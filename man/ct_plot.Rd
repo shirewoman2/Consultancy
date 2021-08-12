@@ -52,6 +52,8 @@ sim_data_cells <- "D29:GU32"
 
 obs_data_file <- "fig1-242-06-001-SD - for XML conversion.xlsx"
 obs_data_cells <- "A11:C259"
+xlab <- "Time (hr)"
+ylab <- "Concentration (uM)"
 ct_plot(sim_data_file, sim_data_cells, obs_data_file, obs_data_cells,
    xlab = "Time (hr)", ylab = "Concentration (uM)")
 

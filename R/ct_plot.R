@@ -30,6 +30,8 @@
 #'
 #' obs_data_file <- "fig1-242-06-001-SD - for XML conversion.xlsx"
 #' obs_data_cells <- "A11:C259"
+#' xlab <- "Time (hr)"
+#' ylab <- "Concentration (uM)"
 #' ct_plot(sim_data_file, sim_data_cells, obs_data_file, obs_data_cells,
 #'    xlab = "Time (hr)", ylab = "Concentration (uM)")
 #'
@@ -45,7 +47,7 @@ ct_plot <- function(sim_data_file,
       sim_data <- readxl::read_excel(path = sim_data_file,
                              sheet = "Conc Profiles CSys(CPlasma)",
                              range = sim_data_cells,
-                             col_names = FALSE) %>% t() %>% as_tibble() %>%
+                             col_names = FALSE) %>% t() %>% as.data.frame() %>%
             rename(time = V1, mean = V2, per95 = V3, per5 = V4)
 
       ## read in observed data that Louise prepared, remember to specify range
@@ -67,10 +69,10 @@ ct_plot <- function(sim_data_file,
             theme_bw()
       B <- ## semi-log scale plot
             A +
-            scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
-                          labels = trans_format("log10", math_format(10^.x)))
-      ggpubr::grid.arrange(A, B, ncol = 2) ## this allows you to look at the plot in R
-      AB <- arrangeGrob(grobs = list(A, B), ncol = 2)
+            scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+                          labels = scales::trans_format("log10", scales::math_format(10^.x)))
+      gridExtra::grid.arrange(A, B, ncol = 2) ## this allows you to look at the plot in R
+      AB <- gridExtra::arrangeGrob(grobs = list(A, B), ncol = 2)
 
       if(save){
             ggsave(filename = figname, plot = AB,

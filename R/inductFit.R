@@ -172,9 +172,10 @@ inductFit <- function(DF,
                        all = list(Indmax = 4, IndC50 = 5, slope = 1))
 
    inductFit_prelim <- function(DF, model){
-      if(model != "all"){
 
-         Weights <- 1/(DF$FoldInduction^2)
+      Weights <- 1/(DF$FoldInduction^2)
+
+      if(model != "all"){
 
          IndFit <- broom::tidy(
             switch(model,
