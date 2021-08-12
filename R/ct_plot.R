@@ -39,8 +39,6 @@ ct_plot <- function(sim_data_file,
                     sim_data_cells,
                     obs_data_file,
                     obs_data_cells,
-                    xlab,
-                    ylab,
                     save = FALSE,
                     figname = NA){
 
@@ -54,23 +52,75 @@ ct_plot <- function(sim_data_file,
       obs_data <- readxl::read_excel(path = obs_data_file,
                                 range = obs_data_cells) %>% drop_na()
 
-      # Converting to appropriate units. Need to figure out how to do this
-      # conditionally...
-      obs_data <- obs_data %>%
-            mutate(DV = DV/1000)
+      # Converting to appropriate ConcUnits as necessary
+      ConcUnits <- readxl::read_excel(path = obs_data_file,
+                                  range = "D5", col_names = FALSE) %>%
+         pull()
 
+      TimeUnits <- readxl::read_excel(path = obs_data_file,
+                                      range = "A5", col_names = FALSE) %>%
+         pull()
+
+      ConversionFactor <- switch(ConcUnits,
+                                 "ng/mL" = 1/1000,
+                                 "µg/mL" = 1,
+                                 "ng/L" = 1/1e6)
+
+      if(is.null(ConversionFactor)){
+         ConversionFactor <- 1
+      }
+
+      obs_data <- obs_data %>% mutate(DV = DV*ConversionFactor)
+
+
+      # Adjusting graph labels as appropriate for the observed data
+      xlab <- switch(TimeUnits,
+                     "Hours" = "Time (hr)",
+                     "Minutes" = "Time (min)")
+
+      ylab <- switch(ConcUnits,
+                     "µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
+                     "ng/mL" = "Concentration (ng/mL)",
+                     "ng/L" = "Concentration (ng/L)",
+                     "uM" = expression(Concentration~"("*mu*M*")"),
+                     "nM" = "Concentration (nM)",
+                     "mg" = "Concentration (mg)",
+                     "mL" = "mL",
+                     "PD response" = "PD response")
+
+      # # Freddy's original graphing code:
+      # A <- ## normal scale plot
+      #       ggplot(sim_data, aes(x = time)) +
+      #       geom_ribbon(aes(ymin = per5, ymax = per95), alpha = 0.2) +
+      #       geom_line(aes(y = mean), lwd = 1.2) +
+      #       geom_point(data = obs_data, aes(x = Time, y = DV),
+      #                  size = 2, shape = 21, fill = "white", alpha = 0.8) +
+      #       labs(x = xlab, y = ylab) +
+      #       theme_bw()
+      # B <- ## semi-log scale plot
+      #       A +
+      #       scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+      #                     labels = scales::trans_format("log10", scales::math_format(10^.x)))
+
+      # Freddy's revised graphing code:
       A <- ## normal scale plot
-            ggplot(sim_data, aes(x = time)) +
-            geom_ribbon(aes(ymin = per5, ymax = per95), alpha = 0.2) +
-            geom_line(aes(y = mean), lwd = 1.2) +
-            geom_point(data = obs_data, aes(x = Time, y = DV),
-                       size = 2, shape = 21, fill = "white", alpha = 0.8) +
-            labs(x = xlab, y = ylab) +
-            theme_bw()
+         ggplot(sim_data, aes(x = time)) +
+         geom_ribbon(aes(ymin = per5, ymax = per95), alpha = 0.2) +
+         geom_line(aes(y = mean), lwd = 1.2) +
+         geom_point(data = obs_data, aes(x = Time, y = DV),
+                    size = 2, shape = 21, fill = "white", alpha = 0.8) +
+         scale_x_continuous(breaks = function(x) seq(0, max(x), 4)) +
+         labs(x = xlab, y = ylab) +
+         theme_bw()
       B <- ## semi-log scale plot
-            A +
-            scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
-                          labels = scales::trans_format("log10", scales::math_format(10^.x)))
+         A +
+         #scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+         #              labels = trans_format("log10", math_format(10^.x))) +
+         scale_y_log10(breaks = c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000),
+                       labels = c(0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000)) +
+         coord_cartesian(ylim = c(0.01, NA)) ## adjust y-axis range
+
+
       gridExtra::grid.arrange(A, B, ncol = 2) ## this allows you to look at the plot in R
       AB <- gridExtra::arrangeGrob(grobs = list(A, B), ncol = 2)
 

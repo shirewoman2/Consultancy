@@ -9,8 +9,6 @@ ct_plot(
   sim_data_cells,
   obs_data_file,
   obs_data_cells,
-  xlab,
-  ylab,
   save = FALSE,
   figname = NA
 )
@@ -30,13 +28,13 @@ concentration data.}
 
 \item{obs_data_cells}{which cells contain the observed data, e.g., "A11:C259"}
 
-\item{xlab}{text you want for the x-axis title}
-
-\item{ylab}{text you want for the y-axis title}
-
 \item{save}{TRUE or FALSE: Save the graph?}
 
 \item{figname}{If \code{save} is TRUE, the file name for the output figure, e.g., "Study 001 SD.png"}
+
+\item{xlab}{text you want for the x-axis title}
+
+\item{ylab}{text you want for the y-axis title}
 }
 \value{
 
