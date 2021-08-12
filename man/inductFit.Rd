@@ -6,8 +6,8 @@
 \usage{
 inductFit(
   DF,
-  concentration = CONC,
-  fold_change = FOLD_CHANGE,
+  concentration = Concentration_uM,
+  fold_induct = FoldInduction,
   model = "IndmaxSlope",
   measurement = "mRNA",
   donor = DONOR,
@@ -20,7 +20,7 @@ inductFit(
 \item{concentration}{the name of the column within DF that contains
 concentration data. This should be unquoted.}
 
-\item{fold_change}{the name of the column within DF that contains fold-change
+\item{fold_induct}{the name of the column within DF that contains fold-change
 data, e.g., mRNA measurements or activity.}
 
 \item{model}{which model(s) you would like to use. The four model options
@@ -75,7 +75,7 @@ perspective.
 data(IndFit)
 
 inductFit(IndData, model = "Indmax")$Graph
-inductFit(IndData \%>\% rename(Conc_uM = CONC), concentration = Conc_uM, model = "IndmaxSlope")$Graph
+inductFit(IndData \%>\% rename(Conc_uM = Concentration_uM), concentration = Conc_uM, model = "IndmaxSlope")$Graph
 inductFit(IndData, model = "Slope")$Graph
 inductFit(IndData, model = "Sig3Param")
 

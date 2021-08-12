@@ -16,7 +16,7 @@
 #' @param DF the data.frame containing induction data
 #' @param concentration the name of the column within DF that contains
 #'   concentration data. This should be unquoted.
-#' @param fold_change the name of the column within DF that contains fold-change
+#' @param fold_induct the name of the column within DF that contains fold-change
 #'   data, e.g., mRNA measurements or activity.
 #' @param model which model(s) you would like to use. The four model options
 #'   are: \describe{
@@ -57,7 +57,7 @@
 #' data(IndFit)
 #'
 #' inductFit(IndData, model = "Indmax")$Graph
-#' inductFit(IndData %>% rename(Conc_uM = CONC), concentration = Conc_uM, model = "IndmaxSlope")$Graph
+#' inductFit(IndData %>% rename(Conc_uM = Concentration_uM), concentration = Conc_uM, model = "IndmaxSlope")$Graph
 #' inductFit(IndData, model = "Slope")$Graph
 #' inductFit(IndData, model = "Sig3Param")
 #'
@@ -77,8 +77,8 @@
 
 
 inductFit <- function(DF,
-                      concentration = CONC,
-                      fold_change = FOLD_CHANGE,
+                      concentration = Concentration_uM,
+                      fold_induct = FoldInduction,
                       model = "IndmaxSlope",
                       measurement = "mRNA",
                       donor = DONOR,
@@ -89,7 +89,7 @@ inductFit <- function(DF,
    `!!` <- rlang::`!!`
 
    concentration <- rlang::enquo(concentration)
-   fold_change <- rlang::enquo(fold_change)
+   fold_induct <- rlang::enquo(fold_induct)
    donor <- rlang::enquo(donor)
 
    # Options for model: IndmaxSlope, Indmax, Slope, Sig3Param, all
@@ -114,7 +114,7 @@ inductFit <- function(DF,
       stop("The column you have listed for the concentration data is not present in your data.frame. Please enter a valid column for concentration data.")
    }
 
-   if(rlang::as_label(fold_change) %in% names(DF) == FALSE){
+   if(rlang::as_label(fold_induct) %in% names(DF) == FALSE){
       stop("The column you have listed for the fold-change data is not present in your data.frame. Please enter a valid column for fold-change data.")
    }
 
@@ -126,16 +126,16 @@ inductFit <- function(DF,
    # here.
    if(rlang::as_label(donor) %in% names(DF) == FALSE){
       DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(concentration),
-                                          rlang::as_label(fold_change)))) %>%
-         dplyr::rename(FOLD_CHANGE = !! fold_change,
-                       CONC = !! concentration)
+                                          rlang::as_label(fold_induct)))) %>%
+         dplyr::rename(FoldInduction = !! fold_induct,
+                       Concentration_uM = !! concentration)
       DF$DONOR <- "A"
    } else {
       DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(concentration),
-                                          rlang::as_label(fold_change),
+                                          rlang::as_label(fold_induct),
                                           rlang::as_label(donor)))) %>%
-         dplyr::rename(FOLD_CHANGE = !! fold_change,
-                       CONC = !! concentration,
+         dplyr::rename(FoldInduction = !! fold_induct,
+                       Concentration_uM = !! concentration,
                        DONOR = !! donor)
    }
 
@@ -160,8 +160,8 @@ inductFit <- function(DF,
 
    # starting parameters for each model
    StartVals <- switch(model,
-                       IndmaxSlope = list(Indmax = 4, # max(DF$CONC, na.rm = T), <-- not sure why this doesn't work, but it doesn't. Fit won't converge.
-                                          IndC50 = 5, # max(DF$CONC, na.rm = T)*2/3,
+                       IndmaxSlope = list(Indmax = 4, # max(DF$Concentration_uM, na.rm = T), <-- not sure why this doesn't work, but it doesn't. Fit won't converge.
+                                          IndC50 = 5, # max(DF$Concentration_uM, na.rm = T)*2/3,
                                           slope = 1),
                        Indmax = list(Indmax = 4,
                                      IndC50 = 5),
@@ -176,14 +176,14 @@ inductFit <- function(DF,
 
          IndFit <- broom::tidy(
             switch(model,
-                   Indmax = nls(FOLD_CHANGE ~ 1+(Indmax*CONC)/(IndC50+CONC),
+                   Indmax = nls(FoldInduction ~ 1+(Indmax*Concentration_uM)/(IndC50+Concentration_uM),
                                 data = DF, start = StartVals),
-                   IndmaxSlope = nls(FOLD_CHANGE ~ 1+(Indmax*CONC^slope) /
-                                        (IndC50^slope+CONC^slope),
+                   IndmaxSlope = nls(FoldInduction ~ 1+(Indmax*Concentration_uM^slope) /
+                                        (IndC50^slope+Concentration_uM^slope),
                                      data = DF, start = StartVals),
-                   Slope =  nls(FOLD_CHANGE ~ 1+(CONC*slope),
+                   Slope =  nls(FoldInduction ~ 1+(Concentration_uM*slope),
                                 data = DF, start = StartVals),
-                   Sig3Param = nls(FOLD_CHANGE ~ Indmax/(1+exp(-(CONC-IndC50)/slope)),
+                   Sig3Param = nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/slope)),
                                    data = DF, start = StartVals) ))
          IndFit$model <- model
 
@@ -192,17 +192,17 @@ inductFit <- function(DF,
          slope <- IndFit$estimate[IndFit$term == "slope"]
 
          # Making data.frame to hold the predicted values for the graph
-         Curve <- data.frame(CONC = seq(min(DF$CONC, na.rm = T),
-                                        1.2*max(DF$CONC, na.rm = T),
+         Curve <- data.frame(Concentration_uM = seq(min(DF$Concentration_uM, na.rm = T),
+                                        1.2*max(DF$Concentration_uM, na.rm = T),
                                         length.out = 300),
                              model = model)
 
-         Curve$FOLD_CHANGE <- switch(model,
-                                     Indmax = 1+(Indmax*Curve$CONC)/(IndC50+Curve$CONC),
-                                     IndmaxSlope = 1+(Indmax*Curve$CONC^slope) /
-                                        (IndC50^slope+Curve$CONC^slope),
-                                     Slope = 1 + Curve$CONC * slope,
-                                     Sig3Param = Indmax/(1+exp(-(Curve$CONC-IndC50)/slope)))
+         Curve$FoldInduction <- switch(model,
+                                     Indmax = 1+(Indmax*Curve$Concentration_uM)/(IndC50+Curve$Concentration_uM),
+                                     IndmaxSlope = 1+(Indmax*Curve$Concentration_uM^slope) /
+                                        (IndC50^slope+Curve$Concentration_uM^slope),
+                                     Slope = 1 + Curve$Concentration_uM * slope,
+                                     Sig3Param = Indmax/(1+exp(-(Curve$Concentration_uM-IndC50)/slope)))
 
          ModelTitle <- switch(model,
                               Indmax = "Indmax model",
@@ -224,26 +224,26 @@ inductFit <- function(DF,
 
          IndFit <- list(
             Indmax = broom::tidy(
-               nls(FOLD_CHANGE ~ 1+(Indmax*CONC)/(IndC50+CONC),
+               nls(FoldInduction ~ 1+(Indmax*Concentration_uM)/(IndC50+Concentration_uM),
                    data = DF, start = StartVals[c("Indmax", "IndC50")])) %>%
                dplyr::mutate(model = "Indmax"),
             IndmaxSlope = broom::tidy(
-               nls(FOLD_CHANGE ~ 1+(Indmax*CONC^slope) /
-                      (IndC50^slope+CONC^slope),
+               nls(FoldInduction ~ 1+(Indmax*Concentration_uM^slope) /
+                      (IndC50^slope+Concentration_uM^slope),
                    data = DF, start = StartVals)) %>%
                dplyr::mutate(model = "IndmaxSlope"),
             Slope =  broom::tidy(
-               nls(FOLD_CHANGE ~ 1+(CONC*slope),
+               nls(FoldInduction ~ 1+(Concentration_uM*slope),
                    data = DF, start = StartVals["slope"])) %>%
                dplyr::mutate(model = "Slope"),
             Sig3Param = broom::tidy(
-               nls(FOLD_CHANGE ~ Indmax/(1+exp(-(CONC-IndC50)/slope)),
+               nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/slope)),
                    data = DF, start = StartVals)) %>%
                dplyr::mutate(model = "Sig3Param")  )
 
          # Making data.frame to hold the predicted values for the graph
-         Curve <- data.frame(CONC = rep(seq(min(DF$CONC, na.rm = T),
-                                            1.2*max(DF$CONC, na.rm = T),
+         Curve <- data.frame(Concentration_uM = rep(seq(min(DF$Concentration_uM, na.rm = T),
+                                            1.2*max(DF$Concentration_uM, na.rm = T),
                                             length.out = 300), 4),
                              model = rep(c("Indmax", "IndmaxSlope", "Slope", "Sig3Param"),
                                          each = 300))  %>%
@@ -252,32 +252,32 @@ inductFit <- function(DF,
          Curve <- Curve %>%
             dplyr::mutate(
                # Indmax model
-               FOLD_CHANGE = 1 + (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "Indmax"] *
-                                     CONC) /
+               FoldInduction = 1 + (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "Indmax"] *
+                                     Concentration_uM) /
                   (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "IndC50"] +
-                      CONC),
+                      Concentration_uM),
                # IndmaxSlope model
-               FOLD_CHANGE = ifelse(model == "IndmaxSlope",
+               FoldInduction = ifelse(model == "IndmaxSlope",
                                     1+(IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "Indmax"] *
-                                          CONC^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]) /
+                                          Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]) /
                                        (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "IndC50"] ^
                                            IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"] +
-                                           CONC^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]),
-                                    FOLD_CHANGE),
+                                           Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]),
+                                    FoldInduction),
                # Slope model
-               FOLD_CHANGE = ifelse(model == "Slope",
-                                    1 + CONC * IndFit[["Slope"]]$estimate[IndFit[["Slope"]]$term == "slope"],
-                                    FOLD_CHANGE),
+               FoldInduction = ifelse(model == "Slope",
+                                    1 + Concentration_uM * IndFit[["Slope"]]$estimate[IndFit[["Slope"]]$term == "slope"],
+                                    FoldInduction),
                # Sig3Param model
-               FOLD_CHANGE = ifelse(model == "Sig3Param",
+               FoldInduction = ifelse(model == "Sig3Param",
                                     IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "Indmax"] /
-                                       (1+exp(-(CONC-IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "IndC50"]) /
+                                       (1+exp(-(Concentration_uM-IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "IndC50"]) /
                                                  IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "slope"])),
-                                    FOLD_CHANGE))
+                                    FoldInduction))
          ModelTitle <- NULL
       }
 
-      G <- ggplot(DF, aes(x = CONC, y = FOLD_CHANGE)) +
+      G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction)) +
          geom_point() +
          geom_line(data = Curve) +
          annotation_logticks(sides = "b",
@@ -343,7 +343,7 @@ inductFit <- function(DF,
                               Slope = "Slope model",
                               Sig3Param = "Sigmoidal 3-parameter model (Xenotech)")
 
-         G <- ggplot(DF, aes(x = CONC, y = FOLD_CHANGE,
+         G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
                              color = DONOR)) +
             geom_point() +
             geom_line(data = CurveData) +
@@ -406,7 +406,7 @@ inductFit <- function(DF,
          CurveData <- do.call(dplyr::bind_rows, CurveData) %>%
             dplyr::mutate(Model_ch = ModelFacet[model])
 
-         G <- ggplot(DF, aes(x = CONC, y = FOLD_CHANGE,
+         G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
                              color = DONOR)) +
             geom_point() +
             geom_line(data = CurveData) +
