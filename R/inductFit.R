@@ -173,7 +173,7 @@ inductFit <- function(DF,
 
    inductFit_prelim <- function(DF, model){
 
-      Weights <- 1/(DF$FoldInduction^2)
+      Weights <- 1/(DF$FoldInduction^2) # Check on this...
 
       if(model != "all"){
 
