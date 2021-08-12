@@ -72,10 +72,11 @@ meant to be a benefit but could be an annoyance depending on your
 perspective.
 }
 \examples{
-data(IndFit)
+data(IndData)
 
 inductFit(IndData, model = "Indmax")$Graph
-inductFit(IndData \%>\% rename(Conc_uM = Concentration_uM), concentration = Conc_uM, model = "IndmaxSlope")$Graph
+inductFit(IndData \%>\% rename(Conc_uM = Concentration_uM),
+          concentration = Conc_uM, model = "IndmaxSlope")$Graph
 inductFit(IndData, model = "Slope")$Graph
 inductFit(IndData, model = "Sig3Param")
 
@@ -84,10 +85,10 @@ inductFit(IndData, model = "IndmaxSlope", measurement = "activity")
 MyFit <- inductFit(IndData, model = "all")
 MyFit$Graph; MyFit$Fit
 
-MyFit <- inductFit(IndData, model = "Sig3Param", fitByDonor = TRUE, donor = DONOR)
+MyFit <- inductFit(IndData, model = "Sig3Param", fitByDonor = TRUE, donor = DonorID)
 MyFit$Fit; MyFit$Fit_means; MyFit$Graph
 
-MyFit <- inductFit(IndData, model = "all", fitByDonor = TRUE, donor = DONOR)
+MyFit <- inductFit(IndData, model = "all", fitByDonor = TRUE, donor = DonorID)
 MyFit$Fit; MyFit$Fit_means; MyFit$Graph
 
 
