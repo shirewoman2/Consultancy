@@ -1,16 +1,15 @@
 
 #' inductFit
 #'
-#' This script is an adaptation of Howie's script "Induction_fit_script_ver2.r"
-#' and has converted that script into a function: inductFit. This function fits
-#' induction data -- either activity or mRNA -- to one or all of four models for
-#' calculating Ind_max, Ind50, and, when appropriate, a slope. Like the original
-#' script, weighting is by 1/y^2. One way in which this differs from the
-#' original script is that no upper or lower bounds for parameter estimates are
-#' in use. This means that, if sufficient data to describe the curve do not
-#' exist, the function will fail to deliver any fitted parameters, which is
-#' meant to be a benefit but could be an annoyance depending on your
-#' perspective.
+#' This function is an adaptation of Howie's script
+#' "Induction_fit_script_ver2.r" and fits induction data -- either activity or
+#' mRNA -- to one or all of four models for calculating Ind_max, Ind50, and,
+#' when appropriate, a slope. Like the original script, weighting is by 1/y^2.
+#' One way in which this differs from the original script is that no upper or
+#' lower bounds for parameter estimates are in use. This means that, if
+#' sufficient data to describe the curve do not exist, the function will fail to
+#' deliver any fitted parameters, which is meant to be a benefit but could be an
+#' annoyance depending on your perspective.
 #'
 #'
 #' @param DF the data.frame containing induction data
@@ -175,17 +174,19 @@ inductFit <- function(DF,
    inductFit_prelim <- function(DF, model){
       if(model != "all"){
 
+         Weights <- 1/(DF$FoldInduction^2)
+
          IndFit <- broom::tidy(
             switch(model,
                    Indmax = nls(FoldInduction ~ 1+(Indmax*Concentration_uM)/(IndC50+Concentration_uM),
-                                data = DF, start = StartVals),
+                                data = DF, start = StartVals, weights = Weights),
                    IndmaxSlope = nls(FoldInduction ~ 1+(Indmax*Concentration_uM^slope) /
                                         (IndC50^slope+Concentration_uM^slope),
-                                     data = DF, start = StartVals),
+                                     data = DF, start = StartVals, weights = Weights),
                    Slope =  nls(FoldInduction ~ 1+(Concentration_uM*slope),
-                                data = DF, start = StartVals),
+                                data = DF, start = StartVals, weights = Weights),
                    Sig3Param = nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/slope)),
-                                   data = DF, start = StartVals) ))
+                                   data = DF, start = StartVals, weights = Weights) ))
          IndFit$model <- model
 
          Indmax <- IndFit$estimate[IndFit$term == "Indmax"]
@@ -226,20 +227,20 @@ inductFit <- function(DF,
          IndFit <- list(
             Indmax = broom::tidy(
                nls(FoldInduction ~ 1+(Indmax*Concentration_uM)/(IndC50+Concentration_uM),
-                   data = DF, start = StartVals[c("Indmax", "IndC50")])) %>%
+                   data = DF, start = StartVals[c("Indmax", "IndC50")], weights = Weights)) %>%
                dplyr::mutate(model = "Indmax"),
             IndmaxSlope = broom::tidy(
                nls(FoldInduction ~ 1+(Indmax*Concentration_uM^slope) /
                       (IndC50^slope+Concentration_uM^slope),
-                   data = DF, start = StartVals)) %>%
+                   data = DF, start = StartVals, weights = Weights)) %>%
                dplyr::mutate(model = "IndmaxSlope"),
             Slope =  broom::tidy(
                nls(FoldInduction ~ 1+(Concentration_uM*slope),
-                   data = DF, start = StartVals["slope"])) %>%
+                   data = DF, start = StartVals["slope"], weights = Weights)) %>%
                dplyr::mutate(model = "Slope"),
             Sig3Param = broom::tidy(
                nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/slope)),
-                   data = DF, start = StartVals)) %>%
+                   data = DF, start = StartVals, weights = Weights)) %>%
                dplyr::mutate(model = "Sig3Param")  )
 
          # Making data.frame to hold the predicted values for the graph

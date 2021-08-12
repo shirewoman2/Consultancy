@@ -60,16 +60,15 @@ Returns a list of \describe{ \item{Fit}{the fitted parameters}
   way}}
 }
 \description{
-This script is an adaptation of Howie's script "Induction_fit_script_ver2.r"
-and has converted that script into a function: inductFit. This function fits
-induction data -- either activity or mRNA -- to one or all of four models for
-calculating Ind_max, Ind50, and, when appropriate, a slope. Like the original
-script, weighting is by 1/y^2. One way in which this differs from the
-original script is that no upper or lower bounds for parameter estimates are
-in use. This means that, if sufficient data to describe the curve do not
-exist, the function will fail to deliver any fitted parameters, which is
-meant to be a benefit but could be an annoyance depending on your
-perspective.
+This function is an adaptation of Howie's script
+"Induction_fit_script_ver2.r" and fits induction data -- either activity or
+mRNA -- to one or all of four models for calculating Ind_max, Ind50, and,
+when appropriate, a slope. Like the original script, weighting is by 1/y^2.
+One way in which this differs from the original script is that no upper or
+lower bounds for parameter estimates are in use. This means that, if
+sufficient data to describe the curve do not exist, the function will fail to
+deliver any fitted parameters, which is meant to be a benefit but could be an
+annoyance depending on your perspective.
 }
 \examples{
 data(IndData)
