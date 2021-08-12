@@ -10,7 +10,7 @@ inductFit(
   fold_induct = FoldInduction,
   model = "IndmaxSlope",
   measurement = "mRNA",
-  donor = DonorID,
+  donor = DONOR,
   fitByDonor = FALSE
 )
 }
