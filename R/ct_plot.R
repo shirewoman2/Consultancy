@@ -24,6 +24,9 @@
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
 #'   set of graphs} }
+#' @param return_indiv_graphs TRUE or FALSE: Return each of the two individual
+#'   graphs? This can be useful if you want to modify the graphs further or only
+#'   use one, etc.
 #'
 #' @return
 #' @export
@@ -36,13 +39,15 @@
 #' ct_plot(sim_data_file)
 #' ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
 #' ct_plot(sim_data_file, return_data = TRUE)
+#' ct_plot(sim_data_file, return_indiv_graphs = TRUE)
 #'
 ct_plot <- function(sim_data_file,
                     obs_data_file = NA,
                     figure_type = "method development",
                     save = FALSE,
                     figname = NA,
-                    return_data = FALSE){
+                    return_data = FALSE,
+                    return_indiv_graphs = FALSE){
 
    # Error catching
    if(length(figure_type) != 1 |
@@ -194,7 +199,7 @@ ct_plot <- function(sim_data_file,
          BreaksToUse = c("24hr", "48hr", "96hr", "1wk", "2wk"))
 
       BreaksToUse <- PossBreaks %>% filter(tlast <= Tlast) %>%
-         slice(which.max(Tlast)) %>% pull(BreaksToUse)
+         slice(which.min(Tlast)) %>% pull(BreaksToUse)
 
       XBreaks <- switch(BreaksToUse,
                         "24hr" = seq(0, 24, 4),
@@ -209,8 +214,8 @@ ct_plot <- function(sim_data_file,
                                BreaksToUse = c("1hr", "4hr",
                                                "8hr", "12hr",
                                                "24hr"))
-      BreaksToUse <- PossBreaks %>% filter(Tlast <= tlast) %>%
-         slice(which.max(Tlast)) %>% pull(BreaksToUse)
+      BreaksToUse <- PossBreaks %>% filter(tlast <= Tlast) %>%
+         slice(which.min(Tlast)) %>% pull(BreaksToUse)
 
       XBreaks <- switch(BreaksToUse,
                         "1hr" = seq(0, 60, 15),
@@ -309,11 +314,24 @@ ct_plot <- function(sim_data_file,
       Out <- list(AB, Data)
       names(Out) <- c("Graphs", "Data")
 
-      return(Out)
+      if(return_indiv_graphs){
+         Out[["Linear graph"]] <- A
+         Out[["Semi-log graph"]] <- B
+      }
 
    } else {
-      return(AB)
+
+      if(return_indiv_graphs){
+         Out <- list(AB)
+         names(Out) <- "Graphs"
+         Out[["Linear graph"]] <- A
+         Out[["Semi-log graph"]] <- B
+      } else {
+         Out <- AB
+      }
    }
+
+   return(Out)
 
 }
 

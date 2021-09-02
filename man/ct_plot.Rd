@@ -10,7 +10,8 @@ ct_plot(
   figure_type = "method development",
   save = FALSE,
   figname = NA,
-  return_data = FALSE
+  return_data = FALSE,
+  return_indiv_graphs = FALSE
 )
 }
 \arguments{
@@ -40,6 +41,10 @@ e.g., "Study 001 SD.png"}
 TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 graphs} \item{Data}{a data.frame of the concentration-time data used in the
 set of graphs} }}
+
+\item{return_indiv_graphs}{TRUE or FALSE: Return each of the two individual
+graphs? This can be useful if you want to modify the graphs further or only
+use one, etc.}
 }
 \value{
 
@@ -56,5 +61,6 @@ obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
 ct_plot(sim_data_file)
 ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
 ct_plot(sim_data_file, return_data = TRUE)
+ct_plot(sim_data_file, return_indiv_graphs = TRUE)
 
 }
