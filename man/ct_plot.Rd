@@ -6,35 +6,40 @@
 \usage{
 ct_plot(
   sim_data_file,
-  sim_data_cells,
-  obs_data_file,
-  obs_data_cells,
+  obs_data_file = NA,
+  figure_type = "method development",
   save = FALSE,
-  figname = NA
+  figname = NA,
+  return_data = FALSE
 )
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulated
 concentration-time data}
 
-\item{sim_data_cells}{which cells in the Excel sheet "Conc Profiles
-CSys(CPlasma)" contain your data, e.g., "D29:GU32". You don't need to
-change this every time if the number of sampling stays the same.}
+\item{obs_data_file}{name of the Excel file containing the observed
+concentration-time data. If the observed data you want to plot were already
+included in the Excel output from the simulator, leave this as NA.
+Otherwise, this is the file that it is ready to be converted to an XML
+file, not the file that contains only the digitized time and concentration
+data.}
 
-\item{obs_data_file}{names of the Excel file containing the observed
-concentration-time data. This is the file that it is ready to be converted
-to an XML file, not the file that contains only the digitized time and
-concentration data.}
-
-\item{obs_data_cells}{which cells contain the observed data, e.g., "A11:C259"}
+\item{figure_type}{type of figure to plot. Options are: \describe{
+\item{method development}{plots a black line for the mean data, gray lines
+for the individual simulated data, and open circles for the observed data}
+\item{method verification}{plots a black line for the mean data, gray lines
+for the 5th and 95th percentiles of the simulated data, and open circles
+for the observed data} }}
 
 \item{save}{TRUE or FALSE: Save the graph?}
 
-\item{figname}{If \code{save} is TRUE, the file name for the output figure, e.g., "Study 001 SD.png"}
+\item{figname}{If \code{save} is TRUE, the file name for the output figure,
+e.g., "Study 001 SD.png"}
 
-\item{xlab}{text you want for the x-axis title}
-
-\item{ylab}{text you want for the y-axis title}
+\item{return_data}{TRUE or FALSE: Return the data used in the graphs? If
+TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
+graphs} \item{Data}{a data.frame of the concentration-time data used in the
+set of graphs} }}
 }
 \value{
 
@@ -44,15 +49,12 @@ This function takes observed and simulated concentration-time data and makes
 publication-quality graphs.
 }
 \examples{
-# (These won't actually work yet. -LS)
-sim_data_file <- "Delamanid output v8.xlsx"
-sim_data_cells <- "D29:GU32"
+sim_data_file <- "../Example simulator output.xlsx"
 
-obs_data_file <- "fig1-242-06-001-SD - for XML conversion.xlsx"
-obs_data_cells <- "A11:C259"
-xlab <- "Time (hr)"
-ylab <- "Concentration (uM)"
-ct_plot(sim_data_file, sim_data_cells, obs_data_file, obs_data_cells,
-   xlab = "Time (hr)", ylab = "Concentration (uM)")
+obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
+
+ct_plot(sim_data_file)
+ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
+ct_plot(sim_data_file, return_data = TRUE)
 
 }
