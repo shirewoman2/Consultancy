@@ -44,6 +44,12 @@ ct_plot <- function(sim_data_file,
                     figname = NA,
                     return_data = FALSE){
 
+   # Error catching
+   if(length(figure_type) != 1 |
+      figure_type %in% c("method development", "method verification")){
+      stop("The only acceptable options for figure_type are 'method development' or 'method verification'.")
+   }
+
    # Getting summary data for the simulation
    SimSummary <- suppressMessages(
       readxl::read_excel(path = sim_data_file, sheet = "Summary",
@@ -121,6 +127,15 @@ ct_plot <- function(sim_data_file,
                                  Factor = c(10^3, 10^3,
                                             10^-3, 10^6,
                                             10^-3))
+
+         if(SimConcUnits %in% ConvTable$SimUnits == FALSE |
+            ObsConcUnits %in% ConvTable$ObsUnits == FALSE |
+            all(c(SimConcUnits, ObsConcUnits) %in% c("µg/mL", "ng/mL", "ng/L",
+                                                     "µM", "nM", "mg", "mL",
+                                                     "PD response") == FALSE)){
+            stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
+         }
+
          ConversionFactor <-
             ConvTable$Factor[which(ConvTable$SimUnits == SimConcUnits &
                                       ConvTable$ObsUnits == ObsConcUnits)]
@@ -163,7 +178,7 @@ ct_plot <- function(sim_data_file,
                   "µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
                   "ng/mL" = "Concentration (ng/mL)",
                   "ng/L" = "Concentration (ng/L)",
-                  "uM" = expression(Concentration~"("*mu*M*")"),
+                  "µM" = expression(Concentration~"("*mu*M*")"),
                   "nM" = "Concentration (nM)",
                   "mg" = "Concentration (mg)",
                   "mL" = "mL",
