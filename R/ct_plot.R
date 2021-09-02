@@ -46,7 +46,7 @@ ct_plot <- function(sim_data_file,
 
    # Error catching
    if(length(figure_type) != 1 |
-      figure_type %in% c("method development", "method verification")){
+      figure_type %in% c("method development", "method verification") == FALSE){
       stop("The only acceptable options for figure_type are 'method development' or 'method verification'.")
    }
 
