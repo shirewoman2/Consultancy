@@ -8,7 +8,7 @@ extractPK(
   sim_data_file,
   PKparameters = c("AUCinf_dose1", "AUCtau_dose1", "AUCtau_lastdose",
     "AUCtau_lastdoseToEnd", "CL_dose1", "CL_lastdose", "CL_lastdoseToEnd", "Cmax_dose1",
-    "HalfLife_dose1", "tmax_dose1")
+    "Cmax_lastdose", "HalfLife_dose1", "tmax_dose1")
 )
 }
 \arguments{
@@ -22,11 +22,11 @@ extractPK(
   \item{"AUCinf_dose1}{AUC from 0 to infinity for dose 1. Data are pulled
   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
 
-  \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are
-  pulled from tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)".
-  IMPORTANT: This will be AUCtau for dose 1 if you have a done a
-  multiple-dose simulation, but, if you have done a single-dose simulation,
-  this will be the AUC from 0 to whatever time you stopped simulating.}
+  \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are pulled from
+  tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)". IMPORTANT:
+  This will be AUCtau for dose 1 if you have a done a multiple-dose
+  simulation, but, if you have done a single-dose simulation, this will be
+  the AUC from 0 to whatever time you stopped simulating.}
 
   \item{"AUCtau_lastdose"}{AUC from 0 to tau for the last dose in the
   simulation. Data are pulled from tab "AUC" from the column titled, e.g.,
@@ -46,12 +46,13 @@ extractPK(
   See the options for "AUCtau_lastdose" as an alternative.}
 
   \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1. Data
-  are pulled from the tab "AUC" and the column titled, e.g., "CL (Dose/AUC_INF)
-  (L/h)", subheading "Extrapolated AUC_INF for the first dose".}
+  are pulled from the tab "AUC" and the column titled, e.g., "CL
+  (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF for the first
+  dose".}
 
-  \item{"CL_lastdose"}{Clearance as calculated by dose / AUCtau for the
-  last dose simulated. Data are pulled from the tab "AUC", column titled,
-  e.g., "CL (Dose/AUC) (L/h)")}
+  \item{"CL_lastdose"}{Clearance as calculated by dose / AUCtau for the last
+  dose simulated. Data are pulled from the tab "AUC", column titled, e.g.,
+  "CL (Dose/AUC) (L/h)")}
 
   \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
   Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the largest
@@ -63,6 +64,10 @@ extractPK(
 
   \item{"Cmax_dose1"}{Cmax for dose 1. Data are pulled from tab
   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
+
+  \item{"Cmax_lastdose"}{Cmax for the last dose. Data are pulled from tab
+  "AUC", column titled, e.g., "CMax (mg/L)", under the subheading "Truncated
+  AUCt for the last dose.}
 
   \item{"HalfLife_dose1"}{half life for dose 1. Data are pulled from the tab
   "AUC", column titled, e.g., "Half-life (h)")}
