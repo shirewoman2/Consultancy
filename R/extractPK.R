@@ -156,7 +156,7 @@ extractPK <- function(sim_data_file,
          if(i %in% c("AUCtau_lastdose", "CL_lastdose", "Cmax_lastdose")){
             CorrectColNum <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                               "Truncated AUCt for the last dose"))
-            ColNum <- ColNum[ColNum > CorrectColNum]
+            ColNum <- ColNum[ColNum >= CorrectColNum]
          }
 
          if(length(ColNum) == 0){
