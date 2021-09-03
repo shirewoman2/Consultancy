@@ -1,19 +1,25 @@
 #' extractPK
 #'
+#' Extract AUCinf, AUCtau, half life, and/or clearance data from the "AUC" tab
+#' of a simulator output Excel file.
+#'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file, all of which will be pulled from the "AUC" tab. Options are
 #'   any combination of the following: \describe{ \item{"AUCtau_dose1"}{AUC from
 #'   0 to tau for dose 1. This is the column "AUCt(0) (mg/L.h)".}
-#'   \item{AUCtau_lastdose}{AUC from 0 to tau for the last dose in the
+#'   \item{"AUCtau_lastdose"}{AUC from 0 to tau for the last dose in the
 #'   simulation. This is the column "AUC (mg/L.h)" under the subheading "AUC
 #'   integrated from X to Y".} \item{"AUCinf_dose1}{AUC from 0 to infinity for
 #'   dose 1 (column: "AUC_INF (mg/L.h)")} \item{"HalfLife_dose1"}{half life,
-#'   estimated for dose 1 (column: "Half-life (h)")} \item{"CL_dose1}{Clearance
+#'   estimated for dose 1 (column: "Half-life (h)")} \item{"CL_dose1"}{Clearance
 #'   as calculated by dose / AUCinf for dose 1 (column: "CL (Dose/AUC_INF)
 #'   (L/h)")} }
 #'
-#' @return
+#' @return Depending on the options selected, returns a list of numerical
+#'   vectors of whichever PK parameters were chosen. If only one PK parameter
+#'   was requested, output is a numerical vector.
+#'
 #' @export
 #'
 #' @examples
@@ -38,60 +44,37 @@ extractPK <- function(sim_data_file,
                                col_names = FALSE))
 
       EndRow <- which(AUC_xl$...2 == "Statistics") - 2
-      Out <- data.frame(Index = 1:(EndRow - 3))
+      Out <- list()
 
+      findCol <- function(PKparam){
 
-      if("AUCtau_dose1" %in% PKparameters){
-            ColNum <- which(str_detect(as.vector(t(AUC_xl[3, ])), "AUCt.0."))
+            ToDetect <- switch(PKparam,
+                               "AUCtau_dose1" = "AUCt.0.",
+                               "AUCtau_lastdose" = "AUC \\(",
+                               "AUCinf_dose1" = "AUC_INF",
+                               "HalfLife_dose1" = "Half-life",
+                               "CL_dose1" = "CL .Dose/AUC_INF")
 
+            which(str_detect(as.vector(t(AUC_xl[3, ])), ToDetect))[1]
+      }
+
+      for(i in PKparameters){
+            ColNum <- findCol(i)
             if(length(ColNum) == 0){
-                  message("The column with information for AUCtau_dose1 cannot be found.")
+                  message(paste("The column with information for", i,
+                                "cannot be found."))
                   rm(ColNum)
                   next
-            } else {
-                  Out$AUCtau_dose1 <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
-                        pull(Values) %>% as.numeric
-                  rm(ColNum)
             }
-      }
 
-      if("AUCtau_lastdose" %in% PKparameters){
-            ColNum <- which(str_detect(as.vector(t(AUC_xl[3, ])), "AUC \\("))[1]
-
-            if(length(ColNum) == 0){
-                  message("The column with information for AUCtau_lastdose cannot be found.")
-                  rm(ColNum)
-                  next
-            } else {
-                  Out$AUCtau_lastdose <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
-                        pull(Values) %>% as.numeric
-                  rm(ColNum)
-            }
-      }
-
-      if("AUCinf_dose1" %in% PKparameters){
-            ColNum <- which(str_detect(as.vector(t(AUC_xl[3, ])), "AUC_INF"))[1]
-            Out$AUCinf_dose1 <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
+            Out[[i]] <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
                   pull(Values) %>% as.numeric
             rm(ColNum)
       }
 
-      if("HalfLife_dose1" %in% PKparameters){
-            ColNum <- which(str_detect(as.vector(t(AUC_xl[3, ])), "Half-life"))
-            Out$HalfLife_dose1 <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
-                  pull(Values) %>% as.numeric
-            rm(ColNum)
-      }
 
-      if("CL_dose1" %in% PKparameters){
-            ColNum <- which(str_detect(as.vector(t(AUC_xl[3, ])), "CL .Dose/AUC_INF"))
-            Out$CL_dose1 <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
-                  pull(Values) %>% as.numeric
-            rm(ColNum)
-      }
-
-      if(ncol(Out) == 2){
-            Out <- Out %>% pull(2)
+      if(length(Out) == 1){
+            Out <- Out[[1]]
       }
 
       return(Out)

@@ -47,10 +47,13 @@ graphs? This can be useful if you want to modify the graphs further or only
 use one, etc.}
 }
 \value{
-
+Depending on the options selected, returns either a set of graphs or
+  a list of the set of graphs (named "Graphs" in the  output), the individual
+  graphs ("Linear graph" and "Semi-log graph"), and/or the data used for
+  creating the graphs ("Data").
 }
 \description{
-This function takes observed and simulated concentration-time data and makes
+Using observed and simulated concentration-time data, make
 publication-quality graphs.
 }
 \examples{

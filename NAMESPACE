@@ -2,5 +2,6 @@
 
 export(calcKi)
 export(ct_plot)
+export(extractPK)
 export(findXLChanges)
 export(inductFit)
