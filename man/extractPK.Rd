@@ -6,9 +6,9 @@
 \usage{
 extractPK(
   sim_data_file,
-  PKparameters = c("AUCtau_dose1", "AUCinf_dose1", "Cmax_dose1", "tmax_dose1",
-    "AUCtau_lastdose_calc", "AUCtau_lastdose_int", "HalfLife_dose1", "CL_dose1",
-    "CL_lastdose_calc")
+  PKparameters = c("AUCinf_dose1", "AUCtau_dose1", "AUCtau_lastdose",
+    "AUCtau_lastdoseToEnd", "CL_dose1", "CL_lastdose", "CL_lastdoseToEnd", "Cmax_dose1",
+    "HalfLife_dose1", "tmax_dose1")
 )
 }
 \arguments{
@@ -17,56 +17,58 @@ extractPK(
 \item{PKparameters}{PK parameters you want to extract from the simulator
   output file. Options are any combination of the following:
 
-  \describe{ \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are
-  pulled from tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)".
-  IMPORTANT: This will be AUCtau for dose 1 if you have a done a
-  multiple-dose simulation, but, if you have done a single-dose simulation,
-  this will be the AUC from 0 to whatever time you stopped monitoring.}
-
-  \item{"Cmax_dose1"}{Cmax for dose 1. Data are pulled from tab
-  "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
-
-  \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
-  "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-
-  \item{"AUCtau_lastdose_calc"}{AUC tau for the last dose. Data are pulled
-  from tab "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which
-  there is a tab, from the column titled, e.g., "AUC (mg/L.h)". Nota bene:
-  These data were calculated by the simulator from the beginning of the last
-  dose to whenever the simulation ended, so that interval may not be tau if
-  you did not set up the simulation that way. See the options for
-  "AUCtau_lastdose_int" as an alternative.}
-
-  \item{AUCtau_lastdose_int}{AUC from 0 to tau for the last dose in the
-  simulation. Data are pulled from tab "AUC" from the column titled, e.g.,
-  "AUC (mg/L.h)" under the subheading "AUC integrated from X to Y". Nota
-  bene: These data were integrated by the simulator using whatever sampling
-  points you selected in the simulation. If you did not adequately sample the
-  dosing interval, the estimate could be off. Also, if you did not set up
-  your simulation to end at the end of the dosing interval, this will be the
-  AUC from the last dosing time to the end of the simulation.}
+  \describe{
 
   \item{"AUCinf_dose1}{AUC from 0 to infinity for dose 1. Data are pulled
   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
 
-  \item{"HalfLife_dose1"}{half life for dose 1. Data are pulled from the tab
-  "AUC", column titled, e.g., "Half-life (h)")}
+  \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are
+  pulled from tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)".
+  IMPORTANT: This will be AUCtau for dose 1 if you have a done a
+  multiple-dose simulation, but, if you have done a single-dose simulation,
+  this will be the AUC from 0 to whatever time you stopped simulating.}
+
+  \item{"AUCtau_lastdose"}{AUC from 0 to tau for the last dose in the
+  simulation. Data are pulled from tab "AUC" from the column titled, e.g.,
+  "AUC (mg/L.h)" under the subheading "Truncated AUCt for the last dose".
+  Nota bene: These data were integrated by the simulator using whatever
+  sampling points you selected in the simulation. If you did not adequately
+  sample the dosing interval, the estimate could be off. To get this
+  parameter, you must have checked the box for "AUCt for the last dose" to be
+  calculated under Outputs-->Data Analysis-->AUC to be calculated}
+
+  \item{"AUCtau_lastdoseToEnd"}{AUC from the last dose to the end of the
+  simulation. Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the
+  largest dose for which there is a tab, from the column titled, e.g., "AUC
+  (mg/L.h)". \emph{Nota bene:} These data were calculated by the simulator
+  from the beginning of the last dose to whenever the simulation ended, so
+  that interval may not be tau if you did not set up the simulation that way.
+  See the options for "AUCtau_lastdose" as an alternative.}
 
   \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1. Data
-  are pulled from the tab "AUC", column titled, e.g., "CL (Dose/AUC_INF)
-  (L/h)")}
+  are pulled from the tab "AUC" and the column titled, e.g., "CL (Dose/AUC_INF)
+  (L/h)", subheading "Extrapolated AUC_INF for the first dose".}
 
-  \item{"CL_lastdose_int"}{Clearance as calculated by dose / AUCtau for the
+  \item{"CL_lastdose"}{Clearance as calculated by dose / AUCtau for the
   last dose simulated. Data are pulled from the tab "AUC", column titled,
   e.g., "CL (Dose/AUC) (L/h)")}
 
-  \item{"CL_lastdose_calc"}{CL for the last dose calculated as Dose / AUCtau.
+  \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
   Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the largest
   dose for which there is a tab, from the column titled, e.g., "AUC
-  (mg/L.h)". Nota bene: These data were calculated by the simulator from the
-  beginning of the last dose to whenever the simulation ended, so that
-  interval may not be tau if you did not set up the simulation that way. See
-  the options for "CL_lastdose_int" as an alternative.}
+  (mg/L.h)". \emph{Nota bene:} These data were calculated by the simulator
+  from the beginning of the last dose to whenever the simulation ended, so
+  that interval may not be tau if you did not set up the simulation that way.
+  See the options for "CL_lastdose_int" as an alternative.}
+
+  \item{"Cmax_dose1"}{Cmax for dose 1. Data are pulled from tab
+  "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
+
+  \item{"HalfLife_dose1"}{half life for dose 1. Data are pulled from the tab
+  "AUC", column titled, e.g., "Half-life (h)")}
+
+  \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
+  "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
 
   }}
 }

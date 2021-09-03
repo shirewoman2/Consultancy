@@ -6,56 +6,58 @@
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are any combination of the following:
 #'
-#'   \describe{ \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are
+#'   \describe{
+#'
+#'   \item{"AUCinf_dose1}{AUC from 0 to infinity for dose 1. Data are pulled
+#'   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
+#'
+#'   \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are
 #'   pulled from tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)".
 #'   IMPORTANT: This will be AUCtau for dose 1 if you have a done a
 #'   multiple-dose simulation, but, if you have done a single-dose simulation,
 #'   this will be the AUC from 0 to whatever time you stopped simulating.}
 #'
+#'   \item{"AUCtau_lastdose"}{AUC from 0 to tau for the last dose in the
+#'   simulation. Data are pulled from tab "AUC" from the column titled, e.g.,
+#'   "AUC (mg/L.h)" under the subheading "Truncated AUCt for the last dose".
+#'   Nota bene: These data were integrated by the simulator using whatever
+#'   sampling points you selected in the simulation. If you did not adequately
+#'   sample the dosing interval, the estimate could be off. To get this
+#'   parameter, you must have checked the box for "AUCt for the last dose" to be
+#'   calculated under Outputs-->Data Analysis-->AUC to be calculated}
+#'
+#'   \item{"AUCtau_lastdoseToEnd"}{AUC from the last dose to the end of the
+#'   simulation. Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the
+#'   largest dose for which there is a tab, from the column titled, e.g., "AUC
+#'   (mg/L.h)". \emph{Nota bene:} These data were calculated by the simulator
+#'   from the beginning of the last dose to whenever the simulation ended, so
+#'   that interval may not be tau if you did not set up the simulation that way.
+#'   See the options for "AUCtau_lastdose" as an alternative.}
+#'
+#'   \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1. Data
+#'   are pulled from the tab "AUC" and the column titled, e.g., "CL (Dose/AUC_INF)
+#'   (L/h)", subheading "Extrapolated AUC_INF for the first dose".}
+#'
+#'   \item{"CL_lastdose"}{Clearance as calculated by dose / AUCtau for the
+#'   last dose simulated. Data are pulled from the tab "AUC", column titled,
+#'   e.g., "CL (Dose/AUC) (L/h)")}
+#'
+#'   \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
+#'   Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the largest
+#'   dose for which there is a tab, from the column titled, e.g., "AUC
+#'   (mg/L.h)". \emph{Nota bene:} These data were calculated by the simulator
+#'   from the beginning of the last dose to whenever the simulation ended, so
+#'   that interval may not be tau if you did not set up the simulation that way.
+#'   See the options for "CL_lastdose_int" as an alternative.}
+#'
 #'   \item{"Cmax_dose1"}{Cmax for dose 1. Data are pulled from tab
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
-#'
-#'   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
-#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-#'
-#'   \item{"AUCtau_lastdose_calc"}{AUC tau for the last dose. Data are pulled
-#'   from tab "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which
-#'   there is a tab, from the column titled, e.g., "AUC (mg/L.h)". Nota bene:
-#'   These data were calculated by the simulator from the beginning of the last
-#'   dose to whenever the simulation ended, so that interval may not be tau if
-#'   you did not set up the simulation that way. See the options for
-#'   "AUCtau_lastdose_int" as an alternative.}
-#'
-#'   \item{AUCtau_lastdose_int}{AUC from 0 to tau for the last dose in the
-#'   simulation. Data are pulled from tab "AUC" from the column titled, e.g.,
-#'   "AUC (mg/L.h)" under the subheading "AUC integrated from X to Y". Nota
-#'   bene: These data were integrated by the simulator using whatever sampling
-#'   points you selected in the simulation. If you did not adequately sample the
-#'   dosing interval, the estimate could be off. Also, if you did not set up
-#'   your simulation to end at the end of the dosing interval, this will be the
-#'   AUC from the last dosing time to the end of the simulation.}
-#'
-#'   \item{"AUCinf_dose1}{AUC from 0 to infinity for dose 1. Data are pulled
-#'   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
 #'
 #'   \item{"HalfLife_dose1"}{half life for dose 1. Data are pulled from the tab
 #'   "AUC", column titled, e.g., "Half-life (h)")}
 #'
-#'   \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1. Data
-#'   are pulled from the tab "AUC", column titled, e.g., "CL (Dose/AUC_INF)
-#'   (L/h)")}
-#'
-#'   \item{"CL_lastdose_int"}{Clearance as calculated by dose / AUCtau for the
-#'   last dose simulated. Data are pulled from the tab "AUC", column titled,
-#'   e.g., "CL (Dose/AUC) (L/h)")}
-#'
-#'   \item{"CL_lastdose_calc"}{CL for the last dose calculated as Dose / AUCtau.
-#'   Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the largest
-#'   dose for which there is a tab, from the column titled, e.g., "AUC
-#'   (mg/L.h)". Nota bene: These data were calculated by the simulator from the
-#'   beginning of the last dose to whenever the simulation ended, so that
-#'   interval may not be tau if you did not set up the simulation that way. See
-#'   the options for "CL_lastdose_int" as an alternative.}
+#'   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
+#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
 #'
 #'   }
 #'
@@ -76,18 +78,21 @@
 #'
 #'
 extractPK <- function(sim_data_file,
-                      PKparameters = c("AUCtau_dose1", "AUCinf_dose1",
-                                       "Cmax_dose1", "tmax_dose1",
-                                       "AUCtau_lastdose_calc",
-                                       "AUCtau_lastdose_int",
-                                       "HalfLife_dose1",
+                      PKparameters = c("AUCinf_dose1",
+                                       "AUCtau_dose1",
+                                       "AUCtau_lastdose",
+                                       "AUCtau_lastdoseToEnd",
                                        "CL_dose1",
-                                       "CL_lastdose_calc")){
+                                       "CL_lastdose",
+                                       "CL_lastdoseToEnd",
+                                       "Cmax_dose1",
+                                       "HalfLife_dose1",
+                                       "tmax_dose1")){
 
    AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
    # Parameters to pull from the AUC tab
-   Param_AUC <- c("AUCtau_lastdose_int",
+   Param_AUC <- c("AUCtau_lastdose",
                   "AUCinf_dose1", "HalfLife_dose1",
                   "CL_dose1", "CL_lastdose")
 
@@ -98,7 +103,7 @@ extractPK <- function(sim_data_file,
    # changes.
 
    # Parameters to pull from the AUCX(Sub)(CPlasma) tab, where X is the last dose
-   Param_AUClast <- c("AUCtau_lastdose_calc", "CL_lastdose_calc")
+   Param_AUCX <- c("AUCtau_lastdoseToEnd", "CL_lastdoseToEnd")
 
    Out <- list()
 
@@ -122,8 +127,8 @@ extractPK <- function(sim_data_file,
       findCol <- function(PKparam){
 
          ToDetect <- switch(PKparam,
-                            "AUCtau_lastdose_int" = "AUCt\\(n\\) \\(",
                             "AUCinf_dose1" = "^AUC_INF",
+                            "AUCtau_lastdose" = "AUCt\\(n\\) \\(",
                             "HalfLife_dose1" = "Half-life",
                             "CL_dose1" = "CL .Dose/AUC_INF",
                             "CL_lastdose" = "CL \\(Dose/AUC\\)")
@@ -142,11 +147,17 @@ extractPK <- function(sim_data_file,
          }
 
          # Need this to come from under the subheading "Truncated AUCt for the last dose"
-         if(i %in% c("AUCtau_lastdose_int", "CL_lastdose")){
+         if(i %in% c("AUCtau_lastdose", "CL_lastdose")){
             CorrectColNum <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                               "Truncated AUCt for the last dose"))
             ColNum <- ColNum[ColNum > CorrectColNum]
+         }
 
+         if(length(ColNum) == 0){
+            message(paste("The column with information for", i,
+                          "cannot be found."))
+            rm(ColNum)
+            next
          }
 
          Out[[i]] <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
@@ -205,10 +216,67 @@ extractPK <- function(sim_data_file,
 
    }
 
+   # Pulling data from the AUCX(Sub)(CPlasma) tab
+   if(any(PKparameters %in% Param_AUCX)){
+
+      PKparameters_AUCX <- intersect(PKparameters, Param_AUCX)
+
+      Tab_last <- AllSheets[str_detect(AllSheets, "AUC[0-9]{1,}")]
+      LastDoseNum <- max(as.numeric(str_extract(Tab_last, "[0-9]{1,}")))
+      Tab_last <- paste0("AUC", LastDoseNum, "(Sub)(CPlasma)")
+
+      # Error catching
+      if(LastDoseNum == 0 | length(LastDoseNum) == 0){
+         stop(paste0("The tab 'AUCX(Sub)(CPlasma)', where 'X' is the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
+                     PKparameters_AUCX, "."))
+      }
+
+      AUCX_xl <- suppressMessages(
+         readxl::read_excel(path = sim_data_file, sheet = Tab_last,
+                            col_names = FALSE))
+
+      EndRow <- which(AUC_xl$...2 == "Statistics") - 3
+
+      findCol <- function(PKparam){
+
+         ToDetect <- switch(PKparam,
+                            "AUCtau_lastdoseToEnd" = "^AUC \\(",
+                            "CL_lastdoseToEnd" = "CL \\(Dose/AUC")
+
+         which(str_detect(as.vector(t(AUCX_xl[2, ])), ToDetect))[1]
+      }
+
+      for(i in PKparameters_AUCX){
+         ColNum <- findCol(i)
+         if(length(ColNum) == 0){
+            message(paste("The column with information for", i,
+                          "cannot be found."))
+            rm(ColNum)
+            next
+         }
+
+         Out[[i]] <- AUCX_xl[3:EndRow, ColNum] %>% rename(Values = 1) %>%
+            pull(Values) %>% as.numeric
+         rm(ColNum)
+      }
+
+      rm(EndRow, findCol)
+
+   }
+
    # If user only wanted one parameter, make the output a vector instead of a
    # list
    if(length(Out) == 1){
       Out <- Out[[1]]
+   } else {
+
+      # Putting objects in alphabetical order
+      ListItems <- names(Out)
+      Out_temp <- Out
+      Out <- list()
+      for(i in sort(ListItems)){
+         Out[[i]] <- Out_temp[[i]]
+      }
    }
 
    return(Out)
