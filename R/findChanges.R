@@ -19,6 +19,8 @@
 #' @export
 #'
 #' @examples
+#' # No examples available atm.
+#'
 findXLChanges <- function(File1, File2, outputAllSheets = TRUE){
 
       File1_wb <- openxlsx::loadWorkbook(File1)

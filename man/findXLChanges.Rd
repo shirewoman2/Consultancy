@@ -26,3 +26,7 @@ between them. It is NOT smart, so if the only difference on a given sheet is
 that everything has moved down a row, it will find LOTS of changes. It is
 also SLOW b/c it has to read everything from Excel.
 }
+\examples{
+# No examples available atm.
+
+}

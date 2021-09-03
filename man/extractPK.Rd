@@ -6,24 +6,47 @@
 \usage{
 extractPK(
   sim_data_file,
-  PKparameters = c("AUCtau_dose1", "AUCtau_lastdose", "AUCinf_dose1", "HalfLife_dose1",
-    "CL_dose1")
+  PKparameters = c("AUCtau_dose1", "AUCinf_dose1", "Cmax_dose1", "tmax_dose1",
+    "AUCtau_lastdose", "HalfLife_dose1", "CL_dose1", "CL_lastdose")
 )
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
-output file, all of which will be pulled from the "AUC" tab. Options are
-any combination of the following: \describe{ \item{"AUCtau_dose1"}{AUC from
-0 to tau for dose 1. This is the column "AUCt(0) (mg/L.h)".}
-\item{"AUCtau_lastdose"}{AUC from 0 to tau for the last dose in the
-simulation. This is the column "AUC (mg/L.h)" under the subheading "AUC
-integrated from X to Y".} \item{"AUCinf_dose1}{AUC from 0 to infinity for
-dose 1 (column: "AUC_INF (mg/L.h)")} \item{"HalfLife_dose1"}{half life,
-estimated for dose 1 (column: "Half-life (h)")} \item{"CL_dose1"}{Clearance
-as calculated by dose / AUCinf for dose 1 (column: "CL (Dose/AUC_INF)
-(L/h)")} }}
+  output file, most of which will be pulled from the "AUC" tab. Options are
+  any combination of the following:
+
+  \describe{ \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. This is the
+  column "AUCt(0) (mg/L.h)". IMPORTANT: This will be AUCtau for dose 1 if you
+  have a done a multiple-dose simulation, but, if you have done a single-dose
+  simulation, this will be the AUC from 0 to whatever time you stopped
+  monitoring.}
+
+  \item{"Cmax_dose1"}{Cmax for dose 1. This is pulled from the column titled,
+  e.g., "CMax (mg/L)" on the tab "AUC0(Sub)(CPlasma)", so if that tab isn't
+  included in your Excel file, you will get an error.}
+
+  \item{"tmax_dose1"}{tmax for dose 1. This is pulled from the column titled,
+  e.g., "TMax (h)" on the tab "AUC0(Sub)(CPlasma)", so if that tab isn't
+  included in your Excel file, you will get an error.}
+
+  \item{"AUCtau_lastdose"}{AUC from 0 to tau for the last dose in the
+  simulation. This is the column "AUC (mg/L.h)" under the subheading "AUC
+  integrated from X to Y".}
+
+
+  \item{"AUCinf_dose1}{AUC from 0 to infinity for dose 1 (column: "AUC_INF
+  (mg/L.h)")}
+
+  \item{"HalfLife_dose1"}{half life, estimated for dose 1 (column: "Half-life
+  (h)")}
+
+  \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1
+  (column: "CL (Dose/AUC_INF) (L/h)")}
+
+  \item{"CL_lastdose"}{Clearance as calculated by dose / AUCtau for the last
+  dose simulated (column: "CL (Dose/AUC) (L/h)")} }}
 }
 \value{
 Depending on the options selected, returns a list of numerical
@@ -31,12 +54,11 @@ Depending on the options selected, returns a list of numerical
   was requested, output is a numerical vector.
 }
 \description{
-Extract AUCinf, AUCtau, half life, and/or clearance data from the "AUC" tab
-of a simulator output Excel file.
+Extract PK data for specific parameters from a simulator output Excel file.
 }
 \examples{
 
-sim_data_file <- "../Example simulator output.xlsx"
+sim_data_file <- "../Example simulator output MD.xlsx"
 extractPK(sim_data_file)
 extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
 
