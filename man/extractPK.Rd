@@ -20,7 +20,7 @@ extractPK(
 
   \describe{
 
-  \item{"AUCinf_dose1}{AUC from 0 to infinity for dose 1. Data are pulled
+  \item{"AUCinf_dose1"}{AUC from 0 to infinity for dose 1. Data are pulled
   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
 
   \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are pulled from
@@ -77,7 +77,7 @@ extractPK(
   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
   }}
 
-\item{returnAggregateOrIndiv}{Return aggregate and/or individual PK
+\item{returnAggregateOrIndiv}{Return aggregate (mean) and/or individual PK
 parameters? Options are "aggregate" or "individual".}
 }
 \value{

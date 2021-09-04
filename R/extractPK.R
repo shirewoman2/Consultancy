@@ -64,7 +64,7 @@
 #'   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
 #'   }
-#' @param returnAggregateOrIndiv Return aggregate and/or individual PK
+#' @param returnAggregateOrIndiv Return aggregate (mean) and/or individual PK
 #'   parameters? Options are "aggregate" or "individual".
 #'
 #'
@@ -294,7 +294,7 @@ extractPK <- function(sim_data_file,
       }
    }
 
-   if(returnAggregateOrIndiv){
+   if(returnAggregateOrIndiv == "aggregate"){
       if(class(Out) == "list"){
          Out <- sapply(Out, FUN = function(.) mean(., na.rm = TRUE))
       } else {
