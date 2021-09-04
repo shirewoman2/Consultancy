@@ -199,7 +199,7 @@ extractPK <- function(sim_data_file,
          readxl::read_excel(path = sim_data_file, sheet = Sheet,
                             col_names = FALSE))
 
-      EndRow <- which(AUC_xl$...2 == "Statistics") - 3
+      EndRow <- which(AUC0_xl$...2 == "Statistics") - 3
 
       findCol <- function(PKparam){
 
@@ -248,7 +248,7 @@ extractPK <- function(sim_data_file,
          readxl::read_excel(path = sim_data_file, sheet = Tab_last,
                             col_names = FALSE))
 
-      EndRow <- which(AUC_xl$...2 == "Statistics") - 3
+      EndRow <- which(AUCX_xl$...2 == "Statistics") - 3
 
       findCol <- function(PKparam){
 
