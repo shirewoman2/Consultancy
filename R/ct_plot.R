@@ -11,6 +11,10 @@
 #'   Otherwise, this is the file that it is ready to be converted to an XML
 #'   file, not the file that contains only the digitized time and concentration
 #'   data.
+#' @param sim_obs_dataframe If you have already extracted the concentration-time
+#'   data using the function \code{extractConcTime}, you can enter the name of
+#'   the output data.frame from that function instead of re-reading the Excel
+#'   file.
 #' @param figure_type type of figure to plot. Options are: \describe{
 #'   \item{method development}{plots a black line for the mean data, gray lines
 #'   for the individual simulated data, and open circles for the observed data}
@@ -44,9 +48,11 @@
 #' ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
 #' ct_plot(sim_data_file, return_data = TRUE)
 #' ct_plot(sim_data_file, return_indiv_graphs = TRUE)
+#' ct_plot(sim_obs_dataframe = MyCTData)
 #'
 ct_plot <- function(sim_data_file,
                     obs_data_file = NA,
+                    sim_obs_dataframe = NA,
                     figure_type = "method development",
                     save = FALSE,
                     figname = NA,
@@ -59,129 +65,19 @@ ct_plot <- function(sim_data_file,
       stop("The only acceptable options for figure_type are 'method development' or 'method verification'.")
    }
 
-   # Getting summary data for the simulation
-   SimSummary <- suppressMessages(
-      readxl::read_excel(path = sim_data_file, sheet = "Summary",
-                         col_names = FALSE))
-
-   # Reading in simulated concentration-time profile data
-   sim_data_xl <- suppressMessages(
-      readxl::read_excel(path = sim_data_file,
-                         sheet = "Conc Profiles CSys(CPlasma)",
-                         col_names = FALSE))
-
-   # mean data
-   StartRow_mean <- which(sim_data_xl$...1 == "Population Statistics") + 1
-   sim_data_mean <- sim_data_xl[StartRow_mean:(StartRow_mean+3), ] %>% t() %>%
-      as.data.frame() %>% slice(-(1:4)) %>%
-      mutate_all(as.numeric) %>%
-      rename(Time = "V1", Mean = "V2", per5 = "V3", per95 = "V4") %>%
-      pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time)
-
-   # individual data
-   StartRow_ind <- which(sim_data_xl$...1 == "Individual Statistics") + 3
-   EndRow_ind <- which(sim_data_xl$...1 == "Observed Data") - 2
-   sim_data_ind <- sim_data_xl[StartRow_ind:EndRow_ind, ] %>% t() %>%
-      as.data.frame() %>% slice(-(1:3)) %>%
-      mutate_all(as.numeric) %>%
-      rename(Time = "V1") %>%
-      pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time)
-
-   # Determining concentration units
-   SimConcUnits <- str_extract(sim_data_xl[3, "...1"], "[µumnp]?g/m?L")
-
-   # If the user did not specify a file to use for observed data, use the
-   # observed data that they included for the simulation.
-   if(is.na(obs_data_file)){
-
-      StartRow_obs <- which(sim_data_xl$...1 == "Observed Data") + 1
-      obs_data <- sim_data_xl[StartRow_obs:(StartRow_obs+1), ] %>% t() %>%
-         as.data.frame() %>% slice(-1) %>%
-         mutate_all(as.numeric) %>%
-         rename(Time = "V1", Conc = "V2") %>% filter(complete.cases(Time)) %>%
-         mutate(ID = "obs")
-
+   if(is.data.frame(sim_obs_dataframe)){
+      Data <- sim_obs_dataframe
    } else {
-      # If the user did specify an observed data file, read in observed data.
-      obs_data_xl <- suppressMessages(
-         readxl::read_excel(path = obs_data_file, col_names = FALSE))
-
-      obs_data <- obs_data_xl[12:nrow(obs_data_xl), 2:3] %>%
-         filter(complete.cases(...3)) %>%
-         rename(Time = ...2, Conc = ...3) %>%
-         mutate_all(as.numeric) %>%
-         mutate(ID = "obs")
-
-      TimeUnits <- suppressMessages(
-         readxl::read_excel(path = obs_data_file,
-                            range = "A5", col_names = FALSE)) %>%
-         pull()
-
-      # Converting to appropriate ObsConcUnits as necessary
-      ObsConcUnits <- suppressMessages(
-         readxl::read_excel(path = obs_data_file,
-                            range = "D5", col_names = FALSE)) %>%
-         pull()
-
-      if(ObsConcUnits != SimConcUnits){
-
-         # Starting with this table of conversion factors, which is assuredly not
-         # exhaustive. Add to this as needed.
-         ConvTable <- data.frame(ObsUnits = c("ng/mL", "ng/mL",
-                                              "ng/mL", "pg/mL",
-                                              "µg/mL"),
-                                 SimUnits = c("mg/L", "µg/mL",
-                                              "ng/L", "mg/L",
-                                              "ng/mL"),
-                                 Factor = c(10^3, 10^3,
-                                            10^-3, 10^6,
-                                            10^-3))
-
-         if(SimConcUnits %in% ConvTable$SimUnits == FALSE |
-            ObsConcUnits %in% ConvTable$ObsUnits == FALSE |
-            all(c(SimConcUnits, ObsConcUnits) %in% c("µg/mL", "ng/mL", "ng/L",
-                                                     "µM", "nM", "mg", "mL",
-                                                     "PD response") == FALSE)){
-            stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
-         }
-
-         ConversionFactor <-
-            ConvTable$Factor[which(ConvTable$SimUnits == SimConcUnits &
-                                      ConvTable$ObsUnits == ObsConcUnits)]
-
-         sim_data_ind <- sim_data_ind %>%
-            mutate(Conc = Conc*ConversionFactor)
-         sim_data_mean <- sim_data_mean %>%
-            mutate(Conc = Conc*ConversionFactor)
-      }
-
+      Data <- extractConcTime(sim_data_file, obs_data_file)
    }
 
-   # If this were a multiple-dose simulation, the observed data is, presumably,
-   # at steady state. The simulated time we'd want those data to match would be
-   # the *last* dose. Adjusting the time for the obs data.
-   DosingScenario <- SimSummary %>%
-      slice(which(...5 == "Dosing Regimen")) %>% pull(...6)
-
-   if(DosingScenario == "Multiple Dose"){
-
-      DoseFreq <- SimSummary %>%
-         slice(which(str_detect(...5, "Dose Interval"))) %>%
-         pull(...6) %>% as.numeric()
-      NumDoses <- SimSummary %>%
-         slice(which(str_detect(...5, "Number of Doses"))) %>%
-         pull(...6) %>% as.numeric()
-
-      LastDoseTime <- DoseFreq * (NumDoses - 1)
-
-      obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
-
-   }
+   TimeUnits <- unique(Data$Time_units)
+   ObsConcUnits <- unique(Data$Conc_units)
 
    # Adjusting graph labels as appropriate for the observed data
    xlab <- switch(TimeUnits,
-                  "Hours" = "Time (hr)",
-                  "Minutes" = "Time (min)")
+                  "hours" = "Time (hr)",
+                  "minutes" = "Time (min)")
 
    ylab <- switch(ObsConcUnits,
                   "µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
@@ -194,9 +90,9 @@ ct_plot <- function(sim_data_file,
                   "PD response" = "PD response")
 
    # Setting the breaks for the x axis
-   tlast <- max(c(obs_data$Time, sim_data_mean$Time))
+   tlast <- max(Data$Time)
 
-   if(TimeUnits == "Hours"){
+   if(TimeUnits == "hours"){
 
       PossBreaks <- data.frame(
          Tlast = c(24, 48, 96, 168, 336),
@@ -213,7 +109,7 @@ ct_plot <- function(sim_data_file,
                         "2wk" = seq(0, 336, 48))
    }
 
-   if(TimeUnits == "Minutes"){
+   if(TimeUnits == "minutes"){
       PossBreaks <- data.frame(Tlast = c(60, 240, 480),
                                BreaksToUse = c("1hr", "4hr",
                                                "8hr", "12hr",
@@ -243,6 +139,13 @@ ct_plot <- function(sim_data_file,
    #       A +
    #       scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
    #                     labels = scales::trans_format("log10", scales::math_format(10^.x)))
+
+   # Separating the data by type
+   sim_data_ind <- Data %>% filter(Simulated == TRUE &
+                                      ID %in% c("Mean", "per5", "per95") == FALSE)
+   sim_data_mean <- Data %>% filter(Simulated == TRUE  &
+                                       ID %in% c("Mean", "per5", "per95"))
+   obs_data <- Data %>% filter(Simulated == FALSE)
 
 
    if(figure_type == "method development"){
@@ -306,15 +209,6 @@ ct_plot <- function(sim_data_file,
    }
 
    if(return_data){
-      Data <- bind_rows(
-         obs_data %>% mutate(Simulated = FALSE),
-
-         sim_data_ind %>% mutate(Simulated = TRUE,
-                                 ID = sub("V", "Subject ", ID)) %>%
-            arrange(ID, Time),
-         sim_data_mean %>% mutate(Simulated = TRUE) %>%
-            arrange(ID, Time))
-
       Out <- list(AB, Data)
       names(Out) <- c("Graphs", "Data")
 

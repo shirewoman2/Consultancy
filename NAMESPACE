@@ -2,6 +2,7 @@
 
 export(calcKi)
 export(ct_plot)
+export(extractConcTime)
 export(extractPK)
 export(findXLChanges)
 export(inductFit)

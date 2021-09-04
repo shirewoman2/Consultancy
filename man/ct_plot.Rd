@@ -7,6 +7,7 @@
 ct_plot(
   sim_data_file,
   obs_data_file = NA,
+  sim_obs_dataframe = NA,
   figure_type = "method development",
   save = FALSE,
   figname = NA,
@@ -24,6 +25,11 @@ included in the Excel output from the simulator, leave this as NA.
 Otherwise, this is the file that it is ready to be converted to an XML
 file, not the file that contains only the digitized time and concentration
 data.}
+
+\item{sim_obs_dataframe}{If you have already extracted the concentration-time
+data using the function \code{extractConcTime}, you can enter the name of
+the output data.frame from that function instead of re-reading the Excel
+file.}
 
 \item{figure_type}{type of figure to plot. Options are: \describe{
 \item{method development}{plots a black line for the mean data, gray lines
@@ -65,5 +71,6 @@ ct_plot(sim_data_file)
 ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
 ct_plot(sim_data_file, return_data = TRUE)
 ct_plot(sim_data_file, return_indiv_graphs = TRUE)
+ct_plot(sim_obs_dataframe = MyCTData)
 
 }
