@@ -105,7 +105,7 @@ extractPK <- function(sim_data_file,
    }
 
    # Parameters to pull from the AUC tab
-   Param_AUC <- c("AUCtau_lastdose",
+   Param_AUC <- c("AUCtau_lastdose", "Cmax_lastdose",
                   "AUCinf_dose1", "HalfLife_dose1",
                   "CL_dose1", "CL_lastdose")
 
@@ -142,6 +142,7 @@ extractPK <- function(sim_data_file,
          ToDetect <- switch(PKparam,
                             "AUCinf_dose1" = "^AUC_INF",
                             "AUCtau_lastdose" = "AUCt\\(n\\) \\(",
+                            "Cmax_lastdose" = "^CMax",
                             "HalfLife_dose1" = "Half-life",
                             "CL_dose1" = "CL .Dose/AUC_INF",
                             "CL_lastdose" = "CL \\(Dose/AUC\\)")
