@@ -8,7 +8,8 @@ extractPK(
   sim_data_file,
   PKparameters = c("AUCinf_dose1", "AUCtau_dose1", "AUCtau_lastdose",
     "AUCtau_lastdoseToEnd", "CL_dose1", "CL_lastdose", "CL_lastdoseToEnd", "Cmax_dose1",
-    "Cmax_lastdose", "HalfLife_dose1", "tmax_dose1")
+    "Cmax_lastdose", "HalfLife_dose1", "tmax_dose1"),
+  returnAggregateOrIndiv = "individual"
 )
 }
 \arguments{
@@ -74,8 +75,10 @@ extractPK(
 
   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-
   }}
+
+\item{returnAggregateOrIndiv}{Return aggregate and/or individual PK
+parameters? Options are "aggregate" or "individual".}
 }
 \value{
 Depending on the options selected, returns a list of numerical

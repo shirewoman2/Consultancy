@@ -8,7 +8,7 @@
 #'
 #'   \describe{
 #'
-#'   \item{"AUCinf_dose1}{AUC from 0 to infinity for dose 1. Data are pulled
+#'   \item{"AUCinf_dose1"}{AUC from 0 to infinity for dose 1. Data are pulled
 #'   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
 #'
 #'   \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are pulled from
@@ -63,9 +63,9 @@
 #'
 #'   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-#'
 #'   }
-#'
+#' @param returnAggregateOrIndiv Return aggregate and/or individual PK
+#'   parameters? Options are "aggregate" or "individual".
 #'
 #'
 #'
@@ -93,9 +93,16 @@ extractPK <- function(sim_data_file,
                                        "Cmax_dose1",
                                        "Cmax_lastdose",
                                        "HalfLife_dose1",
-                                       "tmax_dose1")){
+                                       "tmax_dose1") ,
+                      returnAggregateOrIndiv = "individual"){
 
    AllSheets <- readxl::excel_sheets(path = sim_data_file)
+
+   # Error catching
+   if(length(returnAggregateOrIndiv) != 1 |
+      returnAggregateOrIndiv %in% c("aggregate", "individual") == FALSE){
+      stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
+   }
 
    # Parameters to pull from the AUC tab
    Param_AUC <- c("AUCtau_lastdose",
@@ -121,7 +128,7 @@ extractPK <- function(sim_data_file,
       # Error catching
       if("AUC" %in% AllSheets == FALSE){
          stop(paste0("The tab 'AUC' must be present in the Excel simulated data file to extract the PK parameters ",
-                    PKparameters_AUC, "."))
+                     PKparameters_AUC, "."))
       }
 
       AUC_xl <- suppressMessages(
@@ -204,7 +211,7 @@ extractPK <- function(sim_data_file,
          which(str_detect(as.vector(t(AUC0_xl[2, ])), ToDetect))[1]
       }
 
-       for(i in PKparameters_AUC0){
+      for(i in PKparameters_AUC0){
          ColNum <- findCol(i)
          if(length(ColNum) == 0){
             message(paste("The column with information for", i,
@@ -273,7 +280,9 @@ extractPK <- function(sim_data_file,
    # If user only wanted one parameter, make the output a vector instead of a
    # list
    if(length(Out) == 1){
+
       Out <- Out[[1]]
+
    } else {
 
       # Putting objects in alphabetical order
@@ -282,6 +291,14 @@ extractPK <- function(sim_data_file,
       Out <- list()
       for(i in sort(ListItems)){
          Out[[i]] <- Out_temp[[i]]
+      }
+   }
+
+   if(returnAggregateOrIndiv){
+      if(class(Out) == "list"){
+         Out <- sapply(Out, FUN = function(.) mean(., na.rm = TRUE))
+      } else {
+         Out = mean(Out, na.rm = TRUE)
       }
    }
 

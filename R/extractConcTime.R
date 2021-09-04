@@ -30,9 +30,9 @@ extractConcTime <- function(sim_data_file,
                                                        "individual")){
 
       # Error catching
-      if(any(length(returnAggregateOrIndiv) < 1 |
-             length(returnAggregateOrIndiv) > 2 |
-             unique(returnAggregateOrIndiv) %in% c("aggregate", "individual") == FALSE)) {
+      if(length(returnAggregateOrIndiv) < 1 |
+         length(returnAggregateOrIndiv) > 2 |
+         unique(returnAggregateOrIndiv) %in% c("aggregate", "individual") == FALSE) {
             stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
       }
 
