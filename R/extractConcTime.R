@@ -2,7 +2,9 @@
 #'
 #' Extracts concentration-time data from simulater output Excel files and,
 #' optionally, a separately specified clinical data file, and puts all data into
-#' a single, tidy data.frame.
+#' a single, tidy data.frame. \emph{Note: Currently, only set up to extract
+#' concentration-time data for one substrate and up to one inhibitor as
+#' applicable.}
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data
@@ -16,7 +18,26 @@
 #'   concentration-time data? Options are one or both of "aggregate" and
 #'   "individual".
 #'
-#' @return A data.frame of concentration-time data
+#' @return A data.frame of concentration-time data with the following columns:
+#'   \describe{\item{Compound}{the compound of interest; this matches whatever
+#'   you named your compound in the simulator}
+#'
+#'   \item{Effector (as applies)}{the effector of interest; this also matches
+#'   whatever you named "Inhibitor 1" in the simulator}
+#'
+#'   \item{ID}{the ID of the profile, which will be a number for a simulated
+#'   individual or will be "obs" for observed data, "mean" for the mean data, or
+#'   "per5" or "per95" for the 5th and 95th percentile data.}
+#'
+#'   \item{Simulated}{TRUE or FALSE for whether the data were simulated}
+#'
+#'   \item{Time}{the time since the first dose}
+#'
+#'   \item{Conc}{concentration of the compound listed}
+#'
+#'   \item{Time_units}{units used for time}
+#'
+#'   \item{Conc_units}{units used for concentrations}}
 #'
 #' @export
 #'
@@ -24,15 +45,23 @@
 #' # sim_data_file <- "../Example simulator output MD.xlsx"
 #' extractConcTime("../Example simulator output MD.xlsx")
 #'
+#' extractConcTime("../Example simulator output MD.xlsx",
+#'                 returnAggregateOrIndiv = "individual")
+#'
+#' extractConcTime("../Example simulator output MD.xlsx",
+#'                 obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
+#'
+#'
+#'
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
                             returnAggregateOrIndiv = c("aggregate",
                                                        "individual")){
 
       # Error catching
-      if(length(returnAggregateOrIndiv) < 1 |
-         length(returnAggregateOrIndiv) > 2 |
-         unique(returnAggregateOrIndiv) %in% c("aggregate", "individual") == FALSE) {
+      if(any(c(length(returnAggregateOrIndiv) < 1,
+               length(returnAggregateOrIndiv) > 2,
+               any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual") == FALSE)))) {
             stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
       }
 
@@ -40,6 +69,13 @@ extractConcTime <- function(sim_data_file,
       SimSummary <- suppressMessages(
             readxl::read_excel(path = sim_data_file, sheet = "Summary",
                                col_names = FALSE))
+
+      Compound <- SimSummary$...2[which(str_detect(SimSummary$...1, "^Compound Name"))]
+
+      # Effector present?
+      EffectorRow <- which(str_detect(SimSummary$...1, "Inhibitor"))
+      Inhibitor <- SimSummary$...2[EffectorRow]
+      EffectorPresent <- length(Inhibitor) > 0
 
       # Reading in simulated concentration-time profile data
       sim_data_xl <- suppressMessages(
@@ -50,29 +86,96 @@ extractConcTime <- function(sim_data_file,
       if("aggregate" %in% returnAggregateOrIndiv){
             # mean data
             StartRow_mean <- which(sim_data_xl$...1 == "Population Statistics") + 1
-            sim_data_mean <- sim_data_xl[StartRow_mean:(StartRow_mean+3), ] %>% t() %>%
-                  as.data.frame() %>% slice(-(1:4)) %>%
+            sim_data_mean <- sim_data_xl[StartRow_mean:(StartRow_mean+3), ] %>%
+                  t() %>%
+                  as.data.frame() %>% slice(-(1:3)) %>%
                   mutate_all(as.numeric) %>%
-                  rename(Time = "V1", Mean = "V2", per5 = "V3", per95 = "V4") %>%
-                  pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time)
+                  rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
+                  pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
+                  mutate(Compound = Compound)
 
+            if(EffectorPresent){
+                  StartRow_mean_SubPlusEffector <-
+                        which(str_detect(sim_data_xl$...1, "interaction"))
+                  sim_data_mean_SubPlusEffector <-
+                        sim_data_xl[c(StartRow_mean,
+                                      StartRow_mean_SubPlusEffector:(StartRow_mean_SubPlusEffector+2)), ] %>%
+                        t() %>%
+                        as.data.frame() %>% slice(-(1:3)) %>%
+                        mutate_all(as.numeric) %>%
+                        rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
+                        pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
+                        mutate(Compound = Compound,
+                               Effector = Inhibitor)
+
+                  StartRow_mean_Effector <- which(str_detect(sim_data_xl$...1,
+                                                             "Time - Inhibitor"))[1]
+                  sim_data_mean_Effector <-
+                        sim_data_xl[StartRow_mean_Effector:(StartRow_mean_Effector+3), ] %>%
+                        t() %>%
+                        as.data.frame() %>% slice(-(1:3)) %>%
+                        mutate_all(as.numeric) %>%
+                        rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
+                        pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
+                        mutate(Compound = Inhibitor, Effector = Inhibitor)
+
+
+                  sim_data_mean <- bind_rows(sim_data_mean,
+                                             sim_data_mean_SubPlusEffector,
+                                             sim_data_mean_Effector) %>%
+                        mutate(Effector = ifelse(is.na(Effector),
+                                                 "none", Effector))
+
+
+            }
       }
 
       if("individual" %in% returnAggregateOrIndiv){
 
             # individual data
-            StartRow_ind <- which(sim_data_xl$...1 == "Individual Statistics") + 3
-            EndRow_ind <- which(sim_data_xl$...1 == "Observed Data") - 2
-            sim_data_ind <- sim_data_xl[StartRow_ind:EndRow_ind, ] %>% t() %>%
+            sim_data_ind <- sim_data_xl[which(str_detect(sim_data_xl$...1, "CSys \\(")), ] %>%
+                  t() %>%
                   as.data.frame() %>% slice(-(1:3)) %>%
                   mutate_all(as.numeric) %>%
                   rename(Time = "V1") %>%
-                  pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time)
+                  pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
+                  mutate(Compound = Compound)
 
+            if(EffectorPresent){
+                  sim_data_ind_SubPlusEffector <-
+                        sim_data_xl[which(str_detect(sim_data_xl$...1, "CSys After Inh")), ] %>%
+                        t() %>%
+                        as.data.frame() %>% slice(-(1:3)) %>%
+                        mutate_all(as.numeric) %>%
+                        rename(Time = "V1") %>%
+                        pivot_longer(names_to = "ID", values_to = "Conc",
+                                     cols = -Time) %>%
+                        mutate(Compound = Compound,
+                               Effector = Inhibitor)
+
+                  sim_data_ind_Effector <-
+                        sim_data_xl[which(str_detect(sim_data_xl$...1, "ISys 1 \\(")), ] %>%
+                        t() %>%
+                        as.data.frame() %>% slice(-(1:3)) %>%
+                        mutate_all(as.numeric) %>%
+                        rename(Time = "V1") %>%
+                        pivot_longer(names_to = "ID", values_to = "Conc",
+                                     cols = -Time) %>%
+                        mutate(Compound = Inhibitor,
+                               Effector = Inhibitor)
+
+                  sim_data_ind <- bind_rows(sim_data_ind,
+                                            sim_data_ind_SubPlusEffector,
+                                            sim_data_ind_Effector)  %>%
+                        mutate(Effector = ifelse(is.na(Effector),
+                                                 "none", Effector))
+
+            }
       }
 
       # Determining concentration units
-      SimConcUnits <- str_extract(sim_data_xl[3, "...1"], "[µumnp]?g/m?L")
+      SimConcUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "CSys Mean \\("))]
+      SimConcUnits <- str_extract(SimConcUnits, "[µumnp]?g/m?L")
 
       # If the user did not specify a file to use for observed data, use the
       # observed data that they included for the simulation.
@@ -181,17 +284,20 @@ extractConcTime <- function(sim_data_file,
                   mutate(ID = as.character(ID))
       }
 
-      Data[["obs"]] <- obs_data %>% mutate(Simulated = FALSE)
+      Data[["obs"]] <- obs_data %>% mutate(Simulated = FALSE,
+                                           Compound = Compound)
 
       Data <- bind_rows(Data) %>%
             mutate(Time_units = tolower(TimeUnits),
                    Conc_units = ifelse(exists("ObsConcUnits"),
                                        ObsConcUnits, SimConcUnits),
                    ID = factor(ID, levels = c(
-                         c("obs", "Mean", "per5", "per95"),
+                         c("obs", "mean", "per5", "per95"),
                          setdiff(unique(ID),
-                                 c("obs", "Mean", "per5", "per95"))))) %>%
-            arrange(ID, Time)
+                                 c("obs", "mean", "per5", "per95"))))) %>%
+            arrange(Compound, ID, Time) %>%
+            select(any_of(c("Compound", "Effector", "ID", "Simulated",
+                            "Time", "Conc", "Time_units", "Conc_units")))
 
       return(Data)
 

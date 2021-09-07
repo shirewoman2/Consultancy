@@ -26,15 +26,44 @@ concentration-time data? Options are one or both of "aggregate" and
 "individual".}
 }
 \value{
-A data.frame of concentration-time data
+A data.frame of concentration-time data with the following columns:
+  \describe{\item{Compound}{the compound of interest; this matches whatever
+  you named your compound in the simulator}
+
+  \item{Effector (as applies)}{the effector of interest; this also matches
+  whatever you named "Inhibitor 1" in the simulator}
+
+  \item{ID}{the ID of the profile, which will be a number for a simulated
+  individual or will be "obs" for observed data, "mean" for the mean data, or
+  "per5" or "per95" for the 5th and 95th percentile data.}
+
+  \item{Simulated}{TRUE or FALSE for whether the data were simulated}
+
+  \item{Time}{the time since the first dose}
+
+  \item{Conc}{concentration of the compound listed}
+
+  \item{Time_units}{units used for time}
+
+  \item{Conc_units}{units used for concentrations}}
 }
 \description{
 Extracts concentration-time data from simulater output Excel files and,
 optionally, a separately specified clinical data file, and puts all data into
-a single, tidy data.frame.
+a single, tidy data.frame. \emph{Note: Currently, only set up to extract
+concentration-time data for one substrate and up to one inhibitor as
+applicable.}
 }
 \examples{
 # sim_data_file <- "../Example simulator output MD.xlsx"
 extractConcTime("../Example simulator output MD.xlsx")
+
+extractConcTime("../Example simulator output MD.xlsx",
+                returnAggregateOrIndiv = "individual")
+
+extractConcTime("../Example simulator output MD.xlsx",
+                obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
+
+
 
 }
