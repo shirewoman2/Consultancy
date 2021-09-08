@@ -9,7 +9,13 @@
 #'   \describe{
 #'
 #'   \item{"AUCinf_dose1"}{AUC from 0 to infinity for dose 1. Data are pulled
-#'   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
+#'   from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)"}
+#'
+#'   \item{AUCinf_dose1_withEffector}{AUC from 0 to infinity for dose 1 in the
+#'   presence of an effector (Inhibitor 1 in the simulator). Data are pulled
+#'   from the tab "AUC", column titled, e.g., "AUC_INF_Inh (mg/L.h)" after the
+#'   subheading "Extrapolated AUC_INF for the first dose in the presence of
+#'   inhibitor"}
 #'
 #'   \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are pulled from
 #'   tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)". IMPORTANT:
@@ -26,6 +32,11 @@
 #'   parameter, you must have checked the box for "AUCt for the last dose" to be
 #'   calculated under Outputs-->Data Analysis-->AUC to be calculated}
 #'
+#'   \item{AUCtau_lastdose_withEffector}{AUC from 0 to tau for the last dose in
+#'   the presence of an effector (Inhibitor 1 in the simulator). Data are pulled
+#'   from the tab "AUC", column titled, e.g., "AUCt(n)_Inh (mg/L.h)" after the
+#'   subheading "Truncated AUCt for the last dose in the presence of inhibitor"}
+#'
 #'   \item{"AUCtau_lastdoseToEnd"}{AUC from the last dose to the end of the
 #'   simulation. Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the
 #'   largest dose for which there is a tab, from the column titled, e.g., "AUC
@@ -39,9 +50,21 @@
 #'   (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF for the first
 #'   dose".}
 #'
+#'   \item{"CL_dose1_withEffector"}{Clearance as calculated by dose / AUCinf for
+#'   dose 1 in the presence of an effector (Inhibitor 1 in the simulator). Data
+#'   are pulled from the tab "AUC" and the column titled, e.g., "CL
+#'   (Dose/AUC_INF_Inh) (L/h)", subheading "Extrapolated AUC_INF for the first
+#'   dose in the presence of inhibitor".}
+#'
 #'   \item{"CL_lastdose"}{Clearance as calculated by dose / AUCtau for the last
 #'   dose simulated. Data are pulled from the tab "AUC", column titled, e.g.,
 #'   "CL (Dose/AUC) (L/h)")}
+#'
+#'   \item{"CL_lastdose_withEffector"}{Clearance as calculated by dose / AUCtau
+#'   for the last dose in the presence of an effector (Inhibitor 1 in the
+#'   simulator). Data are pulled from the tab "AUC" and the column titled, e.g.,
+#'   "CL (Dose/AUC_INF_Inh) (L/h)", subheading "Truncated AUCt for the last dose
+#'   in the presence of inhibitor".}
 #'
 #'   \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
 #'   Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the largest
@@ -54,6 +77,10 @@
 #'   \item{"Cmax_dose1"}{Cmax for dose 1. Data are pulled from tab
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
 #'
+#'   \item{"Cmax_dose1_withEffector"}{Cmax for the last dose in the presence of
+#'   an inhibitor. Data are pulled from tab "AUC0(Sub)(CPlasma)", column titled,
+#'   e.g., "CMaxinh (mg/L)".}
+#'
 #'   \item{"Cmax_lastdose"}{Cmax for the last dose. Data are pulled from tab
 #'   "AUC", column titled, e.g., "CMax (mg/L)", under the subheading "Truncated
 #'   AUCt for the last dose.}
@@ -62,8 +89,7 @@
 #'   "AUC", column titled, e.g., "Half-life (h)")}
 #'
 #'   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
-#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-#'   }
+#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".} }
 #' @param returnAggregateOrIndiv Return aggregate (mean) and/or individual PK
 #'   parameters? Options are "aggregate" or "individual".
 #'
@@ -87,13 +113,19 @@ extractPK <- function(sim_data_file,
                                        "AUCtau_dose1",
                                        "AUCtau_lastdose",
                                        "AUCtau_lastdoseToEnd",
+                                       "AUCinf_dose1_withEffector",
+                                       "AUCtau_lastdose_withEffector",
                                        "CL_dose1",
+                                       "CL_dose1_withEffector",
                                        "CL_lastdose",
+                                       "CL_lastdose_withEffector",
                                        "CL_lastdoseToEnd",
                                        "Cmax_dose1",
+                                       "Cmax_dose1_withEffector",
                                        "Cmax_lastdose",
+                                       "Cmax_lastdose_withEffector",
                                        "HalfLife_dose1",
-                                       "tmax_dose1") ,
+                                       "tmax_dose1"),
                       returnAggregateOrIndiv = "individual"){
 
    AllSheets <- readxl::excel_sheets(path = sim_data_file)
@@ -105,12 +137,14 @@ extractPK <- function(sim_data_file,
    }
 
    # Parameters to pull from the AUC tab
-   Param_AUC <- c("AUCtau_lastdose", "Cmax_lastdose",
-                  "AUCinf_dose1", "HalfLife_dose1",
-                  "CL_dose1", "CL_lastdose")
+   Param_AUC <- c("AUCtau_lastdose", "Cmax_lastdose", "Cmax_lastdose_withEffector",
+                  "AUCinf_dose1", "HalfLife_dose1", "AUCinf_dose1_withEffector",
+                  "AUCtau_lastdose_withEffector", "CL_dose1_withEffector",
+                  "CL_dose1", "CL_lastdose", "CL_lastdose_withEffector")
 
    # Parameters to pull from the "AUC0(Sub)(CPlasma)" tab
-   Param_AUC0 <- c("AUCtau_dose1", "Cmax_dose1", "tmax_dose1")
+   Param_AUC0 <- c("AUCtau_dose1", "Cmax_dose1", "tmax_dose1",
+                   "Cmax_dose1_withEffector")
    # Notes to self: AUCtau_dose1 appears to be the same in both
    # AUC0(Sub)(CPlasma) and AUCt0(Sub)(Plasma) tabs. Not sure if that ever
    # changes.
@@ -137,20 +171,95 @@ extractPK <- function(sim_data_file,
 
       EndRow <- which(AUC_xl$...2 == "Statistics") - 2
 
+
+      # sub function for finding correct column
       findCol <- function(PKparam){
 
          ToDetect <- switch(PKparam,
                             "AUCinf_dose1" = "^AUC_INF",
+                            "AUCinf_dose1_withEffector" = "^AUC_INF",
                             "AUCtau_lastdose" = "AUCt\\(n\\) \\(",
+                            "AUCtau_lastdose_withEffector" = "AUCt\\(n\\)_Inh",
                             "Cmax_lastdose" = "^CMax",
+                            "Cmax_lastdose_withEffector" = "^CMax",
                             "HalfLife_dose1" = "Half-life",
                             "CL_dose1" = "CL .Dose/AUC_INF",
-                            "CL_lastdose" = "CL \\(Dose/AUC\\)")
+                            "CL_dose1_withEffector" = "CL \\(Dose/AUC_INF_Inh\\)",
+                            "CL_lastdose" = "CL \\(Dose/AUC\\)",
+                            "CL_lastdose_withEffector" = "CL \\(Dose/AUC\\)")
 
-         which(str_detect(as.vector(t(AUC_xl[3, ])), ToDetect) &
-                  !str_detect(as.vector(t(AUC_xl[3, ])), "%"))
+
+         if(str_detect(PKparam, "_withEffector")){
+
+            # If there is an effector involved, need to start looking for the
+            # correct column after "for the Xth dose in the presence of
+            # inhibitor".
+
+            # dose1 data
+            if(str_detect(PKparam, "_dose1_withEffector")){
+               StartCol <-
+                  which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                   "for the first dose in the presence of inhibitor"))
+
+               PossCol <- StartCol:ncol(AUC_xl)
+
+            }
+
+            # lastdose data
+            if(str_detect(PKparam, "_lastdose_withEffector")){
+
+               StartCol <-
+                  which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                   "for the last dose in the presence of inhibitor"))
+
+               PossCol <- StartCol:ncol(AUC_xl)
+
+            }
+
+
+         } else {
+
+            # first dose
+            if(str_detect(PKparam, "_dose1")){
+
+               StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                             "^Extrapolated AUC_INF for the first dose$"))
+
+               EndCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                          "^Extrapolated AUC_INF for the first dose in the presence of inhibitor$"))
+
+               PossCol <- StartCol:(EndCol-1)
+
+            }
+
+            # last dose
+            if(str_detect(PKparam, "_lastdose")){
+
+               StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                             "^Truncated AUCt for the last dose$"))
+
+               # If there is no effector involved, be sure not to return any
+               # columns after the subheading "for the Xth dose in the presence of
+               # inhibitor".
+               EndCol <-
+                  which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                   "Truncated AUCt for the last dose in the presence of inhibitor"))
+
+               PossCol <- StartCol:(EndCol-1)
+
+            }
+         }
+
+         OutCol <- PossCol[
+            which(str_detect(as.vector(t(
+               AUC_xl[3, PossCol])), ToDetect) &
+                  !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ]
+
+         return(OutCol)
       }
 
+
+      # finding the PK parameters requested
       for(i in PKparameters_AUC){
          ColNum <- findCol(i)
          if(length(ColNum) == 0){
@@ -158,13 +267,6 @@ extractPK <- function(sim_data_file,
                           "cannot be found."))
             rm(ColNum)
             next
-         }
-
-         # Need this to come from under the subheading "Truncated AUCt for the last dose"
-         if(i %in% c("AUCtau_lastdose", "CL_lastdose", "Cmax_lastdose")){
-            CorrectColNum <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                              "Truncated AUCt for the last dose"))
-            ColNum <- ColNum[ColNum >= CorrectColNum]
          }
 
          if(length(ColNum) == 0){
@@ -206,7 +308,8 @@ extractPK <- function(sim_data_file,
 
          ToDetect <- switch(PKparam,
                             "AUCtau_dose1" = "AUC \\(",
-                            "Cmax_dose1" = "CMax",
+                            "Cmax_dose1" = "CMax \\(",
+                            "Cmax_dose1_withEffector" = "CMaxinh",
                             "tmax_dose1" = "TMax")
 
          which(str_detect(as.vector(t(AUC0_xl[2, ])), ToDetect))[1]
@@ -305,5 +408,6 @@ extractPK <- function(sim_data_file,
 
    return(Out)
 }
+
 
 

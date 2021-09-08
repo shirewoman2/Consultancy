@@ -7,8 +7,10 @@
 extractPK(
   sim_data_file,
   PKparameters = c("AUCinf_dose1", "AUCtau_dose1", "AUCtau_lastdose",
-    "AUCtau_lastdoseToEnd", "CL_dose1", "CL_lastdose", "CL_lastdoseToEnd", "Cmax_dose1",
-    "Cmax_lastdose", "HalfLife_dose1", "tmax_dose1"),
+    "AUCtau_lastdoseToEnd", "AUCinf_dose1_withEffector", "AUCtau_lastdose_withEffector",
+    "CL_dose1", "CL_dose1_withEffector", "CL_lastdose", "CL_lastdose_withEffector",
+    "CL_lastdoseToEnd", "Cmax_dose1", "Cmax_dose1_withEffector", "Cmax_lastdose",
+    "Cmax_lastdose_withEffector", "HalfLife_dose1", "tmax_dose1"),
   returnAggregateOrIndiv = "individual"
 )
 }
@@ -21,7 +23,13 @@ extractPK(
   \describe{
 
   \item{"AUCinf_dose1"}{AUC from 0 to infinity for dose 1. Data are pulled
-  from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)")}
+  from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)"}
+
+  \item{AUCinf_dose1_withEffector}{AUC from 0 to infinity for dose 1 in the
+  presence of an effector (Inhibitor 1 in the simulator). Data are pulled
+  from the tab "AUC", column titled, e.g., "AUC_INF_Inh (mg/L.h)" after the
+  subheading "Extrapolated AUC_INF for the first dose in the presence of
+  inhibitor"}
 
   \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. Data are pulled from
   tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)". IMPORTANT:
@@ -38,6 +46,11 @@ extractPK(
   parameter, you must have checked the box for "AUCt for the last dose" to be
   calculated under Outputs-->Data Analysis-->AUC to be calculated}
 
+  \item{AUCtau_lastdose_withEffector}{AUC from 0 to tau for the last dose in
+  the presence of an effector (Inhibitor 1 in the simulator). Data are pulled
+  from the tab "AUC", column titled, e.g., "AUCt(n)_Inh (mg/L.h)" after the
+  subheading "Truncated AUCt for the last dose in the presence of inhibitor"}
+
   \item{"AUCtau_lastdoseToEnd"}{AUC from the last dose to the end of the
   simulation. Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the
   largest dose for which there is a tab, from the column titled, e.g., "AUC
@@ -51,9 +64,21 @@ extractPK(
   (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF for the first
   dose".}
 
+  \item{"CL_dose1_withEffector"}{Clearance as calculated by dose / AUCinf for
+  dose 1 in the presence of an effector (Inhibitor 1 in the simulator). Data
+  are pulled from the tab "AUC" and the column titled, e.g., "CL
+  (Dose/AUC_INF_Inh) (L/h)", subheading "Extrapolated AUC_INF for the first
+  dose in the presence of inhibitor".}
+
   \item{"CL_lastdose"}{Clearance as calculated by dose / AUCtau for the last
   dose simulated. Data are pulled from the tab "AUC", column titled, e.g.,
   "CL (Dose/AUC) (L/h)")}
+
+  \item{"CL_lastdose_withEffector"}{Clearance as calculated by dose / AUCtau
+  for the last dose in the presence of an effector (Inhibitor 1 in the
+  simulator). Data are pulled from the tab "AUC" and the column titled, e.g.,
+  "CL (Dose/AUC_INF_Inh) (L/h)", subheading "Truncated AUCt for the last dose
+  in the presence of inhibitor".}
 
   \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
   Data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the largest
@@ -66,6 +91,10 @@ extractPK(
   \item{"Cmax_dose1"}{Cmax for dose 1. Data are pulled from tab
   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
 
+  \item{"Cmax_dose1_withEffector"}{Cmax for the last dose in the presence of
+  an inhibitor. Data are pulled from tab "AUC0(Sub)(CPlasma)", column titled,
+  e.g., "CMaxinh (mg/L)".}
+
   \item{"Cmax_lastdose"}{Cmax for the last dose. Data are pulled from tab
   "AUC", column titled, e.g., "CMax (mg/L)", under the subheading "Truncated
   AUCt for the last dose.}
@@ -74,8 +103,7 @@ extractPK(
   "AUC", column titled, e.g., "Half-life (h)")}
 
   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
-  "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-  }}
+  "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".} }}
 
 \item{returnAggregateOrIndiv}{Return aggregate (mean) and/or individual PK
 parameters? Options are "aggregate" or "individual".}

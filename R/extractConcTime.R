@@ -42,15 +42,16 @@
 #' @export
 #'
 #' @examples
-#' # sim_data_file <- "../Example simulator output MD.xlsx"
-#' extractConcTime("../Example simulator output MD.xlsx")
+#' extractConcTime(sim_data_file = "../Example simulator output MD.xlsx")
 #'
-#' extractConcTime("../Example simulator output MD.xlsx",
+#' extractConcTime(sim_data_file = "../Example simulator output MD.xlsx",
 #'                 returnAggregateOrIndiv = "individual")
 #'
-#' extractConcTime("../Example simulator output MD.xlsx",
+#' extractConcTime(sim_data_file = "../Example simulator output MD.xlsx",
 #'                 obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
 #'
+#' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+#'                 returnAggregateOrIndiv = c("aggregate", "individual"))
 #'
 #'
 extractConcTime <- function(sim_data_file,
