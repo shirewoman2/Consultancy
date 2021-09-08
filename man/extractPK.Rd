@@ -118,7 +118,7 @@ Extract PK data for specific parameters from a simulator output Excel file.
 }
 \examples{
 
-sim_data_file <- "../Example simulator output MD.xlsx"
+sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"
 extractPK(sim_data_file)
 extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
 

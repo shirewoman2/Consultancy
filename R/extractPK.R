@@ -103,7 +103,7 @@
 #'
 #' @examples
 #'
-#' sim_data_file <- "../Example simulator output MD.xlsx"
+#' sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"
 #' extractPK(sim_data_file)
 #' extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
 #'
@@ -200,22 +200,14 @@ extractPK <- function(sim_data_file,
                StartCol <-
                   which(str_detect(as.vector(t(AUC_xl[2, ])),
                                    "for the first dose in the presence of inhibitor"))
-
-               PossCol <- StartCol:ncol(AUC_xl)
-
             }
 
             # lastdose data
             if(str_detect(PKparam, "_lastdose_withEffector")){
-
                StartCol <-
                   which(str_detect(as.vector(t(AUC_xl[2, ])),
                                    "for the last dose in the presence of inhibitor"))
-
-               PossCol <- StartCol:ncol(AUC_xl)
-
             }
-
 
          } else {
 
@@ -224,12 +216,6 @@ extractPK <- function(sim_data_file,
 
                StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                              "^Extrapolated AUC_INF for the first dose$"))
-
-               EndCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                          "^Extrapolated AUC_INF for the first dose in the presence of inhibitor$"))
-
-               PossCol <- StartCol:(EndCol-1)
-
             }
 
             # last dose
@@ -237,26 +223,42 @@ extractPK <- function(sim_data_file,
 
                StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                              "^Truncated AUCt for the last dose$"))
-
-               # If there is no effector involved, be sure not to return any
-               # columns after the subheading "for the Xth dose in the presence of
-               # inhibitor".
-               EndCol <-
-                  which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                   "Truncated AUCt for the last dose in the presence of inhibitor"))
-
-               PossCol <- StartCol:(EndCol-1)
-
             }
          }
 
-         OutCol <- PossCol[
-            which(str_detect(as.vector(t(
-               AUC_xl[3, PossCol])), ToDetect) &
-                  !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ]
+         if(length(StartCol) == 0){
+
+            OutCol <- StartCol
+
+         } else {
+
+            # Find the last column at the end of whatever subheading this was under
+            EndCol <- which(complete.cases(as.vector(t(AUC_xl[2, ]))))
+            EndCol <- EndCol[EndCol > StartCol][1]
+            EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
+
+            if(any(is.na(c(StartCol, EndCol)))){
+
+               OutCol <- EndCol
+
+            } else {
+
+               PossCol <- StartCol:EndCol
+
+               OutCol <- PossCol[
+                  which(str_detect(as.vector(t(
+                     AUC_xl[3, PossCol])), ToDetect) &
+                        !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ]
+
+            }
+
+
+         }
 
          return(OutCol)
       }
+      # end of subfunction
+
 
 
       # finding the PK parameters requested
@@ -317,7 +319,7 @@ extractPK <- function(sim_data_file,
 
       for(i in PKparameters_AUC0){
          ColNum <- findCol(i)
-         if(length(ColNum) == 0){
+         if(length(ColNum) == 0 | is.na(ColNum)){
             message(paste("The column with information for", i,
                           "cannot be found."))
             rm(ColNum)
