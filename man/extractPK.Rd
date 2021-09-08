@@ -105,8 +105,8 @@ extractPK(
   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".} }}
 
-\item{returnAggregateOrIndiv}{Return aggregate (mean) and/or individual PK
-parameters? Options are "aggregate" or "individual".}
+\item{returnAggregateOrIndiv}{Return aggregate (geometric mean) and/or
+individual PK parameters? Options are "aggregate" or "individual".}
 }
 \value{
 Depending on the options selected, returns a list of numerical
