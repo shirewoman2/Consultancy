@@ -134,7 +134,11 @@ extractConcTime <- function(sim_data_file,
       if("individual" %in% returnAggregateOrIndiv){
 
             # individual data
-            sim_data_ind <- sim_data_xl[which(str_detect(sim_data_xl$...1, "CSys \\(")), ] %>%
+            RowsToUse <- which(str_detect(sim_data_xl$...1, "CSys \\("))
+            RowsToUse <- c(RowsToUse[1] - 1, RowsToUse)
+            TimeRow <- RowsToUse[1]
+
+            sim_data_ind <- sim_data_xl[RowsToUse, ] %>%
                   t() %>%
                   as.data.frame() %>% slice(-(1:3)) %>%
                   mutate_all(as.numeric) %>%
@@ -142,9 +146,16 @@ extractConcTime <- function(sim_data_file,
                   pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
                   mutate(Compound = Compound)
 
+            rm(RowsToUse)
+
             if(EffectorPresent){
+
+                  # Compound conc time data in presence of effector
+                  RowsToUse <- which(str_detect(sim_data_xl$...1, "CSys After Inh"))
+                  RowsToUse <- c(TimeRow, RowsToUse)
+
                   sim_data_ind_SubPlusEffector <-
-                        sim_data_xl[which(str_detect(sim_data_xl$...1, "CSys After Inh")), ] %>%
+                        sim_data_xl[RowsToUse, ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
@@ -153,9 +164,14 @@ extractConcTime <- function(sim_data_file,
                                      cols = -Time) %>%
                         mutate(Compound = Compound,
                                Effector = Inhibitor)
+                  rm(RowsToUse)
+
+                  # Effector conc time data
+                  RowsToUse <- which(str_detect(sim_data_xl$...1, "ISys 1 \\("))
+                  RowsToUse <- c(RowsToUse[1] - 1, RowsToUse)
 
                   sim_data_ind_Effector <-
-                        sim_data_xl[which(str_detect(sim_data_xl$...1, "ISys 1 \\(")), ] %>%
+                        sim_data_xl[RowsToUse, ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
@@ -164,6 +180,8 @@ extractConcTime <- function(sim_data_file,
                                      cols = -Time) %>%
                         mutate(Compound = Inhibitor,
                                Effector = Inhibitor)
+
+                  rm(RowsToUse)
 
                   sim_data_ind <- bind_rows(sim_data_ind,
                                             sim_data_ind_SubPlusEffector,

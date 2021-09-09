@@ -142,9 +142,9 @@ ct_plot <- function(sim_data_file,
 
    # Separating the data by type
    sim_data_ind <- Data %>% filter(Simulated == TRUE &
-                                      ID %in% c("Mean", "per5", "per95") == FALSE)
+                                      ID %in% c("mean", "per5", "per95") == FALSE)
    sim_data_mean <- Data %>% filter(Simulated == TRUE  &
-                                       ID %in% c("Mean", "per5", "per95"))
+                                       ID %in% c("mean", "per5", "per95"))
    obs_data <- Data %>% filter(Simulated == FALSE)
 
 
@@ -157,7 +157,7 @@ ct_plot <- function(sim_data_file,
       ## normal scale plot
       A <- ggplot(sim_data_ind, aes(x = Time, y = Conc, group = ID)) +
          geom_line(alpha = AlphaToUse, lwd = 1) +
-         geom_line(data = sim_data_mean %>% filter(ID == "Mean"), lwd = 1) +
+         geom_line(data = sim_data_mean %>% filter(ID == "mean"), lwd = 1) +
          geom_point(data = obs_data, size = 2, shape = 21) +
          scale_x_continuous(breaks = XBreaks, expand = c(0, 0)) +
          scale_y_continuous(expand = c(0, 0)) +
@@ -178,10 +178,10 @@ ct_plot <- function(sim_data_file,
       # method verification style plot
 
       ## normal scale plot
-      A <- ggplot(sim_data_mean %>% filter(ID != "Mean"),
+      A <- ggplot(sim_data_mean %>% filter(ID != "mean"),
                   aes(x = Time, y = Conc, group = ID)) +
          geom_line(color = "gray80", lwd = 0.8) +
-         geom_line(data = sim_data_mean %>% filter(ID == "Mean"), lwd = 1) +
+         geom_line(data = sim_data_mean %>% filter(ID == "mean"), lwd = 1) +
          geom_point(data = obs_data, size = 2, shape = 21) +
          scale_x_continuous(breaks = XBreaks, expand = c(0, 0)) +
          scale_y_continuous(expand = c(0, 0)) +
