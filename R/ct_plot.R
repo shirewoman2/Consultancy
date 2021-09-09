@@ -86,6 +86,7 @@ ct_plot <- function(sim_data_file,
                   "µM" = expression(Concentration~"("*mu*M*")"),
                   "nM" = "Concentration (nM)",
                   "mg" = "Concentration (mg)",
+                  "mg/L" = expression(Concentration~"("*mu*g/mL*")"),
                   "mL" = "mL",
                   "PD response" = "PD response")
 
@@ -151,7 +152,7 @@ ct_plot <- function(sim_data_file,
    if(figure_type == "method development"){
 
       NumSubj <- length(unique(sim_data_ind$ID))
-      AlphaToUse <- ifelse(NumSubj > 50, 0.01, 0.2)
+      AlphaToUse <- ifelse(NumSubj > 50, 0.05, 0.2)
       # Adjust this as needed. May want to use "switch" as we did for XBreaks.
 
       ## normal scale plot
