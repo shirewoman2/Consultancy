@@ -3,6 +3,8 @@
 export(calcKi)
 export(ct_plot)
 export(extractConcTime)
+export(extractObsConcTime)
 export(extractPK)
 export(findXLChanges)
+export(graph_boxplot)
 export(inductFit)

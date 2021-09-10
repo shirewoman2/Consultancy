@@ -212,25 +212,13 @@ extractConcTime <- function(sim_data_file,
 
       } else {
             # If the user did specify an observed data file, read in observed data.
-            obs_data_xl <- suppressMessages(
-                  readxl::read_excel(path = obs_data_file, col_names = FALSE))
-
-            obs_data <- obs_data_xl[12:nrow(obs_data_xl), 2:3] %>%
-                  filter(complete.cases(...3)) %>%
-                  rename(Time = ...2, Conc = ...3) %>%
-                  mutate_all(as.numeric) %>%
+            obs_data <- extractObsConcTime(obs_data_file) %>%
                   mutate(ID = "obs")
 
-            TimeUnits <- suppressMessages(
-                  readxl::read_excel(path = obs_data_file,
-                                     range = "A5", col_names = FALSE)) %>%
-                  pull()
+            TimeUnits <- unique(obs_data$TimeUnits)
 
             # Converting to appropriate ObsConcUnits as necessary
-            ObsConcUnits <- suppressMessages(
-                  readxl::read_excel(path = obs_data_file,
-                                     range = "D5", col_names = FALSE)) %>%
-                  pull()
+            ObsConcUnits <- unique(obs_data$ConcUnits)
 
             if(ObsConcUnits != SimConcUnits){
 
