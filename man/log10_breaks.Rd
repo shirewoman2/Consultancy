@@ -21,17 +21,17 @@ magnitude.) The decimals aren't necessarily pretty, though, so you may want
 to set "prettify" to TRUE if they're ugly.
 }
 \examples{
-data("IVConcTime")
-ggplot(IVConcTime, aes(x = Time, y = Concentration, color = SubjectID)) +
-      geom_point() + geom_line() +
-      scale_y_log10(breaks = log10_breaks(min = min(IVConcTime$Concentration[IVConcTime$Concentration > 0]),
-                                          max = max(IVConcTime$Concentration)))
+data("ConcTime")
+ggplot(ConcTime, aes(x = Time, y = Conc, color = ID)) +
+   geom_line() +
+   scale_y_log10(breaks = log10_breaks(min = min(ConcTime$Conc[ConcTime$Conc > 0]),
+                                       max = max(ConcTime$Conc)))
 
-ggplot(IVConcTime, aes(x = Time, y = Concentration, color = SubjectID)) +
-      geom_point() + geom_line() +
-      scale_y_log10(breaks = log10_breaks(min = min(IVConcTime$Concentration[IVConcTime$Concentration > 0]),
-                                          max = max(IVConcTime$Concentration),
-                                          prettify = TRUE))
+ggplot(ConcTime, aes(x = Time, y = Conc, color = ID)) +
+   geom_line() +
+   scale_y_log10(breaks = log10_breaks(min = min(ConcTime$Conc[ConcTime$Conc > 0]),
+                                       max = max(ConcTime$Conc),
+                                       prettify = TRUE))
 
 
 }

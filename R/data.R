@@ -7,14 +7,20 @@
 #' \item{FoldInduction}{Fold induction observed compared to control}}
 "IndData"
 
-#' Dummy plasma concentration-time data after an IV dose
+#' Dummy plasma concentration-time data after a 5 mg PO MDZ dose. Format of the
+#' data are the same as the output from \code{extractConcTime}.
 #'
-#' @format A data.frame with 90 rows and 3 columns:
+#' @format A data.frame with 2211 rows and 7 columns:
 #' \describe{
-#' \item{SubjectID}{a unique ID for each subject}
-#' \item{Time}{time since dose (units not specified)}
-#' \item{Concentration}{plasma drug concentration (units not specified)}}
-"IVConcTime"
+#' \item{Compound}{the name of the compound}
+#' \item{ID}{a unique ID for each subject}
+#' \item{Simulated}{TRUE or FALSE for whether the data were simulated (all TRUE
+#' in this dummy example)}
+#' \item{Time}{time since dose}
+#' \item{Conc}{plasma drug concentration}
+#' \item{Time_units}{units for the time column}
+#' \item{Conc_units}{units for the concentration column}}
+"ConcTime"
 
 
 

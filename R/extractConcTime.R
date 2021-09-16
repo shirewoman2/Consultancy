@@ -201,11 +201,15 @@ extractConcTime <- function(sim_data_file,
       if(is.na(obs_data_file)){
 
             StartRow_obs <- which(sim_data_xl$...1 == "Observed Data") + 1
+
+            if(length(StartRow_obs) != 0){
+
             obs_data <- sim_data_xl[StartRow_obs:(StartRow_obs+1), ] %>% t() %>%
                   as.data.frame() %>% slice(-1) %>%
                   mutate_all(as.numeric) %>%
                   rename(Time = "V1", Conc = "V2") %>% filter(complete.cases(Time)) %>%
                   mutate(ID = "obs")
+            }
 
             TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
             TimeUnits <- ifelse(TimeUnits == "Time (h)", "Hours", "Minutes")
@@ -291,8 +295,10 @@ extractConcTime <- function(sim_data_file,
                   mutate(ID = as.character(ID))
       }
 
-      Data[["obs"]] <- obs_data %>% mutate(Simulated = FALSE,
-                                           Compound = Compound)
+      if(exists("obs_data")){
+            Data[["obs"]] <- obs_data %>% mutate(Simulated = FALSE,
+                                                 Compound = Compound)
+      }
 
       Data <- bind_rows(Data) %>%
             mutate(Time_units = tolower(TimeUnits),
