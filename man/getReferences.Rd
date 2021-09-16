@@ -12,7 +12,7 @@ the files}
 }
 \value{
 A data.frame containing columns "Dir" for the directory and, where
-  applicable, the subdirectory of a file and "File" for the file name.
+  applicable, the subdirectory of a file, and "File" for the file name.
 }
 \description{
 Get a list of all the pdf, Word, and Excel files in, e.g., the "DataRec"

@@ -8,7 +8,7 @@
 #'   the files
 #'
 #' @return A data.frame containing columns "Dir" for the directory and, where
-#'   applicable, the subdirectory of a file and "File" for the file name.
+#'   applicable, the subdirectory of a file, and "File" for the file name.
 #'
 #' @export
 #'
@@ -19,6 +19,7 @@
 #'
 #'
 getReferences <- function(main_directory){
+
       RefDirs <- list.dirs(main_directory)
       RefDirs <- RefDirs[!str_detect(RefDirs, "DataRec/Forms")]
 
@@ -38,7 +39,7 @@ getReferences <- function(main_directory){
       }
 
       Refs <- bind_rows(Refs) %>%
-            mutate(Dir = sub("../DataRec", "DataRec", Dir)) %>%
+            mutate(Dir = sub("\\.\\./DataRec", "DataRec", Dir)) %>%
             arrange(Dir, File)
 
       return(Refs)
