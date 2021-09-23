@@ -71,6 +71,10 @@ ct_plot(sim_data_file)
 ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
 ct_plot(sim_data_file, return_data = TRUE)
 ct_plot(sim_data_file, return_indiv_graphs = TRUE)
-ct_plot(sim_obs_dataframe = MyCTData)
+
+# If you've already got a data.frame formatted
+like the output from extractConcTime...
+data(ConcTime)
+ct_plot(sim_obs_dataframe = ConcTime)
 
 }

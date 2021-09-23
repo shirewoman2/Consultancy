@@ -26,5 +26,7 @@ template for converting concentration-time data into an XML file.
 files with only a single substrate concentration in plasma.
 }
 \examples{
+obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx"
+extractObsConcTime(obs_data_file)
 
 }

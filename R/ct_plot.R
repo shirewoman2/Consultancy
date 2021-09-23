@@ -48,7 +48,11 @@
 #' ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
 #' ct_plot(sim_data_file, return_data = TRUE)
 #' ct_plot(sim_data_file, return_indiv_graphs = TRUE)
-#' ct_plot(sim_obs_dataframe = MyCTData)
+#'
+#' # If you've already got a data.frame formatted
+#' like the output from extractConcTime...
+#' data(ConcTime)
+#' ct_plot(sim_obs_dataframe = ConcTime)
 #'
 ct_plot <- function(sim_data_file,
                     obs_data_file = NA,
@@ -71,8 +75,8 @@ ct_plot <- function(sim_data_file,
       Data <- extractConcTime(sim_data_file, obs_data_file)
    }
 
-   TimeUnits <- unique(Data$Time_units)
-   ObsConcUnits <- unique(Data$Conc_units)
+   TimeUnits <- sort(unique(Data$Time_units))
+   ObsConcUnits <- sort(unique(Data$Conc_units))
 
    # Adjusting graph labels as appropriate for the observed data
    xlab <- switch(TimeUnits,

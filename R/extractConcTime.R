@@ -301,7 +301,7 @@ extractConcTime <- function(sim_data_file,
       }
 
       Data <- bind_rows(Data) %>%
-            mutate(Time_units = tolower(TimeUnits),
+            mutate(Time_units = tolower({{TimeUnits}}),
                    Conc_units = ifelse(exists("ObsConcUnits"),
                                        ObsConcUnits, SimConcUnits),
                    ID = factor(ID, levels = c(
