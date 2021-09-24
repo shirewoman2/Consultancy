@@ -27,15 +27,19 @@ concentration-time data? Options are one or both of "aggregate" and
 }
 \value{
 A data.frame of concentration-time data with the following columns:
-  \describe{\item{Compound}{the compound of interest; this matches whatever
-  you named your compound in the simulator}
+  \describe{
 
-  \item{Effector (as applies)}{the effector of interest; this also matches
+  \item{Compound}{the compound whose concentration is listed; this matches
+  whatever you named your substrate or inhibitor in the simulator}
+
+  \item{Effector (as applicable)}{the effector of interest; this matches
   whatever you named "Inhibitor 1" in the simulator}
 
-  \item{ID}{the ID of the profile, which will be a number for a simulated
-  individual or will be "obs" for observed data, "mean" for the mean data, or
-  "per5" or "per95" for the 5th and 95th percentile data.}
+  \item{SubjectID}{the SubjectID of the profile, which will be a number for a
+  simulated individual or will be "obs" for observed data, "mean" for the
+  mean data, or "per5" or "per95" for the 5th and 95th percentile data.}
+
+  \item{Trial}{the trial number for that set of simulations}
 
   \item{Simulated}{TRUE or FALSE for whether the data were simulated}
 

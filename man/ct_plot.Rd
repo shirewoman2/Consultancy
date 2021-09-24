@@ -8,9 +8,7 @@ ct_plot(
   sim_data_file,
   obs_data_file = NA,
   sim_obs_dataframe = NA,
-  figure_type = "method development",
-  save = FALSE,
-  figname = NA,
+  figure_type = "trial means",
   return_data = FALSE,
   return_indiv_graphs = FALSE
 )
@@ -31,17 +29,24 @@ data using the function \code{extractConcTime}, you can enter the name of
 the output data.frame from that function instead of re-reading the Excel
 file.}
 
-\item{figure_type}{type of figure to plot. Options are: \describe{
-\item{method development}{plots a black line for the mean data, gray lines
-for the individual simulated data, and open circles for the observed data}
-\item{method verification}{plots a black line for the mean data, gray lines
-for the 5th and 95th percentiles of the simulated data, and open circles
-for the observed data} }}
+\item{figure_type}{type of figure to plot. Options are:
 
-\item{save}{TRUE or FALSE: Save the graph?}
+  \describe{
 
-\item{figname}{If \code{save} is TRUE, the file name for the output figure,
-e.g., "Study 001 SD.png"}
+  \item{trial means}{plots a black line for the mean data, gray lines for the
+  individual simulated data, and open circles for the observed data}
+
+  \item{trial percentiles}{plots a black line for the mean data, gray lines
+  for the 5th and 95th percentiles of the simulated data, and open circles
+  for the observed data}
+
+  \item{means only}{plots a black line for the mean data and, if an effector
+  was modeled, a dashed line for the concentration-time data with the the
+  effector. (At present, this does NOT graph observed data because I haven't
+  yet figured out the best way to indicate whether those data are with or
+  without the effector present. -LS)}
+
+  }}
 
 \item{return_data}{TRUE or FALSE: Return the data used in the graphs? If
 TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
@@ -64,13 +69,20 @@ publication-quality graphs.
 }
 \examples{
 sim_data_file <- "../Example simulator output.xlsx"
-
 obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
 
 ct_plot(sim_data_file)
-ct_plot(sim_data_file, obs_data_file, figure_type = "method verification")
+ct_plot(sim_data_file, figure_type = "trial percentiles")
 ct_plot(sim_data_file, return_data = TRUE)
 ct_plot(sim_data_file, return_indiv_graphs = TRUE)
+
+# These are probably too busy when you've got an effector present:
+ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
+ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+        figure_type = "trial percentiles")
+# so you may want to consider this alternative instead:
+ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+        figure_type = "means only")
 
 # If you've already got a data.frame formatted
 like the output from extractConcTime...

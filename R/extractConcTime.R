@@ -19,15 +19,19 @@
 #'   "individual".
 #'
 #' @return A data.frame of concentration-time data with the following columns:
-#'   \describe{\item{Compound}{the compound of interest; this matches whatever
-#'   you named your compound in the simulator}
+#'   \describe{
 #'
-#'   \item{Effector (as applies)}{the effector of interest; this also matches
+#'   \item{Compound}{the compound whose concentration is listed; this matches
+#'   whatever you named your substrate or inhibitor in the simulator}
+#'
+#'   \item{Effector (as applicable)}{the effector of interest; this matches
 #'   whatever you named "Inhibitor 1" in the simulator}
 #'
-#'   \item{ID}{the ID of the profile, which will be a number for a simulated
-#'   individual or will be "obs" for observed data, "mean" for the mean data, or
-#'   "per5" or "per95" for the 5th and 95th percentile data.}
+#'   \item{SubjectID}{the SubjectID of the profile, which will be a number for a
+#'   simulated individual or will be "obs" for observed data, "mean" for the
+#'   mean data, or "per5" or "per95" for the 5th and 95th percentile data.}
+#'
+#'   \item{Trial}{the trial number for that set of simulations}
 #'
 #'   \item{Simulated}{TRUE or FALSE for whether the data were simulated}
 #'
@@ -92,7 +96,7 @@ extractConcTime <- function(sim_data_file,
                   as.data.frame() %>% slice(-(1:3)) %>%
                   mutate_all(as.numeric) %>%
                   rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
-                  pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
+                  pivot_longer(names_to = "SubjectID", values_to = "Conc", cols = -Time) %>%
                   mutate(Compound = Compound)
 
             if(EffectorPresent){
@@ -105,7 +109,7 @@ extractConcTime <- function(sim_data_file,
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
                         rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
-                        pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
+                        pivot_longer(names_to = "SubjectID", values_to = "Conc", cols = -Time) %>%
                         mutate(Compound = Compound,
                                Effector = Inhibitor)
 
@@ -117,7 +121,8 @@ extractConcTime <- function(sim_data_file,
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
                         rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
-                        pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
+                        pivot_longer(names_to = "SubjectID", values_to = "Conc",
+                                     cols = -Time) %>%
                         mutate(Compound = Inhibitor, Effector = Inhibitor)
 
 
@@ -142,10 +147,23 @@ extractConcTime <- function(sim_data_file,
                   t() %>%
                   as.data.frame() %>% slice(-(1:3)) %>%
                   mutate_all(as.numeric) %>%
-                  rename(Time = "V1") %>%
-                  pivot_longer(names_to = "ID", values_to = "Conc", cols = -Time) %>%
-                  mutate(Compound = Compound)
+                  rename(Time = "V1")
 
+            SubjTrial <- sim_data_xl[RowsToUse[2:length(RowsToUse)], 2:3] %>%
+                  rename(SubjectID = ...2, Trial = ...3) %>%
+                  mutate(SubjTrial = paste0("ID", SubjectID, "_", Trial))
+
+            names(sim_data_ind)[2:ncol(sim_data_ind)] <- SubjTrial$SubjTrial
+
+            sim_data_ind <- sim_data_ind %>%
+                  pivot_longer(names_to = "SubjTrial", values_to = "Conc",
+                               cols = -Time) %>%
+                  mutate(Compound = Compound,
+                         SubjTrial = sub("ID", "", SubjTrial)) %>%
+                  separate(SubjTrial, into = c("SubjectID", "Trial"),
+                           sep = "_") %>%
+                  mutate(across(.cols = c("SubjectID", "Trial"),
+                                .fns = as.numeric))
             rm(RowsToUse)
 
             if(EffectorPresent){
@@ -159,11 +177,23 @@ extractConcTime <- function(sim_data_file,
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
-                        rename(Time = "V1") %>%
-                        pivot_longer(names_to = "ID", values_to = "Conc",
+                        rename(Time = "V1")
+
+                  names(sim_data_ind_SubPlusEffector)[
+                        2:ncol(sim_data_ind_SubPlusEffector)] <- SubjTrial$SubjTrial
+
+                  sim_data_ind_SubPlusEffector <-
+                        sim_data_ind_SubPlusEffector %>%
+                        pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
                         mutate(Compound = Compound,
-                               Effector = Inhibitor)
+                               Effector = Inhibitor,
+                               SubjTrial = sub("ID", "", SubjTrial)) %>%
+                        separate(SubjTrial, into = c("SubjectID", "Trial"),
+                                 sep = "_") %>%
+                        mutate(across(.cols = c("SubjectID", "Trial"),
+                                      .fns = as.numeric))
+
                   rm(RowsToUse)
 
                   # Effector conc time data
@@ -175,11 +205,22 @@ extractConcTime <- function(sim_data_file,
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
-                        rename(Time = "V1") %>%
-                        pivot_longer(names_to = "ID", values_to = "Conc",
+                        rename(Time = "V1")
+
+                  names(sim_data_ind_Effector)[
+                        2:ncol(sim_data_ind_Effector)] <- SubjTrial$SubjTrial
+
+                  sim_data_ind_Effector <-
+                        sim_data_ind_Effector %>%
+                        pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
                         mutate(Compound = Inhibitor,
-                               Effector = Inhibitor)
+                               Effector = Inhibitor,
+                               SubjTrial = sub("ID", "", SubjTrial)) %>%
+                        separate(SubjTrial, into = c("SubjectID", "Trial"),
+                                 sep = "_") %>%
+                        mutate(across(.cols = c("SubjectID", "Trial"),
+                                      .fns = as.numeric))
 
                   rm(RowsToUse)
 
@@ -204,11 +245,11 @@ extractConcTime <- function(sim_data_file,
 
             if(length(StartRow_obs) != 0){
 
-            obs_data <- sim_data_xl[StartRow_obs:(StartRow_obs+1), ] %>% t() %>%
-                  as.data.frame() %>% slice(-1) %>%
-                  mutate_all(as.numeric) %>%
-                  rename(Time = "V1", Conc = "V2") %>% filter(complete.cases(Time)) %>%
-                  mutate(ID = "obs")
+                  obs_data <- sim_data_xl[StartRow_obs:(StartRow_obs+1), ] %>% t() %>%
+                        as.data.frame() %>% slice(-1) %>%
+                        mutate_all(as.numeric) %>%
+                        rename(Time = "V1", Conc = "V2") %>% filter(complete.cases(Time)) %>%
+                        mutate(SubjectID = "obs")
             }
 
             TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
@@ -217,7 +258,7 @@ extractConcTime <- function(sim_data_file,
       } else {
             # If the user did specify an observed data file, read in observed data.
             obs_data <- extractObsConcTime(obs_data_file) %>%
-                  mutate(ID = "obs")
+                  mutate(SubjectID = "obs")
 
             TimeUnits <- unique(obs_data$TimeUnits)
 
@@ -284,15 +325,40 @@ extractConcTime <- function(sim_data_file,
       if("aggregate" %in% returnAggregateOrIndiv){
             Data[["agg"]] <- sim_data_mean %>%
                   mutate(Simulated = TRUE) %>%
-                  arrange(ID, Time)
+                  arrange(SubjectID, Time)
+
+            if(exists("sim_data_mean_Effector")){
+               Data[["sim_data_mean_Effector"]] <- sim_data_mean_Effector %>%
+                  mutate(Simulated = TRUE,
+                         SubjectID = as.character(SubjectID))
+            }
+
+            if(exists("sim_data_mean_SubPlusEffector")){
+               Data[["sim_data_mean_SubPlusEffector"]] <- sim_data_mean_SubPlusEffector %>%
+                  mutate(Simulated = TRUE,
+                         SubjectID = as.character(SubjectID))
+            }
+
       }
 
       if("individual" %in% returnAggregateOrIndiv){
             Data[["indiv"]] <- sim_data_ind %>%
                   mutate(Simulated = TRUE,
-                         ID = as.numeric(sub("V", "", ID))) %>%
-                  arrange(ID, Time) %>%
-                  mutate(ID = as.character(ID))
+                         SubjectID = as.character(SubjectID)) %>%
+                  arrange(SubjectID, Time)
+
+            if(exists("sim_data_ind_Effector")){
+               Data[["sim_data_ind_Effector"]] <- sim_data_ind_Effector %>%
+                  mutate(Simulated = TRUE,
+                         SubjectID = as.character(SubjectID))
+            }
+
+            if(exists("sim_data_ind_SubPlusEffector")){
+               Data[["sim_data_ind_SubPlusEffector"]] <- sim_data_ind_SubPlusEffector %>%
+                  mutate(Simulated = TRUE,
+                         SubjectID = as.character(SubjectID))
+            }
+
       }
 
       if(exists("obs_data")){
@@ -300,17 +366,19 @@ extractConcTime <- function(sim_data_file,
                                                  Compound = Compound)
       }
 
+
       Data <- bind_rows(Data) %>%
             mutate(Time_units = tolower({{TimeUnits}}),
                    Conc_units = ifelse(exists("ObsConcUnits"),
                                        ObsConcUnits, SimConcUnits),
-                   ID = factor(ID, levels = c(
+                   SubjectID = factor(SubjectID, levels = c(
                          c("obs", "mean", "per5", "per95"),
-                         setdiff(unique(ID),
+                         setdiff(unique(SubjectID),
                                  c("obs", "mean", "per5", "per95"))))) %>%
-            arrange(Compound, ID, Time) %>%
-            select(any_of(c("Compound", "Effector", "ID", "Simulated",
-                            "Time", "Conc", "Time_units", "Conc_units")))
+            arrange(Compound, SubjectID, Time) %>%
+            select(any_of(c("Compound", "Effector", "SubjectID", "Trial",
+                            "Simulated", "Time", "Conc",
+                            "Time_units", "Conc_units")))
 
       return(Data)
 
