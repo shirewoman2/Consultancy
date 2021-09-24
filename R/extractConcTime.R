@@ -1,4 +1,4 @@
-#' extractConcTime
+#' Extract concentration-time data from a simulator output Excel file
 #'
 #' Extracts concentration-time data from simulater output Excel files and,
 #' optionally, a separately specified clinical data file, and puts all data into

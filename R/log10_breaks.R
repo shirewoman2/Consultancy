@@ -1,6 +1,6 @@
-#' log10_breaks
+#' Create nice breaks for graphs of log-transformed data
 #'
-#' Creates a vector of numbers fairly evenly spaced on a log 10 scale with 10
+#' \code{log10_breaks} creates a vector of numbers fairly evenly spaced on a log 10 scale with 10
 #' points. (They're more evenly spaced if "min" and "max" span 1 order of
 #' magnitude.) The decimals aren't necessarily pretty, though, so you may want
 #' to set "prettify" to TRUE if they're ugly.

@@ -1,5 +1,4 @@
-
-#' getReferences
+#' Pull references from a "DataRec" folder
 #'
 #' Get a list of all the pdf, Word, and Excel files in, e.g., the "DataRec"
 #' folder and subfolder. Can be useful for the bibliography section of a report.

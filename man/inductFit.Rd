@@ -2,7 +2,7 @@
 % Please edit documentation in R/inductFit.R
 \name{inductFit}
 \alias{inductFit}
-\title{inductFit}
+\title{Fit induction data to calculate IndC50, Indmax, and/or slope}
 \usage{
 inductFit(
   DF,
@@ -60,7 +60,7 @@ Returns a list of \describe{ \item{Fit}{the fitted parameters}
   way}}
 }
 \description{
-This function is an adaptation of Howie's script
+\code{inductFit} is an adaptation of Howie's script
 "Induction_fit_script_ver2.r" and fits induction data -- either activity or
 mRNA -- to one or all of four models for calculating Ind_max, Ind50, and,
 when appropriate, a slope. Like the original script, weighting is by 1/y^2.

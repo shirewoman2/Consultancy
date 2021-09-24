@@ -2,7 +2,7 @@
 % Please edit documentation in R/extractPK.R
 \name{extractPK}
 \alias{extractPK}
-\title{extractPK}
+\title{Extract PK data for specific parameters from a simulator output Excel file}
 \usage{
 extractPK(
   sim_data_file,
@@ -120,7 +120,9 @@ Depending on the options selected, returns a list of numerical
   was requested, output is a numerical vector.
 }
 \description{
-Extract PK data for specific parameters from a simulator output Excel file.
+This is useful for pulling what parameters were used for setting up a
+simulation in Simcyp and either checking the accuracy of those parameters or
+including them in a report.
 }
 \examples{
 

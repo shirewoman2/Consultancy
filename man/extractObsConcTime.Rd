@@ -2,7 +2,7 @@
 % Please edit documentation in R/extractObsConcTime.R
 \name{extractObsConcTime}
 \alias{extractObsConcTime}
-\title{extractObsConcTime}
+\title{Extract observed concentration-time data from an Excel file}
 \usage{
 extractObsConcTime(obs_data_file)
 }

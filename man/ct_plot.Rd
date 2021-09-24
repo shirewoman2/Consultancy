@@ -2,7 +2,8 @@
 % Please edit documentation in R/ct_plot.R
 \name{ct_plot}
 \alias{ct_plot}
-\title{ct_plot}
+\title{Using observed and simulated concentration-time data, make
+publication-quality graphs.}
 \usage{
 ct_plot(
   sim_data_file,

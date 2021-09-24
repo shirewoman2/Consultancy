@@ -2,7 +2,7 @@
 % Please edit documentation in R/extractConcTime.R
 \name{extractConcTime}
 \alias{extractConcTime}
-\title{extractConcTime}
+\title{Extract concentration-time data from a simulator output Excel file}
 \usage{
 extractConcTime(
   sim_data_file,

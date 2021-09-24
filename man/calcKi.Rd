@@ -2,7 +2,7 @@
 % Please edit documentation in R/calcKi.R
 \name{calcKi}
 \alias{calcKi}
-\title{calcKi}
+\title{Calculate the Ki of an  inhibitor with the Cheng-Prusoff}
 \usage{
 calcKi(IC50, S, Km = NA)
 }
@@ -18,7 +18,8 @@ the enzyme (uM)}
 Returns the inhibitory constant Ki (uM) (numeric)
 }
 \description{
-Function uses the Cheng-Prusoff equation to calculate a Ki value.
+\code{calcKi} uses IC50, substrate concentration, and Km to calculate a Ki
+value for an inhibitor
 }
 \examples{
 calcKi(20, 5, 5)

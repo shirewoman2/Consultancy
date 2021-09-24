@@ -1,7 +1,8 @@
 
-#' calcKi
+#' Calculate the Ki of an  inhibitor with the Cheng-Prusoff
 #'
-#' Function uses the Cheng-Prusoff equation to calculate a Ki value.
+#' \code{calcKi} uses IC50, substrate concentration, and Km to calculate a Ki
+#' value for an inhibitor
 #'
 #' @param IC50 The IC50 value for the inhibitor (uM)
 #' @param S The concentration of the substrate used (uM)

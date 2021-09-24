@@ -1,5 +1,3 @@
-#' ct_plot
-#'
 #' Using observed and simulated concentration-time data, make
 #' publication-quality graphs.
 #'

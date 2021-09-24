@@ -2,7 +2,7 @@
 % Please edit documentation in R/log10_breaks.R
 \name{log10_breaks}
 \alias{log10_breaks}
-\title{log10_breaks}
+\title{Create nice breaks for graphs of log-transformed data}
 \usage{
 log10_breaks(min, max, prettify = FALSE)
 }
@@ -15,7 +15,7 @@ log10_breaks(min, max, prettify = FALSE)
 
 }
 \description{
-Creates a vector of numbers fairly evenly spaced on a log 10 scale with 10
+\code{log10_breaks} creates a vector of numbers fairly evenly spaced on a log 10 scale with 10
 points. (They're more evenly spaced if "min" and "max" span 1 order of
 magnitude.) The decimals aren't necessarily pretty, though, so you may want
 to set "prettify" to TRUE if they're ugly.

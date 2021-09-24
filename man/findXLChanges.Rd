@@ -2,7 +2,7 @@
 % Please edit documentation in R/findChanges.R
 \name{findXLChanges}
 \alias{findXLChanges}
-\title{findXLChanges}
+\title{Find differences between two Excel files}
 \usage{
 findXLChanges(File1, File2, outputAllSheets = TRUE)
 }

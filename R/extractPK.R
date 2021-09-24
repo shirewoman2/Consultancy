@@ -1,6 +1,8 @@
-#' extractPK
+#' Extract PK data for specific parameters from a simulator output Excel file
 #'
-#' Extract PK data for specific parameters from a simulator output Excel file.
+#' This is useful for pulling what parameters were used for setting up a
+#' simulation in Simcyp and either checking the accuracy of those parameters or
+#' including them in a report.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param PKparameters PK parameters you want to extract from the simulator

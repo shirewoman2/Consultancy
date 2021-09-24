@@ -1,7 +1,9 @@
 
-#' graph_boxplot
-#'
 #' Make boxplots or boxplots overlaid with individual points
+#'
+#' \code{graph_boxplot} takes as input a data.frame of numeric values and the
+#' categories those values are in and creates boxplots of those data. Options
+#' are included for type of graph to make and some aesthetics.
 #'
 #' @param DF the data.frame you want to graph
 #' @param category_column the name of the column with categorical data in quotes
@@ -19,12 +21,11 @@
 #' @param ylabel the label to use for the y axis
 #' @param color the set of colors to use. Options: \describe{
 #'   \item{"default"}{colors selected from the color brewer palette "set 1"}
-#'   \item{"black"}{black and white} \item{"rainbow"}{colors selected
-#'   from a rainbow palette. The default palette is limited to something like 6
-#'   groups, so if you have more than that, that's when this palette is most
-#'   useful.} \item{"blue-green"}{a set of blues and greens}
-#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-#'   package}}
+#'   \item{"black"}{black and white} \item{"rainbow"}{colors selected from a
+#'   rainbow palette. The default palette is limited to something like 6 groups,
+#'   so if you have more than that, that's when this palette is most useful.}
+#'   \item{"blue-green"}{a set of blues and greens} \item{"Tableau"}{uses the
+#'   standard Tableau palette; requires the "ggthemes" package}}
 #'
 #' @return
 #' @export

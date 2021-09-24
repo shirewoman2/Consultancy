@@ -1,4 +1,4 @@
-#' extractObsConcTime
+#' Extract observed concentration-time data from an Excel file
 #'
 #' Extract observed data from an Excel file that follows the Simcyp Simulator
 #' template for converting concentration-time data into an XML file.

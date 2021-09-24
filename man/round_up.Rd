@@ -2,7 +2,7 @@
 % Please edit documentation in R/rounding.R
 \name{round_up}
 \alias{round_up}
-\title{round_up, round_down, round_up_nice, round_up_unit, round_down_unit}
+\title{Round a number or vector of numbers up or down to nice intervals}
 \usage{
 round_up(x)
 }
@@ -16,7 +16,7 @@ round_up(x)
 
 }
 \description{
-Round a number or vector of numbers up or down to nice intervals. \describe{
+Round numbers to nice intervals with the following options: \describe{
 \item{round_up}{round up to the nearest power of 10} \item{round_down}{round
 down to the nearest power of 10} \item{round_up_nice}{round up to the nearest
 "nice" value. From

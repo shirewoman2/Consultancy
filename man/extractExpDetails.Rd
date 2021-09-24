@@ -2,21 +2,20 @@
 % Please edit documentation in R/extractExpDetails.R
 \name{extractExpDetails}
 \alias{extractExpDetails}
-\title{extractExpDetails}
+\title{Extract details about the experimental design}
 \usage{
 extractExpDetails(
   sim_data_file,
-  exp_details = c("Substrate", "Inhibitor", "MW_sub", "MW_inhib", "logP_sub",
-    "logP_inhib", "Type_sub", "Type_inhib", "pKa1_sub", "pKa1_inhib", "pKa2_sub",
-    "pKa2_inhib", "BPratio_sub", "BPratio_inhib", "Hematocrit", "Haematocrit", "fu_sub",
-    "fu_inhib", "ModelType_sub", "ModelType_inhib", "Pop", "PopSize", "NumTrials",
-    "NumSubjTrial", "SimStartDayTime", "SimEndDayTime", "StudyDuration",
-    "PrandialSt_sub", "PrandialSt_inhib", "DoseRoute_sub", "DoseRoute_inhib",
-    "DoseUnits_sub", "DoseUnits_inhib", "Dose_sub", "Dose_inhib",     
-    "StartDayTime_sub", "StartDayTime_inhib", "Regimen_sub", "Regimen_inhib",
-    "DoseInt_sub", "DoseInt_inhib", "NumDoses_sub", "NumDoses_inhib", "GIAbsModel_sub",
-    "GIAbsModel_inhib", "VssInput_sub", "VssInput_inhib", "VssPredMeth_sub",
-    "VssPredMeth_inhib")
+  exp_details = c("BPratio_sub", "BPratio_inhib", "Dose_sub", "Dose_inhib",
+    "DoseInt_sub", "DoseInt_inhib", "DoseRoute_sub", "DoseRoute_inhib", "DoseUnits_sub",
+    "DoseUnits_inhib", "fu_sub", "fu_inhib", "GIAbsModel_sub", "GIAbsModel_inhib",
+    "Hematocrit", "Haematocrit", "Inhibitor", "logP_sub", "logP_inhib", "ModelType_sub",
+    "ModelType_inhib", "MW_sub", "MW_inhib", "NumDoses_sub", "NumDoses_inhib",
+    "NumTrials", "NumSubjTrial", "pKa1_sub", "pKa1_inhib", "pKa2_sub", "pKa2_inhib",
+    "Pop", "PopSize", "PrandialSt_sub",      "PrandialSt_inhib", "Regimen_sub",
+    "Regimen_inhib", "SimEndDayTime", "SimStartDayTime", "StartDayTime_sub",
+    "StartDayTime_inhib", "StudyDuration", "Substrate", "Type_sub", "Type_inhib",
+    "VssInput_sub", "VssInput_inhib", "VssPredMeth_sub", "VssPredMeth_inhib")
 )
 }
 \arguments{
@@ -27,59 +26,59 @@ extractExpDetails(
 
   \describe{
 
-  \item{Substrate}{the substrate used}
-
-  \item{Inhibitor}{inhibitor used, if applicable}
-
-  \item{MW_sub or MW_inhib}{molecular weight of substrate or inhibitor}
-
-  \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
-
-  \item{Type_sub or Type_inhib}{type of compound, e.g., monoprotic base}
-
-  \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
-
   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 
-  \item{Hematocrit or Heamatocrit}{the hematocrit}
+  \item{Dose_sub or Dose_inhib}{dose administered}
 
-  \item{fu_sub or fu_inhib}{fraction unbound}
-
-  \item{ModelType_sub or ModelType_inhib}{the type of model, e.g., full PBPK
-  model}
-
-  \item{Pop}{the population modeled}
-
-  \item{PopSize}{the size of population modeled}
-
-  \item{NumTrials}{the number of trials performed}
-
-  \item{NumSubjTrial}{number of subjects per trial}
-
-  \item{SimStartDayTime}{starting day and time of the simulation}
-
-  \item{SimEndDayTime}{ending day and time of the simulation}
-
-  \item{StudyDuration}{study duration}
-
-  \item{PrandialSt_sub or PrandialSt_inhib}{prandial state upon dosing}
+  \item{DoseInt_sub or DoseInt_inhib}{dosing interval}
 
   \item{DoseRoute_sub or DoseRoute_inhib}{dose route, e.g. oral}
 
   \item{DoseUnits_sub or DoseUnits_inhib}{dose units}
 
-  \item{Dose_sub or Dose_inhib}{dose administered}
+  \item{fu_sub or fu_inhib}{fraction unbound}
+
+  \item{Hematocrit or Heamatocrit}{the hematocrit}
+
+  \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
+
+  \item{Inhibitor}{inhibitor used, if applicable}
+
+  \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
+
+  \item{ModelType_sub or ModelType_inhib}{the type of model, e.g., full PBPK
+  model}
+
+  \item{MW_sub or MW_inhib}{molecular weight of substrate or inhibitor}
+
+  \item{NumDoses_sub or NumDoses_inhib}{number of doses}
+
+  \item{NumSubjTrial}{number of subjects per trial}
+
+  \item{NumTrials}{the number of trials performed}
+
+  \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
+
+  \item{Pop}{the population modeled}
+
+  \item{PopSize}{the size of population modeled}
+
+  \item{PrandialSt_sub or PrandialSt_inhib}{prandial state upon dosing}
+
+  \item{Regimen_sub or Regimen_inhib}{dosing regimen}
+
+  \item{SimEndDayTime}{ending day and time of the simulation}
+
+  \item{SimStartDayTime}{starting day and time of the simulation}
 
   \item{StartDayTime_sub or StartDayTime_inhib}{Starting day and time for
   administering the substrate or inhbitor}
 
-  \item{Regimen_sub or Regimen_inhib}{dosing regimen}
+  \item{StudyDuration}{study duration}
 
-  \item{DoseInt_sub or DoseInt_inhib}{dosing interval}
+  \item{Substrate}{the substrate used}
 
-  \item{NumDoses_sub or NumDoses_inhib}{number of doses}
-
-  \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
+  \item{Type_sub or Type_inhib}{type of compound, e.g., monoprotic base}
 
   \item{VssInput_sub or VssInput_inhib}{Vss used}
 
@@ -91,8 +90,8 @@ extractExpDetails(
 Returns a named list of the experimental details
 }
 \description{
-Extract details about the experimental design from the "Summary" tab of a
-simulator output file.
+\code{extractExpDetails} looks up experimental design details from the
+"Summary" tab of a Simcyp simulator output file.
 }
 \examples{
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/getReferences.R
 \name{getReferences}
 \alias{getReferences}
-\title{getReferences}
+\title{Pull references from a "DataRec" folder}
 \usage{
 getReferences(main_directory)
 }

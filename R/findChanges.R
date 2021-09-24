@@ -1,5 +1,5 @@
 
-#' findXLChanges
+#' Find differences between two Excel files
 #'
 #' This function reads in all sheets in 2 Excel files and finds any differences
 #' between them. It is NOT smart, so if the only difference on a given sheet is
