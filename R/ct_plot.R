@@ -81,7 +81,7 @@ ct_plot <- function(sim_data_file,
       if(length(figure_type) != 1 |
          figure_type %in% c("trial means", "trial percentiles",
                             "means only") == FALSE){
-            stop("The only acceptable options for figure_type are 'method development', 'method verification', or 'means only'.")
+            stop("The only acceptable options for figure_type are 'trial means', 'trial percentiles', or 'means only'.")
       }
 
       if(is.data.frame(sim_obs_dataframe)){
