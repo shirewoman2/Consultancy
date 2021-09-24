@@ -89,7 +89,13 @@
 #'   "AUC", column titled, e.g., "Half-life (h)")}
 #'
 #'   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
-#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".} }
+#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
+#'
+#'   \item{"tmax_lastdose"}{tmax for the last dose. Data are pulled from tab
+#'   "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which there is a
+#'   tab, from the column titled, e.g., "TMax (h)".}
+#'
+#'   }
 #' @param returnAggregateOrIndiv Return aggregate (geometric mean) and/or
 #'   individual PK parameters? Options are "aggregate" or "individual".
 #'
@@ -150,7 +156,7 @@ extractPK <- function(sim_data_file,
    # changes.
 
    # Parameters to pull from the AUCX(Sub)(CPlasma) tab, where X is the last dose
-   Param_AUCX <- c("AUCtau_lastdoseToEnd", "CL_lastdoseToEnd")
+   Param_AUCX <- c("AUCtau_lastdoseToEnd", "CL_lastdoseToEnd", "tmax_lastdose")
 
    Out <- list()
 
@@ -360,7 +366,8 @@ extractPK <- function(sim_data_file,
 
          ToDetect <- switch(PKparam,
                             "AUCtau_lastdoseToEnd" = "^AUC \\(",
-                            "CL_lastdoseToEnd" = "CL \\(Dose/AUC")
+                            "CL_lastdoseToEnd" = "CL \\(Dose/AUC",
+                            "tmax_lastdose" = "^TMax")
 
          which(str_detect(as.vector(t(AUCX_xl[2, ])), ToDetect))[1]
       }

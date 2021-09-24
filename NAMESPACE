@@ -3,6 +3,7 @@
 export(calcKi)
 export(ct_plot)
 export(extractConcTime)
+export(extractExpDetails)
 export(extractObsConcTime)
 export(extractPK)
 export(findXLChanges)
