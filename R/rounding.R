@@ -32,15 +32,15 @@
 #'
 #'
 round_up      <- function(x) {
-   # function to round up to the nearest power of 10
+      # function to round up to the nearest power of 10
 
-   ## NOTE TO DEVELOPERS: If you change any of the text for the description,
-   ## please copy and paste that texe above all the other functions included in
-   ## this script. That way, when people search for any of the functions here,
-   ## they'll see the same help file.
+      ## NOTE TO DEVELOPERS: If you change any of the text for the description,
+      ## please copy and paste that texe above all the other functions included in
+      ## this script. That way, when people search for any of the functions here,
+      ## they'll see the same help file.
 
-   10^ceiling(log10(x))
-   }
+      10^ceiling(log10(x))
+}
 
 #' Round a number or vector of numbers up or down to nice intervals
 #'
@@ -201,8 +201,12 @@ round_up_unit <- function(x, b) { # round x up to nearest b
 round_down_unit <- function(x, b) { # round x down to nearest b
       subfun <- function(x){
             rounded <- round(x/b)*b
-            if (rounded < x) {rounded <- rounded - b}
-            return(rounded)
+            if(rounded %% b == 0 & rounded < x){
+                  return(rounded)
+            } else {
+                  if (rounded > x) {rounded <- rounded - b}
+                  return(rounded)
+            }
       }
 
       if(length(x) == 1){

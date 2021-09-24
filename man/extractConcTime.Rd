@@ -7,6 +7,7 @@
 extractConcTime(
   sim_data_file,
   obs_data_file = NA,
+  adjust_obs_time = TRUE,
   returnAggregateOrIndiv = c("aggregate", "individual")
 )
 }
@@ -20,6 +21,14 @@ included in the Excel output from the simulator, leave this as NA.
 Otherwise, this is the file that it is ready to be converted to an XML
 file, not the file that contains only the digitized time and concentration
 data.}
+
+\item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
+data file to match the last dose administered? This only applies to
+multiple-dosing regimens. If TRUE, the graph will show the observed data
+overlaid with the simulated data such that the dose in the observed data
+was administered at the same time as the last dose in the simulated data.
+If FALSE, the observed data will start at whatever times are listed in the
+Excel file.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and

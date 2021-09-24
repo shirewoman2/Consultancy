@@ -31,6 +31,14 @@
 #'   without the effector present. -LS)}
 #'
 #'   }
+#'
+#' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
+#'   data file to match the last dose administered? This only applies to
+#'   multiple-dosing regimens. If TRUE, the graph will show the observed data
+#'   overlaid with the simulated data such that the dose in the observed data
+#'   was administered at the same time as the last dose in the simulated data.
+#'   If FALSE, the observed data will start at whatever times are listed in the
+#'   Excel file.
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
@@ -55,6 +63,21 @@
 #' ct_plot(sim_data_file, return_data = TRUE)
 #' ct_plot(sim_data_file, return_indiv_graphs = TRUE)
 #'
+#' # Here's where adjsuting or not adjusting the observed data time comes
+#' # into play:
+#' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+#'         obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
+#' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+#'         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+#'         adjust_obs_time = FALSE)
+#'
+#' # Perhaps you don't want to show *all* the data but instead want to
+#' # limit the time interval that is graphed. Use \code{time_range} here:
+#' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+#'         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+#'         adjust_obs_time = FALSE, time_range = c(0, 24))
+#'
+#'
 #' # These are probably too busy when you've got an effector present:
 #' ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
 #' ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
@@ -72,6 +95,8 @@ ct_plot <- function(sim_data_file,
                     obs_data_file = NA,
                     sim_obs_dataframe = NA,
                     figure_type = "trial means",
+                    adjust_obs_time = TRUE,
+                    time_range = NA,
                     return_data = FALSE,
                     return_indiv_graphs = FALSE){
 
@@ -82,10 +107,19 @@ ct_plot <- function(sim_data_file,
             stop("The only acceptable options for figure_type are 'trial means', 'trial percentiles', or 'means only'.")
       }
 
+      if(all(complete.cases(time_range)) & length(time_range) != 2){
+            stop("You must enter a start and stop time for 'time_range', e.g., 'c(0, 24)'.")
+      }
+
+      if(all(complete.cases(time_range)) & time_range[1] >= time_range[2]){
+            stop("The 1st value for 'time_range' must be less than the 2nd value.")
+      }
+
       if(is.data.frame(sim_obs_dataframe)){
             Data <- sim_obs_dataframe
       } else {
-            Data <- extractConcTime(sim_data_file, obs_data_file)
+            Data <- extractConcTime(sim_data_file, obs_data_file,
+                                    adjust_obs_time = adjust_obs_time)
       }
 
       TimeUnits <- sort(unique(Data$Time_units))
@@ -108,18 +142,39 @@ ct_plot <- function(sim_data_file,
                      "PD response" = "PD response")
 
       # Setting the breaks for the x axis
-      tlast <- max(Data$Time)
+      tlast <- ifelse(all(complete.cases(time_range)) &
+                            length(time_range) == 2,
+                      time_range[2], max(Data$Time))
+
+      # This doesn't work well if the time range starts at something other than
+      # 0, so adjusting for that situation.
+      if(all(complete.cases(time_range)) & time_range[1] != 0){
+            # Getting summary data for the simulation
+            SimSummary <- extractExpDetails(sim_data_file)
+            DoseFreq <- SimSummary[["DoseInt_sub"]]
+            NumDoses <- SimSummary[["NumDoses_sub"]]
+            LastDoseTime <- DoseFreq * (NumDoses - 1)
+            tlast <- time_range[2] - LastDoseTime
+      }
+
+      # If tlast is just a smidge over one of the possible breaks I've set, it
+      # goes to the next one and doesn't look as nice on the graph. Rounding
+      # tlast down to the nearest 4 for hours and nearest 15 for minutes.
+      tlast <- ifelse(TimeUnits == "hours",
+                      round_down_unit(tlast, 4),
+                      round_down_unit(tlast, 15))
 
       if(TimeUnits == "hours"){
 
             PossBreaks <- data.frame(
-                  Tlast = c(24, 48, 96, 168, 336),
-                  BreaksToUse = c("24hr", "48hr", "96hr", "1wk", "2wk"))
+                  Tlast = c(12, 24, 48, 96, 168, 336),
+                  BreaksToUse = c("12hr", "24hr", "48hr", "96hr", "1wk", "2wk"))
 
-            BreaksToUse <- PossBreaks %>% filter(tlast <= Tlast) %>%
+            BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
                   slice(which.min(Tlast)) %>% pull(BreaksToUse)
 
             XBreaks <- switch(BreaksToUse,
+                              "12hr" = seq(0, 12, 2),
                               "24hr" = seq(0, 24, 4),
                               "48hr" = seq(0, 48, 8),
                               "96hr" = seq(0, 96, 12),
@@ -132,7 +187,7 @@ ct_plot <- function(sim_data_file,
                                      BreaksToUse = c("1hr", "4hr",
                                                      "8hr", "12hr",
                                                      "24hr"))
-            BreaksToUse <- PossBreaks %>% filter(tlast <= Tlast) %>%
+            BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
                   slice(which.min(Tlast)) %>% pull(BreaksToUse)
 
             XBreaks <- switch(BreaksToUse,
@@ -143,6 +198,10 @@ ct_plot <- function(sim_data_file,
                               "24hr" = seq(0, 1440, 240))
       }
 
+      # Adjusting the breaks when time_range[1] isn't 0
+      if(all(complete.cases(time_range)) & time_range[1] != 0){
+            XBreaks <- XBreaks + LastDoseTime
+      }
 
       # # Freddy's original graphing code:
       # A <- ## normal scale plot
@@ -335,6 +394,10 @@ ct_plot <- function(sim_data_file,
             }
       }
 
+      if(all(complete.cases(time_range))){
+            A <- A + coord_cartesian(xlim = time_range)
+      }
+
       A <- A +
             scale_x_continuous(breaks = XBreaks, expand = c(0, 0),
                                limits = Xlim) +
@@ -350,15 +413,30 @@ ct_plot <- function(sim_data_file,
             )
 
       ## semi-log plot
-      B <- suppressMessages(
-            A + scale_y_log10(labels = scales::comma)
-      )
+
+
+      if(all(complete.cases(time_range))){
+            # ylim for semi-log plot is off. Too high. Adjusting.
+            BetterYLim <- range(Data$Conc[Data$Time > time_range[1] &
+                                                Data$Time < time_range[2]])
+            # Giving it a little cushion
+            BetterYLim <- BetterYLim * c(0.9, 1.01)
+            B <- suppressMessages(
+                  A + scale_y_log10(labels = scales::comma) +
+                        coord_cartesian(xlim = time_range, ylim = BetterYLim)
+            )
+      } else {
+            B <- suppressMessages(
+                  A + scale_y_log10(labels = scales::comma)
+            )
+      }
+
 
       # suppressWarnings(gridExtra::grid.arrange(A, B, ncol = 2)) ## this allows you to look at the plot in R
       AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
                               common.legend = TRUE, legend = "right")
-            )
+      )
 
       if(return_data){
             Out <- list(AB, Data)

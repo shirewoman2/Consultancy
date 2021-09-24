@@ -10,6 +10,8 @@ ct_plot(
   obs_data_file = NA,
   sim_obs_dataframe = NA,
   figure_type = "trial means",
+  adjust_obs_time = TRUE,
+  time_range = NA,
   return_data = FALSE,
   return_indiv_graphs = FALSE
 )
@@ -49,6 +51,14 @@ file.}
 
   }}
 
+\item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
+data file to match the last dose administered? This only applies to
+multiple-dosing regimens. If TRUE, the graph will show the observed data
+overlaid with the simulated data such that the dose in the observed data
+was administered at the same time as the last dose in the simulated data.
+If FALSE, the observed data will start at whatever times are listed in the
+Excel file.}
+
 \item{return_data}{TRUE or FALSE: Return the data used in the graphs? If
 TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 graphs} \item{Data}{a data.frame of the concentration-time data used in the
@@ -76,6 +86,21 @@ ct_plot(sim_data_file)
 ct_plot(sim_data_file, figure_type = "trial percentiles")
 ct_plot(sim_data_file, return_data = TRUE)
 ct_plot(sim_data_file, return_indiv_graphs = TRUE)
+
+# Here's where adjsuting or not adjusting the observed data time comes
+# into play:
+ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+        obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
+ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+        adjust_obs_time = FALSE)
+
+# Perhaps you don't want to show *all* the data but instead want to
+# limit the time interval that is graphed. Use \code{time_range} here:
+ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+        adjust_obs_time = FALSE, time_range = c(0, 24))
+
 
 # These are probably too busy when you've got an effector present:
 ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")

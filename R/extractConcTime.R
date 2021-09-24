@@ -14,6 +14,13 @@
 #'   Otherwise, this is the file that it is ready to be converted to an XML
 #'   file, not the file that contains only the digitized time and concentration
 #'   data.
+#' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
+#'   data file to match the last dose administered? This only applies to
+#'   multiple-dosing regimens. If TRUE, the graph will show the observed data
+#'   overlaid with the simulated data such that the dose in the observed data
+#'   was administered at the same time as the last dose in the simulated data.
+#'   If FALSE, the observed data will start at whatever times are listed in the
+#'   Excel file.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are one or both of "aggregate" and
 #'   "individual".
@@ -60,6 +67,7 @@
 #'
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
+                            adjust_obs_time = TRUE,
                             returnAggregateOrIndiv = c("aggregate",
                                                        "individual")){
 
@@ -71,16 +79,12 @@ extractConcTime <- function(sim_data_file,
       }
 
       # Getting summary data for the simulation
-      SimSummary <- suppressMessages(
-            readxl::read_excel(path = sim_data_file, sheet = "Summary",
-                               col_names = FALSE))
+      SimSummary <- extractExpDetails(sim_data_file)
 
-      Compound <- SimSummary$...2[which(str_detect(SimSummary$...1, "^Compound Name"))]
+      Compound <- SimSummary[["Substrate"]]
 
       # Effector present?
-      EffectorRow <- which(str_detect(SimSummary$...1, "Inhibitor"))
-      Inhibitor <- SimSummary$...2[EffectorRow]
-      EffectorPresent <- length(Inhibitor) > 0
+      EffectorPresent <- complete.cases(SimSummary[["Inhibitor"]])
 
       # Reading in simulated concentration-time profile data
       sim_data_xl <- suppressMessages(
@@ -299,21 +303,16 @@ extractConcTime <- function(sim_data_file,
 
       }
 
-      # If this were a multiple-dose simulation, the observed data is, presumably,
-      # at steady state. The simulated time we'd want those data to match would be
-      # the *last* dose. Adjusting the time for the obs data.
-      DosingScenario <- SimSummary %>%
-            slice(which(...5 == "Dosing Regimen")) %>% pull(...6)
+      DosingScenario <- SimSummary[["Regimen_sub"]]
 
-      if(DosingScenario == "Multiple Dose"){
+      if(adjust_obs_time & DosingScenario == "Multiple Dose"){
+            # If this were a multiple-dose simulation, the observed data is,
+            # presumably, at steady state. The simulated time we'd want those
+            # data to match would be the *last* dose. Adjusting the time for the
+            # obs data.
 
-            DoseFreq <- SimSummary %>%
-                  slice(which(str_detect(...5, "Dose Interval"))) %>%
-                  pull(...6) %>% as.numeric()
-            NumDoses <- SimSummary %>%
-                  slice(which(str_detect(...5, "Number of Doses"))) %>%
-                  pull(...6) %>% as.numeric()
-
+            DoseFreq <- SimSummary[["DoseInt_sub"]]
+            NumDoses <- SimSummary[["NumDoses_sub"]]
             LastDoseTime <- DoseFreq * (NumDoses - 1)
 
             obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
@@ -328,15 +327,15 @@ extractConcTime <- function(sim_data_file,
                   arrange(SubjectID, Time)
 
             if(exists("sim_data_mean_Effector")){
-               Data[["sim_data_mean_Effector"]] <- sim_data_mean_Effector %>%
-                  mutate(Simulated = TRUE,
-                         SubjectID = as.character(SubjectID))
+                  Data[["sim_data_mean_Effector"]] <- sim_data_mean_Effector %>%
+                        mutate(Simulated = TRUE,
+                               SubjectID = as.character(SubjectID))
             }
 
             if(exists("sim_data_mean_SubPlusEffector")){
-               Data[["sim_data_mean_SubPlusEffector"]] <- sim_data_mean_SubPlusEffector %>%
-                  mutate(Simulated = TRUE,
-                         SubjectID = as.character(SubjectID))
+                  Data[["sim_data_mean_SubPlusEffector"]] <- sim_data_mean_SubPlusEffector %>%
+                        mutate(Simulated = TRUE,
+                               SubjectID = as.character(SubjectID))
             }
 
       }
@@ -348,15 +347,15 @@ extractConcTime <- function(sim_data_file,
                   arrange(SubjectID, Time)
 
             if(exists("sim_data_ind_Effector")){
-               Data[["sim_data_ind_Effector"]] <- sim_data_ind_Effector %>%
-                  mutate(Simulated = TRUE,
-                         SubjectID = as.character(SubjectID))
+                  Data[["sim_data_ind_Effector"]] <- sim_data_ind_Effector %>%
+                        mutate(Simulated = TRUE,
+                               SubjectID = as.character(SubjectID))
             }
 
             if(exists("sim_data_ind_SubPlusEffector")){
-               Data[["sim_data_ind_SubPlusEffector"]] <- sim_data_ind_SubPlusEffector %>%
-                  mutate(Simulated = TRUE,
-                         SubjectID = as.character(SubjectID))
+                  Data[["sim_data_ind_SubPlusEffector"]] <- sim_data_ind_SubPlusEffector %>%
+                        mutate(Simulated = TRUE,
+                               SubjectID = as.character(SubjectID))
             }
 
       }
