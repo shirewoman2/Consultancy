@@ -413,14 +413,13 @@ ct_plot <- function(sim_data_file,
             )
 
       ## semi-log plot
-
-
       if(all(complete.cases(time_range))){
             # ylim for semi-log plot is off. Too high. Adjusting.
             BetterYLim <- range(Data$Conc[Data$Time > time_range[1] &
                                                 Data$Time < time_range[2]])
             # Giving it a little cushion
             BetterYLim <- BetterYLim * c(0.9, 1.01)
+            BetterYLim[1] <- ifelse(BetterYLim[1] <= 0, 1, BetterYLim[1])
             B <- suppressMessages(
                   A + scale_y_log10(labels = scales::comma) +
                         coord_cartesian(xlim = time_range, ylim = BetterYLim)
