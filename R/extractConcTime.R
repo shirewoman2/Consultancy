@@ -23,7 +23,8 @@
 #'   Excel file.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are one or both of "aggregate" and
-#'   "individual".
+#'   "individual". Aggregated data are not calculated here but are pulled from
+#'   the simulator output rows labeled as "mean".
 #'
 #' @return A data.frame of concentration-time data with the following columns:
 #'   \describe{
@@ -115,7 +116,7 @@ extractConcTime <- function(sim_data_file,
                         rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
                         pivot_longer(names_to = "SubjectID", values_to = "Conc", cols = -Time) %>%
                         mutate(Compound = Compound,
-                               Effector = Inhibitor)
+                               Effector = SimSummary[["Inhibitor"]])
 
                   StartRow_mean_Effector <- which(str_detect(sim_data_xl$...1,
                                                              "Time - Inhibitor"))[1]
@@ -127,7 +128,8 @@ extractConcTime <- function(sim_data_file,
                         rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
                         pivot_longer(names_to = "SubjectID", values_to = "Conc",
                                      cols = -Time) %>%
-                        mutate(Compound = Inhibitor, Effector = Inhibitor)
+                        mutate(Compound = SimSummary[["Inhibitor"]],
+                               Effector = SimSummary[["Inhibitor"]])
 
 
                   sim_data_mean <- bind_rows(sim_data_mean,
@@ -191,7 +193,7 @@ extractConcTime <- function(sim_data_file,
                         pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
                         mutate(Compound = Compound,
-                               Effector = Inhibitor,
+                               Effector = SimSummary[["Inhibitor"]],
                                SubjTrial = sub("ID", "", SubjTrial)) %>%
                         separate(SubjTrial, into = c("SubjectID", "Trial"),
                                  sep = "_") %>%
@@ -218,8 +220,8 @@ extractConcTime <- function(sim_data_file,
                         sim_data_ind_Effector %>%
                         pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
-                        mutate(Compound = Inhibitor,
-                               Effector = Inhibitor,
+                        mutate(Compound = SimSummary[["Inhibitor"]],
+                               Effector = SimSummary[["Inhibitor"]],
                                SubjTrial = sub("ID", "", SubjTrial)) %>%
                         separate(SubjTrial, into = c("SubjectID", "Trial"),
                                  sep = "_") %>%

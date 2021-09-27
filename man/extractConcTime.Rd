@@ -32,7 +32,8 @@ Excel file.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and
-"individual".}
+"individual". Aggregated data are not calculated here but are pulled from
+the simulator output rows labeled as "mean".}
 }
 \value{
 A data.frame of concentration-time data with the following columns:

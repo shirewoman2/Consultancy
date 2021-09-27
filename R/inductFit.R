@@ -318,10 +318,6 @@ inductFit <- function(DF,
    } else {
 
       # fit by donor
-
-      # defining geometric mean function for reporting means
-      gm_mean <- function(x) exp(mean(log(x)))
-
       CurveData <- list()
       MyFits <- list()
 

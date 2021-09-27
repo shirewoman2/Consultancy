@@ -18,7 +18,12 @@
 #'   \describe{
 #'
 #'   \item{trial means}{plots a black line for the mean data, gray lines for the
-#'   individual simulated data, and open circles for the observed data}
+#'   mean of each trial of simulated data, and open circles for the observed
+#'   data. If an effector was present, gray dashed lines indicate the mean of
+#'   each trial of simulated data in the presence of the effector. (At present,
+#'   if an effector were present, this does NOT graph observed data because I
+#'   haven't yet figured out the best way to indicate whether those data are
+#'   with or without the effector. -LS)}
 #'
 #'   \item{trial percentiles}{plots a black line for the mean data, gray lines
 #'   for the 5th and 95th percentiles of the simulated data, and open circles
@@ -26,12 +31,13 @@
 #'
 #'   \item{means only}{plots a black line for the mean data and, if an effector
 #'   was modeled, a dashed line for the concentration-time data with the the
-#'   effector. (At present, this does NOT graph observed data because I haven't
-#'   yet figured out the best way to indicate whether those data are with or
-#'   without the effector present. -LS)}
+#'   effector. (At present, if an effector were present, this does NOT graph
+#'   observed data because I haven't yet figured out the best way to indicate
+#'   whether those data are with or without the effector. -LS)}
 #'
 #'   }
-#'
+#' @param substrate_or_effector "substrate" or "effector" for whether to plot
+#'   the substrate (default) or the effector concentration-time data
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -39,6 +45,8 @@
 #'   was administered at the same time as the last dose in the simulated data.
 #'   If FALSE, the observed data will start at whatever times are listed in the
 #'   Excel file.
+#' @param mean_type "geometric" or "arithmetic" for which type of mean to
+#'   calculate
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
@@ -95,8 +103,10 @@ ct_plot <- function(sim_data_file,
                     obs_data_file = NA,
                     sim_obs_dataframe = NA,
                     figure_type = "trial means",
+                    substrate_or_effector = "substrate",
                     adjust_obs_time = TRUE,
                     time_range = NA,
+                    mean_type = "arithmetic",
                     return_data = FALSE,
                     return_indiv_graphs = FALSE){
 
@@ -151,10 +161,26 @@ ct_plot <- function(sim_data_file,
       if(all(complete.cases(time_range)) & time_range[1] != 0){
             # Getting summary data for the simulation
             SimSummary <- extractExpDetails(sim_data_file)
-            DoseFreq <- SimSummary[["DoseInt_sub"]]
-            NumDoses <- SimSummary[["NumDoses_sub"]]
-            LastDoseTime <- DoseFreq * (NumDoses - 1)
+
+            Sub_t0 <- str_split(SimSummary[["StartDayTime_sub"]], ", ")[[1]]
+            Inhib_t0 <- str_split(SimSummary[["StartDayTime_inhib"]], ", ")[[1]]
+
+            Day_t0 <- as.numeric(sub("Day ", "", c(Sub_t0[1], Inhib_t0[1])))
+
+            # t0 for substrate and inhibitor in hours
+            DayTime_t0 <-
+                  as.numeric((hms::parse_hm(c(Sub_t0[2], Inhib_t0[2])) + 60*60*24*Day_t0)/(60*60))
+            DayTime_t0 <- DayTime_t0 - DayTime_t0[which.min(DayTime_t0)]
+            names(DayTime_t0) <- c("Sub", "Inhib")
+
+            if(substrate_or_effector == "substrate"){
+                  LastDoseTime <- DayTime_t0["Sub"]
+            } else {
+                  LastDoseTime <- DayTime_t0["Inhib"]
+            }
+
             tlast <- time_range[2] - LastDoseTime
+
       }
 
       # If tlast is just a smidge over one of the possible breaks I've set, it
@@ -203,19 +229,6 @@ ct_plot <- function(sim_data_file,
             XBreaks <- XBreaks + LastDoseTime
       }
 
-      # # Freddy's original graphing code:
-      # A <- ## normal scale plot
-      #       ggplot(sim_data, aes(x = Time)) +
-      #       geom_ribbon(aes(ymin = per5, ymax = per95), alpha = 0.2) +
-      #       geom_line(aes(y = mean), lwd = 1.2) +
-      #       geom_point(data = obs_data, aes(x = Time, y = Conc),
-      #                  size = 2, shape = 21, fill = "white", alpha = 0.8) +
-      #       labs(x = xlab, y = ylab) +
-      #       theme_bw()
-      # B <- ## semi-log scale plot
-      #       A +
-      #       scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
-      #                     labels = scales::trans_format("log10", scales::math_format(10^.x)))
 
       # Adding a grouping variable to data.
       if("Effector" %in% names(Data)){
@@ -231,7 +244,9 @@ ct_plot <- function(sim_data_file,
                                SubjectID %in% c("mean", "per5", "per95") == FALSE) %>%
                   group_by(across(any_of(c("Compound", "Effector", "Simulated", "Trial",
                                            "Time", "Time_units", "Conc_units", "Group")))) %>%
-                  summarize(Conc = mean(Conc)) %>%
+                  summarize(Conc = switch(mean_type,
+                                          "arithmetic" = mean(Conc),
+                                          "geometric" = gm_mean(Conc))) %>%
                   ungroup()
       )
 
@@ -245,7 +260,7 @@ ct_plot <- function(sim_data_file,
       if(figure_type == "trial means"){
 
             NumTrials <- length(unique(sim_data_ind$Trial))
-            AlphaToUse <- ifelse(NumTrials > 50, 0.05, 0.15)
+            AlphaToUse <- ifelse(NumTrials > 10, 0.05, 0.12)
             # Adjust this as needed. May want to use "switch" as we did for XBreaks.
 
             if("Effector" %in% names(sim_data_ind)){
@@ -253,28 +268,53 @@ ct_plot <- function(sim_data_file,
                   MyEffector <- sim_data_ind %>% filter(Compound == Effector) %>%
                         pull(Compound) %>% unique()
 
-                  Ylim <- c(0,
-                            1.1 * max(
-                                  c(sim_data_ind$Conc[sim_data_ind$Compound !=
-                                                            MyEffector],
-                                    obs_data$Conc), na.rm = T))
+                  if(substrate_or_effector == "substrate"){
+
+                        Ylim <- c(0,
+                                  1.1 * max(
+                                        c(sim_data_ind$Conc[sim_data_ind$Compound !=
+                                                                  MyEffector],
+                                          obs_data$Conc), na.rm = T))
+
+                  } else {
+
+                        Ylim <- c(0,
+                                  1.1 * max(
+                                        c(sim_data_ind$Conc[sim_data_ind$Compound ==
+                                                                  MyEffector],
+                                          obs_data$Conc), na.rm = T))
+
+                  }
+
                   Xlim <- c(min(XBreaks),
                             1.01 * max(c(sim_data_ind$Time,
                                          obs_data$Time)))
 
 
                   ## linear plot
-                  A <- ggplot(sim_data_ind %>% filter(Compound != MyEffector),
-                              aes(x = Time, y = Conc, group = Group,
-                                  linetype = Effector)) +
-                        guides(linetype = guide_legend(
-                              override.aes=list(fill=c(NA, NA)))) +
-                        geom_line(alpha = AlphaToUse, lwd = 1) +
-                        geom_line(data = sim_data_mean %>%
-                                        filter(SubjectID == "mean" &
-                                                     Compound != MyEffector),
-                                  lwd = 1) +
-                        geom_point(data = obs_data, size = 2, shape = 21)
+                  if(substrate_or_effector == "substrate"){
+                        A <- ggplot(sim_data_ind %>% filter(Compound != MyEffector),
+                                    aes(x = Time, y = Conc, group = Group,
+                                        linetype = Effector)) +
+                              guides(linetype = guide_legend(
+                                    override.aes=list(fill=c(NA, NA)))) +
+                              geom_line(alpha = AlphaToUse, lwd = 1) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(SubjectID == "mean" &
+                                                           Compound != MyEffector),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2, shape = 21)
+
+                  } else {
+                        A <- ggplot(sim_data_ind %>% filter(Compound == MyEffector),
+                                    aes(x = Time, y = Conc, group = Group)) +
+                              geom_line(alpha = AlphaToUse, lwd = 1) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(SubjectID == "mean" &
+                                                           Compound == MyEffector),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2, shape = 21)
+                  }
 
 
             } else {
@@ -309,27 +349,54 @@ ct_plot <- function(sim_data_file,
                         filter(Compound == Effector) %>%
                         pull(Compound) %>% unique()
 
-                  Ylim <- c(0,
-                            1.1 * max(
-                                  c(sim_data_mean$Conc[sim_data_mean$Compound !=
-                                                             MyEffector],
-                                    obs_data$Conc), na.rm = T))
+                  if(substrate_or_effector == "substrate"){
+                        Ylim <- c(0,
+                                  1.1 * max(
+                                        c(sim_data_mean$Conc[sim_data_mean$Compound !=
+                                                                   MyEffector],
+                                          obs_data$Conc), na.rm = T))
+
+                  } else {
+                        Ylim <- c(0,
+                                  1.1 * max(
+                                        c(sim_data_mean$Conc[sim_data_mean$Compound ==
+                                                                   MyEffector],
+                                          obs_data$Conc), na.rm = T))
+
+                  }
+
                   Xlim <- c(min(XBreaks),
                             1.01 * max(c(sim_data_mean$Time,
                                          obs_data$Time)))
 
-                  A <- ggplot(sim_data_mean %>%
-                                    filter(SubjectID %in% c("per5", "per95") &
-                                                 Compound != MyEffector) %>%
-                                    mutate(Group = paste(Group, SubjectID)),
-                              aes(x = Time, y = Conc, linetype = Effector,
-                                  group = Group)) +
-                        geom_line(color = "gray80", lwd = 0.8) +
-                        geom_line(data = sim_data_mean %>%
-                                        filter(SubjectID == "mean" &
-                                                     Compound != MyEffector),
-                                  lwd = 1) +
-                        geom_point(data = obs_data, size = 2, shape = 21)
+                  if(substrate_or_effector == "substrate"){
+
+                        A <- ggplot(sim_data_mean %>%
+                                          filter(SubjectID %in% c("per5", "per95") &
+                                                       Compound != MyEffector) %>%
+                                          mutate(Group = paste(Group, SubjectID)),
+                                    aes(x = Time, y = Conc, linetype = Effector,
+                                        group = Group)) +
+                              geom_line(color = "gray80", lwd = 0.8) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(SubjectID == "mean" &
+                                                           Compound != MyEffector),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2, shape = 21)
+                  } else {
+                        A <- ggplot(sim_data_mean %>%
+                                          filter(SubjectID %in% c("per5", "per95") &
+                                                       Compound == MyEffector) %>%
+                                          mutate(Group = paste(Group, SubjectID)),
+                                    aes(x = Time, y = Conc,
+                                        group = Group)) +
+                              geom_line(color = "gray80", lwd = 0.8) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(SubjectID == "mean" &
+                                                           Compound == MyEffector),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2, shape = 21)
+                  }
 
             } else {
 
@@ -360,21 +427,40 @@ ct_plot <- function(sim_data_file,
                         filter(Compound == Effector) %>%
                         pull(Compound) %>% unique()
 
-                  Ylim <- c(0,
-                            1.1 * max(
-                                  c(sim_data_mean$Conc[sim_data_mean$Compound !=
-                                                             MyEffector],
-                                    obs_data$Conc), na.rm = T))
+                  if(substrate_or_effector == "substrate"){
+                        Ylim <- c(0,
+                                  1.1 * max(
+                                        c(sim_data_mean$Conc[sim_data_mean$Compound !=
+                                                                   MyEffector],
+                                          obs_data$Conc), na.rm = T))
+                  } else {
+                        Ylim <- c(0,
+                                  1.1 * max(
+                                        c(sim_data_mean$Conc[sim_data_mean$Compound ==
+                                                                   MyEffector],
+                                          obs_data$Conc), na.rm = T))
+                  }
+
                   Xlim <- c(min(XBreaks),
                             1.01 * max(c(sim_data_mean$Time,
                                          obs_data$Time)))
 
-                  A <- ggplot(sim_data_mean %>%
+                  if(substrate_or_effector == "substrate"){
+                        A <- ggplot(sim_data_mean %>%
                                     filter(SubjectID == "mean" &
                                                  Compound != MyEffector) %>%
                                     mutate(Group = paste(Group, SubjectID)),
                               aes(x = Time, y = Conc, linetype = Effector)) +
                         geom_line(lwd = 1)
+
+                  } else {
+                        A <- ggplot(sim_data_mean %>%
+                                          filter(SubjectID == "mean" &
+                                                       Compound == MyEffector) %>%
+                                          mutate(Group = paste(Group, SubjectID)),
+                                    aes(x = Time, y = Conc)) +
+                              geom_line(lwd = 1)
+                  }
 
             } else {
 
@@ -411,6 +497,22 @@ ct_plot <- function(sim_data_file,
                   axis.ticks = element_line(color = "grey60"),
                   text = element_text(family = "Calibri")
             )
+
+
+      # # Freddy's original graphing code:
+      # A <- ## normal scale plot
+      #       ggplot(sim_data, aes(x = Time)) +
+      #       geom_ribbon(aes(ymin = per5, ymax = per95), alpha = 0.2) +
+      #       geom_line(aes(y = mean), lwd = 1.2) +
+      #       geom_point(data = obs_data, aes(x = Time, y = Conc),
+      #                  size = 2, shape = 21, fill = "white", alpha = 0.8) +
+      #       labs(x = xlab, y = ylab) +
+      #       theme_bw()
+      # B <- ## semi-log scale plot
+      #       A +
+      #       scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+      #                     labels = scales::trans_format("log10", scales::math_format(10^.x)))
+
 
       ## semi-log plot
       if(all(complete.cases(time_range))){

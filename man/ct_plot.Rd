@@ -10,8 +10,10 @@ ct_plot(
   obs_data_file = NA,
   sim_obs_dataframe = NA,
   figure_type = "trial means",
+  substrate_or_effector = "substrate",
   adjust_obs_time = TRUE,
   time_range = NA,
+  mean_type = "arithmetic",
   return_data = FALSE,
   return_indiv_graphs = FALSE
 )
@@ -37,7 +39,12 @@ file.}
   \describe{
 
   \item{trial means}{plots a black line for the mean data, gray lines for the
-  individual simulated data, and open circles for the observed data}
+  mean of each trial of simulated data, and open circles for the observed
+  data. If an effector was present, gray dashed lines indicate the mean of
+  each trial of simulated data in the presence of the effector. (At present,
+  if an effector were present, this does NOT graph observed data because I
+  haven't yet figured out the best way to indicate whether those data are
+  with or without the effector. -LS)}
 
   \item{trial percentiles}{plots a black line for the mean data, gray lines
   for the 5th and 95th percentiles of the simulated data, and open circles
@@ -45,11 +52,14 @@ file.}
 
   \item{means only}{plots a black line for the mean data and, if an effector
   was modeled, a dashed line for the concentration-time data with the the
-  effector. (At present, this does NOT graph observed data because I haven't
-  yet figured out the best way to indicate whether those data are with or
-  without the effector present. -LS)}
+  effector. (At present, if an effector were present, this does NOT graph
+  observed data because I haven't yet figured out the best way to indicate
+  whether those data are with or without the effector. -LS)}
 
   }}
+
+\item{substrate_or_effector}{"substrate" or "effector" for whether to plot
+the substrate (default) or the effector concentration-time data}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
@@ -58,6 +68,9 @@ overlaid with the simulated data such that the dose in the observed data
 was administered at the same time as the last dose in the simulated data.
 If FALSE, the observed data will start at whatever times are listed in the
 Excel file.}
+
+\item{mean_type}{"geometric" or "arithmetic" for which type of mean to
+calculate}
 
 \item{return_data}{TRUE or FALSE: Return the data used in the graphs? If
 TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
