@@ -159,27 +159,9 @@ ct_plot <- function(sim_data_file,
       # This doesn't work well if the time range starts at something other than
       # 0, so adjusting for that situation.
       if(all(complete.cases(time_range)) & time_range[1] != 0){
-            # Getting summary data for the simulation
-            SimSummary <- extractExpDetails(sim_data_file)
 
-            Sub_t0 <- str_split(SimSummary[["StartDayTime_sub"]], ", ")[[1]]
-            Inhib_t0 <- str_split(SimSummary[["StartDayTime_inhib"]], ", ")[[1]]
-
-            Day_t0 <- as.numeric(sub("Day ", "", c(Sub_t0[1], Inhib_t0[1])))
-
-            # t0 for substrate and inhibitor in hours
-            DayTime_t0 <-
-                  as.numeric((hms::parse_hm(c(Sub_t0[2], Inhib_t0[2])) + 60*60*24*Day_t0)/(60*60))
-            DayTime_t0 <- DayTime_t0 - DayTime_t0[which.min(DayTime_t0)]
-            names(DayTime_t0) <- c("Sub", "Inhib")
-
-            if(substrate_or_effector == "substrate"){
-                  LastDoseTime <- DayTime_t0["Sub"]
-            } else {
-                  LastDoseTime <- DayTime_t0["Inhib"]
-            }
-
-            tlast <- time_range[2] - LastDoseTime
+            tlast <- time_range[2] - time_range[1]
+            LastDoseTime <- time_range[1]
 
       }
 
@@ -286,11 +268,6 @@ ct_plot <- function(sim_data_file,
 
                   }
 
-                  Xlim <- c(min(XBreaks),
-                            1.01 * max(c(sim_data_ind$Time,
-                                         obs_data$Time)))
-
-
                   ## linear plot
                   if(substrate_or_effector == "substrate"){
                         A <- ggplot(sim_data_ind %>% filter(Compound != MyEffector),
@@ -322,9 +299,6 @@ ct_plot <- function(sim_data_file,
                   Ylim <- c(0,
                             1.1 * max(c(sim_data_ind$Conc,
                                         obs_data$Conc), na.rm = T))
-                  Xlim <- c(min(XBreaks),
-                            1.01 * max(c(sim_data_ind$Time,
-                                         obs_data$Time)))
 
                   ## linear plot
                   A <- ggplot(sim_data_ind,
@@ -365,10 +339,6 @@ ct_plot <- function(sim_data_file,
 
                   }
 
-                  Xlim <- c(min(XBreaks),
-                            1.01 * max(c(sim_data_mean$Time,
-                                         obs_data$Time)))
-
                   if(substrate_or_effector == "substrate"){
 
                         A <- ggplot(sim_data_mean %>%
@@ -405,9 +375,6 @@ ct_plot <- function(sim_data_file,
                   Ylim <- c(0,
                             1.1 * max(c(sim_data_mean$Conc,
                                         obs_data$Conc), na.rm = T))
-                  Xlim <- c(min(XBreaks),
-                            1.01 * max(c(sim_data_mean$Time,
-                                         obs_data$Time)))
 
                   A <- ggplot(sim_data_mean %>% filter(SubjectID != "mean"),
                               aes(x = Time, y = Conc, group = SubjectID)) +
@@ -441,9 +408,6 @@ ct_plot <- function(sim_data_file,
                                           obs_data$Conc), na.rm = T))
                   }
 
-                  Xlim <- c(min(XBreaks),
-                            1.01 * max(c(sim_data_mean$Time,
-                                         obs_data$Time)))
 
                   if(substrate_or_effector == "substrate"){
                         A <- ggplot(sim_data_mean %>%
@@ -468,9 +432,6 @@ ct_plot <- function(sim_data_file,
                             1.1 * max(
                                   c(sim_data_mean$Conc,
                                     obs_data$Conc), na.rm = T))
-                  Xlim <- c(min(XBreaks),
-                            1.01 * max(c(sim_data_mean$Time,
-                                         obs_data$Time)))
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(SubjectID == "mean"),
@@ -481,7 +442,9 @@ ct_plot <- function(sim_data_file,
       }
 
       if(all(complete.cases(time_range))){
-            A <- A + coord_cartesian(xlim = time_range)
+            Xlim <- c(min(XBreaks), max(time_range))
+      } else {
+            Xlim <- c(min(XBreaks), max(XBreaks))
       }
 
       A <- A +
@@ -498,6 +461,9 @@ ct_plot <- function(sim_data_file,
                   text = element_text(family = "Calibri")
             )
 
+      if(all(complete.cases(time_range))){
+            A <- A + coord_cartesian(xlim = time_range)
+      }
 
       # # Freddy's original graphing code:
       # A <- ## normal scale plot
@@ -536,7 +502,8 @@ ct_plot <- function(sim_data_file,
       # suppressWarnings(gridExtra::grid.arrange(A, B, ncol = 2)) ## this allows you to look at the plot in R
       AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
-                              common.legend = TRUE, legend = "right")
+                              common.legend = TRUE, legend = "right",
+                              align = "v")
       )
 
       if(return_data){
