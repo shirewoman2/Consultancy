@@ -175,8 +175,9 @@ ct_plot <- function(sim_data_file,
       if(TimeUnits == "hours"){
 
             PossBreaks <- data.frame(
-                  Tlast = c(12, 24, 48, 96, 168, 336),
-                  BreaksToUse = c("12hr", "24hr", "48hr", "96hr", "1wk", "2wk"))
+                  Tlast = c(12, 24, 48, 96, 168, 336, 360, 504, 672),
+                  BreaksToUse = c("12hr", "24hr", "48hr", "96hr", "1wk", "2wk",
+                                  "15d", "3wk", "4wk"))
 
             BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
                   slice(which.min(Tlast)) %>% pull(BreaksToUse)
@@ -187,7 +188,10 @@ ct_plot <- function(sim_data_file,
                               "48hr" = seq(0, 48, 8),
                               "96hr" = seq(0, 96, 12),
                               "1wk" = seq(0, 168, 24),
-                              "2wk" = seq(0, 336, 48))
+                              "2wk" = seq(0, 336, 48),
+                              "15d" = seq(0, 360, 48),
+                              "3wk" = seq(0, 504, 72),
+                              "4wk" = seq(0, 672, 96))
       }
 
       if(TimeUnits == "minutes"){

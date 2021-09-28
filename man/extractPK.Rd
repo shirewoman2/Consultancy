@@ -10,7 +10,8 @@ extractPK(
     "AUCtau_lastdoseToEnd", "AUCinf_dose1_withEffector", "AUCtau_lastdose_withEffector",
     "CL_dose1", "CL_dose1_withEffector", "CL_lastdose", "CL_lastdose_withEffector",
     "CL_lastdoseToEnd", "Cmax_dose1", "Cmax_dose1_withEffector", "Cmax_lastdose",
-    "Cmax_lastdose_withEffector", "HalfLife_dose1", "tmax_dose1"),
+    "Cmax_lastdose_withEffector", "fa_sub", "fa_inhib", "HalfLife_dose1", "ka_sub",
+    "ka_inhib", "lag_sub", "lag_inhib", "tmax_dose1"),
   returnAggregateOrIndiv = "individual"
 )
 }
@@ -101,6 +102,21 @@ extractPK(
 
   \item{"HalfLife_dose1"}{half life for dose 1. Data are pulled from the tab
   "AUC", column titled, e.g., "Half-life (h)")}
+
+  \item{"fa_sub" or "fa_inhib"}{fraction absorbed for the substrate or
+  inhibitor 1. Data are pulled from the tab "Absorption".}
+
+  \item{"fg_sub" or "fg_inhib"}{fraction of substrate or inhibitor escaping
+  gut metabolism. Data are pulled from the tab "Clearance Trials SS".}
+
+  \item{"fh_sub" or "fh_inhib"}{fraction of substrate or inhibitor escaping
+  hepatic metabolism. Data are pulled from the tab "Clearance Trials SS".}
+
+  \item{"ka_sub" or "ka_inhib"}{absorption rate constant ka for the substrate
+  or the 1st inhibitor. Data are pulled from the tab "Absorption".}
+
+  \item{"lag_sub" or "lag_inhib"}{lag time for the substrate or inhibitor 1.
+  Data are pulled from the tab "Absorption".}
 
   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}

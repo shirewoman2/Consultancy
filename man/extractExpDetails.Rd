@@ -6,16 +6,18 @@
 \usage{
 extractExpDetails(
   sim_data_file,
-  exp_details = c("BPratio_sub", "BPratio_inhib", "Dose_sub", "Dose_inhib",
-    "DoseInt_sub", "DoseInt_inhib", "DoseRoute_sub", "DoseRoute_inhib", "DoseUnits_sub",
-    "DoseUnits_inhib", "fu_sub", "fu_inhib", "GIAbsModel_sub", "GIAbsModel_inhib",
-    "Hematocrit", "Haematocrit", "Inhibitor", "logP_sub", "logP_inhib", "ModelType_sub",
+  exp_details = c("Abs_model", "BPratio_sub", "BPratio_inhib", "Dose_sub",
+    "Dose_inhib", "DoseInt_sub", "DoseInt_inhib", "DoseRoute_sub", "DoseRoute_inhib",
+    "DoseUnits_sub", "DoseUnits_inhib", "fa_input", "fu_gut_input", "fu_sub", "fu_inhib",
+    "GIAbsModel_sub", "GIAbsModel_inhib", "Hematocrit", "Haematocrit", "Inhibitor",
+    "ka_input", "lag_input", "logP_sub", "logP_inhib", "ModelType_sub",
     "ModelType_inhib", "MW_sub", "MW_inhib", "NumDoses_sub", "NumDoses_inhib",
-    "NumTrials", "NumSubjTrial", "pKa1_sub", "pKa1_inhib", "pKa2_sub", "pKa2_inhib",
-    "Pop", "PopSize", "PrandialSt_sub",      "PrandialSt_inhib", "Regimen_sub",
-    "Regimen_inhib", "SimEndDayTime", "SimStartDayTime", "StartDayTime_sub",
-    "StartDayTime_inhib", "StudyDuration", "Substrate", "Type_sub", "Type_inhib",
-    "VssInput_sub", "VssInput_inhib", "VssPredMeth_sub", "VssPredMeth_inhib")
+    "NumTrials", "NumSubjTrial", "Peff", "pKa1_sub", "pKa1_inhib",      "pKa2_sub",
+    "pKa2_inhib", "Pop", "PopSize", "PrandialSt_sub", "PrandialSt_inhib", "Regimen_sub",
+    "Regimen_inhib", "SimEndDayTime", "SimStartDayTime", "SimulatorVersion",
+    "StartDayTime_sub", "StartDayTime_inhib", "StudyDuration", "Substrate", "Type_sub",
+    "Type_inhib", "UserAddnOrgan", "VssInput_sub", "VssInput_inhib", "VssPredMeth_sub",
+    "VssPredMeth_inhib")
 )
 }
 \arguments{
@@ -25,6 +27,8 @@ extractExpDetails(
   output file, "Summary" tab. Options are any combination of the following:
 
   \describe{
+
+  \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
 
   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 
@@ -36,6 +40,11 @@ extractExpDetails(
 
   \item{DoseUnits_sub or DoseUnits_inhib}{dose units}
 
+  \item{fa_input}{user input value for the fraction absorbed}
+
+  \item{fu_gut_input}{user input value for the fraction escaping gut
+  metabolism}
+
   \item{fu_sub or fu_inhib}{fraction unbound}
 
   \item{Hematocrit or Heamatocrit}{the hematocrit}
@@ -43,6 +52,10 @@ extractExpDetails(
   \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
 
   \item{Inhibitor}{inhibitor used, if applicable}
+
+  \item{ka_input}{user input value for the absorption constant ka}
+
+  \item{lag_input}{user input value for the lag time}
 
   \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
 
@@ -56,6 +69,8 @@ extractExpDetails(
   \item{NumSubjTrial}{number of subjects per trial}
 
   \item{NumTrials}{the number of trials performed}
+
+  \item{Peff}{Peff,man Cap(10^-4 cm/s)}
 
   \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
 
@@ -71,6 +86,8 @@ extractExpDetails(
 
   \item{SimStartDayTime}{starting day and time of the simulation}
 
+  \item{SimulatorVersion}{Simulator version number}
+
   \item{StartDayTime_sub or StartDayTime_inhib}{Starting day and time for
   administering the substrate or inhbitor}
 
@@ -79,6 +96,9 @@ extractExpDetails(
   \item{Substrate}{the substrate used}
 
   \item{Type_sub or Type_inhib}{type of compound, e.g., monoprotic base}
+
+  \item{UserAddnOrgan}{yes or no: Was a user-defined additional organ
+  included?}
 
   \item{VssInput_sub or VssInput_inhib}{Vss used}
 
@@ -91,7 +111,7 @@ Returns a named list of the experimental details
 }
 \description{
 \code{extractExpDetails} looks up experimental design details from the
-"Summary" tab of a Simcyp simulator output file.
+"Summary" or "Input Sheet" tabs of a Simcyp simulator output file.
 }
 \examples{
 

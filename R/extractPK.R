@@ -90,6 +90,21 @@
 #'   \item{"HalfLife_dose1"}{half life for dose 1. Data are pulled from the tab
 #'   "AUC", column titled, e.g., "Half-life (h)")}
 #'
+#'   \item{"fa_sub" or "fa_inhib"}{fraction absorbed for the substrate or
+#'   inhibitor 1. Data are pulled from the tab "Absorption".}
+#'
+#'   \item{"fg_sub" or "fg_inhib"}{fraction of substrate or inhibitor escaping
+#'   gut metabolism. Data are pulled from the tab "Clearance Trials SS".}
+#'
+#'   \item{"fh_sub" or "fh_inhib"}{fraction of substrate or inhibitor escaping
+#'   hepatic metabolism. Data are pulled from the tab "Clearance Trials SS".}
+#'
+#'   \item{"ka_sub" or "ka_inhib"}{absorption rate constant ka for the substrate
+#'   or the 1st inhibitor. Data are pulled from the tab "Absorption".}
+#'
+#'   \item{"lag_sub" or "lag_inhib"}{lag time for the substrate or inhibitor 1.
+#'   Data are pulled from the tab "Absorption".}
+#'
 #'   \item{"tmax_dose1"}{tmax for dose 1. Data are pulled from tab
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
 #'
@@ -132,7 +147,10 @@ extractPK <- function(sim_data_file,
                                        "Cmax_dose1_withEffector",
                                        "Cmax_lastdose",
                                        "Cmax_lastdose_withEffector",
+                                       "fa_sub", "fa_inhib",
                                        "HalfLife_dose1",
+                                       "ka_sub", "ka_inhib",
+                                       "lag_sub", "lag_inhib",
                                        "tmax_dose1"),
                       returnAggregateOrIndiv = "individual"){
 
@@ -159,6 +177,10 @@ extractPK <- function(sim_data_file,
 
    # Parameters to pull from the AUCX(Sub)(CPlasma) tab, where X is the last dose
    Param_AUCX <- c("AUCtau_lastdoseToEnd", "CL_lastdoseToEnd", "tmax_lastdose")
+
+   # Parameters to pull from the Absorption tab
+   Param_Abs <- c("ka_sub", "ka_inhib", "fa_sub", "fa_inhib",
+                  "lag_sub", "lag_inhib")
 
    Out <- list()
 
@@ -279,13 +301,6 @@ extractPK <- function(sim_data_file,
             next
          }
 
-         if(length(ColNum) == 0){
-            message(paste("The column with information for", i,
-                          "cannot be found."))
-            rm(ColNum)
-            next
-         }
-
          Out[[i]] <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
             pull(Values) %>% as.numeric
          rm(ColNum)
@@ -376,6 +391,7 @@ extractPK <- function(sim_data_file,
 
       for(i in PKparameters_AUCX){
          ColNum <- findCol(i)
+
          if(length(ColNum) == 0){
             message(paste("The column with information for", i,
                           "cannot be found."))
@@ -391,6 +407,70 @@ extractPK <- function(sim_data_file,
       rm(EndRow, findCol)
 
    }
+
+
+
+   # Pulling data from the "Absorption" tab
+   if(any(PKparameters %in% Param_Abs)){
+
+         PKparameters_Abs <- intersect(PKparameters, Param_Abs)
+
+         # Error catching
+         if("Absorption" %in% AllSheets == FALSE){
+               stop(paste0("The tab 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
+                           PKparameters_Abs, "."))
+         }
+
+         Abs_xl <- suppressMessages(
+               readxl::read_excel(path = sim_data_file, sheet = "Absorption",
+                                  col_names = FALSE))
+
+         SubCols <- which(as.character(Abs_xl[8, ]) == "Substrate")[1]
+         InhibCols <- which(as.character(Abs_xl[8, ]) == "Inhibitor 1")[1]
+
+         # SubCols <- SubCols:(SubCols + 2)
+         # InhibCols <- InhibCols:(InhibCols + 2)
+
+         # sub function for finding correct column
+         findCol <- function(PKparam){
+
+               ToDetect <- switch(PKparam,
+                                  "ka_sub" = "^ka \\(1/",
+                                  "ka_inhib" = "^ka \\(1/",
+                                  "fa_sub" = "^fa$",
+                                  "fa_inhib" = "^fa$",
+                                  "lag_sub" = "lag time \\(",
+                                  "lag_inhib" = "lag time \\(")
+
+
+               StartCol <- ifelse(str_detect(PKparam, "sub"),
+                                  SubCols, InhibCols)
+               OutCol <- which(str_detect(
+                     as.character(Abs_xl[9, StartCol:(StartCol+2)]),
+                     ToDetect)) + StartCol - 1
+
+               return(OutCol)
+         }
+         # end of subfunction
+
+         # finding the PK parameters requested
+         for(i in PKparameters_Abs){
+               ColNum <- findCol(i)
+               if(length(ColNum) == 0){
+                     message(paste("The column with information for", i,
+                                   "cannot be found."))
+                     rm(ColNum)
+                     next
+               }
+
+               Out[[i]] <- Abs_xl[10:nrow(Abs_xl), ColNum] %>% rename(Values = 1) %>%
+                     filter(complete.cases(Values)) %>% pull(Values) %>% as.numeric
+               rm(ColNum)
+         }
+
+         rm(EndRow, findCol)
+   }
+
 
    # If user only wanted one parameter, make the output a vector instead of a
    # list
