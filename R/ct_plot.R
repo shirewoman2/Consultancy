@@ -48,6 +48,12 @@
 #'   was administered at the same time as the last dose in the simulated data.
 #'   If FALSE, the observed data will start at whatever times are listed in the
 #'   Excel file.
+#' @param time_range time range to graph. If left as NA, the whole time range of
+#'   the data will be graphed. If set to a time range, e.g., \code{c(24, 48)},
+#'   the graph will only include that range of time. If set to "first dose", the
+#'   time range will be the first dose until the start of the second dose. If
+#'   set to "last dose", the time range will be the last simulated dose to the
+#'   end of the data.
 #' @param mean_type "geometric" or "arithmetic" for which type of mean to
 #'   calculate
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
@@ -74,7 +80,7 @@
 #' ct_plot(sim_data_file, return_data = TRUE)
 #' ct_plot(sim_data_file, return_indiv_graphs = TRUE)
 #'
-#' # Here's where adjsuting or not adjusting the observed data time comes
+#' # Here's where adjusting or not adjusting the observed data time comes
 #' # into play:
 #' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
 #'         obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
@@ -88,17 +94,33 @@
 #'         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
 #'         adjust_obs_time = FALSE, time_range = c(0, 24))
 #'
+#' # Or you can let it automatically calculate the time frame for the first or
+#' # last dose simulated
+#' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+#'         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+#'         time_range = "first dose")
+#' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+#'         obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
+#'         time_range = "last dose")
 #'
-#' # These are probably too busy when you've got an effector present:
+#' # These may be too busy when you've got an effector present:
 #' ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
 #' ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'         figure_type = "trial percentiles")
-#' # so you may want to consider this alternative instead:
+#' # so you may want to consider only plotting means as an alternative:
 #' ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'         figure_type = "means only")
 #'
-#' # If you've already got a data.frame formatted
-#' like the output from extractConcTime...
+#' # You can also add a separate observed concentration-time file for the
+#' # compound with the effector present. The graph will show those points
+#' # as open triangles.
+#' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+#'         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+#'         obs_effector_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
+#'         time_range = "last dose")
+#'
+#' # If you've already got a data.frame formatted like the output
+#' # from extractConcTime...
 #' data(ConcTime)
 #' ct_plot(sim_obs_dataframe = ConcTime)
 #'
@@ -121,14 +143,28 @@ ct_plot <- function(sim_data_file,
             stop("The only acceptable options for figure_type are 'trial means', 'trial percentiles', or 'means only'.")
       }
 
-      if(all(complete.cases(time_range)) & length(time_range) != 2){
-            stop("You must enter a start and stop time for 'time_range', e.g., 'c(0, 24)'.")
+      if(all(complete.cases(time_range)) & class(time_range) == "numeric" &
+         length(time_range) != 2){
+            stop("You must enter a start and stop time for 'time_range', e.g., 'c(0, 24)' or enter 'last dose' to plot only the time range for the last dose.")
       }
 
-      if(all(complete.cases(time_range)) & time_range[1] >= time_range[2]){
+      if(all(complete.cases(time_range)) & class(time_range) == "numeric" &
+         time_range[1] >= time_range[2]){
             stop("The 1st value for 'time_range' must be less than the 2nd value.")
       }
 
+      if(all(complete.cases(time_range)) & class(time_range) == "character" &
+         length(time_range != 1)){
+            time_range <- time_range[1]
+      }
+
+      if(all(complete.cases(time_range)) & class(time_range) == "character" &
+         !time_range %in% c("last dose", "first dose")){
+            stop("The values for time_range must either be 'first dose', 'last dose' or a numeric time range.")
+      }
+
+
+      # Extract the data to plot
       if(is.data.frame(sim_obs_dataframe)){
             Data <- sim_obs_dataframe
       } else {
@@ -165,9 +201,70 @@ ct_plot <- function(sim_data_file,
                             length(time_range) == 2,
                       time_range[2], max(Data$Time))
 
+      time_range_input <- time_range
+
+      if(time_range_input %in% c("first dose", "last dose")){
+            Deets <- extractExpDetails(sim_data_file)
+
+            Sub_t0 <- str_split(Deets[["StartDayTime_sub"]], ", ")[[1]]
+            Inhib_t0 <- str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]]
+
+            Day_t0 <- as.numeric(sub("Day ", "", c(Sub_t0[1], Inhib_t0[1])))
+            names(Day_t0) <- c("Sub", "Inhib")
+
+            # t0 for first dose of substrate and inhibitor in hours
+            DayTime_t0 <-
+                  as.numeric((hms::parse_hm(c(Sub_t0[2], Inhib_t0[2])) + 60*60*24*Day_t0)/(60*60))
+            DayTime_t0 <- DayTime_t0 - DayTime_t0[which.min(DayTime_t0)]
+            names(DayTime_t0) <- c("Sub", "Inhib")
+
+            if(TimeUnits == "minutes"){
+                  DayTime_t0 <- DayTime_t0 * 60
+            }
+
+            # start of 2nd dose of substrate and inhibitor
+            DoseInt <- c("Sub" = Deets$DoseInt_sub,
+                         "Inhib" = Deets$DoseInt_inhib)
+            StartDose2 <- DayTime_t0 + DoseInt
+
+            # start of last dose simulated of substrate and inhibitor
+            NumDoses <- c("Sub" = Deets$NumDoses_sub,
+                          "Inhib" = Deets$NumDoses_inhib)
+            StartLastDose <- DoseInt * NumDoses
+            if(any(StartLastDose == max(Data$Time))){
+                  StartLastDose <- StartLastDose - DoseInt
+            }
+
+            if(time_range_input == "first dose"){
+                  Start <- ifelse(substrate_or_effector == "substrate",
+                                  DayTime_t0[["Sub"]],
+                                  DayTime_t0[["Inhib"]])
+                  End <- ifelse(substrate_or_effector == "substrate",
+                                StartDose2[["Sub"]],
+                                StartDose2[["Inhib"]])
+                  time_range <- c(Start, End)
+                  rm(Start, End)
+            }
+
+            if(time_range_input == "last dose"){
+                  Start <- ifelse(substrate_or_effector == "substrate",
+                                  StartLastDose[["Sub"]],
+                                  StartLastDose[["Inhib"]])
+                  End <- ifelse(substrate_or_effector == "substrate",
+                                max(Data$Time) + 0.04*DoseInt[["Sub"]],
+                                max(Data$Time) + 0.04*DoseInt[["Inhib"]])
+                  # Multiplying by 4% of the dosing interval is just to give a
+                  # little visual cushion on the end of the graph. It makes it a
+                  # little prettier.
+                  time_range <- c(Start, End)
+                  rm(Start, End)
+            }
+      }
+
       # This doesn't work well if the time range starts at something other than
-      # 0, so adjusting for that situation.
-      if(all(complete.cases(time_range)) & time_range[1] != 0){
+      # 0 or ends somewhere other than the max time, so adjusting for that situation.
+      if(all(complete.cases(time_range)) &
+         (time_range[1] != 0 | time_range[2] != max(Data$Time))){
 
             tlast <- time_range[2] - time_range[1]
             LastDoseTime <- time_range[1]
@@ -265,19 +362,25 @@ ct_plot <- function(sim_data_file,
 
                   if(substrate_or_effector == "substrate"){
 
-                        Ylim <- c(0,
-                                  1.1 * max(
-                                        c(sim_data_ind$Conc[sim_data_ind$Compound !=
-                                                                  MyEffector],
-                                          obs_data$Conc), na.rm = T))
+                        Ylim <- sim_data_ind %>%
+                              filter(Compound != MyEffector &
+                                           Time >= time_range[1] &
+                                           Time <= time_range[2] &
+                                           complete.cases(Conc)) %>%
+                              pull(Conc) %>% range()
+                        # Adding a visual cushion to the upper range
+                        Ylim[2] <- Ylim[2] * 1.1
 
                   } else {
 
-                        Ylim <- c(0,
-                                  1.1 * max(
-                                        c(sim_data_ind$Conc[sim_data_ind$Compound ==
-                                                                  MyEffector],
-                                          obs_data$Conc), na.rm = T))
+                        Ylim <- sim_data_ind %>%
+                              filter(Compound == MyEffector &
+                                           Time >= time_range[1] &
+                                           Time <= time_range[2] &
+                                           complete.cases(Conc)) %>%
+                              pull(Conc) %>% range()
+                        # Adding a visual cushion to the upper range
+                        Ylim[2] <- Ylim[2] * 1.1
 
                   }
 
@@ -312,9 +415,13 @@ ct_plot <- function(sim_data_file,
 
             } else {
 
-                  Ylim <- c(0,
-                            1.1 * max(c(sim_data_ind$Conc,
-                                        obs_data$Conc), na.rm = T))
+                  Ylim <- sim_data_ind %>%
+                        filter(Time >= time_range[1] &
+                                     Time <= time_range[2] &
+                                     complete.cases(Conc)) %>%
+                        pull(Conc) %>% range()
+                  # Adding a visual cushion to the upper range
+                  Ylim[2] <- Ylim[2] * 1.1
 
                   ## linear plot
                   A <- ggplot(sim_data_ind,
@@ -340,18 +447,26 @@ ct_plot <- function(sim_data_file,
                         pull(Compound) %>% unique()
 
                   if(substrate_or_effector == "substrate"){
-                        Ylim <- c(0,
-                                  1.1 * max(
-                                        c(sim_data_mean$Conc[sim_data_mean$Compound !=
-                                                                   MyEffector],
-                                          obs_data$Conc), na.rm = T))
+
+                        Ylim <- sim_data_mean %>%
+                              filter(Compound != MyEffector &
+                                           Time >= time_range[1] &
+                                           Time <= time_range[2] &
+                                           complete.cases(Conc)) %>%
+                              pull(Conc) %>% range()
+                        # Adding a visual cushion to the upper range
+                        Ylim[2] <- Ylim[2] * 1.1
 
                   } else {
-                        Ylim <- c(0,
-                                  1.1 * max(
-                                        c(sim_data_mean$Conc[sim_data_mean$Compound ==
-                                                                   MyEffector],
-                                          obs_data$Conc), na.rm = T))
+
+                        Ylim <- sim_data_mean %>%
+                              filter(Compound == MyEffector &
+                                           Time >= time_range[1] &
+                                           Time <= time_range[2] &
+                                           complete.cases(Conc)) %>%
+                              pull(Conc) %>% range()
+                        # Adding a visual cushion to the upper range
+                        Ylim[2] <- Ylim[2] * 1.1
 
                   }
 
@@ -371,6 +486,7 @@ ct_plot <- function(sim_data_file,
                                         lwd = 1) +
                               geom_point(data = obs_data, size = 2) +
                               scale_shape_manual(values = c(21, 24))
+
                   } else {
                         A <- ggplot(sim_data_mean %>%
                                           filter(SubjectID %in% c("per5", "per95") &
@@ -390,9 +506,13 @@ ct_plot <- function(sim_data_file,
 
                   ## linear plot
 
-                  Ylim <- c(0,
-                            1.1 * max(c(sim_data_mean$Conc,
-                                        obs_data$Conc), na.rm = T))
+                  Ylim <- sim_data_mean %>%
+                        filter(Time >= time_range[1] &
+                                     Time <= time_range[2] &
+                                     complete.cases(Conc)) %>%
+                        pull(Conc) %>% range()
+                  # Adding a visual cushion to the upper range
+                  Ylim[2] <- Ylim[2] * 1.1
 
                   A <- ggplot(sim_data_mean %>% filter(SubjectID != "mean"),
                               aes(x = Time, y = Conc, group = SubjectID)) +
@@ -413,27 +533,36 @@ ct_plot <- function(sim_data_file,
                         pull(Compound) %>% unique()
 
                   if(substrate_or_effector == "substrate"){
-                        Ylim <- c(0,
-                                  1.1 * max(
-                                        c(sim_data_mean$Conc[sim_data_mean$Compound !=
-                                                                   MyEffector],
-                                          obs_data$Conc), na.rm = T))
+
+                        Ylim <- sim_data_mean %>%
+                              filter(Compound != MyEffector &
+                                           Time >= time_range[1] &
+                                           Time <= time_range[2] &
+                                           complete.cases(Conc)) %>%
+                              pull(Conc) %>% range()
+                        # Adding a visual cushion to the upper range
+                        Ylim[2] <- Ylim[2] * 1.1
+
                   } else {
-                        Ylim <- c(0,
-                                  1.1 * max(
-                                        c(sim_data_mean$Conc[sim_data_mean$Compound ==
-                                                                   MyEffector],
-                                          obs_data$Conc), na.rm = T))
+
+                        Ylim <- sim_data_mean %>%
+                              filter(Compound == MyEffector &
+                                           Time >= time_range[1] &
+                                           Time <= time_range[2] &
+                                           complete.cases(Conc)) %>%
+                              pull(Conc) %>% range()
+                        # Adding a visual cushion to the upper range
+                        Ylim[2] <- Ylim[2] * 1.1
                   }
 
 
                   if(substrate_or_effector == "substrate"){
                         A <- ggplot(sim_data_mean %>%
-                                    filter(SubjectID == "mean" &
-                                                 Compound != MyEffector) %>%
-                                    mutate(Group = paste(Group, SubjectID)),
-                              aes(x = Time, y = Conc, linetype = Effector)) +
-                        geom_line(lwd = 1)
+                                          filter(SubjectID == "mean" &
+                                                       Compound != MyEffector) %>%
+                                          mutate(Group = paste(Group, SubjectID)),
+                                    aes(x = Time, y = Conc, linetype = Effector)) +
+                              geom_line(lwd = 1)
 
                   } else {
                         A <- ggplot(sim_data_mean %>%
@@ -446,10 +575,13 @@ ct_plot <- function(sim_data_file,
 
             } else {
 
-                  Ylim <- c(0,
-                            1.1 * max(
-                                  c(sim_data_mean$Conc,
-                                    obs_data$Conc), na.rm = T))
+                  Ylim <- sim_data_mean %>%
+                        filter(Time >= time_range[1] &
+                                     Time <= time_range[2] &
+                                     complete.cases(Conc)) %>%
+                        pull(Conc) %>% range()
+                  # Adding a visual cushion to the upper range
+                  Ylim[2] <- Ylim[2] * 1.1
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(SubjectID == "mean"),
@@ -499,25 +631,14 @@ ct_plot <- function(sim_data_file,
 
 
       ## semi-log plot
-      if(all(complete.cases(time_range))){
-            # ylim for semi-log plot is off. Too high. Adjusting.
-            BetterYLim <- range(Data$Conc[Data$Time > time_range[1] &
-                                                Data$Time < time_range[2]])
-            # Giving it a little cushion
-            BetterYLim <- BetterYLim * c(0.9, 1.01)
-            BetterYLim[1] <- ifelse(BetterYLim[1] <= 0, 1, BetterYLim[1])
-            B <- suppressMessages(
-                  A + scale_y_log10(labels = scales::comma) +
-                        coord_cartesian(xlim = time_range, ylim = BetterYLim)
-            )
-      } else {
-            B <- suppressMessages(
-                  A + scale_y_log10(labels = scales::comma)
-            )
-      }
+      B <- suppressMessages(
+            A + scale_y_log10(labels = scales::comma) +
+                  coord_cartesian(xlim = time_range,
+                                  ylim = c(ifelse(Ylim[1] == 0, 1, Ylim),
+                                           Ylim[2]))
+      )
 
-
-      # suppressWarnings(gridExtra::grid.arrange(A, B, ncol = 2)) ## this allows you to look at the plot in R
+      # both plots together, aligned vertically
       AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
                               common.legend = TRUE, legend = "right",

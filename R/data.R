@@ -22,5 +22,11 @@
 #' \item{Conc_units}{units for the concentration column}}
 "ConcTime"
 
+#' Simcyp colors used in the PowerPoint template
+#'
+#' @format A named character vector of colors
+#' @examples
+#' scales::show_col(SimcypColors)
+"SimcypColors"
 
 

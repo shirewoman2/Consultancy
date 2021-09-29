@@ -74,6 +74,13 @@ was administered at the same time as the last dose in the simulated data.
 If FALSE, the observed data will start at whatever times are listed in the
 Excel file.}
 
+\item{time_range}{time range to graph. If left as NA, the whole time range of
+the data will be graphed. If set to a time range, e.g., \code{c(24, 48)},
+the graph will only include that range of time. If set to "first dose", the
+time range will be the first dose until the start of the second dose. If
+set to "last dose", the time range will be the last simulated dose to the
+end of the data.}
+
 \item{mean_type}{"geometric" or "arithmetic" for which type of mean to
 calculate}
 
@@ -105,7 +112,7 @@ ct_plot(sim_data_file, figure_type = "trial percentiles")
 ct_plot(sim_data_file, return_data = TRUE)
 ct_plot(sim_data_file, return_indiv_graphs = TRUE)
 
-# Here's where adjsuting or not adjusting the observed data time comes
+# Here's where adjusting or not adjusting the observed data time comes
 # into play:
 ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
         obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
@@ -119,17 +126,33 @@ ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
         adjust_obs_time = FALSE, time_range = c(0, 24))
 
+# Or you can let it automatically calculate the time frame for the first or
+# last dose simulated
+ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+        time_range = "first dose")
+ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+        obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
+        time_range = "last dose")
 
-# These are probably too busy when you've got an effector present:
+# These may be too busy when you've got an effector present:
 ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
 ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
         figure_type = "trial percentiles")
-# so you may want to consider this alternative instead:
+# so you may want to consider only plotting means as an alternative:
 ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
         figure_type = "means only")
 
-# If you've already got a data.frame formatted
-like the output from extractConcTime...
+# You can also add a separate observed concentration-time file for the
+# compound with the effector present. The graph will show those points
+# as open triangles.
+ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
+        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+        obs_effector_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
+        time_range = "last dose")
+
+# If you've already got a data.frame formatted like the output
+# from extractConcTime...
 data(ConcTime)
 ct_plot(sim_obs_dataframe = ConcTime)
 

@@ -65,6 +65,11 @@
 #' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'                 returnAggregateOrIndiv = c("aggregate", "individual"))
 #'
+#' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+#'                 obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
+#'                 obs_effector_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
+#'                 returnAggregateOrIndiv = c("aggregate", "individual"))
+#'
 #'
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
