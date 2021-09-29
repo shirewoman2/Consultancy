@@ -6,31 +6,35 @@
 \usage{
 extractExpDetails(
   sim_data_file,
-  exp_details = c("Abs_model", "BPratio_sub", "BPratio_inhib", "Dose_sub",
-    "Dose_inhib", "DoseInt_sub", "DoseInt_inhib", "DoseRoute_sub", "DoseRoute_inhib",
-    "DoseUnits_sub", "DoseUnits_inhib", "fa_input", "fu_gut_input", "fu_sub", "fu_inhib",
-    "GIAbsModel_sub", "GIAbsModel_inhib", "Hematocrit", "Haematocrit", "Inhibitor",
-    "ka_input", "lag_input", "logP_sub", "logP_inhib", "ModelType_sub",
+  exp_details = c("BPratio_sub", "BPratio_inhib", "Dose_sub", "Dose_inhib",
+    "DoseInt_sub", "DoseInt_inhib", "DoseRoute_sub", "DoseRoute_inhib", "DoseUnits_sub",
+    "DoseUnits_inhib", "fu_sub", "fu_inhib", "GIAbsModel_sub", "GIAbsModel_inhib",
+    "Hematocrit", "Haematocrit", "Inhibitor", "logP_sub", "logP_inhib", "ModelType_sub",
     "ModelType_inhib", "MW_sub", "MW_inhib", "NumDoses_sub", "NumDoses_inhib",
-    "NumTrials", "NumSubjTrial", "Peff", "pKa1_sub", "pKa1_inhib",      "pKa2_sub",
-    "pKa2_inhib", "Pop", "PopSize", "PrandialSt_sub", "PrandialSt_inhib", "Regimen_sub",
-    "Regimen_inhib", "SimEndDayTime", "SimStartDayTime", "SimulatorVersion",
-    "StartDayTime_sub", "StartDayTime_inhib", "StudyDuration", "Substrate", "Type_sub",
-    "Type_inhib", "UserAddnOrgan", "VssInput_sub", "VssInput_inhib", "VssPredMeth_sub",
-    "VssPredMeth_inhib")
+    "NumTrials", "NumSubjTrial", "pKa1_sub", "pKa1_inhib", "pKa2_sub", "pKa2_inhib",
+    "Pop", "PopSize", "PrandialSt_sub",      "PrandialSt_inhib", "Regimen_sub",
+    "Regimen_inhib", "SimEndDayTime", "SimStartDayTime", "StartDayTime_sub",
+    "StartDayTime_inhib", "StudyDuration", "Substrate", "Type_sub", "Type_inhib",
+    "VssInput_sub", "VssInput_inhib", "VssPredMeth_sub", "VssPredMeth_inhib")
 )
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{exp_details}{Experiment details you want to extract from the simulator
-  output file, "Summary" tab. Options are any combination of the following:
+  output file "Summary" or "Input Sheet" tabs. Options are any combination of
+  the following:
 
   \describe{
 
   \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
 
   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
+
+  \item{CLint}{intrinsic clearance, Vmax, Km, or half life values used for
+  any CYPs, UGTs, or other enzymes listed. Output will be labeled for each
+  enzyme and pathway as, e.g., "CLint_CYP3A4_1-OH" or
+  "Vmax_UGT1A1_Pathway1".}
 
   \item{Dose_sub or Dose_inhib}{dose administered}
 
@@ -104,7 +108,8 @@ extractExpDetails(
 
   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 
-  }}
+  } \emph{NOTE:} The default only pulls parameters that are listed on the
+  "Summary" tab.}
 }
 \value{
 Returns a named list of the experimental details

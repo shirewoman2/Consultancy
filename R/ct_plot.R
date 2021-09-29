@@ -9,6 +9,9 @@
 #'   Otherwise, this is the file that it is ready to be converted to an XML
 #'   file, not the file that contains only the digitized time and concentration
 #'   data.
+#' @param obs_effector_data_file name of the Excel file containing the observed
+#'   concentration-time data in the presence of an effector. This is the file
+#'   that is ready to be converted to an XML file.
 #' @param sim_obs_dataframe If you have already extracted the concentration-time
 #'   data using the function \code{extractConcTime}, you can enter the name of
 #'   the output data.frame from that function instead of re-reading the Excel
@@ -101,6 +104,7 @@
 #'
 ct_plot <- function(sim_data_file,
                     obs_data_file = NA,
+                    obs_effector_data_file = NA,
                     sim_obs_dataframe = NA,
                     figure_type = "trial means",
                     substrate_or_effector = "substrate",
@@ -129,7 +133,12 @@ ct_plot <- function(sim_data_file,
             Data <- sim_obs_dataframe
       } else {
             Data <- extractConcTime(sim_data_file, obs_data_file,
+                                    obs_effector_data_file,
                                     adjust_obs_time = adjust_obs_time)
+      }
+
+      if("Effector" %in% names(Data)){
+            Data$Effector[is.na(Data$Effector)] <- "none"
       }
 
       TimeUnits <- sort(unique(Data$Time_units))
@@ -276,7 +285,7 @@ ct_plot <- function(sim_data_file,
                   if(substrate_or_effector == "substrate"){
                         A <- ggplot(sim_data_ind %>% filter(Compound != MyEffector),
                                     aes(x = Time, y = Conc, group = Group,
-                                        linetype = Effector)) +
+                                        linetype = Effector, shape = Effector)) +
                               guides(linetype = guide_legend(
                                     override.aes=list(fill=c(NA, NA)))) +
                               geom_line(alpha = AlphaToUse, lwd = 1) +
@@ -284,7 +293,8 @@ ct_plot <- function(sim_data_file,
                                               filter(SubjectID == "mean" &
                                                            Compound != MyEffector),
                                         lwd = 1) +
-                              geom_point(data = obs_data, size = 2, shape = 21)
+                              geom_point(data = obs_data, size = 2) +
+                              scale_shape_manual(values = c(21, 24))
 
                   } else {
                         A <- ggplot(sim_data_ind %>% filter(Compound == MyEffector),
@@ -294,7 +304,9 @@ ct_plot <- function(sim_data_file,
                                               filter(SubjectID == "mean" &
                                                            Compound == MyEffector),
                                         lwd = 1) +
-                              geom_point(data = obs_data, size = 2, shape = 21)
+                              geom_point(data = obs_data %>%
+                                               filter(Compound == MyEffector),
+                                         size = 2, shape = 21)
                   }
 
 
@@ -349,14 +361,16 @@ ct_plot <- function(sim_data_file,
                                           filter(SubjectID %in% c("per5", "per95") &
                                                        Compound != MyEffector) %>%
                                           mutate(Group = paste(Group, SubjectID)),
-                                    aes(x = Time, y = Conc, linetype = Effector,
+                                    aes(x = Time, y = Conc,
+                                        linetype = Effector, shape = Effector,
                                         group = Group)) +
                               geom_line(color = "gray80", lwd = 0.8) +
                               geom_line(data = sim_data_mean %>%
                                               filter(SubjectID == "mean" &
                                                            Compound != MyEffector),
                                         lwd = 1) +
-                              geom_point(data = obs_data, size = 2, shape = 21)
+                              geom_point(data = obs_data, size = 2) +
+                              scale_shape_manual(values = c(21, 24))
                   } else {
                         A <- ggplot(sim_data_mean %>%
                                           filter(SubjectID %in% c("per5", "per95") &

@@ -27,7 +27,7 @@ extractObsConcTime <- function(obs_data_file){
       obs_data_xl <- suppressMessages(
             readxl::read_excel(path = obs_data_file, col_names = FALSE))
 
-      TimeUnits <- as.character(obs_data_xl[5, 1])
+      TimeUnits <- tolower(as.character(obs_data_xl[5, 1]))
 
       # Converting to appropriate ObsConcUnits as necessary
       ObsConcUnits <- as.character(obs_data_xl[5, 4])
@@ -36,7 +36,7 @@ extractObsConcTime <- function(obs_data_file){
             filter(complete.cases(...3)) %>%
             rename(SubjectID = ...1, Time = ...2, Conc = ...3) %>%
             mutate(across(.cols = c(Time, Conc), .fns = as.numeric)) %>%
-            mutate(TimeUnits = TimeUnits,
-                   ConcUnits = ObsConcUnits)
+            mutate(Time_units = TimeUnits,
+                   Conc_units = ObsConcUnits)
 }
 

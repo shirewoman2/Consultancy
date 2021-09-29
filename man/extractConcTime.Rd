@@ -7,6 +7,7 @@
 extractConcTime(
   sim_data_file,
   obs_data_file = NA,
+  obs_effector_data_file = NA,
   adjust_obs_time = TRUE,
   returnAggregateOrIndiv = c("aggregate", "individual")
 )

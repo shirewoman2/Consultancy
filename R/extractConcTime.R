@@ -68,6 +68,7 @@
 #'
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
+                            obs_effector_data_file = NA,
                             adjust_obs_time = TRUE,
                             returnAggregateOrIndiv = c("aggregate",
                                                        "individual")){
@@ -264,12 +265,13 @@ extractConcTime <- function(sim_data_file,
       } else {
             # If the user did specify an observed data file, read in observed data.
             obs_data <- extractObsConcTime(obs_data_file) %>%
-                  mutate(SubjectID = "obs")
+                  mutate(SubjectID = "obs", Simulated = FALSE,
+                         Compound = Compound)
 
-            TimeUnits <- unique(obs_data$TimeUnits)
+            TimeUnits <- unique(obs_data$Time_units)
 
             # Converting to appropriate ObsConcUnits as necessary
-            ObsConcUnits <- unique(obs_data$ConcUnits)
+            ObsConcUnits <- unique(obs_data$Conc_units)
 
             if(ObsConcUnits != SimConcUnits){
 
@@ -305,6 +307,15 @@ extractConcTime <- function(sim_data_file,
 
       }
 
+      if(complete.cases(obs_effector_data_file)){
+
+            obs_eff_data <- extractObsConcTime(obs_data_file =
+                                                     obs_effector_data_file) %>%
+                  mutate(Simulated = FALSE, SubjectID = "obs+effector",
+                         Compound = Compound)
+
+      }
+
       DosingScenario <- SimSummary[["Regimen_sub"]]
 
       if(adjust_obs_time & DosingScenario == "Multiple Dose"){
@@ -318,6 +329,7 @@ extractConcTime <- function(sim_data_file,
             LastDoseTime <- DoseFreq * (NumDoses - 1)
 
             obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
+            obs_eff_data <- obs_eff_data %>% mutate(Time = Time + LastDoseTime)
 
       }
 
@@ -363,19 +375,36 @@ extractConcTime <- function(sim_data_file,
       }
 
       if(exists("obs_data")){
-            Data[["obs"]] <- obs_data %>% mutate(Simulated = FALSE,
-                                                 Compound = Compound)
+            Data[["obs"]] <- obs_data
+
+            if(any(c(exists("sim_data_mean_Effector"),
+                     exists("sim_data_ind_Effector")))){
+                  Data[["obs"]]$Effector <- "none"
+            }
       }
 
+      if(exists("obs_eff_data")){
+            Data[["obs_eff"]] <- obs_eff_data
+      }
 
-      Data <- bind_rows(Data) %>%
+      Data <- bind_rows(Data)
+
+      if("Effector" %in% names(Data)){
+            Data <- Data %>% mutate(Effector = ifelse(is.na(Effector),
+                                                      "none", Effector))
+            MyEffector <- unique(Data$Effector[Data$Effector != "none"])
+
+            Data$Effector[Data$SubjectID == "obs+effector"] <- MyEffector
+      }
+
+      Data <- Data %>%
             mutate(Time_units = tolower({{TimeUnits}}),
                    Conc_units = ifelse(exists("ObsConcUnits"),
                                        ObsConcUnits, SimConcUnits),
                    SubjectID = factor(SubjectID, levels = c(
-                         c("obs", "mean", "per5", "per95"),
+                         c("obs", "obs+effector", "mean", "per5", "per95"),
                          setdiff(unique(SubjectID),
-                                 c("obs", "mean", "per5", "per95"))))) %>%
+                                 c("obs", "obs+effector", "mean", "per5", "per95"))))) %>%
             arrange(Compound, SubjectID, Time) %>%
             select(any_of(c("Compound", "Effector", "SubjectID", "Trial",
                             "Simulated", "Time", "Conc",

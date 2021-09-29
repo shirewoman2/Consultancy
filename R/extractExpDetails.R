@@ -6,13 +6,19 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param exp_details Experiment details you want to extract from the simulator
-#'   output file, "Summary" tab. Options are any combination of the following:
+#'   output file "Summary" or "Input Sheet" tabs. Options are any combination of
+#'   the following:
 #'
 #'   \describe{
 #'
 #'   \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
 #'
 #'   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
+#'
+#'   \item{CLint}{intrinsic clearance, Vmax, Km, or half life values used for
+#'   any CYPs, UGTs, or other enzymes listed. Output will be labeled for each
+#'   enzyme and pathway as, e.g., "CLint_CYP3A4_1-OH" or
+#'   "Vmax_UGT1A1_Pathway1".}
 #'
 #'   \item{Dose_sub or Dose_inhib}{dose administered}
 #'
@@ -86,7 +92,8 @@
 #'
 #'   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 #'
-#'   }
+#'   } \emph{NOTE:} The default only pulls parameters that are listed on the
+#'   "Summary" tab.
 #'
 #' @return Returns a named list of the experimental details
 #'
@@ -101,26 +108,21 @@
 #'
 extractExpDetails <- function(sim_data_file,
                               exp_details = c(
-                                    "Abs_model",
                                     "BPratio_sub", "BPratio_inhib",
                                     "Dose_sub", "Dose_inhib",
                                     "DoseInt_sub", "DoseInt_inhib",
                                     "DoseRoute_sub", "DoseRoute_inhib",
                                     "DoseUnits_sub", "DoseUnits_inhib",
-                                    "fa_input",
-                                    "fu_gut_input",
                                     "fu_sub", "fu_inhib",
                                     "GIAbsModel_sub", "GIAbsModel_inhib",
                                     "Hematocrit", "Haematocrit",
                                     "Inhibitor",
-                                    "ka_input", "lag_input",
                                     "logP_sub", "logP_inhib",
                                     "ModelType_sub", "ModelType_inhib",
                                     "MW_sub", "MW_inhib",
                                     "NumDoses_sub", "NumDoses_inhib",
                                     "NumTrials",
                                     "NumSubjTrial",
-                                    "Peff",
                                     "pKa1_sub", "pKa1_inhib",
                                     "pKa2_sub", "pKa2_inhib",
                                     "Pop",
@@ -129,12 +131,10 @@ extractExpDetails <- function(sim_data_file,
                                     "Regimen_sub", "Regimen_inhib",
                                     "SimEndDayTime",
                                     "SimStartDayTime",
-                                    "SimulatorVersion",
                                     "StartDayTime_sub", "StartDayTime_inhib",
                                     "StudyDuration",
                                     "Substrate",
                                     "Type_sub", "Type_inhib",
-                                    "UserAddnOrgan",
                                     "VssInput_sub", "VssInput_inhib",
                                     "VssPredMeth_sub", "VssPredMeth_inhib")){
 
@@ -167,9 +167,10 @@ extractExpDetails <- function(sim_data_file,
                      "NumDoses_sub", "NumDoses_inhib",
                      "GIAbsModel_sub", "GIAbsModel_inhib",
                      "VssInput_sub", "VssInput_inhib",
-                     "VssPredMeth_sub", "VssPredMeth_inhib"),
-            NameCol = c(rep(1, 25), rep(5, 24)),
-            ValueCol = c(rep(2, 25), rep(6, 24)),
+                     "VssPredMeth_sub", "VssPredMeth_inhib",
+                     "SimulatorVersion"),
+            NameCol = c(rep(1, 25), rep(5, 24), 1),
+            ValueCol = c(rep(2, 25), rep(6, 24), 1),
             Sheet = "Summary") %>%
             mutate(ValueCol = ifelse(str_detect(tolower(Deet), "inhib") &
                                            ValueCol == 2,
@@ -182,21 +183,23 @@ extractExpDetails <- function(sim_data_file,
                              "character", rep("numeric", 3), rep("character", 2),
                              "numeric", rep("character", 8), rep("numeric", 2),
                              rep("character", 4), rep("numeric", 4),
-                             rep("character", 6)))
+                             rep("character", 7)))
 
       InputDeets <- data.frame(
             Deet = c("Abs_model", "fa_input", "ka_input", "lag_input",
-                     "fu_gut_input", "Peff", "UserAddnOrgan", "SimulatorVersion"),
-            NameCol = c(rep(1, 7), 3),
-            ValueCol = c(rep(2, 7), 4),
-            Class = c("character", rep("numeric", 5), "character", "character"),
+                     "fu_gut_input", "Peff", "UserAddnOrgan",
+                     "CLint"),
+            NameCol = 1,
+            ValueCol = 2,
+            Class = c("character", rep("numeric", 5), "character",
+                      "numeric"),
             Sheet = "Input Sheet"
       )
 
       AllDeets <- bind_rows(AllDeets, InputDeets)
 
       if(any(exp_details %in% AllDeets$Deet == FALSE)){
-            Problem <- str_collapse(setdiff(exp_details, AllDeets$Deet), collapse = ", ")
+            Problem <- str_c(setdiff(exp_details, AllDeets$Deet), collapse = ", ")
             stop(paste0("These study details are not among the possible options: ",
                         Problem,
                         ". The study details to extract must be among the options listed. (Please see help file for all options.)"))
@@ -249,6 +252,7 @@ extractExpDetails <- function(sim_data_file,
                                      "NumSubjTrial" = "No. of Subjects per Trial",
                                      "SimStartDayTime" = "Start Day/Time",
                                      "SimEndDayTime" = "End Day/Time",
+                                     "SimulatorVersion" = "Simcyp Version",
                                      "StudyDuration" = "Study Duration",
                                      "PrandialSt_sub" = "Prandial State",
                                      "PrandialSt_inhib" = "Prandial State",
@@ -286,6 +290,9 @@ extractExpDetails <- function(sim_data_file,
                   Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
                   Val <- ifelse(str_detect(deet, "DoseUnit"),
                                 gsub("Dose \\(|\\)", "", Val), Val)
+                  Val <- ifelse(deet == "SimulatorVersion",
+                                str_extract(Val, "Version [12][0-9]"),
+                                Val)
 
                   return(Val)
             }
@@ -335,15 +342,69 @@ extractExpDetails <- function(sim_data_file,
                   return(Val)
             }
 
-            for(i in InputDeets){
-                  Out[[i]] <- pullValue(i)
+            # pullValue doesn't work for CL, so those are separate.
+            InputDeets1 <- InputDeets[!InputDeets == "CLint"]
+
+            if(length(InputDeets1) > 0){
+                  for(i in InputDeets1){
+                        Out[[i]] <- pullValue(i)
+                  }
             }
 
+            # Pulling CL info
+            InputDeets2 <- InputDeets[InputDeets == "CLint"]
+
+            if(length(InputDeets2) > 0){
+
+                  CLRows <- which(InputTab$...1 == "Enzyme")
+                  CLRows <- CLRows[complete.cases(InputTab$...1[CLRows + 1])]
+
+                  for(i in CLRows){
+                        Enzyme <- gsub(" ", "", InputTab$...2[i])
+                        Pathway <- gsub(" ", "", InputTab$...2[i - 1])
+
+                        CLType <- str_extract(InputTab$...1[i+1],
+                                              "CLint|Vmax|t1/2")
+
+                        if(CLType == "CLint"){
+                              suppressWarnings(
+                                    Out[[paste("CLint", Enzyme, Pathway, sep = "_")]] <-
+                                          as.numeric(InputTab$...2[i+1])
+                              )
+
+                              rm(Enzyme, Pathway, CLType)
+                              next
+                        }
+
+                        if(CLType == "Vmax"){
+                              suppressWarnings(
+                                    Out[[paste("Vmax", Enzyme, Pathway, sep = "_")]] <-
+                                          as.numeric(InputTab$...2[i+1])
+                              )
+
+                              suppressWarnings(
+                                    Out[[paste("Km", Enzyme, Pathway, sep = "_")]] <-
+                                          as.numeric(InputTab$...2[i+2])
+                              )
+
+                              rm(Enzyme, Pathway, CLType)
+                              next
+                        }
+
+                        if(CLType == "t1/2"){
+                              suppressWarnings(
+                                    Out[[paste("HalfLife", Enzyme, Pathway, sep = "_")]] <-
+                                          as.numeric(InputTab$...2[i+1])
+                              )
+
+                              rm(Enzyme, Pathway, CLType)
+                              next
+                        }
+                  }
+            }
       }
 
-
       return(Out)
-
 }
 
 

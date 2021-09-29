@@ -8,6 +8,7 @@ publication-quality graphs.}
 ct_plot(
   sim_data_file,
   obs_data_file = NA,
+  obs_effector_data_file = NA,
   sim_obs_dataframe = NA,
   figure_type = "trial means",
   substrate_or_effector = "substrate",
@@ -28,6 +29,10 @@ included in the Excel output from the simulator, leave this as NA.
 Otherwise, this is the file that it is ready to be converted to an XML
 file, not the file that contains only the digitized time and concentration
 data.}
+
+\item{obs_effector_data_file}{name of the Excel file containing the observed
+concentration-time data in the presence of an effector. This is the file
+that is ready to be converted to an XML file.}
 
 \item{sim_obs_dataframe}{If you have already extracted the concentration-time
 data using the function \code{extractConcTime}, you can enter the name of
