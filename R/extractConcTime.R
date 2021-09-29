@@ -334,8 +334,10 @@ extractConcTime <- function(sim_data_file,
             LastDoseTime <- DoseFreq * (NumDoses - 1)
 
             obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
-            obs_eff_data <- obs_eff_data %>% mutate(Time = Time + LastDoseTime)
 
+            if(complete.cases(obs_effector_data_file)){
+                  obs_eff_data <- obs_eff_data %>% mutate(Time = Time + LastDoseTime)
+            }
       }
 
       Data <- list()
