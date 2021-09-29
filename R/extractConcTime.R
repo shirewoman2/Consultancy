@@ -312,6 +312,9 @@ extractConcTime <- function(sim_data_file,
 
       }
 
+      obs_data$Compound <- Compound
+      obs_data$Simulated <- FALSE
+
       if(complete.cases(obs_effector_data_file)){
 
             obs_eff_data <- extractObsConcTime(obs_data_file =

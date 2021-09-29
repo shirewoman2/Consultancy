@@ -168,8 +168,9 @@ ct_plot <- function(sim_data_file,
       if(is.data.frame(sim_obs_dataframe)){
             Data <- sim_obs_dataframe
       } else {
-            Data <- extractConcTime(sim_data_file, obs_data_file,
-                                    obs_effector_data_file,
+            Data <- extractConcTime(sim_data_file = sim_data_file,
+                                    obs_data_file = obs_data_file,
+                                    obs_effector_data_file = obs_effector_data_file,
                                     adjust_obs_time = adjust_obs_time)
       }
 
@@ -348,6 +349,10 @@ ct_plot <- function(sim_data_file,
 
       obs_data <- Data %>% filter(Simulated == FALSE)
 
+      # Setting the time range since I use it later.
+      if(is.na(time_range_input)){
+            time_range <- range(Data$Time, na.rm = T)
+      }
 
       if(figure_type == "trial means"){
 
@@ -591,18 +596,13 @@ ct_plot <- function(sim_data_file,
             }
       }
 
-      if(all(complete.cases(time_range))){
-            Xlim <- c(min(XBreaks), max(time_range))
-      } else {
-            Xlim <- c(min(XBreaks), max(XBreaks))
-      }
-
       A <- A +
             scale_x_continuous(breaks = XBreaks, expand = c(0, 0),
                                limits = Xlim) +
             scale_y_continuous(expand = c(0, 0),
                                limits = Ylim) +
             labs(x = xlab, y = ylab) +
+            coord_cartesian(xlim = time_range) +
             theme(panel.background = element_rect(fill="white", color=NA),
                   legend.key = element_rect(fill = "white"),
                   axis.line.x.bottom = element_line(color = "grey60"),
@@ -610,10 +610,6 @@ ct_plot <- function(sim_data_file,
                   axis.ticks = element_line(color = "grey60"),
                   text = element_text(family = "Calibri")
             )
-
-      if(all(complete.cases(time_range))){
-            A <- A + coord_cartesian(xlim = time_range)
-      }
 
       # # Freddy's original graphing code:
       # A <- ## normal scale plot
