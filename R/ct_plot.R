@@ -251,12 +251,7 @@ ct_plot <- function(sim_data_file,
                   Start <- ifelse(substrate_or_effector == "substrate",
                                   StartLastDose[["Sub"]],
                                   StartLastDose[["Inhib"]])
-                  End <- ifelse(substrate_or_effector == "substrate",
-                                max(Data$Time) + 0.04*DoseInt[["Sub"]],
-                                max(Data$Time) + 0.04*DoseInt[["Inhib"]])
-                  # Multiplying by 4% of the dosing interval is just to give a
-                  # little visual cushion on the end of the graph. It makes it a
-                  # little prettier.
+                  End <- max(Data$Time)
                   time_range <- c(Start, End)
                   rm(Start, End)
             }
@@ -373,8 +368,6 @@ ct_plot <- function(sim_data_file,
                                            Time <= time_range[2] &
                                            complete.cases(Conc)) %>%
                               pull(Conc) %>% range()
-                        # Adding a visual cushion to the upper range
-                        Ylim[2] <- Ylim[2] * 1.1
 
                   } else {
 
@@ -384,9 +377,6 @@ ct_plot <- function(sim_data_file,
                                            Time <= time_range[2] &
                                            complete.cases(Conc)) %>%
                               pull(Conc) %>% range()
-                        # Adding a visual cushion to the upper range
-                        Ylim[2] <- Ylim[2] * 1.1
-
                   }
 
                   ## linear plot
@@ -425,8 +415,6 @@ ct_plot <- function(sim_data_file,
                                      Time <= time_range[2] &
                                      complete.cases(Conc)) %>%
                         pull(Conc) %>% range()
-                  # Adding a visual cushion to the upper range
-                  Ylim[2] <- Ylim[2] * 1.1
 
                   ## linear plot
                   A <- ggplot(sim_data_ind,
@@ -459,8 +447,6 @@ ct_plot <- function(sim_data_file,
                                            Time <= time_range[2] &
                                            complete.cases(Conc)) %>%
                               pull(Conc) %>% range()
-                        # Adding a visual cushion to the upper range
-                        Ylim[2] <- Ylim[2] * 1.1
 
                   } else {
 
@@ -470,8 +456,6 @@ ct_plot <- function(sim_data_file,
                                            Time <= time_range[2] &
                                            complete.cases(Conc)) %>%
                               pull(Conc) %>% range()
-                        # Adding a visual cushion to the upper range
-                        Ylim[2] <- Ylim[2] * 1.1
 
                   }
 
@@ -516,8 +500,6 @@ ct_plot <- function(sim_data_file,
                                      Time <= time_range[2] &
                                      complete.cases(Conc)) %>%
                         pull(Conc) %>% range()
-                  # Adding a visual cushion to the upper range
-                  Ylim[2] <- Ylim[2] * 1.1
 
                   A <- ggplot(sim_data_mean %>% filter(SubjectID != "mean"),
                               aes(x = Time, y = Conc, group = SubjectID)) +
@@ -545,8 +527,6 @@ ct_plot <- function(sim_data_file,
                                            Time <= time_range[2] &
                                            complete.cases(Conc)) %>%
                               pull(Conc) %>% range()
-                        # Adding a visual cushion to the upper range
-                        Ylim[2] <- Ylim[2] * 1.1
 
                   } else {
 
@@ -556,8 +536,7 @@ ct_plot <- function(sim_data_file,
                                            Time <= time_range[2] &
                                            complete.cases(Conc)) %>%
                               pull(Conc) %>% range()
-                        # Adding a visual cushion to the upper range
-                        Ylim[2] <- Ylim[2] * 1.1
+
                   }
 
 
@@ -585,8 +564,6 @@ ct_plot <- function(sim_data_file,
                                      Time <= time_range[2] &
                                      complete.cases(Conc)) %>%
                         pull(Conc) %>% range()
-                  # Adding a visual cushion to the upper range
-                  Ylim[2] <- Ylim[2] * 1.1
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(SubjectID == "mean"),
@@ -597,8 +574,9 @@ ct_plot <- function(sim_data_file,
       }
 
       A <- A +
-            scale_x_continuous(breaks = XBreaks, expand = c(0, 0)) +
-            scale_y_continuous(expand = c(0, 0),
+            scale_x_continuous(breaks = XBreaks,
+                               expand = expansion(mult = c(0, 0.04))) +
+            scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
                                limits = Ylim) +
             labs(x = xlab, y = ylab) +
             coord_cartesian(xlim = time_range) +

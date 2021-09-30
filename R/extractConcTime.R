@@ -282,20 +282,32 @@ extractConcTime <- function(sim_data_file,
 
                   # Starting with this table of conversion factors, which is assuredly not
                   # exhaustive. Add to this as needed.
-                  ConvTable <- data.frame(ObsUnits = c("ng/mL", "ng/mL",
-                                                       "ng/mL", "pg/mL",
+                  ConvTable <- data.frame(ObsUnits = c("ng/mL",
+                                                       "ng/mL",
+                                                       "ng/mL",
+                                                       "pg/mL",
+                                                       "µg/mL",
+                                                       "mg/L",
                                                        "µg/mL"),
-                                          SimUnits = c("mg/L", "µg/mL",
-                                                       "ng/L", "mg/L",
-                                                       "ng/mL"),
-                                          Factor = c(10^3, 10^3,
-                                                     10^-3, 10^6,
-                                                     10^-3))
+                                          SimUnits = c("mg/L",
+                                                       "µg/mL",
+                                                       "ng/L",
+                                                       "mg/L",
+                                                       "ng/mL",
+                                                       "µg/mL",
+                                                       "mg/L"),
+                                          Factor = c(10^3,
+                                                     10^3,
+                                                     10^-3,
+                                                     10^6,
+                                                     10^-3,
+                                                     1,
+                                                     1))
 
                   if(SimConcUnits %in% ConvTable$SimUnits == FALSE |
                      ObsConcUnits %in% ConvTable$ObsUnits == FALSE |
                      all(c(SimConcUnits, ObsConcUnits) %in% c("µg/mL", "ng/mL", "ng/L",
-                                                              "µM", "nM", "mg", "mL",
+                                                              "µM", "nM", "mg", "mL", "mg/L",
                                                               "PD response") == FALSE)){
                         stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
                   }
