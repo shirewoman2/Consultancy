@@ -597,8 +597,7 @@ ct_plot <- function(sim_data_file,
       }
 
       A <- A +
-            scale_x_continuous(breaks = XBreaks, expand = c(0, 0),
-                               limits = Xlim) +
+            scale_x_continuous(breaks = XBreaks, expand = c(0, 0)) +
             scale_y_continuous(expand = c(0, 0),
                                limits = Ylim) +
             labs(x = xlab, y = ylab) +
