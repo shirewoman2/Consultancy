@@ -22,8 +22,8 @@ extractExpDetails(
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{exp_details}{Experiment details you want to extract from the simulator
-  output file "Summary" or "Input Sheet" tabs. Options are any combination of
-  the following:
+  output file "Summary" or "Input Sheet" tabs. Options are "all" to extract
+  all possible parameters or any combination of the following:
 
   \describe{
 
@@ -109,7 +109,8 @@ extractExpDetails(
   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 
   } \emph{NOTE:} The default only pulls parameters that are listed on the
-  "Summary" tab.}
+  "Summary" tab. (There are 50 of them, so I'm not listing them here for
+  brevity. -LS)}
 }
 \value{
 Returns a named list of the experimental details
@@ -122,6 +123,8 @@ Returns a named list of the experimental details
 
 extractExpDetails(sim_data_file = "../Example simulator output.xlsx")
 extractExpDetails(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
+extractExpDetails(sim_data_file = "../Example simulator output.xlsx",
+                  exp_details = "all")
 
 
 

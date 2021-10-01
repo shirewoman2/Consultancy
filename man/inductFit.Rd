@@ -15,7 +15,10 @@ inductFit(
 )
 }
 \arguments{
-\item{DF}{the data.frame containing induction data}
+\item{DF}{the data.frame containing induction data with a column for the drug
+concentration, a column for the fold induction observed, and, if you want
+to fit the data by individual, a column for the donor ID. For an example,
+please see \code{data(IndData)}.}
 
 \item{concentration}{the name of the column within DF that contains
 concentration data. This should be unquoted.}

@@ -159,7 +159,7 @@ ct_plot <- function(sim_data_file,
       }
 
       if(all(complete.cases(time_range)) & class(time_range) == "character" &
-         !time_range %in% c("last dose", "first dose")){
+         !any(time_range %in% c("last dose", "first dose"))){
             stop("The values for time_range must either be 'first dose', 'last dose' or a numeric time range.")
       }
 
@@ -236,7 +236,7 @@ ct_plot <- function(sim_data_file,
                   StartLastDose <- StartLastDose - DoseInt
             }
 
-            if(time_range_input == "first dose"){
+            if(time_range_input[1] == "first dose"){
                   Start <- ifelse(substrate_or_effector == "substrate",
                                   DayTime_t0[["Sub"]],
                                   DayTime_t0[["Inhib"]])
@@ -247,7 +247,7 @@ ct_plot <- function(sim_data_file,
                   rm(Start, End)
             }
 
-            if(time_range_input == "last dose"){
+            if(time_range_input[1] == "last dose"){
                   Start <- ifelse(substrate_or_effector == "substrate",
                                   StartLastDose[["Sub"]],
                                   StartLastDose[["Inhib"]])
@@ -345,7 +345,7 @@ ct_plot <- function(sim_data_file,
       obs_data <- Data %>% filter(Simulated == FALSE)
 
       # Setting the time range since I use it later.
-      if(is.na(time_range_input)){
+      if(is.na(time_range_input[1])){
             time_range <- range(Data$Time, na.rm = T)
       }
 
@@ -362,7 +362,7 @@ ct_plot <- function(sim_data_file,
 
                   if(substrate_or_effector == "substrate"){
 
-                        Ylim <- sim_data_ind %>%
+                        Ylim <- bind_rows(sim_data_ind, obs_data) %>%
                               filter(Compound != MyEffector &
                                            Time >= time_range[1] &
                                            Time <= time_range[2] &
@@ -371,7 +371,7 @@ ct_plot <- function(sim_data_file,
 
                   } else {
 
-                        Ylim <- sim_data_ind %>%
+                        Ylim <- bind_rows(sim_data_ind, obs_data) %>%
                               filter(Compound == MyEffector &
                                            Time >= time_range[1] &
                                            Time <= time_range[2] &
@@ -410,7 +410,7 @@ ct_plot <- function(sim_data_file,
 
             } else {
 
-                  Ylim <- sim_data_ind %>%
+                  Ylim <- bind_rows(sim_data_ind, obs_data) %>%
                         filter(Time >= time_range[1] &
                                      Time <= time_range[2] &
                                      complete.cases(Conc)) %>%
@@ -441,7 +441,7 @@ ct_plot <- function(sim_data_file,
 
                   if(substrate_or_effector == "substrate"){
 
-                        Ylim <- sim_data_mean %>%
+                        Ylim <- bind_rows(sim_data_mean, obs_data) %>%
                               filter(Compound != MyEffector &
                                            Time >= time_range[1] &
                                            Time <= time_range[2] &
@@ -450,7 +450,7 @@ ct_plot <- function(sim_data_file,
 
                   } else {
 
-                        Ylim <- sim_data_mean %>%
+                        Ylim <- bind_rows(sim_data_mean, obs_data) %>%
                               filter(Compound == MyEffector &
                                            Time >= time_range[1] &
                                            Time <= time_range[2] &
@@ -495,7 +495,7 @@ ct_plot <- function(sim_data_file,
 
                   ## linear plot
 
-                  Ylim <- sim_data_mean %>%
+                  Ylim <- bind_rows(sim_data_mean, obs_data) %>%
                         filter(Time >= time_range[1] &
                                      Time <= time_range[2] &
                                      complete.cases(Conc)) %>%

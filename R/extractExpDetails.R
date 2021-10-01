@@ -6,8 +6,8 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param exp_details Experiment details you want to extract from the simulator
-#'   output file "Summary" or "Input Sheet" tabs. Options are any combination of
-#'   the following:
+#'   output file "Summary" or "Input Sheet" tabs. Options are "all" to extract
+#'   all possible parameters or any combination of the following:
 #'
 #'   \describe{
 #'
@@ -93,7 +93,8 @@
 #'   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 #'
 #'   } \emph{NOTE:} The default only pulls parameters that are listed on the
-#'   "Summary" tab.
+#'   "Summary" tab. (There are 50 of them, so I'm not listing them here for
+#'   brevity. -LS)
 #'
 #' @return Returns a named list of the experimental details
 #'
@@ -103,6 +104,8 @@
 #'
 #' extractExpDetails(sim_data_file = "../Example simulator output.xlsx")
 #' extractExpDetails(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
+#' extractExpDetails(sim_data_file = "../Example simulator output.xlsx",
+#'                   exp_details = "all")
 #'
 #'
 #'
@@ -197,6 +200,10 @@ extractExpDetails <- function(sim_data_file,
       )
 
       AllDeets <- bind_rows(AllDeets, InputDeets)
+
+      if(exp_details[1] == "all"){
+            exp_details <- AllDeets$Deet
+      }
 
       if(any(exp_details %in% AllDeets$Deet == FALSE)){
             Problem <- str_c(setdiff(exp_details, AllDeets$Deet), collapse = ", ")
