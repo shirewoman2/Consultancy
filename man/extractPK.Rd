@@ -6,12 +6,7 @@
 \usage{
 extractPK(
   sim_data_file,
-  PKparameters = c("AUCinf_dose1", "AUCtau_dose1", "AUCtau_lastdose",
-    "AUCtau_lastdoseToEnd", "AUCinf_dose1_withEffector", "AUCtau_lastdose_withEffector",
-    "CL_dose1", "CL_dose1_withEffector", "CL_lastdose", "CL_lastdose_withEffector",
-    "CL_lastdoseToEnd", "Cmax_dose1", "Cmax_dose1_withEffector", "Cmax_lastdose",
-    "Cmax_lastdose_withEffector", "fa_sub", "fa_inhib", "HalfLife_dose1", "ka_sub",
-    "ka_inhib", "lag_sub", "lag_inhib", "tmax_dose1"),
+  PKparameters = "AUC tab",
   returnAggregateOrIndiv = "individual"
 )
 }
@@ -19,7 +14,9 @@ extractPK(
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
-  output file. Options are any combination of the following:
+  output file. Options are "all" for all possible parameters, "AUC tab" for
+  only those parameters on the "AUC" tab (default), "Absorption tab" for only those
+  parameters on the "Absorption" tab, or any combination of the following:
 
   \describe{
 
@@ -125,7 +122,8 @@ extractPK(
   "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which there is a
   tab, from the column titled, e.g., "TMax (h)".}
 
-  }}
+  } The default is only those parameters present on the "AUC" tab in the
+  simulator output.}
 
 \item{returnAggregateOrIndiv}{Return aggregate (geometric mean) and/or
 individual PK parameters? Options are "aggregate" or "individual".}
@@ -136,14 +134,15 @@ Depending on the options selected, returns a list of numerical
   was requested, output is a numerical vector.
 }
 \description{
-This is useful for pulling what parameters were used for setting up a
-simulation in Simcyp and either checking the accuracy of those parameters or
-including them in a report.
+This is useful for pulling what parameters were used in a simulation in
+Simcyp and either checking the accuracy of those parameters or including them
+in a report.
 }
 \examples{
 
 sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"
 extractPK(sim_data_file)
+extractPK(sim_data_file, PKparameters = "Absorption tab")
 extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
 
 

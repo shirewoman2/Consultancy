@@ -1,12 +1,14 @@
 #' Extract PK data for specific parameters from a simulator output Excel file
 #'
-#' This is useful for pulling what parameters were used for setting up a
-#' simulation in Simcyp and either checking the accuracy of those parameters or
-#' including them in a report.
+#' This is useful for pulling what parameters were used in a simulation in
+#' Simcyp and either checking the accuracy of those parameters or including them
+#' in a report.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param PKparameters PK parameters you want to extract from the simulator
-#'   output file. Options are any combination of the following:
+#'   output file. Options are "all" for all possible parameters, "AUC tab" for
+#'   only those parameters on the "AUC" tab (default), "Absorption tab" for only those
+#'   parameters on the "Absorption" tab, or any combination of the following:
 #'
 #'   \describe{
 #'
@@ -112,7 +114,8 @@
 #'   "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which there is a
 #'   tab, from the column titled, e.g., "TMax (h)".}
 #'
-#'   }
+#'   } The default is only those parameters present on the "AUC" tab in the
+#'   simulator output.
 #' @param returnAggregateOrIndiv Return aggregate (geometric mean) and/or
 #'   individual PK parameters? Options are "aggregate" or "individual".
 #'
@@ -128,30 +131,12 @@
 #'
 #' sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"
 #' extractPK(sim_data_file)
+#' extractPK(sim_data_file, PKparameters = "Absorption tab")
 #' extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
 #'
 #'
 extractPK <- function(sim_data_file,
-                      PKparameters = c("AUCinf_dose1",
-                                       "AUCtau_dose1",
-                                       "AUCtau_lastdose",
-                                       "AUCtau_lastdoseToEnd",
-                                       "AUCinf_dose1_withEffector",
-                                       "AUCtau_lastdose_withEffector",
-                                       "CL_dose1",
-                                       "CL_dose1_withEffector",
-                                       "CL_lastdose",
-                                       "CL_lastdose_withEffector",
-                                       "CL_lastdoseToEnd",
-                                       "Cmax_dose1",
-                                       "Cmax_dose1_withEffector",
-                                       "Cmax_lastdose",
-                                       "Cmax_lastdose_withEffector",
-                                       "fa_sub", "fa_inhib",
-                                       "HalfLife_dose1",
-                                       "ka_sub", "ka_inhib",
-                                       "lag_sub", "lag_inhib",
-                                       "tmax_dose1"),
+                      PKparameters = "AUC tab",
                       returnAggregateOrIndiv = "individual"){
 
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
@@ -161,6 +146,46 @@ extractPK <- function(sim_data_file,
          returnAggregateOrIndiv %in% c("aggregate", "individual") == FALSE){
             stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
       }
+
+      if(PKparameters[1] == "all"){
+            PKparameters <- c("AUCinf_dose1",
+                              "AUCtau_dose1",
+                              "AUCtau_lastdose",
+                              "AUCtau_lastdoseToEnd",
+                              "AUCinf_dose1_withEffector",
+                              "AUCtau_lastdose_withEffector",
+                              "CL_dose1",
+                              "CL_dose1_withEffector",
+                              "CL_lastdose",
+                              "CL_lastdose_withEffector",
+                              "CL_lastdoseToEnd",
+                              "Cmax_dose1",
+                              "Cmax_dose1_withEffector",
+                              "Cmax_lastdose",
+                              "Cmax_lastdose_withEffector",
+                              "fa_sub", "fa_inhib",
+                              "HalfLife_dose1",
+                              "ka_sub", "ka_inhib",
+                              "lag_sub", "lag_inhib",
+                              "tmax_dose1")
+      }
+
+      if(PKparameters[1] == "AUC tab"){
+            PKparameters <- c("AUCtau_lastdose", "Cmax_lastdose",
+                              "Cmax_lastdose_withEffector",
+                              "AUCinf_dose1", "HalfLife_dose1",
+                              "AUCinf_dose1_withEffector",
+                              "AUCtau_lastdose_withEffector",
+                              "CL_dose1_withEffector",
+                              "CL_dose1", "CL_lastdose",
+                              "CL_lastdose_withEffector")
+      }
+
+      if(PKparameters[1] == "Absorption tab"){
+            PKparameters <- c("ka_sub", "ka_inhib", "fa_sub", "fa_inhib",
+                              "lag_sub", "lag_inhib")
+      }
+
 
       # Checking experimental details to only pull details that apply
       Deets <- extractExpDetails(sim_data_file)
@@ -172,6 +197,7 @@ extractPK <- function(sim_data_file,
       if(Deets$Regimen_sub == "Single Dose"){
             PKparameters <- PKparameters[!str_detect(PKparameters, "lastdose")]
       }
+
 
       # Parameters to pull from the AUC tab
       Param_AUC <- c("AUCtau_lastdose", "Cmax_lastdose", "Cmax_lastdose_withEffector",
@@ -205,7 +231,6 @@ extractPK <- function(sim_data_file,
                   warning(paste0("The tab 'AUC' must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUC, collapse = ", "),
                                  ". None of these parameters can be extracted."))
-                  next
             } else {
 
                   AUC_xl <- suppressMessages(
@@ -338,7 +363,6 @@ extractPK <- function(sim_data_file,
                   warning(paste0("The tab 'AUC0(Sub)(CPlasma)' or 'AUCt0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUC0, collapse = ", "),
                                  ". None of these parameters can be extracted."))
-                  next
             } else {
 
 
@@ -379,9 +403,7 @@ extractPK <- function(sim_data_file,
                   }
 
                   rm(EndRow, findCol, Sheet)
-
             }
-
       }
 
       # Pulling data from the AUCX(Sub)(CPlasma) tab ----------------------------
@@ -398,8 +420,6 @@ extractPK <- function(sim_data_file,
                   warning(paste0("The tab 'AUCX(Sub)(CPlasma)', where 'X' is the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUCX, collapse = ", "),
                                  ". None of these parameters can be extracted."))
-                  next
-
             } else {
 
                   AUCX_xl <- suppressMessages(
@@ -452,8 +472,6 @@ extractPK <- function(sim_data_file,
                   warning(paste0("The tab 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_Abs, collapse = ", "),
                                  ". None of these parameters can be extracted."))
-                  next
-
             } else {
 
                   Abs_xl <- suppressMessages(
@@ -508,7 +526,6 @@ extractPK <- function(sim_data_file,
 
                   rm(findCol)
             }
-
       }
 
       # If user only wanted one parameter, make the output a vector instead of a
