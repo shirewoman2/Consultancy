@@ -9,6 +9,7 @@ extractConcTime(
   obs_data_file = NA,
   obs_effector_data_file = NA,
   adjust_obs_time = TRUE,
+  tissue = "plasma",
   returnAggregateOrIndiv = c("aggregate", "individual")
 )
 }
@@ -31,6 +32,12 @@ was administered at the same time as the last dose in the simulated data.
 If FALSE, the observed data will start at whatever times are listed in the
 Excel file.}
 
+\item{tissue}{From which tissue should the desired concentrations be
+extracted? Default is plasma for typical plasma concentration-time data.
+Other tissues are acceptable, e.g., "lung", "brain", etc., as long as the
+tissue is one of the options included in "Sheet Options", "Tissues" in the
+simulator.}
+
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and
 "individual". Aggregated data are not calculated here but are pulled from
@@ -46,11 +53,13 @@ A data.frame of concentration-time data with the following columns:
   \item{Effector (as applicable)}{the effector of interest; this matches
   whatever you named "Inhibitor 1" in the simulator}
 
-  \item{SubjectID}{the SubjectID of the profile, which will be a number for a
-  simulated individual or will be "obs" for observed data, "mean" for the
-  mean data, or "per5" or "per95" for the 5th and 95th percentile data.}
+  \item{Individual}{the individual for the given profile, which will be a
+  number for a simulated individual or will be "obs" or "obs+effector" for
+  observed data, "mean" for the mean data, or "per5" or "per95" for the 5th
+  and 95th percentile data.}
 
-  \item{Trial}{the trial number for that set of simulations}
+  \item{Trial}{the trial number for that set of simulations or "obs", "mean",
+  etc. for the observed or aggregate data}
 
   \item{Simulated}{TRUE or FALSE for whether the data were simulated}
 
@@ -85,6 +94,9 @@ extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx
                 obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
                 obs_effector_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
                 returnAggregateOrIndiv = c("aggregate", "individual"))
+
+extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+                tissue = "lung")
 
 
 }

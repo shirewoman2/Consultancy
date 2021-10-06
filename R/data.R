@@ -13,14 +13,14 @@
 #' @format A data.frame with 2211 rows and 7 columns:
 #' \describe{
 #' \item{Compound}{the name of the compound}
-#' \item{ID}{a unique ID for each subject}
+#' \item{Individual}{a unique ID for each simulated individual}
 #' \item{Simulated}{TRUE or FALSE for whether the data were simulated (all TRUE
 #' in this dummy example)}
 #' \item{Time}{time since dose}
 #' \item{Conc}{plasma drug concentration}
 #' \item{Time_units}{units for the time column}
 #' \item{Conc_units}{units for the concentration column}}
-"ConcTime"
+"MDZConcTime"
 
 #' Simcyp colors used in the PowerPoint template
 #'

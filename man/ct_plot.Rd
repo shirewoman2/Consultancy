@@ -10,6 +10,7 @@ ct_plot(
   obs_data_file = NA,
   obs_effector_data_file = NA,
   sim_obs_dataframe = NA,
+  tissue = "plasma",
   figure_type = "trial means",
   substrate_or_effector = "substrate",
   adjust_obs_time = TRUE,
@@ -38,6 +39,11 @@ that is ready to be converted to an XML file.}
 data using the function \code{extractConcTime}, you can enter the name of
 the output data.frame from that function instead of re-reading the Excel
 file.}
+
+\item{tissue}{the tissue to plot. Default is plasma for typical plasma
+concentration-time data. Other tissues are acceptable, e.g., "lung",
+"brain", etc., as long as the tissue is one of the options included in
+"Sheet Options", "Tissues" in the simulator.}
 
 \item{figure_type}{type of figure to plot. Options are:
 

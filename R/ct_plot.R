@@ -16,6 +16,10 @@
 #'   data using the function \code{extractConcTime}, you can enter the name of
 #'   the output data.frame from that function instead of re-reading the Excel
 #'   file.
+#' @param tissue the tissue to plot. Default is plasma for typical plasma
+#'   concentration-time data. Other tissues are acceptable, e.g., "lung",
+#'   "brain", etc., as long as the tissue is one of the options included in
+#'   "Sheet Options", "Tissues" in the simulator.
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -128,6 +132,7 @@ ct_plot <- function(sim_data_file,
                     obs_data_file = NA,
                     obs_effector_data_file = NA,
                     sim_obs_dataframe = NA,
+                    tissue = "plasma",
                     figure_type = "trial means",
                     substrate_or_effector = "substrate",
                     adjust_obs_time = TRUE,
@@ -170,6 +175,7 @@ ct_plot <- function(sim_data_file,
       } else {
             Data <- extractConcTime(sim_data_file = sim_data_file,
                                     obs_data_file = obs_data_file,
+                                    tissue = tissue,
                                     obs_effector_data_file = obs_effector_data_file,
                                     adjust_obs_time = adjust_obs_time)
       }
@@ -329,8 +335,8 @@ ct_plot <- function(sim_data_file,
       suppressMessages(
             sim_data_ind <- Data %>%
                   filter(Simulated == TRUE &
-                               SubjectID %in% c("mean", "per5", "per95") == FALSE) %>%
-                  group_by(across(any_of(c("Compound", "Effector", "Simulated", "Trial",
+                               Trial %in% c("mean", "per5", "per95") == FALSE) %>%
+                  group_by(across(any_of(c("Compound", "Tissue", "Effector", "Simulated", "Trial",
                                            "Time", "Time_units", "Conc_units", "Group")))) %>%
                   summarize(Conc = switch(mean_type,
                                           "arithmetic" = mean(Conc),
@@ -340,7 +346,7 @@ ct_plot <- function(sim_data_file,
 
       sim_data_mean <- Data %>%
             filter(Simulated == TRUE  &
-                         SubjectID %in% c("mean", "per5", "per95"))
+                         Trial %in% c("mean", "per5", "per95"))
 
       obs_data <- Data %>% filter(Simulated == FALSE)
 
@@ -388,7 +394,7 @@ ct_plot <- function(sim_data_file,
                                     override.aes=list(fill=c(NA, NA)))) +
                               geom_line(alpha = AlphaToUse, lwd = 1) +
                               geom_line(data = sim_data_mean %>%
-                                              filter(SubjectID == "mean" &
+                                              filter(Trial == "mean" &
                                                            Compound != MyEffector),
                                         lwd = 1) +
                               geom_point(data = obs_data, size = 2) +
@@ -399,7 +405,7 @@ ct_plot <- function(sim_data_file,
                                     aes(x = Time, y = Conc, group = Group)) +
                               geom_line(alpha = AlphaToUse, lwd = 1) +
                               geom_line(data = sim_data_mean %>%
-                                              filter(SubjectID == "mean" &
+                                              filter(Trial == "mean" &
                                                            Compound == MyEffector),
                                         lwd = 1) +
                               geom_point(data = obs_data %>%
@@ -421,7 +427,7 @@ ct_plot <- function(sim_data_file,
                               aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(alpha = AlphaToUse, lwd = 1) +
                         geom_line(data = sim_data_mean %>%
-                                        filter(SubjectID == "mean"),
+                                        filter(Trial == "mean"),
                                   lwd = 1) +
                         geom_point(data = obs_data, size = 2, shape = 21)
 
@@ -462,15 +468,15 @@ ct_plot <- function(sim_data_file,
                   if(substrate_or_effector == "substrate"){
 
                         A <- ggplot(sim_data_mean %>%
-                                          filter(SubjectID %in% c("per5", "per95") &
+                                          filter(Trial %in% c("per5", "per95") &
                                                        Compound != MyEffector) %>%
-                                          mutate(Group = paste(Group, SubjectID)),
+                                          mutate(Group = paste(Group, Trial)),
                                     aes(x = Time, y = Conc,
                                         linetype = Effector, shape = Effector,
                                         group = Group)) +
                               geom_line(color = "gray80", lwd = 0.8) +
                               geom_line(data = sim_data_mean %>%
-                                              filter(SubjectID == "mean" &
+                                              filter(Trial == "mean" &
                                                            Compound != MyEffector),
                                         lwd = 1) +
                               geom_point(data = obs_data, size = 2) +
@@ -478,14 +484,14 @@ ct_plot <- function(sim_data_file,
 
                   } else {
                         A <- ggplot(sim_data_mean %>%
-                                          filter(SubjectID %in% c("per5", "per95") &
+                                          filter(Trial %in% c("per5", "per95") &
                                                        Compound == MyEffector) %>%
-                                          mutate(Group = paste(Group, SubjectID)),
+                                          mutate(Group = paste(Group, Trial)),
                                     aes(x = Time, y = Conc,
                                         group = Group)) +
                               geom_line(color = "gray80", lwd = 0.8) +
                               geom_line(data = sim_data_mean %>%
-                                              filter(SubjectID == "mean" &
+                                              filter(Trial == "mean" &
                                                            Compound == MyEffector),
                                         lwd = 1) +
                               geom_point(data = obs_data, size = 2, shape = 21)
@@ -501,11 +507,11 @@ ct_plot <- function(sim_data_file,
                                      complete.cases(Conc)) %>%
                         pull(Conc) %>% range()
 
-                  A <- ggplot(sim_data_mean %>% filter(SubjectID != "mean"),
-                              aes(x = Time, y = Conc, group = SubjectID)) +
+                  A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
+                              aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(color = "gray80", lwd = 0.8) +
                         geom_line(data = sim_data_mean %>%
-                                        filter(SubjectID == "mean"), lwd = 1) +
+                                        filter(Trial == "mean"), lwd = 1) +
                         geom_point(data = obs_data, size = 2, shape = 21)
             }
 
@@ -542,17 +548,17 @@ ct_plot <- function(sim_data_file,
 
                   if(substrate_or_effector == "substrate"){
                         A <- ggplot(sim_data_mean %>%
-                                          filter(SubjectID == "mean" &
+                                          filter(Trial == "mean" &
                                                        Compound != MyEffector) %>%
-                                          mutate(Group = paste(Group, SubjectID)),
+                                          mutate(Group = paste(Group, Trial)),
                                     aes(x = Time, y = Conc, linetype = Effector)) +
                               geom_line(lwd = 1)
 
                   } else {
                         A <- ggplot(sim_data_mean %>%
-                                          filter(SubjectID == "mean" &
+                                          filter(Trial == "mean" &
                                                        Compound == MyEffector) %>%
-                                          mutate(Group = paste(Group, SubjectID)),
+                                          mutate(Group = paste(Group, Trial)),
                                     aes(x = Time, y = Conc)) +
                               geom_line(lwd = 1)
                   }
@@ -566,7 +572,7 @@ ct_plot <- function(sim_data_file,
                         pull(Conc) %>% range()
 
                   A <- ggplot(sim_data_mean %>%
-                                    filter(SubjectID == "mean"),
+                                    filter(Trial == "mean"),
                               aes(x = Time, y = Conc)) +
                         geom_line(lwd = 1)
 

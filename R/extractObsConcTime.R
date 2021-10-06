@@ -11,7 +11,7 @@
 #'   time and concentration data.
 #'
 #' @return a data.frame with the following columns:
-#'   \describe{\item{SubjectID}{the subject ID for the data point}
+#'   \describe{\item{Individual}{the individual ID for the data point}
 #'   \item{Time}{time since dosing} \item{Conc}{concentration}
 #'   \item{TimeUnits}{the units of measurement for the time column}
 #'   \item{ConcUnits}{the units of measurement for the concentration column}}
@@ -34,7 +34,7 @@ extractObsConcTime <- function(obs_data_file){
 
       obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:3] %>%
             filter(complete.cases(...3)) %>%
-            rename(SubjectID = ...1, Time = ...2, Conc = ...3) %>%
+            rename(Individual = ...1, Time = ...2, Conc = ...3) %>%
             mutate(across(.cols = c(Time, Conc), .fns = as.numeric)) %>%
             mutate(Time_units = TimeUnits,
                    Conc_units = ObsConcUnits)

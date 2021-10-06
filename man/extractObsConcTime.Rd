@@ -14,7 +14,7 @@ time and concentration data.}
 }
 \value{
 a data.frame with the following columns:
-  \describe{\item{SubjectID}{the subject ID for the data point}
+  \describe{\item{Individual}{the individual ID for the data point}
   \item{Time}{time since dosing} \item{Conc}{concentration}
   \item{TimeUnits}{the units of measurement for the time column}
   \item{ConcUnits}{the units of measurement for the concentration column}}
