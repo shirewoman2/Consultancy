@@ -6,8 +6,10 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param exp_details Experiment details you want to extract from the simulator
-#'   output file "Summary" or "Input Sheet" tabs. Options are "all" to extract
-#'   all possible parameters or any combination of the following:
+#'   output file "Summary" or "Input Sheet" tabs. Options are "Summary tab" to
+#'   extract details only from the "Summary tab" (default), "Input Sheet" to
+#'   extract details only from the "Input Sheet" tab, "all" to extract all
+#'   possible parameters, or any combination of the following:
 #'
 #'   \describe{
 #'
@@ -15,10 +17,11 @@
 #'
 #'   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 #'
-#'   \item{CLint}{intrinsic clearance, Vmax, Km, or half life values used for
-#'   any CYPs, UGTs, or other enzymes listed. Output will be labeled for each
-#'   enzyme and pathway as, e.g., "CLint_CYP3A4_1-OH" or
-#'   "Vmax_UGT1A1_Pathway1".}
+#'   \item{CLint}{intrinsic clearance, Vmax, Km, fu_mic, and/or half life values
+#'   used for any CYPs, UGTs, or other enzymes listed. Output will be labeled
+#'   for each enzyme and pathway as, e.g., "CLint_CYP3A4_1-OH" or
+#'   "Vmax_UGT1A1_Pathway1". Specify "CLint" and all the other values (Vmax, Km,
+#'   fu,mic, half life) will also be returned.}
 #'
 #'   \item{Dose_sub or Dose_inhib}{dose administered}
 #'
@@ -43,7 +46,9 @@
 #'
 #'   \item{ka_input}{user input value for the absorption constant ka}
 #'
-#'   \item{lag_input}{user input value for the lag time}
+#'   \item{kin_sac and kout_sac}{k in and k out for SAC (1/hr)}
+#'
+#'   \item{tlag_input}{user input value for the lag time}
 #'
 #'   \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
 #'
@@ -68,6 +73,8 @@
 #'
 #'   \item{PrandialSt_sub or PrandialSt_inhib}{prandial state upon dosing}
 #'
+#'   \item{Qgut}{Qgut (L/hr)}
+#'
 #'   \item{Regimen_sub or Regimen_inhib}{dosing regimen}
 #'
 #'   \item{SimEndDayTime}{ending day and time of the simulation}
@@ -88,7 +95,9 @@
 #'   \item{UserAddnOrgan}{yes or no: Was a user-defined additional organ
 #'   included?}
 #'
-#'   \item{VssInput_sub or VssInput_inhib}{Vss used}
+#'   \item{Vsac}{V sac (L/kg)}
+#'
+#'   \item{Vss_input_sub or Vss_input_inhib}{Vss used}
 #'
 #'   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 #'
@@ -110,37 +119,7 @@
 #'
 #'
 extractExpDetails <- function(sim_data_file,
-                              exp_details = c(
-                                    "BPratio_sub", "BPratio_inhib",
-                                    "Dose_sub", "Dose_inhib",
-                                    "DoseInt_sub", "DoseInt_inhib",
-                                    "DoseRoute_sub", "DoseRoute_inhib",
-                                    "DoseUnits_sub", "DoseUnits_inhib",
-                                    "fu_sub", "fu_inhib",
-                                    "GIAbsModel_sub", "GIAbsModel_inhib",
-                                    "Hematocrit", "Haematocrit",
-                                    "Inhibitor",
-                                    "logP_sub", "logP_inhib",
-                                    "ModelType_sub", "ModelType_inhib",
-                                    "MW_sub", "MW_inhib",
-                                    "NumDoses_sub", "NumDoses_inhib",
-                                    "NumTrials",
-                                    "NumSubjTrial",
-                                    "pKa1_sub", "pKa1_inhib",
-                                    "pKa2_sub", "pKa2_inhib",
-                                    "Pop",
-                                    "PopSize",
-                                    "PrandialSt_sub", "PrandialSt_inhib",
-                                    "Regimen_sub", "Regimen_inhib",
-                                    "SimEndDayTime",
-                                    "SimStartDayTime",
-                                    "StartDayTime_sub", "StartDayTime_inhib",
-                                    "StudyDuration",
-                                    "Substrate",
-                                    "Type_sub", "Type_inhib",
-                                    "VssInput_sub", "VssInput_inhib",
-                                    "VssPredMeth_sub", "VssPredMeth_inhib")){
-
+                              exp_details = "Summary tab"){
 
       # Noting which details are possible, which columns to search for their
       # names, which columns contain their values for substrates or
@@ -169,7 +148,7 @@ extractExpDetails <- function(sim_data_file,
                      "DoseInt_sub", "DoseInt_inhib",
                      "NumDoses_sub", "NumDoses_inhib",
                      "GIAbsModel_sub", "GIAbsModel_inhib",
-                     "VssInput_sub", "VssInput_inhib",
+                     "Vss_input_sub", "Vss_input_inhib",
                      "VssPredMeth_sub", "VssPredMeth_inhib",
                      "SimulatorVersion"),
             NameCol = c(rep(1, 25), rep(5, 24), 1),
@@ -186,16 +165,19 @@ extractExpDetails <- function(sim_data_file,
                              "character", rep("numeric", 3), rep("character", 2),
                              "numeric", rep("character", 8), rep("numeric", 2),
                              rep("character", 4), rep("numeric", 4),
-                             rep("character", 7)))
+                             rep("character", 2),
+                             rep("numeric", 2),
+                             rep("character", 3)))
 
       InputDeets <- data.frame(
-            Deet = c("Abs_model", "fa_input", "ka_input", "lag_input",
+            Deet = c("Abs_model", "fa_input", "ka_input", "tlag_input",
                      "fu_gut_input", "Peff", "UserAddnOrgan",
-                     "CLint"),
+                     "CLint",
+                     "Qgut", "kin_sac", "kout_sac", "Vsac"),
             NameCol = 1,
             ValueCol = 2,
             Class = c("character", rep("numeric", 5), "character",
-                      "numeric"),
+                      rep("numeric", 5)),
             Sheet = "Input Sheet"
       )
 
@@ -205,8 +187,16 @@ extractExpDetails <- function(sim_data_file,
             exp_details <- AllDeets$Deet
       }
 
+      if(tolower(exp_details[1]) == "summary tab"){
+            exp_details <- AllDeets$Deet[AllDeets$Sheet == "Summary"]
+      }
+
+      if(tolower(exp_details[1]) == "input sheet"){
+            exp_details <- AllDeets$Deet[AllDeets$Sheet == "Input Sheet"]
+      }
+
       if(any(exp_details %in% AllDeets$Deet == FALSE)){
-            Problem <- str_c(setdiff(exp_details, AllDeets$Deet), collapse = ", ")
+            Problem <- str_comma(setdiff(exp_details, AllDeets$Deet), collapse = ", ")
             stop(paste0("These study details are not among the possible options: ",
                         Problem,
                         ". The study details to extract must be among the options listed. (Please see help file for all options.)"))
@@ -279,8 +269,8 @@ extractExpDetails <- function(sim_data_file,
                                      "NumDoses_inhib" = "Number of Doses",
                                      "GIAbsModel_sub" = "GI Absorption Model",
                                      "GIAbsModel_inhib" = "GI Absorption Model",
-                                     "VssInput_sub" = "^Vss$",
-                                     "VssInput_inhib" = "^Vss$",
+                                     "Vss_input_sub" = "^Vss \\(L/kg\\)$",
+                                     "Vss_input_inhib" = "^Vss \\(L/kg\\)$",
                                      "VssPredMeth_sub" = "Prediction Method",
                                      "VssPredMeth_inhib" = "Prediction Method")
                   NameCol <- AllDeets$NameCol[which(AllDeets$Deet == deet)]
@@ -328,11 +318,15 @@ extractExpDetails <- function(sim_data_file,
                                      "Abs_model" = "Absorption Model",
                                      "fa_input" = "^fa$",
                                      "ka_input" = "^ka \\(",
-                                     "lag_input" = "lag time \\(",
+                                     "tlag_input" = "lag time \\(",
                                      "fu_gut_input" = "fu\\(Gut\\)$",
                                      "Peff" = "Peff,man Cap",
                                      "UserAddnOrgan" = "User-defined Additional",
-                                     "SimulatorVersion" = "Version number")
+                                     "SimulatorVersion" = "Version number",
+                                     "Qgut" = "Q\\(Gut\\)\\(L/hr",
+                                     "kin_sac" = "SAC kin",
+                                     "kout_sac" = "SAC kout",
+                                     "Vsac" = "Volume .Vsac")
                   NameCol <- AllDeets$NameCol[which(AllDeets$Deet == deet)]
                   Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
                   Val <- InputTab[Row, AllDeets$ValueCol[AllDeets$Deet == deet]] %>%
@@ -379,6 +373,12 @@ extractExpDetails <- function(sim_data_file,
                                           as.numeric(InputTab$...2[i+1])
                               )
 
+                              suppressWarnings(
+                                    Out[[paste("fu_mic", Enzyme, Pathway, sep = "_")]] <-
+                                          as.numeric(InputTab$...2[i+2])
+                              )
+
+
                               rm(Enzyme, Pathway, CLType)
                               next
                         }
@@ -392,6 +392,11 @@ extractExpDetails <- function(sim_data_file,
                               suppressWarnings(
                                     Out[[paste("Km", Enzyme, Pathway, sep = "_")]] <-
                                           as.numeric(InputTab$...2[i+2])
+                              )
+
+                              suppressWarnings(
+                                    Out[[paste("fu_mic", Enzyme, Pathway, sep = "_")]] <-
+                                          as.numeric(InputTab$...2[i+3])
                               )
 
                               rm(Enzyme, Pathway, CLType)

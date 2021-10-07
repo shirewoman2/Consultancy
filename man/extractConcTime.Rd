@@ -72,7 +72,7 @@ A data.frame of concentration-time data with the following columns:
   \item{Conc_units}{units used for concentrations}}
 }
 \description{
-Extracts concentration-time data from simulater output Excel files and,
+Extracts concentration-time data from simulator output Excel files and,
 optionally, a separately specified clinical data file, and puts all data into
 a single, tidy data.frame. \emph{Note: Currently, only set up to extract
 concentration-time data for one substrate and up to one inhibitor as

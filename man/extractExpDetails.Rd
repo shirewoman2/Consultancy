@@ -4,26 +4,16 @@
 \alias{extractExpDetails}
 \title{Extract details about the experimental design}
 \usage{
-extractExpDetails(
-  sim_data_file,
-  exp_details = c("BPratio_sub", "BPratio_inhib", "Dose_sub", "Dose_inhib",
-    "DoseInt_sub", "DoseInt_inhib", "DoseRoute_sub", "DoseRoute_inhib", "DoseUnits_sub",
-    "DoseUnits_inhib", "fu_sub", "fu_inhib", "GIAbsModel_sub", "GIAbsModel_inhib",
-    "Hematocrit", "Haematocrit", "Inhibitor", "logP_sub", "logP_inhib", "ModelType_sub",
-    "ModelType_inhib", "MW_sub", "MW_inhib", "NumDoses_sub", "NumDoses_inhib",
-    "NumTrials", "NumSubjTrial", "pKa1_sub", "pKa1_inhib", "pKa2_sub", "pKa2_inhib",
-    "Pop", "PopSize", "PrandialSt_sub",      "PrandialSt_inhib", "Regimen_sub",
-    "Regimen_inhib", "SimEndDayTime", "SimStartDayTime", "StartDayTime_sub",
-    "StartDayTime_inhib", "StudyDuration", "Substrate", "Type_sub", "Type_inhib",
-    "VssInput_sub", "VssInput_inhib", "VssPredMeth_sub", "VssPredMeth_inhib")
-)
+extractExpDetails(sim_data_file, exp_details = "Summary tab")
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{exp_details}{Experiment details you want to extract from the simulator
-  output file "Summary" or "Input Sheet" tabs. Options are "all" to extract
-  all possible parameters or any combination of the following:
+  output file "Summary" or "Input Sheet" tabs. Options are "Summary tab" to
+  extract details only from the "Summary tab" (default), "Input Sheet" to
+  extract details only from the "Input Sheet" tab, "all" to extract all
+  possible parameters, or any combination of the following:
 
   \describe{
 
@@ -31,10 +21,11 @@ extractExpDetails(
 
   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 
-  \item{CLint}{intrinsic clearance, Vmax, Km, or half life values used for
-  any CYPs, UGTs, or other enzymes listed. Output will be labeled for each
-  enzyme and pathway as, e.g., "CLint_CYP3A4_1-OH" or
-  "Vmax_UGT1A1_Pathway1".}
+  \item{CLint}{intrinsic clearance, Vmax, Km, fu_mic, and/or half life values
+  used for any CYPs, UGTs, or other enzymes listed. Output will be labeled
+  for each enzyme and pathway as, e.g., "CLint_CYP3A4_1-OH" or
+  "Vmax_UGT1A1_Pathway1". Specify "CLint" and all the other values (Vmax, Km,
+  fu,mic, half life) will also be returned.}
 
   \item{Dose_sub or Dose_inhib}{dose administered}
 
@@ -59,7 +50,9 @@ extractExpDetails(
 
   \item{ka_input}{user input value for the absorption constant ka}
 
-  \item{lag_input}{user input value for the lag time}
+  \item{kin_sac and kout_sac}{k in and k out for SAC (1/hr)}
+
+  \item{tlag_input}{user input value for the lag time}
 
   \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
 
@@ -84,6 +77,8 @@ extractExpDetails(
 
   \item{PrandialSt_sub or PrandialSt_inhib}{prandial state upon dosing}
 
+  \item{Qgut}{Qgut (L/hr)}
+
   \item{Regimen_sub or Regimen_inhib}{dosing regimen}
 
   \item{SimEndDayTime}{ending day and time of the simulation}
@@ -104,7 +99,9 @@ extractExpDetails(
   \item{UserAddnOrgan}{yes or no: Was a user-defined additional organ
   included?}
 
-  \item{VssInput_sub or VssInput_inhib}{Vss used}
+  \item{Vsac}{V sac (L/kg)}
+
+  \item{Vss_input_sub or Vss_input_inhib}{Vss used}
 
   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 
