@@ -246,8 +246,8 @@ extractPK <- function(sim_data_file,
                         ToDetect <- switch(PKparam,
                                            "AUCinf_dose1" = "^AUC_INF",
                                            "AUCinf_dose1_withEffector" = "^AUC_INF",
-                                           "AUCtau_lastdose" = "AUCt\\(n\\) \\(",
-                                           "AUCtau_lastdose_withEffector" = "AUCt\\(n\\)_Inh",
+                                           "AUCtau_lastdose" = "AUCt\\(n\\) \\(|^AUC \\(",
+                                           "AUCtau_lastdose_withEffector" = "AUCt\\(n\\)_Inh|AUCinh \\(",
                                            "Cmax_lastdose" = "^CMax",
                                            "Cmax_lastdose_withEffector" = "^CMax",
                                            "HalfLife_dose1" = "Half-life",
@@ -274,7 +274,7 @@ extractPK <- function(sim_data_file,
                               if(str_detect(PKparam, "_lastdose_withEffector")){
                                     StartCol <-
                                           which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                           "for the last dose in the presence of inhibitor"))
+                                                           "for the last dose in the presence of inhibitor|^Inhibited$"))
                               }
 
                         } else {
@@ -289,8 +289,12 @@ extractPK <- function(sim_data_file,
                               # last dose
                               if(str_detect(PKparam, "_lastdose")){
 
-                                    StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                                  "^Truncated AUCt for the last dose$"))
+                                    StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                                                 "^Truncated AUCt for the last dose$"))
+                                    if(length(StartCol) == 0){
+                                          StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                                                       "^AUC integrated from"))
+                                    }
                               }
                         }
 
@@ -326,7 +330,6 @@ extractPK <- function(sim_data_file,
                         return(OutCol)
                   }
                   # end of subfunction
-
 
 
                   # finding the PK parameters requested

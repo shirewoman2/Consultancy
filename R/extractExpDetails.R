@@ -196,7 +196,7 @@ extractExpDetails <- function(sim_data_file,
       }
 
       if(any(exp_details %in% AllDeets$Deet == FALSE)){
-            Problem <- str_comma(setdiff(exp_details, AllDeets$Deet), collapse = ", ")
+            Problem <- str_comma(setdiff(exp_details, AllDeets$Deet))
             stop(paste0("These study details are not among the possible options: ",
                         Problem,
                         ". The study details to extract must be among the options listed. (Please see help file for all options.)"))
