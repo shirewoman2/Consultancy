@@ -114,3 +114,49 @@ gm_sd <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 
 
 
+#' Calculate the geometric coefficient of variation (CV)
+#'
+#' \code{gm_sd} takes as input a numeric vector and returns the geometric
+#' CV, calculated as: sqrt(exp(sd(log(x))^2)-1)
+#'
+#' @param x A vector of numbers
+#' @param na.rm Should NA values be removed? (logical)
+#' @param zero.propagate Should zeroes be propagated? (logical)
+#'
+#' @examples
+#'
+#' gm_CV(rnorm(10, 5, 1))
+#' gm_CV(c(5, 3, 6, 10, 2, 0), zero.propagate = TRUE)
+#'
+#' @export
+
+gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
+
+      if(na.rm){
+            x <- x[complete.cases(x)]
+      }
+
+      # If any values are negative, return NaN.
+      if(any(x < 0, na.rm = TRUE)){
+            return(NaN)
+      }
+
+      if(zero.propagate){
+            if(any(x == 0, na.rm = TRUE)){
+                  return(0)
+            }
+      } else { # If you don't want to propagate zeroes, then remove them from the vector.
+            x <- x[x > 0]
+      }
+
+      # Now, proceed with whatever your vector is after removing zeroes (or not
+      # removing them if zero.propagate was TRUE but there weren't any zeroes
+      # to start with anyway.)
+
+      return( sqrt(exp(sd(log(x))^2)-1) )
+}
+
+
+
+
+
