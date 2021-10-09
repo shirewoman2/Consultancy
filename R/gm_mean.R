@@ -116,7 +116,7 @@ gm_sd <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 
 #' Calculate the geometric coefficient of variation (CV)
 #'
-#' \code{gm_sd} takes as input a numeric vector and returns the geometric
+#' \code{gm_CV} takes as input a numeric vector and returns the geometric
 #' CV, calculated as: sqrt(exp(sd(log(x))^2)-1)
 #'
 #' @param x A vector of numbers
@@ -157,6 +157,119 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 }
 
 
+
+#' Calculate the X percent confidence interval
+#'
+#' \code{confInt} takes as input a numeric vector, the desired confidence
+#' interval, and returns the lower and upper values for the confidence interval.
+#' Note that, because calculating a confidence interval relies on an accurate
+#' estimate of the mean and standard deviation, your data should be normally
+#' distributed.
+#'
+#' @param x A vector of numbers
+#' @param CI The confidence interval desired; default is 95%. Enter this
+#'   value as a decimal, e.g., 0.95.
+#' @param na.rm Should NA values be removed? (logical)
+#'
+#' @examples
+#' x <- rnorm(100, 5, 1)
+#' confInt(x)
+#' confInt(x, CI = 0.9)
+#'
+#' @export
+
+confInt <- function(x, CI = 0.95, na.rm = TRUE) {
+
+      if(na.rm){
+            x <- x[complete.cases(x)]
+      }
+
+      # Now, proceed with whatever your vector is after removing zeroes (or not
+      # removing them if zero.propagate was TRUE but there weren't any zeroes
+      # to start with anyway.)
+
+      alpha <- 1-CI
+
+      Up <- mean(x) + qnorm(1-(alpha)/2)*sd(x)/sqrt(length(x))
+      Low <- mean(x) - qnorm(1-(alpha)/2)*sd(x)/sqrt(length(x))
+
+      Out <- c("lower" = Low, "upper" = Up)
+
+      return(Out)
+}
+
+
+#' Calculate the geometric X percent confidence interval
+#'
+#' \code{gm_conf} takes as input a numeric vector, the desired confidence
+#' interval, and returns the lower and upper values for the confidence interval.
+#' Note that, because calculating a confidence interval relies on an accurate
+#' estimate of the mean and standard deviation, your data should be log-normally
+#' distributed.
+#'
+#' @param x A vector of numbers
+#' @param CI The confidence interval desired; default is 95%. Enter this value
+#'   as a decimal, e.g., 0.95.
+#' @param na.rm Should NA values be removed? (logical)
+#' @param zero.propagate Should zeroes be propagated? (logical)
+#'
+#' @examples
+#' x <- rnorm(100, 5, 1)
+#' gm_conf(x)
+#' gm_conf(x, CI = 0.9)
+#'
+#' # PK data are often log-normally distributed, so try this function with
+#' # some example concentration-time data. (For this, we're not worried
+#' # about independence; we just need some example data to work with.)
+#' data(MDZConcTime)
+#' # Making values larger just so we're not dealing w/tiny decimals and
+#' # removing 0's for simplicity.
+#' x <- MDZConcTime$Conc[MDZConcTime$Conc != 0]*100
+#'
+#' # Compare the distributions of the untransformed vs. log-transformed data:
+#' ggplot2::qplot(x, bins = 15)
+#' ggplot2::qplot(x, bins = 15) + ggplot2::scale_x_log10()
+#' gm_conf(x)
+#' # Compare the results with confInt()
+#' confInt(x)
+#'
+#' @export
+
+gm_conf <- function(x, CI = 0.95, na.rm = TRUE, zero.propagate = FALSE) {
+
+      if(na.rm){
+            x <- x[complete.cases(x)]
+      }
+
+      # If any values are negative, return NaN.
+      if(any(x < 0, na.rm = TRUE)){
+            return(NaN)
+      }
+
+      if(zero.propagate){
+            if(any(x == 0, na.rm = TRUE)){
+                  return(0)
+            }
+      } else { # If you don't want to propagate zeroes, then remove them from the vector.
+            x <- x[x > 0]
+      }
+
+      # Now, proceed with whatever your vector is after removing zeroes (or not
+      # removing them if zero.propagate was TRUE but there weren't any zeroes
+      # to start with anyway.)
+
+      alpha <- 1-CI
+
+      logx <- log(x)
+
+      Up <- exp(mean(logx) + qnorm(1-(alpha)/2)*sd(logx)/sqrt(length(logx)))
+      Low <- exp(mean(logx) - qnorm(1-(alpha)/2)*sd(logx)/sqrt(length(logx)))
+
+      Out <- c("lower" = Low, "upper" = Up)
+
+      return(Out)
+
+}
 
 
 

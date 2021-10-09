@@ -573,6 +573,10 @@ extractPK <- function(sim_data_file,
                                      "tlag_inhib" = "lag time \\(",
                                      "tmax_dose1" = "TMax")
 
+                  if(is.null(ToDetect)){
+                        stop(paste("The parameter", PKparam, "could not be found."))
+                  }
+
                   # If the header row is row 2, then there are no subheadings to read
                   # through and StartCol should be 1.
                   if(HeaderRow == 2){
