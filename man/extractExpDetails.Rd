@@ -33,8 +33,6 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{DoseRoute_sub or DoseRoute_inhib}{dose route, e.g. oral}
 
-  \item{DoseUnits_sub or DoseUnits_inhib}{dose units}
-
   \item{fa_input}{user input value for the fraction absorbed}
 
   \item{fu_gut_input}{user input value for the fraction escaping gut
@@ -96,6 +94,9 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{Type_sub or Type_inhib}{type of compound, e.g., monoprotic base}
 
+  \item{Units_dose_sub, Units_dose_inhib, Units_AUC, Units_Cmax, Units_tmax,
+  Units_CL}{Units for substrate dose, inhibitor dose, AUC, Cmax, tmax, or CL}
+
   \item{UserAddnOrgan}{yes or no: Was a user-defined additional organ
   included?}
 
@@ -106,7 +107,7 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 
   } \emph{NOTE:} The default only pulls parameters that are listed on the
-  "Summary" tab. (There are 50 of them, so I'm not listing them here for
+  "Summary" tab. (There are ~50 of them, so I'm not listing them here for
   brevity. -LS)}
 }
 \value{

@@ -29,8 +29,6 @@
 #'
 #'   \item{DoseRoute_sub or DoseRoute_inhib}{dose route, e.g. oral}
 #'
-#'   \item{DoseUnits_sub or DoseUnits_inhib}{dose units}
-#'
 #'   \item{fa_input}{user input value for the fraction absorbed}
 #'
 #'   \item{fu_gut_input}{user input value for the fraction escaping gut
@@ -92,6 +90,9 @@
 #'
 #'   \item{Type_sub or Type_inhib}{type of compound, e.g., monoprotic base}
 #'
+#'   \item{Units_dose_sub, Units_dose_inhib, Units_AUC, Units_Cmax, Units_tmax,
+#'   Units_CL}{Units for substrate dose, inhibitor dose, AUC, Cmax, tmax, or CL}
+#'
 #'   \item{UserAddnOrgan}{yes or no: Was a user-defined additional organ
 #'   included?}
 #'
@@ -102,7 +103,7 @@
 #'   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
 #'
 #'   } \emph{NOTE:} The default only pulls parameters that are listed on the
-#'   "Summary" tab. (There are 50 of them, so I'm not listing them here for
+#'   "Summary" tab. (There are ~50 of them, so I'm not listing them here for
 #'   brevity. -LS)
 #'
 #' @return Returns a named list of the experimental details
@@ -137,11 +138,13 @@ extractExpDetails <- function(sim_data_file,
                      "Pop", "PopSize", "NumTrials",
                      "NumSubjTrial", "SimStartDayTime",
                      "SimEndDayTime", "StudyDuration",
+                     "Units_AUC", "Units_Cmax", "Units_tmax", "Units_CL",
+
 
                      "ModelType_sub", "ModelType_inhib",
                      "PrandialSt_sub", "PrandialSt_inhib",
                      "DoseRoute_sub", "DoseRoute_inhib",
-                     "DoseUnits_sub", "DoseUnits_inhib",
+                     "Units_dose_sub", "Units_dose_inhib",
                      "Dose_sub", "Dose_inhib",
                      "StartDayTime_sub", "StartDayTime_inhib",
                      "Regimen_sub", "Regimen_inhib",
@@ -151,8 +154,8 @@ extractExpDetails <- function(sim_data_file,
                      "Vss_input_sub", "Vss_input_inhib",
                      "VssPredMeth_sub", "VssPredMeth_inhib",
                      "SimulatorVersion"),
-            NameCol = c(rep(1, 25), rep(5, 24), 1),
-            ValueCol = c(rep(2, 25), rep(6, 24), 1),
+            NameCol = c(rep(1, 29), rep(5, 24), 1),
+            ValueCol = c(rep(2, 25), rep(1, 4), rep(6, 24), 1),
             Sheet = "Summary") %>%
             mutate(ValueCol = ifelse(str_detect(tolower(Deet), "inhib") &
                                            ValueCol == 2,
@@ -162,8 +165,8 @@ extractExpDetails <- function(sim_data_file,
                                      7, ValueCol),
                    Class = c(rep("character", 2), rep("numeric", 4),
                              rep("character", 2), rep("numeric", 10),
-                             "character", rep("numeric", 3), rep("character", 2),
-                             "numeric", rep("character", 8), rep("numeric", 2),
+                             "character", rep("numeric", 3), rep("character", 15),
+                             rep("numeric", 2),
                              rep("character", 4), rep("numeric", 4),
                              rep("character", 2),
                              rep("numeric", 2),
@@ -255,8 +258,8 @@ extractExpDetails <- function(sim_data_file,
                                      "PrandialSt_inhib" = "Prandial State",
                                      "DoseRoute_sub" = "Route",
                                      "DoseRoute_inhib" = "Route",
-                                     "DoseUnits_sub" = "Dose Units",
-                                     "DoseUnits_inhib" = "Dose Units",
+                                     "Units_dose_sub" = "Dose Units",
+                                     "Units_dose_inhib" = "Dose Units",
                                      "Dose_sub" = "^Dose$",
                                      "Dose_inhib" = "^Dose$",
                                      "StartDayTime_sub" = "Start Day/Time",
@@ -269,6 +272,10 @@ extractExpDetails <- function(sim_data_file,
                                      "NumDoses_inhib" = "Number of Doses",
                                      "GIAbsModel_sub" = "GI Absorption Model",
                                      "GIAbsModel_inhib" = "GI Absorption Model",
+                                     "Units_AUC" = "^AUC \\(",
+                                     "Units_Cmax" = "^CMax \\(",
+                                     "Units_tmax" = "^TMax \\(",
+                                     "Units_CL" = "CL \\(Dose/AUC",
                                      "Vss_input_sub" = "^Vss \\(L/kg\\)$",
                                      "Vss_input_inhib" = "^Vss \\(L/kg\\)$",
                                      "VssPredMeth_sub" = "Prediction Method",
@@ -285,8 +292,12 @@ extractExpDetails <- function(sim_data_file,
 
                   # Tidying up some specific idiosyncracies of simulator output
                   Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
-                  Val <- ifelse(str_detect(deet, "DoseUnit"),
-                                gsub("Dose \\(|\\)", "", Val), Val)
+                  # Val <- ifelse(str_detect(deet, "DoseUnit"),
+                  #               gsub("Dose \\(|\\)", "", Val), Val)
+                  Val <- ifelse(str_detect(deet, "^Unit"),
+                                gsub("Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(",
+                                     "", Val),
+                                Val)
                   Val <- ifelse(deet == "SimulatorVersion",
                                 str_extract(Val, "Version [12][0-9]"),
                                 Val)

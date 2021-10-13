@@ -210,7 +210,7 @@ ct_plot <- function(sim_data_file,
 
       time_range_input <- time_range
 
-      if(time_range_input %in% c("first dose", "last dose")){
+      if(time_range_input[1] %in% c("first dose", "last dose")){
             Deets <- extractExpDetails(sim_data_file)
 
             Sub_t0 <- str_split(Deets[["StartDayTime_sub"]], ", ")[[1]]
