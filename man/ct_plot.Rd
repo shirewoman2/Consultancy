@@ -80,12 +80,21 @@ was administered at the same time as the last dose in the simulated data.
 If FALSE, the observed data will start at whatever times are listed in the
 Excel file.}
 
-\item{time_range}{time range to graph. If left as NA, the whole time range of
-the data will be graphed. If set to a time range, e.g., \code{c(24, 48)},
-the graph will only include that range of time. If set to "first dose", the
-time range will be the first dose until the start of the second dose. If
-set to "last dose", the time range will be the last simulated dose to the
-end of the data.}
+\item{time_range}{time range to graph. Options: \describe{
+
+  \item{NA}{entire time range of data}
+
+  \item{a start time and end time in hours}{only data in that time range,
+  e.g. \code{c(24, 48)}}
+
+  \item{"first dose"}{only the time range of the first dose}
+
+  \item{"last dose"}{only the time range of the last dose}
+
+  \item{"penultimate dose"}{only the time range of the 2nd-to-last dose, which
+  can be useful for BID data where the end of the simulation extended past
+  the dosing interval or data when the substrate was dosed BID and the
+  effector was dosed QD} }}
 
 \item{mean_type}{"geometric" or "arithmetic" for which type of mean to
 calculate}

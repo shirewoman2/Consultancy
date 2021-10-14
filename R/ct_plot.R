@@ -52,12 +52,22 @@
 #'   was administered at the same time as the last dose in the simulated data.
 #'   If FALSE, the observed data will start at whatever times are listed in the
 #'   Excel file.
-#' @param time_range time range to graph. If left as NA, the whole time range of
-#'   the data will be graphed. If set to a time range, e.g., \code{c(24, 48)},
-#'   the graph will only include that range of time. If set to "first dose", the
-#'   time range will be the first dose until the start of the second dose. If
-#'   set to "last dose", the time range will be the last simulated dose to the
-#'   end of the data.
+#' @param time_range time range to graph. Options: \describe{
+#'
+#'   \item{NA}{entire time range of data}
+#'
+#'   \item{a start time and end time in hours}{only data in that time range,
+#'   e.g. \code{c(24, 48)}}
+#'
+#'   \item{"first dose"}{only the time range of the first dose}
+#'
+#'   \item{"last dose"}{only the time range of the last dose}
+#'
+#'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose, which
+#'   can be useful for BID data where the end of the simulation extended past
+#'   the dosing interval or data when the substrate was dosed BID and the
+#'   effector was dosed QD} }
+#'
 #' @param mean_type "geometric" or "arithmetic" for which type of mean to
 #'   calculate
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
@@ -164,8 +174,8 @@ ct_plot <- function(sim_data_file,
       }
 
       if(all(complete.cases(time_range)) & class(time_range) == "character" &
-         !any(time_range %in% c("last dose", "first dose"))){
-            stop("The values for time_range must either be 'first dose', 'last dose' or a numeric time range.")
+         !any(time_range %in% c("last dose", "first dose", "penultimate dose"))){
+            stop("time_range must be 'first dose', 'last dose', 'penultimate dose', or a numeric time range, e.g., c(12, 24).")
       }
 
 
@@ -210,7 +220,7 @@ ct_plot <- function(sim_data_file,
 
       time_range_input <- time_range
 
-      if(time_range_input[1] %in% c("first dose", "last dose")){
+      if(time_range_input[1] %in% c("first dose", "last dose", "penultimate dose")){
             Deets <- extractExpDetails(sim_data_file)
 
             Sub_t0 <- str_split(Deets[["StartDayTime_sub"]], ", ")[[1]]
@@ -238,7 +248,7 @@ ct_plot <- function(sim_data_file,
             NumDoses <- c("Sub" = Deets$NumDoses_sub,
                           "Inhib" = Deets$NumDoses_inhib)
             StartLastDose <- DoseInt * NumDoses
-            if(any(StartLastDose == max(Data$Time))){
+            if(any(StartLastDose == max(Data$Time), na.rm = T)){
                   StartLastDose <- StartLastDose - DoseInt
             }
 
@@ -259,6 +269,22 @@ ct_plot <- function(sim_data_file,
                                   StartLastDose[["Inhib"]])
                   End <- max(Data$Time)
                   time_range <- c(Start, End)
+                  rm(Start, End)
+            }
+
+            if(time_range_input[1] == "penultimate dose"){
+
+                  DoseIntToUse <- ifelse(substrate_or_effector == "substrate",
+                                         DoseInt["Sub"], DoseInt["Inhib"])
+
+                  Start <- ifelse(substrate_or_effector == "substrate",
+                                  StartLastDose[["Sub"]] - DoseIntToUse,
+                                  StartLastDose[["Inhib"]] - DoseIntToUse)
+                  End <- ifelse(substrate_or_effector == "substrate",
+                                StartLastDose[["Sub"]],
+                                StartLastDose[["Inhib"]])
+                  time_range <- c(Start, End)
+
                   rm(Start, End)
             }
       }
@@ -582,8 +608,8 @@ ct_plot <- function(sim_data_file,
       A <- A +
             scale_x_continuous(breaks = XBreaks,
                                expand = expansion(mult = c(0, 0.04))) +
-            scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
-                               limits = Ylim) +
+            # scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
+            #                    limits = Ylim) +
             labs(x = xlab, y = ylab) +
             coord_cartesian(xlim = time_range) +
             theme(panel.background = element_rect(fill="white", color=NA),
