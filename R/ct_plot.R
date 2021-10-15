@@ -362,6 +362,16 @@ ct_plot <- function(sim_data_file,
                          Compound = ifelse(CompoundIsEffector, Effector, Compound),
                          Group = paste(Compound, Effector, Trial)) %>%
                   select(-CompoundIsEffector)
+
+            # Always want "none" to be the 1st item on the legend.
+            MyEff <- unique(Data$Effector)
+            MyEff <- MyEff[MyEff != "none"]
+
+            Data <- Data %>%
+                  mutate(Effector = factor(Effector, levels = c("none", MyEff)))
+
+            rm(MyEff)
+
       } else {
             Data <- Data %>% mutate(Group = paste(Compound, Trial))
       }
