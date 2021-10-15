@@ -359,7 +359,7 @@ ct_plot <- function(sim_data_file,
                                "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
                                "",
                                Effector)),
-                         Compound = ifelse(Compound == Effector, Effector, Compound),
+                         Compound = ifelse(CompoundIsEffector, Effector, Compound),
                          Group = paste(Compound, Effector, Trial)) %>%
                   select(-CompoundIsEffector)
       } else {
