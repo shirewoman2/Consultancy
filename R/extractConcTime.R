@@ -409,8 +409,10 @@ extractConcTime <- function(sim_data_file,
                   }
             }
 
-            obs_data$Compound <- Compound
-            obs_data$Simulated <- FALSE
+            if(exists("obs_data")){
+                  obs_data$Compound <- Compound
+                  obs_data$Simulated <- FALSE
+            }
 
             if(complete.cases(obs_effector_data_file)){
 
@@ -423,7 +425,8 @@ extractConcTime <- function(sim_data_file,
 
             DosingScenario <- SimSummary[["Regimen_sub"]]
 
-            if(adjust_obs_time & DosingScenario == "Multiple Dose"){
+            if(adjust_obs_time & DosingScenario == "Multiple Dose" &
+               exists("obs_data")){
                   # If this were a multiple-dose simulation, the observed data is,
                   # presumably, at steady state. The simulated time we'd want those
                   # data to match would be the *last* dose. Adjusting the time for the
@@ -439,7 +442,6 @@ extractConcTime <- function(sim_data_file,
                         obs_eff_data <- obs_eff_data %>% mutate(Time = Time + LastDoseTime)
                   }
             }
-
       }
 
       Data <- list()

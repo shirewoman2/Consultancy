@@ -350,9 +350,15 @@ ct_plot <- function(sim_data_file,
       }
 
 
-      # Adding a grouping variable to data.
+      # Adding a grouping variable to data and also making the effector name
+      # prettier for the graphs.
       if("Effector" %in% names(Data)){
-            Data <- Data %>% mutate(Group = paste(Compound, Effector, Trial))
+            Data <- Data %>%
+                  mutate(Effector = tolower(gsub(
+                        "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
+                        "",
+                        Effector)),
+                        Group = paste(Compound, Effector, Trial))
       } else {
             Data <- Data %>% mutate(Group = paste(Compound, Trial))
       }
