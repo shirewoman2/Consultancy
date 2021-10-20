@@ -46,6 +46,8 @@
 #'
 #'   \item{kin_sac and kout_sac}{k in and k out for SAC (1/hr)}
 #'
+#'   \item{kp_scalar}{kp scalar}
+#'
 #'   \item{tlag_input}{user input value for the lag time}
 #'
 #'   \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
@@ -61,7 +63,9 @@
 #'
 #'   \item{NumTrials}{the number of trials performed}
 #'
-#'   \item{Peff}{Peff,man Cap(10^-4 cm/s)}
+#'   \item{Ontogeny}{ontogeny profile used}
+#'
+#'   \item{Peff}{Peff,human Cap(10^-4 cm/s)}
 #'
 #'   \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
 #'
@@ -176,11 +180,12 @@ extractExpDetails <- function(sim_data_file,
             Deet = c("Abs_model", "fa_input", "ka_input", "tlag_input",
                      "fu_gut_input", "Peff", "UserAddnOrgan",
                      "CLint",
-                     "Qgut", "kin_sac", "kout_sac", "Vsac"),
+                     "Qgut", "kin_sac", "kout_sac", "Vsac", "kp_scalar",
+                     "Ontogeny"),
             NameCol = 1,
             ValueCol = 2,
             Class = c("character", rep("numeric", 5), "character",
-                      rep("numeric", 5)),
+                      rep("numeric", 6), "character"),
             Sheet = "Input Sheet"
       )
 
@@ -329,8 +334,10 @@ extractExpDetails <- function(sim_data_file,
                                      "Abs_model" = "Absorption Model",
                                      "fa_input" = "^fa$",
                                      "ka_input" = "^ka \\(",
+                                     "kp_scalar" = "Kp Scalar",
                                      "tlag_input" = "lag time \\(",
                                      "fu_gut_input" = "fu\\(Gut\\)$",
+                                     "Ontogeny" = "Ontogeny Profile",
                                      "Peff" = "Peff,man Cap",
                                      "UserAddnOrgan" = "User-defined Additional",
                                      "SimulatorVersion" = "Version number",
@@ -342,6 +349,13 @@ extractExpDetails <- function(sim_data_file,
                   Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
                   Val <- InputTab[Row, AllDeets$ValueCol[AllDeets$Deet == deet]] %>%
                         pull()
+
+                  # Ontogeny profile is listed twice in output for some reason.
+                  # Only keeping the 1st value. Really, keeping only the unique
+                  # set of values for all deets. This will still throw an error
+                  # if there is more than one value, but we'd want to know that
+                  # anyway, so not just keeping the 1st value listed.
+                  Val <- sort(unique(Val))
 
                   suppressWarnings(
                         Val <- ifelse(AllDeets$Class[AllDeets$Deet == deet] == "character",

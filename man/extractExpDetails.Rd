@@ -50,6 +50,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{kin_sac and kout_sac}{k in and k out for SAC (1/hr)}
 
+  \item{kp_scalar}{kp scalar}
+
   \item{tlag_input}{user input value for the lag time}
 
   \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
@@ -65,7 +67,9 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{NumTrials}{the number of trials performed}
 
-  \item{Peff}{Peff,man Cap(10^-4 cm/s)}
+  \item{Ontogeny}{ontogeny profile used}
+
+  \item{Peff}{Peff,human Cap(10^-4 cm/s)}
 
   \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
 
