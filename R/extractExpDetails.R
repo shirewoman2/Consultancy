@@ -382,60 +382,72 @@ extractExpDetails <- function(sim_data_file,
 
             if(length(InputDeets2) > 0){
 
-                  CLRows <- which(InputTab$...1 == "Enzyme")
+                  CLRows <- which(InputTab$...1 == "Enzyme" |
+                                        str_detect(InputTab$...1, "^Biliary CLint"))
                   CLRows <- CLRows[complete.cases(InputTab$...1[CLRows + 1])]
 
                   for(i in CLRows){
-                        Enzyme <- gsub(" ", "", InputTab$...2[i])
-                        Pathway <- gsub(" ", "", InputTab$...2[i - 1])
+                        if(str_detect(InputTab$...1[i], "Enzyme")){
 
-                        CLType <- str_extract(InputTab$...1[i+1],
-                                              "CLint|Vmax|t1/2")
+                              Enzyme <- gsub(" ", "", InputTab$...2[i])
+                              Pathway <- gsub(" ", "", InputTab$...2[i - 1])
 
-                        if(CLType == "CLint"){
+                              CLType <- str_extract(InputTab$...1[i+1],
+                                                    "CLint|Vmax|t1/2")
+
+                              if(CLType == "CLint"){
+                                    suppressWarnings(
+                                          Out[[paste("CLint", Enzyme, Pathway, sep = "_")]] <-
+                                                as.numeric(InputTab$...2[i+1])
+                                    )
+
+                                    suppressWarnings(
+                                          Out[[paste("fu_mic", Enzyme, Pathway, sep = "_")]] <-
+                                                as.numeric(InputTab$...2[i+2])
+                                    )
+
+
+                                    rm(Enzyme, Pathway, CLType)
+                                    next
+
+                              }
+
+                              if(CLType == "Vmax"){
+                                    suppressWarnings(
+                                          Out[[paste("Vmax", Enzyme, Pathway, sep = "_")]] <-
+                                                as.numeric(InputTab$...2[i+1])
+                                    )
+
+                                    suppressWarnings(
+                                          Out[[paste("Km", Enzyme, Pathway, sep = "_")]] <-
+                                                as.numeric(InputTab$...2[i+2])
+                                    )
+
+                                    suppressWarnings(
+                                          Out[[paste("fu_mic", Enzyme, Pathway, sep = "_")]] <-
+                                                as.numeric(InputTab$...2[i+3])
+                                    )
+
+                                    rm(Enzyme, Pathway, CLType)
+                                    next
+                              }
+
+                              if(CLType == "t1/2"){
+                                    suppressWarnings(
+                                          Out[[paste("HalfLife", Enzyme, Pathway, sep = "_")]] <-
+                                                as.numeric(InputTab$...2[i+1])
+                                    )
+
+                                    rm(Enzyme, Pathway, CLType)
+                                    next
+                              }
+
+                        } else {
+                              # biliary CL
                               suppressWarnings(
-                                    Out[[paste("CLint", Enzyme, Pathway, sep = "_")]] <-
-                                          as.numeric(InputTab$...2[i+1])
+                                    Out[["CLint_biliary"]] <-
+                                          as.numeric(InputTab$...2[i])
                               )
-
-                              suppressWarnings(
-                                    Out[[paste("fu_mic", Enzyme, Pathway, sep = "_")]] <-
-                                          as.numeric(InputTab$...2[i+2])
-                              )
-
-
-                              rm(Enzyme, Pathway, CLType)
-                              next
-                        }
-
-                        if(CLType == "Vmax"){
-                              suppressWarnings(
-                                    Out[[paste("Vmax", Enzyme, Pathway, sep = "_")]] <-
-                                          as.numeric(InputTab$...2[i+1])
-                              )
-
-                              suppressWarnings(
-                                    Out[[paste("Km", Enzyme, Pathway, sep = "_")]] <-
-                                          as.numeric(InputTab$...2[i+2])
-                              )
-
-                              suppressWarnings(
-                                    Out[[paste("fu_mic", Enzyme, Pathway, sep = "_")]] <-
-                                          as.numeric(InputTab$...2[i+3])
-                              )
-
-                              rm(Enzyme, Pathway, CLType)
-                              next
-                        }
-
-                        if(CLType == "t1/2"){
-                              suppressWarnings(
-                                    Out[[paste("HalfLife", Enzyme, Pathway, sep = "_")]] <-
-                                          as.numeric(InputTab$...2[i+1])
-                              )
-
-                              rm(Enzyme, Pathway, CLType)
-                              next
                         }
                   }
             }
