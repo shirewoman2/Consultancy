@@ -15,6 +15,8 @@
 #'
 #'   \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
 #'
+#'   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
+#'
 #'   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 #'
 #'   \item{CLint}{intrinsic clearance, Vmax, Km, fu_mic, and/or half life values
@@ -66,6 +68,8 @@
 #'   \item{Ontogeny}{ontogeny profile used}
 #'
 #'   \item{Peff}{Peff,human Cap(10^-4 cm/s)}
+#'
+#'   \item{PercFemale}{Percent of females in simulated population}
 #'
 #'   \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
 #'
@@ -181,13 +185,17 @@ extractExpDetails <- function(sim_data_file,
                      "fu_gut_input", "Peff", "UserAddnOrgan",
                      "CLint",
                      "Qgut", "kin_sac", "kout_sac", "Vsac", "kp_scalar",
+                     "PercFemale", "Age_min", "Age_max",
                      "Ontogeny"),
             NameCol = 1,
             ValueCol = 2,
             Class = c("character", rep("numeric", 5), "character",
-                      rep("numeric", 6), "character"),
-            Sheet = "Input Sheet"
-      )
+                      rep("numeric", 9), "character"),
+            Sheet = "Input Sheet") %>%
+            mutate(NameCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
+                                    4, NameCol),
+                   ValueCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
+                                     5, ValueCol))
 
       AllDeets <- bind_rows(AllDeets, InputDeets)
 
@@ -332,6 +340,8 @@ extractExpDetails <- function(sim_data_file,
                   # Setting up regex to search
                   ToDetect <- switch(deet,
                                      "Abs_model" = "Absorption Model",
+                                     "Age_min" = "Minimum Age",
+                                     "Age_max" = "Maximum Age",
                                      "fa_input" = "^fa$",
                                      "ka_input" = "^ka \\(",
                                      "kp_scalar" = "Kp Scalar",
@@ -339,6 +349,7 @@ extractExpDetails <- function(sim_data_file,
                                      "fu_gut_input" = "fu\\(Gut\\)$",
                                      "Ontogeny" = "Ontogeny Profile",
                                      "Peff" = "Peff,man Cap",
+                                     "PercFemale" = "Propn. of Females",
                                      "UserAddnOrgan" = "User-defined Additional",
                                      "SimulatorVersion" = "Version number",
                                      "Qgut" = "Q\\(Gut\\)\\(L/hr",

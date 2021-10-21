@@ -19,6 +19,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
 
+  \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
+
   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 
   \item{CLint}{intrinsic clearance, Vmax, Km, fu_mic, and/or half life values
@@ -70,6 +72,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   \item{Ontogeny}{ontogeny profile used}
 
   \item{Peff}{Peff,human Cap(10^-4 cm/s)}
+
+  \item{PercFemale}{Percent of females in simulated population}
 
   \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
 
