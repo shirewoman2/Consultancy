@@ -28,6 +28,8 @@
 #'   standard Tableau palette; requires the "ggthemes" package}}
 #'
 #' @return
+#' @import tidyverse
+#' @import readxl
 #' @export
 #'
 #' @examples

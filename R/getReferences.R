@@ -9,8 +9,8 @@
 #' @return A data.frame containing columns "Dir" for the directory and, where
 #'   applicable, the subdirectory of a file, and "File" for the file name.
 #'
+#' @import tidyverse
 #' @export
-#'
 #' @examples
 #'
 #' main_directory <- "\\\\s08sharepoint.certara.com@SSL/DavWWWRoot/sites/consult/dndi-1a/DataRec"

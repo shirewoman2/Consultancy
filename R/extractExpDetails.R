@@ -115,7 +115,8 @@
 #'   brevity. -LS)
 #'
 #' @return Returns a named list of the experimental details
-#'
+#' @import tidyverse
+#' @import readxl
 #' @export
 #'
 #' @examples

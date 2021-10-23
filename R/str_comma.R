@@ -17,8 +17,8 @@
 #' @param oxford TRUE or FALSE for whether to use the Oxford comma
 #'
 #' @return Returns a single, collapsed character string
+#' @import stringr
 #' @export
-#'
 #' @examples
 #' str_comma(LETTERS[1:2])
 #' str_comma(LETTERS[1:4])

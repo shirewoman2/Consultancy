@@ -128,8 +128,9 @@
 #'   vectors of whichever PK parameters were chosen. If only one PK parameter
 #'   was requested, output is a numerical vector.
 #'
+#' @import tidyverse
+#' @import readxl
 #' @export
-#'
 #' @examples
 #'
 #' sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"

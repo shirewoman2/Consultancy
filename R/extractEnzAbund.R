@@ -31,8 +31,9 @@
 #'   \item{Time_units}{units used for time}
 #' }
 #'
+#' @import tidyverse
+#' @import readxl
 #' @export
-#'
 #' @examples
 #' extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",
 #'                 enzyme = "CYP3A4", tissue = "liver")

@@ -16,9 +16,9 @@
 #'   \item{TimeUnits}{the units of measurement for the time column}
 #'   \item{ConcUnits}{the units of measurement for the concentration column}}
 #'
-#'
+#' @import tidyverse
+#' @import readxl
 #' @export
-#'
 #' @examples
 #' obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx"
 #' extractObsConcTime(obs_data_file)

@@ -82,7 +82,7 @@
 #'   a list of the set of graphs (named "Graphs" in the  output), the individual
 #'   graphs ("Linear graph" and "Semi-log graph"), and/or the data used for
 #'   creating the graphs ("Data").
-#'
+#' @import tidyverse
 #' @export
 #'
 #' @examples

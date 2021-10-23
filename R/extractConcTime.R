@@ -58,6 +58,8 @@
 #'
 #'   \item{Conc_units}{units used for concentrations}}
 #'
+#' @import tidyverse
+#' @import readxl
 #' @export
 #'
 #' @examples

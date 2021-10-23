@@ -53,8 +53,10 @@
 #'   lines} \item{Curve}{a data.frame of numeric data used to graph the fitted
 #'   parameters in case you'd like to plot the fitted parameters in some other
 #'   way}}
+#' @import tidyverse
+#' @import readxl
+#' @import rlang
 #' @export
-#'
 #' @examples
 #' data(IndData)
 #'

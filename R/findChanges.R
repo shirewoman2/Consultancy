@@ -16,8 +16,9 @@
 #'   columns differ between File1 and File2. If \code{ouputAllSheets} is TRUE,
 #'   output is both the list and also a list of all the sheet contents from both
 #'   files.
+#' @import tidyverse
+#' @import readxl
 #' @export
-#'
 #' @examples
 #' # No examples available atm.
 #'
