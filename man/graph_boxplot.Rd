@@ -56,7 +56,6 @@ categories those values are in and creates boxplots of those data. Options
 are included for type of graph to make and some aesthetics.
 }
 \examples{
-
 AUCs <- data.frame(AgeGroup = LETTERS[1:5],
                    AUC = rnorm(n = 500, mean = 20000, sd = 2000))
 

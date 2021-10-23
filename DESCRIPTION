@@ -7,6 +7,10 @@ Maintainer: The package maintainer <laura.shireman@certara.com>
 Description: This package is meant to be a collection of useful and standardized
     tools for the Simcyp Consultancy Team to use. By placing all of these tools
     in one package, they can be standardized and easy to find. 
+Imports:
+      tidyverse,
+      readxl,
+      stringr
 License: none
 Encoding: UTF-8
 LazyData: true

@@ -31,7 +31,6 @@
 #' @export
 #'
 #' @examples
-#'
 #' AUCs <- data.frame(AgeGroup = LETTERS[1:5],
 #'                    AUC = rnorm(n = 500, mean = 20000, sd = 2000))
 #'
