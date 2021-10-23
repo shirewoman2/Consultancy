@@ -190,10 +190,6 @@ ct_plot <- function(sim_data_file,
                                     adjust_obs_time = adjust_obs_time)
       }
 
-      if("Effector" %in% names(Data)){
-            Data$Effector[is.na(Data$Effector)] <- "none"
-      }
-
       TimeUnits <- sort(unique(Data$Time_units))
       ObsConcUnits <- sort(unique(Data$Conc_units))
 
@@ -349,12 +345,12 @@ ct_plot <- function(sim_data_file,
             XBreaks <- XBreaks + LastDoseTime
       }
 
-
       # Adding a grouping variable to data and also making the effector name
       # prettier for the graphs.
       if("Effector" %in% names(Data)){
             Data <- Data %>%
                   mutate(CompoundIsEffector = Compound == Effector,
+                         Effector = ifelse(is.na(Effector), "none", Effector),
                          Effector = tolower(gsub(
                                "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
                                "",
@@ -364,16 +360,16 @@ ct_plot <- function(sim_data_file,
                   select(-CompoundIsEffector)
 
             # Always want "none" to be the 1st item on the legend.
-            MyEff <- unique(Data$Effector)
-            MyEff <- MyEff[MyEff != "none"]
+            MyEffector <- Data %>% filter(Compound == Effector) %>%
+                  pull(Compound) %>% unique()
 
             Data <- Data %>%
-                  mutate(Effector = factor(Effector, levels = c("none", MyEff)))
-
-            rm(MyEff)
+                  mutate(Effector = factor(Effector, levels = unique(c("none", MyEffector))))
 
       } else {
-            Data <- Data %>% mutate(Group = paste(Compound, Trial))
+            MyEffector <- "none"
+            Data <- Data %>% mutate(Group = paste(Compound, Trial),
+                                    Effector = MyEffector)
       }
 
       # Separating the data by type and calculating trial means
@@ -400,35 +396,34 @@ ct_plot <- function(sim_data_file,
             time_range <- range(Data$Time, na.rm = T)
       }
 
+      # Setting Y axis limits for both linear and semi-log plots
+      if(substrate_or_effector == "substrate"){
+
+            Ylim <- bind_rows(sim_data_ind, obs_data) %>%
+                  filter(Compound != MyEffector &
+                               Time >= time_range[1] &
+                               Time <= time_range[2] &
+                               complete.cases(Conc)) %>%
+                  pull(Conc) %>% range()
+
+      } else {
+
+            Ylim <- bind_rows(sim_data_ind, obs_data) %>%
+                  filter(Compound == MyEffector &
+                               Time >= time_range[1] &
+                               Time <= time_range[2] &
+                               complete.cases(Conc)) %>%
+                  pull(Conc) %>% range()
+      }
+
       if(figure_type == "trial means"){
 
             NumTrials <- length(unique(sim_data_ind$Trial))
             AlphaToUse <- ifelse(NumTrials > 10, 0.05, 0.12)
             # Adjust this as needed. May want to use "switch" as we did for XBreaks.
 
-            if("Effector" %in% names(sim_data_ind)){
 
-                  MyEffector <- sim_data_ind %>% filter(Compound == Effector) %>%
-                        pull(Compound) %>% unique()
-
-                  if(substrate_or_effector == "substrate"){
-
-                        Ylim <- bind_rows(sim_data_ind, obs_data) %>%
-                              filter(Compound != MyEffector &
-                                           Time >= time_range[1] &
-                                           Time <= time_range[2] &
-                                           complete.cases(Conc)) %>%
-                              pull(Conc) %>% range()
-
-                  } else {
-
-                        Ylim <- bind_rows(sim_data_ind, obs_data) %>%
-                              filter(Compound == MyEffector &
-                                           Time >= time_range[1] &
-                                           Time <= time_range[2] &
-                                           complete.cases(Conc)) %>%
-                              pull(Conc) %>% range()
-                  }
+            if(MyEffector[1] != "none"){
 
                   ## linear plot
                   if(substrate_or_effector == "substrate"){
@@ -484,31 +479,7 @@ ct_plot <- function(sim_data_file,
 
             # graphs with 95% confidence interval
 
-            if("Effector" %in% names(sim_data_mean)){
-
-                  MyEffector <- sim_data_mean %>%
-                        filter(Compound == Effector) %>%
-                        pull(Compound) %>% unique()
-
-                  if(substrate_or_effector == "substrate"){
-
-                        Ylim <- bind_rows(sim_data_mean, obs_data) %>%
-                              filter(Compound != MyEffector &
-                                           Time >= time_range[1] &
-                                           Time <= time_range[2] &
-                                           complete.cases(Conc)) %>%
-                              pull(Conc) %>% range()
-
-                  } else {
-
-                        Ylim <- bind_rows(sim_data_mean, obs_data) %>%
-                              filter(Compound == MyEffector &
-                                           Time >= time_range[1] &
-                                           Time <= time_range[2] &
-                                           complete.cases(Conc)) %>%
-                              pull(Conc) %>% range()
-
-                  }
+            if(MyEffector[1] != "none"){
 
                   if(substrate_or_effector == "substrate"){
 
@@ -545,13 +516,6 @@ ct_plot <- function(sim_data_file,
             } else {
 
                   ## linear plot
-
-                  Ylim <- bind_rows(sim_data_mean, obs_data) %>%
-                        filter(Time >= time_range[1] &
-                                     Time <= time_range[2] &
-                                     complete.cases(Conc)) %>%
-                        pull(Conc) %>% range()
-
                   A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
                               aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(color = "gray80", lwd = 0.8) +
@@ -564,32 +528,7 @@ ct_plot <- function(sim_data_file,
 
       if(figure_type == "means only"){
 
-            if("Effector" %in% names(sim_data_mean)){
-
-                  MyEffector <- sim_data_mean %>%
-                        filter(Compound == Effector) %>%
-                        pull(Compound) %>% unique()
-
-                  if(substrate_or_effector == "substrate"){
-
-                        Ylim <- sim_data_mean %>%
-                              filter(Compound != MyEffector &
-                                           Time >= time_range[1] &
-                                           Time <= time_range[2] &
-                                           complete.cases(Conc)) %>%
-                              pull(Conc) %>% range()
-
-                  } else {
-
-                        Ylim <- sim_data_mean %>%
-                              filter(Compound == MyEffector &
-                                           Time >= time_range[1] &
-                                           Time <= time_range[2] &
-                                           complete.cases(Conc)) %>%
-                              pull(Conc) %>% range()
-
-                  }
-
+            if(MyEffector[1] != "none"){
 
                   if(substrate_or_effector == "substrate"){
                         A <- ggplot(sim_data_mean %>%
@@ -609,12 +548,6 @@ ct_plot <- function(sim_data_file,
                   }
 
             } else {
-
-                  Ylim <- sim_data_mean %>%
-                        filter(Time >= time_range[1] &
-                                     Time <= time_range[2] &
-                                     complete.cases(Conc)) %>%
-                        pull(Conc) %>% range()
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial == "mean"),
@@ -655,11 +588,41 @@ ct_plot <- function(sim_data_file,
 
 
       ## semi-log plot
+      Ylim_log <- Ylim
+      if(Ylim[1] == 0 |
+         # Also need to trim a bit from the low values when the data don't start
+         # at 0 but still really small
+         Ylim[1] < mean(Data$Conc, na.rm = TRUE) * 0.01){
+            if(substrate_or_effector == "Effector"){
+                  Ylim_log[1] <- bind_rows(sim_data_ind, obs_data) %>%
+                        filter(Compound == MyEffector &
+                                     Time > switch(TimeUnits, "hours" = 4,
+                                                   "minutes" = 4*60) &
+                                     complete.cases(Conc) &
+                                     Conc > 0) %>%
+                        pull(Conc) %>% min() * 0.8
+            } else {
+                  Ylim_log[1] <- bind_rows(sim_data_ind, obs_data) %>%
+                        filter(Compound != MyEffector &
+                                     # probably at tmax by 4 hrs for pretty much
+                                     # anything... This is pretty hacky, though,
+                                     # and I bet it will break at some point.
+                                     # Add option to let people set the y axis
+                                     # limits? Meh. If they want to do that,
+                                     # they can save the graphs individually and
+                                     # adjust as needed.
+                                     Time > switch(TimeUnits, "hours" = 4,
+                                                   "minutes" = 4*60) &
+                                     complete.cases(Conc) &
+                                     Conc > 0) %>%
+                        pull(Conc) %>% min() * 0.8
+            }
+      }
+
       B <- suppressMessages(
             A + scale_y_log10(labels = scales::comma) +
                   coord_cartesian(xlim = time_range,
-                                  ylim = c(ifelse(Ylim[1] == 0, 1, Ylim),
-                                           Ylim[2]))
+                                  ylim = Ylim_log)
       )
 
       # both plots together, aligned vertically

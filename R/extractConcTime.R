@@ -328,7 +328,7 @@ extractConcTime <- function(sim_data_file,
       SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
 
       TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
-      TimeUnits <- ifelse(TimeUnits == "Time (h)", "Hours", "Minutes")
+      TimeUnits <- ifelse(str_detect(TimeUnits, "Time .* \\(h\\)"), "hours", "minutes")
 
       # Observed data -- only applies to plasma
       if(TissueOrPlasma == "plasma"){
@@ -409,7 +409,7 @@ extractConcTime <- function(sim_data_file,
                   }
             }
 
-            if(exists("obs_data")){
+            if(exists("obs_data", inherits = FALSE)){
                   obs_data$Compound <- Compound
                   obs_data$Simulated <- FALSE
             }
@@ -426,7 +426,7 @@ extractConcTime <- function(sim_data_file,
             DosingScenario <- SimSummary[["Regimen_sub"]]
 
             if(adjust_obs_time & DosingScenario == "Multiple Dose" &
-               exists("obs_data")){
+               exists("obs_data", inherits = FALSE)){
                   # If this were a multiple-dose simulation, the observed data is,
                   # presumably, at steady state. The simulated time we'd want those
                   # data to match would be the *last* dose. Adjusting the time for the
@@ -460,16 +460,16 @@ extractConcTime <- function(sim_data_file,
                   arrange(Individual, Time)
       }
 
-      if(exists("obs_data")){
+      if(exists("obs_data", inherits = FALSE)){
             Data[["obs"]] <- obs_data
 
-            if(any(c(exists("sim_data_mean_Effector"),
-                     exists("sim_data_ind_Effector")))){
+            if(any(c(exists("sim_data_mean_Effector", inherits = FALSE),
+                     exists("sim_data_ind_Effector", inherits = FALSE)))){
                   Data[["obs"]]$Effector <- "none"
             }
       }
 
-      if(exists("obs_eff_data")){
+      if(exists("obs_eff_data", inherits = FALSE)){
             Data[["obs_eff"]] <- obs_eff_data
       }
 
@@ -493,8 +493,8 @@ extractConcTime <- function(sim_data_file,
       }
 
       Data <- Data %>%
-            mutate(Time_units = tolower({{TimeUnits}}),
-                   Conc_units = ifelse(exists("ObsConcUnits"),
+            mutate(Time_units = TimeUnits,
+                   Conc_units = ifelse(exists("ObsConcUnits", inherits = FALSE),
                                        ObsConcUnits, SimConcUnits),
                    Trial = factor(Trial, levels = c(
                          c("obs", "obs+effector", "mean", "per5", "per95"),
