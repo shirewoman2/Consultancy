@@ -374,7 +374,7 @@ ct_plot <- function(sim_data_file,
 
       # Separating the data by type and calculating trial means
       suppressMessages(
-            sim_data_ind <- Data %>%
+            sim_data_trial <- Data %>%
                   filter(Simulated == TRUE &
                                Trial %in% c("mean", "per5", "per95") == FALSE) %>%
                   group_by(across(any_of(c("Compound", "Tissue", "Effector", "Simulated", "Trial",
@@ -399,7 +399,7 @@ ct_plot <- function(sim_data_file,
       # Setting Y axis limits for both linear and semi-log plots
       if(substrate_or_effector == "substrate"){
 
-            Ylim <- bind_rows(sim_data_ind, obs_data) %>%
+            Ylim <- bind_rows(sim_data_trial, obs_data) %>%
                   filter(Compound != MyEffector &
                                Time >= time_range[1] &
                                Time <= time_range[2] &
@@ -408,7 +408,7 @@ ct_plot <- function(sim_data_file,
 
       } else {
 
-            Ylim <- bind_rows(sim_data_ind, obs_data) %>%
+            Ylim <- bind_rows(sim_data_trial, obs_data) %>%
                   filter(Compound == MyEffector &
                                Time >= time_range[1] &
                                Time <= time_range[2] &
@@ -418,7 +418,7 @@ ct_plot <- function(sim_data_file,
 
       if(figure_type == "trial means"){
 
-            NumTrials <- length(unique(sim_data_ind$Trial))
+            NumTrials <- length(unique(sim_data_trial$Trial))
             AlphaToUse <- ifelse(NumTrials > 10, 0.05, 0.12)
             # Adjust this as needed. May want to use "switch" as we did for XBreaks.
 
@@ -427,7 +427,7 @@ ct_plot <- function(sim_data_file,
 
                   ## linear plot
                   if(substrate_or_effector == "substrate"){
-                        A <- ggplot(sim_data_ind %>% filter(Compound != MyEffector),
+                        A <- ggplot(sim_data_trial %>% filter(Compound != MyEffector),
                                     aes(x = Time, y = Conc, group = Group,
                                         linetype = Effector, shape = Effector)) +
                               guides(linetype = guide_legend(
@@ -441,7 +441,7 @@ ct_plot <- function(sim_data_file,
                               scale_shape_manual(values = c(21, 24))
 
                   } else {
-                        A <- ggplot(sim_data_ind %>% filter(Compound == MyEffector),
+                        A <- ggplot(sim_data_trial %>% filter(Compound == MyEffector),
                                     aes(x = Time, y = Conc, group = Group)) +
                               geom_line(alpha = AlphaToUse, lwd = 1) +
                               geom_line(data = sim_data_mean %>%
@@ -456,14 +456,8 @@ ct_plot <- function(sim_data_file,
 
             } else {
 
-                  Ylim <- bind_rows(sim_data_ind, obs_data) %>%
-                        filter(Time >= time_range[1] &
-                                     Time <= time_range[2] &
-                                     complete.cases(Conc)) %>%
-                        pull(Conc) %>% range()
-
                   ## linear plot
-                  A <- ggplot(sim_data_ind,
+                  A <- ggplot(sim_data_trial,
                               aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(alpha = AlphaToUse, lwd = 1) +
                         geom_line(data = sim_data_mean %>%
@@ -591,10 +585,10 @@ ct_plot <- function(sim_data_file,
       Ylim_log <- Ylim
       if(Ylim[1] == 0 |
          # Also need to trim a bit from the low values when the data don't start
-         # at 0 but still really small
+         # at 0 but are still really small
          Ylim[1] < mean(Data$Conc, na.rm = TRUE) * 0.01){
             if(substrate_or_effector == "Effector"){
-                  Ylim_log[1] <- bind_rows(sim_data_ind, obs_data) %>%
+                  Ylim_log[1] <- bind_rows(sim_data_trial, obs_data) %>%
                         filter(Compound == MyEffector &
                                      Time > switch(TimeUnits, "hours" = 4,
                                                    "minutes" = 4*60) &
@@ -602,7 +596,7 @@ ct_plot <- function(sim_data_file,
                                      Conc > 0) %>%
                         pull(Conc) %>% min() * 0.8
             } else {
-                  Ylim_log[1] <- bind_rows(sim_data_ind, obs_data) %>%
+                  Ylim_log[1] <- bind_rows(sim_data_trial, obs_data) %>%
                         filter(Compound != MyEffector &
                                      # probably at tmax by 4 hrs for pretty much
                                      # anything... This is pretty hacky, though,
@@ -619,6 +613,10 @@ ct_plot <- function(sim_data_file,
             }
       }
 
+      # Just not quite getting the top part of the graph every time for the
+      # semi-log plots. Adding a little more cushion to the upper Y limit
+      Ylim_log[2] <- Ylim[2] * 1.5
+
       B <- suppressMessages(
             A + scale_y_log10(labels = scales::comma) +
                   coord_cartesian(xlim = time_range,
@@ -632,29 +630,22 @@ ct_plot <- function(sim_data_file,
                               align = "v")
       )
 
+      Out <- list("Graphs" = AB)
+
       if(return_data){
-            Out <- list(AB, Data)
-            names(Out) <- c("Graphs", "Data")
+            Out[["Data"]] <- Data
+      }
 
-            if(return_indiv_graphs){
-                  Out[["Linear graph"]] <- A
-                  Out[["Semi-log graph"]] <- B
-            }
+      if(return_indiv_graphs){
+            Out[["Linear graph"]] <- A
+            Out[["Semi-log graph"]] <- B
+      }
 
-      } else {
-
-            if(return_indiv_graphs){
-                  Out <- list(AB)
-                  names(Out) <- "Graphs"
-                  Out[["Linear graph"]] <- A
-                  Out[["Semi-log graph"]] <- B
-            } else {
-                  Out <- AB
-            }
+      if(length(Out) == 1){
+            Out <- Out[[1]]
       }
 
       return(Out)
-
 }
 
 
