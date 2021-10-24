@@ -330,7 +330,7 @@ extractConcTime <- function(sim_data_file,
       SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
 
       TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
-      TimeUnits <- ifelse(str_detect(TimeUnits, "Time .* \\(h\\)"), "hours", "minutes")
+      TimeUnits <- ifelse(str_detect(TimeUnits, "Time.* \\(h\\)"), "hours", "minutes")
 
       # Observed data -- only applies to plasma
       if(TissueOrPlasma == "plasma"){
