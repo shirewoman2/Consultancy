@@ -5,7 +5,7 @@
 #' in a report.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
-#' @param tab optionally specify the name of the tab where you'd like to pull
+#' @param sheet optionally specify the name of the sheet where you'd like to pull
 #'   the PK data. If left as NA, it will automatically be selected from,
 #'   possibly, multiple tabs.
 #' @param PKparameters PK parameters you want to extract from the simulator
@@ -17,34 +17,34 @@
 #'   \describe{
 #'
 #'   \item{"AUCinf_dose1"}{AUC from 0 to infinity for dose 1. By default, data
-#'   are pulled from the tab "AUC", column titled, e.g., "AUC_INF (mg/L.h)"}
+#'   are pulled from the sheet "AUC", column titled, e.g., "AUC_INF (mg/L.h)"}
 #'
 #'   \item{AUCinf_dose1_withEffector}{AUC from 0 to infinity for dose 1 in the
 #'   presence of an effector (Inhibitor 1 in the simulator). By default, data
-#'   are pulled from the tab "AUC", column titled, e.g., "AUC_INF_Inh (mg/L.h)"
+#'   are pulled from the sheet "AUC", column titled, e.g., "AUC_INF_Inh (mg/L.h)"
 #'   after the subheading "Extrapolated AUC_INF for the first dose in the
 #'   presence of inhibitor"}
 #'
 #'   \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. By default, data are
-#'   pulled from tab "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)".
+#'   pulled from sheet "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)".
 #'   IMPORTANT: This will be AUCtau for dose 1 if you have a done a
 #'   multiple-dose simulation, but, if you have done a single-dose simulation,
 #'   this will be the AUC from 0 to whatever time you stopped simulating.}
 #'
 #'   \item{"AUCtau_ss"}{AUC from 0 to tau for the steady-state dose in the
-#'   simulation. By default, data are pulled from tab "AUC" from the column
+#'   simulation. By default, data are pulled from sheet "AUC" from the column
 #'   titled, e.g., "AUC (mg/L.h)" under the subheading "Truncated AUCt for the
 #'   last dose".}
 #'
 #'   \item{AUCtau_ss_withEffector}{AUC from 0 to tau for the steady-state dose in
 #'   the presence of an effector (Inhibitor 1 in the simulator). By default,
-#'   data are pulled from the tab "AUC", column titled, e.g., "AUCt(n)_Inh
+#'   data are pulled from the sheet "AUC", column titled, e.g., "AUCt(n)_Inh
 #'   (mg/L.h)" after the subheading "Truncated AUCt for the last dose in the
 #'   presence of inhibitor"}
 #'
 #'   \item{"AUCtau_lastdoseToEnd"}{AUC from the last dose to the end of the
-#'   simulation. By default, data are pulled from tab "AUCX(Sub)(CPlasma)",
-#'   where "X" is the largest dose for which there is a tab, from the column
+#'   simulation. By default, data are pulled from sheet "AUCX(Sub)(CPlasma)",
+#'   where "X" is the largest dose for which there is a sheet, from the column
 #'   titled, e.g., "AUC (mg/L.h)". \emph{Nota bene:} These data were calculated
 #'   by the simulator from the beginning of the last dose to whenever the
 #'   simulation ended, so that interval may not be tau if you did not set up the
@@ -52,74 +52,74 @@
 #'   alternative.}
 #'
 #'   \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1. Data
-#'   are pulled from the tab "AUC" and the column titled, e.g., "CL
+#'   are pulled from the sheet "AUC" and the column titled, e.g., "CL
 #'   (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF for the first
 #'   dose".}
 #'
 #'   \item{"CL_dose1_withEffector"}{Clearance as calculated by dose / AUCinf for
 #'   dose 1 in the presence of an effector (Inhibitor 1 in the simulator). Data
-#'   are pulled from the tab "AUC" and the column titled, e.g., "CL
+#'   are pulled from the sheet "AUC" and the column titled, e.g., "CL
 #'   (Dose/AUC_INF_Inh) (L/h)", subheading "Extrapolated AUC_INF for the first
 #'   dose in the presence of inhibitor".}
 #'
 #'   \item{"CL_ss"}{Clearance as calculated by dose / AUCtau for the last
-#'   dose simulated. By default, data are pulled from the tab "AUC", column
+#'   dose simulated. By default, data are pulled from the sheet "AUC", column
 #'   titled, e.g., "CL (Dose/AUC) (L/h)")}
 #'
 #'   \item{"CL_ss_withEffector"}{Clearance as calculated by dose / AUCtau
 #'   for the last dose in the presence of an effector (Inhibitor 1 in the
-#'   simulator). By default, data are pulled from the tab "AUC" and the column
+#'   simulator). By default, data are pulled from the sheet "AUC" and the column
 #'   titled, e.g., "CL (Dose/AUC_INF_Inh) (L/h)", subheading "Truncated AUCt for
 #'   the last dose in the presence of inhibitor".}
 #'
 #'   \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
-#'   By default, data are pulled from tab "AUCX(Sub)(CPlasma)", where "X" is the
-#'   largest dose for which there is a tab, from the column titled, e.g., "AUC
+#'   By default, data are pulled from sheet "AUCX(Sub)(CPlasma)", where "X" is the
+#'   largest dose for which there is a sheet, from the column titled, e.g., "AUC
 #'   (mg/L.h)". \emph{Nota bene:} These data were calculated by the simulator
 #'   from the beginning of the last dose to whenever the simulation ended, so
 #'   that interval may not be tau if you did not set up the simulation that way.
 #'   See the options for "CL_ss_int" as an alternative.}
 #'
-#'   \item{"Cmax_dose1"}{Cmax for dose 1. By default, data are pulled from tab
+#'   \item{"Cmax_dose1"}{Cmax for dose 1. By default, data are pulled from sheet
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
 #'
 #'   \item{"Cmax_dose1_withEffector"}{Cmax for the last dose in the presence of
-#'   an inhibitor. By default, data are pulled from tab "AUC0(Sub)(CPlasma)",
+#'   an inhibitor. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
 #'   column titled, e.g., "CMaxinh (mg/L)".}
 #'
 #'   \item{"Cmax_ss"}{Cmax for the last dose. By default, data are pulled
-#'   from tab "AUC", column titled, e.g., "CMax (mg/L)", under the subheading
+#'   from sheet "AUC", column titled, e.g., "CMax (mg/L)", under the subheading
 #'   "Truncated AUCt for the last dose.}
 #'
 #'   \item{"HalfLife_dose1"}{half life for dose 1. By default, data are pulled
-#'   from the tab "AUC", column titled, e.g., "Half-life (h)")}
+#'   from the sheet "AUC", column titled, e.g., "Half-life (h)")}
 #'
 #'   \item{"fa_sub" or "fa_inhib"}{fraction absorbed for the substrate or
-#'   inhibitor 1. By default, data are pulled from the tab "Absorption".}
+#'   inhibitor 1. By default, data are pulled from the sheet "Absorption".}
 #'
 #'   \item{"fg_sub" or "fg_inhib"}{fraction of substrate or inhibitor escaping
-#'   gut metabolism. By default, data are pulled from the tab "Clearance Trials
+#'   gut metabolism. By default, data are pulled from the sheet "Clearance Trials
 #'   SS".}
 #'
 #'   \item{"fh_sub" or "fh_inhib"}{fraction of substrate or inhibitor escaping
-#'   hepatic metabolism. By default, data are pulled from the tab "Clearance
+#'   hepatic metabolism. By default, data are pulled from the sheet "Clearance
 #'   Trials SS".}
 #'
 #'   \item{"ka_sub" or "ka_inhib"}{absorption rate constant ka for the substrate
-#'   or the 1st inhibitor. By default, data are pulled from the tab
+#'   or the 1st inhibitor. By default, data are pulled from the sheet
 #'   "Absorption".}
 #'
 #'   \item{"tlag_sub" or "tlag_inhib"}{lag time for the substrate or inhibitor 1.
-#'   By default, data are pulled from the tab "Absorption".}
+#'   By default, data are pulled from the sheet "Absorption".}
 #'
-#'   \item{"tmax_dose1"}{tmax for dose 1. By default, data are pulled from tab
+#'   \item{"tmax_dose1"}{tmax for dose 1. By default, data are pulled from sheet
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
 #'
 #'   \item{"tmax_ss"}{tmax for the last dose. By default, data are pulled
-#'   from tab "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which
-#'   there is a tab, from the column titled, e.g., "TMax (h)".}
+#'   from sheet "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which
+#'   there is a sheet, from the column titled, e.g., "TMax (h)".}
 #'
-#'   } The default is only those parameters present on the "AUC" tab in the
+#'   } The default is only those parameters present on the "AUC" sheet in the
 #'   simulator output.
 #' @param returnAggregateOrIndiv Return aggregate (geometric mean) and/or
 #'   individual PK parameters? Options are "aggregate" or "individual".
@@ -141,13 +141,13 @@
 #'
 extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
-                      tab = NA,
+                      sheet = NA,
                       returnAggregateOrIndiv = "individual"){
 
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
-      if(complete.cases(tab) & tab %in% AllSheets == FALSE){
-            stop("The tab requested could not be found in the Excel file.")
+      if(complete.cases(sheet) & sheet %in% AllSheets == FALSE){
+            stop("The sheet requested could not be found in the Excel file.")
       }
 
       # Error catching
@@ -213,30 +213,30 @@ extractPK <- function(sim_data_file,
                      "AUCtau_ss_withEffector", "CL_dose1_withEffector",
                      "CL_dose1", "CL_ss", "CL_ss_withEffector")
 
-      # Parameters to pull from the "AUC0(Sub)(CPlasma)" tab
+      # Parameters to pull from the "AUC0(Sub)(CPlasma)" sheet
       Param_AUC0 <- c("AUCtau_dose1", "Cmax_dose1", "tmax_dose1",
                       "Cmax_dose1_withEffector")
       # Notes to self: AUCtau_dose1 appears to be the same in both
       # AUC0(Sub)(CPlasma) and AUCt0(Sub)(Plasma) tabs. Not sure if that ever
       # changes.
 
-      # Parameters to pull from the AUCX(Sub)(CPlasma) tab, where X is the last dose
+      # Parameters to pull from the AUCX(Sub)(CPlasma) sheet, where X is the last dose
       Param_AUCX <- c("AUCtau_lastdoseToEnd", "CL_lastdoseToEnd", "tmax_ss")
 
-      # Parameters to pull from the Absorption tab
+      # Parameters to pull from the Absorption sheet
       Param_Abs <- c("ka_sub", "ka_inhib", "fa_sub", "fa_inhib",
                      "tlag_sub", "tlag_inhib")
 
       Out <- list()
 
-      # Pulling data from the "AUC" tab ------------------------------------------
-      if(any(PKparameters %in% Param_AUC) & is.na(tab)){
+      # Pulling data from the "AUC" sheet ------------------------------------------
+      if(any(PKparameters %in% Param_AUC) & is.na(sheet)){
 
             PKparameters_AUC <- intersect(PKparameters, Param_AUC)
 
             # Error catching
             if("AUC" %in% AllSheets == FALSE){
-                  warning(paste0("The tab 'AUC' must be present in the Excel simulated data file to extract the PK parameters ",
+                  warning(paste0("The sheet 'AUC' must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUC, collapse = ", "),
                                  ". None of these parameters can be extracted."))
             } else {
@@ -364,14 +364,14 @@ extractPK <- function(sim_data_file,
 
 
       # Pulling data from the "AUC0(Sub)(CPlasma)" or "AUCt0(Sub)(CPlasma)" tabs -----------
-      if(any(PKparameters %in% Param_AUC0) & is.na(tab)){
+      if(any(PKparameters %in% Param_AUC0) & is.na(sheet)){
 
             PKparameters_AUC0 <- intersect(PKparameters, Param_AUC0)
 
             # Error catching
             if(any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
 
-                  warning(paste0("The tab 'AUC0(Sub)(CPlasma)' or 'AUCt0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
+                  warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' or 'AUCt0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUC0, collapse = ", "),
                                  ". None of these parameters can be extracted."))
             } else {
@@ -417,8 +417,8 @@ extractPK <- function(sim_data_file,
             }
       }
 
-      # Pulling data from the AUCX(Sub)(CPlasma) tab ----------------------------
-      if(any(PKparameters %in% Param_AUCX) & is.na(tab)){
+      # Pulling data from the AUCX(Sub)(CPlasma) sheet ----------------------------
+      if(any(PKparameters %in% Param_AUCX) & is.na(sheet)){
 
             PKparameters_AUCX <- intersect(PKparameters, Param_AUCX)
 
@@ -428,7 +428,7 @@ extractPK <- function(sim_data_file,
 
             # Error catching
             if(ssNum == 0 | length(ssNum) == 0){
-                  warning(paste0("The tab 'AUCX(Sub)(CPlasma)', where 'X' is the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
+                  warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUCX, collapse = ", "),
                                  ". None of these parameters can be extracted."))
             } else {
@@ -471,14 +471,14 @@ extractPK <- function(sim_data_file,
 
             }
       }
-      # Pulling data from the "Absorption" tab -----------------------------------
-      if(any(PKparameters %in% Param_Abs) & is.na(tab)){
+      # Pulling data from the "Absorption" sheet -----------------------------------
+      if(any(PKparameters %in% Param_Abs) & is.na(sheet)){
 
             PKparameters_Abs <- intersect(PKparameters, Param_Abs)
 
             # Error catching
             if("Absorption" %in% AllSheets == FALSE){
-                  warning(paste0("The tab 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
+                  warning(paste0("The sheet 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_Abs, collapse = ", "),
                                  ". None of these parameters can be extracted."))
             } else {
@@ -537,11 +537,11 @@ extractPK <- function(sim_data_file,
             }
       }
 
-      # Pulling parameters from a user-specified tab --------------------------
-      if(complete.cases(tab)){
+      # Pulling parameters from a user-specified sheet --------------------------
+      if(complete.cases(sheet)){
 
             XL <- suppressMessages(
-                  readxl::read_excel(path = sim_data_file, sheet = tab,
+                  readxl::read_excel(path = sim_data_file, sheet = sheet,
                                      col_names = FALSE))
 
             HeaderRow <- which(XL$...1 == "Index")[1]
