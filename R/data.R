@@ -29,4 +29,10 @@
 #' scales::show_col(SimcypColors)
 "SimcypColors"
 
-
+#' Paths for Certara's large file directory and the SharePoint directory
+#'
+#' @format A two-item list:
+#' \describe{
+#' \item{LgFileDir}{the large-file directory}
+#' \item{SharePtDir}{the SharePoint directory}}
+"CertaraDir"
