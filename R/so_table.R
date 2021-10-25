@@ -132,6 +132,29 @@ so_table <- function(Info, sheet = NA,
                                    .names = "{.col} {.fn}"))
       } else {
 
+            # Sometimes -- maybe even oftentimes -- people will report the
+            # arithmetic means for nearly everything but then the *geometric*
+            # means for the AUC or Cmax ratios with vs. without effector.
+            # Creating a special case for that inconsistency.
+            if(EffectorPresent &
+               Info$InputXL$Value[
+                     which(Info$InputXL$RName == "GMR_mean_type")] != "arithmetic"){
+                  GMRs <- MyPKResults %>%
+                        summarize(across(.cols = matches("GMR"),
+                                         .fns = list(GMean = gm_mean,
+                                                     CV = gm_CV,
+                                                     CI_10 = function(.) gm_conf(., CI = 0.9)[[1]],
+                                                     CI_90 = function(.) gm_conf(., CI = 0.9)[[2]],
+                                                     CI_05 = function(.) gm_conf(., CI = 0.95)[[1]],
+                                                     CI_95 = function(.) gm_conf(., CI = 0.95)[[2]],
+                                                     Q5th = function(.) quantile(., 0.05),
+                                                     Q95th = function(.) quantile(., 0.95),
+                                                     Med = median,
+                                                     Min = min,
+                                                     Max = max),
+                                         .names = "{.col} {.fn}"))
+            }
+
             MyPKResults <- MyPKResults %>%
                   summarize(across(.cols = everything(),
                                    .fns = list(GMean = mean,
@@ -156,7 +179,16 @@ so_table <- function(Info, sheet = NA,
 
       MyPKResults <- MyPKResults %>%
             pivot_longer(cols = everything(), names_to = "Param",
-                         values_to = "Value") %>%
+                         values_to = "Value")
+
+      if(exists("GMRs", inherits = FALSE)){
+            GMRs <- GMRs %>% pivot_longer(cols = everything(), names_to = "Param",
+                                          values_to = "Value")
+            MyPKResults <- MyPKResults %>% filter(Param %in% GMRs$Param == FALSE) %>%
+                  bind_rows(GMRs)
+      }
+
+      MyPKResults <- MyPKResults %>%
             mutate(Value = if_else(str_detect(Param, "CV"),
                                    round(Value * 100, 0),
                                    signif(Value, 3))) %>%  # not sure of the best option for rounding here
