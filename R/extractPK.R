@@ -640,8 +640,8 @@ extractPK <- function(sim_data_file,
                   }
 
                   OutCol <- which(str_detect(as.vector(t(
-                        XL[2, ])), ToDetect) &
-                              !str_detect(as.vector(t(XL[2, ])), "%"))
+                        XL[HeaderRow, ])), ToDetect) &
+                              !str_detect(as.vector(t(XL[HeaderRow, ])), "%"))
 
                   return(OutCol)
             }
