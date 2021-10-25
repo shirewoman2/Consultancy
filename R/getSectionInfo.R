@@ -19,31 +19,34 @@
 #'
 getSectionInfo <- function(report_input_file, sheet){
 
-      Info <- suppressMessages(
+      InputXL <- suppressMessages(
             readxl::read_excel(path = report_input_file,
                                sheet = sheet,
                                skip = 1) %>%
       rename(RName = "Name in R code"))
 
-      ClinStudy <- Info$Value[which(Info$RName == "ClinStudy")]
+      ClinStudy <- InputXL$Value[which(InputXL$RName == "ClinStudy")]
 
-      SimFile <- Info$Value[which(Info$RName == "SimFile")]
+      SimFile <- InputXL$Value[which(InputXL$RName == "SimFile")]
+      ObsFile_dose1 <- InputXL$Value[which(InputXL$RName == "ObsFile_dose1")]
+      ObsFile_ss <- InputXL$Value[which(InputXL$RName == "ObsFile_ss")]
+      ObsEffectorFile <- InputXL$Value[which(InputXL$RName == "ObsEffectorFile")]
 
-      StatType <- Info$Value[which(Info$RName == "ArithOrGeom")]
+      StatType <- InputXL$Value[which(InputXL$RName == "ArithOrGeom")]
       StatType <- ifelse(is.na(StatType),
                          ArithOrGeom, StatType)
 
       Deets <- extractExpDetails(sim_data_file = SimFile)
 
       # Tidying up the names used for populations so that they look nice in report
-      Pop <- tidyPop(Deets)
+      Pop <- tidyPop(Deets$Pop)
 
       Dose <- Deets[["Dose_sub"]]
       DoseUnits <- Deets[["Units_dose_sub"]]
 
       NumSimSubj <- Deets[["NumSubjTrial"]] * Deets[["NumTrials"]]
 
-      DoseRegimen <- Info$Value[which(Info$RName == "DoseRegimen")]
+      DoseRegimen <- InputXL$Value[which(InputXL$RName == "DoseRegimen")]
       DoseRegimen <- ifelse(DoseRegimen == "SD", "single dose", DoseRegimen)
       DoseRegimen <- ifelse(DoseRegimen == "MD", "multiple doses", DoseRegimen)
 
@@ -78,19 +81,21 @@ getSectionInfo <- function(report_input_file, sheet){
             (Deets[["DoseInt_inhib"]] * Deets[["NumDoses_inhib"]])/24
 
 
-      InfoList <- list(ClinStudy, SimFile, StatType,
-                       Deets,
-                       Pop, Dose, DoseUnits, NumSimSubj,
-                       DoseRegimen, DoseFreq,
-                       Inhib, Dose_inhib, Units_dose_inhib, DoseFreq_inhib,
-                       StartDoseDay_sub, StartDoseDay_inhib, LastDoseDay_inhib)
-
-      names(InfoList) <- c("ClinStudy", "SimFile", "StatType",
-                           "Deets",
-                           "Pop", "Dose", "DoseUnits", "NumSimSubj",
-                           "DoseRegimen", "DoseFreq",
-                           "Inhib", "Dose_inhib", "Units_dose_inhib", "DoseFreq_inhib",
-                           "StartDoseDay_sub", "StartDoseDay_inhib", "LastDoseDay_inhib")
+      InfoList <- list(
+            "InputXL" = InputXL,
+            "StatType" = StatType,
+            "ClinStudy" = ClinStudy,
+            "SimFile" = SimFile,
+            "ObsFile_dose1" = ObsFile_dose1, "ObsFile_ss" = ObsFile_ss,
+            "ObsEffectorFile" = ObsEffectorFile,
+            "Deets" = Deets, "Pop" = Pop, "NumSimSubj" = NumSimSubj,
+            "Dose" = Dose, "DoseUnits" = DoseUnits, "DoseRegimen" = DoseRegimen,
+            "DoseFreq" = DoseFreq,
+            "Inhib" = Inhib, "Dose_inhib" = Dose_inhib,
+            "Units_dose_inhib" = Units_dose_inhib, "DoseFreq_inhib" = DoseFreq_inhib,
+            "StartDoseDay_sub" = StartDoseDay_sub,
+            "StartDoseDay_inhib" = StartDoseDay_inhib,
+            "LastDoseDay_inhib" = LastDoseDay_inhib)
 
       return(InfoList)
 }

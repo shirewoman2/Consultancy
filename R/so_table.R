@@ -36,7 +36,7 @@ so_table <- function(Info, sheet = NA,
                      concatVariability = TRUE,
                      includeT12 = FALSE){
 
-      if("data.frame" %in% class(Info) == FALSE){
+      if(class(Info) != "list"){
             Info <- readInfo <- getSectionInfo(Info, sheet = sheet)
       }
 
