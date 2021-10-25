@@ -36,9 +36,9 @@ concentration-time data in the presence of an effector. This is the file
 that is ready to be converted to an XML file.}
 
 \item{sim_obs_dataframe}{If you have already extracted the concentration-time
-data using the function \code{extractConcTime}, you can enter the name of
-the output data.frame from that function instead of re-reading the Excel
-file.}
+data using the function \code{\link{extractConcTime}}, you can enter the
+name of the output data.frame from that function instead of re-reading the
+Excel file.}
 
 \item{tissue}{the tissue to plot. Default is plasma for typical plasma
 concentration-time data. Other tissues are acceptable, e.g., "lung",
@@ -91,9 +91,9 @@ Excel file.}
 
   \item{"last dose"}{only the time range of the last dose}
 
-  \item{"penultimate dose"}{only the time range of the 2nd-to-last dose, which
-  can be useful for BID data where the end of the simulation extended past
-  the dosing interval or data when the substrate was dosed BID and the
+  \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
+  which can be useful for BID data where the end of the simulation extended
+  past the dosing interval or data when the substrate was dosed BID and the
   effector was dosed QD} }}
 
 \item{mean_type}{"geometric" or "arithmetic" for which type of mean to

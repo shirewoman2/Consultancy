@@ -267,9 +267,9 @@ extractPK <- function(sim_data_file,
 
                         if(str_detect(PKparam, "_withEffector")){
 
-                              # If there is an effector involved, need to start looking for the
-                              # correct column after "for the Xth dose in the presence of
-                              # inhibitor".
+                              # If there is an effector involved, need to start
+                              # looking for the correct column after "for the
+                              # Xth dose in the presence of inhibitor".
 
                               # dose1 data
                               if(str_detect(PKparam, "_dose1_withEffector")){
@@ -282,7 +282,7 @@ extractPK <- function(sim_data_file,
                               if(str_detect(PKparam, "_ss_withEffector")){
                                     StartCol <-
                                           which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                           "for the last dose in the presence of inhibitor|^Inhibited$"))
+                                                           "for the last dose in the presence of inhibitor|^Inhibited$"))[1]
                               }
 
                         } else {
@@ -314,7 +314,7 @@ extractPK <- function(sim_data_file,
 
                               # Find the last column at the end of whatever subheading this was under
                               EndCol <- which(complete.cases(as.vector(t(AUC_xl[2, ]))))
-                              EndCol <- EndCol[EndCol > StartCol][1]
+                              EndCol <- EndCol[EndCol > StartCol][1] - 1
                               EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
 
                               if(any(is.na(c(StartCol, EndCol)))){
