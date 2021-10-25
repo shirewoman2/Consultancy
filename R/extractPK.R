@@ -619,7 +619,7 @@ extractPK <- function(sim_data_file,
                               }
 
                               # last dose
-                              if(str_detect(PKparam, "_lastdose")){
+                              if(str_detect(PKparam, "_ss")){
                                     StartCol <- which(str_detect(as.vector(t(XL[2, ])),
                                                                  "^Truncated AUCt for the last dose$"))
                                     if(length(StartCol) == 0){
