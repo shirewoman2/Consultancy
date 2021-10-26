@@ -1,4 +1,4 @@
-#' Get information about this section of the report
+#' Get information about a section for a report
 #'
 #' \code{getSectionInfo} pulls information from an Excel file that is formatted
 #' \emph{exactly} like the file "Report input template.xlsx" and organizes those
@@ -6,10 +6,13 @@
 #' The output of this function serves as part of the input for the function
 #' \code{so_table}.
 #'
-#' @param report_input_file the name of the filled-in Excel file formatted
-#'   exactly like "Report input template.xlsx", including the path if it's in
-#'   any other directory than the current one
-#' @param sheet the sheet to read
+#' @param report_input_file the name of the Excel file formatted exactly like
+#'   "Report input template.xlsx", including the path if it's in any other
+#'   directory than the current one. This should be filled out with your
+#'   specific project details.
+#' @param sheet the sheet to read in that Excel file
+#' @param report_input_DF the data.frame object that is laid out exactly like a
+#'   tab from the "Report input template.xlsx" file
 #'
 #' @return a list object
 #' @export
@@ -17,13 +20,20 @@
 #' @examples
 #' # No examples yet.
 #'
-getSectionInfo <- function(report_input_file, sheet){
+getSectionInfo <- function(report_input_file = NA,
+                           sheet = NA,
+                           report_input_DF = NA){
 
-      InputXL <- suppressMessages(
-            readxl::read_excel(path = report_input_file,
-                               sheet = sheet,
-                               skip = 1) %>%
-      rename(RName = "Name in R code"))
+      if(all(c(complete.cases(report_input_file),
+               complete.cases(sheet)))){
+            InputXL <- suppressMessages(
+                  readxl::read_excel(path = report_input_file,
+                                     sheet = sheet,
+                                     skip = 1) %>%
+                        rename(RName = "Name in R code"))
+      } else {
+            InputXL <- report_input_DF
+      }
 
       ClinStudy <- InputXL$Value[which(InputXL$RName == "ClinStudy")]
 

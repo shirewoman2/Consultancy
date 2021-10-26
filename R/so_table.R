@@ -136,9 +136,10 @@ so_table <- function(Info, sheet = NA,
             # arithmetic means for nearly everything but then the *geometric*
             # means for the AUC or Cmax ratios with vs. without effector.
             # Creating a special case for that inconsistency.
-            if(EffectorPresent &
-               Info$InputXL$Value[
-                     which(Info$InputXL$RName == "GMR_mean_type")] != "arithmetic"){
+            GMRMeanType <- Info$InputXL$Value[
+                  which(Info$InputXL$RName == "GMR_mean_type")]
+            if(EffectorPresent & (is.na(GMRMeanType) |
+                                  GMRMeanType != "arithmetic")){
                   GMRs <- MyPKResults %>%
                         summarize(across(.cols = matches("GMR"),
                                          .fns = list(GMean = gm_mean,

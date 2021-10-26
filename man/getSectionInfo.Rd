@@ -2,16 +2,20 @@
 % Please edit documentation in R/getSectionInfo.R
 \name{getSectionInfo}
 \alias{getSectionInfo}
-\title{Get information about this section of the report}
+\title{Get information about a section for a report}
 \usage{
-getSectionInfo(report_input_file, sheet)
+getSectionInfo(report_input_file = NA, sheet = NA, report_input_DF = NA)
 }
 \arguments{
-\item{report_input_file}{the name of the filled-in Excel file formatted
-exactly like "Report input template.xlsx", including the path if it's in
-any other directory than the current one}
+\item{report_input_file}{the name of the Excel file formatted exactly like
+"Report input template.xlsx", including the path if it's in any other
+directory than the current one. This should be filled out with your
+specific project details.}
 
-\item{sheet}{the sheet to read}
+\item{sheet}{the sheet to read in that Excel file}
+
+\item{report_input_DF}{the data.frame object that is laid out exactly like a
+tab from the "Report input template.xlsx" file}
 }
 \value{
 a list object
