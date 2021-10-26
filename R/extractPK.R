@@ -594,7 +594,7 @@ extractPK <- function(sim_data_file,
                               }
 
                               # lastdose data
-                              if(str_detect(PKparam, "_lastdose_withEffector")){
+                              if(str_detect(PKparam, "_ss_withEffector")){
                                     StartCol <-
                                           which(str_detect(as.vector(t(XL[2, ])),
                                                            "for the last dose in the presence of inhibitor|^Inhibited$"))
