@@ -341,7 +341,9 @@ extractExpDetails <- function(sim_data_file,
                                      col_names = FALSE))
 
             # Check whether an effector is present b/c that moves things around
-            EffectorPresent <- any(str_detect(InputTab$...3, "Inhibitor"))
+            EffectorPresent <- any(str_detect(InputTab$...3, "Inhibitor"), na.rm = TRUE)
+            # !!! May need to adjust this further when there are TWO inhibitor
+            # present!!!
 
             if(EffectorPresent){
                   AllDeets$ValueCol[AllDeets$Sheet == "Input Sheet" &
