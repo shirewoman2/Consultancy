@@ -235,6 +235,11 @@ extractExpDetails <- function(sim_data_file,
                   readxl::read_excel(path = sim_data_file, sheet = "Summary",
                                      col_names = FALSE))
 
+            # # Check whether an effector is present b/c that moves things around
+            # EffectorPresent <-
+            #       complete.cases(SummaryTab[
+            #             which(str_detect(SummaryTab$...1, "Inhibitor"))[1], 2])
+
             # sub function for finding correct cell
             pullValue <- function(deet){
 
@@ -334,6 +339,16 @@ extractExpDetails <- function(sim_data_file,
             InputTab <- suppressMessages(
                   readxl::read_excel(path = sim_data_file, sheet = "Input Sheet",
                                      col_names = FALSE))
+
+            # Check whether an effector is present b/c that moves things around
+            EffectorPresent <- any(str_detect(InputTab$...3, "Inhibitor"))
+
+            if(EffectorPresent){
+                  AllDeets$ValueCol[AllDeets$Sheet == "Input Sheet" &
+                                          AllDeets$ValueCol == 5] <- 7
+                  AllDeets$NameCol[AllDeets$Sheet == "Input Sheet" &
+                                          AllDeets$NameCol == 4] <- 6
+            }
 
             # sub function for finding correct cell
             pullValue <- function(deet){
