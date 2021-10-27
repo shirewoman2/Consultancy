@@ -4,12 +4,15 @@
 \alias{findXLChanges}
 \title{Find differences between two Excel files}
 \usage{
-findXLChanges(File1, File2, outputAllSheets = TRUE)
+findXLChanges(File1, File2, sheets_to_check = NA, outputAllSheets = TRUE)
 }
 \arguments{
 \item{File1}{An Excel file you want to compare}
 
 \item{File2}{The other Excel file you want to compare}
+
+\item{sheets_to_check}{a vector of the names of sheets to compare. If left as
+NA, all sheets will be checked.}
 
 \item{outputAllSheets}{TRUE or FALSE: Do you want to have the output include
 a list of all the loaded Excel sheets?}

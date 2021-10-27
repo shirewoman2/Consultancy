@@ -9,6 +9,8 @@
 #'
 #' @param File1 An Excel file you want to compare
 #' @param File2 The other Excel file you want to compare
+#' @param sheets_to_check a vector of the names of sheets to compare. If left as
+#'   NA, all sheets will be checked.
 #' @param outputAllSheets TRUE or FALSE: Do you want to have the output include
 #'   a list of all the loaded Excel sheets?
 #'
@@ -22,15 +24,13 @@
 #' @examples
 #' # No examples available atm.
 #'
-findXLChanges <- function(File1, File2, outputAllSheets = TRUE){
+findXLChanges <- function(File1, File2, sheets_to_check = NA, outputAllSheets = TRUE){
 
-      File1_wb <- openxlsx::loadWorkbook(File1)
-      Sheets1 <- names(File1_wb)
+      Sheets1 <- readxl::excel_sheets(path = File1)
+      Sheets2 <- readxl::excel_sheets(path = File2)
 
-      File2_wb <- openxlsx::loadWorkbook(File2)
-      Sheets2 <- names(File2_wb)
-
-      if(all(Sheets1 %in% Sheets2) == FALSE | all(Sheets2 %in% Sheets1) == FALSE){
+      if(is.na(sheets_to_check)[1] & (all(Sheets1 %in% Sheets2) == FALSE |
+                                   all(Sheets2 %in% Sheets1) == FALSE)){
             MissingFrom1 <- setdiff(Sheets1, Sheets2)
             Msg <- paste0("The sheet(s) ", stringr::str_comma(MissingFrom1),
                           " is/are present in file 1 but not in file 2; it/they will be ignored.")
@@ -42,7 +42,16 @@ findXLChanges <- function(File1, File2, outputAllSheets = TRUE){
             warning(Msg)
       }
 
+      if(complete.cases(sheets_to_check)[1] &
+         any(c(all(sheets_to_check %in% Sheets1) == FALSE,
+               all(sheets_to_check %in% Sheets2) == FALSE))){
+            warning("Some of the requested sheets are not present in both files. They will be ignored.")
+      }
+
       AllSheets <- intersect(Sheets1, Sheets2)
+      if(complete.cases(sheets_to_check[1])){
+            AllSheets <- intersect(AllSheets, sheets_to_check)
+      }
 
       F1_sheets <- list()
       F2_sheets <- list()
@@ -51,10 +60,8 @@ findXLChanges <- function(File1, File2, outputAllSheets = TRUE){
 
       for(i in AllSheets){
             # Reading & comparing
-            F1_i <- openxlsx::read.xlsx(File1_wb, sheet = i, colNames = FALSE,
-                              skipEmptyCols = FALSE, skipEmptyRows = FALSE)
-            F2_i <- openxlsx::read.xlsx(File2_wb, sheet = i, colNames = FALSE,
-                              skipEmptyCols = FALSE, skipEmptyRows = FALSE)
+            F1_i <- readxl::read_excel(File1, sheet = i, col_names = FALSE)
+            F2_i <- readxl::read_excel(File2, sheet = i, col_names = FALSE)
 
             AllSame[[i]] <- all(F1_i == F2_i, na.rm = TRUE)
 
@@ -76,16 +83,16 @@ findXLChanges <- function(File1, File2, outputAllSheets = TRUE){
             DiffCell[[i]] <- list()
 
             for(j in 1:ncol(F1_sheets[[i]])){
+                  DiffCell[[i]][[j]] <- list()
                   AnyDiffCol <- F1_sheets[[i]][, j] == F2_sheets[[i]][, j]
                   DiffRow <- which(AnyDiffCol == FALSE)
                   if(length(DiffRow) > 0){
-                        DiffCell[[i]] <- paste0(XLCols[j], DiffRow)
+                        DiffCell[[i]][[j]] <- paste0(XLCols[j], DiffRow)
                   }
-
-                  rm(AnyDiffCol, DifRow)
+                  rm(AnyDiffCol, DiffRow)
             }
 
-
+            DiffCell[[i]] <- unlist(DiffCell[[i]])
       }
 
       if(outputAllSheets){
