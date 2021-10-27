@@ -14,7 +14,7 @@ specific project details.}
 
 \item{sheet}{the sheet to read in that Excel file}
 
-\item{report_input_DF}{the data.frame object that is laid out exactly like a
+\item{report_input_DF}{a data.frame object that is laid out exactly like a
 tab from the "Report input template.xlsx" file}
 }
 \value{

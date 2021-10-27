@@ -11,7 +11,7 @@
 #'   directory than the current one. This should be filled out with your
 #'   specific project details.
 #' @param sheet the sheet to read in that Excel file
-#' @param report_input_DF the data.frame object that is laid out exactly like a
+#' @param report_input_DF a data.frame object that is laid out exactly like a
 #'   tab from the "Report input template.xlsx" file
 #'
 #' @return a list object
