@@ -79,6 +79,12 @@
 #'   ended, so that interval may not be tau if you did not set up the simulation
 #'   that way. See the options for "CL_ss_int" as an alternative.}
 #'
+#'   \item{"CL_hepatic"}{I'm not actually positive that this is the total
+#'   hepatic clearance, but I think that's what it is... This is the value
+#'   listed on the Summary tab, under "PKPD Parameters" with the name "CL
+#'   (L/h)". This is often in cell A41. Sorry for the uncertain explanation;
+#'   I'll update this when I know better what this is! -LS}
+#'
 #'   \item{"Cmax_dose1"}{Cmax for dose 1. By default, data are pulled from sheet
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
 #'
@@ -168,6 +174,7 @@ extractPK <- function(sim_data_file,
                               "CL_ss",
                               "CL_ss_withEffector",
                               "CL_lastdoseToEnd",
+                              "CL_hepatic",
                               "Cmax_dose1",
                               "Cmax_dose1_withEffector",
                               "Cmax_ss",
@@ -231,7 +238,7 @@ extractPK <- function(sim_data_file,
                      "tlag_sub", "tlag_inhib")
 
       # Parameters to pull from the Clearance Trials SS tab
-      Param_CLTSS <- c("F_sub", "fh_sub", "fg_sub")
+      Param_CLTSS <- c("F_sub", "fh_sub", "fg_sub", "CL_hepatic")
 
       Out <- list()
 
@@ -563,6 +570,7 @@ extractPK <- function(sim_data_file,
                   findCol <- function(PKparam){
 
                         ToDetect <- switch(PKparam,
+                                           "CL_hepatic" = "CL \\(L",
                                            "F_sub" = "F\\(Sub",
                                            "fh_sub" = "Fh\\(Sub",
                                            "fg_sub" = "Fg\\(Sub")

@@ -85,6 +85,12 @@ extractPK(
   ended, so that interval may not be tau if you did not set up the simulation
   that way. See the options for "CL_ss_int" as an alternative.}
 
+  \item{"CL_hepatic"}{I'm not actually positive that this is the total
+  hepatic clearance, but I think that's what it is... This is the value
+  listed on the Summary tab, under "PKPD Parameters" with the name "CL
+  (L/h)". This is often in cell A41. Sorry for the uncertain explanation;
+  I'll update this when I know better what this is! -LS}
+
   \item{"Cmax_dose1"}{Cmax for dose 1. By default, data are pulled from sheet
   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
 
@@ -102,8 +108,8 @@ extractPK(
   \item{"F_sub"}{bioavailability (F) of substrate. By default, data are
   pulled from the sheet "Clearance Trials SS".}
 
-  \item{"fa_sub"}{fraction absorbed for the substrate. By default, data are
-  pulled from the sheet "Absorption".}
+  \item{"fa_sub" or "fa_inhib"}{fraction absorbed for the substrate or
+  inhibitor. By default, data are pulled from the sheet "Absorption".}
 
   \item{"fg_sub"}{fraction of substrate escaping gut metabolism. By default,
   data are pulled from the sheet "Clearance Trials SS".}
