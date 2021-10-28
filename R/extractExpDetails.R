@@ -67,7 +67,9 @@
 #'
 #'   \item{Ontogeny}{ontogeny profile used}
 #'
-#'   \item{Peff}{Peff,human Cap(10^-4 cm/s)}
+#'   \item{Papp_MDCK}{Papp as determined in MDCKII cells (10^-6 cm/s)}
+#'
+#'   \item{Papp_calibrator}{Papp of the calibrator compound (10^-6 cm/s)}
 #'
 #'   \item{PercFemale}{Percent of females in simulated population}
 #'
@@ -183,15 +185,15 @@ extractExpDetails <- function(sim_data_file,
 
       InputDeets <- data.frame(
             Deet = c("Abs_model", "fa_input", "ka_input", "tlag_input",
-                     "fu_gut_input", "Peff", "UserAddnOrgan",
+                     "fu_gut_input", "Papp_MDCK", "Papp_calibrator",
+                     "UserAddnOrgan",
                      "CLint",
                      "Qgut", "kin_sac", "kout_sac", "Vsac", "kp_scalar",
                      "PercFemale", "Age_min", "Age_max",
                      "Ontogeny"),
             NameCol = 1,
             ValueCol = 2,
-            Class = c("character", rep("numeric", 5), "character",
-                      rep("numeric", 9), "character"),
+            Class = c("character", rep("numeric", 16), "character"),
             Sheet = "Input Sheet") %>%
             mutate(NameCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
                                     4, NameCol),
@@ -342,7 +344,7 @@ extractExpDetails <- function(sim_data_file,
 
             # Check whether an effector is present b/c that moves things around
             EffectorPresent <- any(str_detect(InputTab$...3, "Inhibitor"), na.rm = TRUE)
-            # !!! May need to adjust this further when there are TWO inhibitor
+            # !!! May need to adjust this further when there are TWO inhibitors
             # present!!!
 
             if(EffectorPresent){
@@ -366,11 +368,12 @@ extractExpDetails <- function(sim_data_file,
                                      "tlag_input" = "lag time \\(",
                                      "fu_gut_input" = "fu\\(Gut\\)$",
                                      "Ontogeny" = "Ontogeny Profile",
-                                     "Peff" = "Peff,man Cap",
+                                     "Papp_MDCK" = "MDCK\\(10E-06 cm/s\\)",
+                                     "Papp_calibrator" = "Reference Compound Value \\(10E-06 cm/s\\)",
                                      "PercFemale" = "Propn. of Females",
                                      "UserAddnOrgan" = "User-defined Additional",
                                      "SimulatorVersion" = "Version number",
-                                     "Qgut" = "Q\\(Gut\\)\\(L/hr",
+                                     "Qgut" = "Q\\(Gut\\) \\(L/h",
                                      "kin_sac" = "SAC kin",
                                      "kout_sac" = "SAC kout",
                                      "Vsac" = "Volume .Vsac")
