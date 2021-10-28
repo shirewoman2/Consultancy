@@ -6,16 +6,22 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param exp_details Experiment details you want to extract from the simulator
-#'   output file "Summary" or "Input Sheet" tabs. Options are "Summary tab" to
-#'   extract details only from the "Summary tab" (default), "Input Sheet" to
-#'   extract details only from the "Input Sheet" tab, "all" to extract all
-#'   possible parameters, or any combination of the following:
+#'   output file "Summary" or "Input Sheet" tabs or the tab containing
+#'   information about that population (the tab with the same name as the
+#'   population simulated). Options are "Summary tab" to extract details only
+#'   from the "Summary tab" (default), "Input Sheet" to extract details only
+#'   from the "Input Sheet" tab, "all" to extract all possible parameters, or
+#'   any combination of the following:
 #'
 #'   \describe{
 #'
 #'   \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
 #'
 #'   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
+#'
+#'   \item{AGP_male or AGP_female}{AGP mean value for males or females. Values
+#'   are pulled from the tab with information on the population simulated.
+#'   Specifying "AGP" will return data for both sexes.}
 #'
 #'   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 #'
@@ -38,7 +44,17 @@
 #'
 #'   \item{fu_sub or fu_inhib}{fraction unbound}
 #'
-#'   \item{Hematocrit or Heamatocrit}{the hematocrit}
+#'   \item{Hematocrit or Haematocrit}{the hematocrit listed on the "Summary"
+#'   tab}
+#'
+#'   \item{Hematocrit_male, Hematocrit_female, Haematocrit_male, or
+#'   Haematocrit_female}{the hematocrit listed on the tab with population info.
+#'   Note from LS: Can someone tell me how this differs from the "Haematocrit"
+#'   value listed on the Summary tab?}
+#'
+#'   \item{HSA_male or HSA_female}{the HSA value for the sex specified --
+#'   including C0, C1, and C2, where appropriate -- listed on the tab with
+#'   population info. Specifying "HSA" will return all possible HSA details.}
 #'
 #'   \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
 #'
@@ -187,20 +203,32 @@ extractExpDetails <- function(sim_data_file,
             Deet = c("Abs_model", "fa_input", "ka_input", "tlag_input",
                      "fu_gut_input", "Papp_MDCK", "Papp_calibrator",
                      "UserAddnOrgan",
-                     "CLint",
+                     "CLint", "Interaction",
                      "Qgut", "kin_sac", "kout_sac", "Vsac", "kp_scalar",
                      "PercFemale", "Age_min", "Age_max",
                      "Ontogeny"),
             NameCol = 1,
             ValueCol = 2,
-            Class = c("character", rep("numeric", 16), "character"),
+            Class = c("character", rep("numeric", 17), "character"),
             Sheet = "Input Sheet") %>%
             mutate(NameCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
                                     4, NameCol),
                    ValueCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
                                      5, ValueCol))
 
-      AllDeets <- bind_rows(AllDeets, InputDeets)
+      PopDeets <- data.frame(
+            Deet = c("AGP", "AGP_female", "AGP_male",
+                     "Haematocrit", "Hematocrit",
+                     "Haematocrit_female", "Haematocrit_male",
+                     "Hematocrit_female", "Hematocrit_male",
+                     "HSA", "HSA_female", "HSA_male",
+                     "HSA_CO_female", "HSA_CO_male",
+                     "HSA_C1_female", "HSA_C1_male",
+                     "HSA_C2_female", "HSA_C2_male"),
+            NameCol = 15, ValueCol = 16,
+            Class = "numeric", Sheet = "population")
+
+      AllDeets <- bind_rows(AllDeets, InputDeets, PopDeets)
 
       if(exp_details[1] == "all"){
             exp_details <- AllDeets$Deet
@@ -226,6 +254,16 @@ extractExpDetails <- function(sim_data_file,
       }
 
       Out <- list()
+
+      # Need to note original exp_details requested b/c I'm adding to it if
+      # people request info from population tab
+      exp_details_orig <- exp_details
+
+      if(any(exp_details %in% AllDeets$Deet[AllDeets$Sheet == "population"])){
+            exp_details <- c(exp_details, "Pop")
+            exp_details <- unique(exp_details)
+      }
+
 
       # Pulling details from the summary tab
       SumDeets <- intersect(exp_details,
@@ -483,6 +521,93 @@ extractExpDetails <- function(sim_data_file,
                         }
                   }
             }
+      }
+
+      # Pulling details from the Pop Sheet tab
+      PopDeets <- intersect(exp_details,
+                            AllDeets$Deet[AllDeets$Sheet == "population"])
+
+      if(length(PopDeets) > 0){
+            # Getting name of that tab.
+            SheetNames <- readxl::excel_sheets(sim_data_file)
+            PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Pop, 1, 20))]
+
+            PopTab <- suppressMessages(
+                  readxl::read_excel(path = sim_data_file, sheet = PopSheet,
+                                     col_names = FALSE))
+
+            # Removing population from output if the user didn't specifically request
+            # it.
+            if("Pop" %in% exp_details_orig == FALSE){
+                  Out$Pop <- NULL
+            }
+
+            if("HSA" %in% exp_details_orig){
+                  exp_details <- unique(c(exp_details, "HSA_CO_female",
+                                          "HSA_CO_male", "HSA_C1_female",
+                                          "HSA_C1_male", "HSA_C2_female",
+                                          "HSA_C2_male", "HSA_male", "HSA_female"))
+                  exp_details <- exp_details[!exp_details == "HSA"]
+            }
+
+            if("HSA_male" %in% exp_details_orig){
+                  exp_details <- unique(c(exp_details, "HSA_male", "HSA_CO_male",
+                                          "HSA_C1_male", "HSA_C2_male"))
+            }
+
+            if("HSA_female" %in% exp_details_orig){
+                  exp_details <- unique(c(exp_details, "HSA_female", "HSA_CO_female",
+                                          "HSA_C1_female", "HSA_C2_female"))
+            }
+
+            if("AGP" %in% exp_details_orig){
+                  exp_details <- unique(c(exp_details, "AGP_male", "AGP_female"))
+                  exp_details <- exp_details[!exp_details == "AGP"]
+            }
+
+            PopDeets <- intersect(exp_details, AllDeets$Deet[AllDeets$Sheet == "population"])
+
+            # sub function for finding correct cell
+            pullValue <- function(deet){
+
+                  # Setting up regex to search
+                  ToDetect <- switch(deet,
+                                     "HSA_female" = "HSA : Female",
+                                     "HSA_male" = "HSA : Male",
+                                     "HSA_CO_female" = "HSA C0 : Female",
+                                     "HSA_CO_male" = "HSA C0 : Male",
+                                     "HSA_C1_female" = "HSA C1 : Female",
+                                     "HSA_C1_male" = "HSA C1 : Male",
+                                     "HSA_C2_female" = "HSA C2 : Female",
+                                     "HSA_C2_male" = "HSA C2 : Male",
+                                     "AGP_male" = "AGP Mean : Male",
+                                     "AGP_female" = "AGP Mean : Female",
+                                     "Hematocrit_male" = "Haematocrit Mean : Male",
+                                     "Hematocrit_female" = "Haematocrit Mean : Female",
+                                     "Haematocrit_male" = "Haematocrit Mean : Male",
+                                     "Haematocrit_female" = "Haematocrit Mean : Female")
+
+                  NameCol <- AllDeets$NameCol[which(AllDeets$Deet == deet)]
+                  Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
+                  Val <- PopTab[Row, AllDeets$ValueCol[AllDeets$Deet == deet]] %>%
+                        pull()
+                  Val <- sort(unique(Val))
+
+                  suppressWarnings(
+                        Val <- ifelse(AllDeets$Class[AllDeets$Deet == deet] == "character",
+                                      Val, as.numeric(Val))
+                  )
+
+                  # Tidying up some specific idiosyncracies of simulator output
+                  Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
+
+                  return(Val)
+            }
+
+            for(i in PopDeets){
+                  Out[[i]] <- pullValue(i)
+            }
+
       }
 
       return(Out)

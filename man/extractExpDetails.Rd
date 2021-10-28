@@ -10,16 +10,22 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{exp_details}{Experiment details you want to extract from the simulator
-  output file "Summary" or "Input Sheet" tabs. Options are "Summary tab" to
-  extract details only from the "Summary tab" (default), "Input Sheet" to
-  extract details only from the "Input Sheet" tab, "all" to extract all
-  possible parameters, or any combination of the following:
+  output file "Summary" or "Input Sheet" tabs or the tab containing
+  information about that population (the tab with the same name as the
+  population simulated). Options are "Summary tab" to extract details only
+  from the "Summary tab" (default), "Input Sheet" to extract details only
+  from the "Input Sheet" tab, "all" to extract all possible parameters, or
+  any combination of the following:
 
   \describe{
 
   \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
 
   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
+
+  \item{AGP_male or AGP_female}{AGP mean value for males or females. Values
+  are pulled from the tab with information on the population simulated.
+  Specifying "AGP" will return data for both sexes.}
 
   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 
@@ -42,7 +48,17 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{fu_sub or fu_inhib}{fraction unbound}
 
-  \item{Hematocrit or Heamatocrit}{the hematocrit}
+  \item{Hematocrit or Haematocrit}{the hematocrit listed on the "Summary"
+  tab}
+
+  \item{Hematocrit_male, Hematocrit_female, Haematocrit_male, or
+  Haematocrit_female}{the hematocrit listed on the tab with population info.
+  Note from LS: Can someone tell me how this differs from the "Haematocrit"
+  value listed on the Summary tab?}
+
+  \item{HSA_male or HSA_female}{the HSA value for the sex specified --
+  including C0, C1, and C2, where appropriate -- listed on the tab with
+  population info. Specifying "HSA" will return all possible HSA details.}
 
   \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
 
@@ -71,7 +87,9 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{Ontogeny}{ontogeny profile used}
 
-  \item{Peff}{Peff,human Cap(10^-4 cm/s)}
+  \item{Papp_MDCK}{Papp as determined in MDCKII cells (10^-6 cm/s)}
+
+  \item{Papp_calibrator}{Papp of the calibrator compound (10^-6 cm/s)}
 
   \item{PercFemale}{Percent of females in simulated population}
 
