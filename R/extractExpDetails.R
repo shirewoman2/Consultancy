@@ -203,13 +203,13 @@ extractExpDetails <- function(sim_data_file,
             Deet = c("Abs_model", "fa_input", "ka_input", "tlag_input",
                      "fu_gut_input", "Papp_MDCK", "Papp_calibrator",
                      "UserAddnOrgan",
-                     "CLint", "Interaction",
+                     "CLint", #"Interaction",
                      "Qgut", "kin_sac", "kout_sac", "Vsac", "kp_scalar",
                      "PercFemale", "Age_min", "Age_max",
                      "Ontogeny"),
             NameCol = 1,
             ValueCol = 2,
-            Class = c("character", rep("numeric", 17), "character"),
+            Class = c("character", rep("numeric", 16), "character"),
             Sheet = "Input Sheet") %>%
             mutate(NameCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
                                     4, NameCol),
@@ -218,11 +218,10 @@ extractExpDetails <- function(sim_data_file,
 
       PopDeets <- data.frame(
             Deet = c("AGP", "AGP_female", "AGP_male",
-                     "Haematocrit", "Hematocrit",
                      "Haematocrit_female", "Haematocrit_male",
                      "Hematocrit_female", "Hematocrit_male",
                      "HSA", "HSA_female", "HSA_male",
-                     "HSA_CO_female", "HSA_CO_male",
+                     "HSA_C0_female", "HSA_C0_male",
                      "HSA_C1_female", "HSA_C1_male",
                      "HSA_C2_female", "HSA_C2_male"),
             NameCol = 15, ValueCol = 16,
@@ -543,20 +542,20 @@ extractExpDetails <- function(sim_data_file,
             }
 
             if("HSA" %in% exp_details_orig){
-                  exp_details <- unique(c(exp_details, "HSA_CO_female",
-                                          "HSA_CO_male", "HSA_C1_female",
+                  exp_details <- unique(c(exp_details, "HSA_C0_female",
+                                          "HSA_C0_male", "HSA_C1_female",
                                           "HSA_C1_male", "HSA_C2_female",
                                           "HSA_C2_male", "HSA_male", "HSA_female"))
                   exp_details <- exp_details[!exp_details == "HSA"]
             }
 
             if("HSA_male" %in% exp_details_orig){
-                  exp_details <- unique(c(exp_details, "HSA_male", "HSA_CO_male",
+                  exp_details <- unique(c(exp_details, "HSA_male", "HSA_C0_male",
                                           "HSA_C1_male", "HSA_C2_male"))
             }
 
             if("HSA_female" %in% exp_details_orig){
-                  exp_details <- unique(c(exp_details, "HSA_female", "HSA_CO_female",
+                  exp_details <- unique(c(exp_details, "HSA_female", "HSA_C0_female",
                                           "HSA_C1_female", "HSA_C2_female"))
             }
 
@@ -574,8 +573,8 @@ extractExpDetails <- function(sim_data_file,
                   ToDetect <- switch(deet,
                                      "HSA_female" = "HSA : Female",
                                      "HSA_male" = "HSA : Male",
-                                     "HSA_CO_female" = "HSA C0 : Female",
-                                     "HSA_CO_male" = "HSA C0 : Male",
+                                     "HSA_C0_female" = "HSA C0 : Female",
+                                     "HSA_C0_male" = "HSA C0 : Male",
                                      "HSA_C1_female" = "HSA C1 : Female",
                                      "HSA_C1_male" = "HSA C1 : Male",
                                      "HSA_C2_female" = "HSA C2 : Female",
@@ -607,7 +606,6 @@ extractExpDetails <- function(sim_data_file,
             for(i in PopDeets){
                   Out[[i]] <- pullValue(i)
             }
-
       }
 
       return(Out)
