@@ -395,9 +395,26 @@ ct_plot <- function(sim_data_file,
                   ungroup()
       )
 
+      # The mean and percentile data listed in the simulator output files I've
+      # seen are arithmetic, although I'm not sure if that's always true. If the
+      # user specified "geometric", we need to calculate that or the wrong type
+      # of mean will be plotted in the graph b/c the overall mean will be
+      # arithmetic while the trial means will be geometric. To be on the safe
+      # side, calculating for both instances since I just don't know how
+      # consistent the simulator output is. -LS
       sim_data_mean <- Data %>%
             filter(Simulated == TRUE  &
-                         Trial %in% c("mean", "per5", "per95"))
+                         !Trial %in% c("mean", "per5", "per95")) %>%
+            group_by(across(
+                  any_of(c("Compound", "Tissue", "Effector", "Simulated",
+                           "Time", "Time_units", "Conc_units")))) %>%
+            summarize(mean = switch(mean_type,
+                                        "arithmetic" = mean(Conc, na.rm = TRUE),
+                                        "geometric" =gm_mean(Conc)),
+                      per5 = quantile(Conc, 0.05),
+                      per95 = quantile(Conc, 0.95)) %>%
+            pivot_longer(cols = c("mean", "per5", "per95"),
+                         names_to = "Trial", values_to = "Conc")
 
       obs_data <- Data %>% filter(Simulated == FALSE)
 
