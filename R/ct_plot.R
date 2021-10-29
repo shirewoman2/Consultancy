@@ -1,5 +1,11 @@
+#' Concentration-time plots to match Consultancy template
+#'
 #' Using observed and simulated concentration-time data, make
-#' publication-quality graphs.
+#' publication-quality graphs that match the consultancy template formatting
+#' instructions. A note: The breaks on the x axis are set up to work nicely for
+#' time intervals up to 4 weeks; if the time you're monitoring is longer than
+#' that, you may want to set \code{return_indiv_graphs = TRUE} and set the x
+#' axis breaks yourself.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data
@@ -305,9 +311,9 @@ ct_plot <- function(sim_data_file,
       if(TimeUnits == "hours"){
 
             PossBreaks <- data.frame(
-                  Tlast = c(12, 24, 48, 96, 168, 336, 360, 504, 672),
+                  Tlast = c(12, 24, 48, 96, 168, 336, 360, 504, 672, Inf),
                   BreaksToUse = c("12hr", "24hr", "48hr", "96hr", "1wk", "2wk",
-                                  "15d", "3wk", "4wk"))
+                                  "15d", "3wk", "4wk", "4wkplus"))
 
             BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
                   slice(which.min(Tlast)) %>% pull(BreaksToUse)
@@ -321,14 +327,16 @@ ct_plot <- function(sim_data_file,
                               "2wk" = seq(0, 336, 48),
                               "15d" = seq(0, 360, 48),
                               "3wk" = seq(0, 504, 72),
-                              "4wk" = seq(0, 672, 96))
+                              "4wk" = seq(0, 672, 96),
+                              "4wkplus" = round_up_nice(seq(0, tlast,
+                                                            length.out = 6)))
       }
 
       if(TimeUnits == "minutes"){
-            PossBreaks <- data.frame(Tlast = c(60, 240, 480, 720, 1440),
+            PossBreaks <- data.frame(Tlast = c(60, 240, 480, 720, 1440, Inf),
                                      BreaksToUse = c("1hr", "4hr",
                                                      "8hr", "12hr",
-                                                     "24hr"))
+                                                     "24hr", "24hrplus"))
             BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
                   slice(which.min(Tlast)) %>% pull(BreaksToUse)
 
@@ -337,7 +345,9 @@ ct_plot <- function(sim_data_file,
                               "4hr" = seq(0, 240, 30),
                               "8hr" = seq(0, 480, 60),
                               "12hr" = seq(0, 720, 120),
-                              "24hr" = seq(0, 1440, 240))
+                              "24hr" = seq(0, 1440, 240),
+                              "24hrplus" = round_up_nice(seq(0, tlast,
+                                                             length.out = 6)))
       }
 
       # Adjusting the breaks when time_range[1] isn't 0

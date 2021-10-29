@@ -2,8 +2,7 @@
 % Please edit documentation in R/ct_plot.R
 \name{ct_plot}
 \alias{ct_plot}
-\title{Using observed and simulated concentration-time data, make
-publication-quality graphs.}
+\title{Concentration-time plots to match Consultancy template}
 \usage{
 ct_plot(
   sim_data_file,
@@ -116,7 +115,11 @@ Depending on the options selected, returns either a set of graphs or
 }
 \description{
 Using observed and simulated concentration-time data, make
-publication-quality graphs.
+publication-quality graphs that match the consultancy template formatting
+instructions. A note: The breaks on the x axis are set up to work nicely for
+time intervals up to 4 weeks; if the time you're monitoring is longer than
+that, you may want to set \code{return_indiv_graphs = TRUE} and set the x
+axis breaks yourself.
 }
 \examples{
 sim_data_file <- "../Example simulator output.xlsx"
