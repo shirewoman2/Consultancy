@@ -19,7 +19,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \describe{
 
-  \item{AbsorptionModel}{absorption model used, e.g., "1st order"}
+  \item{Abs_model_sub, Abs_model_inhib}{absorption model used, e.g., "1st
+  order", for either the substrate or inhibitor}
 
   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
 
@@ -29,11 +30,15 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
 
-  \item{CLint}{intrinsic clearance, Vmax, Km, fu_mic, and/or half life values
-  used for any CYPs, UGTs, or other enzymes listed. Output will be labeled
-  for each enzyme and pathway as, e.g., "CLint_CYP3A4_1-OH" or
-  "Vmax_UGT1A1_Pathway1". Specify "CLint" and all the other values (Vmax, Km,
-  fu,mic, half life) will also be returned.}
+  \item{CLint_sub or CLint_inhib}{intrinsic clearance, Vmax, Km, fu_mic,
+  and/or half life values used for any CYPs, UGTs, or other enzymes listed
+  for the substrate or inhibitor. Output will be labeled for each enzyme and
+  pathway as, e.g., "CLint_sub_CYP3A4_1-OH" or "Vmax_UGT1A1_Pathway1".
+  Specify "CLint_sub" and all the other values (Vmax, Km, fu,mic, half life)
+  will also be returned.}
+
+  \item{CLrenal_sub or CLrenal_inhib}{renal clearance (L/hr) of the substrate
+  or inhibitor}
 
   \item{Dose_sub or Dose_inhib}{dose administered}
 
@@ -41,12 +46,15 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{DoseRoute_sub or DoseRoute_inhib}{dose route, e.g. oral}
 
-  \item{fa_input}{user input value for the fraction absorbed}
+  \item{fa_sub or fa_inhib}{user input value for the fraction absorbed for
+  the substrate or inhibitor}
 
-  \item{fu_gut_input}{user input value for the fraction escaping gut
-  metabolism}
+  \item{fu_gut_sub or fu_gut_inhib}{user input value for the fraction
+  escaping gut metabolism for the substrate or inhibitor}
 
   \item{fu_sub or fu_inhib}{fraction unbound}
+
+  \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
 
   \item{Hematocrit or Haematocrit}{the hematocrit listed on the "Summary"
   tab}
@@ -60,17 +68,20 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   including C0, C1, and C2, where appropriate -- listed on the tab with
   population info. Specifying "HSA" will return all possible HSA details.}
 
-  \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
-
   \item{Inhibitor}{inhibitor used, if applicable}
 
-  \item{ka_input}{user input value for the absorption constant ka}
+  \item{Interaction_sub or Interaction_inhib}{interaction parameters for any
+  CYPs, UGTs, or other enzymes listed for the substrate or inhibitor. Output
+  will be labeled for each enzyme and interaction type.}
 
-  \item{kin_sac and kout_sac}{k in and k out for SAC (1/hr)}
+  \item{ka_sub or ka_inhib}{user input value for the absorption constant ka
+  for the substrate or inhibitor}
 
-  \item{kp_scalar}{kp scalar}
+  \item{kin_sac_sub, kin_sac_inhib, kout_sac_sub, or kout_sac_inhib}{k in and
+  k out for SAC (1/hr) for the substrate or inhibitor}
 
-  \item{tlag_input}{user input value for the lag time}
+  \item{kp_scalar_sub or kp_scalar_inhib}{kp scalar for the substrate or
+  inhibitor}
 
   \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
 
@@ -87,9 +98,12 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{Ontogeny}{ontogeny profile used}
 
-  \item{Papp_MDCK}{Papp as determined in MDCKII cells (10^-6 cm/s)}
+  \item{Papp_MDCK_sub, Papp_MDCK_inhib, Papp_Caco_sub, or
+  Papp_Caco_inhib}{Papp as determined in MDCKII or Caco-2 cells (10^-6 cm/s)
+  for the substrate or inhibitor}
 
-  \item{Papp_calibrator}{Papp of the calibrator compound (10^-6 cm/s)}
+  \item{Papp_calibrator_sub or Papp_calibrator_inhib}{Papp of the calibrator
+  compound (10^-6 cm/s) of the substrate or inhibitor}
 
   \item{PercFemale}{Percent of females in simulated population}
 
@@ -101,7 +115,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{PrandialSt_sub or PrandialSt_inhib}{prandial state upon dosing}
 
-  \item{Qgut}{Qgut (L/hr)}
+  \item{Qgut_sub or Qgut_inhib}{Qgut_sub (L/hr) for the substrate or
+  inhibitor}
 
   \item{Regimen_sub or Regimen_inhib}{dosing regimen}
 
@@ -118,15 +133,18 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{Substrate}{the substrate used}
 
+  \item{tlag_sub or tlag_inhib}{user input value for the lag time for the
+  substrate or inhibitor}
+
   \item{Type_sub or Type_inhib}{type of compound, e.g., monoprotic base}
 
   \item{Units_dose_sub, Units_dose_inhib, Units_AUC, Units_Cmax, Units_tmax,
   Units_CL}{Units for substrate dose, inhibitor dose, AUC, Cmax, tmax, or CL}
 
-  \item{UserAddnOrgan}{yes or no: Was a user-defined additional organ
-  included?}
+  \item{UserAddnOrgan_sub or UserAddnOrgan_inhib}{yes or no: Was a
+  user-defined additional organ included for the substrate or inhibitor?}
 
-  \item{Vsac}{V sac (L/kg)}
+  \item{Vsac_sub or Vsac_inhib}{V sac (L/kg) for the substrate or inhibitor}
 
   \item{Vss_input_sub or Vss_input_inhib}{Vss used}
 
