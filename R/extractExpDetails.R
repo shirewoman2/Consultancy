@@ -597,15 +597,21 @@ extractExpDetails <- function(sim_data_file,
                         ValCol <- ifelse(SorI == "_sub", 2, 4)
 
                         IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
-                                                    "^Enzyme$|^Transporter$")) # need to address transporter inhibition but i don't know what the output looks like
+                                                    "^Enzyme$|^Transporter$"))
                         IntRows <- IntRows[complete.cases(InputTab[IntRows + 1, NameCol])]
 
-                        # Only IntRows after "Interaction" in NameCol are for interaction data
+                        # Only IntRows after the first instance of an
+                        # interaction type of term is found in NameCol. NB: I
+                        # thought it would work to just look for cells after
+                        # "interaction", but "interaction" hasn't always been
+                        # listed in the output files I've found.
                         IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
-                                                              pull(), "Interaction"))[1]
+                                                              pull(), "Ind max|^Ki |^MBI"))[1] - 1
 
                         if(complete.cases(IntRowStart)){
-                              IntRows <- IntRows[IntRows > IntRowStart]
+
+                              IntRows <- IntRows[IntRows >= IntRowStart]
+
 
                               for(i in IntRows){
                                     Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, ValCol])
