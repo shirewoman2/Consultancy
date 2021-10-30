@@ -7,13 +7,15 @@
 #' applicable.}
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
-#'   concentration-time data
+#'   concentration-time data; must be an output file from the Simcyp simulator
 #' @param obs_data_file name of the Excel file containing the observed
-#'   concentration-time data. If the observed data you want to plot were already
-#'   included in the Excel output from the simulator, leave this as NA.
-#'   Otherwise, this is the file that it is ready to be converted to an XML
-#'   file, not the file that contains only the digitized time and concentration
-#'   data.
+#'   concentration-time data for the substrate. If the observed data you want to
+#'   plot were already included in the Excel output from the simulator, leave
+#'   this as NA. Otherwise, this is the file that it is ready to be converted to
+#'   an XML file, not the file that contains only the digitized time and
+#'   concentration data.
+#' @param obs_effector_data_file name of the Excel file containing observed
+#'   concentration-time data for the effector, when appropriate
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -23,9 +25,8 @@
 #'   Excel file.
 #' @param tissue From which tissue should the desired concentrations be
 #'   extracted? Default is plasma for typical plasma concentration-time data.
-#'   Other tissues are acceptable, e.g., "lung", "brain", etc., as long as the
-#'   tissue is one of the options included in "Sheet Options", "Tissues" in the
-#'   simulator.
+#'   Other options are "blood" or any tissues included in "Sheet Options",
+#'   "Tissues" in the simulator, e.g., "lung", "brain", etc.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are one or both of "aggregate" and
 #'   "individual". Aggregated data are not calculated here but are pulled from
@@ -107,8 +108,8 @@ extractConcTime <- function(sim_data_file,
       if(tissue %in% c("gi tissue", "lung", "additional organ", "adipose",
                        "heart", "muscle", "feto-placenta", "bone", "kidney",
                        "skin", "pancreas", "brain", "liver", "spleen",
-                       "plasma") == FALSE){
-            stop("The requested tissue must be one of the options listed under 'Sheet Options', 'Tissues' in the Simulator.")
+                       "plasma", "blood") == FALSE){
+            stop("The requested tissue must be plasma, blood, or one of the options listed under 'Sheet Options', 'Tissues' in the Simulator.")
       }
 
       # Getting summary data for the simulation
@@ -119,11 +120,12 @@ extractConcTime <- function(sim_data_file,
       # Effector present?
       EffectorPresent <- complete.cases(SimSummary[["Inhibitor"]])
 
-      # Extracting tissue or plasma data? Sheet format differs.
-      TissueOrPlasma <- ifelse(tissue == "plasma", "plasma", "tissue")
+      # Extracting tissue or plasma/blood data? Sheet format differs.
+      TissueType <- ifelse(tissue %in% c("plasma", "blood"), "systemic", "tissue")
 
       SheetToExtract <- switch(tissue,
                                "plasma" = "Conc Profiles CSys(CPlasma)",
+                               "blood" = "Conc Profiles CSys(CBlood)",
                                "gi tissue" = "Gut Tissue Conc",
                                "lung" = "Lung Conc",
                                "additional organ" = "Additional Organ Conc",
@@ -160,10 +162,10 @@ extractConcTime <- function(sim_data_file,
                   # Substrate concentrations in presence of effector
                   StartRow_mean_SubPlusEffector <-
                         which(str_detect(tolower(sim_data_xl$...1),
-                                         switch(TissueOrPlasma,
-                                                "plasma" = tolower(paste("CSys Mean -",
-                                                                         Compound,
-                                                                         ". interaction")),
+                                         switch(TissueType,
+                                                "systemic" = tolower(paste("CSys Mean -",
+                                                                           Compound,
+                                                                           ". interaction")),
                                                 "tissue" = "ctissue . interaction mean")
                         ))
 
@@ -181,9 +183,9 @@ extractConcTime <- function(sim_data_file,
                   # Effector concentrations
                   StartRow_mean_Effector <-
                         which(str_detect(sim_data_xl$...1,
-                                         switch(TissueOrPlasma,
-                                                "plasma" = paste("ISys 1 Mean -",
-                                                                 SimSummary[["Inhibitor"]]),
+                                         switch(TissueType,
+                                                "systemic" = paste("ISys 1 Mean -",
+                                                                   SimSummary[["Inhibitor"]]),
                                                 "tissue" = "ITissue\\(Inh 1\\) Mean")
                         ))
 
@@ -213,10 +215,10 @@ extractConcTime <- function(sim_data_file,
 
             # individual data
             RowsToUse <- which(str_detect(sim_data_xl$...1,
-                                          switch(TissueOrPlasma,
-                                                 "plasma" = "CSys \\(",
+                                          switch(TissueType,
+                                                 "systemic" = "CSys \\(",
                                                  "tissue" = "CTissue$")))
-            if(TissueOrPlasma == "plasma"){
+            if(TissueType == "systemic"){
                   RowsToUse <- c(RowsToUse[1] - 1, RowsToUse)
             } else {
                   RowsToUse <- c(RowsToUse[2] - 1, RowsToUse[-1])
@@ -251,8 +253,8 @@ extractConcTime <- function(sim_data_file,
 
                   # Compound conc time data in presence of effector
                   RowsToUse <- which(str_detect(sim_data_xl$...1,
-                                                switch(TissueOrPlasma,
-                                                       "plasma" = "CSys After Inh",
+                                                switch(TissueType,
+                                                       "systemic" = "CSys After Inh",
                                                        "tissue" = "CTissue . Interaction")))
                   RowsToUse <- RowsToUse[which(
                         RowsToUse > which(sim_data_xl$...1 == "Individual Statistics"))]
@@ -284,8 +286,8 @@ extractConcTime <- function(sim_data_file,
 
                   # Effector conc time data
                   RowsToUse <- which(str_detect(sim_data_xl$...1,
-                                                switch(TissueOrPlasma,
-                                                       "plasma" = "ISys 1 \\(",
+                                                switch(TissueType,
+                                                       "systemic" = "ISys 1 \\(",
                                                        "tissue" = "ITissue\\(Inh 1")))
                   RowsToUse <- RowsToUse[which(
                         RowsToUse > which(sim_data_xl$...1 == "Individual Statistics"))]
@@ -332,8 +334,8 @@ extractConcTime <- function(sim_data_file,
       TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
       TimeUnits <- ifelse(str_detect(TimeUnits, "Time.* \\(h\\)"), "hours", "minutes")
 
-      # Observed data -- only applies to plasma
-      if(TissueOrPlasma == "plasma"){
+      # Observed data -- only applies to systemic concs
+      if(TissueType == "systemic"){
 
             # If the user did not specify a file to use for observed data, use the
             # observed data that they included for the simulation.
@@ -371,13 +373,15 @@ extractConcTime <- function(sim_data_file,
                                                              "pg/mL",
                                                              "µg/mL",
                                                              "mg/L",
-                                                             "µg/mL"),
+                                                             "µg/mL",
+                                                             "ng/mL"),
                                                 SimUnits = c("mg/L",
                                                              "µg/mL",
                                                              "ng/L",
                                                              "mg/L",
                                                              "ng/mL",
                                                              "µg/mL",
+                                                             "mg/L",
                                                              "mg/L"),
                                                 Factor = c(10^3,
                                                            10^3,
@@ -385,7 +389,8 @@ extractConcTime <- function(sim_data_file,
                                                            10^6,
                                                            10^-3,
                                                            1,
-                                                           1))
+                                                           1,
+                                                           10^3))
 
                         if(SimConcUnits %in% ConvTable$SimUnits == FALSE |
                            ObsConcUnits %in% ConvTable$ObsUnits == FALSE |

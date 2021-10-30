@@ -15,14 +15,17 @@ extractConcTime(
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulated
-concentration-time data}
+concentration-time data; must be an output file from the Simcyp simulator}
 
 \item{obs_data_file}{name of the Excel file containing the observed
-concentration-time data. If the observed data you want to plot were already
-included in the Excel output from the simulator, leave this as NA.
-Otherwise, this is the file that it is ready to be converted to an XML
-file, not the file that contains only the digitized time and concentration
-data.}
+concentration-time data for the substrate. If the observed data you want to
+plot were already included in the Excel output from the simulator, leave
+this as NA. Otherwise, this is the file that it is ready to be converted to
+an XML file, not the file that contains only the digitized time and
+concentration data.}
+
+\item{obs_effector_data_file}{name of the Excel file containing observed
+concentration-time data for the effector, when appropriate}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
@@ -34,9 +37,8 @@ Excel file.}
 
 \item{tissue}{From which tissue should the desired concentrations be
 extracted? Default is plasma for typical plasma concentration-time data.
-Other tissues are acceptable, e.g., "lung", "brain", etc., as long as the
-tissue is one of the options included in "Sheet Options", "Tissues" in the
-simulator.}
+Other options are "blood" or any tissues included in "Sheet Options",
+"Tissues" in the simulator, e.g., "lung", "brain", etc.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and
