@@ -505,7 +505,7 @@ extractExpDetails <- function(sim_data_file,
                         IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
                                                               pull(), "Ind max|^Ki |^MBI"))[1] - 1
 
-                        if(length(IntRowStart) > 0){
+                        if(complete.cases(IntRowStart)){
                               CLRows <- CLRows[CLRows < min(IntRowStart)]
                         }
 
