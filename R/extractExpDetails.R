@@ -282,14 +282,18 @@ extractExpDetails <- function(sim_data_file,
 
       if(length(MySumDeets) > 0){
 
-            SummaryTab <- suppressMessages(
+            # Long file names cause problems for readxl but not openxlsx, for
+            # some reason. That's why there's the error function calling on
+            # openxlsx.
+            SummaryTab <- suppressMessages(tryCatch(
                   readxl::read_excel(path = sim_data_file, sheet = "Summary",
-                                     col_names = FALSE))
-
-            # # Check whether an effector is present b/c that moves things around
-            # EffectorPresent <-
-            #       complete.cases(SummaryTab[
-            #             which(str_detect(SummaryTab$...1, "Inhibitor"))[1], 2])
+                                     col_names = FALSE),
+                  error = openxlsx::read.xlsx(sim_data_file, sheet = "Summary",
+                                             colNames = FALSE)))
+            # If openxlsx read the file, the names are different. Fixing.
+            if(names(SummaryTab)[1] == "X1"){
+                  names(SummaryTab) <- paste0("...", 1:ncol(SummaryTab))
+            }
 
             # sub function for finding correct cell
             pullValue <- function(deet){
@@ -386,9 +390,15 @@ extractExpDetails <- function(sim_data_file,
 
       if(length(MyInputDeets) > 0){
 
-            InputTab <- suppressMessages(
+            InputTab <- suppressMessages(tryCatch(
                   readxl::read_excel(path = sim_data_file, sheet = "Input Sheet",
-                                     col_names = FALSE))
+                                     col_names = FALSE),
+                  error = openxlsx::read.xlsx(sim_data_file, sheet = "Input Sheet",
+                                              colNames = FALSE)))
+            # If openxlsx read the file, the names are different. Fixing.
+            if(names(InputTab)[1] == "X1"){
+                  names(InputTab) <- paste0("...", 1:ncol(InputTab))
+            }
 
             # Check whether an effector is present b/c that moves things around
             EffectorPresent <- any(str_detect(InputTab$...3, "Inhibitor"), na.rm = TRUE)
@@ -722,12 +732,19 @@ extractExpDetails <- function(sim_data_file,
 
       if(length(MyPopDeets) > 0){
             # Getting name of that tab.
-            SheetNames <- readxl::excel_sheets(sim_data_file)
+            SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                                   error = openxlsx::getSheetNames(sim_data_file))
             PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Pop, 1, 20))]
 
-            PopTab <- suppressMessages(
+            PopTab <- suppressMessages(tryCatch(
                   readxl::read_excel(path = sim_data_file, sheet = PopSheet,
-                                     col_names = FALSE))
+                                     col_names = FALSE),
+                  error = openxlsx::read.xlsx(sim_data_file, sheet = PopSheet,
+                                              colNames = FALSE)))
+            # If openxlsx read the file, the names are different. Fixing.
+            if(names(PopTab)[1] == "X1"){
+                  names(PopTab) <- paste0("...", 1:ncol(PopTab))
+            }
 
             # Removing population from output if the user didn't specifically request
             # it.
