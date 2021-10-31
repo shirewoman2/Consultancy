@@ -503,18 +503,25 @@ extractExpDetails <- function(sim_data_file,
 
                         # Checking for interaction data
                         IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
-                                                              pull(), "Interaction"))
+                                                              pull(), "Ind max|^Ki |^MBI"))[1] - 1
+
                         if(length(IntRowStart) > 0){
                               CLRows <- CLRows[CLRows < min(IntRowStart)]
                         }
-
 
                         for(i in CLRows){
                               if(str_detect(as.character(InputTab[i, NameCol]), "Enzyme")){
 
                                     Enzyme <- gsub(" ", "", InputTab[i, ValCol])
                                     Pathway <- gsub(" |-", "", InputTab[i - 1, ValCol])
-                                    CLType <- str_extract(InputTab[i+1, NameCol],
+                                    if(InputTab[i+1, NameCol] == "Genotype"){
+                                          Enzyme <- paste0(Enzyme, InputTab[i+1, ValCol])
+                                          CLrow <- i + 2
+                                    } else {
+                                          CLrow <- i + 1
+                                    }
+
+                                    CLType <- str_extract(InputTab[CLrow, NameCol],
                                                           "CLint|Vmax|t1/2|Ind max")
 
                                     if(CLType == "CLint"){
@@ -523,7 +530,7 @@ extractExpDetails <- function(sim_data_file,
                                                       paste("CLint", Enzyme,
                                                            Pathway, sep = "_"),
                                                       SorI)]] <-
-                                                      as.numeric(InputTab[i+1, ValCol])
+                                                      as.numeric(InputTab[CLrow, ValCol])
                                           )
 
                                           suppressWarnings(
@@ -531,7 +538,7 @@ extractExpDetails <- function(sim_data_file,
                                                       paste("fu_mic", Enzyme,
                                                             Pathway, sep = "_"),
                                                       SorI)]] <-
-                                                      as.numeric(InputTab[i+2, ValCol])
+                                                      as.numeric(InputTab[CLrow+1, ValCol])
                                           )
 
 
@@ -546,7 +553,7 @@ extractExpDetails <- function(sim_data_file,
                                                       paste("Vmax", Enzyme,
                                                             Pathway, sep = "_"),
                                                       SorI)]] <-
-                                                      as.numeric(InputTab[i+1, ValCol])
+                                                      as.numeric(InputTab[CLrow, ValCol])
                                           )
 
                                           suppressWarnings(
@@ -554,7 +561,7 @@ extractExpDetails <- function(sim_data_file,
                                                       paste("Km", Enzyme,
                                                             Pathway, sep = "_"),
                                                       SorI)]] <-
-                                                      as.numeric(InputTab[i+2, ValCol])
+                                                      as.numeric(InputTab[CLrow+1, ValCol])
                                           )
 
                                           suppressWarnings(
@@ -562,7 +569,7 @@ extractExpDetails <- function(sim_data_file,
                                                       paste("fu_mic", Enzyme,
                                                             Pathway, sep = "_"),
                                                       SorI)]] <-
-                                                      as.numeric(InputTab[i+3, ValCol])
+                                                      as.numeric(InputTab[CLrow+2, ValCol])
                                           )
 
                                           rm(Enzyme, Pathway, CLType)
@@ -575,7 +582,7 @@ extractExpDetails <- function(sim_data_file,
                                                       paste("HalfLife", Enzyme,
                                                             Pathway, sep = "_"),
                                                       SorI)]] <-
-                                                      as.numeric(InputTab[i+1, ValCol])
+                                                      as.numeric(InputTab[CLrow, ValCol])
                                           )
 
                                           rm(Enzyme, Pathway, CLType)
