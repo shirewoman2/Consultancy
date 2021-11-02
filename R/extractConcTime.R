@@ -27,6 +27,8 @@
 #'   extracted? Default is plasma for typical plasma concentration-time data.
 #'   Other options are "blood" or any tissues included in "Sheet Options",
 #'   "Tissues" in the simulator, e.g., "lung", "brain", etc.
+#' @param extractMetabolite Extract metabolite concentration-time data? TRUE
+#'   or FALSE (default)
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are one or both of "aggregate" and
 #'   "individual". Aggregated data are not calculated here but are pulled from
@@ -89,6 +91,7 @@ extractConcTime <- function(sim_data_file,
                             obs_effector_data_file = NA,
                             adjust_obs_time = TRUE,
                             tissue = "plasma",
+                            extractMetabolite = FALSE,
                             returnAggregateOrIndiv = c("aggregate",
                                                        "individual")){
 
@@ -115,7 +118,7 @@ extractConcTime <- function(sim_data_file,
       # Getting summary data for the simulation
       SimSummary <- extractExpDetails(sim_data_file)
 
-      Compound <- SimSummary[["Substrate"]]
+      Substrate <- SimSummary[["Substrate"]]
 
       # Effector present?
       EffectorPresent <- complete.cases(SimSummary[["Inhibitor"]])
@@ -123,208 +126,278 @@ extractConcTime <- function(sim_data_file,
       # Extracting tissue or plasma/blood data? Sheet format differs.
       TissueType <- ifelse(tissue %in% c("plasma", "blood"), "systemic", "tissue")
 
-      SheetToExtract <- switch(tissue,
-                               "plasma" = "Conc Profiles CSys(CPlasma)",
-                               "blood" = "Conc Profiles CSys(CBlood)",
-                               "gi tissue" = "Gut Tissue Conc",
-                               "lung" = "Lung Conc",
-                               "additional organ" = "Additional Organ Conc",
-                               "adipose" = "Adipose Conc",
-                               "heart" = "Heart Conc",
-                               "muscle" = "Muscle Conc",
-                               "bone" = "Bone Conc",
-                               "kidney" = "Kidney Conc",
-                               "skin" = "Skin Conc",
-                               "pancreas" = "Pancreas Conc",
-                               "brain" = "Brain Conc",
-                               "liver" = "Liver Conc",
-                               "spleen" = "Spleen Conc")
+      SheetNames <- readxl::excel_sheets(sim_data_file)
 
-      # Reading in simulated concentration-time profile data
-      sim_data_xl <- suppressMessages(
-            readxl::read_excel(path = sim_data_file,
-                               sheet = SheetToExtract,
-                               col_names = FALSE))
+      if(extractMetabolite & TissueType == "systemic"){
+            Concs <- list(Substrate = list(),
+                          Met1 = list(),
+                          Met2 = list())
+      } else {
+            Concs <- list(Substrate = list())
+      }
 
-      if("aggregate" %in% returnAggregateOrIndiv){
-            # mean data
-            StartRow_mean <- which(sim_data_xl$...1 == "Population Statistics") + 1
-            sim_data_mean <- sim_data_xl[StartRow_mean:(StartRow_mean+3), ] %>%
-                  t() %>%
-                  as.data.frame() %>% slice(-(1:3)) %>%
-                  mutate_all(as.numeric) %>%
-                  rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
-                  pivot_longer(names_to = "Trial", values_to = "Conc", cols = -Time) %>%
-                  mutate(Compound = Compound)
+      for(i in names(Concs)){
 
-            if(EffectorPresent){
+            ToMatch <- ifelse(TissueType == "systemic",
+                              paste(tissue, ifelse(i == "Substrate", "Sub", "Met")),
+                              tissue)
+            SheetToExtract <- switch(ToMatch,
+                                     "plasma Sub" = "Conc Profiles CSys\\(CPlasma\\)|Conc Trials Profiles\\(CPlasma\\)",
+                                     "blood Sub" = "Conc Profiles CSys\\(CBlood\\)|Conc Trials Profiles\\(CBlood\\)",
+                                     "plasma Met" = paste0("Sub Pri Met",
+                                                           str_extract(i, "1|2"),
+                                                           ".*CPlasma"),
+                                     "blood Met" = paste0("Sub Pri Met",
+                                                          str_extract(i, "1|2"),
+                                                          ".*CBlood"),
+                                     "gi tissue" = "Gut Tissue Conc",
+                                     "lung" = "Lung Conc",
+                                     "additional organ" = "Additional Organ Conc",
+                                     "adipose" = "Adipose Conc",
+                                     "heart" = "Heart Conc",
+                                     "muscle" = "Muscle Conc",
+                                     "bone" = "Bone Conc",
+                                     "kidney" = "Kidney Conc",
+                                     "skin" = "Skin Conc",
+                                     "pancreas" = "Pancreas Conc",
+                                     "brain" = "Brain Conc",
+                                     "liver" = "Liver Conc",
+                                     "spleen" = "Spleen Conc")
+            Sheet <- SheetNames[str_detect(SheetNames, SheetToExtract)][1]
 
-                  # Substrate concentrations in presence of effector
-                  StartRow_mean_SubPlusEffector <-
-                        which(str_detect(tolower(sim_data_xl$...1),
-                                         switch(TissueType,
-                                                "systemic" = tolower(paste("CSys Mean -",
-                                                                           Compound,
-                                                                           ". interaction")),
-                                                "tissue" = "ctissue . interaction mean")
-                        ))
+            # Reading in simulated concentration-time profile data
+            sim_data_xl <- suppressMessages(
+                  readxl::read_excel(path = sim_data_file,
+                                     sheet = Sheet,
+                                     col_names = FALSE))
+            CompoundName <- ifelse(i == "Substrate",
+                                   Substrate,
+                                   gsub("CSys.*?-| \\(Trial [0-9]*\\)",
+                                        "", sim_data_xl[4, 1]))
 
-                  sim_data_mean_SubPlusEffector <-
-                        sim_data_xl[c(StartRow_mean,
-                                      StartRow_mean_SubPlusEffector:(StartRow_mean_SubPlusEffector+2)), ] %>%
+            if("aggregate" %in% returnAggregateOrIndiv){
+                  # mean data
+                  StartRow_mean <- which(sim_data_xl$...1 == "Population Statistics") + 1
+                  sim_data_mean <- sim_data_xl[StartRow_mean:(StartRow_mean+3), ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
                         rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc", cols = -Time) %>%
-                        mutate(Compound = Compound,
-                               Effector = SimSummary[["Inhibitor"]])
+                        mutate(Compound = CompoundName)
 
-                  # Effector concentrations
-                  StartRow_mean_Effector <-
-                        which(str_detect(sim_data_xl$...1,
-                                         switch(TissueType,
-                                                "systemic" = paste("ISys 1 Mean -",
-                                                                   SimSummary[["Inhibitor"]]),
-                                                "tissue" = "ITissue\\(Inh 1\\) Mean")
-                        ))
+                  if(EffectorPresent){
 
-                  sim_data_mean_Effector <-
-                        sim_data_xl[c(StartRow_mean,
-                                      StartRow_mean_Effector:(StartRow_mean_Effector+2)), ] %>%
-                        t() %>%
-                        as.data.frame() %>% slice(-(1:3)) %>%
-                        mutate_all(as.numeric) %>%
-                        rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
-                        pivot_longer(names_to = "Trial", values_to = "Conc",
-                                     cols = -Time) %>%
-                        mutate(Compound = SimSummary[["Inhibitor"]],
-                               Effector = SimSummary[["Inhibitor"]])
+                        # Substrate concentrations in presence of effector
+                        StartRow_mean_SubPlusEffector <-
+                              which(str_detect(
+                                    tolower(sim_data_xl$...1),
+                                    switch(TissueType,
+                                           "systemic" =
+                                                 # location of "interaction" moves depending on whether it's substrate or metabolite
+                                                 ifelse(i == "Substrate",
+                                                        tolower(paste0("CSys Mean.*?",
+                                                                       CompoundName,
+                                                                       " . interaction")),
+                                                        tolower(paste0("CSys Mean.interaction.*?-",
+                                                                       CompoundName))),
+                                           "tissue" = "ctissue . interaction mean") # RETURN TO THIS PART; make sure it's working as I suspect it's not
+                              ))[1]
 
+                        sim_data_mean_SubPlusEffector <-
+                              sim_data_xl[c(StartRow_mean,
+                                            StartRow_mean_SubPlusEffector:(StartRow_mean_SubPlusEffector+2)), ] %>%
+                              t() %>%
+                              as.data.frame() %>% slice(-(1:3)) %>%
+                              mutate_all(as.numeric) %>%
+                              rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
+                              pivot_longer(names_to = "Trial", values_to = "Conc", cols = -Time) %>%
+                              mutate(Compound = CompoundName,
+                                     Effector = SimSummary[["Inhibitor"]])
 
-                  # All together
-                  sim_data_mean <- bind_rows(sim_data_mean,
-                                             sim_data_mean_SubPlusEffector,
-                                             sim_data_mean_Effector) %>%
-                        mutate(Effector = ifelse(is.na(Effector),
-                                                 "none", Effector))
+                        # Effector concentrations -- only present on tabs w/substrate info
+                        if(i == "Substrate"){
+
+                              StartRow_mean_Effector <-
+                                    which(str_detect(sim_data_xl$...1,
+                                                     switch(TissueType,
+                                                            "systemic" = paste0("ISys 1 Mean.*?",
+                                                                               SimSummary[["Inhibitor"]]),
+                                                            "tissue" = "ITissue\\(Inh 1\\) Mean")
+                                    ))[1]
+
+                              sim_data_mean_Effector <-
+                                    sim_data_xl[c(StartRow_mean,
+                                                  StartRow_mean_Effector:(StartRow_mean_Effector+2)), ] %>%
+                                    t() %>%
+                                    as.data.frame() %>% slice(-(1:3)) %>%
+                                    mutate_all(as.numeric) %>%
+                                    rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
+                                    pivot_longer(names_to = "Trial", values_to = "Conc",
+                                                 cols = -Time) %>%
+                                    mutate(Compound = SimSummary[["Inhibitor"]],
+                                           Effector = SimSummary[["Inhibitor"]])
+
+                              # All together
+                              sim_data_mean <- bind_rows(sim_data_mean,
+                                                         sim_data_mean_SubPlusEffector,
+                                                         sim_data_mean_Effector) %>%
+                                    mutate(Effector = ifelse(is.na(Effector),
+                                                             "none", Effector))
+
+                              rm(StartRow_mean_Effector, sim_data_mean_Effector)
+
+                        } else {
+                              # All together
+                              sim_data_mean <- bind_rows(sim_data_mean,
+                                                         sim_data_mean_SubPlusEffector) %>%
+                                    mutate(Effector = ifelse(is.na(Effector),
+                                                             "none", Effector))
+                        }
+                        rm(sim_data_mean_SubPlusEffector,
+                           StartRow_mean_SubPlusEffector)
+                  }
+
+                  Concs[[i]][["Means"]] <- sim_data_mean
+                  rm(StartRow_mean, sim_data_mean)
             }
-      }
 
-      if("individual" %in% returnAggregateOrIndiv){
+            if("individual" %in% returnAggregateOrIndiv){
 
-            # individual data
-            RowsToUse <- which(str_detect(sim_data_xl$...1,
-                                          switch(TissueType,
-                                                 "systemic" = "CSys \\(",
-                                                 "tissue" = "CTissue$")))
-            if(TissueType == "systemic"){
-                  RowsToUse <- c(RowsToUse[1] - 1, RowsToUse)
-            } else {
-                  RowsToUse <- c(RowsToUse[2] - 1, RowsToUse[-1])
-            }
-
-            TimeRow <- RowsToUse[1]
-
-            sim_data_ind <- sim_data_xl[RowsToUse, ] %>%
-                  t() %>%
-                  as.data.frame() %>% slice(-(1:3)) %>%
-                  mutate_all(as.numeric) %>%
-                  rename(Time = "V1")
-
-            SubjTrial <- sim_data_xl[RowsToUse[2:length(RowsToUse)], 2:3] %>%
-                  rename(Individual = ...2, Trial = ...3) %>%
-                  mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
-
-            names(sim_data_ind)[2:ncol(sim_data_ind)] <- SubjTrial$SubjTrial
-
-            sim_data_ind <- sim_data_ind %>%
-                  pivot_longer(names_to = "SubjTrial", values_to = "Conc",
-                               cols = -Time) %>%
-                  mutate(Compound = Compound,
-                         SubjTrial = sub("ID", "", SubjTrial)) %>%
-                  separate(SubjTrial, into = c("Individual", "Trial"),
-                           sep = "_") %>%
-                  mutate(across(.cols = c("Individual", "Trial"),
-                                .fns = as.numeric))
-            rm(RowsToUse)
-
-            if(EffectorPresent){
-
-                  # Compound conc time data in presence of effector
+                  # individual data
                   RowsToUse <- which(str_detect(sim_data_xl$...1,
                                                 switch(TissueType,
-                                                       "systemic" = "CSys After Inh",
-                                                       "tissue" = "CTissue . Interaction")))
-                  RowsToUse <- RowsToUse[which(
-                        RowsToUse > which(sim_data_xl$...1 == "Individual Statistics"))]
-                  RowsToUse <- c(TimeRow, RowsToUse)
+                                                       "systemic" = "CSys \\(",
+                                                       "tissue" = "CTissue$")))
+                  RowsToUse <- RowsToUse[RowsToUse >
+                                               which(str_detect(sim_data_xl$...1,
+                                                                "Individual Statistics"))]
+                  if(TissueType == "systemic"){
+                        RowsToUse <- c(RowsToUse[1] - 1, RowsToUse)
+                  } else {
+                        RowsToUse <- c(RowsToUse[2] - 1, RowsToUse[-1])
+                  }
 
-                  sim_data_ind_SubPlusEffector <-
-                        sim_data_xl[RowsToUse, ] %>%
+                  TimeRow <- RowsToUse[1]
+
+                  sim_data_ind <- sim_data_xl[RowsToUse, ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
                         rename(Time = "V1")
 
-                  names(sim_data_ind_SubPlusEffector)[
-                        2:ncol(sim_data_ind_SubPlusEffector)] <- SubjTrial$SubjTrial
+                  SubjTrial <- sim_data_xl[RowsToUse[2:length(RowsToUse)], 2:3] %>%
+                        rename(Individual = ...2, Trial = ...3) %>%
+                        mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
 
-                  sim_data_ind_SubPlusEffector <-
-                        sim_data_ind_SubPlusEffector %>%
+                  names(sim_data_ind)[2:ncol(sim_data_ind)] <- SubjTrial$SubjTrial
+
+                  sim_data_ind <- sim_data_ind %>%
                         pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
-                        mutate(Compound = Compound,
-                               Effector = SimSummary[["Inhibitor"]],
+                        mutate(Compound = CompoundName,
                                SubjTrial = sub("ID", "", SubjTrial)) %>%
                         separate(SubjTrial, into = c("Individual", "Trial"),
                                  sep = "_") %>%
                         mutate(across(.cols = c("Individual", "Trial"),
                                       .fns = as.numeric))
-
                   rm(RowsToUse)
 
-                  # Effector conc time data
-                  RowsToUse <- which(str_detect(sim_data_xl$...1,
-                                                switch(TissueType,
-                                                       "systemic" = "ISys 1 \\(",
-                                                       "tissue" = "ITissue\\(Inh 1")))
-                  RowsToUse <- RowsToUse[which(
-                        RowsToUse > which(sim_data_xl$...1 == "Individual Statistics"))]
-                  RowsToUse <- c(TimeRow, RowsToUse)
+                  if(EffectorPresent){
 
-                  sim_data_ind_Effector <-
-                        sim_data_xl[RowsToUse, ] %>%
-                        t() %>%
-                        as.data.frame() %>% slice(-(1:3)) %>%
-                        mutate_all(as.numeric) %>%
-                        rename(Time = "V1")
+                        # Substrate conc time data in presence of effector
+                        RowsToUse <- which(str_detect(sim_data_xl$...1,
+                                                      switch(TissueType,
+                                                             "systemic" = "CSys After Inh|CSys.interaction",
+                                                             "tissue" = "CTissue . Interaction")))
+                        RowsToUse <- RowsToUse[which(
+                              RowsToUse > which(sim_data_xl$...1 == "Individual Statistics"))]
+                        RowsToUse <- c(TimeRow, RowsToUse)
 
-                  names(sim_data_ind_Effector)[
-                        2:ncol(sim_data_ind_Effector)] <- SubjTrial$SubjTrial
+                        sim_data_ind_SubPlusEffector <-
+                              sim_data_xl[RowsToUse, ] %>%
+                              t() %>%
+                              as.data.frame() %>% slice(-(1:3)) %>%
+                              mutate_all(as.numeric) %>%
+                              rename(Time = "V1")
 
-                  sim_data_ind_Effector <-
-                        sim_data_ind_Effector %>%
-                        pivot_longer(names_to = "SubjTrial", values_to = "Conc",
-                                     cols = -Time) %>%
-                        mutate(Compound = SimSummary[["Inhibitor"]],
-                               Effector = SimSummary[["Inhibitor"]],
-                               SubjTrial = sub("ID", "", SubjTrial)) %>%
-                        separate(SubjTrial, into = c("Individual", "Trial"),
-                                 sep = "_") %>%
-                        mutate(across(.cols = c("Individual", "Trial"),
-                                      .fns = as.numeric))
+                        names(sim_data_ind_SubPlusEffector)[
+                              2:ncol(sim_data_ind_SubPlusEffector)] <- SubjTrial$SubjTrial
 
-                  rm(RowsToUse)
+                        sim_data_ind_SubPlusEffector <-
+                              sim_data_ind_SubPlusEffector %>%
+                              pivot_longer(names_to = "SubjTrial", values_to = "Conc",
+                                           cols = -Time) %>%
+                              mutate(Compound = CompoundName,
+                                     Effector = SimSummary[["Inhibitor"]],
+                                     SubjTrial = sub("ID", "", SubjTrial)) %>%
+                              separate(SubjTrial, into = c("Individual", "Trial"),
+                                       sep = "_") %>%
+                              mutate(across(.cols = c("Individual", "Trial"),
+                                            .fns = as.numeric))
 
-                  sim_data_ind <- bind_rows(sim_data_ind,
-                                            sim_data_ind_SubPlusEffector,
-                                            sim_data_ind_Effector)  %>%
-                        mutate(Effector = ifelse(is.na(Effector),
-                                                 "none", Effector))
+                        rm(RowsToUse)
 
+                        # Effector conc time data -- only present on substrate tabs
+                        if(i == "Substrate"){
+
+                              RowsToUse <- which(str_detect(sim_data_xl$...1,
+                                                            switch(TissueType,
+                                                                   "systemic" = "ISys 1 \\(",
+                                                                   "tissue" = "ITissue\\(Inh 1")))
+                              RowsToUse <- RowsToUse[which(
+                                    RowsToUse > which(sim_data_xl$...1 == "Individual Statistics"))]
+                              RowsToUse <- c(TimeRow, RowsToUse)
+
+                              sim_data_ind_Effector <-
+                                    sim_data_xl[RowsToUse, ] %>%
+                                    t() %>%
+                                    as.data.frame() %>% slice(-(1:3)) %>%
+                                    mutate_all(as.numeric) %>%
+                                    rename(Time = "V1")
+
+                              names(sim_data_ind_Effector)[
+                                    2:ncol(sim_data_ind_Effector)] <- SubjTrial$SubjTrial
+
+                              sim_data_ind_Effector <-
+                                    sim_data_ind_Effector %>%
+                                    pivot_longer(names_to = "SubjTrial", values_to = "Conc",
+                                                 cols = -Time) %>%
+                                    mutate(Compound = SimSummary[["Inhibitor"]],
+                                           Effector = SimSummary[["Inhibitor"]],
+                                           SubjTrial = sub("ID", "", SubjTrial)) %>%
+                                    separate(SubjTrial, into = c("Individual", "Trial"),
+                                             sep = "_") %>%
+                                    mutate(across(.cols = c("Individual", "Trial"),
+                                                  .fns = as.numeric))
+
+                              rm(RowsToUse)
+
+                              sim_data_ind <- bind_rows(sim_data_ind,
+                                                        sim_data_ind_SubPlusEffector,
+                                                        sim_data_ind_Effector)  %>%
+                                    mutate(Effector = ifelse(is.na(Effector),
+                                                             "none", Effector))
+                              rm(sim_data_ind_SubPlusEffector)
+
+                        } else {
+                              sim_data_ind <- bind_rows(sim_data_ind,
+                                                        sim_data_ind_SubPlusEffector)  %>%
+                                    mutate(Effector = ifelse(is.na(Effector),
+                                                             "none", Effector))
+                        }
+                  }
+                  Concs[[i]][["Indiv"]] <- sim_data_ind %>%
+                        mutate(Trial = as.character(Trial))
+                  rm(TimeRow, SubjTrial, sim_data_ind)
             }
+
+            Concs[[i]] <- bind_rows(Concs[[i]])
+
+            rm(SheetToExtract, ToMatch, Sheet, sim_data_xl, CompoundName)
       }
+
+      Concs <- bind_rows(Concs)
 
       # Determining concentration units
       SimConcUnits <- as.character(
@@ -356,7 +429,7 @@ extractConcTime <- function(sim_data_file,
                   # If the user did specify an observed data file, read in observed data.
                   obs_data <- extractObsConcTime(obs_data_file) %>%
                         mutate(Trial = "obs", Simulated = FALSE,
-                               Compound = Compound)
+                               Compound = Substrate)
 
                   TimeUnits <- unique(obs_data$Time_units)
 
@@ -417,7 +490,7 @@ extractConcTime <- function(sim_data_file,
             }
 
             if(exists("obs_data", inherits = FALSE)){
-                  obs_data$Compound <- Compound
+                  obs_data$Compound <- Substrate
                   obs_data$Simulated <- FALSE
             }
 
@@ -426,7 +499,7 @@ extractConcTime <- function(sim_data_file,
                   obs_eff_data <- extractObsConcTime(obs_data_file =
                                                            obs_effector_data_file) %>%
                         mutate(Simulated = FALSE, Trial = "obs+effector",
-                               Compound = Compound)
+                               Compound = Substrate)
 
             }
 
