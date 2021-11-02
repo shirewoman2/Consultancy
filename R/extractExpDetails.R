@@ -1,7 +1,9 @@
 #' Extract details about the experimental design
 #'
 #' \code{extractExpDetails} looks up experimental design details from the
-#' "Summary" or "Input Sheet" tabs of a Simcyp simulator output file.
+#' "Summary" or "Input Sheet" tabs of a Simcyp simulator output file. This is
+#' currently set up to extract details on the substrate, the first inhibitor,
+#' metabolite 1, and/or metabolite 2.
 #'
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
@@ -15,8 +17,9 @@
 #'
 #'   \describe{
 #'
-#'   \item{Abs_model_sub, Abs_model_inhib}{absorption model used, e.g., "1st
-#'   order", for either the substrate or inhibitor}
+#'   \item{Abs_model_sub, Abs_model_inhib, Abs_model_met1,
+#'   Abs_model_met2}{absorption model used, e.g., "1st order", for either the
+#'   substrate, inhibitor, metabolite 1, or metabolite 2}
 #'
 #'   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
 #'
@@ -24,17 +27,20 @@
 #'   are pulled from the tab with information on the population simulated.
 #'   Specifying "AGP" will return data for both sexes.}
 #'
-#'   \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
+#'   \item{BPratio_sub, BPratio_inhib, BPratio_met1,
+#'   BPratio_met2}{blood-to-plasma ratio}
 #'
-#'   \item{CLint_sub or CLint_inhib}{intrinsic clearance, Vmax, Km, fu_mic,
-#'   and/or half life values used for any CYPs, UGTs, or other enzymes listed
-#'   for the substrate or inhibitor. Output will be labeled for each enzyme and
-#'   pathway as, e.g., "CLint_sub_CYP3A4_1-OH" or "Vmax_UGT1A1_Pathway1".
-#'   Specify "CLint_sub" and all the other values (Vmax, Km, fu,mic, half life)
-#'   will also be returned.}
+#'   \item{CLint_sub, CLint_inhib, CLint_met1, CLint_met2}{intrinsic clearance,
+#'   Vmax, Km, fu_mic, and/or half life values used for any CYPs, UGTs, or other
+#'   enzymes listed for the substrate, inhibitor, metabolite 1, or metabolite 2.
+#'   Output will be labeled for each enzyme and pathway as, e.g.,
+#'   "CLint_sub_CYP3A4_1-OH" or "Vmax_sub_UGT1A1_Pathway1". Specify, e.g.,
+#'   "CLint_sub" and all the other values (Vmax, Km, fu,mic, half life) will
+#'   also be returned.}
 #'
-#'   \item{CLrenal_sub or CLrenal_inhib}{renal clearance (L/hr) of the substrate
-#'   or inhibitor}
+#'   \item{CLrenal_sub, CLrenal_inhib, CLrenal_met1, CLrenal_met2}{renal
+#'   clearance (L/hr) for the substrate, inhibitor, metabolite 1, or metabolite
+#'   2}
 #'
 #'   \item{Dose_sub or Dose_inhib}{dose administered}
 #'
@@ -42,15 +48,17 @@
 #'
 #'   \item{DoseRoute_sub or DoseRoute_inhib}{dose route, e.g. oral}
 #'
-#'   \item{fa_sub or fa_inhib}{user input value for the fraction absorbed for
-#'   the substrate or inhibitor}
+#'   \item{fa_sub, fa_inhib, fa_met1, fa_met2}{user input value for the fraction
+#'   absorbed for the substrate, inhibitor, metabolite 1, or metabolite 2}
 #'
-#'   \item{fu_gut_sub or fu_gut_inhib}{user input value for the fraction
-#'   escaping gut metabolism for the substrate or inhibitor}
+#'   \item{fu_gut_sub, fu_gut_inhib, fu_gut_met1, fu_gut_met2}{user input value
+#'   for the fraction escaping gut metabolism for the substrate, inhibitor,
+#'   metabolite 1, or metabolite 2}
 #'
-#'   \item{fu_sub or fu_inhib}{fraction unbound}
+#'   \item{fu_sub, fu_inhib, fu_met1, fu_met2}{fraction unbound}
 #'
-#'   \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
+#'   \item{GIAbsModel_sub, GIAbsModel_inhib, GIAbsModel_met1,
+#'   GIAbsModel_met2}{GI absorption model used}
 #'
 #'   \item{Hematocrit or Haematocrit}{the hematocrit listed on the "Summary"
 #'   tab}
@@ -66,25 +74,29 @@
 #'
 #'   \item{Inhibitor}{inhibitor used, if applicable}
 #'
-#'   \item{Interaction_sub or Interaction_inhib}{interaction parameters for any
-#'   CYPs, UGTs, or other enzymes listed for the substrate or inhibitor. Output
-#'   will be labeled for each enzyme and interaction type.}
+#'   \item{Interaction_sub, Interaction_inhib, Interaction_met1,
+#'   Interaction_met2}{interaction parameters for any CYPs, UGTs, or other
+#'   enzymes listed for the substrate, inhibitor, metabolite 1, or metabolite 2.
+#'   Output will be labeled for each enzyme and interaction type.}
 #'
-#'   \item{ka_sub or ka_inhib}{user input value for the absorption constant ka
-#'   for the substrate or inhibitor}
+#'   \item{ka_sub, ka_inhib, ka_met1, ka_met2}{user input value for the
+#'   absorption constant ka for the substrate, inhibitor, metabolite 1, or
+#'   metabolite 2}
 #'
 #'   \item{kin_sac_sub, kin_sac_inhib, kout_sac_sub, or kout_sac_inhib}{k in and
-#'   k out for SAC (1/hr) for the substrate or inhibitor}
+#'   k out for SAC (1/hr) for the substrate, inhibitor, metabolite 1, or
+#'   metabolite 2}
 #'
-#'   \item{kp_scalar_sub or kp_scalar_inhib}{kp scalar for the substrate or
-#'   inhibitor}
+#'   \item{kp_scalar_sub, kp_scalar_inhib, kp_scalar_met1, kp_scalar_met2}{kp
+#'   scalar for the substrate, inhibitor, metabolite 1, or metabolite 2}
 #'
-#'   \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
+#'   \item{logP_sub, logP_inhib, logP_met1, logP_met2}{logP for the substrate,
+#'   inhibitor, metabolite 1, or metabolite 2}
 #'
-#'   \item{ModelType_sub or ModelType_inhib}{the type of model, e.g., full PBPK
-#'   model}
+#'   \item{ModelType_sub, ModelType_inhib, ModelType_met1, ModelType_met2}{the
+#'   type of model, e.g., full PBPK model}
 #'
-#'   \item{MW_sub or MW_inhib}{molecular weight of substrate or inhibitor}
+#'   \item{MW_sub, MW_inhib, MW_met1, MW_met2}{molecular weight}
 #'
 #'   \item{NumDoses_sub or NumDoses_inhib}{number of doses}
 #'
@@ -94,16 +106,18 @@
 #'
 #'   \item{Ontogeny}{ontogeny profile used}
 #'
-#'   \item{Papp_MDCK_sub, Papp_MDCK_inhib, Papp_Caco_sub, or
-#'   Papp_Caco_inhib}{Papp as determined in MDCKII or Caco-2 cells (10^-6 cm/s)
-#'   for the substrate or inhibitor}
+#'   \item{Papp_MDCK_sub, Papp_MDCK_inhib, Papp_MDCK_met1, Papp_MDCK_met2,
+#'   Papp_Caco_sub, Papp_Caco_inhib, Papp_Caco_met1, Papp_Caco_met2}{Papp as
+#'   determined in MDCKII or Caco-2 cells (10^-6 cm/s) for the substrate,
+#'   inhibitor, metabolite 1, or metabolite 2}
 #'
-#'   \item{Papp_calibrator_sub or Papp_calibrator_inhib}{Papp of the calibrator
-#'   compound (10^-6 cm/s) of the substrate or inhibitor}
+#'   \item{Papp_calibrator_sub, Papp_calibrator_inhib, Papp_calibrator_met1,
+#'   Papp_calibrator_met2}{Papp of the calibrator compound (10^-6 cm/s)}
 #'
 #'   \item{PercFemale}{Percent of females in simulated population}
 #'
-#'   \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
+#'   \item{pKa1_sub, pKa2_sub, pKa1_inhib, pKa2_inhib, pKa1_met1, pKa1_met2,
+#'   pKa2_met1, pKa2_met2}{the pertinent pKa}
 #'
 #'   \item{Pop}{the population modeled}
 #'
@@ -138,15 +152,19 @@
 #'   Units_CL}{Units for substrate dose, inhibitor dose, AUC, Cmax, tmax, or CL}
 #'
 #'   \item{UserAddnOrgan_sub or UserAddnOrgan_inhib}{yes or no: Was a
-#'   user-defined additional organ included for the substrate or inhibitor?}
+#'   user-defined additional organ included for the substrate, inhibitor,
+#'   metabolite 1, or metabolite 2?}
 #'
-#'   \item{Vsac_sub or Vsac_inhib}{V sac (L/kg) for the substrate or inhibitor}
+#'   \item{Vsac_sub, Vsac_inhib, Vsac_met1, Vsac_met2}{V sac (L/kg) for the
+#'   substrate, inhibitor, metabolite 1, or metabolite 2}
 #'
-#'   \item{Vss_input_sub or Vss_input_inhib}{Vss used}
+#'   \item{Vss_input_sub, Vss_input_inhib, Vss_input_met1, Vss_input_met2}{Vss
+#'   used}
 #'
-#'   \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
+#'   \item{VssPredMeth_sub, VssPredMeth_inhib, VssPredMeth_met1,
+#'   VssPredMeth_met2}{method used for predicting Vss}
 #'
-#'   } \emph{NOTE:} The default only pulls parameters that are listed on the
+#'   } \emph{NOTE:} The default pulls only parameters that are listed on the
 #'   "Summary" tab. (There are ~50 of them, so I'm not listing them here for
 #'   brevity. -LS)
 #'
@@ -206,29 +224,35 @@ extractExpDetails <- function(sim_data_file,
       InputDeets <- data.frame(
             Deet = c("Abs_model_sub", "fa_sub", "ka_sub", "tlag_sub",
                      "fu_gut_sub", "Papp_MDCK_sub", "Papp_calibrator_sub",
-                     "Papp_Caco_sub",
-                     "UserAddnOrgan", "CLrenal_sub",
-                     "CLint_sub", "Interaction_sub",
-                     "Qgut_sub", "kin_sac_sub", "kout_sac_sub", "Vsac_sub", "kp_scalar_sub",
+                     "Papp_Caco_sub", "UserAddnOrgan_sub", "CLrenal_sub",
+                     "CLint_sub", "Interaction_sub", "Qgut_sub",
+                     "kin_sac_sub", "kout_sac_sub", "Vsac_sub", "kp_scalar_sub",
+
+                     # Trial Design details start here
                      "PercFemale", "Age_min", "Age_max",
                      "Ontogeny"),
-            NameCol = 1,
-            ValueCol = 2,
+            # NameCol and ValueCol change depending on whether there are
+            # metabolites or inhibitors present, so noting what to detect using
+            # RegEx in row 4 to determine position of those columns.
+            NameColDetect = c(rep("Substrate", 17), rep("Trial Design", 4)),
             Class = c("character", rep("numeric", 19), "character"),
-            Sheet = "Input Sheet") %>%
-            mutate(NameCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
-                                    4, NameCol),
-                   ValueCol = ifelse(Deet %in% c("PercFemale", "Age_min", "Age_max"),
-                                     5, ValueCol))
+            Sheet = "Input Sheet")
 
+      # Inhibitor 1 data
       InputDeets_inhib <- InputDeets %>% filter(str_detect(Deet, "_sub")) %>%
             mutate(Deet = sub("_sub", "_inhib", Deet),
-                   NameCol = NameCol + 2,
-                   ValueCol = ValueCol + 2)
-      # For items that are named in column 3 when there's no inhibitor and
-      # column 4 when there is, will still need to adjust which columns to use
-      # depending on whether inhibitor present but will do that lower in script.
-      InputDeets <- bind_rows(InputDeets, InputDeets_inhib)
+                   NameColDetect = "Inhibitor 1")
+
+      # Metabolite data
+      InputDeets_met1 <- InputDeets_inhib %>%
+            mutate(Deet = sub("_inhib", "_met1", Deet),
+                   NameColDetect = "Sub Pri Metabolite1")
+      InputDeets_met2 <- InputDeets_inhib %>%
+            mutate(Deet = sub("_inhib", "_met2", Deet),
+                   NameColDetect = "Sub Pri Metabolite2")
+
+      InputDeets <- bind_rows(InputDeets, InputDeets_inhib,
+                              InputDeets_met1, InputDeets_met2)
 
       PopDeets <- data.frame(
             Deet = c("AGP", "AGP_female", "AGP_male",
@@ -400,55 +424,57 @@ extractExpDetails <- function(sim_data_file,
                   names(InputTab) <- paste0("...", 1:ncol(InputTab))
             }
 
-            # Check whether an effector is present b/c that moves things around
-            EffectorPresent <- any(str_detect(InputTab$...3, "Inhibitor"), na.rm = TRUE)
-            # !!! May need to adjust this further when there are TWO inhibitors
-            # present!!!
-
-            if(EffectorPresent){
-                  InputDeets$ValueCol[InputDeets$ValueCol == 5] <- 7
-                  InputDeets$NameCol[InputDeets$NameCol == 4] <- 6
+            # When effector is not present, don't look for those values.
+            if(any(str_detect(t(InputTab[5, ]), "Inhibitor 1"), na.rm = T) == FALSE){
+                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_inhib")]
             }
+
+            # When metabolite 1 is not present, don't look for those values.
+            if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite1"), na.rm = T) == FALSE){
+                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met1")]
+            }
+
+            # When metabolite 2 is not present, don't look for those values.
+            if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite2"), na.rm = T) == FALSE){
+                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met2")]
+            }
+
+            # Looking for locations of columns.
+            ColLocations <- c("Substrate" = 1,
+                              "Trial Design" = which(t(InputTab[5, ]) == "Trial Design"),
+                              "Inhibitor 1" = which(t(InputTab[5, ]) == "Inhibitor 1"),
+                              "Sub Pri Metabolite1" = which(t(InputTab[5, ]) == "Sub Pri Metabolite1"),
+                              "Sub Pri Metabolite2" = which(t(InputTab[5, ]) == "Sub Pri Metabolite2"))
+
+            InputDeets$NameCol <- ColLocations[InputDeets$NameColDetect]
+            InputDeets$ValueCol <- InputDeets$NameCol + 1
 
             # sub function for finding correct cell
             pullValue <- function(deet){
 
                   # Setting up regex to search
-                  ToDetect <- switch(deet,
-                                     "Abs_model_sub" = "Absorption Model",
-                                     "Abs_model_inhib" = "Absorption Model",
+                  ToDetect <- switch(sub("_sub|_inhib|_met1|_met2", "", deet),
+                                     "Abs_model" = "Absorption Model",
                                      "Age_min" = "Minimum Age",
                                      "Age_max" = "Maximum Age",
-                                     "CLrenal_sub" = "CL R \\(L/h",
-                                     "fa_sub" = "^fa$",
-                                     "ka_sub" = "^ka \\(",
-                                     "kp_scalar_sub" = "Kp Scalar",
-                                     "tlag_sub" = "lag time \\(",
-                                     "fu_gut_sub" = "fu\\(Gut\\)$",
-                                     "CLrenal_inhib" = "CL R \\(L/h",
-                                     "fa_inhib" = "^fa$",
-                                     "ka_inhib" = "^ka \\(",
-                                     "kp_scalar_inhib" = "Kp Scalar",
-                                     "tlag_inhib" = "lag time \\(",
-                                     "fu_gut_inhib" = "fu\\(Gut\\)$",
+                                     "CLrenal" = "CL R \\(L/h",
+                                     "fa" = "^fa$",
+                                     "ka" = "^ka \\(",
+                                     "kp_scalar" = "Kp Scalar",
+                                     "tlag" = "lag time \\(",
+                                     "fu_gut" = "fu\\(Gut\\)$",
                                      "Ontogeny" = "Ontogeny Profile",
-                                     "Papp_MDCK_sub" = "MDCK\\(10E-06 cm/s\\)",
-                                     "Papp_Caco_sub" = "PCaco-2",
-                                     "Papp_calibrator_sub" = "Reference Compound Value \\(10E-06 cm/s\\)",
-                                     "Papp_MDCK_inhib" = "MDCK\\(10E-06 cm/s\\)",
-                                     "Papp_Caco_inhib" = "PCaco-2",
-                                     "Papp_calibrator_inhib" = "Reference Compound Value \\(10E-06 cm/s\\)",
+                                     "Papp_MDCK" = "MDCK\\(10E-06 cm/s\\)",
+                                     "Papp_Caco" = "PCaco-2",
+                                     "Papp_calibrator" = "Reference Compound Value \\(10E-06 cm/s\\)",
                                      "PercFemale" = "Propn. of Females",
                                      "UserAddnOrgan" = "User-defined Additional",
                                      "SimulatorVersion" = "Version number",
-                                     "Qgut_sub" = "Q\\(Gut\\) \\(L/h",
-                                     "kin_sac_sub" = "SAC kin",
-                                     "kout_sac_sub" = "SAC kout",
-                                     "Vsac_sub" = "Volume .Vsac",
-                                     "Qgut_inhib" = "Q\\(Gut\\) \\(L/h",
-                                     "kin_sac_inhib" = "SAC kin",
-                                     "kout_sac_inhib" = "SAC kout",
-                                     "Vsac_inhib" = "Volume .Vsac")
+                                     "Qgut" = "Q\\(Gut\\) \\(L/h",
+                                     "kin_sac" = "SAC kin",
+                                     "kout_sac" = "SAC kout",
+                                     "Vsac" = "Volume .Vsac")
+
                   NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
                   Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
                   Val <- InputTab[Row,
@@ -474,10 +500,7 @@ extractExpDetails <- function(sim_data_file,
             }
 
             # pullValue doesn't work for CL, so those are separate.
-            MyInputDeets1 <- MyInputDeets[!MyInputDeets %in% c("CLint_sub",
-                                                               "CLint_inhib",
-                                                               "Interaction_sub",
-                                                               "Interaction_inhib")]
+            MyInputDeets1 <- MyInputDeets[!str_detect(MyInputDeets, "CLint_|Interaction_")]
 
             if(length(MyInputDeets1) > 0){
                   for(i in MyInputDeets1){
@@ -486,15 +509,14 @@ extractExpDetails <- function(sim_data_file,
             }
 
             # Pulling CL info
-            MyInputDeets2 <- MyInputDeets[MyInputDeets %in% c("CLint_sub", "CLint_inhib")]
+            MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
 
             if(length(MyInputDeets2) > 0){
 
                   for(j in MyInputDeets2){
 
-                        SorI <- str_extract(j, "_sub|_inhib")
-                        NameCol <- ifelse(SorI == "_sub", 1, 3)
-                        ValCol <- ifelse(SorI == "_sub", 2, 4)
+                        Suffix <- str_extract(j, "_sub$|_inhib$|_met1$|_met2$")
+                        NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                         CLRows <- which(InputTab[ , NameCol] == "Enzyme" |
                                             str_detect(InputTab[ , NameCol] %>%
                                                              pull(),
@@ -512,10 +534,10 @@ extractExpDetails <- function(sim_data_file,
                         for(i in CLRows){
                               if(str_detect(as.character(InputTab[i, NameCol]), "Enzyme")){
 
-                                    Enzyme <- gsub(" ", "", InputTab[i, ValCol])
-                                    Pathway <- gsub(" |-", "", InputTab[i - 1, ValCol])
+                                    Enzyme <- gsub(" ", "", InputTab[i, NameCol + 1])
+                                    Pathway <- gsub(" |-", "", InputTab[i - 1, NameCol + 1])
                                     if(InputTab[i+1, NameCol] == "Genotype"){
-                                          Enzyme <- paste0(Enzyme, InputTab[i+1, ValCol])
+                                          Enzyme <- paste0(Enzyme, InputTab[i+1, NameCol + 1])
                                           CLrow <- i + 2
                                     } else {
                                           CLrow <- i + 1
@@ -529,16 +551,16 @@ extractExpDetails <- function(sim_data_file,
                                                 Out[[paste0(
                                                       paste("CLint", Enzyme,
                                                            Pathway, sep = "_"),
-                                                      SorI)]] <-
-                                                      as.numeric(InputTab[CLrow, ValCol])
+                                                      Suffix)]] <-
+                                                      as.numeric(InputTab[CLrow, NameCol + 1])
                                           )
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("fu_mic", Enzyme,
                                                             Pathway, sep = "_"),
-                                                      SorI)]] <-
-                                                      as.numeric(InputTab[CLrow+1, ValCol])
+                                                      Suffix)]] <-
+                                                      as.numeric(InputTab[CLrow+1, NameCol + 1])
                                           )
 
 
@@ -552,24 +574,24 @@ extractExpDetails <- function(sim_data_file,
                                                 Out[[paste0(
                                                       paste("Vmax", Enzyme,
                                                             Pathway, sep = "_"),
-                                                      SorI)]] <-
-                                                      as.numeric(InputTab[CLrow, ValCol])
+                                                      Suffix)]] <-
+                                                      as.numeric(InputTab[CLrow, NameCol + 1])
                                           )
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("Km", Enzyme,
                                                             Pathway, sep = "_"),
-                                                      SorI)]] <-
-                                                      as.numeric(InputTab[CLrow+1, ValCol])
+                                                      Suffix)]] <-
+                                                      as.numeric(InputTab[CLrow+1, NameCol + 1])
                                           )
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("fu_mic", Enzyme,
                                                             Pathway, sep = "_"),
-                                                      SorI)]] <-
-                                                      as.numeric(InputTab[CLrow+2, ValCol])
+                                                      Suffix)]] <-
+                                                      as.numeric(InputTab[CLrow+2, NameCol + 1])
                                           )
 
                                           rm(Enzyme, Pathway, CLType)
@@ -581,8 +603,8 @@ extractExpDetails <- function(sim_data_file,
                                                 Out[[paste0(
                                                       paste("HalfLife", Enzyme,
                                                             Pathway, sep = "_"),
-                                                      SorI)]] <-
-                                                      as.numeric(InputTab[CLrow, ValCol])
+                                                      Suffix)]] <-
+                                                      as.numeric(InputTab[CLrow, NameCol + 1])
                                           )
 
                                           rm(Enzyme, Pathway, CLType)
@@ -592,27 +614,25 @@ extractExpDetails <- function(sim_data_file,
                               } else {
                                     # biliary CL
                                     suppressWarnings(
-                                          Out[[paste0("CLint_biliary", SorI)]] <-
-                                                as.numeric(InputTab[i, ValCol])
+                                          Out[[paste0("CLint_biliary", Suffix)]] <-
+                                                as.numeric(InputTab[i, NameCol + 1])
                                     )
                               }
                         }
 
-                        rm(SorI, CLRows, IntRowStart, NameCol, ValCol)
+                        rm(CLRows, IntRowStart, NameCol, Suffix)
                   }
             }
 
             # Pulling interaction info
-            MyInputDeets3 <- MyInputDeets[MyInputDeets %in% c("Interaction_sub", "Interaction_inhib")]
+            MyInputDeets3 <- MyInputDeets[str_detect(MyInputDeets, "Interaction_")]
 
             if(length(MyInputDeets3) > 0){
 
                   for(j in MyInputDeets3){
 
-                        SorI <- str_extract(j, "_sub|_inhib")
-                        NameCol <- ifelse(SorI == "_sub", 1, 3)
-                        ValCol <- ifelse(SorI == "_sub", 2, 4)
-
+                        Suffix <- str_extract(j, "_sub$|_inhib$|_met1$|_met2$")
+                        NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                         IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
                                                     "^Enzyme$|^Transporter$"))
                         IntRows <- IntRows[complete.cases(InputTab[IntRows + 1, NameCol])]
@@ -631,8 +651,8 @@ extractExpDetails <- function(sim_data_file,
 
 
                               for(i in IntRows){
-                                    Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, ValCol])
-                                    NextEmptyCell <- which(is.na(InputTab[, ValCol]))
+                                    Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
+                                    NextEmptyCell <- which(is.na(InputTab[, NameCol + 1]))
                                     NextEmptyCell <- NextEmptyCell[NextEmptyCell > i][1]
                                     ThisIntRows <- i:NextEmptyCell
 
@@ -643,22 +663,22 @@ extractExpDetails <- function(sim_data_file,
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("IndMax", Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[IndMax], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[IndMax], NameCol + 1])
                                           )
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("IndC50", Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[IndMax+3], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[IndMax+3], NameCol + 1])
                                           )
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("Ind_fu_inc", Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[IndMax+5], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[IndMax+5], NameCol + 1])
                                           )
                                     }
 
@@ -672,14 +692,14 @@ extractExpDetails <- function(sim_data_file,
                                           if(EnzTrans == "Transporter"){
                                                 Enzyme <-
                                                       paste0(Enzyme, "_",
-                                                            tolower(as.character(InputTab[i-1, ValCol])))
+                                                            tolower(as.character(InputTab[i-1, NameCol + 1])))
                                           }
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("Ki", Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[Ki], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[Ki], NameCol + 1])
                                           )
 
                                           # fu mic or fu inc
@@ -692,8 +712,8 @@ extractExpDetails <- function(sim_data_file,
                                                                    "inc" = "Ki_fu_inc",
                                                                    "mic" = "Ki_fu_mic"),
                                                             Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[Ki+1], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[Ki+1], NameCol + 1])
                                           )
 
                                           rm(IncType, EnzTrans)
@@ -706,22 +726,22 @@ extractExpDetails <- function(sim_data_file,
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("MBI_Kapp", Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[MBI], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[MBI], NameCol + 1])
                                           )
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("MBI_kinact", Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[MBI+1], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[MBI+1], NameCol + 1])
                                           )
 
                                           suppressWarnings(
                                                 Out[[paste0(
                                                       paste("MBI_fu_mic", Enzyme,
-                                                            sep = "_"), SorI)]] <-
-                                                      as.numeric(InputTab[ThisIntRows[MBI+2], ValCol])
+                                                            sep = "_"), Suffix)]] <-
+                                                      as.numeric(InputTab[ThisIntRows[MBI+2], NameCol + 1])
                                           )
                                     }
 
@@ -729,7 +749,7 @@ extractExpDetails <- function(sim_data_file,
                               }
                         }
 
-                        rm(SorI, IntRows, IntRowStart, NameCol, ValCol)
+                        rm(Suffix, IntRows, IntRowStart, NameCol)
                   }
             }
       }

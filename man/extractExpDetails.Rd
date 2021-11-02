@@ -19,8 +19,9 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \describe{
 
-  \item{Abs_model_sub, Abs_model_inhib}{absorption model used, e.g., "1st
-  order", for either the substrate or inhibitor}
+  \item{Abs_model_sub, Abs_model_inhib, Abs_model_met1,
+  Abs_model_met2}{absorption model used, e.g., "1st order", for either the
+  substrate, inhibitor, metabolite 1, or metabolite 2}
 
   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
 
@@ -28,17 +29,20 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   are pulled from the tab with information on the population simulated.
   Specifying "AGP" will return data for both sexes.}
 
-  \item{BPratio_sub or BPratio_inhib}{blood-to-plasma ratio}
+  \item{BPratio_sub, BPratio_inhib, BPratio_met1,
+  BPratio_met2}{blood-to-plasma ratio}
 
-  \item{CLint_sub or CLint_inhib}{intrinsic clearance, Vmax, Km, fu_mic,
-  and/or half life values used for any CYPs, UGTs, or other enzymes listed
-  for the substrate or inhibitor. Output will be labeled for each enzyme and
-  pathway as, e.g., "CLint_sub_CYP3A4_1-OH" or "Vmax_UGT1A1_Pathway1".
-  Specify "CLint_sub" and all the other values (Vmax, Km, fu,mic, half life)
-  will also be returned.}
+  \item{CLint_sub, CLint_inhib, CLint_met1, CLint_met2}{intrinsic clearance,
+  Vmax, Km, fu_mic, and/or half life values used for any CYPs, UGTs, or other
+  enzymes listed for the substrate, inhibitor, metabolite 1, or metabolite 2.
+  Output will be labeled for each enzyme and pathway as, e.g.,
+  "CLint_sub_CYP3A4_1-OH" or "Vmax_sub_UGT1A1_Pathway1". Specify, e.g.,
+  "CLint_sub" and all the other values (Vmax, Km, fu,mic, half life) will
+  also be returned.}
 
-  \item{CLrenal_sub or CLrenal_inhib}{renal clearance (L/hr) of the substrate
-  or inhibitor}
+  \item{CLrenal_sub, CLrenal_inhib, CLrenal_met1, CLrenal_met2}{renal
+  clearance (L/hr) for the substrate, inhibitor, metabolite 1, or metabolite
+  2}
 
   \item{Dose_sub or Dose_inhib}{dose administered}
 
@@ -46,15 +50,17 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{DoseRoute_sub or DoseRoute_inhib}{dose route, e.g. oral}
 
-  \item{fa_sub or fa_inhib}{user input value for the fraction absorbed for
-  the substrate or inhibitor}
+  \item{fa_sub, fa_inhib, fa_met1, fa_met2}{user input value for the fraction
+  absorbed for the substrate, inhibitor, metabolite 1, or metabolite 2}
 
-  \item{fu_gut_sub or fu_gut_inhib}{user input value for the fraction
-  escaping gut metabolism for the substrate or inhibitor}
+  \item{fu_gut_sub, fu_gut_inhib, fu_gut_met1, fu_gut_met2}{user input value
+  for the fraction escaping gut metabolism for the substrate, inhibitor,
+  metabolite 1, or metabolite 2}
 
-  \item{fu_sub or fu_inhib}{fraction unbound}
+  \item{fu_sub, fu_inhib, fu_met1, fu_met2}{fraction unbound}
 
-  \item{GIAbsModel_sub or GIAbsModel_inhib}{GI absorption model used}
+  \item{GIAbsModel_sub, GIAbsModel_inhib, GIAbsModel_met1,
+  GIAbsModel_met2}{GI absorption model used}
 
   \item{Hematocrit or Haematocrit}{the hematocrit listed on the "Summary"
   tab}
@@ -70,25 +76,29 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{Inhibitor}{inhibitor used, if applicable}
 
-  \item{Interaction_sub or Interaction_inhib}{interaction parameters for any
-  CYPs, UGTs, or other enzymes listed for the substrate or inhibitor. Output
-  will be labeled for each enzyme and interaction type.}
+  \item{Interaction_sub, Interaction_inhib, Interaction_met1,
+  Interaction_met2}{interaction parameters for any CYPs, UGTs, or other
+  enzymes listed for the substrate, inhibitor, metabolite 1, or metabolite 2.
+  Output will be labeled for each enzyme and interaction type.}
 
-  \item{ka_sub or ka_inhib}{user input value for the absorption constant ka
-  for the substrate or inhibitor}
+  \item{ka_sub, ka_inhib, ka_met1, ka_met2}{user input value for the
+  absorption constant ka for the substrate, inhibitor, metabolite 1, or
+  metabolite 2}
 
   \item{kin_sac_sub, kin_sac_inhib, kout_sac_sub, or kout_sac_inhib}{k in and
-  k out for SAC (1/hr) for the substrate or inhibitor}
+  k out for SAC (1/hr) for the substrate, inhibitor, metabolite 1, or
+  metabolite 2}
 
-  \item{kp_scalar_sub or kp_scalar_inhib}{kp scalar for the substrate or
-  inhibitor}
+  \item{kp_scalar_sub, kp_scalar_inhib, kp_scalar_met1, kp_scalar_met2}{kp
+  scalar for the substrate, inhibitor, metabolite 1, or metabolite 2}
 
-  \item{logP_sub or logP_inhib}{logP of substrate or inhibitor}
+  \item{logP_sub, logP_inhib, logP_met1, logP_met2}{logP for the substrate,
+  inhibitor, metabolite 1, or metabolite 2}
 
-  \item{ModelType_sub or ModelType_inhib}{the type of model, e.g., full PBPK
-  model}
+  \item{ModelType_sub, ModelType_inhib, ModelType_met1, ModelType_met2}{the
+  type of model, e.g., full PBPK model}
 
-  \item{MW_sub or MW_inhib}{molecular weight of substrate or inhibitor}
+  \item{MW_sub, MW_inhib, MW_met1, MW_met2}{molecular weight}
 
   \item{NumDoses_sub or NumDoses_inhib}{number of doses}
 
@@ -98,16 +108,18 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{Ontogeny}{ontogeny profile used}
 
-  \item{Papp_MDCK_sub, Papp_MDCK_inhib, Papp_Caco_sub, or
-  Papp_Caco_inhib}{Papp as determined in MDCKII or Caco-2 cells (10^-6 cm/s)
-  for the substrate or inhibitor}
+  \item{Papp_MDCK_sub, Papp_MDCK_inhib, Papp_MDCK_met1, Papp_MDCK_met2,
+  Papp_Caco_sub, Papp_Caco_inhib, Papp_Caco_met1, Papp_Caco_met2}{Papp as
+  determined in MDCKII or Caco-2 cells (10^-6 cm/s) for the substrate,
+  inhibitor, metabolite 1, or metabolite 2}
 
-  \item{Papp_calibrator_sub or Papp_calibrator_inhib}{Papp of the calibrator
-  compound (10^-6 cm/s) of the substrate or inhibitor}
+  \item{Papp_calibrator_sub, Papp_calibrator_inhib, Papp_calibrator_met1,
+  Papp_calibrator_met2}{Papp of the calibrator compound (10^-6 cm/s)}
 
   \item{PercFemale}{Percent of females in simulated population}
 
-  \item{pKa1_sub, pKa2_sub, pKa1_inhib, or pKa2_inhib}{the pertinent pKa}
+  \item{pKa1_sub, pKa2_sub, pKa1_inhib, pKa2_inhib, pKa1_met1, pKa1_met2,
+  pKa2_met1, pKa2_met2}{the pertinent pKa}
 
   \item{Pop}{the population modeled}
 
@@ -142,15 +154,19 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   Units_CL}{Units for substrate dose, inhibitor dose, AUC, Cmax, tmax, or CL}
 
   \item{UserAddnOrgan_sub or UserAddnOrgan_inhib}{yes or no: Was a
-  user-defined additional organ included for the substrate or inhibitor?}
+  user-defined additional organ included for the substrate, inhibitor,
+  metabolite 1, or metabolite 2?}
 
-  \item{Vsac_sub or Vsac_inhib}{V sac (L/kg) for the substrate or inhibitor}
+  \item{Vsac_sub, Vsac_inhib, Vsac_met1, Vsac_met2}{V sac (L/kg) for the
+  substrate, inhibitor, metabolite 1, or metabolite 2}
 
-  \item{Vss_input_sub or Vss_input_inhib}{Vss used}
+  \item{Vss_input_sub, Vss_input_inhib, Vss_input_met1, Vss_input_met2}{Vss
+  used}
 
-  \item{VssPredMeth_sub or VssPredMeth_inhib}{method used for predicting Vss}
+  \item{VssPredMeth_sub, VssPredMeth_inhib, VssPredMeth_met1,
+  VssPredMeth_met2}{method used for predicting Vss}
 
-  } \emph{NOTE:} The default only pulls parameters that are listed on the
+  } \emph{NOTE:} The default pulls only parameters that are listed on the
   "Summary" tab. (There are ~50 of them, so I'm not listing them here for
   brevity. -LS)}
 }
@@ -159,7 +175,9 @@ Returns a named list of the experimental details
 }
 \description{
 \code{extractExpDetails} looks up experimental design details from the
-"Summary" or "Input Sheet" tabs of a Simcyp simulator output file.
+"Summary" or "Input Sheet" tabs of a Simcyp simulator output file. This is
+currently set up to extract details on the substrate, the first inhibitor,
+metabolite 1, and/or metabolite 2.
 }
 \examples{
 
