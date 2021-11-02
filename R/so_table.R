@@ -34,7 +34,7 @@
 so_table <- function(Info, sheet = NA,
                      mean_type = NA,
                      variability_option = "90% CI",
-                     concatVariability = TRUE,
+                     concatVariability = FALSE,
                      includeT12 = FALSE){
 
       if(class(Info) != "list"){
