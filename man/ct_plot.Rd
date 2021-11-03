@@ -10,6 +10,7 @@ ct_plot(
   obs_effector_data_file = NA,
   sim_obs_dataframe = NA,
   tissue = "plasma",
+  compoundToExtract = "substrate",
   figure_type = "trial means",
   substrate_or_effector = "substrate",
   adjust_obs_time = TRUE,
@@ -44,6 +45,11 @@ concentration-time data. Other tissues are acceptable, e.g., "lung",
 "brain", etc., as long as the tissue is one of the options included in
 "Sheet Options", "Tissues" in the simulator.}
 
+\item{compoundToExtract}{For which compound do you want to extract
+concentration-time data? Options are "substrate" (default), "metabolite 1",
+or "metabolite 2". (Note: If you want inhibitor concentration-time data,
+those show up with the substrate, so enter "substrate" here.)}
+
 \item{figure_type}{type of figure to plot. Options are:
 
   \describe{
@@ -67,9 +73,6 @@ concentration-time data. Other tissues are acceptable, e.g., "lung",
   whether those data are with or without the effector. -LS)}
 
   }}
-
-\item{substrate_or_effector}{"substrate" or "effector" for whether to plot
-the substrate (default) or the effector concentration-time data}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to

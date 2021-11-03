@@ -26,6 +26,10 @@
 #'   concentration-time data. Other tissues are acceptable, e.g., "lung",
 #'   "brain", etc., as long as the tissue is one of the options included in
 #'   "Sheet Options", "Tissues" in the simulator.
+#' @param compoundToExtract For which compound do you want to extract
+#'   concentration-time data? Options are "substrate" (default), "metabolite 1",
+#'   or "metabolite 2". (Note: If you want inhibitor concentration-time data,
+#'   those show up with the substrate, so enter "substrate" here.)
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -49,10 +53,6 @@
 #'   whether those data are with or without the effector. -LS)}
 #'
 #'   }
-#' @param substrate_or_effector "substrate" or "effector" for whether to plot
-#'   the substrate (default; plots metabolite data if those are what you've
-#'   extracted using \code{extractConcTime}) or the effector concentration-time
-#'   data
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -151,6 +151,7 @@ ct_plot <- function(sim_data_file,
                     obs_effector_data_file = NA,
                     sim_obs_dataframe = NA,
                     tissue = "plasma",
+                    compoundToExtract = "substrate",
                     figure_type = "trial means",
                     substrate_or_effector = "substrate",
                     adjust_obs_time = TRUE,
@@ -194,6 +195,7 @@ ct_plot <- function(sim_data_file,
             Data <- extractConcTime(sim_data_file = sim_data_file,
                                     obs_data_file = obs_data_file,
                                     tissue = tissue,
+                                    compoundToExtract = compoundToExtract,
                                     obs_effector_data_file = obs_effector_data_file,
                                     adjust_obs_time = adjust_obs_time)
       }
@@ -227,74 +229,81 @@ ct_plot <- function(sim_data_file,
       if(time_range_input[1] %in% c("first dose", "last dose", "penultimate dose")){
             Deets <- extractExpDetails(sim_data_file)
 
-            Sub_t0 <- str_split(Deets[["StartDayTime_sub"]], ", ")[[1]]
-            Inhib_t0 <- str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]]
+            if(Deets$Regimen_sub == "Single Dose"){
+                  time_range <- c(0, tlast)
+                  warning(paste0("You requested the ", time_range_input[1],
+                                 ", but the substrate was administered as a single dose. The full time range will be plotted."))
+            } else {
 
-            Day_t0 <- as.numeric(sub("Day ", "", c(Sub_t0[1], Inhib_t0[1])))
-            names(Day_t0) <- c("Sub", "Inhib")
+                  Sub_t0 <- str_split(Deets[["StartDayTime_sub"]], ", ")[[1]]
+                  Inhib_t0 <- str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]]
 
-            # t0 for first dose of substrate and inhibitor in hours
-            DayTime_t0 <-
-                  as.numeric((hms::parse_hm(c(Sub_t0[2], Inhib_t0[2])) + 60*60*24*Day_t0)/(60*60))
-            DayTime_t0 <- DayTime_t0 - DayTime_t0[which.min(DayTime_t0)]
-            names(DayTime_t0) <- c("Sub", "Inhib")
+                  Day_t0 <- as.numeric(sub("Day ", "", c(Sub_t0[1], Inhib_t0[1])))
+                  names(Day_t0) <- c("Sub", "Inhib")
 
-            if(TimeUnits == "minutes"){
-                  DayTime_t0 <- DayTime_t0 * 60
-            }
+                  # t0 for first dose of substrate and inhibitor in hours
+                  DayTime_t0 <-
+                        as.numeric((hms::parse_hm(c(Sub_t0[2], Inhib_t0[2])) + 60*60*24*Day_t0)/(60*60))
+                  DayTime_t0 <- DayTime_t0 - DayTime_t0[which.min(DayTime_t0)]
+                  names(DayTime_t0) <- c("Sub", "Inhib")
 
-            # start of 2nd dose of substrate and inhibitor
-            DoseInt <- c("Sub" = Deets$DoseInt_sub,
-                         "Inhib" = Deets$DoseInt_inhib)
-            StartDose2 <- DayTime_t0 + DoseInt
+                  if(TimeUnits == "minutes"){
+                        DayTime_t0 <- DayTime_t0 * 60
+                  }
 
-            # start of last dose simulated of substrate and inhibitor
-            NumDoses <- c("Sub" = Deets$NumDoses_sub,
-                          "Inhib" = Deets$NumDoses_inhib)
-            StartLastDose <- DoseInt * NumDoses
-            if(any(StartLastDose == max(Data$Time), na.rm = T)){
-                  StartLastDose <- StartLastDose - DoseInt
-            }
+                  # start of 2nd dose of substrate and inhibitor
+                  DoseInt <- c("Sub" = Deets$DoseInt_sub,
+                               "Inhib" = Deets$DoseInt_inhib)
+                  StartDose2 <- DayTime_t0 + DoseInt
 
-            if(time_range_input[1] == "first dose"){
-                  Start <- ifelse(substrate_or_effector == "substrate",
-                                  DayTime_t0[["Sub"]],
-                                  DayTime_t0[["Inhib"]])
-                  End <- ifelse(substrate_or_effector == "substrate",
-                                StartDose2[["Sub"]],
-                                StartDose2[["Inhib"]])
-                  time_range <- c(Start, End)
-                  rm(Start, End)
-            }
+                  # start of last dose simulated of substrate and inhibitor
+                  NumDoses <- c("Sub" = Deets$NumDoses_sub,
+                                "Inhib" = Deets$NumDoses_inhib)
+                  StartLastDose <- DoseInt * NumDoses
+                  if(any(StartLastDose == max(Data$Time), na.rm = T)){
+                        StartLastDose <- StartLastDose - DoseInt
+                  }
 
-            if(time_range_input[1] == "last dose"){
-                  Start <- ifelse(substrate_or_effector == "substrate",
-                                  StartLastDose[["Sub"]],
-                                  StartLastDose[["Inhib"]])
-                  End <- max(Data$Time)
-                  time_range <- c(Start, End)
-                  rm(Start, End)
-            }
+                  if(time_range_input[1] == "first dose"){
+                        Start <- ifelse(compoundToExtract == "effector",
+                                        DayTime_t0[["Inhib"]],
+                                        DayTime_t0[["Sub"]])
+                        End <- ifelse(compoundToExtract == "effector",
+                                      StartDose2[["Inhib"]],
+                                      StartDose2[["Sub"]])
+                        time_range <- c(Start, End)
+                        rm(Start, End)
+                  }
 
-            if(time_range_input[1] == "penultimate dose"){
+                  if(time_range_input[1] == "last dose"){
+                        Start <- ifelse(compoundToExtract == "effector",
+                                        StartLastDose[["Inhib"]],
+                                        StartLastDose[["Sub"]])
+                        End <- max(Data$Time)
+                        time_range <- c(Start, End)
+                        rm(Start, End)
+                  }
 
-                  DoseIntToUse <- ifelse(substrate_or_effector == "substrate",
-                                         DoseInt["Sub"], DoseInt["Inhib"])
+                  if(time_range_input[1] == "penultimate dose"){
+                        DoseIntToUse <- ifelse(compoundToExtract == "effector",
+                                               DoseInt["Inhib"], DoseInt["Sub"])
 
-                  Start <- ifelse(substrate_or_effector == "substrate",
-                                  StartLastDose[["Sub"]] - DoseIntToUse,
-                                  StartLastDose[["Inhib"]] - DoseIntToUse)
-                  End <- ifelse(substrate_or_effector == "substrate",
-                                StartLastDose[["Sub"]],
-                                StartLastDose[["Inhib"]])
-                  time_range <- c(Start, End)
+                        Start <- ifelse(compoundToExtract == "effector",
+                                        StartLastDose[["Inhib"]] - DoseIntToUse,
+                                        StartLastDose[["Sub"]] - DoseIntToUse)
+                        End <- ifelse(compoundToExtract == "effector",
+                                      StartLastDose[["Inhib"]],
+                                      StartLastDose[["Sub"]])
+                        time_range <- c(Start, End)
 
-                  rm(Start, End)
+                        rm(Start, End)
+                  }
             }
       }
 
       # This doesn't work well if the time range starts at something other than
-      # 0 or ends somewhere other than the max time, so adjusting for that situation.
+      # 0 or ends somewhere other than the max time, so adjusting for that
+      # situation.
       if(all(complete.cases(time_range)) &
          (time_range[1] != 0 | time_range[2] != max(Data$Time))){
 
@@ -359,13 +368,14 @@ ct_plot <- function(sim_data_file,
 
       # Adding a grouping variable to data and also making the effector name
       # prettier for the graphs.
-      if("Effector" %in% names(Data)){
-            MyEffector <- unique(Data$Effector)
-            MyEffector <- MyEffector[!MyEffector == "none"]
+      MyEffector <- unique(Data$Effector) %>% as.character()
+      MyEffector <- MyEffector[!MyEffector == "none"]
+
+      if(complete.cases(MyEffector)){
 
             Data <- Data %>%
                   mutate(CompoundIsEffector = Compound == MyEffector,
-                         Effector = ifelse(is.na(Effector), "none", Effector),
+                         Effector = as.character(ifelse(is.na(Effector), "none", Effector)),
                          Effector = tolower(gsub(
                                "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
                                "",
@@ -373,21 +383,16 @@ ct_plot <- function(sim_data_file,
                          Compound = ifelse(CompoundIsEffector, Effector, Compound),
                          Group = paste(Compound, Effector, Trial)) %>%
                   select(-CompoundIsEffector)
-
-            MyEffector <- tolower(gsub(
-                  "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
-                  "",
-                  MyEffector))
-
-            # Always want "none" to be the 1st item on the legend.
-            Data <- Data %>%
-                  mutate(Effector = factor(Effector, levels = unique(c("none", MyEffector))))
-
-      } else {
-            MyEffector <- "none"
-            Data <- Data %>% mutate(Group = paste(Compound, Trial),
-                                    Effector = MyEffector)
       }
+
+      MyEffector <- tolower(gsub(
+            "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
+            "",
+            MyEffector))
+
+      # Always want "none" to be the 1st item on the legend.
+      Data <- Data %>%
+            mutate(Effector = factor(Effector, levels = c("none", MyEffector)))
 
       # Separating the data by type and calculating trial means
       suppressMessages(
@@ -418,15 +423,15 @@ ct_plot <- function(sim_data_file,
                   any_of(c("Compound", "Tissue", "Effector", "Simulated",
                            "Time", "Time_units", "Conc_units")))) %>%
             summarize(mean = switch(mean_type,
-                                        "arithmetic" = mean(Conc, na.rm = TRUE),
-                                        "geometric" =gm_mean(Conc)),
+                                    "arithmetic" = mean(Conc, na.rm = TRUE),
+                                    "geometric" = gm_mean(Conc)),
                       per5 = quantile(Conc, 0.05),
                       per95 = quantile(Conc, 0.95)) %>%
             pivot_longer(cols = c("mean", "per5", "per95"),
                          names_to = "Trial", values_to = "Conc") %>%
             mutate(Group = paste(Compound, Effector, Trial))
 
-      obs_data <- Data %>% filter(Simulated == FALSE)
+      obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
 
       # Setting the time range since I use it later.
       if(is.na(time_range_input[1])){
@@ -434,24 +439,11 @@ ct_plot <- function(sim_data_file,
       }
 
       # Setting Y axis limits for both linear and semi-log plots
-      if(substrate_or_effector == "substrate"){
-
-            Ylim <- bind_rows(sim_data_trial, obs_data) %>%
-                  filter(Compound != MyEffector &
-                               Time >= time_range[1] &
-                               Time <= time_range[2] &
-                               complete.cases(Conc)) %>%
-                  pull(Conc) %>% range()
-
-      } else {
-
-            Ylim <- bind_rows(sim_data_trial, obs_data) %>%
-                  filter(Compound == MyEffector &
-                               Time >= time_range[1] &
-                               Time <= time_range[2] &
-                               complete.cases(Conc)) %>%
-                  pull(Conc) %>% range()
-      }
+      Ylim <- bind_rows(sim_data_trial, obs_data) %>%
+            filter(Time >= time_range[1] &
+                         Time <= time_range[2] &
+                         complete.cases(Conc)) %>%
+            pull(Conc) %>% range()
 
       if(figure_type == "trial means"){
 
@@ -459,37 +451,20 @@ ct_plot <- function(sim_data_file,
             AlphaToUse <- ifelse(NumTrials > 10, 0.05, 0.12)
             # Adjust this as needed. May want to use "switch" as we did for XBreaks.
 
-
-            if(MyEffector[1] != "none"){
+            if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
                   ## linear plot
-                  if(substrate_or_effector == "substrate"){
-                        A <- ggplot(sim_data_trial %>% filter(Compound != MyEffector),
-                                    aes(x = Time, y = Conc, group = Group,
-                                        linetype = Effector, shape = Effector)) +
-                              guides(linetype = guide_legend(
-                                    override.aes=list(fill=c(NA, NA)))) +
-                              geom_line(alpha = AlphaToUse, lwd = 1) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean" &
-                                                           Compound != MyEffector),
-                                        lwd = 1) +
-                              geom_point(data = obs_data, size = 2) +
-                              scale_shape_manual(values = c(21, 24))
-
-                  } else {
-                        A <- ggplot(sim_data_trial %>% filter(Compound == MyEffector),
-                                    aes(x = Time, y = Conc, group = Group)) +
-                              geom_line(alpha = AlphaToUse, lwd = 1) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean" &
-                                                           Compound == MyEffector),
-                                        lwd = 1) +
-                              geom_point(data = obs_data %>%
-                                               filter(Compound == MyEffector),
-                                         size = 2, shape = 21)
-                  }
-
+                  A <- ggplot(sim_data_trial,
+                              aes(x = Time, y = Conc, group = Group,
+                                  linetype = Effector, shape = Effector)) +
+                        # guides(linetype = guide_legend(
+                        #       override.aes = list(fill = c(NA, NA)))) + # this is causing problems, probably b/c I've only got 1 effector, so length linetype = 1
+                        geom_line(alpha = AlphaToUse, lwd = 1) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"),
+                                  lwd = 1) +
+                        geom_point(data = obs_data, size = 2) +
+                        scale_shape_manual(values = c(21, 24))
 
             } else {
 
@@ -507,42 +482,22 @@ ct_plot <- function(sim_data_file,
       }
 
       if(figure_type == "trial percentiles"){
-
             # graphs with 95% confidence interval
 
-            if(MyEffector[1] != "none"){
+            if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
-                  if(substrate_or_effector == "substrate"){
-
-                        A <- ggplot(sim_data_mean %>%
-                                          filter(Trial %in% c("per5", "per95") &
-                                                       Compound != MyEffector) %>%
-                                          mutate(Group = paste(Group, Trial)),
-                                    aes(x = Time, y = Conc,
-                                        linetype = Effector, shape = Effector,
-                                        group = Group)) +
-                              geom_line(color = "gray80", lwd = 0.8) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean" &
-                                                           Compound != MyEffector),
-                                        lwd = 1) +
-                              geom_point(data = obs_data, size = 2) +
-                              scale_shape_manual(values = c(21, 24))
-
-                  } else {
-                        A <- ggplot(sim_data_mean %>%
-                                          filter(Trial %in% c("per5", "per95") &
-                                                       Compound == MyEffector) %>%
-                                          mutate(Group = paste(Group, Trial)),
-                                    aes(x = Time, y = Conc,
-                                        group = Group)) +
-                              geom_line(color = "gray80", lwd = 0.8) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean" &
-                                                           Compound == MyEffector),
-                                        lwd = 1) +
-                              geom_point(data = obs_data, size = 2, shape = 21)
-                  }
+                  A <- ggplot(sim_data_mean %>%
+                                    filter(Trial %in% c("per5", "per95")) %>%
+                                    mutate(Group = paste(Group, Trial)),
+                              aes(x = Time, y = Conc,
+                                  linetype = Effector, shape = Effector,
+                                  group = Group)) +
+                        geom_line(color = "gray80", lwd = 0.8) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"),
+                                  lwd = 1) +
+                        geom_point(data = obs_data, size = 2) +
+                        scale_shape_manual(values = c(21, 24))
 
             } else {
 
@@ -559,24 +514,13 @@ ct_plot <- function(sim_data_file,
 
       if(figure_type == "means only"){
 
-            if(MyEffector[1] != "none"){
+            if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
-                  if(substrate_or_effector == "substrate"){
-                        A <- ggplot(sim_data_mean %>%
-                                          filter(Trial == "mean" &
-                                                       Compound != MyEffector) %>%
-                                          mutate(Group = paste(Group, Trial)),
-                                    aes(x = Time, y = Conc, linetype = Effector)) +
-                              geom_line(lwd = 1)
-
-                  } else {
-                        A <- ggplot(sim_data_mean %>%
-                                          filter(Trial == "mean" &
-                                                       Compound == MyEffector) %>%
-                                          mutate(Group = paste(Group, Trial)),
-                                    aes(x = Time, y = Conc)) +
-                              geom_line(lwd = 1)
-                  }
+                  A <- ggplot(sim_data_mean %>%
+                                    filter(Trial == "mean") %>%
+                                    mutate(Group = paste(Group, Trial)),
+                              aes(x = Time, y = Conc, linetype = Effector)) +
+                        geom_line(lwd = 1)
 
             } else {
 
@@ -591,8 +535,7 @@ ct_plot <- function(sim_data_file,
       A <- A +
             scale_x_continuous(breaks = XBreaks,
                                expand = expansion(mult = c(0, 0.04))) +
-            # scale_y_continuous(expand = expansion(mult = c(0, 0.1)),
-            #                    limits = Ylim) +
+            scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
             labs(x = xlab, y = ylab) +
             coord_cartesian(xlim = time_range) +
             theme(panel.background = element_rect(fill="white", color=NA),
@@ -602,6 +545,11 @@ ct_plot <- function(sim_data_file,
                   axis.ticks = element_line(color = "grey60"),
                   text = element_text(family = "Calibri")
             )
+
+      # If the graph is of the effector, remove legend.
+      if(compoundToExtract == "effector"){
+            A <- A + theme(legend.position = "none")
+      }
 
       # # Freddy's original graphing code:
       # A <- ## normal scale plot
@@ -624,30 +572,21 @@ ct_plot <- function(sim_data_file,
          # Also need to trim a bit from the low values when the data don't start
          # at 0 but are still really small
          Ylim[1] < mean(Data$Conc, na.rm = TRUE) * 0.01){
-            if(substrate_or_effector == "Effector"){
-                  Ylim_log[1] <- bind_rows(sim_data_trial, obs_data) %>%
-                        filter(Compound == MyEffector &
-                                     Time > switch(TimeUnits, "hours" = 4,
-                                                   "minutes" = 4*60) &
-                                     complete.cases(Conc) &
-                                     Conc > 0) %>%
-                        pull(Conc) %>% min() * 0.8
-            } else {
-                  Ylim_log[1] <- bind_rows(sim_data_trial, obs_data) %>%
-                        filter(Compound != MyEffector &
-                                     # probably at tmax by 4 hrs for pretty much
-                                     # anything... This is pretty hacky, though,
-                                     # and I bet it will break at some point.
-                                     # Add option to let people set the y axis
-                                     # limits? Meh. If they want to do that,
-                                     # they can save the graphs individually and
-                                     # adjust as needed.
-                                     Time > switch(TimeUnits, "hours" = 4,
-                                                   "minutes" = 4*60) &
-                                     complete.cases(Conc) &
-                                     Conc > 0) %>%
-                        pull(Conc) %>% min() * 0.8
-            }
+
+            Ylim_log[1] <- bind_rows(sim_data_trial, obs_data) %>%
+                  filter(
+                        # probably at tmax by 4 hrs for pretty much
+                        # anything... This is pretty hacky, though,
+                        # and I bet it will break at some point.
+                        # Add option to let people set the y axis
+                        # limits? Meh. If they want to do that,
+                        # they can save the graphs individually and
+                        # adjust as needed.
+                        Time > switch(TimeUnits, "hours" = 4,
+                                      "minutes" = 4*60) &
+                              complete.cases(Conc) &
+                              Conc > 0) %>%
+                  pull(Conc) %>% min() * 0.8
       }
 
       # Just not quite getting the top part of the graph every time for the
@@ -661,11 +600,19 @@ ct_plot <- function(sim_data_file,
       )
 
       # both plots together, aligned vertically
-      AB <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
-                              common.legend = TRUE, legend = "right",
-                              align = "v")
-      )
+      if(compoundToExtract == "effector"){
+            AB <- suppressWarnings(
+                  ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
+                                    align = "v")
+            )
+
+      } else {
+            AB <- suppressWarnings(
+                  ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
+                                    common.legend = TRUE, legend = "right",
+                                    align = "v")
+            )
+      }
 
       Out <- list("Graphs" = AB)
 

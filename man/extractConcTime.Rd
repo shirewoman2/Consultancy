@@ -10,6 +10,7 @@ extractConcTime(
   obs_effector_data_file = NA,
   adjust_obs_time = TRUE,
   tissue = "plasma",
+  compoundToExtract = "substrate",
   returnAggregateOrIndiv = c("aggregate", "individual")
 )
 }
@@ -18,11 +19,11 @@ extractConcTime(
 concentration-time data; must be an output file from the Simcyp simulator}
 
 \item{obs_data_file}{name of the Excel file containing the observed
-concentration-time data for the substrate. If the observed data you want to
-plot were already included in the Excel output from the simulator, leave
-this as NA. Otherwise, this is the file that it is ready to be converted to
-an XML file, not the file that contains only the digitized time and
-concentration data.}
+concentration-time data for the substrate or metabolite you're extracting.
+If the observed data you want to plot were already included in the Excel
+output from the simulator, leave this as NA. Otherwise, this is the file
+that it is ready to be converted to an XML file, not the file that contains
+only the digitized time and concentration data.}
 
 \item{obs_effector_data_file}{name of the Excel file containing observed
 concentration-time data for the effector, when appropriate}
@@ -39,6 +40,11 @@ Excel file.}
 extracted? Default is plasma for typical plasma concentration-time data.
 Other options are "blood" or any tissues included in "Sheet Options",
 "Tissues" in the simulator, e.g., "lung", "brain", etc.}
+
+\item{compoundToExtract}{For which compound do you want to extract
+concentration-time data? Options are "substrate" (default), "metabolite 1",
+"metabolite 2", or "effector" (this can be either an inducer or inhibitor;
+this is labeled as "inhibitor 1" in the simulator).}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and
@@ -77,8 +83,8 @@ A data.frame of concentration-time data with the following columns:
 Extracts concentration-time data from simulator output Excel files and,
 optionally, a separately specified clinical data file, and puts all data into
 a single, tidy data.frame. \emph{Note: Currently, only set up to extract
-concentration-time data for one substrate and up to one inhibitor as
-applicable.}
+concentration-time data for the substrate, metabolite 1, metabolite 2, or
+inhibitor 1.}
 }
 \examples{
 extractConcTime(sim_data_file = "../Example simulator output MD.xlsx")
