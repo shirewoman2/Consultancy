@@ -50,7 +50,9 @@
 #'
 #'   }
 #' @param substrate_or_effector "substrate" or "effector" for whether to plot
-#'   the substrate (default) or the effector concentration-time data
+#'   the substrate (default; plots metabolite data if those are what you've
+#'   extracted using \code{extractConcTime}) or the effector concentration-time
+#'   data
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -358,8 +360,11 @@ ct_plot <- function(sim_data_file,
       # Adding a grouping variable to data and also making the effector name
       # prettier for the graphs.
       if("Effector" %in% names(Data)){
+            MyEffector <- unique(Data$Effector)
+            MyEffector <- MyEffector[!MyEffector == "none"]
+
             Data <- Data %>%
-                  mutate(CompoundIsEffector = Compound == Effector,
+                  mutate(CompoundIsEffector = Compound == MyEffector,
                          Effector = ifelse(is.na(Effector), "none", Effector),
                          Effector = tolower(gsub(
                                "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
@@ -369,10 +374,12 @@ ct_plot <- function(sim_data_file,
                          Group = paste(Compound, Effector, Trial)) %>%
                   select(-CompoundIsEffector)
 
-            # Always want "none" to be the 1st item on the legend.
-            MyEffector <- Data %>% filter(Compound == Effector) %>%
-                  pull(Compound) %>% unique()
+            MyEffector <- tolower(gsub(
+                  "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
+                  "",
+                  MyEffector))
 
+            # Always want "none" to be the 1st item on the legend.
             Data <- Data %>%
                   mutate(Effector = factor(Effector, levels = unique(c("none", MyEffector))))
 
@@ -387,8 +394,10 @@ ct_plot <- function(sim_data_file,
             sim_data_trial <- Data %>%
                   filter(Simulated == TRUE &
                                Trial %in% c("mean", "per5", "per95") == FALSE) %>%
-                  group_by(across(any_of(c("Compound", "Tissue", "Effector", "Simulated", "Trial",
-                                           "Time", "Time_units", "Conc_units", "Group")))) %>%
+                  group_by(across(any_of(c("Compound", "Tissue", "Effector",
+                                           "Simulated", "Trial",
+                                           "Time", "Time_units", "Conc_units",
+                                           "Group")))) %>%
                   summarize(Conc = switch(mean_type,
                                           "arithmetic" = mean(Conc),
                                           "geometric" = gm_mean(Conc))) %>%
@@ -414,7 +423,8 @@ ct_plot <- function(sim_data_file,
                       per5 = quantile(Conc, 0.05),
                       per95 = quantile(Conc, 0.95)) %>%
             pivot_longer(cols = c("mean", "per5", "per95"),
-                         names_to = "Trial", values_to = "Conc")
+                         names_to = "Trial", values_to = "Conc") %>%
+            mutate(Group = paste(Compound, Effector, Trial))
 
       obs_data <- Data %>% filter(Simulated == FALSE)
 
