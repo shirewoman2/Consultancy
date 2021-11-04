@@ -66,21 +66,19 @@ so_table <- function(Info, sheet = NA,
             (which(Info$InputXL$Item == "Details for the clinical study") + 2):nrow(Info$InputXL), ] %>%
             mutate(Value = as.numeric(Value))
 
-      EffectorPresent <- str_detect(tolower(
-            SectionInput$Value[
-                  which(SectionInput$RName == "EffectorPresent")]), "y")
+      EffectorPresent <- complete.cases(Info$Deets$Inhibitor)
+      DoseRegimen <- Info$Deets$Regimen_sub
 
       # Getting PK parameters from the AUC tab
       MyPKParam <- switch(
-            paste(SectionInput$Value[which(SectionInput$RName == "DoseRegimen")],
-                  EffectorPresent),
-            "SD FALSE" = PKToPull[
+            paste(DoseRegimen, EffectorPresent),
+            "Single Dose FALSE" = PKToPull[
                   str_detect(PKToPull, "dose1") &
                         !str_detect(PKToPull, "withEffector")],
-            "SD TRUE" = PKToPull[
+            "Single Dose TRUE" = PKToPull[
                   str_detect(PKToPull, "dose1")],
-            "MD FALSE" = PKToPull[!str_detect(PKToPull, "withEffector")],
-            "MD TRUE" = PKToPull)
+            "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withEffector")],
+            "Multiple Dose TRUE" = PKToPull)
 
       Extract <- extractPK(SectionInput$Value[which(SectionInput$RName == "SimFile")],
                            PKparameters = MyPKParam)
@@ -192,7 +190,10 @@ so_table <- function(Info, sheet = NA,
       MyPKResults <- MyPKResults %>%
             mutate(Value = if_else(str_detect(Param, "CV"),
                                    round(Value * 100, 0),
-                                   signif(Value, 3))) %>%  # not sure of the best option for rounding here
+                                   # Per Christiane: 3 sig figs for everything
+                                   # or full number when > 100
+                                   if_else(Value > 100,
+                                           round(Value, 0), signif(Value, 3)))) %>%
             separate(col = Param, into = c("PKParam", "Stat"), sep = " ") %>%
             filter((str_detect(PKParam, "tmax") & Stat %in% c("Med", "Min", "Max")) |
                          (!str_detect(PKParam, "tmax")
@@ -236,7 +237,7 @@ so_table <- function(Info, sheet = NA,
                   left_join(MyObsPK %>% filter(Stat == "GMean") %>%
                                   pivot_longer(names_to = "PKParam_short", values_to = "Obs",
                                                cols = -Stat)) %>%
-                  mutate(S_O = round(Sim / Obs, 1)) %>%
+                  mutate(S_O = round(Sim / Obs, 2)) %>%
                   select(PKParam_short, S_O) %>%
                   pivot_wider(names_from = PKParam_short, values_from = S_O) %>%
                   mutate(Stat = "S/O")
