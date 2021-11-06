@@ -380,9 +380,10 @@ extractConcTime <- function(sim_data_file,
             }
 
             TimeRow <- which(str_detect(sim_data_xl$...1,
-                                        "Individual Statistics")) + 1
-            TimeRow <- ifelse(sim_data_xl$...1[TimeRow] == "Type",
-                              TimeRow + 1, TimeRow)
+                                        "Individual Statistics"))
+            TimeRow <- which(
+                  str_detect(as.character(sim_data_xl$...1[TimeRow:nrow(sim_data_xl)]),
+                             "^Time"))[1] + TimeRow -1
 
             sim_data_ind <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                   t() %>%

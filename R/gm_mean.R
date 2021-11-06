@@ -41,7 +41,9 @@ gm_mean <- function(x, na.rm=TRUE, zero.propagate = FALSE){
             if(any(x == 0, na.rm = TRUE)){
                   return(0)
             }
-      } else { # If you don't want to propagate zeroes, then remove them from the vector.
+      } else {
+            # If user doesn't want to propagate zeroes, then remove them from
+            # the vector.
             x <- x[x > 0]
       }
 
