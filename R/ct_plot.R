@@ -540,9 +540,11 @@ ct_plot <- function(sim_data_file,
             coord_cartesian(xlim = time_range) +
             theme(panel.background = element_rect(fill="white", color=NA),
                   legend.key = element_rect(fill = "white"),
+                  axis.ticks = element_line(color = "grey60"),
+                  axis.text = element_text(color = "black"),
+                  axis.title = element_text(color = "black", face = "bold"),
                   axis.line.x.bottom = element_line(color = "grey60"),
                   axis.line.y.left = element_line(color = "grey60"),
-                  axis.ticks = element_line(color = "grey60"),
                   text = element_text(family = "Calibri")
             )
 
@@ -593,10 +595,16 @@ ct_plot <- function(sim_data_file,
       # semi-log plots. Adding a little more cushion to the upper Y limit
       Ylim_log[2] <- Ylim[2] * 1.5
 
+      # Now, adjusting to nearest power of 10 on the bottom. Often, that's
+      # too much for the top, so not rounding up to nearest power of 10 for
+      # Ylim_log[2].
+      Ylim_log[1] <- round_down(Ylim_log[1])
+
       B <- suppressMessages(
-            A + scale_y_log10(labels = scales::comma) +
-                  coord_cartesian(xlim = time_range,
-                                  ylim = Ylim_log)
+            A + scale_y_log10(limits = Ylim_log,
+                              labels = function(.) format(., scientific = FALSE,
+                                                          drop0trailing = TRUE)) +
+                  coord_cartesian(xlim = time_range)
       )
 
       # both plots together, aligned vertically
