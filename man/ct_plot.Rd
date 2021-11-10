@@ -47,8 +47,8 @@ concentration-time data. Other tissues are acceptable, e.g., "lung",
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are "substrate" (default), "metabolite 1",
-or "metabolite 2". (Note: If you want inhibitor concentration-time data,
-those show up with the substrate, so enter "substrate" here.)}
+"metabolite 2", or "effector" (this can be either an inducer or inhibitor;
+this is labeled as "inhibitor 1" in the simulator).}
 
 \item{figure_type}{type of figure to plot. Options are:
 

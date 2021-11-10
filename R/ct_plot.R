@@ -28,8 +28,8 @@
 #'   "Sheet Options", "Tissues" in the simulator.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are "substrate" (default), "metabolite 1",
-#'   or "metabolite 2". (Note: If you want inhibitor concentration-time data,
-#'   those show up with the substrate, so enter "substrate" here.)
+#'   "metabolite 2", or "effector" (this can be either an inducer or inhibitor;
+#'   this is labeled as "inhibitor 1" in the simulator).
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -439,7 +439,7 @@ ct_plot <- function(sim_data_file,
       }
 
       # Setting Y axis limits for both linear and semi-log plots
-      Ylim <- bind_rows(sim_data_trial, obs_data) %>%
+      Ylim <- bind_rows(sim_data_trial, sim_data_mean, obs_data) %>%
             filter(Time >= time_range[1] &
                          Time <= time_range[2] &
                          complete.cases(Conc)) %>%
@@ -575,7 +575,7 @@ ct_plot <- function(sim_data_file,
          # at 0 but are still really small
          Ylim[1] < mean(Data$Conc, na.rm = TRUE) * 0.01){
 
-            Ylim_log[1] <- bind_rows(sim_data_trial, obs_data) %>%
+            Ylim_log[1] <- bind_rows(sim_data_trial, sim_data_mean, obs_data) %>%
                   filter(
                         # probably at tmax by 4 hrs for pretty much
                         # anything... This is pretty hacky, though,

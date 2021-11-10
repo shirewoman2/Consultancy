@@ -29,7 +29,7 @@
 #'
 #' @return
 #' @import tidyverse
-#' @import readxl
+#' @import ggthemes
 #' @export
 #'
 #' @examples
