@@ -36,3 +36,14 @@
 #' \item{LgFileDir}{the large-file directory}
 #' \item{SharePtDir}{the SharePoint directory}}
 "SimcypDir"
+
+#' Report input forms to be used in conjunction with
+#' \code{\link{getSectionInfo}} and \code{\link{so_table}}
+#'
+#' @format A named list of two forms: "Observed data form" for entering
+#'   information about a clinical study and "Section input form" for entering
+#'   data about a specific simulation file to be described in this section of a
+#'   report
+"ReportInputForm"
+
+
