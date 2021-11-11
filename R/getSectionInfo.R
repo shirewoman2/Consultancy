@@ -4,7 +4,7 @@
 #' \emph{exactly} like the file "Report input template.xlsx" and organizes those
 #' data plus some further data it pulls from the simulator output Excel file.
 #' The output of this function serves as part of the input for the function
-#' \code{so_table}.
+#' \code{\link{so_table}}.
 #'
 #' @param report_input_file the name of the Excel file formatted exactly like
 #'   "Report input template.xlsx", including the path if it's in any other

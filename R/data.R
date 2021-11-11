@@ -8,7 +8,7 @@
 "IndData"
 
 #' Dummy plasma concentration-time data after a 5 mg PO MDZ dose. Format of the
-#' data are the same as the output from \code{extractConcTime}.
+#' data are the same as the output from \code{\link{extractConcTime}}.
 #'
 #' @format A data.frame with 2211 rows and 7 columns:
 #' \describe{

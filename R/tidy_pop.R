@@ -3,7 +3,7 @@
 #' \code{tidyPop}
 #'
 #' @param input_pop input population to tidy up; this has been designed to work
-#'   with \code{extractExpDetails} with the output item named "Pop"
+#'   with \code{\link{extractExpDetails}} with the output item named "Pop"
 #'
 #' @return
 #' @export

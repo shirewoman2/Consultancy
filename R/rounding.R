@@ -12,8 +12,8 @@
 #' points across each order of magnitude} }
 #'
 #' @param x the number or vector of numbers to be rounded
-#' @param b the unit to round the number to (applies to \code{round_up_unit} and
-#'   \code{round_down_unit} only)
+#' @param b the unit to round the number to (applies to
+#'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
 #' @return
 #' @export
@@ -55,8 +55,8 @@ round_up      <- function(x) {
 #' points across each order of magnitude} }
 #'
 #' @param x the number or vector of numbers to be rounded
-#' @param b the unit to round the number to (applies to \code{round_up_unit} and
-#'   \code{round_down_unit} only)
+#' @param b the unit to round the number to (applies to
+#'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
 #' @return
 #' @export
@@ -89,8 +89,8 @@ round_down    <- function(x) 10^floor(log10(x))
 #' points across each order of magnitude} }
 #'
 #' @param x the number or vector of numbers to be rounded
-#' @param b the unit to round the number to (applies to \code{round_up_unit} and
-#'   \code{round_down_unit} only)
+#' @param b the unit to round the number to (applies to
+#'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
 #' @return
 #' @export
@@ -132,8 +132,8 @@ round_up_nice <- function(x, nice=seq(1, 10, 0.1)) {    # function to round up t
 #' points across each order of magnitude} }
 #'
 #' @param x the number or vector of numbers to be rounded
-#' @param b the unit to round the number to (applies to \code{round_up_unit} and
-#'   \code{round_down_unit} only)
+#' @param b the unit to round the number to (applies to
+#'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
 #' @return
 #' @export
@@ -179,8 +179,8 @@ round_up_unit <- function(x, b) { # round x up to nearest b
 #' points across each order of magnitude} }
 #'
 #' @param x the number or vector of numbers to be rounded
-#' @param b the unit to round the number to (applies to \code{round_up_unit} and
-#'   \code{round_down_unit} only)
+#' @param b the unit to round the number to (applies to
+#'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
 #' @return
 #' @export
