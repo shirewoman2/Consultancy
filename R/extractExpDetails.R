@@ -654,7 +654,14 @@ extractExpDetails <- function(sim_data_file,
                                     Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
                                     NextEmptyCell <- which(is.na(InputTab[, NameCol + 1]))
                                     NextEmptyCell <- NextEmptyCell[NextEmptyCell > i][1]
-                                    ThisIntRows <- i:NextEmptyCell
+                                    # If there's another interaction listed
+                                    # before the next empty cell, need to
+                                    # account for that.
+                                    NextInt <- IntRows[which(IntRows == i) + 1] - 1
+                                    NextInt <- ifelse(i == IntRows[length(IntRows)],
+                                                      nrow(InputTab), NextInt)
+                                    ThisIntRows <- i:(c(NextEmptyCell, NextInt)[
+                                          which.min(c(NextEmptyCell, NextInt))])
 
                                     # induction
                                     IndMax <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
@@ -745,7 +752,8 @@ extractExpDetails <- function(sim_data_file,
                                           )
                                     }
 
-                                    rm(Enzyme, NextEmptyCell, ThisIntRows, IndMax, Ki, MBI)
+                                    rm(Enzyme, NextEmptyCell, NextInt,
+                                       ThisIntRows, IndMax, Ki, MBI)
                               }
                         }
 
