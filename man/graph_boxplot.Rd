@@ -31,9 +31,13 @@ uncertain what this does.}
 might break up the graph into small multiples.}
 
 \item{graph_type}{the type of graph to plot. Options: \describe{
-\item{"boxplot"}{standard boxplots or box-and-whisker plots}
-\item{"jittered points"}{boxplots overlaid with points depicting each
-individual observation.}}}
+  \item{"boxplot"}{standard boxplots or box-and-whisker plots}
+
+  \item{"boxplot with error bars"}{standard boxplots or box-and-whisker plots
+  plus error bars on the whiskers}
+
+  \item{"jittered points"}{boxplots overlaid with points depicting each
+  individual observation.}}}
 
 \item{xlabel}{the label to  use for the x axis}
 
@@ -62,7 +66,7 @@ AUCs <- data.frame(AgeGroup = LETTERS[1:5],
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-               xlabel = "Age group")
+               xlabel = "Age group", graph_type = "boxplot with error bars")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
                color = "rainbow")

@@ -15,6 +15,10 @@
 #'   might break up the graph into small multiples.
 #' @param graph_type the type of graph to plot. Options: \describe{
 #'   \item{"boxplot"}{standard boxplots or box-and-whisker plots}
+#'
+#'   \item{"boxplot with error bars"}{standard boxplots or box-and-whisker plots
+#'   plus error bars on the whiskers}
+#'
 #'   \item{"jittered points"}{boxplots overlaid with points depicting each
 #'   individual observation.}}
 #' @param xlabel the label to  use for the x axis
@@ -39,7 +43,7 @@
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC")
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-#'                xlabel = "Age group")
+#'                xlabel = "Age group", graph_type = "boxplot with error bars")
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'                color = "rainbow")
@@ -76,28 +80,6 @@ graph_boxplot <- function(DF,
                            xlabel = NA,
                            ylabel = NA,
                            color = "default"){
-
-      # Setting graphing preferences
-      ThemeLaura <- function (base_size = 12, base_family = "") {
-            theme_gray(base_size = base_size, base_family = base_family) %+replace%
-                  theme(
-                        panel.background = element_rect(fill="white", color=NA),
-                        panel.grid.minor.y = element_line(color = NA),
-                        panel.grid.minor.x = element_line(color = NA),
-                        panel.grid.major = element_line(colour = NA),
-                        plot.background = element_rect(fill="white", colour=NA),
-                        panel.border = element_rect(color="black", fill=NA),
-                        strip.background = element_rect(color=NA, fill="white"),
-                        legend.background = element_rect(color=NA, fill=NA),
-                        legend.key = element_rect(color=NA, fill=NA)
-                  )
-      }
-
-      scale_colour_discrete <- function(...) scale_colour_brewer(..., palette="Set1")
-      scale_fill_discrete <- function(...) scale_fill_brewer(... , palette="Set1")
-
-      # Call up that theme before plotting graphs.
-      theme_set(ThemeLaura())
 
       # Adding a couple more options for colors
       colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
@@ -137,6 +119,12 @@ graph_boxplot <- function(DF,
             G <- G + geom_boxplot(color = "black")
       }
 
+      if(graph_type == "boxplot with error bars"){
+            G <- G + stat_boxplot(geom = "errorbar", color = "black") +
+                  geom_boxplot(color = "black")
+
+      }
+
       if(graph_type == "jittered points"){
 
             JitterWidth = 0.5/length(unique(DF$CATCOL))
@@ -165,6 +153,22 @@ graph_boxplot <- function(DF,
             G <- G + ylab(ylabel)
       } else {
             G <- G + ylab(value_column)
+      }
+
+      # Adding some aesthetic preferences
+      G <- G + theme(
+            panel.background = element_rect(fill="white", color=NA),
+            panel.grid.minor.y = element_line(color = NA),
+            panel.grid.minor.x = element_line(color = NA),
+            panel.grid.major = element_line(colour = NA),
+            plot.background = element_rect(fill="white", colour=NA),
+            panel.border = element_rect(color="black", fill=NA),
+            strip.background = element_rect(color=NA, fill="white"),
+            legend.background = element_rect(color=NA, fill=NA),
+            legend.key = element_rect(color=NA, fill=NA))
+
+      if(color == "default"){
+            G <- G + scale_fill_brewer(palette="Set1")
       }
 
       if(color == "blue-green"){
