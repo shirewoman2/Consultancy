@@ -282,7 +282,7 @@ extractPK <- function(sim_data_file,
                                            "CL_dose1" = "CL .Dose/AUC_INF",
                                            "CL_dose1_withEffector" = "CL \\(Dose/AUC_INF_Inh\\)",
                                            "CL_ss" = "CL \\(Dose/AUC\\)",
-                                           "CL_ss_withEffector" = "CL \\(Dose/AUC\\)")
+                                           "CL_ss_withEffector" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)")
 
 
                         if(str_detect(PKparam, "_withEffector")){
