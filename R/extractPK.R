@@ -6,8 +6,8 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
-#'   pull the PK data. If left as NA, it will automatically be selected from,
-#'   possibly, multiple tabs.
+#'   pull the PK data. If left as NA, it will automatically be selected and
+#'   could come from multiple tabs.
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are "all" for all possible parameters, "AUC tab" for
 #'   only those parameters on the "AUC" tab (default), "Absorption tab" for only
@@ -128,11 +128,17 @@
 #'   } The default is only those parameters present on the "AUC" sheet in the
 #'   simulator output.
 #' @param returnAggregateOrIndiv Return aggregate (geometric mean) and/or
-#'   individual PK parameters? Options are "aggregate" or "individual".
+#'   individual PK parameters? Options are "aggregate" and/or "individual".
+#' @param includeTrialInfo TRUE or FALSE: Include which individual and trial the
+#'   data describe? This only applies when \code{returnAggregateOrIndiv}
+#'   includes "individual". IMPORTANT: If this is TRUE, this changes the output
+#'   from a list to a data.frame so that all the correct values can be assigned
+#'   to the correct subject and trial.
 #'
 #' @return Depending on the options selected, returns a list of numerical
-#'   vectors of whichever PK parameters were chosen. If only one PK parameter
-#'   was requested, output is a numerical vector.
+#'   vectors or a data.frame. If both individual and aggregate data were
+#'   requested, the output will be a list of lists or a list of a data.frame and
+#'   a list.
 #'
 #' @import tidyverse
 #' @import readxl
@@ -148,7 +154,8 @@
 extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
                       sheet = NA,
-                      returnAggregateOrIndiv = "individual"){
+                      returnAggregateOrIndiv = "individual",
+                      includeTrialInfo = TRUE){
 
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
@@ -157,8 +164,8 @@ extractPK <- function(sim_data_file,
       }
 
       # Error catching
-      if(length(returnAggregateOrIndiv) != 1 |
-         returnAggregateOrIndiv %in% c("aggregate", "individual") == FALSE){
+      if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
+         all(returnAggregateOrIndiv %in% c("aggregate", "individual")) == FALSE){
             stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
       }
 
@@ -371,6 +378,15 @@ extractPK <- function(sim_data_file,
                         rm(ColNum)
                   }
 
+                  if(includeTrialInfo){
+                        # Subject and trial info
+                        SubjTrial_AUC <- AUC_xl[4:EndRow, 1:2] %>%
+                              rename("Individual" = ...1, "Trial" = ...2)
+
+                        Out[["AUCtab"]] <- cbind(SubjTrial_AUC,
+                                                 as.data.frame(Out[PKparameters_AUC]))
+                  }
+
                   rm(EndRow, findCol)
             }
       }
@@ -426,6 +442,15 @@ extractPK <- function(sim_data_file,
                         rm(ColNum)
                   }
 
+                  if(includeTrialInfo){
+                        # Subject and trial info
+                        SubjTrial_AUC0 <- AUC0_xl[3:EndRow, 1:2] %>%
+                              rename("Individual" = ...1, "Trial" = ...2)
+
+                        Out[["AUC0tab"]] <- cbind(SubjTrial_AUC0,
+                                                 as.data.frame(Out[PKparameters_AUC0]))
+                  }
+
                   rm(EndRow, findCol, Sheet)
             }
       }
@@ -478,6 +503,15 @@ extractPK <- function(sim_data_file,
                         )
 
                         rm(ColNum)
+                  }
+
+                  if(includeTrialInfo){
+                        # Subject and trial info
+                        SubjTrial_AUCX <- AUCX_xl[3:EndRow, 1:2] %>%
+                              rename("Individual" = ...1, "Trial" = ...2)
+
+                        Out[["AUCXtab"]] <- cbind(SubjTrial_AUCX,
+                                                  as.data.frame(Out[PKparameters_AUCX]))
                   }
 
                   rm(EndRow, findCol)
@@ -546,6 +580,16 @@ extractPK <- function(sim_data_file,
                         rm(ColNum)
                   }
 
+                  if(includeTrialInfo){
+                        # Subject and trial info
+                        SubjTrial_Abs <- Abs_xl[(which(Abs_xl$...1 == "Index") + 1):
+                                                      nrow(Abs_xl), 1:2] %>%
+                              rename("Individual" = ...1, "Trial" = ...2)
+
+                        Out[["Abstab"]] <- cbind(SubjTrial_Abs,
+                                                  as.data.frame(Out[PKparameters_Abs]))
+                  }
+
                   rm(findCol)
             }
       }
@@ -598,6 +642,16 @@ extractPK <- function(sim_data_file,
                         )
                         rm(ColNum)
                   }
+
+                  if(includeTrialInfo){
+                        # Subject and trial info
+                        SubjTrial_CLTSS <- CLTSS_xl[2:nrow(CLTSS_xl), 1:2] %>%
+                              rename("Individual" = ...1, "Trial" = ...2)
+
+                        Out[["CLTSStab"]] <- cbind(SubjTrial_CLTSS,
+                                                 as.data.frame(Out[PKparameters_CLTSS]))
+                  }
+
                   rm(findCol)
             }
       }
@@ -733,12 +787,21 @@ extractPK <- function(sim_data_file,
                   rm(ColNum)
             }
 
+            if(includeTrialInfo){
+                  # Subject and trial info
+                  SubjTrial_sheetX <- XL[(HeaderRow+1):EndRow, 1:2] %>%
+                        rename("Individual" = ...1, "Trial" = ...2)
+
+                  Out[["Xtab"]] <- cbind(SubjTrial_X,
+                                             as.data.frame(Out[PKparameters]))
+            }
+
             rm(EndRow, findCol)
       }
 
-      # If user only wanted one parameter, make the output a vector instead of a
-      # list
-      if(length(Out) == 1){
+      # If user only wanted one parameter and includeTrialInfo was FALSE, make
+      # the output a vector instead of a list
+      if(length(Out) == 1 & includeTrialInfo == FALSE){
 
             Out <- Out[[1]]
 
@@ -751,14 +814,46 @@ extractPK <- function(sim_data_file,
             for(i in sort(ListItems)){
                   Out[[i]] <- Out_temp[[i]]
             }
+
+            if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
+                  Indiv <- Out[ListItems[str_detect(ListItems, "tab$")]]
+                  Indiv <- bind_rows(Indiv) %>%
+                        pivot_longer(cols = -(c(Individual, Trial)),
+                                     names_to = "Parameter",
+                                     values_to = "Value") %>%
+                        filter(complete.cases(Value)) %>%
+                        arrange(Parameter, as.numeric(Trial),
+                                as.numeric(Individual)) %>%
+                        pivot_wider(names_from = Parameter,
+                                    values_from = Value)
+            } else {
+                  Indiv <- Out[ListItems[!str_detect(ListItems, "tab$")]]
+            }
       }
 
-      if(returnAggregateOrIndiv == "aggregate"){
+      if("aggregate" %in% returnAggregateOrIndiv){
             if(class(Out) == "list"){
-                  Out <- sapply(Out, FUN = gm_mean)
+                  Agg <- sapply(Out[ListItems[!str_detect(ListItems, "tab$")]],
+                                FUN = gm_mean)
             } else {
-                  Out = gm_mean(Out)
+                  Agg = gm_mean(Out) # when output is a single vector
             }
+      }
+
+      if(length(returnAggregateOrIndiv) == 1 &
+         returnAggregateOrIndiv[[1]] == "individual"){
+            Out <- Indiv
+      }
+
+      if(length(returnAggregateOrIndiv) == 1 &
+         returnAggregateOrIndiv[[1]] == "aggregate"){
+            Out <- Agg
+
+      }
+
+      if(length(returnAggregateOrIndiv) == 2){
+            Out <- list("Individual" = Indiv,
+                        "Aggregate" = Agg)
       }
 
       return(Out)
