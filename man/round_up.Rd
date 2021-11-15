@@ -9,8 +9,8 @@ round_up(x)
 \arguments{
 \item{x}{the number or vector of numbers to be rounded}
 
-\item{b}{the unit to round the number to (applies to \code{round_up_unit} and
-\code{round_down_unit} only)}
+\item{b}{the unit to round the number to (applies to
+\code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)}
 }
 \value{
 

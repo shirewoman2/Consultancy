@@ -25,7 +25,7 @@ a list object
 \emph{exactly} like the file "Report input template.xlsx" and organizes those
 data plus some further data it pulls from the simulator output Excel file.
 The output of this function serves as part of the input for the function
-\code{so_table}.
+\code{\link{so_table}}.
 }
 \examples{
 # No examples yet.
