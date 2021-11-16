@@ -96,7 +96,7 @@ getSectionInfo <- function(report_input_file = NA,
       InfoList <- list(
             "InputXL" = InputXL, "ClinXL" = ClinXL,
             "MeanType" = MeanType, "GMR_mean_type" = GMR_mean_type,
-            "ClinStudy" = ClinStudy,
+            "ClinStudyTab" = ClinStudyTab,
             "SimFile" = SimFile,
             "ObsFile_dose1" = ObsFile_dose1, "ObsFile_ss" = ObsFile_ss,
             "ObsEffectorFile" = ObsEffectorFile,
