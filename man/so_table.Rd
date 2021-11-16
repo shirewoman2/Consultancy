@@ -26,8 +26,8 @@ like to override the value listed in "Info". If no value is specified here
 or in "Info", the default is "geometric".}
 
 \item{variability_option}{What type of variability would you like the table
-to include? Options are: "90% CI", "95% CI", "95th percentiles", or any
-combination of those, e.g. \code{variability_option = c("90% CI", "95th
+to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
+combination of those, e.g. \code{variability_option = c("90\% CI", "95th
 percentiles")}}
 
 \item{concatVariability}{Would you like to have the variability concatenated?

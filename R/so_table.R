@@ -16,8 +16,8 @@
 #'   like to override the value listed in "Info". If no value is specified here
 #'   or in "Info", the default is "geometric".
 #' @param variability_option  What type of variability would you like the table
-#'   to include? Options are: "90% CI", "95% CI", "95th percentiles", or any
-#'   combination of those, e.g. \code{variability_option = c("90% CI", "95th
+#'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
+#'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
 #'   percentiles")}
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
@@ -106,6 +106,7 @@ so_table <- function(Info, sheet = NA,
 
       if(MeanType == "geometric"){
             MyPKResults <- MyPKResults %>%
+                  select(-Trial, -Individual) %>%
                   summarize(across(.cols = everything(),
                                    .fns = list(GMean = gm_mean,
                                                CV = gm_CV,
