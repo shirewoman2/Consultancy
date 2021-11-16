@@ -292,6 +292,9 @@ so_table <- function(Info, sheet = NA,
       # Concatenating the rows w/lower and upper limits of variability when
       # requested
       if(concatVariability){
+
+            # Note: When multiple options are chosen for variability type,
+            # concatVariability doesn't work. Will need to fix this later.
             VarRows <- VarOpts_tableRows[variability_option]
             VarRows[["obs"]] <- c("CIL_obs", "CIU_obs")
             for(j in names(VarRows)){
@@ -321,7 +324,7 @@ so_table <- function(Info, sheet = NA,
                      "CI_90" = "90% CI - Upper",
                      "CI90concat" = "90% CI",
                      "CI_05" = "95% CI - Lower",
-                     "CI_10" = "95% CI - Upper",
+                     "CI_95" = "95% CI - Upper",
                      "CI95concat" = "95% CI",
                      "Q5th" = "5th Percentile",
                      "Q95th" = "95th Percentile",
