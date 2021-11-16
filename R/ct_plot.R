@@ -37,10 +37,7 @@
 #'   \item{trial means}{plots a black line for the mean data, gray lines for the
 #'   mean of each trial of simulated data, and open circles for the observed
 #'   data. If an effector was present, gray dashed lines indicate the mean of
-#'   each trial of simulated data in the presence of the effector. (At present,
-#'   if an effector were present, this does NOT graph observed data because I
-#'   haven't yet figured out the best way to indicate whether those data are
-#'   with or without the effector. -LS)}
+#'   each trial of simulated data in the presence of the effector.}
 #'
 #'   \item{trial percentiles}{plots a black line for the mean data, gray lines
 #'   for the 5th and 95th percentiles of the simulated data, and open circles
@@ -48,11 +45,7 @@
 #'
 #'   \item{means only}{plots a black line for the mean data and, if an effector
 #'   was modeled, a dashed line for the concentration-time data with the the
-#'   effector. (At present, if an effector were present, this does NOT graph
-#'   observed data because I haven't yet figured out the best way to indicate
-#'   whether those data are with or without the effector. -LS)}
-#'
-#'   }
+#'   effector.} }
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data

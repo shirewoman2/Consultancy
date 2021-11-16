@@ -11,9 +11,13 @@ graph_boxplot(
   facet_column1 = NA,
   facet_column2 = NA,
   graph_type = "boxplot",
+  include_errorbars = FALSE,
   xlabel = NA,
   ylabel = NA,
-  color = "default"
+  color = "default",
+  outfile = NA,
+  outwidth = 6,
+  outheight = 4
 )
 }
 \arguments{
@@ -33,23 +37,47 @@ might break up the graph into small multiples.}
 \item{graph_type}{the type of graph to plot. Options: \describe{
   \item{"boxplot"}{standard boxplots or box-and-whisker plots}
 
-  \item{"boxplot with error bars"}{standard boxplots or box-and-whisker plots
-  plus error bars on the whiskers}
-
   \item{"jittered points"}{boxplots overlaid with points depicting each
-  individual observation.}}}
+  individual observation.}
+
+  \item{"jittered points, filled boxes"}{boxplots with fill color according
+  to \code{category_column} and open circles for the jittered points}}}
+
+\item{include_errorbars}{TRUE or FALSE on whether to include horizontal error
+bars on the whiskers}
 
 \item{xlabel}{the label to  use for the x axis}
 
 \item{ylabel}{the label to use for the y axis}
 
 \item{color}{the set of colors to use. Options: \describe{
-\item{"default"}{colors selected from the color brewer palette "set 1"}
-\item{"black"}{black and white} \item{"rainbow"}{colors selected from a
-rainbow palette. The default palette is limited to something like 6 groups,
-so if you have more than that, that's when this palette is most useful.}
-\item{"blue-green"}{a set of blues and greens} \item{"Tableau"}{uses the
-standard Tableau palette; requires the "ggthemes" package}}}
+
+  \item{"default"}{colors selected from the color brewer palette "set 1"}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"black"}{black and white}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 groups, so if you have more than
+  that, that's when this palette is most useful.}
+
+  \item{"blue-green"}{a set of blues and greens}
+
+  \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
+  State that are friendly to those with red-green colorblindness}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}}}
+
+\item{outfile}{the file name for the output graph, e.g., "My pretty
+boxplot.png". If you don't want to automatically save the graph, leave this
+as NA.}
+
+\item{outwidth}{the width in inches of the output graph}
+
+\item{outheight}{the height in inches of the output graph}
 }
 \value{
 
@@ -66,20 +94,13 @@ AUCs <- data.frame(AgeGroup = LETTERS[1:5],
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-               xlabel = "Age group", graph_type = "boxplot with error bars")
-
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
                color = "rainbow")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
                color = "blue-green", graph_type =  "jittered points")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-              color = "Tableau", graph_type =  "jittered points")
-
-graph_boxplot(AUCs \%>\% filter(AgeGroup \%in\% c("A", "B", "C")),
-               category_column = "AgeGroup", value_column = "AUC",
-               graph_type =  "jittered points")
+              color = "Tableau", graph_type =  "jittered points, filled boxes")
 
 # Adding a couple of example columns to use the "facet" options.
 AUCs$Sex <- c("M", "F")
@@ -92,6 +113,16 @@ graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
                facet_column1 = "Sex", facet_column2 = "Metabolizer",
                color = "blue-green", graph_type =  "jittered points")
+
+graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
+              graph_type = "jittered points, filled boxes")
+
+# Saving the output
+graph_boxplot(AUCs \%>\% filter(AgeGroup \%in\% c("A", "B")),
+              category_column = "AgeGroup", value_column = "AUC",
+              graph_type = "jittered points, filled boxes",
+              color = "Brewer set 2", include_errorbars = TRUE,
+              outfile = "test boxplot.png")
 
 
 }
