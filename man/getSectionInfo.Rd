@@ -14,8 +14,10 @@ specific project details.}
 
 \item{sheet}{the sheet to read in that Excel file}
 
-\item{report_input_DF}{a data.frame object that is laid out exactly like a
-tab from the "Report input template.xlsx" file}
+\item{report_input_DF}{a data.frame object that is the filled-out version of
+ReportInputForm[["Section input form"]]. (This is still under construction,
+actually, and does not currently work after I redesigned the input form.
+-LS)}
 }
 \value{
 a list object

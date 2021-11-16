@@ -57,15 +57,6 @@ so_table <- function(Info, sheet = NA,
 
       PKToPull <- ObsToPull[!str_detect(ObsToPull, "_CV")]
 
-      # Info for the section
-      SectionInput <- Info$InputXL[
-            1:(which(Info$InputXL$Item == "Details for the clinical study") - 1), ]
-
-      # Info we'll use here
-      ObsInput <- Info$InputXL[
-            (which(Info$InputXL$Item == "Details for the clinical study") + 2):nrow(Info$InputXL), ] %>%
-            mutate(Value = as.numeric(Value))
-
       EffectorPresent <- complete.cases(Info$Deets$Inhibitor)
       DoseRegimen <- Info$Deets$Regimen_sub
 
@@ -80,7 +71,7 @@ so_table <- function(Info, sheet = NA,
             "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withEffector")],
             "Multiple Dose TRUE" = PKToPull)
 
-      Extract <- extractPK(SectionInput$Value[which(SectionInput$RName == "SimFile")],
+      Extract <- extractPK(Info$SimFile,
                            PKparameters = MyPKParam)
 
       MyPKResults <- do.call(bind_rows, Extract)
@@ -109,7 +100,7 @@ so_table <- function(Info, sheet = NA,
       }
 
       MeanType <- ifelse(is.na(mean_type),
-                         SectionInput$Value[which(SectionInput$RName == "ArithOrGeom")],
+                         Info$MeanType,
                          mean_type)
       MeanType <- ifelse(is.na(MeanType), "geometric", MeanType)
 
@@ -134,11 +125,10 @@ so_table <- function(Info, sheet = NA,
             # arithmetic means for nearly everything but then the *geometric*
             # means for the AUC or Cmax ratios with vs. without effector.
             # Creating a special case for that inconsistency.
-            GMRMeanType <- Info$InputXL$Value[
-                  which(Info$InputXL$RName == "GMR_mean_type")]
-            if(EffectorPresent & (is.na(GMRMeanType) |
-                                  GMRMeanType != "arithmetic")){
+            if(EffectorPresent & (is.na(Info$GMR_mean_type) |
+                                  Info$GMR_mean_type != "arithmetic")){
                   GMRs <- MyPKResults %>%
+                        select(-Individual, -Trial) %>%
                         summarize(across(.cols = matches("GMR"),
                                          .fns = list(GMean = gm_mean,
                                                      CV = gm_CV,
@@ -155,6 +145,7 @@ so_table <- function(Info, sheet = NA,
             }
 
             MyPKResults <- MyPKResults %>%
+                  select(-Individual, -Trial) %>%
                   summarize(across(.cols = everything(),
                                    .fns = list(GMean = mean,
                                                CV = function(.) sd(.)/mean(.),
@@ -204,7 +195,7 @@ so_table <- function(Info, sheet = NA,
             pivot_wider(names_from = PKParam, values_from = Value)
 
       # Observed data. Not included when section is model application.
-      if(SectionInput$Value[which(SectionInput$RName == "ModelPurpose")] !=
+      if(Info$InputXL$Value[which(Info$InputXL$RName == "ModelPurpose")] !=
          "application"){
 
             MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
@@ -215,10 +206,11 @@ so_table <- function(Info, sheet = NA,
                                     "GMR_AUCtau_ss_90CIU")
             }
 
-            MyObsPK <- ObsInput %>%
+            MyObsPK <- Info$ClinXL %>%
                   filter(RName %in% MyObsPKParam) %>%
                   select(RName, Value) %>%
-                  mutate(Value = ifelse(str_detect(RName, "CV"),
+                  mutate(Value = as.numeric(Value),
+                         Value = ifelse(str_detect(RName, "CV"),
                                         round(Value * 100, 0), signif(Value, 3)),
                          Stat = ifelse(str_detect(RName, "CV"), "CV_obs", "GMean"),
                          Stat = ifelse(str_detect(RName, "CIU"), "CIU_obs", Stat),

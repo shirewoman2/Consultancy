@@ -11,8 +11,10 @@
 #'   directory than the current one. This should be filled out with your
 #'   specific project details.
 #' @param sheet the sheet to read in that Excel file
-#' @param report_input_DF a data.frame object that is laid out exactly like a
-#'   tab from the "Report input template.xlsx" file
+#' @param report_input_DF a data.frame object that is the filled-out version of
+#'   ReportInputForm[["Section input form"]]. (This is still under construction,
+#'   actually, and does not currently work after I redesigned the input form.
+#'   -LS)
 #'
 #' @return a list object
 #' @export
@@ -28,23 +30,23 @@ getSectionInfo <- function(report_input_file = NA,
                complete.cases(sheet)))){
             InputXL <- suppressMessages(
                   readxl::read_excel(path = report_input_file,
-                                     sheet = sheet,
-                                     skip = 1) %>%
-                        rename(RName = "Name in R code"))
+                                     sheet = sheet))
       } else {
             InputXL <- report_input_DF
       }
 
-      ClinStudy <- InputXL$Value[which(InputXL$RName == "ClinStudy")]
+      ClinStudyTab <- InputXL$Value[which(InputXL$RName == "ClinStudy")]
+
+      ClinXL <- suppressMessages(readxl::read_excel(path = report_input_file,
+                                                    sheet = ClinStudyTab))
 
       SimFile <- InputXL$Value[which(InputXL$RName == "SimFile")]
       ObsFile_dose1 <- InputXL$Value[which(InputXL$RName == "ObsFile_dose1")]
       ObsFile_ss <- InputXL$Value[which(InputXL$RName == "ObsFile_ss")]
       ObsEffectorFile <- InputXL$Value[which(InputXL$RName == "ObsEffectorFile")]
 
-      StatType <- InputXL$Value[which(InputXL$RName == "ArithOrGeom")]
-      StatType <- ifelse(is.na(StatType),
-                         ArithOrGeom, StatType)
+      MeanType <- ClinXL$Value[which(ClinXL$RName == "MeanType")]
+      GMR_mean_type <- ClinXL$Value[which(ClinXL$RName == "GMR_mean_type")]
 
       Deets <- extractExpDetails(sim_data_file = SimFile)
 
@@ -92,8 +94,8 @@ getSectionInfo <- function(report_input_file = NA,
 
 
       InfoList <- list(
-            "InputXL" = InputXL,
-            "StatType" = StatType,
+            "InputXL" = InputXL, "ClinXL" = ClinXL,
+            "MeanType" = MeanType, "GMR_mean_type" = GMR_mean_type,
             "ClinStudy" = ClinStudy,
             "SimFile" = SimFile,
             "ObsFile_dose1" = ObsFile_dose1, "ObsFile_ss" = ObsFile_ss,

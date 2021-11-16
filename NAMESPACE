@@ -2,7 +2,9 @@
 
 export(calcKi)
 export(confInt)
+export(countWords)
 export(ct_plot)
+export(cutNumeric)
 export(dateConv)
 export(extractConcTime)
 export(extractEnzAbund)
