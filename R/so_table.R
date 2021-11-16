@@ -327,6 +327,8 @@ so_table <- function(Info, sheet = NA,
                      "Q95thconcat" = "5th to 95th Percentile",
                      "GMean_obs" = "Observed",
                      "CV_obs" = "CV%",
+                     "CIL_obs" = "observed CI - Lower",
+                     "CIU_obs" = "observed CI - Upper",
                      "CIobsconcat" = "Observed CI",
                      "S/O" = "S/O")
 
