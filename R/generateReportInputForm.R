@@ -22,8 +22,7 @@
 #' report.}}
 #'
 #' @param filename the Excel file name that you'd like for the form you're
-#'   creating, ending in ".xlsx". Note: This WILL overwrite any existing file
-#'   with the same name, so BE CAREFUL.
+#'   creating, ending in ".xlsx".
 #'
 #' @return This does not return an R object; it saves an Excel file that serves
 #'   as a form for report information.
@@ -35,64 +34,73 @@
 #' generateReportInputForm(paste0(SimcypDir$LgFileDir, "abc-1a/Ultraconazole report input.xlsx"))
 #' generateReportInputForm(paste0(SimcypDir$SharePtDir, "def-2b/Superstatin report input.xlsx"))
 #'
-#' 
+#'
 
 generateReportInputForm <- function(filename){
-      
+
       # Check for "\" b/c people will probably paste the path from Windows
       filename <- gsub("\\\\", "/", filename)
-      
+
       # If people *did* copy and paste the full path and it includes the "https"
       # part of the share point drive, that doesn't work well. Switch that.
-      filename <- sub("https:..s08sharepoint.certara.com.sites.consult.", 
+      filename <- sub("https:..s08sharepoint.certara.com.sites.consult.",
                       SimcypDir$SharePtDir, filename)
-      
+
+      # Check whether file exists and stop if it does so that no one
+      # accidentally overwrites something they've spent time filling out
+      # already.
+      if(file.exists(filename)){
+            stop(paste0("The file '", filename, "' already exists. Please use a different file name or delete the existing version and try again."))
+      }
+
       # Loading the forms
       data("ReportInputForm")
-      
+
       Path <- dirname(filename)
       File <- basename(filename)
       CurDir <- getwd()
-      
+
       # For some reason, when you only include a relative path for the file with
       # the formatXL function, it will overwrite rather than adding sheets, but
       # it DOESN'T do that when you just set the path first and then write.
       setwd(Path)
-      
-      formatXL(ReportInputForm[["Overall report form"]], 
-               file = filename, 
+
+      formatXL(ReportInputForm[["Overall report form"]],
+               file = filename,
                sheet = "overall report info",
-               styles = list(
-                     list(columns = 1, textposition = list(wrapping = TRUE)),
-                     list(rows = 0, font = list(bold = TRUE, size = 12), 
-                          textposition = list(alignment = "middle"))
-               ))
-      
-      formatXL(ReportInputForm[["Observed data form"]], 
-               file = filename, 
-               sheet = "observed data", 
-               colWidth = list(colNum = 1:3, 
+               colWidth = list(colNum = 1:3,
                                width = c(75, 0, 30)),
                styles = list(
                      list(columns = 1, textposition = list(wrapping = TRUE)),
-                     list(rows = 0, font = list(bold = TRUE, size = 12), 
-                          textposition = list(alignment = "middle")), 
-                     list(rows = 22, font = list(bold = TRUE), 
+                     list(rows = 0, font = list(bold = TRUE, size = 12),
+                          textposition = list(alignment = "middle"))
+               ))
+
+      formatXL(ReportInputForm[["Observed data form"]],
+               file = filename,
+               sheet = "observed data",
+               colWidth = list(colNum = 1:3,
+                               width = c(75, 0, 30)),
+               styles = list(
+                     list(columns = 1, textposition = list(wrapping = TRUE)),
+                     list(rows = 0, font = list(bold = TRUE, size = 12),
+                          textposition = list(alignment = "middle")),
+                     list(rows = 22, font = list(bold = TRUE),
                           textposition = list(wrapping = FALSE))
                ))
-      
-      
-      formatXL(ReportInputForm[["Section input form"]], 
+
+
+      formatXL(ReportInputForm[["Section input form"]],
                file = filename,
                sheet = "section input",
                colWidth = list(colNum = 1:3,
                                width = c(75, 0, 30)),
                styles = list(
                      list(columns = 1, textposition = list(wrapping = TRUE)),
-                     list(rows = 0, font = list(bold = TRUE, size = 12), 
+                     list(rows = 0, font = list(bold = TRUE, size = 12),
                           textposition = list(alignment = "middle"))
                ))
-      
+
       setwd(CurDir)
 }
 

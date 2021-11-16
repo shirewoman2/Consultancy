@@ -8,8 +8,7 @@ generateReportInputForm(filename)
 }
 \arguments{
 \item{filename}{the Excel file name that you'd like for the form you're
-creating, ending in ".xlsx". Note: This WILL overwrite any existing file
-with the same name, so BE CAREFUL.}
+creating, ending in ".xlsx".}
 }
 \value{
 This does not return an R object; it saves an Excel file that serves
