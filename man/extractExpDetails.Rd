@@ -141,6 +141,12 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   \item{StartDayTime_sub or StartDayTime_inhib}{Starting day and time for
   administering the substrate or inhbitor}
 
+  \item{StartHr_sub or StartHr_inhib}{Starting time in hours since the start
+  of the simulation for administering the substrate or inhibitor.
+  \strong{NOTE:} Unlike the other parameters listed here, this is
+  \emph{calculated} from StartDayTime_sub or StartDayTime_inhib rather than
+  being simply pulled from the simulator output file.}
+
   \item{StudyDuration}{study duration}
 
   \item{Substrate}{the substrate used}

@@ -139,6 +139,12 @@
 #'   \item{StartDayTime_sub or StartDayTime_inhib}{Starting day and time for
 #'   administering the substrate or inhbitor}
 #'
+#'   \item{StartHr_sub or StartHr_inhib}{Starting time in hours since the start
+#'   of the simulation for administering the substrate or inhibitor.
+#'   \strong{NOTE:} Unlike the other parameters listed here, this is
+#'   \emph{calculated} from StartDayTime_sub or StartDayTime_inhib rather than
+#'   being simply pulled from the simulator output file.}
+#'
 #'   \item{StudyDuration}{study duration}
 #'
 #'   \item{Substrate}{the substrate used}
@@ -266,18 +272,36 @@ extractExpDetails <- function(sim_data_file,
             Class = "numeric", Sheet = "population")
 
       if(exp_details[1] == "all"){
-            exp_details <- c(SumDeets$Deet, InputDeets$Deet, PopDeets$Deet)
+            exp_details <- c(SumDeets$Deet, InputDeets$Deet, PopDeets$Deet,
+                             "StartHr_sub", "StartHr_inhib")
       }
 
       if(tolower(exp_details[1]) == "summary tab"){
-            exp_details <- SumDeets$Deet
+            exp_details <- c(SumDeets$Deet, "StartHr_sub", "StartHr_inhib")
       }
 
       if(tolower(exp_details[1]) == "input sheet"){
             exp_details <- InputDeets$Deet
       }
 
-      if(any(exp_details %in% c(SumDeets$Deet, InputDeets$Deet, PopDeets$Deet) == FALSE)){
+      # Need to note original exp_details requested b/c I'm adding to it if
+      # people request info from population tab
+      exp_details_orig <- exp_details
+
+      # Since StartHr_sub and StartHr_inhib are calculated from StartDayTime_sub
+      # and StartDayTime_inhib, those must be included in exp_details to
+      # extract.
+      if("StartHr_sub" %in% exp_details){
+            exp_details <- unique(c(exp_details, "StartDayTime_sub",
+                                    "SimStartDayTime"))
+      }
+      if("StartHr_inhib" %in% exp_details){
+            exp_details <- unique(c(exp_details, "StartDayTime_inhib",
+                                    "SimStartDayTime"))
+      }
+
+      if(any(exp_details %in% c(SumDeets$Deet, InputDeets$Deet,
+                                PopDeets$Deet, "StartHr_sub", "StartHr_inhib") == FALSE)){
             Problem <- str_comma(setdiff(exp_details,
                                          c(SumDeets$Deet, InputDeets$Deet, PopDeets$Deet)))
             stop(paste0("These study details are not among the possible options: ",
@@ -290,10 +314,6 @@ extractExpDetails <- function(sim_data_file,
       }
 
       Out <- list()
-
-      # Need to note original exp_details requested b/c I'm adding to it if
-      # people request info from population tab
-      exp_details_orig <- exp_details
 
       if(any(exp_details %in% PopDeets$Deet)){
             exp_details <- c(exp_details, "Pop")
@@ -405,6 +425,57 @@ extractExpDetails <- function(sim_data_file,
 
             for(i in MySumDeets){
                   Out[[i]] <- pullValue(i)
+            }
+
+            # Dealing with the two calculated details
+            if("StartHr_sub" %in% exp_details){
+                  Days_sim <- as.numeric(sub("Day ", "",
+                                             str_extract(Out$SimStartDayTime, "Day [0-9]{1,3}"))) - 1
+                  Hrs_sim <- as.numeric(sub(":[0-9]{2}", "",
+                                            str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
+                  Mins_sim <- as.numeric(sub("[0-9]{2}:", "",
+                                             str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
+
+                  Days_sub <- as.numeric(sub("Day ", "",
+                                        str_extract(Out$StartDayTime_sub, "Day [0-9]{1,3}"))) - 1
+                  Hrs_sub <- as.numeric(sub(":[0-9]{2}", "",
+                                        str_extract(Out$StartDayTime_sub, "[0-9]{2}:[0-9]{2}")))
+                  Mins_sub <- as.numeric(sub("[0-9]{2}:", "",
+                                         str_extract(Out$StartDayTime_sub, "[0-9]{2}:[0-9]{2}")))
+
+                  Out[["StartHr_sub"]] <- (Days_sub - Days_sim) * 24 +
+                        (Hrs_sub - Hrs_sim) + (Mins_sub - Mins_sim)/60
+            }
+
+            if("StartHr_inhib" %in% exp_details){
+                  Days_sim <- as.numeric(sub("Day ", "",
+                                             str_extract(Out$SimStartDayTime, "Day [0-9]{1,3}"))) - 1
+                  Hrs_sim <- as.numeric(sub(":[0-9]{2}", "",
+                                            str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
+                  Mins_sim <- as.numeric(sub("[0-9]{2}:", "",
+                                             str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
+
+                  Days_inhib <- as.numeric(sub("Day ", "",
+                                             str_extract(Out$StartDayTime_inhib, "Day [0-9]{1,3}"))) - 1
+                  Hrs_inhib <- as.numeric(sub(":[0-9]{2}", "",
+                                            str_extract(Out$StartDayTime_inhib, "[0-9]{2}:[0-9]{2}")))
+                  Mins_inhib <- as.numeric(sub("[0-9]{2}:", "",
+                                             str_extract(Out$StartDayTime_inhib, "[0-9]{2}:[0-9]{2}")))
+
+                  Out[["StartHr_inhib"]] <- (Days_inhib - Days_sim) * 24 +
+                        (Hrs_inhib - Hrs_sim) + (Mins_inhib - Mins_sim)/60
+            }
+
+            # Removing StartDayTime_sub and SimStartDayTime if the user
+            # did not request them.
+            if("StartDayTime_sub" %in% exp_details_orig == FALSE){
+                  Out[["StartDayTime_sub"]] <- NULL
+            }
+            if("StartDayTime_inhib" %in% exp_details_orig == FALSE){
+                  Out[["StartDayTime_inhib"]] <- NULL
+            }
+            if("SimStartDayTime" %in% exp_details_orig == FALSE){
+                  Out[["SimStartDayTime"]] <- NULL
             }
 
       }
