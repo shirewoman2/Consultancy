@@ -4,20 +4,22 @@
 \alias{getSectionInfo}
 \title{Get information about a section for a report}
 \usage{
-getSectionInfo(report_input_file = NA, sheet = NA, report_input_DF = NA)
+getSectionInfo(report_input_file = NA, sheet = NA, section_input_DF = NA)
 }
 \arguments{
 \item{report_input_file}{the name of the Excel file formatted exactly like
 "Report input template.xlsx", including the path if it's in any other
-directory than the current one. This should be filled out with your
-specific project details.}
+directory than the current one}
 
-\item{sheet}{the sheet to read in that Excel file}
+\item{sheet}{the sheet in the Excel file that contains information about this
+section of the report}
 
-\item{report_input_DF}{a data.frame object that is the filled-out version of
-ReportInputForm[["Section input form"]]. (This is still under construction,
-actually, and does not currently work after I redesigned the input form.
--LS)}
+\item{section_input_DF}{a data.frame object that contains information about
+this section of the report and is the filled-out version of
+ReportInputForm[["Section input form"]]. If this is NOT set to NA, then
+this will be used for section details instead of reading the Excel sheet
+listed. You still must fill out \code{report_input_file}, though, because
+that will be used to read in data about the clinical study.}
 }
 \value{
 a list object

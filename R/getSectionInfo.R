@@ -8,13 +8,15 @@
 #'
 #' @param report_input_file the name of the Excel file formatted exactly like
 #'   "Report input template.xlsx", including the path if it's in any other
-#'   directory than the current one. This should be filled out with your
-#'   specific project details.
-#' @param sheet the sheet to read in that Excel file
-#' @param report_input_DF a data.frame object that is the filled-out version of
-#'   ReportInputForm[["Section input form"]]. (This is still under construction,
-#'   actually, and does not currently work after I redesigned the input form.
-#'   -LS)
+#'   directory than the current one
+#' @param sheet the sheet in the Excel file that contains information about this
+#'   section of the report
+#' @param section_input_DF a data.frame object that contains information about
+#'   this section of the report and is the filled-out version of
+#'   ReportInputForm[["Section input form"]]. If this is NOT set to NA, then
+#'   this will be used for section details instead of reading the Excel sheet
+#'   listed. You still must fill out \code{report_input_file}, though, because
+#'   that will be used to read in data about the clinical study.
 #'
 #' @return a list object
 #' @export
@@ -24,15 +26,14 @@
 #'
 getSectionInfo <- function(report_input_file = NA,
                            sheet = NA,
-                           report_input_DF = NA){
+                           section_input_DF = NA){
 
-      if(all(c(complete.cases(report_input_file),
-               complete.cases(sheet)))){
+      if("data.frame" %in% class(section_input_DF)){
+            InputXL <- section_input_DF
+      } else {
             InputXL <- suppressMessages(
                   readxl::read_excel(path = report_input_file,
                                      sheet = sheet))
-      } else {
-            InputXL <- report_input_DF
       }
 
       ClinStudyTab <- InputXL$Value[which(InputXL$RName == "ClinStudy")]
