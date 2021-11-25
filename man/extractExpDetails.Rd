@@ -147,7 +147,7 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   \emph{calculated} from StartDayTime_sub or StartDayTime_inhib rather than
   being simply pulled from the simulator output file.}
 
-  \item{StudyDuration}{study duration}
+  \item{StudyDuration}{study duration in hours}
 
   \item{Substrate}{the substrate used}
 

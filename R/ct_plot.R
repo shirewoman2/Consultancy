@@ -232,6 +232,7 @@ ct_plot <- function(sim_data_file = NA,
                         time1 = c(Deets[["SimStartDayTime"]], Deets[["SimStartDayTime"]]),
                         time2 = c(Deets[["StartDayTime_sub"]], Deets[["StartDayTime_inhib"]]),
                         units = TimeUnits)
+                  names(DayTime_t0) <- c("Sub", "Inhib")
 
                   # start of 2nd dose of substrate and inhibitor
                   DoseInt <- c("Sub" = Deets$DoseInt_sub,
@@ -241,10 +242,21 @@ ct_plot <- function(sim_data_file = NA,
                   # start of last dose simulated of substrate and inhibitor
                   NumDoses <- c("Sub" = Deets$NumDoses_sub,
                                 "Inhib" = Deets$NumDoses_inhib)
-                  StartLastDose <- DoseInt * NumDoses
-                  if(any(StartLastDose == max(Data$Time), na.rm = T)){
-                        StartLastDose <- StartLastDose - DoseInt
+                  StartLastDose <- DoseInt * (NumDoses - 1) # Time starts at 0, not 1, so that's why it's "NumDoses - 1" rather than "NumDoses" alone.
+
+                  # There's a possibility that the user set up the simulation to
+                  # start the last dose right at the end of the simulation;
+                  # adjusting for that.
+                  if(StartLastDose[["Sub"]] == max(Data$Time, na.rm = T)){
+                        StartLastDose[["Sub"]] <-
+                              StartLastDose[["Sub"]] - DoseInt[["Sub"]]
                   }
+
+                  if(StartLastDose[["Inhib"]] == max(Data$Time, na.rm = T)){
+                        StartLastDose[["Inhib"]] <-
+                              StartLastDose[["Inhib"]] - DoseInt[["Inhib"]]
+                  }
+
 
                   if(time_range_input[1] == "first dose"){
                         Start <- ifelse(compoundToExtract == "effector",

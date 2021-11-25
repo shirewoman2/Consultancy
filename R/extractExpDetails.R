@@ -145,7 +145,7 @@
 #'   \emph{calculated} from StartDayTime_sub or StartDayTime_inhib rather than
 #'   being simply pulled from the simulator output file.}
 #'
-#'   \item{StudyDuration}{study duration}
+#'   \item{StudyDuration}{study duration in hours}
 #'
 #'   \item{Substrate}{the substrate used}
 #'
@@ -410,12 +410,11 @@ extractExpDetails <- function(sim_data_file,
 
                   # Tidying up some specific idiosyncracies of simulator output
                   Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
-                  # Val <- ifelse(str_detect(deet, "DoseUnit"),
-                  #               gsub("Dose \\(|\\)", "", Val), Val)
                   Val <- ifelse(str_detect(deet, "^Unit"),
                                 gsub("Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(",
-                                     "", Val),
-                                Val)
+                                     "", Val), Val)
+                  Val <- ifelse(deet %in% c("StudyDuration"),
+                                as.numeric(Val), Val)
                   Val <- ifelse(deet == "SimulatorVersion",
                                 str_extract(Val, "Version [12][0-9]"),
                                 Val)
