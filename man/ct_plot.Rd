@@ -5,7 +5,7 @@
 \title{Concentration-time plots to match Consultancy template}
 \usage{
 ct_plot(
-  sim_data_file,
+  sim_data_file = NA,
   obs_data_file = NA,
   obs_effector_data_file = NA,
   sim_obs_dataframe = NA,

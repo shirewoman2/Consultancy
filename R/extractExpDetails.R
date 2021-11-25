@@ -429,41 +429,13 @@ extractExpDetails <- function(sim_data_file,
 
             # Dealing with the two calculated details
             if("StartHr_sub" %in% exp_details){
-                  Days_sim <- as.numeric(sub("Day ", "",
-                                             str_extract(Out$SimStartDayTime, "Day [0-9]{1,3}"))) - 1
-                  Hrs_sim <- as.numeric(sub(":[0-9]{2}", "",
-                                            str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
-                  Mins_sim <- as.numeric(sub("[0-9]{2}:", "",
-                                             str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
-
-                  Days_sub <- as.numeric(sub("Day ", "",
-                                        str_extract(Out$StartDayTime_sub, "Day [0-9]{1,3}"))) - 1
-                  Hrs_sub <- as.numeric(sub(":[0-9]{2}", "",
-                                        str_extract(Out$StartDayTime_sub, "[0-9]{2}:[0-9]{2}")))
-                  Mins_sub <- as.numeric(sub("[0-9]{2}:", "",
-                                         str_extract(Out$StartDayTime_sub, "[0-9]{2}:[0-9]{2}")))
-
-                  Out[["StartHr_sub"]] <- (Days_sub - Days_sim) * 24 +
-                        (Hrs_sub - Hrs_sim) + (Mins_sub - Mins_sim)/60
+                  Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                                       time2 = Out$StartDayTime_sub)
             }
 
             if("StartHr_inhib" %in% exp_details){
-                  Days_sim <- as.numeric(sub("Day ", "",
-                                             str_extract(Out$SimStartDayTime, "Day [0-9]{1,3}"))) - 1
-                  Hrs_sim <- as.numeric(sub(":[0-9]{2}", "",
-                                            str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
-                  Mins_sim <- as.numeric(sub("[0-9]{2}:", "",
-                                             str_extract(Out$SimStartDayTime, "[0-9]{2}:[0-9]{2}")))
-
-                  Days_inhib <- as.numeric(sub("Day ", "",
-                                             str_extract(Out$StartDayTime_inhib, "Day [0-9]{1,3}"))) - 1
-                  Hrs_inhib <- as.numeric(sub(":[0-9]{2}", "",
-                                            str_extract(Out$StartDayTime_inhib, "[0-9]{2}:[0-9]{2}")))
-                  Mins_inhib <- as.numeric(sub("[0-9]{2}:", "",
-                                             str_extract(Out$StartDayTime_inhib, "[0-9]{2}:[0-9]{2}")))
-
-                  Out[["StartHr_inhib"]] <- (Days_inhib - Days_sim) * 24 +
-                        (Hrs_inhib - Hrs_sim) + (Mins_inhib - Mins_sim)/60
+                  Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                                         time2 = Out$StartDayTime_inhib)
             }
 
             # Removing StartDayTime_sub and SimStartDayTime if the user

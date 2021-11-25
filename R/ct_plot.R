@@ -139,7 +139,7 @@
 #' data(ConcTime)
 #' ct_plot(sim_obs_dataframe = ConcTime)
 #'
-ct_plot <- function(sim_data_file,
+ct_plot <- function(sim_data_file = NA,
                     obs_data_file = NA,
                     obs_effector_data_file = NA,
                     sim_obs_dataframe = NA,
@@ -228,21 +228,10 @@ ct_plot <- function(sim_data_file,
                                  ", but the substrate was administered as a single dose. The full time range will be plotted."))
             } else {
 
-                  Sub_t0 <- str_split(Deets[["StartDayTime_sub"]], ", ")[[1]]
-                  Inhib_t0 <- str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]]
-
-                  Day_t0 <- as.numeric(sub("Day ", "", c(Sub_t0[1], Inhib_t0[1])))
-                  names(Day_t0) <- c("Sub", "Inhib")
-
-                  # t0 for first dose of substrate and inhibitor in hours
-                  DayTime_t0 <-
-                        as.numeric((hms::parse_hm(c(Sub_t0[2], Inhib_t0[2])) + 60*60*24*Day_t0)/(60*60))
-                  DayTime_t0 <- DayTime_t0 - DayTime_t0[which.min(DayTime_t0)]
-                  names(DayTime_t0) <- c("Sub", "Inhib")
-
-                  if(TimeUnits == "minutes"){
-                        DayTime_t0 <- DayTime_t0 * 60
-                  }
+                  DayTime_t0 <- difftime_sim(
+                        time1 = c(Deets[["SimStartDayTime"]], Deets[["SimStartDayTime"]]),
+                        time2 = c(Deets[["StartDayTime_sub"]], Deets[["StartDayTime_inhib"]]),
+                        units = TimeUnits)
 
                   # start of 2nd dose of substrate and inhibitor
                   DoseInt <- c("Sub" = Deets$DoseInt_sub,
