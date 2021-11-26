@@ -8,7 +8,7 @@ extractPK(
   sim_data_file,
   PKparameters = "AUC tab",
   sheet = NA,
-  returnAggregateOrIndiv = "individual",
+  returnAggregateOrIndiv = c("aggregate", "individual"),
   includeTrialInfo = TRUE
 )
 }
@@ -139,20 +139,19 @@ extractPK(
 pull the PK data. If left as NA, it will automatically be selected and
 could come from multiple tabs.}
 
-\item{returnAggregateOrIndiv}{Return aggregate (geometric mean) and/or
-individual PK parameters? Options are "aggregate" and/or "individual".}
+\item{returnAggregateOrIndiv}{Return aggregate and/or individual PK
+parameters? Options are "aggregate" and/or "individual". For aggregate
+data, values are pulled from simulator output -- not calculated -- and the
+output will be a data.frame with the PK parameters in columns and the
+statistics reported exactly as in the simulator output file.}
 
 \item{includeTrialInfo}{TRUE or FALSE: Include which individual and trial the
 data describe? This only applies when \code{returnAggregateOrIndiv}
-includes "individual". IMPORTANT: If this is TRUE, this changes the output
-from a list to a data.frame so that all the correct values can be assigned
-to the correct subject and trial.}
+includes "individual".}
 }
 \value{
 Depending on the options selected, returns a list of numerical
-  vectors or a data.frame. If both individual and aggregate data were
-  requested, the output will be a list of lists or a list of a data.frame and
-  a list.
+  vectors or a list of data.frames.
 }
 \description{
 This is useful for pulling what parameters were used in a simulation in

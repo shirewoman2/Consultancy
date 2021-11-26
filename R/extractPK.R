@@ -127,18 +127,17 @@
 #'
 #'   } The default is only those parameters present on the "AUC" sheet in the
 #'   simulator output.
-#' @param returnAggregateOrIndiv Return aggregate (geometric mean) and/or
-#'   individual PK parameters? Options are "aggregate" and/or "individual".
+#' @param returnAggregateOrIndiv Return aggregate and/or individual PK
+#'   parameters? Options are "aggregate" and/or "individual". For aggregate
+#'   data, values are pulled from simulator output -- not calculated -- and the
+#'   output will be a data.frame with the PK parameters in columns and the
+#'   statistics reported exactly as in the simulator output file.
 #' @param includeTrialInfo TRUE or FALSE: Include which individual and trial the
 #'   data describe? This only applies when \code{returnAggregateOrIndiv}
-#'   includes "individual". IMPORTANT: If this is TRUE, this changes the output
-#'   from a list to a data.frame so that all the correct values can be assigned
-#'   to the correct subject and trial.
+#'   includes "individual".
 #'
 #' @return Depending on the options selected, returns a list of numerical
-#'   vectors or a data.frame. If both individual and aggregate data were
-#'   requested, the output will be a list of lists or a list of a data.frame and
-#'   a list.
+#'   vectors or a list of data.frames.
 #'
 #' @import tidyverse
 #' @import readxl
@@ -154,10 +153,26 @@
 extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
                       sheet = NA,
-                      returnAggregateOrIndiv = "individual",
+                      returnAggregateOrIndiv = c("aggregate", "individual"),
                       includeTrialInfo = TRUE){
 
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
+
+      # Determining the name of the tab that contains PK data for the last dose
+      Tab_last <- AllSheets[str_detect(AllSheets, "AUC[0-9]{1,}")]
+      ssNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
+      # It's the highest dose number and it can't be 0 b/c that's dose 1.
+      ssNum <- suppressWarnings(max(ssNum[ssNum != 0]))
+      Tab_last <- paste0("AUC", ssNum, "(Sub)(CPlasma)")
+
+      # If the user supplied a sheet but it's just one of the sheets built in,
+      # then use *that* sheet instead b/c that code is more versatile than the
+      # generic one.
+      if(complete.cases(sheet) &
+         sheet %in% c(Tab_last, "AUC", "AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)",
+                      "Absorption", "Clearance Trials SS")){
+            sheet <- NA
+      }
 
       if(complete.cases(sheet) & sheet %in% AllSheets == FALSE){
             stop("The sheet requested could not be found in the Excel file.")
@@ -247,7 +262,8 @@ extractPK <- function(sim_data_file,
       # Parameters to pull from the Clearance Trials SS tab
       Param_CLTSS <- c("F_sub", "fh_sub", "fg_sub", "CL_hepatic")
 
-      Out <- list()
+      Out_ind <- list()
+      Out_agg <- list()
 
       # Pulling data from the "AUC" sheet ------------------------------------------
       if(any(PKparameters %in% Param_AUC) & is.na(sheet)){
@@ -265,7 +281,7 @@ extractPK <- function(sim_data_file,
                         readxl::read_excel(path = sim_data_file, sheet = "AUC",
                                            col_names = FALSE))
 
-                  EndRow <- which(AUC_xl$...2 == "Statistics") - 2
+                  EndRow_ind <- which(AUC_xl$...2 == "Statistics") - 2
 
 
                   # sub function for finding correct column
@@ -361,6 +377,10 @@ extractPK <- function(sim_data_file,
 
 
                   # finding the PK parameters requested
+                  StartRow_agg <- which(AUC_xl$...2 == "Statistics") + 2
+                  EndRow_agg <- which(is.na(AUC_xl$...2))
+                  EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+
                   for(i in PKparameters_AUC){
                         ColNum <- findCol(i)
                         if(length(ColNum) == 0){
@@ -371,23 +391,30 @@ extractPK <- function(sim_data_file,
                         }
 
                         suppressWarnings(
-                              Out[[i]] <- AUC_xl[4:EndRow, ColNum] %>% rename(Values = 1) %>%
-                                    pull(Values) %>% as.numeric
+                              Out_ind[[i]] <- AUC_xl[4:EndRow_ind, ColNum] %>%
+                                    pull(1) %>% as.numeric
                         )
+
+                        suppressWarnings(
+                              Out_agg[[i]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                                    pull(1) %>% as.numeric()
+                        )
+                        names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
+                              pull(1)
 
                         rm(ColNum)
                   }
 
                   if(includeTrialInfo){
                         # Subject and trial info
-                        SubjTrial_AUC <- AUC_xl[4:EndRow, 1:2] %>%
+                        SubjTrial_AUC <- AUC_xl[4:EndRow_ind, 1:2] %>%
                               rename("Individual" = ...1, "Trial" = ...2)
 
-                        Out[["AUCtab"]] <- cbind(SubjTrial_AUC,
-                                                 as.data.frame(Out[PKparameters_AUC]))
+                        Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
+                                                     as.data.frame(Out_ind[PKparameters_AUC]))
                   }
 
-                  rm(EndRow, findCol)
+                  rm(EndRow_ind, findCol, StartRow_agg, EndRow_agg)
             }
       }
 
@@ -412,7 +439,7 @@ extractPK <- function(sim_data_file,
                         readxl::read_excel(path = sim_data_file, sheet = Sheet,
                                            col_names = FALSE))
 
-                  EndRow <- which(AUC0_xl$...2 == "Statistics") - 3
+                  EndRow_ind <- which(AUC0_xl$...2 == "Statistics") - 3
 
                   findCol <- function(PKparam){
 
@@ -424,6 +451,12 @@ extractPK <- function(sim_data_file,
 
                         which(str_detect(as.vector(t(AUC0_xl[2, ])), ToDetect))[1]
                   }
+                  # end of subfunction
+
+                  # finding the PK parameters requested
+                  StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
+                  EndRow_agg <- which(is.na(AUC0_xl$...2))
+                  EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
 
                   for(i in PKparameters_AUC0){
                         ColNum <- findCol(i)
@@ -435,23 +468,30 @@ extractPK <- function(sim_data_file,
                         }
 
                         suppressWarnings(
-                              Out[[i]] <- AUC0_xl[3:EndRow, ColNum] %>% rename(Values = 1) %>%
-                                    pull(Values) %>% as.numeric
+                              Out_ind[[i]] <- AUC0_xl[3:EndRow_ind, ColNum] %>%
+                                    pull(1) %>% as.numeric
                         )
+
+                        suppressWarnings(
+                              Out_agg[[i]] <- AUC0_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                                    pull(1) %>% as.numeric()
+                        )
+                        names(Out_agg[[i]]) <- AUC0_xl[StartRow_agg:EndRow_agg, 2] %>%
+                              pull(1)
 
                         rm(ColNum)
                   }
 
                   if(includeTrialInfo){
                         # Subject and trial info
-                        SubjTrial_AUC0 <- AUC0_xl[3:EndRow, 1:2] %>%
+                        SubjTrial_AUC0 <- AUC0_xl[3:EndRow_ind, 1:2] %>%
                               rename("Individual" = ...1, "Trial" = ...2)
 
-                        Out[["AUC0tab"]] <- cbind(SubjTrial_AUC0,
-                                                 as.data.frame(Out[PKparameters_AUC0]))
+                        Out_ind[["AUC0tab"]] <- cbind(SubjTrial_AUC0,
+                                                      as.data.frame(Out_ind[PKparameters_AUC0]))
                   }
 
-                  rm(EndRow, findCol, Sheet)
+                  rm(EndRow_ind, findCol, Sheet)
             }
       }
 
@@ -460,13 +500,9 @@ extractPK <- function(sim_data_file,
 
             PKparameters_AUCX <- intersect(PKparameters, Param_AUCX)
 
-            Tab_last <- AllSheets[str_detect(AllSheets, "AUC[0-9]{1,}")]
-            ssNum <- max(as.numeric(str_extract(Tab_last, "[0-9]{1,}")))
-            Tab_last <- paste0("AUC", ssNum, "(Sub)(CPlasma)")
-
             # Error catching
             if(ssNum == 0 | length(ssNum) == 0){
-                  warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
+                  warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUCX, collapse = ", "),
                                  ". None of these parameters can be extracted."))
             } else {
@@ -475,7 +511,7 @@ extractPK <- function(sim_data_file,
                         readxl::read_excel(path = sim_data_file, sheet = Tab_last,
                                            col_names = FALSE))
 
-                  EndRow <- which(AUCX_xl$...2 == "Statistics") - 3
+                  EndRow_ind <- which(AUCX_xl$...2 == "Statistics") - 3
 
                   findCol <- function(PKparam){
 
@@ -486,6 +522,12 @@ extractPK <- function(sim_data_file,
 
                         which(str_detect(as.vector(t(AUCX_xl[2, ])), ToDetect))[1]
                   }
+                  # end subfunction
+
+                  # finding the PK parameters requested
+                  StartRow_agg <- which(AUCX_xl$...2 == "Statistics") + 2
+                  EndRow_agg <- which(is.na(AUCX_xl$...2))
+                  EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
 
                   for(i in PKparameters_AUCX){
                         ColNum <- findCol(i)
@@ -498,23 +540,30 @@ extractPK <- function(sim_data_file,
                         }
 
                         suppressWarnings(
-                              Out[[i]] <- AUCX_xl[3:EndRow, ColNum] %>% rename(Values = 1) %>%
-                                    pull(Values) %>% as.numeric
+                              Out_ind[[i]] <- AUCX_xl[3:EndRow_ind, ColNum] %>%
+                                    pull(1) %>% as.numeric
                         )
+
+                        suppressWarnings(
+                              Out_agg[[i]] <- AUCX_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                                    pull(1) %>% as.numeric()
+                        )
+                        names(Out_agg[[i]]) <- AUCX_xl[StartRow_agg:EndRow_agg, 2] %>%
+                              pull(1)
 
                         rm(ColNum)
                   }
 
                   if(includeTrialInfo){
                         # Subject and trial info
-                        SubjTrial_AUCX <- AUCX_xl[3:EndRow, 1:2] %>%
+                        SubjTrial_AUCX <- AUCX_xl[3:EndRow_ind, 1:2] %>%
                               rename("Individual" = ...1, "Trial" = ...2)
 
-                        Out[["AUCXtab"]] <- cbind(SubjTrial_AUCX,
-                                                  as.data.frame(Out[PKparameters_AUCX]))
+                        Out_ind[["AUCXtab"]] <- cbind(SubjTrial_AUCX,
+                                                      as.data.frame(Out_ind[PKparameters_AUCX]))
                   }
 
-                  rm(EndRow, findCol)
+                  rm(EndRow_ind, findCol, StartRow_agg, EndRow_agg)
 
             }
       }
@@ -536,9 +585,6 @@ extractPK <- function(sim_data_file,
 
                   SubCols <- which(as.character(Abs_xl[8, ]) == "Substrate")[1]
                   InhibCols <- which(as.character(Abs_xl[8, ]) == "Inhibitor 1")[1]
-
-                  # SubCols <- SubCols:(SubCols + 2)
-                  # InhibCols <- InhibCols:(InhibCols + 2)
 
                   # sub function for finding correct column
                   findCol <- function(PKparam){
@@ -573,7 +619,7 @@ extractPK <- function(sim_data_file,
                         }
 
                         suppressWarnings(
-                              Out[[i]] <- Abs_xl[10:nrow(Abs_xl), ColNum] %>% rename(Values = 1) %>%
+                              Out_ind[[i]] <- Abs_xl[10:nrow(Abs_xl), ColNum] %>% rename(Values = 1) %>%
                                     filter(complete.cases(Values)) %>% pull(Values) %>% as.numeric
                         )
 
@@ -586,11 +632,86 @@ extractPK <- function(sim_data_file,
                                                       nrow(Abs_xl), 1:2] %>%
                               rename("Individual" = ...1, "Trial" = ...2)
 
-                        Out[["Abstab"]] <- cbind(SubjTrial_Abs,
-                                                  as.data.frame(Out[PKparameters_Abs]))
+                        Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
+                                                     as.data.frame(Out_ind[PKparameters_Abs]))
                   }
 
                   rm(findCol)
+
+                  # AGGREGATE VALUES: For the absorption tab, the aggregate
+                  # values are stored in a COMPLETELY different place, so
+                  # extracting those values completely separately.
+
+                  # I think the data always start in column 20, but I'm not
+                  # positive. The value in the column that starts the aggregate
+                  # data is "Trial Groups", so looking for that. It's in the
+                  # same row where the value is "Index" in column 1. The 1st
+                  # instance of "Trial" is for the individual data, so it has to
+                  # be the 2nd instance.
+                  IndexRow <- which(Abs_xl$...1 == "Index")
+                  StartCol_agg <- which(str_detect(t(Abs_xl[IndexRow, ]), "Trial"))[2]
+
+                  # They are NOT LABELED (!!!!) as such, but the summary stats
+                  # are for fa, ka, and lag time in order for 1) the substrate,
+                  # 2) inhibitor 1, 3) inhibitor 2, and 4) inhibitor 3. Getting
+                  # the appropriate columns.
+                  SubCols <- StartCol_agg:(StartCol_agg + 2)
+                  Inhib1Cols <- (StartCol_agg + 3):(StartCol_agg + 5)
+                  Inhib2Cols <- (StartCol_agg + 6):(StartCol_agg + 8)
+                  Inhib3Cols <- (StartCol_agg + 9):(StartCol_agg + 11)
+                  # Note to self: I have only set this up for substrate and
+                  # inhibitor 1 so far. Return to this later if/when we want
+                  # more.
+
+                  # "Statistics" is in the column before StartCol_agg, so looking
+                  # for that next.
+                  StartRow_agg <- which(Abs_xl[, StartCol_agg - 1] == "Statistics") + 1
+                  EndRow_agg <- which(is.na(Abs_xl[, StartCol_agg - 1]))
+                  EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+
+                  # sub function for finding the correct column
+                  findCol <- function(PKparam){
+
+                        ToDetect <- switch(PKparam,
+                                           "ka_sub" = "^ka \\(1/",
+                                           "ka_inhib" = "^ka \\(1/",
+                                           "fa_sub" = "^fa$",
+                                           "fa_inhib" = "^fa$",
+                                           "tlag_sub" = "lag time \\(",
+                                           "tlag_inhib" = "lag time \\(")
+
+                        MyCols <- switch(str_extract(PKparam, "sub|inhib"),
+                                         "sub" = SubCols,
+                                         "inhib" = Inhib1Cols)
+                        OutCol <- MyCols[
+                              which(str_detect(
+                                    as.character(Abs_xl[StartRow_agg, MyCols]),
+                                    ToDetect))]
+
+                        return(OutCol)
+                  }
+                  # end of subfunction
+
+                  # finding the PK parameters requested
+                  for(i in PKparameters_Abs){
+                        ColNum <- findCol(i)
+                        if(length(ColNum) == 0){
+                              message(paste("The column with information for", i,
+                                            "cannot be found."))
+                              rm(ColNum)
+                              next
+                        }
+
+                        suppressWarnings(
+                              Out_agg[[i]] <- Abs_xl[(StartRow_agg + 1):EndRow_agg, ColNum] %>%
+                                    pull(1) %>% as.numeric
+                        )
+
+                        names(Out_agg[[i]]) <- Abs_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg - 1] %>%
+                              pull(1)
+
+                        rm(ColNum)
+                  }
             }
       }
 
@@ -636,7 +757,7 @@ extractPK <- function(sim_data_file,
                         }
 
                         suppressWarnings(
-                              Out[[i]] <- CLTSS_xl[2:nrow(CLTSS_xl), ColNum] %>%
+                              Out_ind[[i]] <- CLTSS_xl[2:nrow(CLTSS_xl), ColNum] %>%
                                     rename(Values = 1) %>%
                                     pull(Values) %>% as.numeric
                         )
@@ -648,11 +769,59 @@ extractPK <- function(sim_data_file,
                         SubjTrial_CLTSS <- CLTSS_xl[2:nrow(CLTSS_xl), 1:2] %>%
                               rename("Individual" = ...1, "Trial" = ...2)
 
-                        Out[["CLTSStab"]] <- cbind(SubjTrial_CLTSS,
-                                                 as.data.frame(Out[PKparameters_CLTSS]))
+                        Out_ind[["CLTSStab"]] <- cbind(SubjTrial_CLTSS,
+                                                       as.data.frame(Out_ind[PKparameters_CLTSS]))
                   }
 
                   rm(findCol)
+
+                  # AGGREGATE VALUES: For the CLTSS tab, the aggregate values
+                  # are stored in a COMPLETELY different place, so extracting
+                  # those values completely separately. I *think* the aggregate
+                  # values always start in column 10, but I'm not sure, so let's
+                  # check each time.
+                  StartCol_agg <- which(str_detect(t(CLTSS_xl[1, ]), "Total Systemic"))
+                  StartRow_agg <- which(CLTSS_xl[, StartCol_agg] == "Statistics") + 1
+                  EndRow_agg <- which(is.na(CLTSS_xl[, StartCol_agg]))
+                  EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+
+                  # sub function for finding correct column
+                  findCol <- function(PKparam){
+
+                        ToDetect <- switch(PKparam,
+                                           "CL_hepatic" = "CL \\(L",
+                                           "F_sub" = "F\\(Sub",
+                                           "fh_sub" = "Fh\\(Sub",
+                                           "fg_sub" = "Fg\\(Sub")
+
+                        OutCol <- which(str_detect(as.vector(t(CLTSS_xl[StartRow_agg, ])),
+                                                   ToDetect))
+                        return(OutCol)
+                  }
+                  # end of subfunction
+
+                  # finding the PK parameters requested
+                  for(i in PKparameters_CLTSS){
+                        ColNum <- findCol(i)
+                        if(length(ColNum) == 0){
+                              message(paste("The column with information for", i,
+                                            "cannot be found."))
+                              rm(ColNum)
+                              next
+                        }
+
+                        suppressWarnings(
+                              Out_agg[[i]] <- CLTSS_xl[(StartRow_agg + 1):EndRow_agg, ColNum] %>%
+                                    pull(1) %>% as.numeric
+                        )
+
+                        names(Out_agg[[i]]) <- CLTSS_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg] %>%
+                              pull(1)
+
+                        rm(ColNum)
+                  }
+
+
             }
       }
 
@@ -660,13 +829,27 @@ extractPK <- function(sim_data_file,
       # Pulling parameters from a user-specified sheet --------------------------
       if(complete.cases(sheet)){
 
+            # WARNING: I have NOT written this to work for aggregate values that
+            # are listed anywhere but right below all the individual values.
+            # That's just b/c I'm not sure where to look for aggregate values in
+            # that situation.
+            if("aggregate" %in% returnAggregateOrIndiv &
+               str_detect(sheet, "AUC") == FALSE){
+                  warning(paste0("This function has not (yet) been set up to extract aggregate PK data from the sheet ",
+                                 sheet, ". It can extract individual data only."))
+            }
+
             XL <- suppressMessages(
                   readxl::read_excel(path = sim_data_file, sheet = sheet,
                                      col_names = FALSE))
 
             HeaderRow <- which(XL$...1 == "Index")[1]
-            EndRow <- which(is.na(XL$...1))
-            EndRow <- min(EndRow[EndRow > HeaderRow]) - 1
+            EndRow_ind <- which(is.na(XL$...1))
+            EndRow_ind <- min(EndRow_ind[EndRow_ind > HeaderRow]) - 1
+
+            StartRow_agg <- which(XL$...2 == "Statistics") + 2
+            EndRow_agg <- which(is.na(XL$...2))
+            EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
 
             # sub function for finding correct column
             findCol <- function(PKparam){
@@ -767,7 +950,6 @@ extractPK <- function(sim_data_file,
             }
             # end of subfunction
 
-
             # finding the PK parameters requested
             for(i in PKparameters){
                   ColNum <- findCol(i)
@@ -779,45 +961,53 @@ extractPK <- function(sim_data_file,
                   }
 
                   suppressWarnings(
-                        Out[[i]] <- XL[(HeaderRow+1):EndRow, ColNum] %>%
-                              rename(Values = 1) %>%
-                              pull(Values) %>% as.numeric
+                        Out_ind[[i]] <- XL[(HeaderRow+1):EndRow_ind, ColNum] %>%
+                              pull(1) %>% as.numeric
                   )
+
+                  suppressWarnings(
+                        Out_agg[[i]] <- XL[StartRow_agg:EndRow_agg, ColNum] %>%
+                              pull(1) %>% as.numeric()
+                  )
+                  names(Out_agg[[i]]) <- XL[StartRow_agg:EndRow_agg, 2] %>%
+                        pull(1)
 
                   rm(ColNum)
             }
 
             if(includeTrialInfo){
                   # Subject and trial info
-                  SubjTrial_sheetX <- XL[(HeaderRow+1):EndRow, 1:2] %>%
-                        rename("Individual" = ...1, "Trial" = ...2)
+                  IndexCol <- which(str_detect(as.character(XL[HeaderRow, ]),
+                                               "Index"))
+                  SubjTrial_XL <- XL[(HeaderRow + 1):EndRow_ind, IndexCol:(IndexCol + 1)]
+                  names(SubjTrial_XL) <- c("Individual", "Trial")
 
-                  Out[["Xtab"]] <- cbind(SubjTrial_X,
-                                             as.data.frame(Out[PKparameters]))
+                  Out_ind[["Xtab"]] <- cbind(SubjTrial_XL,
+                                             as.data.frame(Out_ind[PKparameters]))
             }
 
-            rm(EndRow, findCol)
+            rm(EndRow_ind, findCol)
       }
 
       # If user only wanted one parameter and includeTrialInfo was FALSE, make
       # the output a vector instead of a list
-      if(length(Out) == 1 & includeTrialInfo == FALSE){
+      if(length(Out_ind) == 1 & includeTrialInfo == FALSE){
 
-            Out <- Out[[1]]
+            Out_ind <- Out_ind[[1]]
 
       } else {
 
             # Putting objects in alphabetical order
-            ListItems <- names(Out)
-            Out_temp <- Out
-            Out <- list()
+            ListItems <- names(Out_ind)
+            Out_temp <- Out_ind
+            Out_ind <- list()
             for(i in sort(ListItems)){
-                  Out[[i]] <- Out_temp[[i]]
+                  Out_ind[[i]] <- Out_temp[[i]]
             }
 
             if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
-                  Indiv <- Out[ListItems[str_detect(ListItems, "tab$")]]
-                  Indiv <- bind_rows(Indiv) %>%
+                  Out_ind <- Out_ind[ListItems[str_detect(ListItems, "tab$")]]
+                  Out_ind <- bind_rows(Out_ind) %>%
                         pivot_longer(cols = -(c(Individual, Trial)),
                                      names_to = "Parameter",
                                      values_to = "Value") %>%
@@ -827,33 +1017,44 @@ extractPK <- function(sim_data_file,
                         pivot_wider(names_from = Parameter,
                                     values_from = Value)
             } else {
-                  Indiv <- Out[ListItems[!str_detect(ListItems, "tab$")]]
+                  Out_ind <- Out_ind[ListItems[!str_detect(ListItems, "tab$")]] %>%
+                        as.data.frame()
             }
       }
 
-      if("aggregate" %in% returnAggregateOrIndiv){
-            if(class(Out) == "list"){
-                  Agg <- sapply(Out[ListItems[!str_detect(ListItems, "tab$")]],
-                                FUN = gm_mean)
-            } else {
-                  Agg = gm_mean(Out) # when output is a single vector
+      if("aggregate" %in% returnAggregateOrIndiv &
+         # If the user only wanted 1 parameter, ok to leave Out_agg as is b/c
+         # it's a named vector.
+         length(Out_agg) > 1){
+
+            for(i in names(Out_agg)){
+                  Statistic_char <- names(Out_agg[[i]])
+                  Out_agg[[i]] <- as.data.frame(Out_agg[[i]]) %>%
+                        mutate(Statistic = Statistic_char,
+                               Parameter = i)
+                  names(Out_agg[[i]])[1] <- "Value"
             }
+
+            Out_agg <- bind_rows(Out_agg) %>%
+                  select(Parameter, Statistic, Value) %>%
+                  pivot_wider(names_from = Parameter, values_from = Value,
+                              id_cols = Statistic)
       }
 
       if(length(returnAggregateOrIndiv) == 1 &
          returnAggregateOrIndiv[[1]] == "individual"){
-            Out <- Indiv
+            Out <- Out_ind
       }
 
       if(length(returnAggregateOrIndiv) == 1 &
          returnAggregateOrIndiv[[1]] == "aggregate"){
-            Out <- Agg
+            Out <- Out_agg
 
       }
 
       if(length(returnAggregateOrIndiv) == 2){
-            Out <- list("Individual" = Indiv,
-                        "Aggregate" = Agg)
+            Out <- list("Individual" = Out_ind,
+                        "Aggregate" = Out_agg)
       }
 
       return(Out)
