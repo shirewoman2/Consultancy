@@ -8,8 +8,11 @@ extractPK(
   sim_data_file,
   PKparameters = "AUC tab",
   sheet = NA,
-  returnAggregateOrIndiv = c("aggregate", "individual"),
-  includeTrialInfo = TRUE
+  matrix = "plasma",
+  returnAggregateOrIndiv = "aggregate",
+  includeTrialInfo = TRUE,
+  GMR = TRUE,
+  avoidNAs = FALSE
 )
 }
 \arguments{
@@ -23,121 +26,96 @@ extractPK(
 
   \describe{
 
-  \item{"AUCinf_dose1"}{AUC from 0 to infinity for dose 1. By default, data
-  are pulled from the sheet "AUC", column titled, e.g., "AUC_INF (mg/L.h)"}
+  \item{AccumulationIndex, AccumulationIndex_withEffector}{Accumulation index
+  (AUC infinity for dose 1 / AUC tau at steady state). By default, data are
+  pulled from the sheet "AUC", column titled "Accumulation Index" or, for the
+  accumulation index in the presence of an effector, "Accumulation
+  Index_Inh". UNDER CONSTRUCTION.}
 
-  \item{AUCinf_dose1_withEffector}{AUC from 0 to infinity for dose 1 in the
-  presence of an effector (Inhibitor 1 in the simulator). By default, data
-  are pulled from the sheet "AUC", column titled, e.g., "AUC_INF_Inh
-  (mg/L.h)" after the subheading "Extrapolated AUC_INF for the first dose in
-  the presence of inhibitor"}
+  \item{AccumulationRatio, AccumulationRatio_withEffector}{Accumulation ratio
+  (AUC tau for dose 1 / AUC tau at steady state). By default, data are pulled
+  from the sheet "AUC", column titled "Accumluation Ratio" or, for the
+  accumulation ratio in the presence of an effector, "Accumulation
+  Ratio_Inh".}
 
-  \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. By default, data are
-  pulled from sheet "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC
-  (mg/L.h)". IMPORTANT: This will be AUCtau for dose 1 if you have a done a
-  multiple-dose simulation, but, if you have done a single-dose simulation,
-  this will be the AUC from 0 to whatever time you stopped simulating.}
+  \item{AUCinf_dose1, AUCinf_dose1_withEffector}{AUC from 0 to infinity for
+  dose 1, in the absence or presence of an effector, respectively. By
+  default, data are pulled from the sheet "AUC", column titled, e.g.,
+  "AUC_INF (mg/L.h)"}
 
-  \item{"AUCtau_ss"}{AUC from 0 to tau for the steady-state dose in the
-  simulation. By default, data are pulled from sheet "AUC" from the column
-  titled, e.g., "AUC (mg/L.h)" under the subheading "Truncated AUCt for the
-  last dose".}
+  \item{AUCinf_ratio_dose1, AUCtau_ratio_ss, Cmax_ratio_dose1,
+  Cmax_ratio_ss}{The ratio of either the AUC or Cmax for dose 1 or at steady
+  state with effector present / without effector present.}
 
-  \item{AUCtau_ss_withEffector}{AUC from 0 to tau for the steady-state dose
-  in the presence of an effector (Inhibitor 1 in the simulator). By default,
-  data are pulled from the sheet "AUC", column titled, e.g., "AUCt(n)_Inh
-  (mg/L.h)" after the subheading "Truncated AUCt for the last dose in the
-  presence of inhibitor"}
+  \item{AUCtau_dose1, AUCtau_dose1_withEffector, AUCtau_ss,
+  AUCtau_ss_withEffector}{AUC from 0 to tau for dose 1 or the last dose in
+  the absence or presence of an effector. By default, dose 1 data are pulled
+  from sheet "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)", and
+  steady-state data are pulled from the "AUC" tab}
 
-  \item{"AUCtau_lastdoseToEnd"}{AUC from the last dose to the end of the
-  simulation. By default, data are pulled from sheet "AUCX(Sub)(CPlasma)",
-  where "X" is the largest dose for which there is a sheet, from the column
-  titled, e.g., "AUC (mg/L.h)". \emph{Nota bene:} These data were calculated
-  by the simulator from the beginning of the last dose to whenever the
-  simulation ended, so that interval may not be tau if you did not set up the
-  simulation that way. See the options for "AUCtau_ss" as an alternative.}
+  \item{CL_dose1, CL_dose1_withEffector}{Clearance as calculated by dose /
+  AUCinf for dose 1. Data are pulled from the sheet "AUC" and the column
+  titled, e.g., "CL (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF
+  for the first dose".}
 
-  \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1. Data
-  are pulled from the sheet "AUC" and the column titled, e.g., "CL
-  (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF for the first
-  dose".}
+  \item{CL_ss, CL_ss_withEffector}{Clearance as calculated by dose / AUCtau
+  for the last dose simulated. By default, data are pulled from the sheet
+  "AUC", column titled, e.g., "CL (Dose/AUC) (L/h)")}
 
-  \item{"CL_dose1_withEffector"}{Clearance as calculated by dose / AUCinf for
-  dose 1 in the presence of an effector (Inhibitor 1 in the simulator). Data
-  are pulled from the sheet "AUC" and the column titled, e.g., "CL
-  (Dose/AUC_INF_Inh) (L/h)", subheading "Extrapolated AUC_INF for the first
-  dose in the presence of inhibitor".}
-
-  \item{"CL_ss"}{Clearance as calculated by dose / AUCtau for the last dose
-  simulated. By default, data are pulled from the sheet "AUC", column titled,
-  e.g., "CL (Dose/AUC) (L/h)")}
-
-  \item{"CL_ss_withEffector"}{Clearance as calculated by dose / AUCtau for
-  the last dose in the presence of an effector (Inhibitor 1 in the
-  simulator). By default, data are pulled from the sheet "AUC" and the column
-  titled, e.g., "CL (Dose/AUC_INF_Inh) (L/h)", subheading "Truncated AUCt for
-  the last dose in the presence of inhibitor".}
-
-  \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
-  By default, data are pulled from sheet "AUCX(Sub)(CPlasma)", where "X" is
-  the largest dose for which there is a sheet, from the column titled, e.g.,
-  "AUC (mg/L.h)". \emph{Nota bene:} These data were calculated by the
-  simulator from the beginning of the last dose to whenever the simulation
-  ended, so that interval may not be tau if you did not set up the simulation
-  that way. See the options for "CL_ss_int" as an alternative.}
-
-  \item{"CL_hepatic"}{I'm not actually positive that this is the total
-  hepatic clearance, but I think that's what it is... This is the value
-  listed on the Summary tab, under "PKPD Parameters" with the name "CL
-  (L/h)". This is often in cell A41. Sorry for the uncertain explanation;
+  \item{CL_hepatic}{I'm not actually positive that this is the total hepatic
+  clearance, but I think that's what it is... By default, data are pulled
+  from the "Clearance Trials SS" tab. Sorry for the uncertain explanation;
   I'll update this when I know better what this is! -LS}
 
-  \item{"Cmax_dose1"}{Cmax for dose 1. By default, data are pulled from sheet
-  "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
+  \item{Cmax_dose1, Cmax_dose1_withEffector}{Cmax for dose 1 with or without
+  an effector. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
+  column titled, e.g., "CMax (mg/L)".}
 
-  \item{"Cmax_dose1_withEffector"}{Cmax for the last dose in the presence of
-  an inhibitor. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
-  column titled, e.g., "CMaxinh (mg/L)".}
-
-  \item{"Cmax_ss"}{Cmax for the last dose. By default, data are pulled from
+  \item{Cmax_ss}{Cmax for the last dose. By default, data are pulled from
   sheet "AUC", column titled, e.g., "CMax (mg/L)", under the subheading
   "Truncated AUCt for the last dose.}
 
-  \item{"HalfLife_dose1"}{half life for dose 1. By default, data are pulled
+  \item{HalfLife_dose1}{half life for dose 1. By default, data are pulled
   from the sheet "AUC", column titled, e.g., "Half-life (h)")}
 
-  \item{"F_sub"}{bioavailability (F) of substrate. By default, data are
-  pulled from the sheet "Clearance Trials SS".}
+  \item{F_sub}{bioavailability (F) of substrate. By default, data are pulled
+  from the sheet "Clearance Trials SS".}
 
-  \item{"fa_sub" or "fa_inhib"}{fraction absorbed for the substrate or
-  inhibitor. By default, data are pulled from the sheet "Absorption".}
+  \item{fa_sub or fa_inhib}{fraction absorbed for the substrate or inhibitor.
+  By default, data are pulled from the sheet "Absorption".}
 
-  \item{"fg_sub"}{fraction of substrate escaping gut metabolism. By default,
+  \item{fg_sub}{fraction of substrate escaping gut metabolism. By default,
   data are pulled from the sheet "Clearance Trials SS".}
 
-  \item{"fh_sub"}{fraction of substrate escaping hepatic metabolism. By
+  \item{fh_sub}{fraction of substrate escaping hepatic metabolism. By
   default, data are pulled from the sheet "Clearance Trials SS".}
 
-  \item{"ka_sub" or "ka_inhib"}{absorption rate constant ka for the substrate
-  or the 1st inhibitor. By default, data are pulled from the sheet
+  \item{ka_sub or ka_inhib}{absorption rate constant ka for the substrate or
+  the 1st inhibitor. By default, data are pulled from the sheet
   "Absorption".}
 
-  \item{"tlag_sub" or "tlag_inhib"}{lag time for the substrate or inhibitor
-  1. By default, data are pulled from the sheet "Absorption".}
+  \item{tlag_sub or tlag_inhib}{lag time for the substrate or inhibitor 1. By
+  default, data are pulled from the sheet "Absorption".}
 
-  \item{"tmax_dose1"}{tmax for dose 1. By default, data are pulled from sheet
+  \item{tmax_dose1}{tmax for dose 1. By default, data are pulled from sheet
   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
 
-  \item{"tmax_ss"}{tmax for the last dose. By default, data are pulled from
+  \item{tmax_ss}{tmax for the last dose. By default, data are pulled from
   sheet "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which there
   is a sheet, from the column titled, e.g., "TMax (h)".}
 
   } The default is only those parameters present on the "AUC" sheet in the
   simulator output.}
 
-\item{sheet}{optionally specify the name of the sheet where you'd like to
-pull the PK data. If left as NA, it will automatically be selected and
-could come from multiple tabs.}
+\item{sheet}{Which sheet should be used for pulling the PK parameters?
+\strong{Note:} Unless you want a very specific Excel sheet that's not what
+the usual sheet name would be for a first or last dose, this function will
+work best if this is left as NA.}
+
+\item{matrix}{For which matrix would you like the PK parameters to be pulled?
+Options will be "plasma" or "blood", but, since this section is currently
+under construction, the only option that works at the moment is "plasma"
+and specifying anything else has no effect.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual PK
 parameters? Options are "aggregate" and/or "individual". For aggregate
@@ -148,15 +126,23 @@ statistics reported exactly as in the simulator output file.}
 \item{includeTrialInfo}{TRUE or FALSE: Include which individual and trial the
 data describe? This only applies when \code{returnAggregateOrIndiv}
 includes "individual".}
+
+\item{GMR}{TRUE or FALSE: When calculating a mean ratio for AUC or Cmax with
+effector present divided by AUC or Cmax without effector present, use the
+\emph{geometric} mean even if \code{mean_type} has been set to "arithmetic"
+for other means. UNDER CONSTRUCTION.}
+
+\item{avoidNAs}{TRUE or FALSE: The simulator sometimes has trouble
+calculating AUCinf, leading to NA values being included, which can't be
+used for many calculations. When NA values arise for AUCinf, TRUE or FALSE
+for whether to use AUCtau for the last dose instead. UNDER CONSTRUCTION.}
 }
 \value{
 Depending on the options selected, returns a list of numerical
   vectors or a list of data.frames.
 }
 \description{
-This is useful for pulling what parameters were used in a simulation in
-Simcyp and either checking the accuracy of those parameters or including them
-in a report.
+Pull calculated PK parameters from a Simcyp simulation output Excel file.
 }
 \examples{
 

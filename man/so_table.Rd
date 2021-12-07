@@ -28,12 +28,12 @@ or in "Info", the default is "geometric".}
 \item{variability_option}{What type of variability would you like the table
 to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-percentiles")}}
+percentiles"). The arithmetic CV will automatically be included.}}
 
 \item{concatVariability}{Would you like to have the variability concatenated?
 TRUE or FALSE. If "TRUE", the output will be formatted into a single row
-and listed as the lower confidence interval or percentile to the upper. Ex:
-"2400 to  2700"}
+and listed as the lower confidence interval or percentile to the upper CI
+or percentile. Ex: "2400 to 2700"}
 
 \item{includeT12}{TRUE or FALSE on whether to include t1/2 as a parameter in
 the output table}

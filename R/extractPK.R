@@ -1,8 +1,6 @@
 #' Extract PK data for specific parameters from a simulator output Excel file
 #'
-#' This is useful for pulling what parameters were used in a simulation in
-#' Simcyp and either checking the accuracy of those parameters or including them
-#' in a report.
+#' Pull calculated PK parameters from a Simcyp simulation output Excel file.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
@@ -16,117 +14,94 @@
 #'
 #'   \describe{
 #'
-#'   \item{"AUCinf_dose1"}{AUC from 0 to infinity for dose 1. By default, data
-#'   are pulled from the sheet "AUC", column titled, e.g., "AUC_INF (mg/L.h)"}
+#'   \item{AccumulationIndex, AccumulationIndex_withEffector}{Accumulation index
+#'   (AUC infinity for dose 1 / AUC tau at steady state). By default, data are
+#'   pulled from the sheet "AUC", column titled "Accumulation Index" or, for the
+#'   accumulation index in the presence of an effector, "Accumulation
+#'   Index_Inh". UNDER CONSTRUCTION.}
 #'
-#'   \item{AUCinf_dose1_withEffector}{AUC from 0 to infinity for dose 1 in the
-#'   presence of an effector (Inhibitor 1 in the simulator). By default, data
-#'   are pulled from the sheet "AUC", column titled, e.g., "AUC_INF_Inh
-#'   (mg/L.h)" after the subheading "Extrapolated AUC_INF for the first dose in
-#'   the presence of inhibitor"}
+#'   \item{AccumulationRatio, AccumulationRatio_withEffector}{Accumulation ratio
+#'   (AUC tau for dose 1 / AUC tau at steady state). By default, data are pulled
+#'   from the sheet "AUC", column titled "Accumluation Ratio" or, for the
+#'   accumulation ratio in the presence of an effector, "Accumulation
+#'   Ratio_Inh".}
 #'
-#'   \item{"AUCtau_dose1"}{AUC from 0 to tau for dose 1. By default, data are
-#'   pulled from sheet "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC
-#'   (mg/L.h)". IMPORTANT: This will be AUCtau for dose 1 if you have a done a
-#'   multiple-dose simulation, but, if you have done a single-dose simulation,
-#'   this will be the AUC from 0 to whatever time you stopped simulating.}
+#'   \item{AUCinf_dose1, AUCinf_dose1_withEffector}{AUC from 0 to infinity for
+#'   dose 1, in the absence or presence of an effector, respectively. By
+#'   default, data are pulled from the sheet "AUC", column titled, e.g.,
+#'   "AUC_INF (mg/L.h)"}
 #'
-#'   \item{"AUCtau_ss"}{AUC from 0 to tau for the steady-state dose in the
-#'   simulation. By default, data are pulled from sheet "AUC" from the column
-#'   titled, e.g., "AUC (mg/L.h)" under the subheading "Truncated AUCt for the
-#'   last dose".}
+#'   \item{AUCinf_ratio_dose1, AUCtau_ratio_ss, Cmax_ratio_dose1,
+#'   Cmax_ratio_ss}{The ratio of either the AUC or Cmax for dose 1 or at steady
+#'   state with effector present / without effector present.}
 #'
-#'   \item{AUCtau_ss_withEffector}{AUC from 0 to tau for the steady-state dose
-#'   in the presence of an effector (Inhibitor 1 in the simulator). By default,
-#'   data are pulled from the sheet "AUC", column titled, e.g., "AUCt(n)_Inh
-#'   (mg/L.h)" after the subheading "Truncated AUCt for the last dose in the
-#'   presence of inhibitor"}
+#'   \item{AUCtau_dose1, AUCtau_dose1_withEffector, AUCtau_ss,
+#'   AUCtau_ss_withEffector}{AUC from 0 to tau for dose 1 or the last dose in
+#'   the absence or presence of an effector. By default, dose 1 data are pulled
+#'   from sheet "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)", and
+#'   steady-state data are pulled from the "AUC" tab}
 #'
-#'   \item{"AUCtau_lastdoseToEnd"}{AUC from the last dose to the end of the
-#'   simulation. By default, data are pulled from sheet "AUCX(Sub)(CPlasma)",
-#'   where "X" is the largest dose for which there is a sheet, from the column
-#'   titled, e.g., "AUC (mg/L.h)". \emph{Nota bene:} These data were calculated
-#'   by the simulator from the beginning of the last dose to whenever the
-#'   simulation ended, so that interval may not be tau if you did not set up the
-#'   simulation that way. See the options for "AUCtau_ss" as an alternative.}
+#'   \item{CL_dose1, CL_dose1_withEffector}{Clearance as calculated by dose /
+#'   AUCinf for dose 1. Data are pulled from the sheet "AUC" and the column
+#'   titled, e.g., "CL (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF
+#'   for the first dose".}
 #'
-#'   \item{"CL_dose1"}{Clearance as calculated by dose / AUCinf for dose 1. Data
-#'   are pulled from the sheet "AUC" and the column titled, e.g., "CL
-#'   (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF for the first
-#'   dose".}
+#'   \item{CL_ss, CL_ss_withEffector}{Clearance as calculated by dose / AUCtau
+#'   for the last dose simulated. By default, data are pulled from the sheet
+#'   "AUC", column titled, e.g., "CL (Dose/AUC) (L/h)")}
 #'
-#'   \item{"CL_dose1_withEffector"}{Clearance as calculated by dose / AUCinf for
-#'   dose 1 in the presence of an effector (Inhibitor 1 in the simulator). Data
-#'   are pulled from the sheet "AUC" and the column titled, e.g., "CL
-#'   (Dose/AUC_INF_Inh) (L/h)", subheading "Extrapolated AUC_INF for the first
-#'   dose in the presence of inhibitor".}
-#'
-#'   \item{"CL_ss"}{Clearance as calculated by dose / AUCtau for the last dose
-#'   simulated. By default, data are pulled from the sheet "AUC", column titled,
-#'   e.g., "CL (Dose/AUC) (L/h)")}
-#'
-#'   \item{"CL_ss_withEffector"}{Clearance as calculated by dose / AUCtau for
-#'   the last dose in the presence of an effector (Inhibitor 1 in the
-#'   simulator). By default, data are pulled from the sheet "AUC" and the column
-#'   titled, e.g., "CL (Dose/AUC_INF_Inh) (L/h)", subheading "Truncated AUCt for
-#'   the last dose in the presence of inhibitor".}
-#'
-#'   \item{"CL_lastdoseToEnd"}{CL for the last dose calculated as Dose / AUCtau.
-#'   By default, data are pulled from sheet "AUCX(Sub)(CPlasma)", where "X" is
-#'   the largest dose for which there is a sheet, from the column titled, e.g.,
-#'   "AUC (mg/L.h)". \emph{Nota bene:} These data were calculated by the
-#'   simulator from the beginning of the last dose to whenever the simulation
-#'   ended, so that interval may not be tau if you did not set up the simulation
-#'   that way. See the options for "CL_ss_int" as an alternative.}
-#'
-#'   \item{"CL_hepatic"}{I'm not actually positive that this is the total
-#'   hepatic clearance, but I think that's what it is... This is the value
-#'   listed on the Summary tab, under "PKPD Parameters" with the name "CL
-#'   (L/h)". This is often in cell A41. Sorry for the uncertain explanation;
+#'   \item{CL_hepatic}{I'm not actually positive that this is the total hepatic
+#'   clearance, but I think that's what it is... By default, data are pulled
+#'   from the "Clearance Trials SS" tab. Sorry for the uncertain explanation;
 #'   I'll update this when I know better what this is! -LS}
 #'
-#'   \item{"Cmax_dose1"}{Cmax for dose 1. By default, data are pulled from sheet
-#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
+#'   \item{Cmax_dose1, Cmax_dose1_withEffector}{Cmax for dose 1 with or without
+#'   an effector. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
+#'   column titled, e.g., "CMax (mg/L)".}
 #'
-#'   \item{"Cmax_dose1_withEffector"}{Cmax for the last dose in the presence of
-#'   an inhibitor. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
-#'   column titled, e.g., "CMaxinh (mg/L)".}
-#'
-#'   \item{"Cmax_ss"}{Cmax for the last dose. By default, data are pulled from
+#'   \item{Cmax_ss}{Cmax for the last dose. By default, data are pulled from
 #'   sheet "AUC", column titled, e.g., "CMax (mg/L)", under the subheading
 #'   "Truncated AUCt for the last dose.}
 #'
-#'   \item{"HalfLife_dose1"}{half life for dose 1. By default, data are pulled
+#'   \item{HalfLife_dose1}{half life for dose 1. By default, data are pulled
 #'   from the sheet "AUC", column titled, e.g., "Half-life (h)")}
 #'
-#'   \item{"F_sub"}{bioavailability (F) of substrate. By default, data are
-#'   pulled from the sheet "Clearance Trials SS".}
+#'   \item{F_sub}{bioavailability (F) of substrate. By default, data are pulled
+#'   from the sheet "Clearance Trials SS".}
 #'
-#'   \item{"fa_sub" or "fa_inhib"}{fraction absorbed for the substrate or
-#'   inhibitor. By default, data are pulled from the sheet "Absorption".}
+#'   \item{fa_sub or fa_inhib}{fraction absorbed for the substrate or inhibitor.
+#'   By default, data are pulled from the sheet "Absorption".}
 #'
-#'   \item{"fg_sub"}{fraction of substrate escaping gut metabolism. By default,
+#'   \item{fg_sub}{fraction of substrate escaping gut metabolism. By default,
 #'   data are pulled from the sheet "Clearance Trials SS".}
 #'
-#'   \item{"fh_sub"}{fraction of substrate escaping hepatic metabolism. By
+#'   \item{fh_sub}{fraction of substrate escaping hepatic metabolism. By
 #'   default, data are pulled from the sheet "Clearance Trials SS".}
 #'
-#'   \item{"ka_sub" or "ka_inhib"}{absorption rate constant ka for the substrate
-#'   or the 1st inhibitor. By default, data are pulled from the sheet
+#'   \item{ka_sub or ka_inhib}{absorption rate constant ka for the substrate or
+#'   the 1st inhibitor. By default, data are pulled from the sheet
 #'   "Absorption".}
 #'
-#'   \item{"tlag_sub" or "tlag_inhib"}{lag time for the substrate or inhibitor
-#'   1. By default, data are pulled from the sheet "Absorption".}
+#'   \item{tlag_sub or tlag_inhib}{lag time for the substrate or inhibitor 1. By
+#'   default, data are pulled from the sheet "Absorption".}
 #'
-#'   \item{"tmax_dose1"}{tmax for dose 1. By default, data are pulled from sheet
+#'   \item{tmax_dose1}{tmax for dose 1. By default, data are pulled from sheet
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
 #'
-#'   \item{"tmax_ss"}{tmax for the last dose. By default, data are pulled from
+#'   \item{tmax_ss}{tmax for the last dose. By default, data are pulled from
 #'   sheet "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which there
 #'   is a sheet, from the column titled, e.g., "TMax (h)".}
 #'
 #'   } The default is only those parameters present on the "AUC" sheet in the
 #'   simulator output.
+#' @param sheet Which sheet should be used for pulling the PK parameters?
+#'   \strong{Note:} Unless you want a very specific Excel sheet that's not what
+#'   the usual sheet name would be for a first or last dose, this function will
+#'   work best if this is left as NA.
+#' @param matrix For which matrix would you like the PK parameters to be pulled?
+#'   Options will be "plasma" or "blood", but, since this section is currently
+#'   under construction, the only option that works at the moment is "plasma"
+#'   and specifying anything else has no effect.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual PK
 #'   parameters? Options are "aggregate" and/or "individual". For aggregate
 #'   data, values are pulled from simulator output -- not calculated -- and the
@@ -135,6 +110,14 @@
 #' @param includeTrialInfo TRUE or FALSE: Include which individual and trial the
 #'   data describe? This only applies when \code{returnAggregateOrIndiv}
 #'   includes "individual".
+#' @param GMR TRUE or FALSE: When calculating a mean ratio for AUC or Cmax with
+#'   effector present divided by AUC or Cmax without effector present, use the
+#'   \emph{geometric} mean even if \code{mean_type} has been set to "arithmetic"
+#'   for other means. UNDER CONSTRUCTION.
+#' @param avoidNAs TRUE or FALSE: The simulator sometimes has trouble
+#'   calculating AUCinf, leading to NA values being included, which can't be
+#'   used for many calculations. When NA values arise for AUCinf, TRUE or FALSE
+#'   for whether to use AUCtau for the last dose instead. UNDER CONSTRUCTION.
 #'
 #' @return Depending on the options selected, returns a list of numerical
 #'   vectors or a list of data.frames.
@@ -153,8 +136,11 @@
 extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
                       sheet = NA,
-                      returnAggregateOrIndiv = c("aggregate", "individual"),
-                      includeTrialInfo = TRUE){
+                      matrix = "plasma",
+                      returnAggregateOrIndiv = "aggregate",
+                      includeTrialInfo = TRUE,
+                      GMR = TRUE,
+                      avoidNAs = FALSE){
 
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
@@ -169,106 +155,125 @@ extractPK <- function(sim_data_file,
       # then use *that* sheet instead b/c that code is more versatile than the
       # generic one.
       if(complete.cases(sheet) &
-         sheet %in% c(Tab_last, "AUC", "AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)",
+         sheet %in% c(Tab_last, "AUC", "AUC0(Sub)(CPlasma)",
+                      "AUCt0(Sub)(CPlasma)",
                       "Absorption", "Clearance Trials SS")){
             sheet <- NA
       }
 
+      # Error catching
       if(complete.cases(sheet) & sheet %in% AllSheets == FALSE){
             stop("The sheet requested could not be found in the Excel file.")
       }
 
-      # Error catching
       if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
          all(returnAggregateOrIndiv %in% c("aggregate", "individual")) == FALSE){
             stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
       }
 
+      ParamAUC <- c("AccumulationIndex",
+                    "AccumulationIndex_withEffector",
+                    "AccumulationRatio",
+                    "AccumulationRatio_withEffector",
+                    "AUCinf_dose1",
+                    "AUCinf_dose1_withEffector",
+                    "AUCinf_ratio_dose1",
+                    "AUCtau_dose1",
+                    "AUCtau_dose1_withEffector",
+                    "AUCtau_ratio_dose1",
+                    "AUCtau_ss",
+                    "AUCtau_ss_withEffector",
+                    "CL_dose1",
+                    "CL_dose1_withEffector",
+                    "CL_ss",
+                    "CL_ss_withEffector",
+                    "Cmax_dose1",
+                    "Cmax_dose1_withEffector",
+                    "Cmax_ratio_dose1",
+                    "Cmax_ss",
+                    "Cmax_ratio_ss",
+                    "Cmax_ss_withEffector",
+                    "HalfLife_dose1",
+                    "tmax_dose1")
+
+      ParamAbsorption <- c("ka_sub", "ka_inhib",
+                           "fa_sub", "fa_inhib",
+                           "tlag_sub", "tlag_inhib")
+
+      ParamAUC0 <- c("AUCtau_dose1",
+                     "AUCtau_dose1_withEffector",
+                     "AUCtau_ratio_dose1",
+                     "Cmax_dose1",
+                     "Cmax_dose1_withEffector",
+                     "Cmax_ratio_dose1",
+                     "tmax_dose1")
+
+      ParamAUCX <- c("AUCtau_ss",
+                     "AUCtau_ss_withEffector",
+                     "AUCtau_ratio_ss",
+                     "CL_ss",
+                     "CL_ss_withEffector",
+                     "CL_ratio_ss",
+                     "Cmax_ss",
+                     "Cmax_ss_withEffector",
+                     "Cmax_ratio_ss",
+                     "tmax_ss",
+                     "tmax_ss_withEffector")
+
+      ParamCLTSS <- c("F_sub", "fh_sub", "fg_sub", "CL_hepatic",
+                         "CLpo")
+
+      ParamSummary <- c("CL_hepatic")
+
+
       if(PKparameters[1] == "all"){
-            PKparameters <- c("AUCinf_dose1",
-                              "AUCtau_dose1",
-                              "AUCtau_ss",
-                              "AUCtau_lastdoseToEnd",
-                              "AUCinf_dose1_withEffector",
-                              "AUCtau_ss_withEffector",
-                              "CL_dose1",
-                              "CL_dose1_withEffector",
-                              "CL_ss",
-                              "CL_ss_withEffector",
-                              "CL_lastdoseToEnd",
-                              "CL_hepatic",
-                              "Cmax_dose1",
-                              "Cmax_dose1_withEffector",
-                              "Cmax_ss",
-                              "Cmax_ss_withEffector",
-                              "fa_sub",
-                              "F_sub",
-                              "fh_sub",
-                              "fg_sub",
-                              "HalfLife_dose1",
-                              "ka_sub", "ka_inhib",
-                              "tlag_sub", "tlag_inhib",
-                              "tmax_dose1")
+            PKparameters <- c(ParamAbsorption, ParamAUC, ParamAUC0, ParamAUCX,
+                              ParamCLTSS, ParamSummary)
       }
 
       if(PKparameters[1] == "AUC tab"){
-            PKparameters <- c("AUCtau_ss", "Cmax_ss",
-                              "Cmax_ss_withEffector",
-                              "AUCinf_dose1", "HalfLife_dose1",
-                              "AUCinf_dose1_withEffector",
-                              "AUCtau_ss_withEffector",
-                              "CL_dose1_withEffector",
-                              "CL_dose1", "CL_ss",
-                              "CL_ss_withEffector")
+            PKparameters <- ParamAUC
       }
 
       if(PKparameters[1] == "Absorption tab"){
-            PKparameters <- c("ka_sub", "ka_inhib", "fa_sub", "fa_inhib",
-                              "tlag_sub", "tlag_inhib")
+            PKparameters <- ParamAbsorption
       }
 
       # Checking experimental details to only pull details that apply
       Deets <- extractExpDetails(sim_data_file)
 
       if(is.na(Deets$Inhibitor)){
-            PKparameters <- PKparameters[!str_detect(PKparameters, "Effector|inhib")]
+            PKparameters <- PKparameters[!str_detect(PKparameters,
+                                                     "Effector|inhib|ratio")]
       }
 
-      if(is.na(Deets$Inhibitor) & Deets$Regimen_sub == "Single Dose"){
-            PKparameters <- PKparameters[!str_detect(PKparameters, "ss")]
+      if(Deets$Regimen_sub == "Single Dose"){
+            PKparameters <- PKparameters[!str_detect(PKparameters, "ss|AccumulationIndex|AccumulationRatio")]
       }
 
-
-      # Parameters to pull from the AUC tab
-      Param_AUC <- c("AUCtau_ss", "Cmax_ss", "Cmax_ss_withEffector",
-                     "AUCinf_dose1", "HalfLife_dose1", "AUCinf_dose1_withEffector",
-                     "AUCtau_ss_withEffector", "CL_dose1_withEffector",
-                     "CL_dose1", "CL_ss", "CL_ss_withEffector")
-
-      # Parameters to pull from the "AUC0(Sub)(CPlasma)" sheet
-      Param_AUC0 <- c("AUCtau_dose1", "Cmax_dose1", "tmax_dose1",
-                      "Cmax_dose1_withEffector")
-      # Notes to self: AUCtau_dose1 appears to be the same in both
-      # AUC0(Sub)(CPlasma) and AUCt0(Sub)(Plasma) tabs. Not sure if that ever
-      # changes.
-
-      # Parameters to pull from the AUCX(Sub)(CPlasma) sheet, where X is the last dose
-      Param_AUCX <- c("AUCtau_lastdoseToEnd", "CL_lastdoseToEnd", "tmax_ss")
-
-      # Parameters to pull from the Absorption sheet
-      Param_Abs <- c("ka_sub", "ka_inhib", "fa_sub", "fa_inhib",
-                     "tlag_sub", "tlag_inhib")
-
-      # Parameters to pull from the Clearance Trials SS tab
-      Param_CLTSS <- c("F_sub", "fh_sub", "fg_sub", "CL_hepatic")
+      # If it was a multiple-dose regimen, then the AUC tab will not include
+      # certain parameters that WILL be able to be pulled from the AUC0 tab.
+      # NOTE: I am NOT removing "AUCinf_ratio_dose1" from this list b/c it is
+      # not available when the regimen is MD (at least, nowhere I've found in
+      # the output). By NOT removing it, there will be a warning to the user
+      # that that parameter was not found. TO CONSIDER FOR FUTURE: We *could*
+      # calculate it. It's not like it's complicated math, but calculating the
+      # aggregate values could be problematic given that there's that weirdness
+      # in how the 90% CI is calculated by the simulator. -LS
+      if(Deets$Regimen_sub == "Multiple Dose"){
+            ParamAUC <- setdiff(ParamAUC,
+                                c("AUCtau_ratio_dose1",
+                                  "Cmax_dose1", "Cmax_dose1_withEffector",
+                                  "Cmax_ratio_dose1", "tmax_dose1"))
+      }
 
       Out_ind <- list()
       Out_agg <- list()
 
       # Pulling data from the "AUC" sheet ------------------------------------------
-      if(any(PKparameters %in% Param_AUC) & is.na(sheet)){
+      if(any(PKparameters %in% ParamAUC) & is.na(sheet)){
 
-            PKparameters_AUC <- intersect(PKparameters, Param_AUC)
+            PKparameters_AUC <- intersect(PKparameters, ParamAUC)
 
             # Error catching
             if("AUC" %in% AllSheets == FALSE){
@@ -283,23 +288,69 @@ extractPK <- function(sim_data_file,
 
                   EndRow_ind <- which(AUC_xl$...2 == "Statistics") - 2
 
+                  # If matrix is blood, REMOVE the plasma columns entirely. I
+                  # think this will be easier to code. -LS
+                  if(matrix == "blood"){
+                        PlasmaCols <- c(which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1]:
+                                             (which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1] -1))
+                        if(length(PlasmaCols) > 0){
+                              AUC_xl <- AUC_xl[, -PlasmaCols]
+                        }
+                  }
 
                   # sub function for finding correct column
                   findCol <- function(PKparam){
 
                         ToDetect <- switch(PKparam,
+                                           "AccumulationIndex" = "Accumulation Index$",
+                                           "AccumulationRatio" = "Accumulation Ratio$",
+                                           "AccumulationIndex_withEffector" = "Accumulation Index_Inh",
+                                           "AccumulationRatio_withEffector" = "Accumulation Ratio_Inh",
+                                           "AUCtau_dose1" = "^AUC \\(|AUCt.0. \\(",
+                                           "AUCtau_dose1_withEffector" = "^AUCt.0._Inh \\(|^AUCinh \\(",
+                                           "AUCtau_ratio_dose1" = "^AUC Ratio$",
                                            "AUCinf_dose1" = "^AUC_INF",
                                            "AUCinf_dose1_withEffector" = "^AUC_INF",
+                                           "AUCinf_ratio_dose1" = "^AUC_INF ratio$",
                                            "AUCtau_ss" = "AUCt\\(n\\) \\(|^AUC \\(",
                                            "AUCtau_ss_withEffector" = "AUCt\\(n\\)_Inh|AUCinh \\(",
-                                           "Cmax_ss" = "^CMax",
-                                           "Cmax_ss_withEffector" = "^CMax",
-                                           "HalfLife_dose1" = "Half-life",
                                            "CL_dose1" = "CL .Dose/AUC_INF",
                                            "CL_dose1_withEffector" = "CL \\(Dose/AUC_INF_Inh\\)",
                                            "CL_ss" = "CL \\(Dose/AUC\\)",
-                                           "CL_ss_withEffector" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)")
+                                           "CL_ss_withEffector" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
+                                           "Cmax_dose1" = "CMax \\(",
+                                           "Cmax_dose1_withEffector" = "CMaxinh \\(",
+                                           "Cmax_ratio_dose1" = "^CMax Ratio$",
+                                           "Cmax_ss" = "^CMax",
+                                           "Cmax_ss_withEffector" = "^CMax",
+                                           "Cmax_ratio_ss" = "^CMax Ratio$",
+                                           "HalfLife_dose1" = "Half-life",
+                                           "tmax_dose1" = "^TMax \\(")
 
+                        # The AUC and Cmax ratios are listed with the parameters
+                        # with effector present and need those columns to be
+                        # searched, even though "_withEffector" is not in the
+                        # name. Temporarily changing the parameter name to
+                        # search the appropriate columns. Note that this regex
+                        # will catch, e.g., "AUCinf_ratio_dose1" but NOT
+                        # "AccumulationRatio".
+                        PKparam <- ifelse(str_detect(PKparam, "ratio"),
+                                          paste0(PKparam, "_withEffector"),
+                                          PKparam)
+
+                        # Dose 1 CL should be the clearance calculated using
+                        # AUCinf, not AUCtau for dose 1, so temporarily adding
+                        # "inf" to that parameter to check the correct columns.
+                        # Same thing with half life.
+                        PKparam <- ifelse(str_detect(PKparam, "CL.*_dose1|HalfLife_dose1"),
+                                          sub("_dose1", "inf_dose1", PKparam), PKparam)
+
+                        # Dose 1 tmax and Cmax are only available for the 0 to
+                        # tau columns, so changing those parameter names
+                        # temporarily.
+                        PKparam <- ifelse(str_detect(PKparam, "[Ct]max"),
+                                          sub("max", "maxtau", PKparam),
+                                          PKparam)
 
                         if(str_detect(PKparam, "_withEffector")){
 
@@ -308,10 +359,18 @@ extractPK <- function(sim_data_file,
                               # Xth dose in the presence of inhibitor".
 
                               # dose1 data
-                              if(str_detect(PKparam, "_dose1_withEffector")){
-                                    StartCol <-
-                                          which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                           "for the first dose in the presence of inhibitor"))
+                              if(str_detect(PKparam, "dose1_withEffector")){
+                                    if(str_detect(PKparam, "inf")){
+                                          StartCol <-
+                                                which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                                                 "for the first dose in the presence of inhibitor"))
+                                    } else {
+                                          StartCol <-
+                                                which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                                                 ifelse(Deets$Regimen_sub == "Single Dose",
+                                                                        "^Inhibited$",
+                                                                        "Truncated AUCt_inh for the first dose")))
+                                    }
                               }
 
                               # ss data
@@ -324,10 +383,21 @@ extractPK <- function(sim_data_file,
                         } else {
 
                               # first dose
-                              if(str_detect(PKparam, "_dose1")){
-
+                              if(str_detect(PKparam, "inf.*_dose1")){
                                     StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                   "^Extrapolated AUC_INF for the first dose$"))
+                              }
+
+                              if(str_detect(PKparam, "tau.*_dose1") &
+                                 Deets$Regimen_sub == "Single Dose"){
+                                    StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                                                  "^AUC integrated from"))
+                              }
+
+                              if(str_detect(PKparam, "tau.*_dose1") &
+                                 Deets$Regimen_sub == "Multiple Dose"){
+                                    StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                                                  "^Truncated AUCt for the first dose"))
                               }
 
                               # last dose
@@ -340,7 +410,15 @@ extractPK <- function(sim_data_file,
                                                                        "^AUC integrated from"))
                                     }
                               }
+
+                              # accumulation index or other
+                              if(str_detect(PKparam, "_dose1") == FALSE &
+                                 str_detect(PKparam, "_ss") == FALSE){
+                                    StartCol <- 1
+                              }
                         }
+
+                        StartCol <- StartCol[1]
 
                         if(length(StartCol) == 0){
 
@@ -353,6 +431,12 @@ extractPK <- function(sim_data_file,
                               EndCol <- EndCol[EndCol > StartCol][1] - 1
                               EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
 
+                              # accumulation index etc.
+                              if(str_detect(PKparam, "_dose1") == FALSE &
+                                 str_detect(PKparam, "_ss") == FALSE){
+                                    EndCol <- ncol(AUC_xl)
+                              }
+
                               if(any(is.na(c(StartCol, EndCol)))){
 
                                     OutCol <- EndCol
@@ -364,11 +448,9 @@ extractPK <- function(sim_data_file,
                                     OutCol <- PossCol[
                                           which(str_detect(as.vector(t(
                                                 AUC_xl[3, PossCol])), ToDetect) &
-                                                      !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ]
+                                                      !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
 
                               }
-
-
                         }
 
                         return(OutCol)
@@ -383,10 +465,11 @@ extractPK <- function(sim_data_file,
 
                   for(i in PKparameters_AUC){
                         ColNum <- findCol(i)
-                        if(length(ColNum) == 0){
+                        if(length(ColNum) == 0 | is.na(ColNum)){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               rm(ColNum)
+                              PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                               next
                         }
 
@@ -420,10 +503,18 @@ extractPK <- function(sim_data_file,
 
 
       # Pulling data from the "AUC0(Sub)(CPlasma)" or "AUCt0(Sub)(CPlasma)" tabs -----------
-      if(any(PKparameters %in% Param_AUC0) & is.na(sheet)){
+      PKparameters_AUC0 <- intersect(PKparameters, ParamAUC0)
 
-            PKparameters_AUC0 <- intersect(PKparameters, Param_AUC0)
+      # Some PK parameters show up on multiple sheets. No need to pull
+      # those here if they've already been pulled from another sheet.
+      PKparameters_AUC0 <- setdiff(PKparameters_AUC0, names(Out_agg))
 
+      if(complete.cases(sheet)){
+            # How do you set something to have length 0? Hacking it for now.
+            PKparameters_AUC0 <- intersect("A", "B")
+      }
+
+      if(length(PKparameters_AUC0) > 0){
             # Error catching
             if(any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
 
@@ -431,7 +522,6 @@ extractPK <- function(sim_data_file,
                                  str_c(PKparameters_AUC0, collapse = ", "),
                                  ". None of these parameters can be extracted."))
             } else {
-
 
                   Sheet <- intersect(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)"), AllSheets)[1]
 
@@ -444,10 +534,14 @@ extractPK <- function(sim_data_file,
                   findCol <- function(PKparam){
 
                         ToDetect <- switch(PKparam,
-                                           "AUCtau_dose1" = "AUC \\(",
+                                           "AUCtau_dose1" = "^AUC \\(",
+                                           "AUCtau_dose1_withEffector" = "^AUCinh \\(",
+                                           "AUCtau_ratio_dose1" = "AUC Ratio",
                                            "Cmax_dose1" = "CMax \\(",
                                            "Cmax_dose1_withEffector" = "CMaxinh",
-                                           "tmax_dose1" = "TMax")
+                                           "Cmax_ratio_dose1" = "^CMax Ratio$",
+                                           "tmax_dose1" = "TMax",
+                                           "tmax_dose1_withEffector" = "TMaxinh")
 
                         which(str_detect(as.vector(t(AUC0_xl[2, ])), ToDetect))[1]
                   }
@@ -463,6 +557,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0 | is.na(ColNum)){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
+                              PKparameters_AUC0 <- setdiff(PKparameters_AUC0, i)
                               rm(ColNum)
                               next
                         }
@@ -495,10 +590,20 @@ extractPK <- function(sim_data_file,
             }
       }
 
-      # Pulling data from the AUCX(Sub)(CPlasma) sheet ----------------------------
-      if(any(PKparameters %in% Param_AUCX) & is.na(sheet)){
 
-            PKparameters_AUCX <- intersect(PKparameters, Param_AUCX)
+      # Pulling data from the AUCX(Sub)(CPlasma) sheet ----------------------------
+      PKparameters_AUCX <- intersect(PKparameters, ParamAUCX)
+
+      # Some PK parameters show up on multiple sheets. No need to pull
+      # those here if they've already been pulled from another sheet.
+      PKparameters_AUCX <- setdiff(PKparameters_AUCX, names(Out_agg))
+
+      if(complete.cases(sheet)){
+            # How do you set something to have length 0? Hacking it for now.
+            PKparameters_AUCX <- intersect("A", "B")
+      }
+
+      if(length(PKparameters_AUC0) > 0){
 
             # Error catching
             if(ssNum == 0 | length(ssNum) == 0){
@@ -516,9 +621,17 @@ extractPK <- function(sim_data_file,
                   findCol <- function(PKparam){
 
                         ToDetect <- switch(PKparam,
-                                           "AUCtau_lastdoseToEnd" = "^AUC \\(",
-                                           "CL_lastdoseToEnd" = "CL \\(Dose/AUC",
-                                           "tmax_ss" = "^TMax")
+                                           "AUCtau_ss" = "AUC \\(",
+                                           "AUCtau_ss_withEffector" = "AUCinh \\(",
+                                           "AUCtau_ratio_ss" = "AUC Ratio",
+                                           "CL_ss" = "CL \\(Dose/AUC",
+                                           "CL_ss_withEffector" = "CLinh \\(Dose/AUCinh",
+                                           "CL_ratio_ss" = "CL Ratio",
+                                           "Cmax_ss" = "CMax \\(",
+                                           "Cmax_ss_withEffector" = "CMaxinh \\(",
+                                           "Cmax_ratio_ss" = "CMax Ratio",
+                                           "tmax_ss" = "^TMax \\(",
+                                           "tmax_ss_withEffector" = "TMaxinh \\(")
 
                         which(str_detect(as.vector(t(AUCX_xl[2, ])), ToDetect))[1]
                   }
@@ -535,6 +648,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
+                              PKparameters_AUCX <- setdiff(PKparameters_AUCX, i)
                               rm(ColNum)
                               next
                         }
@@ -567,11 +681,20 @@ extractPK <- function(sim_data_file,
 
             }
       }
+
       # Pulling data from the "Absorption" sheet -----------------------------------
-      if(any(PKparameters %in% Param_Abs) & is.na(sheet)){
+      PKparameters_Abs <- intersect(PKparameters, ParamAbsorption)
 
-            PKparameters_Abs <- intersect(PKparameters, Param_Abs)
+      # Some PK parameters show up on multiple sheets. No need to pull
+      # those here if they've already been pulled from another sheet.
+      PKparameters_Abs <- setdiff(PKparameters_Abs, names(Out_agg))
 
+      if(complete.cases(sheet)){
+            # How do you set something to have length 0? Hacking it for now.
+            PKparameters_Abs <- intersect("A", "B")
+      }
+
+      if(length(PKparameters_Abs) > 0){
             # Error catching
             if("Absorption" %in% AllSheets == FALSE){
                   warning(paste0("The sheet 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
@@ -614,6 +737,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
+                              PKparameters_Abs <- setdiff(PKparameters_Abs, i)
                               rm(ColNum)
                               next
                         }
@@ -716,10 +840,18 @@ extractPK <- function(sim_data_file,
       }
 
       # Pulling data from the "Clearance Trials SS" sheet ------------------------------------------
-      if(any(PKparameters %in% Param_CLTSS) & is.na(sheet)){
+      PKparameters_CLTSS <- intersect(PKparameters, ParamCLTSS)
 
-            PKparameters_CLTSS <- intersect(PKparameters, Param_CLTSS)
+      # Some PK parameters show up on multiple sheets. No need to pull
+      # those here if they've already been pulled from another sheet.
+      PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, names(Out_agg))
 
+      if(complete.cases(sheet)){
+            # How do you set something to have length 0? Hacking it for now.
+            PKparameters_CLTSS <- intersect("A", "B")
+      }
+
+      if(length(PKparameters_CLTSS) > 0){
             # Error catching
             if("Clearance Trials SS" %in% AllSheets == FALSE){
                   warning(paste0("The sheet 'Clearance Trials SS' must be present in the Excel simulated data file to extract the PK parameters ",
@@ -736,6 +868,7 @@ extractPK <- function(sim_data_file,
 
                         ToDetect <- switch(PKparam,
                                            "CL_hepatic" = "CL \\(L",
+                                           "CLpo" = "CLpo",
                                            "F_sub" = "F\\(Sub",
                                            "fh_sub" = "Fh\\(Sub",
                                            "fg_sub" = "Fg\\(Sub")
@@ -752,6 +885,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
+                              PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                               rm(ColNum)
                               next
                         }
@@ -790,6 +924,7 @@ extractPK <- function(sim_data_file,
 
                         ToDetect <- switch(PKparam,
                                            "CL_hepatic" = "CL \\(L",
+                                           "CLpo" = "CLpo",
                                            "F_sub" = "F\\(Sub",
                                            "fh_sub" = "Fh\\(Sub",
                                            "fg_sub" = "Fg\\(Sub")
@@ -896,7 +1031,7 @@ extractPK <- function(sim_data_file,
                                                            "for the first dose in the presence of inhibitor"))
                               }
 
-                              # lastdose data
+                              # ss data
                               if(str_detect(PKparam, "_ss_withEffector")){
                                     StartCol <-
                                           which(str_detect(as.vector(t(XL[2, ])),
@@ -998,15 +1133,10 @@ extractPK <- function(sim_data_file,
       } else {
 
             # Putting objects in alphabetical order
-            ListItems <- names(Out_ind)
-            Out_temp <- Out_ind
-            Out_ind <- list()
-            for(i in sort(ListItems)){
-                  Out_ind[[i]] <- Out_temp[[i]]
-            }
+            Out_ind <- Out_ind[order(names(Out_ind))]
 
             if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
-                  Out_ind <- Out_ind[ListItems[str_detect(ListItems, "tab$")]]
+                  Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
                   Out_ind <- bind_rows(Out_ind) %>%
                         pivot_longer(cols = -(c(Individual, Trial)),
                                      names_to = "Parameter",
@@ -1017,7 +1147,7 @@ extractPK <- function(sim_data_file,
                         pivot_wider(names_from = Parameter,
                                     values_from = Value)
             } else {
-                  Out_ind <- Out_ind[ListItems[!str_detect(ListItems, "tab$")]] %>%
+                  Out_ind <- Out_ind[names(Out_ind)[!str_detect(names(Out_ind), "tab$")]] %>%
                         as.data.frame()
             }
       }
@@ -1039,6 +1169,9 @@ extractPK <- function(sim_data_file,
                   select(Parameter, Statistic, Value) %>%
                   pivot_wider(names_from = Parameter, values_from = Value,
                               id_cols = Statistic)
+
+            Out_agg <- Out_agg[c("Statistic",
+                                 sort(setdiff(names(Out_agg), "Statistic")))]
       }
 
       if(length(returnAggregateOrIndiv) == 1 &

@@ -18,11 +18,11 @@
 #' @param variability_option  What type of variability would you like the table
 #'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 #'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-#'   percentiles")}
+#'   percentiles"). The arithmetic CV will automatically be included.}
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
-#'   and listed as the lower confidence interval or percentile to the upper. Ex:
-#'   "2400 to  2700"
+#'   and listed as the lower confidence interval or percentile to the upper CI
+#'   or percentile. Ex: "2400 to 2700"
 #' @param includeT12 TRUE or FALSE on whether to include t1/2 as a parameter in
 #'   the output table
 #' @return a data.frame
@@ -47,13 +47,11 @@ so_table <- function(Info, sheet = NA,
       D1 <- paste0(D1, "_dose1")
       D2 <- paste0(D2, "_ss")
 
-      ObsToPull <- c(
-            c(D1, paste0(D1, "_withEffector"),
-              D2, paste0(D2, "_withEffector")),
+      Dcomp <- c("AUCinf_ratio_dose1", "AUCtau_ratio_dose1",
+                 "Cmax_ratio_dose1", "Cmax_ratio_ss")
 
-            paste0(c(D1, paste0(D1, "_withEffector"),
-                     D2, paste0(D2, "_withEffector")), "_CV")
-      )
+      ObsToPull <- c(D1, paste0(D1, "_withEffector"),
+                     D2, paste0(D2, "_withEffector"), Dcomp)
 
       PKToPull <- ObsToPull[!str_detect(ObsToPull, "_CV")]
 
@@ -71,128 +69,61 @@ so_table <- function(Info, sheet = NA,
             "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withEffector")],
             "Multiple Dose TRUE" = PKToPull)
 
-      Extract <- extractPK(Info$SimFile,
-                           PKparameters = MyPKParam)
-
-      MyPKResults <- do.call(bind_rows, Extract)
-
-      # Calculating GMR where appropriate
-      if(EffectorPresent){
-            if(any(str_detect(MyPKParam, "dose1")) &
-               all(c("AUCinf_dose1_withEffector", "AUCinf_dose1",
-                     "Cmax_dose1_withEffector", "Cmax_dose1") %in%
-                   names(MyPKResults))){
-                  MyPKResults <- MyPKResults %>%
-                        mutate(GMR_AUCinf_dose1 = AUCinf_dose1_withEffector /
-                                     AUCinf_dose1,
-                               GMR_Cmax_dose1 = Cmax_dose1_withEffector / Cmax_dose1)
-            }
-
-            if(any(str_detect(MyPKParam, "ss")) &
-               all(c("AUCtau_ss_withEffector", "AUCtau_ss",
-                     "Cmax_ss_withEffector", "Cmax_ss") %in%
-                   names(MyPKResults))){
-                  MyPKResults <- MyPKResults %>%
-                        mutate(GMR_AUCtau_ss = AUCtau_ss_withEffector /
-                                     AUCtau_ss,
-                               GMR_Cmax_ss = Cmax_ss_withEffector / Cmax_ss)
-            }
-      }
+      MyPKResults <- extractPK(Info$SimFile,
+                           PKparameters = MyPKParam,
+                           returnAggregateOrIndiv = "aggregate")
+      # MyPKResults_orig <- MyPKResults
 
       MeanType <- ifelse(is.na(mean_type),
                          Info$MeanType,
                          mean_type)
       MeanType <- ifelse(is.na(MeanType), "geometric", MeanType)
 
-      if(MeanType == "geometric"){
-            MyPKResults <- MyPKResults %>%
-                  select(-Trial, -Individual) %>%
-                  summarize(across(.cols = everything(),
-                                   .fns = list(GMean = gm_mean,
-                                               CV = gm_CV,
-                                               CI_10 = function(.) gm_conf(., CI = 0.9)[[1]],
-                                               CI_90 = function(.) gm_conf(., CI = 0.9)[[2]],
-                                               CI_05 = function(.) gm_conf(., CI = 0.95)[[1]],
-                                               CI_95 = function(.) gm_conf(., CI = 0.95)[[2]],
-                                               Q5th = function(.) quantile(., 0.05),
-                                               Q95th = function(.) quantile(., 0.95),
-                                               Med = median,
-                                               Min = min,
-                                               Max = max),
-                                   .names = "{.col} {.fn}"))
-      } else {
-
-            # Sometimes -- maybe even oftentimes -- people will report the
-            # arithmetic means for nearly everything but then the *geometric*
-            # means for the AUC or Cmax ratios with vs. without effector.
-            # Creating a special case for that inconsistency.
-            if(EffectorPresent & (is.na(Info$GMR_mean_type) |
-                                  Info$GMR_mean_type != "arithmetic")){
-                  GMRs <- MyPKResults %>%
-                        select(-Individual, -Trial) %>%
-                        summarize(across(.cols = matches("GMR"),
-                                         .fns = list(GMean = gm_mean,
-                                                     CV = gm_CV,
-                                                     CI_10 = function(.) gm_conf(., CI = 0.9)[[1]],
-                                                     CI_90 = function(.) gm_conf(., CI = 0.9)[[2]],
-                                                     CI_05 = function(.) gm_conf(., CI = 0.95)[[1]],
-                                                     CI_95 = function(.) gm_conf(., CI = 0.95)[[2]],
-                                                     Q5th = function(.) quantile(., 0.05),
-                                                     Q95th = function(.) quantile(., 0.95),
-                                                     Med = median,
-                                                     Min = min,
-                                                     Max = max),
-                                         .names = "{.col} {.fn}"))
-            }
-
-            MyPKResults <- MyPKResults %>%
-                  select(-Individual, -Trial) %>%
-                  summarize(across(.cols = everything(),
-                                   .fns = list(GMean = mean,
-                                               CV = function(.) sd(.)/mean(.),
-                                               CI_10 = function(.) confInt(., 0.9)[[1]],
-                                               CI_90 = function(.) confInt(., 0.9)[[2]],
-                                               CI_05 = function(.) confInt(., 0.95)[[1]],
-                                               CI_95 = function(.) confInt(., 0.95)[[2]],
-                                               Q5th = function(.) quantile(., 0.05),
-                                               Q95th = function(.) quantile(., 0.95),
-                                               Med = median,
-                                               Min = min,
-                                               Max = max),
-                                   .names = "{.col} {.fn}"))
-      }
-
       VarOpt1 <- variability_option[1]
-      VaribilityNames <- switch(VarOpt1,
+      VariabilityNames <- switch(VarOpt1,
                                 "90% CI" = c("CI_10", "CI_90"),
                                 "95% CI" = c("CI_05", "CI_95"),
                                 "95th percentiles" = c("Q5th", "Q95th"))
 
+      MyPKResults <- MyPKResults_orig
       MyPKResults <- MyPKResults %>%
-            pivot_longer(cols = everything(), names_to = "Param",
-                         values_to = "Value")
+            filter(!Statistic == ifelse(MeanType == "geometric",
+                                        "Mean", "Geometric Mean")) %>%
+            mutate(Stat = recode(Statistic,
+                                 "Mean" = "GMean",
+                                 "Geometric Mean" = "GMean",
+                                 "90% confidence interval around the geometric mean(lower limit)" = "CI_10",
+                                 "90% confidence interval around the geometric mean(upper limit)" = "CI_90",
+                                 "95% confidence interval around the geometric mean(lower limit)" = "CI_05",
+                                 "95% confidence interval around the geometric mean(upper limit)" = "CI_95",
+                                 "5th centile" = "Q5th",
+                                 "95th centile" = "Q95th",
+                                 "cv" = "CV",
+                                 "Std Dev" = "SD")) %>%
+            select(-Statistic)
 
-      if(exists("GMRs", inherits = FALSE)){
-            GMRs <- GMRs %>% pivot_longer(cols = everything(), names_to = "Param",
-                                          values_to = "Value")
-            MyPKResults <- MyPKResults %>% filter(Param %in% GMRs$Param == FALSE) %>%
-                  bind_rows(GMRs)
-      }
+      # Adjusting tmax values since the geometric mean row will actually be the
+      # median, VariabilityNames[1] will be the min, and VariabilityNames[2] will
+      # be the max.
+      MyPKResults$tmax_dose1[MyPKResults$Stat == "GMean"] <-
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "Median"]
+      MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[1]] <-
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "Min Val"]
+      MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[2]] <-
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "Max Val"]
 
+      # Formatting
       MyPKResults <- MyPKResults %>%
-            mutate(Value = if_else(str_detect(Param, "CV"),
+            pivot_longer(cols = -Stat, names_to = "PKParam",
+                         values_to = "Value") %>%
+            mutate(Value = if_else(Stat == "CV",
                                    round(Value * 100, 0),
                                    # Per Christiane: 3 sig figs for everything
                                    # or full number when > 100
                                    if_else(Value > 100,
                                            round(Value, 0), signif(Value, 3)))) %>%
-            separate(col = Param, into = c("PKParam", "Stat"), sep = " ") %>%
-            filter((str_detect(PKParam, "tmax") & Stat %in% c("Med", "Min", "Max")) |
-                         (!str_detect(PKParam, "tmax")
-                          & Stat %in% c("Med", "Min", "Max") == FALSE)) %>%
-            mutate(Stat = recode(Stat, "Med" = "GMean",
-                                 "Min" = VaribilityNames[1],
-                                 "Max" = VaribilityNames[2])) %>%
+            filter(Stat %in% c("GMean", "CI_10", "CI_90", "CI_05", "CI_95",
+                               "Q5th", "Q95th", "CV")) %>%
             pivot_wider(names_from = PKParam, values_from = Value)
 
       # Observed data. Not included when section is model application.
@@ -201,10 +132,9 @@ so_table <- function(Info, sheet = NA,
 
             MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
             if(EffectorPresent){
-                  MyObsPKParam <- c(MyObsPKParam, "GMR_Cmax_ss",
-                                    "GMR_Cmax_ss_90CIL", "GMR_Cmax_ss_90CIU",
-                                    "GMR_AUCtau_ss", "GMR_AUCtau_ss_90CIL",
-                                    "GMR_AUCtau_ss_90CIU")
+                  MyObsPKParam <- c(MyObsPKParam,
+                                    "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
+                                    "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
             }
 
             MyObsPK <- Info$ClinXL %>%
@@ -264,8 +194,8 @@ so_table <- function(Info, sheet = NA,
                   select(Stat, matches("AUC|Cmax|GMR"))
 
             PKToPull <-  c(PKToPull,
-                           "GMR_AUCinf_dose1", "GMR_Cmax_dose1",
-                           "GMR_AUCtau_ss", "GMR_Cmax_ss")
+                           "AUCinf_ratio_dose1", "Cmax_ratio_dose1",
+                           "AUCtau_ratio_ss", "Cmax_ratio_ss")
 
       }
 
