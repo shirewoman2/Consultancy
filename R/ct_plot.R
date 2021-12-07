@@ -324,17 +324,18 @@ ct_plot <- function(sim_data_file = NA,
                   slice(which.min(Tlast)) %>% pull(BreaksToUse)
 
             XBreaks <- switch(BreaksToUse,
-                              "12hr" = seq(0, 12, 2),
-                              "24hr" = seq(0, 24, 4),
-                              "48hr" = seq(0, 48, 8),
-                              "96hr" = seq(0, 96, 12),
-                              "1wk" = seq(0, 168, 24),
-                              "2wk" = seq(0, 336, 48),
-                              "15d" = seq(0, 360, 48),
-                              "3wk" = seq(0, 504, 72),
-                              "4wk" = seq(0, 672, 96),
+                              "12hr" = seq(0, 12, 1),
+                              "24hr" = seq(0, 24, 2),
+                              "48hr" = seq(0, 48, 4),
+                              "96hr" = seq(0, 96, 6),
+                              "1wk" = seq(0, 168, 12),
+                              "2wk" = seq(0, 336, 24),
+                              "15d" = seq(0, 360, 24),
+                              "3wk" = seq(0, 504, 36),
+                              "4wk" = seq(0, 672, 48),
                               "4wkplus" = round_up_nice(seq(0, tlast,
-                                                            length.out = 6)))
+                                                            length.out = 12)))
+
       }
 
       if(TimeUnits == "minutes"){
@@ -346,18 +347,23 @@ ct_plot <- function(sim_data_file = NA,
                   slice(which.min(Tlast)) %>% pull(BreaksToUse)
 
             XBreaks <- switch(BreaksToUse,
-                              "1hr" = seq(0, 60, 15),
-                              "4hr" = seq(0, 240, 30),
-                              "8hr" = seq(0, 480, 60),
-                              "12hr" = seq(0, 720, 120),
-                              "24hr" = seq(0, 1440, 240),
+                              "1hr" = seq(0, 60, 7.5),
+                              "4hr" = seq(0, 240, 15),
+                              "8hr" = seq(0, 480, 30),
+                              "12hr" = seq(0, 720, 60),
+                              "24hr" = seq(0, 1440, 120),
                               "24hrplus" = round_up_nice(seq(0, tlast,
-                                                             length.out = 6)))
+                                                             length.out = 12)))
       }
+
+      XLabels <- XBreaks
+      XLabels[seq(2,length(XLabels),2)] <- ""
 
       # Adjusting the breaks when time_range[1] isn't 0
       if(all(complete.cases(time_range)) & time_range[1] != 0){
             XBreaks <- XBreaks + LastDoseTime
+            XLabels <- XBreaks
+            XLabels[seq(2,length(XLabels),2)] <- ""
       }
 
       # Adding a grouping variable to data and also making the effector name
@@ -427,23 +433,46 @@ ct_plot <- function(sim_data_file = NA,
 
       obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
 
-      # Setting the time range since I use it later.
+      # Setting the time range since we use it later.
       if(is.na(time_range_input[1])){
             time_range <- range(Data$Time, na.rm = T)
       }
 
       # Setting Y axis limits for both linear and semi-log plots
-      Ylim <- bind_rows(sim_data_trial, sim_data_mean, obs_data) %>%
-            filter(Time >= time_range[1] &
-                         Time <= time_range[2] &
-                         complete.cases(Conc)) %>%
-            pull(Conc) %>% range()
+      if (figure_type == "trial means") {
+            Ylim_data <- bind_rows(sim_data_trial, obs_data)
+      } else if (figure_type == "trial percentiles") {
+            Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
+      } else if (figure_type == "means only") {
+            Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
+
+      Ylim <- Ylim_data %>% filter(Time >= time_range[1] &
+                                         Time <= time_range[2] &
+                                         complete.cases(Conc)) %>% pull(Conc) %>% range()
+
+      PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
+                                         100, 200, 500, 1000, 2000, 5000,
+                                         10000, 20000, 50000, 100000,
+                                         200000, 500000, Inf),
+                                YBreaksToUse = c(0.02, 0.05, 0.1, 0.2, 0.5,
+                                                 1, 2, 5, 10, 20, 50, 100, 200,
+                                                 500, 1000, 2000, 5000, 10000,
+                                                 20000, 50000, 100000, 200000))
+
+      YBreaksToUse <- PossYBreaks %>% filter(Ymax >= Ylim[2]) %>%
+            slice(which.min(Ymax)) %>% pull(YBreaksToUse)
+
+      YInterval    <- YBreaksToUse
+      YmaxRnd      <- round_up_unit(Ylim[2], YInterval)
+      YBreaks      <- seq(0, YmaxRnd, YInterval/2)                    # create labels at major and minor points
+      YLabels      <- YBreaks
+      YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
 
       if(figure_type == "trial means"){
 
             NumTrials <- length(unique(sim_data_trial$Trial))
-            AlphaToUse <- ifelse(NumTrials > 10, 0.05, 0.12)
-            # Adjust this as needed. May want to use "switch" as we did for XBreaks.
+            AlphaToUse <- ifelse(NumTrials > 10, 0.05, 0.4)
+            # Adjust this as needed.
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
@@ -451,8 +480,6 @@ ct_plot <- function(sim_data_file = NA,
                   A <- ggplot(sim_data_trial,
                               aes(x = Time, y = Conc, group = Group,
                                   linetype = Effector, shape = Effector)) +
-                        # guides(linetype = guide_legend(
-                        #       override.aes = list(fill = c(NA, NA)))) + # this is causing problems, probably b/c I've only got 1 effector, so length linetype = 1
                         geom_line(alpha = AlphaToUse, lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
@@ -527,79 +554,49 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       A <- A +
-            scale_x_continuous(breaks = XBreaks,
+            scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(mult = c(0, 0.04))) +
-            scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+            scale_y_continuous(limits = c(0, YmaxRnd), breaks = YBreaks,
+                               labels = YLabels,
+                               expand = expansion(mult = c(0, 0.1))) +
             labs(x = xlab, y = ylab) +
             coord_cartesian(xlim = time_range) +
             theme(panel.background = element_rect(fill="white", color=NA),
                   legend.key = element_rect(fill = "white"),
-                  axis.ticks = element_line(color = "grey60"),
+                  axis.ticks = element_line(color = "black"),
                   axis.text = element_text(color = "black"),
                   axis.title = element_text(color = "black", face = "bold"),
-                  axis.line.x.bottom = element_line(color = "grey60"),
-                  axis.line.y.left = element_line(color = "grey60"),
-                  text = element_text(family = "Calibri")
-            )
+                  axis.line.x.bottom = element_line(color = "black"),
+                  axis.line.y.left = element_line(color = "black"),
+                  text = element_text(family = "Calibri"),
+                  legend.position = "none")
+      # Question from LS: Do we want to always remove the legend? I like its presence for graphing +/- an effector.
 
-      # If the graph is of the effector, remove legend.
-      if(compoundToExtract == "effector"){
-            A <- A + theme(legend.position = "none")
-      }
-
-      # # Freddy's original graphing code:
-      # A <- ## normal scale plot
-      #       ggplot(sim_data, aes(x = Time)) +
-      #       geom_ribbon(aes(ymin = per5, ymax = per95), alpha = 0.2) +
-      #       geom_line(aes(y = mean), lwd = 1.2) +
-      #       geom_point(data = obs_data, aes(x = Time, y = Conc),
-      #                  size = 2, shape = 21, fill = "white", alpha = 0.8) +
-      #       labs(x = xlab, y = ylab) +
-      #       theme_bw()
-      # B <- ## semi-log scale plot
-      #       A +
-      #       scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
-      #                     labels = scales::trans_format("log10", scales::math_format(10^.x)))
-
+      # # If the graph is of the effector, remove legend.
+      # if(compoundToExtract == "effector"){
+      #       A <- A + theme(legend.position = "none")
+      # }
 
       ## semi-log plot
       Ylim_log <- Ylim
-      if(Ylim[1] == 0 |
-         # Also need to trim a bit from the low values when the data don't start
-         # at 0 but are still really small
-         Ylim[1] < mean(Data$Conc, na.rm = TRUE) * 0.01){
 
-            Ylim_log[1] <- bind_rows(sim_data_trial, sim_data_mean, obs_data) %>%
-                  filter(
-                        # probably at tmax by 4 hrs for pretty much
-                        # anything... This is pretty hacky, though,
-                        # and I bet it will break at some point.
-                        # Add option to let people set the y axis
-                        # limits? Meh. If they want to do that,
-                        # they can save the graphs individually and
-                        # adjust as needed.
-                        Time > switch(TimeUnits, "hours" = 4,
-                                      "minutes" = 4*60) &
-                              complete.cases(Conc) &
-                              Conc > 0) %>%
-                  pull(Conc) %>% min() * 0.8
-      }
+      near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
 
-      # Just not quite getting the top part of the graph every time for the
-      # semi-log plots. Adding a little more cushion to the upper Y limit
-      Ylim_log[2] <- Ylim[2] * 1.5
+      Ylim_log[1] <- Ylim_data %>%
+            filter(Time == near_match(Ylim_data$Time, time_range[2])) %>%
+            pull(Conc) %>% min()
 
-      # Now, adjusting to nearest power of 10 on the bottom. Often, that's
-      # too much for the top, so not rounding up to nearest power of 10 for
-      # Ylim_log[2].
+      Ylim_log[2] <- round_up(Ylim[2])
       Ylim_log[1] <- round_down(Ylim_log[1])
 
-      B <- suppressMessages(
-            A + scale_y_log10(limits = Ylim_log,
-                              labels = function(.) format(., scientific = FALSE,
-                                                          drop0trailing = TRUE)) +
-                  coord_cartesian(xlim = time_range)
-      )
+      YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
+      YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
+      YLogLabels   <- rep("",length(YLogBreaks))
+      YLogLabels[seq(1,length(YLogLabels),9)] <- YLogBreaks[seq(1,length(YLogLabels),9)]    # add labels at order of magnitude
+
+      B <- suppressMessages(A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks, labels = YLogLabels)+
+                                  # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
+                                  coord_cartesian(xlim = time_range))
 
       # both plots together, aligned vertically
       if(compoundToExtract == "effector"){
