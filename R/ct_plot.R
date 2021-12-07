@@ -570,7 +570,6 @@ ct_plot <- function(sim_data_file = NA,
                   axis.line.y.left = element_line(color = "black"),
                   text = element_text(family = "Calibri"),
                   legend.position = "none")
-      # Question from LS: Do we want to always remove the legend? I like its presence for graphing +/- an effector.
 
       # # If the graph is of the effector, remove legend.
       # if(compoundToExtract == "effector"){
@@ -594,9 +593,12 @@ ct_plot <- function(sim_data_file = NA,
       YLogLabels   <- rep("",length(YLogBreaks))
       YLogLabels[seq(1,length(YLogLabels),9)] <- YLogBreaks[seq(1,length(YLogLabels),9)]    # add labels at order of magnitude
 
-      B <- suppressMessages(A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks, labels = YLogLabels)+
-                                  # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
-                                  coord_cartesian(xlim = time_range))
+      B <- suppressMessages(
+            A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
+                              labels = YLogLabels) +
+                  # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
+                  coord_cartesian(xlim = time_range)
+            )
 
       # both plots together, aligned vertically
       if(compoundToExtract == "effector"){

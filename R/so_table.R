@@ -72,7 +72,6 @@ so_table <- function(Info, sheet = NA,
       MyPKResults <- extractPK(Info$SimFile,
                            PKparameters = MyPKParam,
                            returnAggregateOrIndiv = "aggregate")
-      # MyPKResults_orig <- MyPKResults
 
       MeanType <- ifelse(is.na(mean_type),
                          Info$MeanType,
@@ -85,7 +84,6 @@ so_table <- function(Info, sheet = NA,
                                 "95% CI" = c("CI_05", "CI_95"),
                                 "95th percentiles" = c("Q5th", "Q95th"))
 
-      MyPKResults <- MyPKResults_orig
       MyPKResults <- MyPKResults %>%
             filter(!Statistic == ifelse(MeanType == "geometric",
                                         "Mean", "Geometric Mean")) %>%
