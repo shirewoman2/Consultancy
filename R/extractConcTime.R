@@ -136,6 +136,14 @@ extractConcTime <- function(sim_data_file,
       TissueType <- ifelse(tissue %in% c("plasma", "blood"), "systemic", "tissue")
 
       SheetNames <- readxl::excel_sheets(sim_data_file)
+      # Preferentially extracting from sheets w/"Trials" in the name. That would
+      # be best b/c we want to extract trial means rather than calculating them.
+      # If there is both a sheet w/"Trials" and a matching sheet w/out "Trials",
+      # remove the one w/out "Trials" from consideration.
+      TrialCheck <- which(duplicated(gsub("Trials Profiles", "Profiles CSys", SheetNames)))
+      if(length(TrialCheck) > 0){
+            SheetNames <- SheetNames[-TrialCheck]
+      }
 
       SheetToDetect <-
             switch(ifelse(TissueType == "systemic",
@@ -216,19 +224,42 @@ extractConcTime <- function(sim_data_file,
                        "per5" = paste0("V", which(str_detect(tolower(NamesToCheck), " 5th percentile"))),
                        "per95" = paste0("V", which(str_detect(tolower(NamesToCheck), " 95th percentile"))))
 
-            sim_data_mean <- sim_data_xl[c(TimeRow, StartRow_mean:(StartRow_mean + 2)), ] %>%
+            RowsToExtract <- c(TimeRow, StartRow_mean:(StartRow_mean + 2))
+
+            # Looking for trial means
+            if(str_detect(Sheet, "Trials")){
+                  StartRow_TM <- which(sim_data_xl$...1 == "Trial Statistics") + 3
+                  EndRow_TM <- which(is.na(sim_data_xl$...1))
+                  EndRow_TM <- EndRow_TM[EndRow_TM > StartRow_TM][1] - 1
+                  RowsToExtract <- c(RowsToExtract, StartRow_TM:EndRow_TM)
+                  TrialCells <- paste0("V", 1:length(StartRow_TM:EndRow_TM) + 4)
+                  names(TrialCells) <- paste0("TrialMean", 1:length(TrialCells))
+            }
+
+            sim_data_mean <- sim_data_xl[RowsToExtract, ] %>%
                   t() %>%
                   as.data.frame() %>% slice(-(1:3)) %>%
                   mutate_all(as.numeric) %>%
-                  rename(Time = "V1", mean = as.character(Cells["mean"]),
+                  rename(Time = "V1",
+                         mean = as.character(Cells["mean"]),
                          per5 = as.character(Cells["per5"]),
-                         per95 = as.character(Cells["per95"])) %>%
+                         per95 = as.character(Cells["per95"]))
+
+            if(str_detect(Sheet, "Trials")){
+                  sim_data_mean <- sim_data_mean %>% rename(TrialCells)
+                  rm(TrialCells)
+            }
+
+            sim_data_mean <- sim_data_mean %>%
                   pivot_longer(names_to = "Trial", values_to = "Conc",
                                cols = -c(Time)) %>%
                   mutate(Compound = SubstrateName,
                          Effector = "none")
 
-            rm(NamesToCheck, Cells)
+            rm(NamesToCheck, Cells, RowsToExtract)
+
+            # LEFT OFF HERE. Next, need to check on trial data when effector
+            # present and with other tissues. Then, will need to update ct_plot.
 
             if(EffectorPresent){
 
