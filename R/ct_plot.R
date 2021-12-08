@@ -409,12 +409,12 @@ ct_plot <- function(sim_data_file = NA,
                   ungroup()
       )
 
-      # The mean and percentile data listed in the simulator output files I've
-      # seen are arithmetic, although I'm not sure if that's always true. If the
-      # user specified "geometric", we need to calculate that or the wrong type
-      # of mean will be plotted in the graph b/c the overall mean will be
-      # arithmetic while the trial means will be geometric. To be on the safe
-      # side, calculating for both instances since I just don't know how
+      # The mean and confidence interval data listed in the simulator output
+      # files I've seen are arithmetic, although I'm not sure if that's always
+      # true. If the user specified "geometric", we need to calculate that or
+      # the wrong type of mean will be plotted in the graph b/c the overall mean
+      # will be arithmetic while the trial means will be geometric. To be on the
+      # safe side, calculating for both instances since I just don't know how
       # consistent the simulator output is. -LS
       sim_data_mean <- Data %>%
             filter(Simulated == TRUE  &
@@ -503,7 +503,7 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       if(figure_type == "trial percentiles"){
-            # graphs with 95% confidence interval
+            # graphs with 95th percentiles
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
