@@ -25,6 +25,7 @@
 #'   or percentile. Ex: "2400 to 2700"
 #' @param includeT12 TRUE or FALSE on whether to include t1/2 as a parameter in
 #'   the output table
+#'
 #' @return a data.frame
 #' @export
 #' @examples
@@ -47,7 +48,7 @@ so_table <- function(Info, sheet = NA,
       D1 <- paste0(D1, "_dose1")
       D2 <- paste0(D2, "_ss")
 
-      Dcomp <- c("AUCinf_ratio_dose1", "AUCtau_ratio_dose1",
+      Dcomp <- c("AUCinf_ratio_dose1", "AUCtau_ratio_dose1", "AUCtau_ratio_ss",
                  "Cmax_ratio_dose1", "Cmax_ratio_ss")
 
       ObsToPull <- c(D1, paste0(D1, "_withEffector"),
@@ -69,9 +70,11 @@ so_table <- function(Info, sheet = NA,
             "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withEffector")],
             "Multiple Dose TRUE" = PKToPull)
 
-      MyPKResults <- extractPK(Info$SimFile,
+      MyPKResults_all <- extractPK(sim_data_file = Info$SimFile,
                            PKparameters = MyPKParam,
                            returnAggregateOrIndiv = "aggregate")
+      # Just keeping a copy of original output from extractPK temporarily... I may delete this bit from final code...
+      MyPKResults <- MyPKResults_all
 
       MeanType <- ifelse(is.na(mean_type),
                          Info$MeanType,
@@ -83,6 +86,16 @@ so_table <- function(Info, sheet = NA,
                                 "90% CI" = c("CI_10", "CI_90"),
                                 "95% CI" = c("CI_05", "CI_95"),
                                 "95th percentiles" = c("Q5th", "Q95th"))
+
+      # Accounting for when mean_type is arithmetic but the user requests that
+      # the ratio for + effector over - effector be a GMR.
+      if(MeanType == "arithmetic" &
+         Info$ClinXL$Value[which(Info$ClinXL$RName == "GMR_mean_type")] == "geometric"){
+            MyPKResults[MyPKResults$Statistic == "Mean",
+                        str_detect(names(MyPKResults), "ratio")] <-
+                  MyPKResults[MyPKResults$Statistic == "Geometric Mean",
+                              str_detect(names(MyPKResults), "ratio")]
+      }
 
       MyPKResults <- MyPKResults %>%
             filter(!Statistic == ifelse(MeanType == "geometric",
@@ -131,6 +144,8 @@ so_table <- function(Info, sheet = NA,
             MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
             if(EffectorPresent){
                   MyObsPKParam <- c(MyObsPKParam,
+                                    "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
+                                    "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
                                     "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
                                     "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
             }
@@ -189,7 +204,7 @@ so_table <- function(Info, sheet = NA,
       if(EffectorPresent){
             # Only want AUC, Cmax, GMR w/ and w/out effector
             MyPKResults <- MyPKResults %>%
-                  select(Stat, matches("AUC|Cmax|GMR"))
+                  select(Stat, matches("AUC|Cmax|ratio"))
 
             PKToPull <-  c(PKToPull,
                            "AUCinf_ratio_dose1", "Cmax_ratio_dose1",

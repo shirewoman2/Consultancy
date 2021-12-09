@@ -36,7 +36,7 @@ getSectionInfo <- function(report_input_file = NA,
                                      sheet = sheet))
       }
 
-      ClinStudyTab <- InputXL$Value[which(InputXL$RName == "ClinStudy")]
+      ClinStudyTab <- InputXL$Value[which(InputXL$RName == "ClinStudyTab")]
 
       ClinXL <- suppressMessages(readxl::read_excel(path = report_input_file,
                                                     sheet = ClinStudyTab))
