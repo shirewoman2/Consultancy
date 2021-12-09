@@ -2,17 +2,16 @@
 % Please edit documentation in R/extractPK.R
 \name{extractPK}
 \alias{extractPK}
-\title{Extract PK data for specific parameters from a simulator output Excel file}
+\title{Extract substrate PK data for specific parameters from a simulator output
+Excel file}
 \usage{
 extractPK(
   sim_data_file,
   PKparameters = "AUC tab",
   sheet = NA,
-  matrix = "plasma",
+  tissue = "plasma",
   returnAggregateOrIndiv = "aggregate",
-  includeTrialInfo = TRUE,
-  GMR = TRUE,
-  avoidNAs = FALSE
+  includeTrialInfo = TRUE
 )
 }
 \arguments{
@@ -43,9 +42,10 @@ extractPK(
   default, data are pulled from the sheet "AUC", column titled, e.g.,
   "AUC_INF (mg/L.h)"}
 
-  \item{AUCinf_ratio_dose1, AUCtau_ratio_ss, Cmax_ratio_dose1,
-  Cmax_ratio_ss}{The ratio of either the AUC or Cmax for dose 1 or at steady
-  state with effector present / without effector present.}
+  \item{AUCinf_ratio_dose1, AUCtau_ratio_dose1, AUCtau_ratio_ss,
+  Cmax_ratio_dose1, Cmax_ratio_ss}{The ratio of either the AUC or Cmax for
+  dose 1 or at steady state with effector present / without effector
+  present.}
 
   \item{AUCtau_dose1, AUCtau_dose1_withEffector, AUCtau_ss,
   AUCtau_ss_withEffector}{AUC from 0 to tau for dose 1 or the last dose in
@@ -112,10 +112,8 @@ extractPK(
 the usual sheet name would be for a first or last dose, this function will
 work best if this is left as NA.}
 
-\item{matrix}{For which matrix would you like the PK parameters to be pulled?
-Options will be "plasma" or "blood", but, since this section is currently
-under construction, the only option that works at the moment is "plasma"
-and specifying anything else has no effect.}
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" or "blood".}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual PK
 parameters? Options are "aggregate" and/or "individual". For aggregate
@@ -126,23 +124,14 @@ statistics reported exactly as in the simulator output file.}
 \item{includeTrialInfo}{TRUE or FALSE: Include which individual and trial the
 data describe? This only applies when \code{returnAggregateOrIndiv}
 includes "individual".}
-
-\item{GMR}{TRUE or FALSE: When calculating a mean ratio for AUC or Cmax with
-effector present divided by AUC or Cmax without effector present, use the
-\emph{geometric} mean even if \code{mean_type} has been set to "arithmetic"
-for other means. UNDER CONSTRUCTION.}
-
-\item{avoidNAs}{TRUE or FALSE: The simulator sometimes has trouble
-calculating AUCinf, leading to NA values being included, which can't be
-used for many calculations. When NA values arise for AUCinf, TRUE or FALSE
-for whether to use AUCtau for the last dose instead. UNDER CONSTRUCTION.}
 }
 \value{
 Depending on the options selected, returns a list of numerical
   vectors or a list of data.frames.
 }
 \description{
-Pull calculated PK parameters from a Simcyp simulation output Excel file.
+Pull calculated substrate PK parameters from a Simcyp simulation output Excel
+file.
 }
 \examples{
 

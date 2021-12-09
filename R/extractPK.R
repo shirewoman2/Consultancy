@@ -1,6 +1,8 @@
-#' Extract PK data for specific parameters from a simulator output Excel file
+#' Extract substrate PK data for specific parameters from a simulator output
+#' Excel file
 #'
-#' Pull calculated PK parameters from a Simcyp simulation output Excel file.
+#' Pull calculated substrate PK parameters from a Simcyp simulation output Excel
+#' file.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
@@ -31,9 +33,10 @@
 #'   default, data are pulled from the sheet "AUC", column titled, e.g.,
 #'   "AUC_INF (mg/L.h)"}
 #'
-#'   \item{AUCinf_ratio_dose1, AUCtau_ratio_ss, Cmax_ratio_dose1,
-#'   Cmax_ratio_ss}{The ratio of either the AUC or Cmax for dose 1 or at steady
-#'   state with effector present / without effector present.}
+#'   \item{AUCinf_ratio_dose1, AUCtau_ratio_dose1, AUCtau_ratio_ss,
+#'   Cmax_ratio_dose1, Cmax_ratio_ss}{The ratio of either the AUC or Cmax for
+#'   dose 1 or at steady state with effector present / without effector
+#'   present.}
 #'
 #'   \item{AUCtau_dose1, AUCtau_dose1_withEffector, AUCtau_ss,
 #'   AUCtau_ss_withEffector}{AUC from 0 to tau for dose 1 or the last dose in
@@ -98,10 +101,8 @@
 #'   \strong{Note:} Unless you want a very specific Excel sheet that's not what
 #'   the usual sheet name would be for a first or last dose, this function will
 #'   work best if this is left as NA.
-#' @param matrix For which matrix would you like the PK parameters to be pulled?
-#'   Options will be "plasma" or "blood", but, since this section is currently
-#'   under construction, the only option that works at the moment is "plasma"
-#'   and specifying anything else has no effect.
+#' @param tissue For which tissue would you like the PK parameters to be pulled?
+#'   Options are "plasma" or "blood".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual PK
 #'   parameters? Options are "aggregate" and/or "individual". For aggregate
 #'   data, values are pulled from simulator output -- not calculated -- and the
@@ -110,14 +111,6 @@
 #' @param includeTrialInfo TRUE or FALSE: Include which individual and trial the
 #'   data describe? This only applies when \code{returnAggregateOrIndiv}
 #'   includes "individual".
-#' @param GMR TRUE or FALSE: When calculating a mean ratio for AUC or Cmax with
-#'   effector present divided by AUC or Cmax without effector present, use the
-#'   \emph{geometric} mean even if \code{mean_type} has been set to "arithmetic"
-#'   for other means. UNDER CONSTRUCTION.
-#' @param avoidNAs TRUE or FALSE: The simulator sometimes has trouble
-#'   calculating AUCinf, leading to NA values being included, which can't be
-#'   used for many calculations. When NA values arise for AUCinf, TRUE or FALSE
-#'   for whether to use AUCtau for the last dose instead. UNDER CONSTRUCTION.
 #'
 #' @return Depending on the options selected, returns a list of numerical
 #'   vectors or a list of data.frames.
@@ -136,16 +129,16 @@
 extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
                       sheet = NA,
-                      matrix = "plasma",
+                      tissue = "plasma",
                       returnAggregateOrIndiv = "aggregate",
-                      includeTrialInfo = TRUE,
-                      GMR = TRUE,
-                      avoidNAs = FALSE){
+                      includeTrialInfo = TRUE){
 
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
       # Determining the name of the tab that contains PK data for the last dose
-      Tab_last <- AllSheets[str_detect(AllSheets, "AUC[0-9]{1,}")]
+      # of the substrate (not the inhibitor, at least, not at this point).
+      Tab_last <- AllSheets[str_detect(AllSheets, "AUC[0-9]{1,}") &
+                                  !str_detect(AllSheets, "Inh")]
       ssNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
       # It's the highest dose number and it can't be 0 b/c that's dose 1.
       ssNum <- suppressWarnings(max(ssNum[ssNum != 0]))
@@ -288,9 +281,9 @@ extractPK <- function(sim_data_file,
 
                   EndRow_ind <- which(AUC_xl$...2 == "Statistics") - 2
 
-                  # If matrix is blood, REMOVE the plasma columns entirely. I
+                  # If tissue is blood, REMOVE the plasma columns entirely. I
                   # think this will be easier to code. -LS
-                  if(matrix == "blood"){
+                  if(tissue == "blood"){
                         PlasmaCols <- c(which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1]:
                                              (which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1] -1))
                         if(length(PlasmaCols) > 0){
