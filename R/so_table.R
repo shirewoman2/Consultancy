@@ -90,6 +90,7 @@ so_table <- function(Info, sheet = NA,
       # Accounting for when mean_type is arithmetic but the user requests that
       # the ratio for + effector over - effector be a GMR.
       if(MeanType == "arithmetic" &
+         complete.cases(Info$ClinXL$Value[which(Info$ClinXL$RName == "GMR_mean_type")]) &
          Info$ClinXL$Value[which(Info$ClinXL$RName == "GMR_mean_type")] == "geometric"){
             MyPKResults[MyPKResults$Statistic == "Mean",
                         str_detect(names(MyPKResults), "ratio")] <-
@@ -138,7 +139,7 @@ so_table <- function(Info, sheet = NA,
             pivot_wider(names_from = PKParam, values_from = Value)
 
       # Observed data. Not included when section is model application.
-      if(Info$InputXL$Value[which(Info$InputXL$RName == "ModelPurpose")] !=
+      if(tolower(Info$InputXL$Value[which(Info$InputXL$RName == "ModelPurpose")]) !=
          "application"){
 
             MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
