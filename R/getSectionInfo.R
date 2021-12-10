@@ -37,6 +37,10 @@ getSectionInfo <- function(report_input_file = NA,
       }
 
       ClinStudyTab <- InputXL$Value[which(InputXL$RName == "ClinStudyTab")]
+      ModelPhase <- tolower(InputXL$Value[which(InputXL$RName == "ModelPurpose")])
+      if(is.na(ClinStudyTab) & ModelPhase != "application"){
+            warning("The modelling phase is not listed as 'application', but no clinical study tab is listed for comparing to simulated data. Are you sure that's correct? The information extracted for this section will not be compared to any observed data.")
+      }
 
       ClinXL <- suppressMessages(readxl::read_excel(path = report_input_file,
                                                     sheet = ClinStudyTab))
