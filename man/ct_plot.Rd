@@ -13,8 +13,10 @@ ct_plot(
   compoundToExtract = "substrate",
   figure_type = "trial means",
   substrate_or_effector = "substrate",
-  adjust_obs_time = TRUE,
+  adjust_obs_time = FALSE,
   time_range = NA,
+  trial_mean_alpha = NA,
+  pad_x_axis = FALSE,
   mean_type = "arithmetic",
   return_data = FALSE,
   return_indiv_graphs = FALSE
@@ -65,7 +67,16 @@ this is labeled as "inhibitor 1" in the simulator).}
 
   \item{means only}{plots a black line for the mean data and, if an effector
   was modeled, a dashed line for the concentration-time data with the the
-  effector.} }}
+  effector.}
+
+  \item{Freddy}{Freddy's favorite style of plot with trial means in light
+  gray, the overall mean in thicker black, the 5th and 95th percentiles in
+  dashed lines, and the observed data in semi-transparent purple-blue. While
+  this does not align with the officially sanctioned template at this time,
+  this looks \emph{sharp}, makes it easy to see the defining characteristics
+  of the data, and I recommend checking it out. -LS}
+
+  }}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
@@ -90,6 +101,17 @@ Excel file.}
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
   effector was dosed QD} }}
+
+\item{trial_mean_alpha}{Optionally specify the transparency for the trial
+means. Acceptable values are from 0 (no transparency) to 1 (full
+transparency). If left as NA, this value will be automatically determined.}
+
+\item{pad_x_axis}{Optionally add a smidge of padding to the left side of the
+x axis. If left as FALSE, the y axis will be placed right at the beginning
+of your time range. If set to TRUE, there will be a little bit of space
+between the y axis and the start of your time range. NOTE: We could allow
+users to specify exactly how much padding and on which sides of the x axis
+if there's interest from users. -LS}
 
 \item{mean_type}{"geometric" or "arithmetic" for which type of mean to
 calculate}

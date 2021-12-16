@@ -45,7 +45,16 @@
 #'
 #'   \item{means only}{plots a black line for the mean data and, if an effector
 #'   was modeled, a dashed line for the concentration-time data with the the
-#'   effector.} }
+#'   effector.}
+#'
+#'   \item{Freddy}{Freddy's favorite style of plot with trial means in light
+#'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
+#'   dashed lines, and the observed data in semi-transparent purple-blue. While
+#'   this does not align with the officially sanctioned template at this time,
+#'   this looks \emph{sharp}, makes it easy to see the defining characteristics
+#'   of the data, and I recommend checking it out. -LS}
+#'
+#'   }
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -68,7 +77,15 @@
 #'   which can be useful for BID data where the end of the simulation extended
 #'   past the dosing interval or data when the substrate was dosed BID and the
 #'   effector was dosed QD} }
-#'
+#' @param trial_mean_alpha Optionally specify the transparency for the trial
+#'   means. Acceptable values are from 0 (no transparency) to 1 (full
+#'   transparency). If left as NA, this value will be automatically determined.
+#' @param pad_x_axis Optionally add a smidge of padding to the left side of the
+#'   x axis. If left as FALSE, the y axis will be placed right at the beginning
+#'   of your time range. If set to TRUE, there will be a little bit of space
+#'   between the y axis and the start of your time range. NOTE: We could allow
+#'   users to specify exactly how much padding and on which sides of the x axis
+#'   if there's interest from users. -LS
 #' @param mean_type "geometric" or "arithmetic" for which type of mean to
 #'   calculate
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
@@ -147,8 +164,10 @@ ct_plot <- function(sim_data_file = NA,
                     compoundToExtract = "substrate",
                     figure_type = "trial means",
                     substrate_or_effector = "substrate",
-                    adjust_obs_time = TRUE,
+                    adjust_obs_time = FALSE,
                     time_range = NA,
+                    trial_mean_alpha = NA,
+                    pad_x_axis = FALSE,
                     mean_type = "arithmetic",
                     return_data = FALSE,
                     return_indiv_graphs = FALSE){
@@ -180,7 +199,6 @@ ct_plot <- function(sim_data_file = NA,
             stop("time_range must be 'first dose', 'last dose', 'penultimate dose', or a numeric time range, e.g., c(12, 24).")
       }
 
-
       # Extract the data to plot
       if(is.data.frame(sim_obs_dataframe)){
             Data <- sim_obs_dataframe
@@ -195,6 +213,16 @@ ct_plot <- function(sim_data_file = NA,
 
       TimeUnits <- sort(unique(Data$Time_units))
       ObsConcUnits <- sort(unique(Data$Conc_units))
+
+      # A little more error catching
+      if(all(complete.cases(time_range) & class(time_range) == "numeric") &
+         (any(time_range < min(Data$Time[Data$Simulated == TRUE])) |
+          any(time_range > max(Data$Time[Data$Simulated == TRUE])))){
+            stop(paste0(
+                  "Both the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
+                  min(Data$Time[Data$Simulated == TRUE]), " to ",
+                  max(Data$Time[Data$Simulated == TRUE]), " ", TimeUnits, "."))
+      }
 
       # Adjusting graph labels as appropriate for the observed data
       xlab <- switch(TimeUnits,
@@ -252,11 +280,11 @@ ct_plot <- function(sim_data_file = NA,
                               StartLastDose[["Sub"]] - DoseInt[["Sub"]]
                   }
 
-                  if(StartLastDose[["Inhib"]] == max(Data$Time, na.rm = T)){
+                  if(complete.cases(StartLastDose[["Inhib"]]) &
+                     StartLastDose[["Inhib"]] == max(Data$Time, na.rm = T)){
                         StartLastDose[["Inhib"]] <-
                               StartLastDose[["Inhib"]] - DoseInt[["Inhib"]]
                   }
-
 
                   if(time_range_input[1] == "first dose"){
                         Start <- ifelse(compoundToExtract == "effector",
@@ -390,9 +418,14 @@ ct_plot <- function(sim_data_file = NA,
             "",
             MyEffector))
 
-      # Always want "none" to be the 1st item on the legend.
+      # Always want "none" to be the 1st item on the legend, and we need there
+      # to be some value present for "Effector" for function to work correctly.
       Data <- Data %>%
-            mutate(Effector = factor(Effector, levels = c("none", MyEffector)))
+            mutate(Effector = ifelse(is.na(Effector), "none", Effector))
+      if(complete.cases(MyEffector)){
+            Data <- Data %>%
+                  mutate(Effector = factor(Effector, levels = c("none", MyEffector)))
+      }
 
       # Separating the data by type and calculating trial means
       suppressMessages(
@@ -400,9 +433,8 @@ ct_plot <- function(sim_data_file = NA,
                   filter(Simulated == TRUE &
                                Trial %in% c("mean", "per5", "per95") == FALSE) %>%
                   group_by(across(any_of(c("Compound", "Tissue", "Effector",
-                                           "Simulated", "Trial",
-                                           "Time", "Time_units", "Conc_units",
-                                           "Group")))) %>%
+                                           "Simulated", "Trial", "Group",
+                                           "Time", "Time_units", "Conc_units")))) %>%
                   summarize(Conc = switch(mean_type,
                                           "arithmetic" = mean(Conc),
                                           "geometric" = gm_mean(Conc))) %>%
@@ -421,7 +453,7 @@ ct_plot <- function(sim_data_file = NA,
                          !Trial %in% c("mean", "per5", "per95")) %>%
             group_by(across(
                   any_of(c("Compound", "Tissue", "Effector", "Simulated",
-                           "Time", "Time_units", "Conc_units")))) %>%
+                           "Time", "Time_units", "Conc_units", "Group")))) %>%
             summarize(mean = switch(mean_type,
                                     "arithmetic" = mean(Conc, na.rm = TRUE),
                                     "geometric" = gm_mean(Conc)),
@@ -433,7 +465,7 @@ ct_plot <- function(sim_data_file = NA,
 
       obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
 
-      # Setting the time range since we use it later.
+      # Setting the time range if it's not already set since we use it later.
       if(is.na(time_range_input[1])){
             time_range <- range(Data$Time, na.rm = T)
       }
@@ -441,14 +473,15 @@ ct_plot <- function(sim_data_file = NA,
       # Setting Y axis limits for both linear and semi-log plots
       if (figure_type == "trial means") {
             Ylim_data <- bind_rows(sim_data_trial, obs_data)
-      } else if (figure_type == "trial percentiles") {
+      } else if (figure_type %in% c("trial percentiles", "Freddy")) {
             Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
       } else if (figure_type == "means only") {
             Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
 
       Ylim <- Ylim_data %>% filter(Time >= time_range[1] &
                                          Time <= time_range[2] &
-                                         complete.cases(Conc)) %>% pull(Conc) %>% range()
+                                         complete.cases(Conc)) %>% pull(Conc) %>%
+            range()
 
       PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
                                          100, 200, 500, 1000, 2000, 5000,
@@ -471,8 +504,9 @@ ct_plot <- function(sim_data_file = NA,
       if(figure_type == "trial means"){
 
             NumTrials <- length(unique(sim_data_trial$Trial))
-            AlphaToUse <- ifelse(NumTrials > 10, 0.05, 0.4)
-            # Adjust this as needed.
+            AlphaToUse <- ifelse(complete.cases(trial_mean_alpha),
+                                 trial_mean_alpha,
+                                 ifelse(NumTrials > 10, 0.05, 0.4))
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
@@ -499,7 +533,6 @@ ct_plot <- function(sim_data_file = NA,
                         geom_point(data = obs_data, size = 2, shape = 21)
 
             }
-
       }
 
       if(figure_type == "trial percentiles"){
@@ -533,6 +566,46 @@ ct_plot <- function(sim_data_file = NA,
 
       }
 
+      if(figure_type == "Freddy"){
+
+            NumTrials <- length(unique(sim_data_trial$Trial))
+            AlphaToUse <- ifelse(complete.cases(trial_mean_alpha),
+                                 trial_mean_alpha,
+                                 ifelse(NumTrials > 10, 0.05, 0.4))
+
+            if(complete.cases(MyEffector) & MyEffector[1] != "none"){
+
+                  ## linear plot
+                  A <- ggplot(sim_data_trial,
+                              aes(x = Time, y = Conc, group = Group,
+                                  linetype = Effector, shape = Effector)) +
+                        geom_line(alpha = AlphaToUse, lwd = 1) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"),
+                                  lwd = 1) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial %in% c("per5", "per95"))) +
+                        geom_point(data = obs_data, size = 2) +
+                        scale_shape_manual(values = c(21, 24))
+
+            } else {
+
+                  ## linear plot
+                  A <- ggplot(sim_data_trial,
+                              aes(x = Time, y = Conc, group = Trial)) +
+                        geom_line(alpha = AlphaToUse, lwd = 1) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"),
+                                  lwd = 1) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial %in% c("per5", "per95")),
+                                  linetype = "dashed") +
+                        geom_point(data = obs_data, size = 3, shape = 21,
+                                   fill = "#3030FE", alpha = 0.5)
+
+            }
+      }
+
       if(figure_type == "means only"){
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
@@ -555,7 +628,8 @@ ct_plot <- function(sim_data_file = NA,
 
       A <- A +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                               expand = expansion(mult = c(0, 0.04))) +
+                               expand = expansion(
+                                     mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04))) +
             scale_y_continuous(limits = c(0, YmaxRnd), breaks = YBreaks,
                                labels = YLabels,
                                expand = expansion(mult = c(0, 0.1))) +
