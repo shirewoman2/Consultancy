@@ -213,11 +213,15 @@ extractConcTime <- function(sim_data_file,
             NamesToCheck <- sim_data_xl$...1[c(StartRow_mean:(StartRow_mean + 4))]
             RowsToKeep <- c("mean" = which(str_detect(tolower(NamesToCheck), "mean") &
                                                  !str_detect(tolower(NamesToCheck),
-                                                             "geometric")) + StartRow_mean-1,
+                                                             "geometric|interaction")) + StartRow_mean-1,
                             "per5" = which(str_detect(tolower(NamesToCheck),
-                                                      " 5th percentile")) + StartRow_mean-1,
+                                                      " 5th percentile") &
+                                                 !str_detect(tolower(NamesToCheck),
+                                                             "interaction")) + StartRow_mean-1,
                             "per95" = which(str_detect(tolower(NamesToCheck),
-                                                       " 95th percentile")) + StartRow_mean-1)
+                                                       " 95th percentile") &
+                                                  !str_detect(tolower(NamesToCheck),
+                                                              "interaction")) + StartRow_mean-1)
 
             sim_data_mean <- sim_data_xl[c(TimeRow, RowsToKeep), ] %>%
                   t() %>%
