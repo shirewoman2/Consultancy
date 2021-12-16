@@ -356,7 +356,7 @@ extractConcTime <- function(sim_data_file,
                               mutate(Compound = SimSummary[["Inhibitor"]],
                                      Effector = SimSummary[["Inhibitor"]])
 
-                        rm(NamesToCheck, Cells)
+                        rm(NamesToCheck, RowsToKeep)
 
                         # All together
                         sim_data_mean <- bind_rows(sim_data_mean,
