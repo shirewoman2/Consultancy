@@ -489,7 +489,8 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
                                   lwd = 1) +
-                        geom_point(data = obs_data, size = 2) +
+                        geom_point(data = obs_data, size = 2,
+                                   stroke = 1.5) +
                         scale_shape_manual(values = c(21, 24))
 
             } else {
@@ -501,7 +502,8 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
                                   lwd = 1) +
-                        geom_point(data = obs_data, size = 2, shape = 21)
+                        geom_point(data = obs_data, size = 2, shape = 21,
+                                   stroke = 1.5)
 
             }
       }
@@ -521,7 +523,8 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
                                   lwd = 1) +
-                        geom_point(data = obs_data, size = 2) +
+                        geom_point(data = obs_data, size = 2,
+                                   stroke = 1.5) +
                         scale_shape_manual(values = c(21, 24))
 
             } else {
@@ -532,7 +535,8 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(color = "gray80", lwd = 0.8) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"), lwd = 1) +
-                        geom_point(data = obs_data, size = 2, shape = 21)
+                        geom_point(data = obs_data, size = 2, shape = 21,
+                                   stroke = 1.5)
             }
 
       }

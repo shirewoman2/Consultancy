@@ -203,32 +203,36 @@ extractConcTime <- function(sim_data_file,
                          "metabolite 1 systemic" = which(sim_data_xl$...1 == "Population Statistics") + 2,
                          "metabolite 2 systemic" = which(sim_data_xl$...1 == "Population Statistics") + 2,
                          "metabolite 1 tissue" = which(str_detect(sim_data_xl$...1,
-                                                           paste0("M", tissue, " Mean"))),
+                                                                  paste0("M", tissue, " Mean"))),
                          "metabolite 2 tissue" = which(str_detect(sim_data_xl$...1,
-                                                           paste0("PM2", tissue, " Mean"))))[1]
+                                                                  paste0("PM2", tissue, " Mean"))))[1]
 
             TimeRow <- which(sim_data_xl$...1 == "Population Statistics") + 1
 
             # Checking which cells contain mean, 5th, and 95th percentile data.
-            NamesToCheck <- sim_data_xl$...1[c(TimeRow,
-                                               StartRow_mean:(StartRow_mean + 2))]
-            Cells <- c("mean" = paste0("V", which(str_detect(tolower(NamesToCheck), "mean"))),
-                       "per5" = paste0("V", which(str_detect(tolower(NamesToCheck), " 5th percentile"))),
-                       "per95" = paste0("V", which(str_detect(tolower(NamesToCheck), " 95th percentile"))))
+            NamesToCheck <- sim_data_xl$...1[c(StartRow_mean:(StartRow_mean + 4))]
+            RowsToKeep <- c("mean" = which(str_detect(tolower(NamesToCheck), "mean") &
+                                                 !str_detect(tolower(NamesToCheck),
+                                                             "geometric")) + StartRow_mean-1,
+                            "per5" = which(str_detect(tolower(NamesToCheck),
+                                                      " 5th percentile")) + StartRow_mean-1,
+                            "per95" = which(str_detect(tolower(NamesToCheck),
+                                                       " 95th percentile")) + StartRow_mean-1)
 
-            sim_data_mean <- sim_data_xl[c(TimeRow, StartRow_mean:(StartRow_mean + 2)), ] %>%
+            sim_data_mean <- sim_data_xl[c(TimeRow, RowsToKeep), ] %>%
                   t() %>%
                   as.data.frame() %>% slice(-(1:3)) %>%
                   mutate_all(as.numeric) %>%
-                  rename(Time = "V1", mean = as.character(Cells["mean"]),
-                         per5 = as.character(Cells["per5"]),
-                         per95 = as.character(Cells["per95"])) %>%
+                  rename(Time = 1,
+                         mean = 2,
+                         per5 = 3,
+                         per95 = 4) %>%
                   pivot_longer(names_to = "Trial", values_to = "Conc",
                                cols = -c(Time)) %>%
                   mutate(Compound = SubstrateName,
                          Effector = "none")
 
-            rm(NamesToCheck, Cells)
+            rm(NamesToCheck, RowsToKeep)
 
             if(EffectorPresent){
 
@@ -273,27 +277,38 @@ extractConcTime <- function(sim_data_file,
                                            paste0("pm2", tissue, " mean.*?interaction"))
                         ))[1]
 
+
                   # Checking which cells contain mean, 5th, and 95th percentile data.
-                  NamesToCheck <- sim_data_xl$...1[c(TimeRow,
-                                                     StartRow_mean_SubPlusEffector:(StartRow_mean_SubPlusEffector + 2))]
-                  Cells <- c("mean" = paste0("V", which(str_detect(tolower(NamesToCheck), "mean"))),
-                             "per5" = paste0("V", which(str_detect(tolower(NamesToCheck), " 5th percentile"))),
-                             "per95" = paste0("V", which(str_detect(tolower(NamesToCheck), " 95th percentile"))))
+                  NamesToCheck <- sim_data_xl$...1[
+                        c(StartRow_mean_SubPlusEffector:(
+                              StartRow_mean_SubPlusEffector + 4))]
+                  RowsToKeep <- c(
+                        "mean" = which(
+                              str_detect(tolower(NamesToCheck), "mean") &
+                                    !str_detect(tolower(NamesToCheck),
+                                                "geometric")) +
+                              StartRow_mean_SubPlusEffector-1,
+                        "per5" = which(str_detect(tolower(NamesToCheck),
+                                                  " 5th percentile")) +
+                              StartRow_mean_SubPlusEffector-1,
+                        "per95" = which(str_detect(tolower(NamesToCheck),
+                                                   " 95th percentile")) +
+                              StartRow_mean_SubPlusEffector-1)
 
                   sim_data_mean_SubPlusEffector <-
-                        sim_data_xl[c(TimeRow,
-                                      StartRow_mean_SubPlusEffector:(StartRow_mean_SubPlusEffector+2)), ] %>%
+                        sim_data_xl[c(TimeRow, RowsToKeep), ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
-                        rename(Time = "V1", mean = as.character(Cells["mean"]),
-                               per5 = as.character(Cells["per5"]),
-                               per95 = as.character(Cells["per95"])) %>%
+                        rename(Time = 1,
+                               mean = 2,
+                               per5 = 3,
+                               per95 = 4) %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc", cols = -Time) %>%
                         mutate(Compound = SubstrateName,
                                Effector = SimSummary[["Inhibitor"]])
 
-                  rm(NamesToCheck, Cells)
+                  rm(NamesToCheck, RowsToKeep)
 
                   # Effector concentrations -- only present on tabs w/substrate
                   # info for systemic tissues so extracting effector
@@ -312,21 +327,30 @@ extractConcTime <- function(sim_data_file,
                               ))[1]
 
                         # Checking which cells contain mean, 5th, and 95th percentile data.
-                        NamesToCheck <- sim_data_xl$...1[c(TimeRow,
-                                                           StartRow_mean_Effector:(StartRow_mean_Effector + 2))]
-                        Cells <- c("mean" = paste0("V", which(str_detect(tolower(NamesToCheck), "mean"))),
-                                   "per5" = paste0("V", which(str_detect(tolower(NamesToCheck), " 5th percentile"))),
-                                   "per95" = paste0("V", which(str_detect(tolower(NamesToCheck), " 95th percentile"))))
+                        NamesToCheck <- sim_data_xl$...1[
+                              c(StartRow_mean_Effector:(
+                                    StartRow_mean_Effector + 4))]
+                        RowsToKeep <- c(
+                              "mean" = which(str_detect(tolower(NamesToCheck), "mean") &
+                                                   !str_detect(tolower(NamesToCheck),
+                                                               "geometric")) +
+                                    StartRow_mean_Effector-1,
+                              "per5" = which(str_detect(tolower(NamesToCheck),
+                                                        " 5th percentile")) +
+                                    StartRow_mean_Effector-1,
+                              "per95" = which(str_detect(tolower(NamesToCheck),
+                                                         " 95th percentile")) +
+                                    StartRow_mean_Effector-1)
 
                         sim_data_mean_Effector <-
-                              sim_data_xl[c(TimeRow,
-                                            StartRow_mean_Effector:(StartRow_mean_Effector+2)), ] %>%
+                              sim_data_xl[c(TimeRow, RowsToKeep), ] %>%
                               t() %>%
                               as.data.frame() %>% slice(-(1:3)) %>%
                               mutate_all(as.numeric) %>%
-                              rename(Time = "V1", mean = as.character(Cells["mean"]),
-                                     per5 = as.character(Cells["per5"]),
-                                     per95 = as.character(Cells["per95"])) %>%
+                              rename(Time = 1,
+                                     mean = 2,
+                                     per5 = 3,
+                                     per95 = 4) %>%
                               pivot_longer(names_to = "Trial", values_to = "Conc",
                                            cols = -Time) %>%
                               mutate(Compound = SimSummary[["Inhibitor"]],
@@ -409,22 +433,23 @@ extractConcTime <- function(sim_data_file,
             if(EffectorPresent){
 
                   # Substrate conc time data in presence of effector
-                  RowsToUse <- which(str_detect(sim_data_xl$...1,
-                                                switch(ifelse(TissueType == "systemic",
-                                                              TissueType,
-                                                              paste(TissueType, compoundToExtract)),
-                                                       "systemic" = "CSys After Inh|CSys.interaction",
-                                                       "tissue substrate" =
-                                                             paste0("CTissue . Interaction|",
-                                                                    "C", tissue, " After Inh"),
-                                                       "tissue effector" =
-                                                             paste0("CTissue . Interaction|",
-                                                                    "C", tissue, " After Inh"),
-                                                       "tissue metabolite 1" =
-                                                             paste0("M", tissue, " After Inh"),
-                                                       "tissue metabolite 2" =
-                                                             paste0("PM2", tissue, " After Inh"))
-                  ))
+                  RowsToUse <- which(
+                        str_detect(sim_data_xl$...1,
+                                   switch(ifelse(TissueType == "systemic",
+                                                 TissueType,
+                                                 paste(TissueType, compoundToExtract)),
+                                          "systemic" = "CSys After Inh|CSys.interaction",
+                                          "tissue substrate" =
+                                                paste0("CTissue . Interaction|",
+                                                       "C", tissue, " After Inh"),
+                                          "tissue effector" =
+                                                paste0("CTissue . Interaction|",
+                                                       "C", tissue, " After Inh"),
+                                          "tissue metabolite 1" =
+                                                paste0("M", tissue, " After Inh"),
+                                          "tissue metabolite 2" =
+                                                paste0("PM2", tissue, " After Inh"))
+                        ))
                   RowsToUse <- RowsToUse[which(
                         RowsToUse > which(sim_data_xl$...1 == "Individual Statistics"))]
                   RowsToUse <- c(TimeRow, RowsToUse)
