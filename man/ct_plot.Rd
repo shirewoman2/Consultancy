@@ -12,6 +12,8 @@ ct_plot(
   tissue = "plasma",
   compoundToExtract = "substrate",
   figure_type = "trial means",
+  obs_data_option = NA,
+  obs_data_color = NA,
   substrate_or_effector = "substrate",
   adjust_obs_time = FALSE,
   time_range = NA,
@@ -69,6 +71,17 @@ this is labeled as "inhibitor 1" in the simulator).}
   effector.}
 
   }}
+
+\item{obs_data_option}{UNDER CONSTRUCTION AND NOT YET OPERATIONAL. Set
+options for how to view observed data. Options are "mean only" to show only
+a single point at the arithmetic mean value for each time point, "all data"
+to show all the individual data, or "mean and error bars" to show a point
+at the arithmetic mean for each time point and error bars for the
+arithmetic standard deviation.}
+
+\item{obs_data_color}{If you would like the observed data points to be in
+color, set this to TRUE. Points will be displayed in semi-transparent
+blue-purple.}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to

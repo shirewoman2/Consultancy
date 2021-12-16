@@ -48,6 +48,15 @@
 #'   effector.}
 #'
 #'   }
+#' @param obs_data_option UNDER CONSTRUCTION AND NOT YET OPERATIONAL. Set
+#'   options for how to view observed data. Options are "mean only" to show only
+#'   a single point at the arithmetic mean value for each time point, "all data"
+#'   to show all the individual data, or "mean and error bars" to show a point
+#'   at the arithmetic mean for each time point and error bars for the
+#'   arithmetic standard deviation.
+#' @param obs_data_color If you would like the observed data points to be in
+#'   color, set this to TRUE. Points will be displayed in semi-transparent
+#'   blue-purple.
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -154,6 +163,8 @@ ct_plot <- function(sim_data_file = NA,
                     tissue = "plasma",
                     compoundToExtract = "substrate",
                     figure_type = "trial means",
+                    obs_data_option = NA,
+                    obs_data_color = NA,
                     substrate_or_effector = "substrate",
                     adjust_obs_time = FALSE,
                     time_range = NA,
@@ -214,6 +225,8 @@ ct_plot <- function(sim_data_file = NA,
                   max(Data$Time[Data$Simulated == TRUE]), " ", TimeUnits, "."))
       }
 
+
+      # Setting x axis (time) ------------------------------------------------
       # Adjusting graph labels as appropriate for the observed data
       xlab <- switch(TimeUnits,
                      "hours" = "Time (hr)",
@@ -384,6 +397,12 @@ ct_plot <- function(sim_data_file = NA,
             XLabels[seq(2,length(XLabels),2)] <- ""
       }
 
+      # Setting the time range if it's not already set since we use it later.
+      if(is.na(time_range_input[1])){
+            time_range <- range(Data$Time, na.rm = T)
+      }
+
+      # Dealing with possible effector data ---------------------------------
       # Adding a grouping variable to data and also making the effector name
       # prettier for the graphs.
       MyEffector <- unique(Data$Effector) %>% as.character()
@@ -417,6 +436,7 @@ ct_plot <- function(sim_data_file = NA,
                   mutate(Effector = factor(Effector, levels = c("none", MyEffector)))
       }
 
+      # Setting up data.frames to graph ---------------------------------------
       # Separating the data by type and calculating trial means
       suppressMessages(
             sim_data_trial <- Data %>%
@@ -436,11 +456,7 @@ ct_plot <- function(sim_data_file = NA,
 
       obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
 
-      # Setting the time range if it's not already set since we use it later.
-      if(is.na(time_range_input[1])){
-            time_range <- range(Data$Time, na.rm = T)
-      }
-
+      # Setting y axis (concentration) ---------------------------------------
       # Setting Y axis limits for both linear and semi-log plots
       if (figure_type == "trial means") {
             Ylim_data <- bind_rows(sim_data_trial, obs_data)
@@ -472,6 +488,9 @@ ct_plot <- function(sim_data_file = NA,
       YLabels      <- YBreaks
       YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
 
+
+      # Figure types ---------------------------------------------------------
+      ## figure_type: trial means -----------------------------------------------------------
       if(figure_type == "trial means"){
 
             NumTrials <- length(unique(sim_data_trial$Trial))
@@ -482,30 +501,55 @@ ct_plot <- function(sim_data_file = NA,
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
                   ## linear plot
-                  A <- ggplot(sim_data_trial,
-                              aes(x = Time, y = Conc, group = Group,
-                                  linetype = Effector, shape = Effector)) +
-                        geom_line(alpha = AlphaToUse, lwd = 1) +
-                        geom_line(data = sim_data_mean %>%
-                                        filter(Trial == "mean"),
-                                  lwd = 1) +
-                        geom_point(data = obs_data, size = 2) +
-                        scale_shape_manual(values = c(21, 24))
+                  if(is.na(obs_data_color)){
+                        A <- ggplot(sim_data_trial,
+                                    aes(x = Time, y = Conc, group = Group,
+                                        linetype = Effector, shape = Effector)) +
+                              geom_line(alpha = AlphaToUse, lwd = 1) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(Trial == "mean"),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2) +
+                              scale_shape_manual(values = c(21, 24))
+                  } else {
+                        A <- ggplot(sim_data_trial,
+                                    aes(x = Time, y = Conc, group = Group,
+                                        linetype = Effector, shape = Effector)) +
+                              geom_line(alpha = AlphaToUse, lwd = 1) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(Trial == "mean"),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = "#3030FE", alpha = 0.5) +
+                              scale_shape_manual(values = c(21, 24))
+                  }
+
 
             } else {
 
                   ## linear plot
-                  A <- ggplot(sim_data_trial,
-                              aes(x = Time, y = Conc, group = Trial)) +
-                        geom_line(alpha = AlphaToUse, lwd = 1) +
-                        geom_line(data = sim_data_mean %>%
-                                        filter(Trial == "mean"),
-                                  lwd = 1) +
-                        geom_point(data = obs_data, size = 2, shape = 21)
-
+                  if(is.na(obs_data_color)){
+                        A <- ggplot(sim_data_trial,
+                                    aes(x = Time, y = Conc, group = Trial)) +
+                              geom_line(alpha = AlphaToUse, lwd = 1) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(Trial == "mean"),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2, shape = 21)
+                  } else {
+                        A <- ggplot(sim_data_trial,
+                                    aes(x = Time, y = Conc, group = Trial)) +
+                              geom_line(alpha = AlphaToUse, lwd = 1) +
+                              geom_line(data = sim_data_mean %>%
+                                              filter(Trial == "mean"),
+                                        lwd = 1) +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = "#3030FE", alpha = 0.5)
+                  }
             }
       }
 
+      ## figure_type: percentiles ----------------------------------------------------------
       if(figure_type == "trial percentiles"){
             # graphs with 95th percentiles
 
@@ -537,6 +581,7 @@ ct_plot <- function(sim_data_file = NA,
 
       }
 
+      ## figure_type: Freddy --------------------------------------------------------------
       if(figure_type == "Freddy"){
 
             NumTrials <- length(unique(sim_data_trial$Trial))
@@ -579,6 +624,7 @@ ct_plot <- function(sim_data_file = NA,
             }
       }
 
+      ## figure_type: means only -----------------------------------------------------------
       if(figure_type == "means only"){
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
@@ -599,6 +645,8 @@ ct_plot <- function(sim_data_file = NA,
             }
       }
 
+
+      # Applying aesthetics ------------------------------------------------
       A <- A +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
