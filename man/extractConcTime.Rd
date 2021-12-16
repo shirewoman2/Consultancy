@@ -8,7 +8,7 @@ extractConcTime(
   sim_data_file,
   obs_data_file = NA,
   obs_effector_data_file = NA,
-  adjust_obs_time = TRUE,
+  adjust_obs_time = FALSE,
   tissue = "plasma",
   compoundToExtract = "substrate",
   returnAggregateOrIndiv = c("aggregate", "individual")
