@@ -47,13 +47,6 @@
 #'   was modeled, a dashed line for the concentration-time data with the the
 #'   effector.}
 #'
-#'   \item{Freddy}{Freddy's favorite style of plot with trial means in light
-#'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
-#'   dashed lines, and the observed data in semi-transparent purple-blue. While
-#'   this does not align with the officially sanctioned template at this time,
-#'   this looks \emph{sharp}, makes it easy to see the defining characteristics
-#'   of the data, and I recommend checking it out. -LS}
-#'
 #'   }
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
@@ -86,8 +79,6 @@
 #'   between the y axis and the start of your time range. NOTE: We could allow
 #'   users to specify exactly how much padding and on which sides of the x axis
 #'   if there's interest from users. -LS
-#' @param mean_type "geometric" or "arithmetic" for which type of mean to
-#'   calculate
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
@@ -168,15 +159,14 @@ ct_plot <- function(sim_data_file = NA,
                     time_range = NA,
                     trial_mean_alpha = NA,
                     pad_x_axis = FALSE,
-                    mean_type = "arithmetic",
                     return_data = FALSE,
                     return_indiv_graphs = FALSE){
 
       # Error catching
       if(length(figure_type) != 1 |
-         figure_type %in% c("trial means", "trial percentiles",
+         figure_type %in% c("trial means", "trial percentiles", "Freddy",
                             "means only") == FALSE){
-            stop("The only acceptable options for figure_type are 'trial means', 'trial percentiles', or 'means only'.")
+            stop("The only acceptable options for figure_type are 'trial means', 'trial percentiles', 'means only', or 'Freddy'.")
       }
 
       if(all(complete.cases(time_range)) & class(time_range) == "numeric" &
@@ -435,32 +425,13 @@ ct_plot <- function(sim_data_file = NA,
                   group_by(across(any_of(c("Compound", "Tissue", "Effector",
                                            "Simulated", "Trial", "Group",
                                            "Time", "Time_units", "Conc_units")))) %>%
-                  summarize(Conc = switch(mean_type,
-                                          "arithmetic" = mean(Conc),
-                                          "geometric" = gm_mean(Conc))) %>%
+                  summarize(Conc = mean(Conc, na.rm = T)) %>%
                   ungroup()
       )
 
-      # The mean and confidence interval data listed in the simulator output
-      # files I've seen are arithmetic, although I'm not sure if that's always
-      # true. If the user specified "geometric", we need to calculate that or
-      # the wrong type of mean will be plotted in the graph b/c the overall mean
-      # will be arithmetic while the trial means will be geometric. To be on the
-      # safe side, calculating for both instances since I just don't know how
-      # consistent the simulator output is. -LS
       sim_data_mean <- Data %>%
             filter(Simulated == TRUE  &
-                         !Trial %in% c("mean", "per5", "per95")) %>%
-            group_by(across(
-                  any_of(c("Compound", "Tissue", "Effector", "Simulated",
-                           "Time", "Time_units", "Conc_units", "Group")))) %>%
-            summarize(mean = switch(mean_type,
-                                    "arithmetic" = mean(Conc, na.rm = TRUE),
-                                    "geometric" = gm_mean(Conc)),
-                      per5 = quantile(Conc, 0.05),
-                      per95 = quantile(Conc, 0.95)) %>%
-            pivot_longer(cols = c("mean", "per5", "per95"),
-                         names_to = "Trial", values_to = "Conc") %>%
+                         Trial %in% c("mean", "per5", "per95")) %>%
             mutate(Group = paste(Compound, Effector, Trial))
 
       obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
@@ -576,16 +547,18 @@ ct_plot <- function(sim_data_file = NA,
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
                   ## linear plot
-                  A <- ggplot(sim_data_trial,
-                              aes(x = Time, y = Conc, group = Group,
-                                  linetype = Effector, shape = Effector)) +
-                        geom_line(alpha = AlphaToUse, lwd = 1) +
+                  A <-
+                        ggplot(sim_data_trial,
+                               aes(x = Time, y = Conc, group = Group,
+                                   linetype = Effector, shape = Effector)) +
+                        # geom_line(alpha = AlphaToUse, lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
                                   lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95"))) +
-                        geom_point(data = obs_data, size = 2) +
+                        geom_point(data = obs_data, size = 3,
+                                   fill = "#3030FE", alpha = 0.5) +
                         scale_shape_manual(values = c(21, 24))
 
             } else {
@@ -672,7 +645,7 @@ ct_plot <- function(sim_data_file = NA,
                               labels = YLogLabels) +
                   # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
                   coord_cartesian(xlim = time_range)
-            )
+      )
 
       # both plots together, aligned vertically
       if(compoundToExtract == "effector"){
