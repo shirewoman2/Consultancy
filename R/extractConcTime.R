@@ -556,11 +556,34 @@ extractConcTime <- function(sim_data_file,
 
                   if(length(StartRow_obs) != 0){
 
-                        obs_data <- sim_data_xl[StartRow_obs:(StartRow_obs+1), ] %>% t() %>%
-                              as.data.frame() %>% slice(-1) %>%
+                        obs_data <- sim_data_xl[StartRow_obs:nrow(sim_data_xl), ] %>% t() %>%
+                              as.data.frame()
+                        NewNamesObs <- obs_data[1, ]
+                        NewNamesObs[str_detect(NewNamesObs, "Time")] <- "Time"
+                        NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
+                        TimeCols <- which(NewNamesObs == "Time")
+                        ConcCols <- which(NewNamesObs != "Time")
+                        NewNamesObs[TimeCols] <- paste0("Time_", NewNamesObs[ConcCols])
+                        NewNamesObs[ConcCols] <- paste0("Conc_", NewNamesObs[ConcCols])
+                        names(obs_data) <- NewNamesObs
+
+                        suppressWarnings(
+                              obs_data <- obs_data %>%
                               mutate_all(as.numeric) %>%
-                              rename(Time = "V1", Conc = "V2") %>% filter(complete.cases(Time)) %>%
-                              mutate(Trial = "obs")
+                              mutate(ID = 1:nrow(.)) %>%
+                              pivot_longer(cols = -ID,
+                                           names_to = "Param",
+                                           values_to = "Value") %>%
+                              separate(col = Param,
+                                       into = c("Parameter", "Individual"),
+                                       sep = "_") %>%
+                              pivot_wider(names_from = Parameter,
+                                          values_from = Value) %>%
+                              filter(complete.cases(Time)) %>%
+                              mutate(Trial = "obs",
+                                     Individual = sub("^Subject", "", Individual)) %>%
+                              select(-ID)
+                        )
                   }
 
             } else {
