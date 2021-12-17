@@ -50,9 +50,11 @@
 #'   }
 #' @param obs_data_option Set options for how to view observed data. Options are
 #'   "mean only" to show only a single point at the arithmetic mean value for
-#'   each time point, "all data" to show all the individual data, or "mean and
-#'   error bars" to show a point at the arithmetic mean for each time point and
-#'   error bars for the arithmetic standard deviation.
+#'   each time point, "geometric mean only" to show a single point at the
+#'   geometric mean, "all data" to show all the individual data (equivalently,
+#'   leave \code{obs_data_option} as NA), or "mean bars" to show a point at the
+#'   arithmetic mean for each time point and error bars for the arithmetic
+#'   standard deviation.
 #' @param obs_data_color If you would like the observed data points to be in
 #'   color, either list a specific color or set this to "default". Points will
 #'   be displayed in semi-transparent blue-purple for default and the
@@ -454,8 +456,6 @@ ct_plot <- function(sim_data_file = NA,
                          Trial %in% c("mean", "per5", "per95")) %>%
             mutate(Group = paste(Compound, Effector, Trial))
 
-      obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
-
       # Setting y axis (concentration) ---------------------------------------
       # Setting Y axis limits for both linear and semi-log plots
       if (figure_type == "trial means") {
@@ -490,14 +490,28 @@ ct_plot <- function(sim_data_file = NA,
 
 
       # Setting up observed data per user input -------------------------------
+
+      obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
+
+      if(complete.cases(obs_data_option) &
+         str_detect(obs_data_option, "mean")){
+            obs_data <- obs_data %>%
+                  group_by(across(any_of(c("Compound", "Tissue", "Effector",
+                                           "Simulated", "Trial", "Group",
+                                           "Time", "Time_units", "Conc_units")))) %>%
+                  summarize(SDConc = sd(Conc, na.rm = T),
+                            Conc = switch("mean only" = mean(Conc, na.rm = T),
+                                          "mean bars" = mean(Conc, na.rm = T),
+                                          "geometric mean only" = gm_mean(Conc))) %>%
+                  ungroup()
+      }
+
       # Setting observed data color option.
       obs_data_color <- ifelse((complete.cases(obs_data_color) &
-                                     obs_data_color == "default") |
+                                      obs_data_color == "default") |
                                      (is.na(obs_data_color) &
                                             figure_type == "Freddy"),
                                "#3030FE", obs_data_color)
-
-
 
       # Figure types ---------------------------------------------------------
       ## figure_type: trial means -----------------------------------------------------------
@@ -610,8 +624,8 @@ ct_plot <- function(sim_data_file = NA,
                   ## linear plot
                   A <- ggplot(data = sim_data_mean %>%
                                     filter(Trial == "mean"),
-                               aes(x = Time, y = Conc, group = Group,
-                                   linetype = Effector, shape = Effector)) +
+                              aes(x = Time, y = Conc, group = Group,
+                                  linetype = Effector, shape = Effector)) +
                         geom_line(lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95")),
@@ -657,6 +671,14 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(lwd = 1)
 
             }
+      }
+
+      if(complete.cases(obs_data_option) & obs_data_option == "mean bars" &
+         figure_type != "means only"){
+            A <- A +
+                  geom_errorbar(data = obs_data,
+                                aes(x = Time, ymin = Conc - SDConc,
+                                    ymax = Conc + SDConc))
       }
 
       # Applying aesthetics ------------------------------------------------

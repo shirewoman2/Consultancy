@@ -72,16 +72,18 @@ this is labeled as "inhibitor 1" in the simulator).}
 
   }}
 
-\item{obs_data_option}{UNDER CONSTRUCTION AND NOT YET OPERATIONAL. Set
-options for how to view observed data. Options are "mean only" to show only
-a single point at the arithmetic mean value for each time point, "all data"
-to show all the individual data, or "mean and error bars" to show a point
-at the arithmetic mean for each time point and error bars for the
-arithmetic standard deviation.}
+\item{obs_data_option}{Set options for how to view observed data. Options are
+"mean only" to show only a single point at the arithmetic mean value for
+each time point, "geometric mean only" to show a single point at the
+geometric mean, "all data" to show all the individual data (equivalently,
+leave \code{obs_data_option} as NA), or "mean bars" to show a point at the
+arithmetic mean for each time point and error bars for the arithmetic
+standard deviation.}
 
 \item{obs_data_color}{If you would like the observed data points to be in
-color, set this to TRUE. Points will be displayed in semi-transparent
-blue-purple.}
+color, either list a specific color or set this to "default". Points will
+be displayed in semi-transparent blue-purple for default and the
+semi-transparent version of whatever other color you list otherwise.}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
