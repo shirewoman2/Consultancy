@@ -211,15 +211,15 @@ extractConcTime <- function(sim_data_file,
 
             # Checking which cells contain mean, 5th, and 95th percentile data.
             NamesToCheck <- sim_data_xl$...1[c(StartRow_mean:(StartRow_mean + 4))]
-            RowsToKeep <- c("mean" = which(str_detect(tolower(NamesToCheck), "mean") &
+            RowsToKeep <- c("mean" = which(str_detect(tolower(NamesToCheck), "(^csys|^ctissue).*mean") &
                                                  !str_detect(tolower(NamesToCheck),
                                                              "geometric|interaction")) + StartRow_mean-1,
                             "per5" = which(str_detect(tolower(NamesToCheck),
-                                                      " 5th percentile") &
+                                                      "(^csys|^ctissue).* 5(th)? percentile") &
                                                  !str_detect(tolower(NamesToCheck),
                                                              "interaction")) + StartRow_mean-1,
                             "per95" = which(str_detect(tolower(NamesToCheck),
-                                                       " 95th percentile") &
+                                                       "(^csys|^ctissue).* 95(th)? percentile") &
                                                   !str_detect(tolower(NamesToCheck),
                                                               "interaction")) + StartRow_mean-1)
 
@@ -288,15 +288,15 @@ extractConcTime <- function(sim_data_file,
                               StartRow_mean_SubPlusEffector + 4))]
                   RowsToKeep <- c(
                         "mean" = which(
-                              str_detect(tolower(NamesToCheck), "mean") &
+                              str_detect(tolower(NamesToCheck), "(^csys|^ctissue).*mean") &
                                     !str_detect(tolower(NamesToCheck),
                                                 "geometric")) +
                               StartRow_mean_SubPlusEffector-1,
                         "per5" = which(str_detect(tolower(NamesToCheck),
-                                                  " 5th percentile")) +
+                                                  "(^csys|^ctissue).* 5(th)? percentile")) +
                               StartRow_mean_SubPlusEffector-1,
                         "per95" = which(str_detect(tolower(NamesToCheck),
-                                                   " 95th percentile")) +
+                                                   "(^csys|^ctissue).* 95(th)? percentile")) +
                               StartRow_mean_SubPlusEffector-1)
 
                   sim_data_mean_SubPlusEffector <-
@@ -335,15 +335,15 @@ extractConcTime <- function(sim_data_file,
                               c(StartRow_mean_Effector:(
                                     StartRow_mean_Effector + 4))]
                         RowsToKeep <- c(
-                              "mean" = which(str_detect(tolower(NamesToCheck), "mean") &
+                              "mean" = which(str_detect(tolower(NamesToCheck), "(^isys|^itissue).*mean") &
                                                    !str_detect(tolower(NamesToCheck),
                                                                "geometric")) +
                                     StartRow_mean_Effector-1,
                               "per5" = which(str_detect(tolower(NamesToCheck),
-                                                        " 5th percentile")) +
+                                                        "(^isys|^itissue).* 5th percentile")) +
                                     StartRow_mean_Effector-1,
                               "per95" = which(str_detect(tolower(NamesToCheck),
-                                                         " 95th percentile")) +
+                                                         "(^isys|^itissue).* 95th percentile")) +
                                     StartRow_mean_Effector-1)
 
                         sim_data_mean_Effector <-
