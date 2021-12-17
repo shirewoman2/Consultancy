@@ -48,15 +48,15 @@
 #'   effector.}
 #'
 #'   }
-#' @param obs_data_option UNDER CONSTRUCTION AND NOT YET OPERATIONAL. Set
-#'   options for how to view observed data. Options are "mean only" to show only
-#'   a single point at the arithmetic mean value for each time point, "all data"
-#'   to show all the individual data, or "mean and error bars" to show a point
-#'   at the arithmetic mean for each time point and error bars for the
-#'   arithmetic standard deviation.
+#' @param obs_data_option Set options for how to view observed data. Options are
+#'   "mean only" to show only a single point at the arithmetic mean value for
+#'   each time point, "all data" to show all the individual data, or "mean and
+#'   error bars" to show a point at the arithmetic mean for each time point and
+#'   error bars for the arithmetic standard deviation.
 #' @param obs_data_color If you would like the observed data points to be in
-#'   color, set this to TRUE. Points will be displayed in semi-transparent
-#'   blue-purple.
+#'   color, either list a specific color or set this to "default". Points will
+#'   be displayed in semi-transparent blue-purple for default and the
+#'   semi-transparent version of whatever other color you list otherwise.
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -489,6 +489,16 @@ ct_plot <- function(sim_data_file = NA,
       YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
 
 
+      # Setting up observed data per user input -------------------------------
+      # Setting observed data color option.
+      obs_data_color <- ifelse((complete.cases(obs_data_color) &
+                                     obs_data_color == "default") |
+                                     (is.na(obs_data_color) &
+                                            figure_type == "Freddy"),
+                               "#3030FE", obs_data_color)
+
+
+
       # Figure types ---------------------------------------------------------
       ## figure_type: trial means -----------------------------------------------------------
       if(figure_type == "trial means"){
@@ -501,50 +511,41 @@ ct_plot <- function(sim_data_file = NA,
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
                   ## linear plot
-                  if(is.na(obs_data_color)){
-                        A <- ggplot(sim_data_trial,
-                                    aes(x = Time, y = Conc, group = Group,
-                                        linetype = Effector, shape = Effector)) +
-                              geom_line(alpha = AlphaToUse, lwd = 1) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean"),
-                                        lwd = 1) +
-                              geom_point(data = obs_data, size = 2) +
-                              scale_shape_manual(values = c(21, 24))
-                  } else {
-                        A <- ggplot(sim_data_trial,
-                                    aes(x = Time, y = Conc, group = Group,
-                                        linetype = Effector, shape = Effector)) +
-                              geom_line(alpha = AlphaToUse, lwd = 1) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean"),
-                                        lwd = 1) +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = "#3030FE", alpha = 0.5) +
-                              scale_shape_manual(values = c(21, 24))
-                  }
+                  A <- ggplot(sim_data_trial,
+                              aes(x = Time, y = Conc, group = Group,
+                                  linetype = Effector, shape = Effector)) +
+                        geom_line(alpha = AlphaToUse, lwd = 1) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"),
+                                  lwd = 1) +
+                        scale_shape_manual(values = c(21, 24))
 
+                  if(is.na(obs_data_color)){
+                        A <-  A + geom_point(data = obs_data, size = 2,
+                                             stroke = 1)
+                  } else {
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            fill = obs_data_color, alpha = 0.5,
+                                            stroke = 1)
+                  }
 
             } else {
 
                   ## linear plot
+                  A <- ggplot(sim_data_trial,
+                              aes(x = Time, y = Conc, group = Trial)) +
+                        geom_line(alpha = AlphaToUse, lwd = 1) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"),
+                                  lwd = 1)
+
                   if(is.na(obs_data_color)){
-                        A <- ggplot(sim_data_trial,
-                                    aes(x = Time, y = Conc, group = Trial)) +
-                              geom_line(alpha = AlphaToUse, lwd = 1) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean"),
-                                        lwd = 1) +
-                              geom_point(data = obs_data, size = 2, shape = 21)
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            shape = 21, stroke = 1)
                   } else {
-                        A <- ggplot(sim_data_trial,
-                                    aes(x = Time, y = Conc, group = Trial)) +
-                              geom_line(alpha = AlphaToUse, lwd = 1) +
-                              geom_line(data = sim_data_mean %>%
-                                              filter(Trial == "mean"),
-                                        lwd = 1) +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = "#3030FE", alpha = 0.5)
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            fill = obs_data_color, alpha = 0.5,
+                                            shape = 21, stroke = 1)
                   }
             }
       }
@@ -564,9 +565,17 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(color = "gray80", lwd = 0.8) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
-                                  lwd = 1) +
-                        geom_point(data = obs_data, size = 2) +
+                                  lwd = 1)  +
                         scale_shape_manual(values = c(21, 24))
+
+                  if(is.na(obs_data_color)){
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            stroke = 1)
+                  } else {
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            fill = obs_data_color, alpha = 0.5,
+                                            stroke = 1)
+                  }
 
             } else {
 
@@ -575,10 +584,17 @@ ct_plot <- function(sim_data_file = NA,
                               aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(color = "gray80", lwd = 0.8) +
                         geom_line(data = sim_data_mean %>%
-                                        filter(Trial == "mean"), lwd = 1) +
-                        geom_point(data = obs_data, size = 2, shape = 21)
-            }
+                                        filter(Trial == "mean"), lwd = 1)
 
+                  if(is.na(obs_data_color)){
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            stroke = 1, shape = 21)
+                  } else {
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            fill = obs_data_color, alpha = 0.5,
+                                            stroke = 1, shape = 21)
+                  }
+            }
       }
 
       ## figure_type: Freddy --------------------------------------------------------------
@@ -592,18 +608,16 @@ ct_plot <- function(sim_data_file = NA,
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
                   ## linear plot
-                  A <-
-                        ggplot(sim_data_trial,
+                  A <- ggplot(data = sim_data_mean %>%
+                                    filter(Trial == "mean"),
                                aes(x = Time, y = Conc, group = Group,
                                    linetype = Effector, shape = Effector)) +
-                        # geom_line(alpha = AlphaToUse, lwd = 1) +
+                        geom_line(lwd = 1) +
                         geom_line(data = sim_data_mean %>%
-                                        filter(Trial == "mean"),
-                                  lwd = 1) +
-                        geom_line(data = sim_data_mean %>%
-                                        filter(Trial %in% c("per5", "per95"))) +
-                        geom_point(data = obs_data, size = 3,
-                                   fill = "#3030FE", alpha = 0.5) +
+                                        filter(Trial %in% c("per5", "per95")),
+                                  alpha = AlphaToUse, lwd = 1) +
+                        geom_point(data = obs_data, size = 2,
+                                   color = "#3030FE", alpha = 0.5) +
                         scale_shape_manual(values = c(21, 24))
 
             } else {
@@ -618,9 +632,9 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95")),
                                   linetype = "dashed") +
-                        geom_point(data = obs_data, size = 3, shape = 21,
-                                   fill = "#3030FE", alpha = 0.5)
-
+                        geom_point(data = obs_data, size = 2, shape = 21,
+                                   fill = "#3030FE", alpha = 0.5,
+                                   stroke = 1)
             }
       }
 
@@ -644,7 +658,6 @@ ct_plot <- function(sim_data_file = NA,
 
             }
       }
-
 
       # Applying aesthetics ------------------------------------------------
       A <- A +
