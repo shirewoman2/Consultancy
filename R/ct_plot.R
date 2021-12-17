@@ -2,7 +2,10 @@
 #'
 #' Using observed and simulated concentration-time data, make
 #' publication-quality graphs that match the consultancy template formatting
-#' instructions. A note: The breaks on the x axis are set up to work nicely for
+#' instructions. We've tried to include a fair number of options here for
+#' flexibility, but many of the function arguments are optional; most of the
+#' time, you'll get decent-looking graphs while only setting a minimal number of
+#' arguments. A note: The breaks on the x axis are set up to work nicely for
 #' time intervals up to 4 weeks; if the time you're monitoring is longer than
 #' that, you may want to set \code{return_indiv_graphs = TRUE} and set the x
 #' axis breaks yourself.
@@ -39,9 +42,9 @@
 #'   data. If an effector was present, gray dashed lines indicate the mean of
 #'   each trial of simulated data in the presence of the effector.}
 #'
-#'   \item{trial percentiles}{plots a black line for the mean data, gray lines
-#'   for the 5th and 95th percentiles of the simulated data, and open circles
-#'   for the observed data}
+#'   \item{percentiles}{plots a black line for the mean data, gray lines for the
+#'   5th and 95th percentiles of the simulated data, and open circles for the
+#'   observed data}
 #'
 #'   \item{means only}{plots a black line for the mean data and, if an effector
 #'   was modeled, a dashed line for the concentration-time data with the the
@@ -81,15 +84,23 @@
 #'   which can be useful for BID data where the end of the simulation extended
 #'   past the dosing interval or data when the substrate was dosed BID and the
 #'   effector was dosed QD} }
+#' @param yaxis_limits_log Optionlly manually set the Y axis limits for the
+#'   semi-log plot, e.g., \code{c(10, 1000)}. Values will be rounded down and
+#'   up, respectively, to the nearest order of magnitude. If left as NA, the Y
+#'   axis limits for the semi-log plot will be automatically selected.
 #' @param trial_mean_alpha Optionally specify the transparency for the trial
-#'   means. Acceptable values are from 0 (no transparency) to 1 (full
-#'   transparency). If left as NA, this value will be automatically determined.
+#'   means. Acceptable values are from 0 (fully transparent) to 1 (completely
+#'   opaque). If left as NA, this value will be automatically determined.
 #' @param pad_x_axis Optionally add a smidge of padding to the left side of the
 #'   x axis. If left as FALSE, the y axis will be placed right at the beginning
 #'   of your time range. If set to TRUE, there will be a little bit of space
 #'   between the y axis and the start of your time range. NOTE: We could allow
 #'   users to specify exactly how much padding and on which sides of the x axis
 #'   if there's interest from users. -LS
+#' @param inhibitor_or_inducer Optionally indicate in the legend whether the
+#'   effector is an inhibitor or an inducer. Input will be used as the legend
+#'   title. If left as NA, the legend title will be "effector" when a legend is
+#'   included and an effector is present.
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
@@ -170,15 +181,18 @@ ct_plot <- function(sim_data_file = NA,
                     substrate_or_effector = "substrate",
                     adjust_obs_time = FALSE,
                     time_range = NA,
+                    yaxis_limits_log = NA,
                     trial_mean_alpha = NA,
                     pad_x_axis = FALSE,
+                    include_legend = FALSE,
+                    inhibitor_or_inducer = NA,
                     return_data = FALSE,
                     return_indiv_graphs = FALSE){
 
       # Error catching
       if(length(figure_type) != 1 |
-         figure_type %in% c("trial means", "trial percentiles", "Freddy",
-                            "means only") == FALSE){
+         figure_type %in% c("trial means", "percentiles", "trial percentiles",
+                            "Freddy", "means only") == FALSE){
             stop("The only acceptable options for figure_type are 'trial means', 'trial percentiles', 'means only', or 'Freddy'.")
       }
 
@@ -460,7 +474,7 @@ ct_plot <- function(sim_data_file = NA,
       # Setting Y axis limits for both linear and semi-log plots
       if (figure_type == "trial means") {
             Ylim_data <- bind_rows(sim_data_trial, obs_data)
-      } else if (figure_type %in% c("trial percentiles", "Freddy")) {
+      } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles")) {
             Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
       } else if (figure_type == "means only") {
             Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
@@ -565,7 +579,6 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       ## figure_type: percentiles ----------------------------------------------------------
-      if(figure_type == "trial percentiles"){
             # graphs with 95th percentiles
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
@@ -689,7 +702,11 @@ ct_plot <- function(sim_data_file = NA,
             scale_y_continuous(limits = c(0, YmaxRnd), breaks = YBreaks,
                                labels = YLabels,
                                expand = expansion(mult = c(0, 0.1))) +
-            labs(x = xlab, y = ylab) +
+            labs(x = xlab, y = ylab,
+                 linetype = ifelse(complete.cases(inhibitor_or_inducer),
+                                   inhibitor_or_inducer, "Effector"),
+                 shape = ifelse(complete.cases(inhibitor_or_inducer),
+                                inhibitor_or_inducer, "Effector")) +
             coord_cartesian(xlim = time_range) +
             theme(panel.background = element_rect(fill="white", color=NA),
                   legend.key = element_rect(fill = "white"),
@@ -698,25 +715,35 @@ ct_plot <- function(sim_data_file = NA,
                   axis.title = element_text(color = "black", face = "bold"),
                   axis.line.x.bottom = element_line(color = "black"),
                   axis.line.y.left = element_line(color = "black"),
-                  text = element_text(family = "Calibri"),
-                  legend.position = "none")
+                  text = element_text(family = "Calibri"))
 
-      # # If the graph is of the effector, remove legend.
-      # if(compoundToExtract == "effector"){
-      #       A <- A + theme(legend.position = "none")
-      # }
+      # If the user didn't want the legend or if the graph is of the effector,
+      # remove legend.
+      if(include_legend == FALSE | compoundToExtract == "effector"){
+            A <- A + theme(legend.position = "none")
+      }
 
       ## semi-log plot
-      Ylim_log <- Ylim
+      if(is.na(yaxis_limits_log[1])){
 
-      near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
+            Ylim_log <- Ylim
 
-      Ylim_log[1] <- Ylim_data %>%
-            filter(Time == near_match(Ylim_data$Time, time_range[2])) %>%
-            pull(Conc) %>% min()
+            near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
 
-      Ylim_log[2] <- round_up(Ylim[2])
-      Ylim_log[1] <- round_down(Ylim_log[1])
+            Ylim_log[1] <- Ylim_data %>%
+                  filter(Time == near_match(Ylim_data$Time, time_range[2])) %>%
+                  pull(Conc) %>% min()
+            Ylim_log[1] <- round_down(Ylim_log[1])
+            Ylim_log[2] <- round_up(Ylim[2])
+
+      } else {
+            # Having trouble w/our current setup sometimes clipping early data,
+            # especially when figure type is trial means. Allowing user to
+            # specify y axis limits here.
+            Ylim_log <- yaxis_limits_log
+            Ylim_log[1] <- round_down(Ylim_log[1])
+            Ylim_log[2] <- round_up(Ylim[2])
+      }
 
       YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
       YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
