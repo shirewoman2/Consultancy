@@ -480,6 +480,36 @@ ct_plot <- function(sim_data_file = NA,
                          Trial %in% c("mean", "per5", "per95")) %>%
             mutate(Group = paste(Compound, Effector, Trial))
 
+      # Setting up observed data per user input -------------------------------
+
+      obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
+
+      if(complete.cases(obs_data_option) &
+         str_detect(obs_data_option, "mean")){
+
+            suppressMessages(
+                  obs_data <- obs_data %>%
+                        group_by(across(any_of(c("Compound", "Tissue", "Effector",
+                                                 "Simulated", "Trial", "Group",
+                                                 "Time", "Time_units", "Conc_units")))) %>%
+                        summarize(SDConc = sd(Conc, na.rm = T),
+                                  Conc = switch(obs_data_option,
+                                                "means only" = mean(Conc, na.rm = T),
+                                                "mean bars" = mean(Conc, na.rm = T),
+                                                "geometric mean only" = gm_mean(Conc))) %>%
+                        ungroup()
+            )
+      }
+
+      # Setting observed data color option.
+      obs_data_color <- ifelse((complete.cases(obs_data_color) &
+                                      obs_data_color == "default") |
+                                     (is.na(obs_data_color) &
+                                            figure_type == "Freddy"),
+                               "#3030FE", obs_data_color)
+
+
+
       # Setting y axis (concentration) ---------------------------------------
       # Setting Y axis limits for both linear and semi-log plots
       if (figure_type == "trial means") {
@@ -512,34 +542,6 @@ ct_plot <- function(sim_data_file = NA,
       YLabels      <- YBreaks
       YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
 
-
-      # Setting up observed data per user input -------------------------------
-
-      obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
-
-      if(complete.cases(obs_data_option) &
-         str_detect(obs_data_option, "mean")){
-
-            suppressMessages(
-                  obs_data <- obs_data %>%
-                        group_by(across(any_of(c("Compound", "Tissue", "Effector",
-                                                 "Simulated", "Trial", "Group",
-                                                 "Time", "Time_units", "Conc_units")))) %>%
-                        summarize(SDConc = sd(Conc, na.rm = T),
-                                  Conc = switch(obs_data_option,
-                                                "means only" = mean(Conc, na.rm = T),
-                                                "mean bars" = mean(Conc, na.rm = T),
-                                                "geometric mean only" = gm_mean(Conc))) %>%
-                        ungroup()
-            )
-      }
-
-      # Setting observed data color option.
-      obs_data_color <- ifelse((complete.cases(obs_data_color) &
-                                      obs_data_color == "default") |
-                                     (is.na(obs_data_color) &
-                                            figure_type == "Freddy"),
-                               "#3030FE", obs_data_color)
 
       # Figure types ---------------------------------------------------------
       ## figure_type: trial means -----------------------------------------------------------
