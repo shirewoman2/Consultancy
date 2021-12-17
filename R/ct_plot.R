@@ -88,9 +88,10 @@
 #'   semi-log plot, e.g., \code{c(10, 1000)}. Values will be rounded down and
 #'   up, respectively, to the nearest order of magnitude. If left as NA, the Y
 #'   axis limits for the semi-log plot will be automatically selected.
-#' @param trial_mean_alpha Optionally specify the transparency for the trial
-#'   means. Acceptable values are from 0 (fully transparent) to 1 (completely
-#'   opaque). If left as NA, this value will be automatically determined.
+#' @param line_transparency Optionally specify the transparency for the trial
+#'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
+#'   so white) to 1 (completely opaque or black). If left as NA, this value will be
+#'   automatically determined.
 #' @param pad_x_axis Optionally add a smidge of padding to the left side of the
 #'   x axis. If left as FALSE, the y axis will be placed right at the beginning
 #'   of your time range. If set to TRUE, there will be a little bit of space
@@ -192,7 +193,7 @@ ct_plot <- function(sim_data_file = NA,
                     adjust_obs_time = FALSE,
                     time_range = NA,
                     yaxis_limits_log = NA,
-                    trial_mean_alpha = NA,
+                    line_transparency = NA,
                     pad_x_axis = FALSE,
                     include_legend = FALSE,
                     legend_label = NA,
@@ -548,8 +549,8 @@ ct_plot <- function(sim_data_file = NA,
       if(figure_type == "trial means"){
 
             NumTrials <- length(unique(sim_data_trial$Trial))
-            AlphaToUse <- ifelse(complete.cases(trial_mean_alpha),
-                                 trial_mean_alpha,
+            AlphaToUse <- ifelse(complete.cases(line_transparency),
+                                 line_transparency,
                                  ifelse(NumTrials > 10, 0.05, 0.4))
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
@@ -568,9 +569,12 @@ ct_plot <- function(sim_data_file = NA,
                         A <-  A + geom_point(data = obs_data, size = 2,
                                              stroke = 1)
                   } else {
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            fill = obs_data_color, alpha = 0.5,
-                                            stroke = 1)
+                        A <- A +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = obs_data_color, alpha = 0.5,
+                                         stroke = 1) +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = NA, stroke = 1)
                   }
 
             } else {
@@ -589,64 +593,76 @@ ct_plot <- function(sim_data_file = NA,
                   } else {
                         A <- A + geom_point(data = obs_data, size = 2,
                                             fill = obs_data_color, alpha = 0.5,
-                                            shape = 21, stroke = 1)
+                                            shape = 21, stroke = 1) +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = NA, shape = 21, stroke = 1)
                   }
             }
       }
 
       ## figure_type: percentiles ----------------------------------------------------------
-      # graphs with 95th percentiles
+      if(str_detect(figure_type, "percentile")){
+            # graphs with 95th percentiles
 
-      if(complete.cases(MyEffector) & MyEffector[1] != "none"){
+            AlphaToUse <- ifelse(complete.cases(line_transparency),
+                                 line_transparency, 0.25)
 
-            A <- ggplot(sim_data_mean %>%
-                              filter(Trial %in% c("per5", "per95")) %>%
-                              mutate(Group = paste(Group, Trial)),
-                        aes(x = Time, y = Conc,
-                            linetype = Effector, shape = Effector,
-                            group = Group)) +
-                  geom_line(color = "gray80", lwd = 0.8) +
-                  geom_line(data = sim_data_mean %>%
-                                  filter(Trial == "mean"),
-                            lwd = 1)  +
-                  scale_shape_manual(values = c(21, 24))
+            if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
-            if(is.na(obs_data_color)){
-                  A <- A + geom_point(data = obs_data, size = 2,
-                                      stroke = 1)
+                  A <- ggplot(sim_data_mean %>%
+                                    filter(Trial %in% c("per5", "per95")) %>%
+                                    mutate(Group = paste(Group, Trial)),
+                              aes(x = Time, y = Conc,
+                                  linetype = Effector, shape = Effector,
+                                  group = Group)) +
+                        geom_line(alpha = AlphaToUse, lwd = 0.8) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"),
+                                  lwd = 1)  +
+                        scale_shape_manual(values = c(21, 24))
+
+                  if(is.na(obs_data_color)){
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            stroke = 1)
+                  } else {
+                        A <- A +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = obs_data_color, alpha = 0.5,
+                                         stroke = 1) +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = NA, stroke = 1)
+                  }
+
             } else {
-                  A <- A + geom_point(data = obs_data, size = 2,
-                                      fill = obs_data_color, alpha = 0.5,
-                                      stroke = 1)
-            }
 
-      } else {
+                  ## linear plot
+                  A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
+                              aes(x = Time, y = Conc, group = Trial)) +
+                        geom_line(alpha = AlphaToUse, lwd = 0.8) +
+                        geom_line(data = sim_data_mean %>%
+                                        filter(Trial == "mean"), lwd = 1)
 
-            ## linear plot
-            A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
-                        aes(x = Time, y = Conc, group = Trial)) +
-                  geom_line(color = "gray80", lwd = 0.8) +
-                  geom_line(data = sim_data_mean %>%
-                                  filter(Trial == "mean"), lwd = 1)
-
-            if(is.na(obs_data_color)){
-                  A <- A + geom_point(data = obs_data, size = 2,
-                                      stroke = 1, shape = 21)
-            } else {
-                  A <- A + geom_point(data = obs_data, size = 2,
-                                      fill = obs_data_color, alpha = 0.5,
-                                      stroke = 1, shape = 21)
+                  if(is.na(obs_data_color)){
+                        A <- A + geom_point(data = obs_data, size = 2,
+                                            stroke = 1, shape = 21)
+                  } else {
+                        A <- A +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = obs_data_color, alpha = 0.5,
+                                         stroke = 1, shape = 21) +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = NA, shape = 21, stroke = 1)
+                  }
             }
       }
-
 
       ## figure_type: Freddy --------------------------------------------------------------
       if(figure_type == "Freddy"){
 
             NumTrials <- length(unique(sim_data_trial$Trial))
-            AlphaToUse <- ifelse(complete.cases(trial_mean_alpha),
-                                 trial_mean_alpha,
-                                 ifelse(NumTrials > 10, 0.05, 0.4))
+            AlphaToUse <- ifelse(complete.cases(line_transparency),
+                                 line_transparency,
+                                 ifelse(NumTrials > 10, 0.05, 0.25))
 
             if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
@@ -660,7 +676,10 @@ ct_plot <- function(sim_data_file = NA,
                                         filter(Trial %in% c("per5", "per95")),
                                   alpha = AlphaToUse, lwd = 1) +
                         geom_point(data = obs_data, size = 2,
-                                   color = "#3030FE", alpha = 0.5) +
+                                   fill = "#3030FE", alpha = 0.5,
+                                   stroke = 1) +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = NA, stroke = 1) +
                         scale_shape_manual(values = c(21, 24))
 
             } else {
@@ -677,7 +696,9 @@ ct_plot <- function(sim_data_file = NA,
                                   linetype = "dashed") +
                         geom_point(data = obs_data, size = 2, shape = 21,
                                    fill = "#3030FE", alpha = 0.5,
-                                   stroke = 1)
+                                   stroke = 1) +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = NA, shape = 21, stroke = 1)
             }
       }
 

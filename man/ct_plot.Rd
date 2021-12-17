@@ -18,7 +18,7 @@ ct_plot(
   adjust_obs_time = FALSE,
   time_range = NA,
   yaxis_limits_log = NA,
-  trial_mean_alpha = NA,
+  line_transparency = NA,
   pad_x_axis = FALSE,
   include_legend = FALSE,
   legend_label = NA,
@@ -117,9 +117,10 @@ semi-log plot, e.g., \code{c(10, 1000)}. Values will be rounded down and
 up, respectively, to the nearest order of magnitude. If left as NA, the Y
 axis limits for the semi-log plot will be automatically selected.}
 
-\item{trial_mean_alpha}{Optionally specify the transparency for the trial
-means. Acceptable values are from 0 (fully transparent) to 1 (completely
-opaque). If left as NA, this value will be automatically determined.}
+\item{line_transparency}{Optionally specify the transparency for the trial
+mean or percentile lines. Acceptable values are from 0 (fully transparent,
+so white) to 1 (completely opaque or black). If left as NA, this value will be
+automatically determined.}
 
 \item{pad_x_axis}{Optionally add a smidge of padding to the left side of the
 x axis. If left as FALSE, the y axis will be placed right at the beginning
