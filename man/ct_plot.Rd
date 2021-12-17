@@ -21,7 +21,7 @@ ct_plot(
   trial_mean_alpha = NA,
   pad_x_axis = FALSE,
   include_legend = FALSE,
-  inhibitor_or_inducer = NA,
+  legend_label = NA,
   return_data = FALSE,
   return_indiv_graphs = FALSE
 )
@@ -128,10 +128,10 @@ between the y axis and the start of your time range. NOTE: We could allow
 users to specify exactly how much padding and on which sides of the x axis
 if there's interest from users. -LS}
 
-\item{inhibitor_or_inducer}{Optionally indicate in the legend whether the
-effector is an inhibitor or an inducer. Input will be used as the legend
-title. If left as NA, the legend title will be "effector" when a legend is
-included and an effector is present.}
+\item{legend_label}{Optionally indicate on the legend whether the effector is
+an inhibitor or an inducer. Input will be used as the label in the legend
+for the line style and the shape. If left as NA when a legend is included
+and an effector is present, the label in the legend will be "effector".}
 
 \item{return_data}{TRUE or FALSE: Return the data used in the graphs? If
 TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
@@ -144,9 +144,9 @@ use one, etc.}
 }
 \value{
 Depending on the options selected, returns either a set of graphs or
-  a list of the set of graphs (named "Graphs" in the  output), the individual
-  graphs ("Linear graph" and "Semi-log graph"), and/or the data used for
-  creating the graphs ("Data").
+  a named list of the set of the two graphs together ("Graphs" in the
+  output), the individual graphs ("Linear graph" and "Semi-log graph"),
+  and/or the data used for creating the graphs ("Data").
 }
 \description{
 Using observed and simulated concentration-time data, make
@@ -164,7 +164,7 @@ sim_data_file <- "../Example simulator output.xlsx"
 obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
 
 ct_plot(sim_data_file)
-ct_plot(sim_data_file, figure_type = "trial percentiles")
+ct_plot(sim_data_file, figure_type = "percentiles")
 ct_plot(sim_data_file, return_data = TRUE)
 ct_plot(sim_data_file, return_indiv_graphs = TRUE)
 
@@ -212,4 +212,13 @@ ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
 data(ConcTime)
 ct_plot(sim_obs_dataframe = ConcTime)
 
+# Add some further options for the look of your graph -- especially useful
+# if the default settings are clipping your data.
+ct_plot(sim_data_file = "../Example simulator output - MDZ + metabolites + inhibitor.xlsx",
+        obs_data_option = "mean bars",
+        Obs_data_color = "red",
+        yaxis_limits_log = c(1e-05, 0.1),
+        pad_x_axis = TRUE,
+        include_legend = TRUE,
+        legend_label = "Inhibitor")
 }

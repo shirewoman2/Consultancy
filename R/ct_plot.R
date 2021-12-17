@@ -97,10 +97,10 @@
 #'   between the y axis and the start of your time range. NOTE: We could allow
 #'   users to specify exactly how much padding and on which sides of the x axis
 #'   if there's interest from users. -LS
-#' @param inhibitor_or_inducer Optionally indicate in the legend whether the
-#'   effector is an inhibitor or an inducer. Input will be used as the legend
-#'   title. If left as NA, the legend title will be "effector" when a legend is
-#'   included and an effector is present.
+#' @param legend_label Optionally indicate on the legend whether the effector is
+#'   an inhibitor or an inducer. Input will be used as the label in the legend
+#'   for the line style and the shape. If left as NA when a legend is included
+#'   and an effector is present, the label in the legend will be "effector".
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
@@ -110,9 +110,9 @@
 #'   use one, etc.
 #'
 #' @return Depending on the options selected, returns either a set of graphs or
-#'   a list of the set of graphs (named "Graphs" in the  output), the individual
-#'   graphs ("Linear graph" and "Semi-log graph"), and/or the data used for
-#'   creating the graphs ("Data").
+#'   a named list of the set of the two graphs together ("Graphs" in the
+#'   output), the individual graphs ("Linear graph" and "Semi-log graph"),
+#'   and/or the data used for creating the graphs ("Data").
 #' @import tidyverse
 #' @export
 #'
@@ -121,7 +121,7 @@
 #' obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
 #'
 #' ct_plot(sim_data_file)
-#' ct_plot(sim_data_file, figure_type = "trial percentiles")
+#' ct_plot(sim_data_file, figure_type = "percentiles")
 #' ct_plot(sim_data_file, return_data = TRUE)
 #' ct_plot(sim_data_file, return_indiv_graphs = TRUE)
 #'
@@ -169,6 +169,16 @@
 #' data(ConcTime)
 #' ct_plot(sim_obs_dataframe = ConcTime)
 #'
+#' # Add some further options for the look of your graph -- especially useful
+#' # if the default settings are clipping your data.
+#' ct_plot(sim_data_file = "../Example simulator output - MDZ + metabolites + inhibitor.xlsx",
+#'         obs_data_option = "mean bars",
+#'         Obs_data_color = "red",
+#'         yaxis_limits_log = c(1e-05, 0.1),
+#'         pad_x_axis = TRUE,
+#'         include_legend = TRUE,
+#'         legend_label = "Inhibitor")
+
 ct_plot <- function(sim_data_file = NA,
                     obs_data_file = NA,
                     obs_effector_data_file = NA,
@@ -185,7 +195,7 @@ ct_plot <- function(sim_data_file = NA,
                     trial_mean_alpha = NA,
                     pad_x_axis = FALSE,
                     include_legend = FALSE,
-                    inhibitor_or_inducer = NA,
+                    legend_label = NA,
                     return_data = FALSE,
                     return_indiv_graphs = FALSE){
 
@@ -509,15 +519,19 @@ ct_plot <- function(sim_data_file = NA,
 
       if(complete.cases(obs_data_option) &
          str_detect(obs_data_option, "mean")){
-            obs_data <- obs_data %>%
-                  group_by(across(any_of(c("Compound", "Tissue", "Effector",
-                                           "Simulated", "Trial", "Group",
-                                           "Time", "Time_units", "Conc_units")))) %>%
-                  summarize(SDConc = sd(Conc, na.rm = T),
-                            Conc = switch("mean only" = mean(Conc, na.rm = T),
-                                          "mean bars" = mean(Conc, na.rm = T),
-                                          "geometric mean only" = gm_mean(Conc))) %>%
-                  ungroup()
+
+            suppressMessages(
+                  obs_data <- obs_data %>%
+                        group_by(across(any_of(c("Compound", "Tissue", "Effector",
+                                                 "Simulated", "Trial", "Group",
+                                                 "Time", "Time_units", "Conc_units")))) %>%
+                        summarize(SDConc = sd(Conc, na.rm = T),
+                                  Conc = switch(obs_data_option,
+                                                "means only" = mean(Conc, na.rm = T),
+                                                "mean bars" = mean(Conc, na.rm = T),
+                                                "geometric mean only" = gm_mean(Conc))) %>%
+                        ungroup()
+            )
       }
 
       # Setting observed data color option.
@@ -579,50 +593,50 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       ## figure_type: percentiles ----------------------------------------------------------
-            # graphs with 95th percentiles
+      # graphs with 95th percentiles
 
-            if(complete.cases(MyEffector) & MyEffector[1] != "none"){
+      if(complete.cases(MyEffector) & MyEffector[1] != "none"){
 
-                  A <- ggplot(sim_data_mean %>%
-                                    filter(Trial %in% c("per5", "per95")) %>%
-                                    mutate(Group = paste(Group, Trial)),
-                              aes(x = Time, y = Conc,
-                                  linetype = Effector, shape = Effector,
-                                  group = Group)) +
-                        geom_line(color = "gray80", lwd = 0.8) +
-                        geom_line(data = sim_data_mean %>%
-                                        filter(Trial == "mean"),
-                                  lwd = 1)  +
-                        scale_shape_manual(values = c(21, 24))
+            A <- ggplot(sim_data_mean %>%
+                              filter(Trial %in% c("per5", "per95")) %>%
+                              mutate(Group = paste(Group, Trial)),
+                        aes(x = Time, y = Conc,
+                            linetype = Effector, shape = Effector,
+                            group = Group)) +
+                  geom_line(color = "gray80", lwd = 0.8) +
+                  geom_line(data = sim_data_mean %>%
+                                  filter(Trial == "mean"),
+                            lwd = 1)  +
+                  scale_shape_manual(values = c(21, 24))
 
-                  if(is.na(obs_data_color)){
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            stroke = 1)
-                  } else {
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            fill = obs_data_color, alpha = 0.5,
-                                            stroke = 1)
-                  }
-
+            if(is.na(obs_data_color)){
+                  A <- A + geom_point(data = obs_data, size = 2,
+                                      stroke = 1)
             } else {
+                  A <- A + geom_point(data = obs_data, size = 2,
+                                      fill = obs_data_color, alpha = 0.5,
+                                      stroke = 1)
+            }
 
-                  ## linear plot
-                  A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
-                              aes(x = Time, y = Conc, group = Trial)) +
-                        geom_line(color = "gray80", lwd = 0.8) +
-                        geom_line(data = sim_data_mean %>%
-                                        filter(Trial == "mean"), lwd = 1)
+      } else {
 
-                  if(is.na(obs_data_color)){
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            stroke = 1, shape = 21)
-                  } else {
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            fill = obs_data_color, alpha = 0.5,
-                                            stroke = 1, shape = 21)
-                  }
+            ## linear plot
+            A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
+                        aes(x = Time, y = Conc, group = Trial)) +
+                  geom_line(color = "gray80", lwd = 0.8) +
+                  geom_line(data = sim_data_mean %>%
+                                  filter(Trial == "mean"), lwd = 1)
+
+            if(is.na(obs_data_color)){
+                  A <- A + geom_point(data = obs_data, size = 2,
+                                      stroke = 1, shape = 21)
+            } else {
+                  A <- A + geom_point(data = obs_data, size = 2,
+                                      fill = obs_data_color, alpha = 0.5,
+                                      stroke = 1, shape = 21)
             }
       }
+
 
       ## figure_type: Freddy --------------------------------------------------------------
       if(figure_type == "Freddy"){
@@ -691,7 +705,8 @@ ct_plot <- function(sim_data_file = NA,
             A <- A +
                   geom_errorbar(data = obs_data,
                                 aes(x = Time, ymin = Conc - SDConc,
-                                    ymax = Conc + SDConc))
+                                    ymax = Conc + SDConc),
+                                width = (time_range[2] - time_range[1])/80)
       }
 
       # Applying aesthetics ------------------------------------------------
@@ -703,10 +718,10 @@ ct_plot <- function(sim_data_file = NA,
                                labels = YLabels,
                                expand = expansion(mult = c(0, 0.1))) +
             labs(x = xlab, y = ylab,
-                 linetype = ifelse(complete.cases(inhibitor_or_inducer),
-                                   inhibitor_or_inducer, "Effector"),
-                 shape = ifelse(complete.cases(inhibitor_or_inducer),
-                                inhibitor_or_inducer, "Effector")) +
+                 linetype = ifelse(complete.cases(legend_label),
+                                   legend_label, "Effector"),
+                 shape = ifelse(complete.cases(legend_label),
+                                legend_label, "Effector")) +
             coord_cartesian(xlim = time_range) +
             theme(panel.background = element_rect(fill="white", color=NA),
                   legend.key = element_rect(fill = "white"),
