@@ -73,6 +73,16 @@ this is labeled as "inhibitor 1" in the simulator).}
   was modeled, a dashed line for the concentration-time data with the the
   effector.}
 
+  \item{Freddy}{Freddy's favorite style of plot with trial means in light
+  gray, the overall mean in thicker black, the 5th and 95th percentiles in
+  dashed lines, and the observed data in semi-transparent purple-blue. Graphs
+  with an effector present lose the trial means, and the percentiles switch
+  to solid, gray lines. While this does not align with the officially
+  sanctioned template at this time, this looks \emph{sharp}, makes it easy to
+  see the defining characteristics of the data, and I recommend checking it
+  out. If the color is too much for you but you like the rest, try setting
+  \code{obs_data_color = "none"}. -LS}
+
   }}
 
 \item{obs_data_option}{Set options for how to view observed data. Options are
@@ -86,7 +96,8 @@ standard deviation.}
 \item{obs_data_color}{If you would like the observed data points to be in
 color, either list a specific color or set this to "default". Points will
 be displayed in semi-transparent blue-purple for default and the
-semi-transparent version of whatever other color you list otherwise.}
+semi-transparent version of whatever other color you list otherwise.
+Setting this to "none" will also make sure that the color is transparent.}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
@@ -119,8 +130,8 @@ axis limits for the semi-log plot will be automatically selected.}
 
 \item{line_transparency}{Optionally specify the transparency for the trial
 mean or percentile lines. Acceptable values are from 0 (fully transparent,
-so white) to 1 (completely opaque or black). If left as NA, this value will be
-automatically determined.}
+so no line at all) to 1 (completely opaque or black). If left as NA, this
+value will be automatically determined.}
 
 \item{pad_x_axis}{Optionally add a smidge of padding to the left side of the
 x axis. If left as FALSE, the y axis will be placed right at the beginning

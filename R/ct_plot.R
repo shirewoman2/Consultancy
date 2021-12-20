@@ -50,6 +50,16 @@
 #'   was modeled, a dashed line for the concentration-time data with the the
 #'   effector.}
 #'
+#'   \item{Freddy}{Freddy's favorite style of plot with trial means in light
+#'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
+#'   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
+#'   with an effector present lose the trial means, and the percentiles switch
+#'   to solid, gray lines. While this does not align with the officially
+#'   sanctioned template at this time, this looks \emph{sharp}, makes it easy to
+#'   see the defining characteristics of the data, and I recommend checking it
+#'   out. If the color is too much for you but you like the rest, try setting
+#'   \code{obs_data_color = "none"}. -LS}
+#'
 #'   }
 #' @param obs_data_option Set options for how to view observed data. Options are
 #'   "mean only" to show only a single point at the arithmetic mean value for
@@ -62,6 +72,7 @@
 #'   color, either list a specific color or set this to "default". Points will
 #'   be displayed in semi-transparent blue-purple for default and the
 #'   semi-transparent version of whatever other color you list otherwise.
+#'   Setting this to "none" will also make sure that the color is transparent.
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -90,8 +101,8 @@
 #'   axis limits for the semi-log plot will be automatically selected.
 #' @param line_transparency Optionally specify the transparency for the trial
 #'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
-#'   so white) to 1 (completely opaque or black). If left as NA, this value will be
-#'   automatically determined.
+#'   so no line at all) to 1 (completely opaque or black). If left as NA, this
+#'   value will be automatically determined.
 #' @param pad_x_axis Optionally add a smidge of padding to the left side of the
 #'   x axis. If left as FALSE, the y axis will be placed right at the beginning
 #'   of your time range. If set to TRUE, there will be a little bit of space
@@ -565,7 +576,7 @@ ct_plot <- function(sim_data_file = NA,
                                   lwd = 1) +
                         scale_shape_manual(values = c(21, 24))
 
-                  if(is.na(obs_data_color)){
+                  if(is.na(obs_data_color) | obs_data_color == "none"){
                         A <-  A + geom_point(data = obs_data, size = 2,
                                              stroke = 1)
                   } else {
@@ -587,7 +598,7 @@ ct_plot <- function(sim_data_file = NA,
                                         filter(Trial == "mean"),
                                   lwd = 1)
 
-                  if(is.na(obs_data_color)){
+                  if(is.na(obs_data_color) | obs_data_color == "none"){
                         A <- A + geom_point(data = obs_data, size = 2,
                                             shape = 21, stroke = 1)
                   } else {
@@ -621,7 +632,7 @@ ct_plot <- function(sim_data_file = NA,
                                   lwd = 1)  +
                         scale_shape_manual(values = c(21, 24))
 
-                  if(is.na(obs_data_color)){
+                  if(is.na(obs_data_color) | obs_data_color == "none"){
                         A <- A + geom_point(data = obs_data, size = 2,
                                             stroke = 1)
                   } else {
@@ -642,7 +653,7 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"), lwd = 1)
 
-                  if(is.na(obs_data_color)){
+                  if(is.na(obs_data_color) | obs_data_color == "none"){
                         A <- A + geom_point(data = obs_data, size = 2,
                                             stroke = 1, shape = 21)
                   } else {
@@ -675,12 +686,38 @@ ct_plot <- function(sim_data_file = NA,
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95")),
                                   alpha = AlphaToUse, lwd = 1) +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = "#3030FE", alpha = 0.5,
-                                   stroke = 1) +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1) +
                         scale_shape_manual(values = c(21, 24))
+
+                  if(is.na(obs_data_color)){
+                        A <- A +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = "#3030FE", alpha = 0.5,
+                                         stroke = 1) +
+                              geom_point(data = obs_data, size = 2,
+                                         fill = NA, stroke = 1)
+                  } else {
+
+                        # When figure_type == "Freddy", I want the default to be
+                        # a blue-purple semi-transparent fill. However, I want
+                        # people to have the option to override that, so
+                        # setting obs_data_color to "none" will override the
+                        # "Freddy" default. -LS
+                        if(obs_data_color == "none"){
+                              A <- A + geom_point(data = obs_data, size = 2,
+                                                  fill = NA, stroke = 1)
+                        } else {
+                              # This is the situation when the user has
+                              # requested a specific color for the Freddy figure
+                              # type.
+                              A <- A +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = obs_data_color, alpha = 0.5,
+                                               stroke = 1) +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = NA, stroke = 1)
+                        }
+                  }
+
 
             } else {
 
@@ -693,12 +730,38 @@ ct_plot <- function(sim_data_file = NA,
                                   lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95")),
-                                  linetype = "dashed") +
-                        geom_point(data = obs_data, size = 2, shape = 21,
-                                   fill = "#3030FE", alpha = 0.5,
-                                   stroke = 1) +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, shape = 21, stroke = 1)
+                                  linetype = "dashed")
+
+                  if(is.na(obs_data_color)){
+                        A <- A +
+                              geom_point(data = obs_data, size = 2, shape = 21,
+                                         fill = "#3030FE", alpha = 0.5,
+                                         stroke = 1) +
+                              geom_point(data = obs_data, size = 2, shape = 21,
+                                         fill = NA, stroke = 1)
+                  } else {
+
+                        # When figure_type == "Freddy", I want the default to be
+                        # a blue-purple semi-transparent fill. However, I want
+                        # people to have the option to override that, so
+                        # setting obs_data_color to "none" will override the
+                        # "Freddy" default. -LS
+                        if(obs_data_color == "none"){
+                              A <- A + geom_point(data = obs_data, size = 2,
+                                                  fill = NA, stroke = 1,
+                                                  shape = 21)
+                        } else {
+                              # This is the situation when the user has
+                              # requested a specific color for the Freddy figure
+                              # type.
+                              A <- A +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = obs_data_color, alpha = 0.5,
+                                               stroke = 1, shape = 21) +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = NA, stroke = 1, shape = 21)
+                        }
+                  }
             }
       }
 
