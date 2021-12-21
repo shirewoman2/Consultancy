@@ -786,6 +786,10 @@ ct_plot <- function(sim_data_file = NA,
             }
       }
 
+      if(nrow(obs_data) == 0){
+            A <- A + guides(shape = FALSE)
+      }
+
       if(complete.cases(obs_data_option) & obs_data_option == "mean bars" &
          figure_type != "means only"){
             A <- A +
