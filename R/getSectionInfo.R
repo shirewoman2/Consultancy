@@ -53,76 +53,49 @@ getSectionInfo <- function(report_input_file = NA,
                                      sheet = sheet))
       }
 
-      # Making each of the items in InputXL its own thing so that output from
-      # getSectionInfo will be exclusively a list rather than a list that
-      # contains a data.frame, since the latter is annoying to code namewise.
-      ModelPurpose <- InputXL$Value[which(InputXL$RName == "ModelPurpose")]
-      SimFile <- InputXL$Value[which(InputXL$RName == "SimFile")]
-      ClinStudyTab <- InputXL$Value[which(InputXL$RName == "ClinStudyTab")]
-      ObsFile_dose1 <- InputXL$Value[which(InputXL$RName == "ObsFile_dose1")]
-      ObsFile_ss <- InputXL$Value[which(InputXL$RName == "ObsFile_ss")]
-      ObsEffectorFile <- InputXL$Value[which(InputXL$RName == "ObsEffectorFile")]
+      # Making each of the items in InputXL its own named item in a list so that
+      # output from getSectionInfo will be exclusively a list rather than a list
+      # that contains a data.frame, since the latter is annoying to code
+      # namewise.
+      InfoList <- InputXL %>% select(-Item) %>%
+            mutate(Value = gsub("\\\\", "/", Value),
+                   Value = sub("(https://)?s08sharepoint.certara.com/sites/consult/",
+                               SimcypDir$SharePtDir, Value)) %>%
+            pivot_wider(names_from = RName, values_from = Value) %>%
+      as.list()
 
-      SimFile <- gsub("\\\\", "/", SimFile)
-      SimFile <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
-                     SimcypDir$SharePtDir, SimFile)
-
-      ObsFile_dose1 <- gsub("\\\\", "/", ObsFile_dose1)
-      ObsFile_dose1 <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
-                     SimcypDir$SharePtDir, ObsFile_dose1)
-
-      ObsFile_ss <- gsub("\\\\", "/", ObsFile_ss)
-      ObsFile_ss <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
-                           SimcypDir$SharePtDir, ObsFile_ss)
-
-      ObsEffectorFile <- gsub("\\\\", "/", ObsEffectorFile)
-      ObsEffectorFile <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
-                           SimcypDir$SharePtDir, ObsEffectorFile)
-      # Question: Is there a way to code this so that we don't need to do the
-      # above, item by item? If we ever change the input form, which I'm sure
-      # we'll do, then we'll need to change all of this to match. -LS
-
-      if(is.na(ClinStudyTab) & ModelPurpose != "application"){
+      if(is.na(InfoList$ClinStudyTab) & InfoList$ModelPurpose != "application"){
             warning("The modeling phase is not listed as 'application', but no clinical study tab is listed for comparing to simulated data. Are you sure that's correct? The information extracted for this section will not be compared to any observed data.")
       }
 
       ClinXL <- suppressMessages(readxl::read_excel(path = report_input_file,
                                                     sheet = ClinStudyTab))
 
-      MeanType <- ClinXL$Value[which(ClinXL$RName == "MeanType")]
-      GMR_mean_type <- ClinXL$Value[which(ClinXL$RName == "GMR_mean_type")]
+      InfoList <- c(InfoList,
+                ClinXL %>% select(-Item) %>%
+                      filter(complete.cases(RName)) %>%
+                      pivot_wider(names_from = RName, values_from = Value) %>%
+                      as.list())
 
       Deets <- extractExpDetails(sim_data_file = SimFile)
 
       # Tidying up the names used for populations so that they look nice in report
       Pop <- tidyPop(Deets$Pop)
-
-      Dose <- Deets[["Dose_sub"]]
-      DoseUnits <- Deets[["Units_dose_sub"]]
-
       NumSimSubj <- Deets[["NumSubjTrial"]] * Deets[["NumTrials"]]
-
-      DoseRegimen <- InputXL$Value[which(InputXL$RName == "DoseRegimen")]
-      DoseRegimen <- ifelse(DoseRegimen == "SD", "single dose", DoseRegimen)
-      DoseRegimen <- ifelse(DoseRegimen == "MD", "multiple doses", DoseRegimen)
-
       DoseFreq <- switch(as.character(Deets[["DoseInt_sub"]]),
                          "12" = "BID",
                          "24" = "QD",
-                         "8" = "TID")
-      DoseFreq <- ifelse(is.null(DoseFreq),
-                         DoseRegimen, DoseFreq)
-
-      Inhib <- tolower(gsub(
+                         "8" = "TID",
+                         "Single Dose" = "single dose")
+      Deets[["Inhibitor"]] <- tolower(gsub(
             "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
             "",
             Deets[["Inhibitor"]]))
-      Dose_inhib <- Deets[["Dose_inhib"]]
-      Units_dose_inhib <- Deets[["Units_dose_inhib"]]
       DoseFreq_inhib <- switch(as.character(Deets[["DoseInt_inhib"]]),
                                "12" = "BID",
                                "24" = "QD",
-                               "8" = "TID")
+                               "8" = "TID",
+                               "Single Dose" = "single dose")
 
       # Day substrate was administered
       StartDoseDay_sub <-
@@ -137,31 +110,17 @@ getSectionInfo <- function(report_input_file = NA,
             (Deets[["DoseInt_inhib"]] * Deets[["NumDoses_inhib"]])/24
 
 
-      InfoList <- list(
-            # "InputXL" = InputXL,
-            "ModelPurpose" = ModelPurpose,
-            # "ClinXL" = ClinXL,
+      # Putting everything together
+      InfoList <- c(InfoList, Deets,
+                    "Pop" = Pop,
+                    "NumSimSubj" = NumSimSubj,
+                    "DoseFreq" = DoseFreq,
+                    "DoseFreq_inhib" = DoseFreq_inhib,
+                    "StartDoseDay_sub" = StartDoseDay_sub,
+                    "StartDoseDay_inhib" = StartDoseDay_inhib,
+                    "LastDoseDay_inhib" = LastDoseDay_inhib)
 
-            "MeanType" = MeanType, "GMR_mean_type" = GMR_mean_type,
-            "ClinStudyTab" = ClinStudyTab,
-            "SimFile" = SimFile,
-            "ObsFile_dose1" = ObsFile_dose1,
-            "ObsFile_ss" = ObsFile_ss,
-            "ObsEffectorFile" = ObsEffectorFile,
-            "Deets" = Deets,
-            "Pop" = Pop,
-            "NumSimSubj" = NumSimSubj,
-            "Dose" = Dose,
-            "DoseUnits" = DoseUnits,
-            "DoseRegimen" = DoseRegimen,
-            "DoseFreq" = DoseFreq,
-            "Inhib" = Inhib,
-            "Dose_inhib" = Dose_inhib,
-            "Units_dose_inhib" = Units_dose_inhib,
-            "DoseFreq_inhib" = DoseFreq_inhib,
-            "StartDoseDay_sub" = StartDoseDay_sub,
-            "StartDoseDay_inhib" = StartDoseDay_inhib,
-            "LastDoseDay_inhib" = LastDoseDay_inhib)
+      InfoList <- InfoList[sort(names(InfoList))]
 
       return(InfoList)
 }

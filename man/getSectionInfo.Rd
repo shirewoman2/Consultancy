@@ -2,7 +2,7 @@
 % Please edit documentation in R/getSectionInfo.R
 \name{getSectionInfo}
 \alias{getSectionInfo}
-\title{Get information about a section for a report}
+\title{Get information from an Excel report-input file about a section for a report}
 \usage{
 getSectionInfo(report_input_file = NA, sheet = NA, section_input_DF = NA)
 }
@@ -44,7 +44,9 @@ names include the full file path.} \item{Save your Excel file.} \item{Here,
 within RStudio (or within the shiny app that we plan to make!), run this
 function using the name of that Excel file as input for
 \code{report_input_file} and the name of the "section input" tab as the input
-for \code{sheet}.} }
+for \code{sheet}. Note: If the Excel file lives on SharePoint, you'll need to
+close it or this function will just keep running and not generate any output
+while it waits for access to the file.} }
 }
 \examples{
 # No examples yet.

@@ -19,7 +19,9 @@
 #' within RStudio (or within the shiny app that we plan to make!), run this
 #' function using the name of that Excel file as input for
 #' \code{report_input_file} and the name of the "section input" tab as the input
-#' for \code{sheet}.} }
+#' for \code{sheet}. Note: If the Excel file lives on SharePoint, you'll need to
+#' close it or this function will just keep running and not generate any output
+#' while it waits for access to the file.} }
 #'
 #' @param report_input_file the name of the Excel file to be piped to
 #'   \code{\link{getSectionInfo}}
@@ -88,8 +90,8 @@ so_table <- function(report_input_file = NA,
 
       PKToPull <- ObsToPull[!str_detect(ObsToPull, "_CV")]
 
-      EffectorPresent <- complete.cases(sectionInfo$Deets$Inhibitor)
-      DoseRegimen <- sectionInfo$Deets$Regimen_sub
+      EffectorPresent <- complete.cases(sectionInfo$Inhibitor)
+      DoseRegimen <- sectionInfo$Regimen_sub
 
       # Getting PK parameters from the AUC tab
       MyPKParam <- switch(
@@ -126,8 +128,9 @@ so_table <- function(report_input_file = NA,
       # Accounting for when mean_type is arithmetic but the user requests that
       # the ratio for + effector over - effector be a GMR.
       if(MeanType == "arithmetic" &
-         complete.cases(sectionInfo$ClinXL$Value[which(sectionInfo$ClinXL$RName == "GMR_mean_type")]) &
-         sectionInfo$ClinXL$Value[which(sectionInfo$ClinXL$RName == "GMR_mean_type")] == "geometric"){
+         complete.cases(sectionInfo$GMR_mean_type) &
+         sectionInfo$GMR_mean_type == "geometric"){
+
             MyPKResults[MyPKResults$Statistic == "Mean",
                         str_detect(names(MyPKResults), "ratio")] <-
                   MyPKResults[MyPKResults$Statistic == "Geometric Mean",
@@ -210,8 +213,7 @@ so_table <- function(report_input_file = NA,
             pivot_wider(names_from = PKParam, values_from = Value)
 
       # Observed data. Not included when section is model application.
-      if(tolower(sectionInfo$InputXL$Value[which(sectionInfo$InputXL$RName == "ModelPurpose")]) !=
-         "application"){
+      if(tolower(sectionInfo$ModelPurpose) != "application"){
 
             MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
             if(EffectorPresent){
@@ -222,10 +224,12 @@ so_table <- function(report_input_file = NA,
                                     "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
             }
 
-            MyObsPK <- sectionInfo$ClinXL %>%
-                  filter(RName %in% MyObsPKParam) %>%
-                  select(RName, Value) %>%
-                  mutate(Value = as.numeric(Value),
+            MyObsPK <- sectionInfo[names(sectionInfo)[
+                  names(sectionInfo) %in% MyObsPKParam]] %>%
+                  as.data.frame() %>% t() %>% as.data.frame() %>%
+                  rename("Value" = V1) %>%
+                  mutate(RName = row.names(.),
+                         Value = as.numeric(Value),
                          Stat = ifelse(str_detect(RName, "CV"), "CV_obs", "GMean"),
                          Stat = ifelse(str_detect(RName, "CIU"), "CIU_obs", Stat),
                          Stat = ifelse(str_detect(RName, "CIL"), "CIL_obs", Stat),
