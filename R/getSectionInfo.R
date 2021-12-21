@@ -19,7 +19,9 @@
 #' within RStudio (or within the shiny app that we plan to make!), run this
 #' function using the name of that Excel file as input for
 #' \code{report_input_file} and the name of the "section input" tab as the input
-#' for \code{sheet}.} }
+#' for \code{sheet}. Note: If the Excel file lives on SharePoint, you'll need to
+#' close it or this function will just keep running and not generate any output
+#' while it waits for access to the file.} }
 #'
 #' @param report_input_file the name of the Excel file formatted exactly like
 #'   "Report input template.xlsx", including the path if it's in any other
@@ -51,19 +53,41 @@ getSectionInfo <- function(report_input_file = NA,
                                      sheet = sheet))
       }
 
+      # Making each of the items in InputXL its own thing so that output from
+      # getSectionInfo will be exclusively a list rather than a list that
+      # contains a data.frame, since the latter is annoying to code namewise.
+      ModelPurpose <- InputXL$Value[which(InputXL$RName == "ModelPurpose")]
+      SimFile <- InputXL$Value[which(InputXL$RName == "SimFile")]
       ClinStudyTab <- InputXL$Value[which(InputXL$RName == "ClinStudyTab")]
-      ModelPhase <- tolower(InputXL$Value[which(InputXL$RName == "ModelPurpose")])
-      if(is.na(ClinStudyTab) & ModelPhase != "application"){
-            warning("The modelling phase is not listed as 'application', but no clinical study tab is listed for comparing to simulated data. Are you sure that's correct? The information extracted for this section will not be compared to any observed data.")
+      ObsFile_dose1 <- InputXL$Value[which(InputXL$RName == "ObsFile_dose1")]
+      ObsFile_ss <- InputXL$Value[which(InputXL$RName == "ObsFile_ss")]
+      ObsEffectorFile <- InputXL$Value[which(InputXL$RName == "ObsEffectorFile")]
+
+      SimFile <- gsub("\\\\", "/", SimFile)
+      SimFile <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
+                     SimcypDir$SharePtDir, SimFile)
+
+      ObsFile_dose1 <- gsub("\\\\", "/", ObsFile_dose1)
+      ObsFile_dose1 <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
+                     SimcypDir$SharePtDir, ObsFile_dose1)
+
+      ObsFile_ss <- gsub("\\\\", "/", ObsFile_ss)
+      ObsFile_ss <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
+                           SimcypDir$SharePtDir, ObsFile_ss)
+
+      ObsEffectorFile <- gsub("\\\\", "/", ObsEffectorFile)
+      ObsEffectorFile <- sub("(https://)?s08sharepoint.certara.com/sites/consult/",
+                           SimcypDir$SharePtDir, ObsEffectorFile)
+      # Question: Is there a way to code this so that we don't need to do the
+      # above, item by item? If we ever change the input form, which I'm sure
+      # we'll do, then we'll need to change all of this to match. -LS
+
+      if(is.na(ClinStudyTab) & ModelPurpose != "application"){
+            warning("The modeling phase is not listed as 'application', but no clinical study tab is listed for comparing to simulated data. Are you sure that's correct? The information extracted for this section will not be compared to any observed data.")
       }
 
       ClinXL <- suppressMessages(readxl::read_excel(path = report_input_file,
                                                     sheet = ClinStudyTab))
-
-      SimFile <- InputXL$Value[which(InputXL$RName == "SimFile")]
-      ObsFile_dose1 <- InputXL$Value[which(InputXL$RName == "ObsFile_dose1")]
-      ObsFile_ss <- InputXL$Value[which(InputXL$RName == "ObsFile_ss")]
-      ObsEffectorFile <- InputXL$Value[which(InputXL$RName == "ObsEffectorFile")]
 
       MeanType <- ClinXL$Value[which(ClinXL$RName == "MeanType")]
       GMR_mean_type <- ClinXL$Value[which(ClinXL$RName == "GMR_mean_type")]
@@ -114,17 +138,27 @@ getSectionInfo <- function(report_input_file = NA,
 
 
       InfoList <- list(
-            "InputXL" = InputXL, "ClinXL" = ClinXL,
+            # "InputXL" = InputXL,
+            "ModelPurpose" = ModelPurpose,
+            # "ClinXL" = ClinXL,
+
             "MeanType" = MeanType, "GMR_mean_type" = GMR_mean_type,
             "ClinStudyTab" = ClinStudyTab,
             "SimFile" = SimFile,
-            "ObsFile_dose1" = ObsFile_dose1, "ObsFile_ss" = ObsFile_ss,
+            "ObsFile_dose1" = ObsFile_dose1,
+            "ObsFile_ss" = ObsFile_ss,
             "ObsEffectorFile" = ObsEffectorFile,
-            "Deets" = Deets, "Pop" = Pop, "NumSimSubj" = NumSimSubj,
-            "Dose" = Dose, "DoseUnits" = DoseUnits, "DoseRegimen" = DoseRegimen,
+            "Deets" = Deets,
+            "Pop" = Pop,
+            "NumSimSubj" = NumSimSubj,
+            "Dose" = Dose,
+            "DoseUnits" = DoseUnits,
+            "DoseRegimen" = DoseRegimen,
             "DoseFreq" = DoseFreq,
-            "Inhib" = Inhib, "Dose_inhib" = Dose_inhib,
-            "Units_dose_inhib" = Units_dose_inhib, "DoseFreq_inhib" = DoseFreq_inhib,
+            "Inhib" = Inhib,
+            "Dose_inhib" = Dose_inhib,
+            "Units_dose_inhib" = Units_dose_inhib,
+            "DoseFreq_inhib" = DoseFreq_inhib,
             "StartDoseDay_sub" = StartDoseDay_sub,
             "StartDoseDay_inhib" = StartDoseDay_inhib,
             "LastDoseDay_inhib" = LastDoseDay_inhib)
