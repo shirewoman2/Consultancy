@@ -64,7 +64,7 @@
 #' @param obs_data_option Set options for how to view observed data. Options are
 #'   "mean only" to show only a single point at the arithmetic mean value for
 #'   each time point, "geometric mean only" to show a single point at the
-#'   geometric mean, "all data" to show all the individual data (equivalently,
+#'   geometric mean, "all" to show all the individual data (equivalently,
 #'   leave \code{obs_data_option} as NA), or "mean bars" to show a point at the
 #'   arithmetic mean for each time point and error bars for the arithmetic
 #'   standard deviation.

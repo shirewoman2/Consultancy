@@ -14,8 +14,8 @@ graph_boxplot(
   include_errorbars = FALSE,
   xlabel = NA,
   ylabel = NA,
-  color = "default",
-  outfile = NA,
+  color_set = "default",
+  filename = NA,
   outwidth = 6,
   outheight = 4
 )
@@ -50,7 +50,7 @@ bars on the whiskers}
 
 \item{ylabel}{the label to use for the y axis}
 
-\item{color}{the set of colors to use. Options: \describe{
+\item{color_set}{the set of colors to use. Options: \describe{
 
   \item{"default"}{colors selected from the color brewer palette "set 1"}
 
@@ -71,7 +71,7 @@ bars on the whiskers}
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}}}
 
-\item{outfile}{the file name for the output graph, e.g., "My pretty
+\item{filename}{the file name for the output graph, e.g., "My pretty
 boxplot.png". If you don't want to automatically save the graph, leave this
 as NA.}
 
@@ -94,13 +94,13 @@ AUCs <- data.frame(AgeGroup = LETTERS[1:5],
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-               color = "rainbow")
+               color_set = "rainbow")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-               color = "blue-green", graph_type =  "jittered points")
+               color_set = "blue-green", graph_type =  "jittered points")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-              color = "Tableau", graph_type =  "jittered points, filled boxes")
+              color_set = "Tableau", graph_type =  "jittered points, filled boxes")
 
 # Adding a couple of example columns to use the "facet" options.
 AUCs$Sex <- c("M", "F")
@@ -108,11 +108,11 @@ AUCs$Metabolizer <- sample(c("poor", "extensive"), 100, replace = TRUE)
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
                facet_column1 = "Sex",
-               color = "blue-green", graph_type =  "jittered points")
+               color_set = "blue-green", graph_type =  "jittered points")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
                facet_column1 = "Sex", facet_column2 = "Metabolizer",
-               color = "blue-green", graph_type =  "jittered points")
+               color_set = "blue-green", graph_type =  "jittered points")
 
 graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
               graph_type = "jittered points, filled boxes")
@@ -121,8 +121,8 @@ graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 graph_boxplot(AUCs \%>\% filter(AgeGroup \%in\% c("A", "B")),
               category_column = "AgeGroup", value_column = "AUC",
               graph_type = "jittered points, filled boxes",
-              color = "Brewer set 2", include_errorbars = TRUE,
-              outfile = "test boxplot.png")
+              color_set = "Brewer set 2", include_errorbars = TRUE,
+              filename = "test boxplot.png")
 
 
 }

@@ -7,15 +7,15 @@
 #' also SLOW b/c it has to read everything from Excel.
 #'
 #'
-#' @param File1 An Excel file you want to compare
-#' @param File2 The other Excel file you want to compare
+#' @param file1 An Excel file you want to compare
+#' @param file2 The other Excel file you want to compare
 #' @param sheets_to_check a vector of the names of sheets to compare. If left as
 #'   NA, all sheets will be checked.
 #' @param outputAllSheets TRUE or FALSE: Do you want to have the output include
 #'   a list of all the loaded Excel sheets?
 #'
 #' @return If \code{ouputAllSheets} is FALSE, output is a list of which rows and
-#'   columns differ between File1 and File2. If \code{ouputAllSheets} is TRUE,
+#'   columns differ between file1 and file2. If \code{ouputAllSheets} is TRUE,
 #'   output is both the list and also a list of all the sheet contents from both
 #'   files.
 #' @import tidyverse
@@ -24,10 +24,10 @@
 #' @examples
 #' # No examples available atm.
 #'
-findXLChanges <- function(File1, File2, sheets_to_check = NA, outputAllSheets = TRUE){
+findXLChanges <- function(file1, file2, sheets_to_check = NA, outputAllSheets = TRUE){
 
-      Sheets1 <- readxl::excel_sheets(path = File1)
-      Sheets2 <- readxl::excel_sheets(path = File2)
+      Sheets1 <- readxl::excel_sheets(path = file1)
+      Sheets2 <- readxl::excel_sheets(path = file2)
 
       if(is.na(sheets_to_check)[1] & (all(Sheets1 %in% Sheets2) == FALSE |
                                    all(Sheets2 %in% Sheets1) == FALSE)){
@@ -60,8 +60,8 @@ findXLChanges <- function(File1, File2, sheets_to_check = NA, outputAllSheets = 
 
       for(i in AllSheets){
             # Reading & comparing
-            F1_i <- readxl::read_excel(File1, sheet = i, col_names = FALSE)
-            F2_i <- readxl::read_excel(File2, sheet = i, col_names = FALSE)
+            F1_i <- readxl::read_excel(file1, sheet = i, col_names = FALSE)
+            F2_i <- readxl::read_excel(file2, sheet = i, col_names = FALSE)
 
             AllSame[[i]] <- all(F1_i == F2_i, na.rm = TRUE)
 
@@ -106,6 +106,6 @@ findXLChanges <- function(File1, File2, sheets_to_check = NA, outputAllSheets = 
 
 }
 
-# findXLChanges(File1, File2, outputAllSheets = FALSE)
+# findXLChanges(file1, file2, outputAllSheets = FALSE)
 
 

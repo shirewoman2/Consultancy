@@ -25,7 +25,7 @@
 #'   bars on the whiskers
 #' @param xlabel the label to  use for the x axis
 #' @param ylabel the label to use for the y axis
-#' @param color the set of colors to use. Options: \describe{
+#' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{colors selected from the color brewer palette "set 1"}
 #'
@@ -45,7 +45,7 @@
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}}
-#' @param outfile the file name for the output graph, e.g., "My pretty
+#' @param filename the file name for the output graph, e.g., "My pretty
 #'   boxplot.png". If you don't want to automatically save the graph, leave this
 #'   as NA.
 #' @param outwidth the width in inches of the output graph
@@ -63,13 +63,13 @@
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC")
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-#'                color = "rainbow")
+#'                color_set = "rainbow")
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-#'                color = "blue-green", graph_type =  "jittered points")
+#'                color_set = "blue-green", graph_type =  "jittered points")
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-#'               color = "Tableau", graph_type =  "jittered points, filled boxes")
+#'               color_set = "Tableau", graph_type =  "jittered points, filled boxes")
 #'
 #' # Adding a couple of example columns to use the "facet" options.
 #' AUCs$Sex <- c("M", "F")
@@ -77,11 +77,11 @@
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'                facet_column1 = "Sex",
-#'                color = "blue-green", graph_type =  "jittered points")
+#'                color_set = "blue-green", graph_type =  "jittered points")
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'                facet_column1 = "Sex", facet_column2 = "Metabolizer",
-#'                color = "blue-green", graph_type =  "jittered points")
+#'                color_set = "blue-green", graph_type =  "jittered points")
 #'
 #' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'               graph_type = "jittered points, filled boxes")
@@ -90,8 +90,8 @@
 #' graph_boxplot(AUCs %>% filter(AgeGroup %in% c("A", "B")),
 #'               category_column = "AgeGroup", value_column = "AUC",
 #'               graph_type = "jittered points, filled boxes",
-#'               color = "Brewer set 2", include_errorbars = TRUE,
-#'               outfile = "test boxplot.png")
+#'               color_set = "Brewer set 2", include_errorbars = TRUE,
+#'               filename = "test boxplot.png")
 #'
 #'
 graph_boxplot <- function(DF,
@@ -103,8 +103,8 @@ graph_boxplot <- function(DF,
                           include_errorbars = FALSE,
                           xlabel = NA,
                           ylabel = NA,
-                          color = "default",
-                          outfile = NA,
+                          color_set = "default",
+                          filename = NA,
                           outwidth = 6, outheight = 4){
 
       # Adding options for colors
@@ -132,7 +132,7 @@ graph_boxplot <- function(DF,
             select(any_of(c("CATCOL", "VALCOL", "FACETCOL1", "FACETCOL2")))
 
       # Building graph layers
-      if(color == "black"){
+      if(color_set == "black"){
             G <- ggplot(DF, aes(x = CATCOL, y = VALCOL))
       } else {
             G <- ggplot(DF, aes(x = CATCOL, y = VALCOL,
@@ -204,38 +204,38 @@ graph_boxplot <- function(DF,
             legend.background = element_rect(color=NA, fill=NA),
             legend.key = element_rect(color=NA, fill=NA))
 
-      if(color == "default"){
+      if(color_set == "default"){
             G <- G + scale_color_brewer(palette = "Set1") +
                   scale_fill_brewer(palette="Set1")
       }
 
-      if(color == "blue-green"){
+      if(color_set == "blue-green"){
             G <- G + scale_color_manual(
                   values = blueGreen(length(unique(DF$CATCOL)))) +
                   scale_fill_manual(
                         values = blueGreen(length(unique(DF$CATCOL))))
       }
 
-      if(color == "rainbow"){
+      if(color_set == "rainbow"){
             G <- G + scale_color_manual(
                   values = colRainbow(length(unique(DF$CATCOL)))) +
                   scale_fill_manual(
                         values = colRainbow(length(unique(DF$CATCOL))))
       }
 
-      if(color == "Brewer set 2"){
+      if(color_set == "Brewer set 2"){
             G <- G + scale_fill_brewer(palette = "Set2") +
                   scale_color_brewer(palette = "Set2")
       }
 
-      if(color == "Tableau"){
+      if(color_set == "Tableau"){
             G <- G + ggthemes::scale_color_tableau() +
                   ggthemes::scale_fill_tableau()
       }
 
-      if(complete.cases(outfile)){
+      if(complete.cases(filename)){
             print(G)
-            ggsave(outfile, height = outheight, width = outwidth, dpi = 600)
+            ggsave(filename, height = outheight, width = outwidth, dpi = 600)
       }
 
       return(G)

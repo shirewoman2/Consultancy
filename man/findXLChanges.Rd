@@ -4,12 +4,12 @@
 \alias{findXLChanges}
 \title{Find differences between two Excel files}
 \usage{
-findXLChanges(File1, File2, sheets_to_check = NA, outputAllSheets = TRUE)
+findXLChanges(file1, file2, sheets_to_check = NA, outputAllSheets = TRUE)
 }
 \arguments{
-\item{File1}{An Excel file you want to compare}
+\item{file1}{An Excel file you want to compare}
 
-\item{File2}{The other Excel file you want to compare}
+\item{file2}{The other Excel file you want to compare}
 
 \item{sheets_to_check}{a vector of the names of sheets to compare. If left as
 NA, all sheets will be checked.}
@@ -19,7 +19,7 @@ a list of all the loaded Excel sheets?}
 }
 \value{
 If \code{ouputAllSheets} is FALSE, output is a list of which rows and
-  columns differ between File1 and File2. If \code{ouputAllSheets} is TRUE,
+  columns differ between file1 and file2. If \code{ouputAllSheets} is TRUE,
   output is both the list and also a list of all the sheet contents from both
   files.
 }

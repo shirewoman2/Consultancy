@@ -16,9 +16,9 @@
 #'   concentration, a column for the fold induction observed, and, if you want
 #'   to fit the data by individual, a column for the donor ID. For an example,
 #'   please see \code{data(IndData)}.
-#' @param concentration the name of the column within DF that contains
+#' @param conc_column the name of the column within DF that contains
 #'   concentration data. This should be unquoted.
-#' @param fold_induct the name of the column within DF that contains fold-change
+#' @param fold_change_column the name of the column within DF that contains fold-change
 #'   data, e.g., mRNA measurements or activity.
 #' @param model which model(s) you would like to use. The four model options
 #'   are: \describe{
@@ -61,7 +61,7 @@
 #'
 #' inductFit(IndData, model = "Indmax")$Graph
 #' inductFit(IndData %>% rename(Conc_uM = Concentration_uM),
-#'           concentration = Conc_uM, model = "IndmaxSlope")$Graph
+#'           conc_column = Conc_uM, model = "IndmaxSlope")$Graph
 #' inductFit(IndData, model = "Slope")$Graph
 #' inductFit(IndData, model = "Sig3Param")
 #'
@@ -81,8 +81,8 @@
 
 
 inductFit <- function(DF,
-                      concentration = Concentration_uM,
-                      fold_induct = FoldInduction,
+                      conc_column = Concentration_uM,
+                      fold_change_column = FoldInduction,
                       model = "IndmaxSlope",
                       measurement = "mRNA",
                       donor = DONOR,
@@ -92,8 +92,8 @@ inductFit <- function(DF,
       `%>%` <- magrittr::`%>%`
       `!!` <- rlang::`!!`
 
-      concentration <- rlang::enquo(concentration)
-      fold_induct <- rlang::enquo(fold_induct)
+      conc_column <- rlang::enquo(conc_column)
+      fold_change_column <- rlang::enquo(fold_change_column)
       donor <- rlang::enquo(donor)
 
       # Options for model: IndmaxSlope, Indmax, Slope, Sig3Param, all
@@ -114,11 +114,11 @@ inductFit <- function(DF,
             stop("Please select only one option for the measurement. Options are 'mRNA' or 'activity'.")
       }
 
-      if(rlang::as_label(concentration) %in% names(DF) == FALSE){
+      if(rlang::as_label(conc_column) %in% names(DF) == FALSE){
             stop("The column you have listed for the concentration data is not present in your data.frame. Please enter a valid column for concentration data.")
       }
 
-      if(rlang::as_label(fold_induct) %in% names(DF) == FALSE){
+      if(rlang::as_label(fold_change_column) %in% names(DF) == FALSE){
             stop("The column you have listed for the fold-change data is not present in your data.frame. Please enter a valid column for fold-change data.")
       }
 
@@ -129,17 +129,17 @@ inductFit <- function(DF,
       # Need a donor column for joining purposes later. Adding a placeholder
       # here.
       if(rlang::as_label(donor) %in% names(DF) == FALSE){
-            DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(concentration),
-                                                rlang::as_label(fold_induct)))) %>%
-                  dplyr::rename(FoldInduction = !! fold_induct,
-                                Concentration_uM = !! concentration)
+            DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(conc_column),
+                                                rlang::as_label(fold_change_column)))) %>%
+                  dplyr::rename(FoldInduction = !! fold_change_column,
+                                Concentration_uM = !! conc_column)
             DF$DONOR <- "A"
       } else {
-            DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(concentration),
-                                                rlang::as_label(fold_induct),
+            DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(conc_column),
+                                                rlang::as_label(fold_change_column),
                                                 rlang::as_label(donor)))) %>%
-                  dplyr::rename(FoldInduction = !! fold_induct,
-                                Concentration_uM = !! concentration,
+                  dplyr::rename(FoldInduction = !! fold_change_column,
+                                Concentration_uM = !! conc_column,
                                 DONOR = !! donor)
       }
 

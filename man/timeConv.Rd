@@ -9,9 +9,9 @@ timeConv(x, tz = "UTC", dataSource = "Excel")
 \arguments{
 \item{x}{A numeric string}
 
-\item{dataSource}{dataSource Either "Excel" (default) or "Unix" depending on where
-the data are coming from. Excel data have an origin of Dec. 30, 1899
-whereas Unix or R data have an origin of Jan. 1, 1970.}
+\item{dataSource}{source of the data. Either "Excel" (default), R, or "Unix"
+depending on where the data are coming from. Excel data have an origin of
+Dec. 30, 1899 whereas Unix or R data have an origin of Jan. 1, 1970.}
 }
 \value{
 Returns a POSIXct object
