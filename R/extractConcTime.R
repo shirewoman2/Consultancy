@@ -124,10 +124,10 @@ extractConcTime <- function(sim_data_file,
       }
 
       # Getting summary data for the simulation
-      SimSummary <- extractExpDetails(sim_data_file)
+      Deets <- extractExpDetails(sim_data_file)
 
       # Effector present?
-      EffectorPresent <- complete.cases(SimSummary[["Inhibitor"]])
+      EffectorPresent <- complete.cases(Deets[["Inhibitor"]])
       if(EffectorPresent == FALSE & compoundToExtract == "effector"){
             stop("There are no effector data in the simulator output file supplied. Please either submit a different output file or request concentration-time data for a substrate or metabolite.")
       }
@@ -178,10 +178,10 @@ extractConcTime <- function(sim_data_file,
                                col_names = FALSE))
 
       SubstrateName <- switch(paste(compoundToExtract, TissueType),
-                              "substrate systemic" = SimSummary$Substrate,
-                              "substrate tissue" = SimSummary$Substrate,
-                              "effector systemic" = SimSummary$Substrate,
-                              "effector tissue" = SimSummary$Substrate,
+                              "substrate systemic" = Deets$Substrate,
+                              "substrate tissue" = Deets$Substrate,
+                              "effector systemic" = Deets$Substrate,
+                              "effector tissue" = Deets$Substrate,
                               "metabolite 1 systemic" =
                                     gsub("CSys.*?-| \\(Trial [0-9]*\\)|.interaction",
                                          "", sim_data_xl[4, 1]),
@@ -248,9 +248,9 @@ extractConcTime <- function(sim_data_file,
                                      "systemic substrate" =
                                            tolower(
                                                  paste0("csys mean.*?",
-                                                        SimSummary$Substrate,
+                                                        Deets$Substrate,
                                                         " . interaction|csys mean.interaction.*?-",
-                                                        SimSummary$Substrate)),
+                                                        Deets$Substrate)),
                                      "systemic metabolite 1" =
                                            tolower(
                                                  paste0("csys mean.*?",
@@ -266,9 +266,9 @@ extractConcTime <- function(sim_data_file,
                                      "systemic effector" =
                                            tolower(
                                                  paste0("csys mean.*?",
-                                                        SimSummary$Substrate,
+                                                        Deets$Substrate,
                                                         " . interaction|csys mean.interaction.*?-",
-                                                        SimSummary$Substrate)),
+                                                        Deets$Substrate)),
                                      "tissue substrate" =
                                            paste0("ctissue . interaction mean|",
                                                   "c", tissue, " mean.*?interaction"),
@@ -310,7 +310,7 @@ extractConcTime <- function(sim_data_file,
                                per95 = 4) %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc", cols = -Time) %>%
                         mutate(Compound = SubstrateName,
-                               Effector = SimSummary[["Inhibitor"]])
+                               Effector = Deets[["Inhibitor"]])
 
                   rm(NamesToCheck, RowsToKeep)
 
@@ -324,7 +324,7 @@ extractConcTime <- function(sim_data_file,
                                     sim_data_xl$...1,
                                     switch(TissueType,
                                            "systemic" = paste0("ISys 1 Mean.*?",
-                                                               SimSummary[["Inhibitor"]]),
+                                                               Deets[["Inhibitor"]]),
                                            "tissue" =
                                                  paste0("ITissue\\(Inh 1\\) Mean|",
                                                         "I", tissue, " 1 Mean"))
@@ -340,10 +340,10 @@ extractConcTime <- function(sim_data_file,
                                                                "geometric")) +
                                     StartRow_mean_Effector-1,
                               "per5" = which(str_detect(tolower(NamesToCheck),
-                                                        "(^isys|^itissue).* 5th percentile")) +
+                                                        "(^isys|^itissue).* 5(th)? percentile")) +
                                     StartRow_mean_Effector-1,
                               "per95" = which(str_detect(tolower(NamesToCheck),
-                                                         "(^isys|^itissue).* 95th percentile")) +
+                                                         "(^isys|^itissue).* 95(th)? percentile")) +
                                     StartRow_mean_Effector-1)
 
                         sim_data_mean_Effector <-
@@ -357,8 +357,8 @@ extractConcTime <- function(sim_data_file,
                                      per95 = 4) %>%
                               pivot_longer(names_to = "Trial", values_to = "Conc",
                                            cols = -Time) %>%
-                              mutate(Compound = SimSummary[["Inhibitor"]],
-                                     Effector = SimSummary[["Inhibitor"]])
+                              mutate(Compound = Deets[["Inhibitor"]],
+                                     Effector = Deets[["Inhibitor"]])
 
                         rm(NamesToCheck, RowsToKeep)
 
@@ -473,7 +473,7 @@ extractConcTime <- function(sim_data_file,
                         pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
                         mutate(Compound = SubstrateName,
-                               Effector = SimSummary[["Inhibitor"]],
+                               Effector = Deets[["Inhibitor"]],
                                SubjTrial = sub("ID", "", SubjTrial)) %>%
                         separate(SubjTrial, into = c("Individual", "Trial"),
                                  sep = "_")
@@ -509,8 +509,8 @@ extractConcTime <- function(sim_data_file,
                               sim_data_ind_Effector %>%
                               pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                            cols = -Time) %>%
-                              mutate(Compound = SimSummary[["Inhibitor"]],
-                                     Effector = SimSummary[["Inhibitor"]],
+                              mutate(Compound = Deets[["Inhibitor"]],
+                                     Effector = Deets[["Inhibitor"]],
                                      SubjTrial = sub("ID", "", SubjTrial)) %>%
                               separate(SubjTrial, into = c("Individual", "Trial"),
                                        sep = "_")
@@ -651,7 +651,7 @@ extractConcTime <- function(sim_data_file,
             }
 
             if(exists("obs_data", inherits = FALSE)){
-                  obs_data$Compound <- SimSummary[["Substrate"]]
+                  obs_data$Compound <- Deets[["Substrate"]]
                   obs_data$Simulated <- FALSE
             }
 
@@ -661,11 +661,11 @@ extractConcTime <- function(sim_data_file,
                                                            obs_effector_data_file) %>%
                         mutate(Simulated = FALSE, Trial = "obs+effector",
                                Compound = SubstrateName,
-                               Effector = SimSummary[["Inhibitor"]])
+                               Effector = Deets[["Inhibitor"]])
 
             }
 
-            DosingScenario <- SimSummary[["Regimen_sub"]]
+            DosingScenario <- Deets[["Regimen_sub"]]
 
             if(adjust_obs_time & DosingScenario == "Multiple Dose" &
                exists("obs_data", inherits = FALSE)){
@@ -674,8 +674,8 @@ extractConcTime <- function(sim_data_file,
                   # data to match would be the *last* dose. Adjusting the time for the
                   # obs data.
 
-                  DoseFreq <- SimSummary[["DoseInt_sub"]]
-                  NumDoses <- SimSummary[["NumDoses_sub"]]
+                  DoseFreq <- Deets[["DoseInt_sub"]]
+                  NumDoses <- Deets[["NumDoses_sub"]]
                   LastDoseTime <- DoseFreq * (NumDoses - 1)
 
                   obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
@@ -727,7 +727,7 @@ extractConcTime <- function(sim_data_file,
       }
 
       if(EffectorPresent){
-            Data$Effector[Data$Trial == "obs+effector"] <- SimSummary$Inhibitor
+            Data$Effector[Data$Trial == "obs+effector"] <- Deets$Inhibitor
       }
 
       Data <- Data %>%
@@ -763,11 +763,11 @@ extractConcTime <- function(sim_data_file,
       # "filter" statements I've added below.  -LS
 
       if(compoundToExtract == "substrate" & EffectorPresent){
-            Data <- Data %>% filter(Compound != SimSummary[["Inhibitor"]])
+            Data <- Data %>% filter(Compound != Deets[["Inhibitor"]])
       }
 
       if(compoundToExtract == "effector"){
-            Data <- Data %>% filter(Compound == SimSummary[["Inhibitor"]])
+            Data <- Data %>% filter(Compound == Deets[["Inhibitor"]])
       }
 
       return(Data)

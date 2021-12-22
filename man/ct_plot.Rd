@@ -17,6 +17,7 @@ ct_plot(
   substrate_or_effector = "substrate",
   adjust_obs_time = FALSE,
   time_range = NA,
+  t0 = "simulation start",
   yaxis_limits_log = NA,
   line_transparency = NA,
   pad_x_axis = FALSE,
@@ -107,7 +108,8 @@ was administered at the same time as the last dose in the simulated data.
 If FALSE, the observed data will start at whatever times are listed in the
 Excel file.}
 
-\item{time_range}{time range to graph. Options: \describe{
+\item{time_range}{time range to graph relative to the start of the
+  simulation. Options: \describe{
 
   \item{NA}{entire time range of data}
 
@@ -122,6 +124,13 @@ Excel file.}
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
   effector was dosed QD} }}
+
+\item{t0}{What event should be used for time zero? Options are: "simulation
+start" (default), "substrate dose 1", "effector dose 1", "substrate last
+dose", "effector last dose", "substrate penultimate dose", or "effector
+penultimate dose". \emph{This does not change which data are included in
+the graph;} instead, this determines whether the x axis numbers are offset
+so that, e.g., the last dose is administered at time 0.}
 
 \item{yaxis_limits_log}{Optionlly manually set the Y axis limits for the
 semi-log plot, e.g., \code{c(10, 1000)}. Values will be rounded down and

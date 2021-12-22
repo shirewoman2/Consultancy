@@ -80,7 +80,8 @@
 #'   was administered at the same time as the last dose in the simulated data.
 #'   If FALSE, the observed data will start at whatever times are listed in the
 #'   Excel file.
-#' @param time_range time range to graph. Options: \describe{
+#' @param time_range time range to graph relative to the start of the
+#'   simulation. Options: \describe{
 #'
 #'   \item{NA}{entire time range of data}
 #'
@@ -95,6 +96,12 @@
 #'   which can be useful for BID data where the end of the simulation extended
 #'   past the dosing interval or data when the substrate was dosed BID and the
 #'   effector was dosed QD} }
+#' @param t0 What event should be used for time zero? Options are: "simulation
+#'   start" (default), "substrate dose 1", "effector dose 1", "substrate last
+#'   dose", "effector last dose", "substrate penultimate dose", or "effector
+#'   penultimate dose". \emph{This does not change which data are included in
+#'   the graph;} instead, this determines whether the x axis numbers are offset
+#'   so that, e.g., the last dose is administered at time 0.
 #' @param yaxis_limits_log Optionlly manually set the Y axis limits for the
 #'   semi-log plot, e.g., \code{c(10, 1000)}. Values will be rounded down and
 #'   up, respectively, to the nearest order of magnitude. If left as NA, the Y
@@ -203,6 +210,7 @@ ct_plot <- function(sim_data_file = NA,
                     substrate_or_effector = "substrate",
                     adjust_obs_time = FALSE,
                     time_range = NA,
+                    t0 = "simulation start",
                     yaxis_limits_log = NA,
                     line_transparency = NA,
                     pad_x_axis = FALSE,
@@ -238,6 +246,15 @@ ct_plot <- function(sim_data_file = NA,
             stop("time_range must be 'first dose', 'last dose', 'penultimate dose', or a numeric time range, e.g., c(12, 24).")
       }
 
+      t0 <- tolower(t0)
+      t0_opts <- c("simulation start", "substrate dose 1", "effector dose 1",
+                   "substrate last dose", "effector last dose",
+                   "substrate penultimate dose", "effector penultimate dose")
+      if(t0 %in% t0_opts == FALSE){
+            stop(paste0("t0 must be set to ",
+                        sub("and", "or", str_comma(t0_opts)), "."))
+      }
+
       # Extract the data to plot
       if(is.data.frame(sim_obs_dataframe)){
             Data <- sim_obs_dataframe
@@ -267,7 +284,7 @@ ct_plot <- function(sim_data_file = NA,
       # Setting x axis (time) ------------------------------------------------
       # Adjusting graph labels as appropriate for the observed data
       xlab <- switch(TimeUnits,
-                     "hours" = "Time (hr)",
+                     "hours" = "Time (h)",
                      "minutes" = "Time (min)")
 
       ylab <- switch(ObsConcUnits,
@@ -288,13 +305,30 @@ ct_plot <- function(sim_data_file = NA,
 
       time_range_input <- time_range
 
-      if(time_range_input[1] %in% c("first dose", "last dose", "penultimate dose")){
+      if(time_range_input[1] %in% c("first dose", "last dose",
+                                    "penultimate dose") |
+         t0 != "simulation start"){
             Deets <- extractExpDetails(sim_data_file)
 
+            # start of last dose simulated of substrate and inhibitor
+            NumDoses <- c("Sub" = Deets$NumDoses_sub,
+                          "Inhib" = Deets$NumDoses_inhib)
+            DoseInt <- c("Sub" = Deets$DoseInt_sub,
+                         "Inhib" = Deets$DoseInt_inhib)
+            StartLastDose <- DoseInt * (NumDoses - 1) # Time starts at 0, not 1, so that's why it's "NumDoses - 1" rather than "NumDoses" alone.
+
+      }
+
+      if(time_range_input[1] %in% c("first dose", "last dose",
+                                    "penultimate dose")){
+
             if(Deets$Regimen_sub == "Single Dose"){
-                  time_range <- c(0, tlast)
+
+                  time_range <- c(difftime_sim(Deets$SimStartDayTime,
+                                               Deets$StartDayTime_sub),
+                                  tlast)
                   warning(paste0("You requested the ", time_range_input[1],
-                                 ", but the substrate was administered as a single dose. The full time range will be plotted."))
+                                 ", but the substrate was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."))
             } else {
 
                   DayTime_t0 <- difftime_sim(
@@ -304,14 +338,7 @@ ct_plot <- function(sim_data_file = NA,
                   names(DayTime_t0) <- c("Sub", "Inhib")
 
                   # start of 2nd dose of substrate and inhibitor
-                  DoseInt <- c("Sub" = Deets$DoseInt_sub,
-                               "Inhib" = Deets$DoseInt_inhib)
                   StartDose2 <- DayTime_t0 + DoseInt
-
-                  # start of last dose simulated of substrate and inhibitor
-                  NumDoses <- c("Sub" = Deets$NumDoses_sub,
-                                "Inhib" = Deets$NumDoses_inhib)
-                  StartLastDose <- DoseInt * (NumDoses - 1) # Time starts at 0, not 1, so that's why it's "NumDoses - 1" rather than "NumDoses" alone.
 
                   # There's a possibility that the user set up the simulation to
                   # start the last dose right at the end of the simulation;
@@ -375,6 +402,11 @@ ct_plot <- function(sim_data_file = NA,
 
       }
 
+      # Setting the time range if it's not already set since we use it later.
+      if(is.na(time_range_input[1])){
+            time_range <- range(Data$Time, na.rm = T)
+      }
+
       # If tlast is just a smidge over one of the possible breaks I've set, it
       # goes to the next one and doesn't look as nice on the graph. Rounding
       # tlast down to the nearest 4 for hours and nearest 15 for minutes.
@@ -425,20 +457,45 @@ ct_plot <- function(sim_data_file = NA,
                                                              length.out = 12)))
       }
 
-      XLabels <- XBreaks
-      XLabels[seq(2,length(XLabels),2)] <- ""
-
       # Adjusting the breaks when time_range[1] isn't 0
       if(all(complete.cases(time_range)) & time_range[1] != 0){
             XBreaks <- XBreaks + LastDoseTime
-            XLabels <- XBreaks
-            XLabels[seq(2,length(XLabels),2)] <- ""
       }
 
-      # Setting the time range if it's not already set since we use it later.
-      if(is.na(time_range_input[1])){
-            time_range <- range(Data$Time, na.rm = T)
+      # If t0 isn't "simulation start", need to adjust x axis.
+      if(t0 != "simulation start"){
+            t0_num <- switch(
+                  t0,
+                  "substrate dose 1" = difftime_sim(Deets$SimStartDayTime,
+                                                    Deets$StartDayTime_sub),
+                  "effector dose 1" = difftime_sim(Deets$SimStartDayTime,
+                                                   Deets$StartDayTime_inhib),
+                  "substrate last dose" =
+                        ifelse(StartLastDose["Sub"] == max(Data$Time),
+                               StartLastDose["Sub"] - DoseInt["Sub"],
+                               StartLastDose["Sub"]),
+                  "effector last dose" =
+                        ifelse(StartLastDose["Inhib"] == max(Data$Time),
+                               StartLastDose["Inhib"] - DoseInt["Inhib"],
+                               StartLastDose["Inhib"]),
+                  "substrate penultimate dose" =
+                        ifelse(StartLastDose["Sub"] == max(Data$Time),
+                               StartLastDose["Sub"] - 2*DoseInt["Sub"],
+                               StartLastDose["Sub"] - DoseInt["Sub"]),
+                  "effector penultimate dose"  =
+                        ifelse(StartLastDose["Inhib"] == max(Data$Time),
+                               StartLastDose["Inhib"] - 2*DoseInt["Inhib"],
+                               StartLastDose["Inhib"] - DoseInt["Inhib"]))
+            Data$Time_orig <- Data$Time
+            Data$Time <- Data$Time - t0_num
+            XBreaks <- XBreaks - t0_num
+      } else {
+            Data$Time_orig <- Data$Time
       }
+
+      XLabels <- XBreaks
+      XLabels[seq(2,length(XLabels),2)] <- ""
+      XLabels[which(XBreaks == 0)] <- "0"
 
       # Dealing with possible effector data ---------------------------------
       # Adding a grouping variable to data and also making the effector name
@@ -482,7 +539,8 @@ ct_plot <- function(sim_data_file = NA,
                                Trial %in% c("mean", "per5", "per95") == FALSE) %>%
                   group_by(across(any_of(c("Compound", "Tissue", "Effector",
                                            "Simulated", "Trial", "Group",
-                                           "Time", "Time_units", "Conc_units")))) %>%
+                                           "Time", "Time_orig",
+                                           "Time_units", "Conc_units")))) %>%
                   summarize(Conc = mean(Conc, na.rm = T)) %>%
                   ungroup()
       )
@@ -503,7 +561,8 @@ ct_plot <- function(sim_data_file = NA,
                   obs_data <- obs_data %>%
                         group_by(across(any_of(c("Compound", "Tissue", "Effector",
                                                  "Simulated", "Trial", "Group",
-                                                 "Time", "Time_units", "Conc_units")))) %>%
+                                                 "Time", "Time_orig",
+                                                 "Time_units", "Conc_units")))) %>%
                         summarize(SDConc = sd(Conc, na.rm = T),
                                   Conc = switch(obs_data_option,
                                                 "means only" = mean(Conc, na.rm = T),
@@ -531,8 +590,8 @@ ct_plot <- function(sim_data_file = NA,
       } else if (figure_type == "means only") {
             Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
 
-      Ylim <- Ylim_data %>% filter(Time >= time_range[1] &
-                                         Time <= time_range[2] &
+      Ylim <- Ylim_data %>% filter(Time_orig >= time_range[1] &
+                                         Time_orig <= time_range[2] &
                                          complete.cases(Conc)) %>% pull(Conc) %>%
             range()
 
@@ -787,7 +846,7 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       if(nrow(obs_data) == 0){
-            A <- A + guides(shape = FALSE)
+            A <- A + guides(shape = "none")
       }
 
       if(complete.cases(obs_data_option) & obs_data_option == "mean bars" &
@@ -800,6 +859,12 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       # Applying aesthetics ------------------------------------------------
+      if(t0 != "simulation start"){
+            time_range_relative <- time_range - t0_num
+      } else {
+            time_range_relative <- time_range
+      }
+
       A <- A +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
@@ -812,7 +877,7 @@ ct_plot <- function(sim_data_file = NA,
                                    legend_label, "Effector"),
                  shape = ifelse(complete.cases(legend_label),
                                 legend_label, "Effector")) +
-            coord_cartesian(xlim = time_range) +
+            coord_cartesian(xlim = time_range_relative) +
             theme(panel.background = element_rect(fill="white", color=NA),
                   legend.key = element_rect(fill = "white"),
                   axis.ticks = element_line(color = "black"),
@@ -836,7 +901,7 @@ ct_plot <- function(sim_data_file = NA,
             near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
 
             Ylim_log[1] <- Ylim_data %>%
-                  filter(Time == near_match(Ylim_data$Time, time_range[2])) %>%
+                  filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
                   pull(Conc) %>% min()
             Ylim_log[1] <- round_down(Ylim_log[1])
             Ylim_log[2] <- round_up(Ylim[2])
@@ -859,7 +924,7 @@ ct_plot <- function(sim_data_file = NA,
             A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
                               labels = YLogLabels) +
                   # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
-                  coord_cartesian(xlim = time_range)
+                  coord_cartesian(xlim = time_range_relative)
       )
 
       # both plots together, aligned vertically
