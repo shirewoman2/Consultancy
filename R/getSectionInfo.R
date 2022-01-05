@@ -10,74 +10,123 @@
 #' and enter details about your observed data. It's ok if you don't have all the
 #' information; anything that's missing won't be included in the final S/O
 #' table. It's also ok to rename this tab and/or make copies of it within the
-#' same Excel file for making other S/O tables.} \item{Go to the tab "section
-#' input" and fill out information here for the specific section you're making
-#' this S/O table for. Make sure that whatever you list for the tab that
-#' contains information about the observed data is exactly the same as the
+#' same Excel file for making other S/O tables.} \item{Go to the tab "table and
+#' graph input" and fill out information here for the specific report section
+#' you're making this S/O table for. Make sure that whatever you list as the tab
+#' that contains information about the observed data is exactly the same as the
 #' actual tab name that you filled out in step 2. Also make sure that the file
 #' names include the full file path.} \item{Save your Excel file.} \item{Here,
 #' within RStudio (or within the shiny app that we plan to make!), run this
 #' function using the name of that Excel file as input for
-#' \code{report_input_file} and the name of the "section input" tab as the input
-#' for \code{sheet}. Note: If the Excel file lives on SharePoint, you'll need to
-#' close it or this function will just keep running and not generate any output
-#' while it waits for access to the file.} }
+#' \code{report_input_file} and the name of the "table and graph input" tab as
+#' the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
+#' you'll need to close it or this function will just keep running and not
+#' generate any output while it waits for access to the file.} }
 #'
-#' @param report_input_file the name of the Excel file formatted exactly like
-#'   "Report input template.xlsx", including the path if it's in any other
-#'   directory than the current one
+#' @param report_input_file the name of the Excel file created by running
+#'   \code{\link{generateReportInputForm}}, including the path if it's in any
+#'   other directory than the current one, which you have now filled out
 #' @param sheet the sheet in the Excel file that contains information about this
-#'   section of the report
-#' @param section_input_DF a data.frame object that contains information about
-#'   this section of the report and is the filled-out version of
-#'   ReportInputForm[["Section input form"]]. If this is NOT set to NA, then
-#'   this will be used for section details instead of reading the Excel sheet
-#'   listed. You still must fill out \code{report_input_file}, though, because
-#'   that will be used to read in data about the clinical study.
+#'   section of the report. In the original template, this was the tab titled
+#'   "table and graph input".
 #'
 #' @return a list object
 #' @export
 #'
 #' @examples
-#' # No examples yet.
+#' # getSectionInfo(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx")
 #'
 getSectionInfo <- function(report_input_file = NA,
-                           sheet = NA,
-                           section_input_DF = NA){
+                           sheet = "table and graph input"){
 
-      if("data.frame" %in% class(section_input_DF)){
+      if("data.frame" %in% class(section_input_DF)){# RETURN TO THIS AND ADJUST FOR SITUATIONS WHEN ONLY INCLUDING DF. Need to decide how to determine whether DDI involved.
             InputXL <- section_input_DF
       } else {
             InputXL <- suppressMessages(
                   readxl::read_excel(path = report_input_file,
-                                     sheet = sheet))
+                                     sheet = sheet, skip = 3))
       }
 
       # Making each of the items in InputXL its own named item in a list so that
       # output from getSectionInfo will be exclusively a list rather than a list
       # that contains a data.frame, since the latter is annoying to code
       # namewise.
-      InfoList <- InputXL %>% select(-Item) %>%
+      sectionInfo <- InputXL %>% select(-Item) %>%
             mutate(Value = gsub("\\\\", "/", Value),
                    Value = sub("(https://)?s08sharepoint.certara.com/sites/consult/",
                                SimcypDir$SharePtDir, Value)) %>%
             pivot_wider(names_from = RName, values_from = Value) %>%
       as.list()
 
-      if(is.na(InfoList$ClinStudyTab) & InfoList$ModelPurpose != "application"){
-            warning("The modeling phase is not listed as 'application', but no clinical study tab is listed for comparing to simulated data. Are you sure that's correct? The information extracted for this section will not be compared to any observed data.")
+      # Checking whether DDI involved.
+      DDI <- readxl::read_excel(path = report_input_file,
+                                sheet = sectionInfo$ClinStudyTab,
+                                range = "A1")
+      DDI <- stringr::str_detect(names(DDI), "Observed data with DDI")
+
+      ClinXL <- suppressMessages(
+            readxl::read_excel(path = report_input_file,
+                               sheet = sectionInfo$ClinStudyTab,
+                               col_types = "text",
+                               skip = 3))
+
+      if(DDI){
+
+            StartPK <- which(str_detect(ClinXL[, 1] %>% pull(1),
+                                        "^Victim PK data"))
+            # StartRatio <- which(str_detect(ClinXL[, 1] %>% pull(1),
+            #                                "^Mean ratios of PK"))
+
+            ClinXL_main <- ClinXL[1:StartPK, 1:3]
+            ClinXL_vic <- ClinXL[StartPK:nrow(ClinXL), 1:3]
+            ClinXL_perp <- ClinXL[StartPK:nrow(ClinXL), 4:6]
+            names(ClinXL_main) <- c("Item", "RName", "Value")
+            names(ClinXL_vic) <- c("Item", "RName", "Value")
+            names(ClinXL_perp) <- c("Item", "RName", "Value")
+            # names(ClinXL_rat) <- c("Item", "RName", "Value")
+
+            # Adjusting to deal w/multiple scenarios
+            DDIScenario <- unique(ClinXL_main$RName[
+                  which(str_detect(ClinXL_main$RName, "Scenario") &
+                              complete.cases(ClinXL_main$Value))])
+            DDIScenario_pretty <- switch(DDIScenario,
+                                         "ScenarioA" = "SD victim, SD perpetrator",
+                                         "ScenarioB" = "MD victim, SD perpetrator",
+                                         "ScenarioC" = "SD victim, MD perpetrator",
+                                         "ScenarioD" = "MD victim, MD perpetrator")
+            Suffix <- switch(DDIScenario,
+                             "ScenarioA" = "_dose1",
+                             "ScenarioB" = "_ss",
+                             "ScenarioC" = "_dose1",
+                             "ScenarioD" = "_ss")
+
+            ClinXL_vic$RName <- paste0(ClinXL_vic$RName, Suffix)
+            ClinXL_perp$RName <- paste0(ClinXL_perp$RName, Suffix, "_withEffector")
+            ClinXL_main <- ClinXL_main %>%
+                  mutate(RName = ifelse(str_detect(RName, "Scenario"),
+                                        "DDIScenario", RName),
+                         Value = ifelse(RName == "DDIScenario", DDIScenario_pretty, Value))
+
+            ClinXL <- bind_rows(ClinXL_main, ClinXL_vic, ClinXL_perp) %>%
+                  filter(!str_detect(RName, "^blank")) %>%
+                  mutate(RName = sub("_CV_ss", "_ss_CV", RName),
+                         RName = sub("_CV_dose1", "_dose1_CV", RName),
+                         RName = ifelse(str_detect(RName, "_CV_"),
+                                        paste0(RName, "_CV"), RName),
+                         RName = sub("_CV_", "_", RName))
       }
 
-      ClinXL <- suppressMessages(readxl::read_excel(path = report_input_file,
-                                                    sheet = ClinStudyTab))
+      sectionInfo <- c(
+            sectionInfo,
+            ClinXL %>% select(-Item)  %>% unique() %>%
+                  pivot_wider(names_from = RName, values_from = Value) %>%
+                  mutate(across(.cols = -any_of(
+                        c("ClinStudy", "MeanType", "Tissue", "DDIRole",
+                          "DDIScenario", "GMR_mean_type")),
+                        .fns = as.numeric)) %>%
+                  as.list())
 
-      InfoList <- c(InfoList,
-                ClinXL %>% select(-Item) %>%
-                      filter(complete.cases(RName)) %>%
-                      pivot_wider(names_from = RName, values_from = Value) %>%
-                      as.list())
-
-      Deets <- extractExpDetails(sim_data_file = SimFile)
+      Deets <- extractExpDetails(sim_data_file = sectionInfo$SimFile)
 
       # Tidying up the names used for populations so that they look nice in report
       Pop <- tidyPop(Deets$Pop)
@@ -111,8 +160,7 @@ getSectionInfo <- function(report_input_file = NA,
 
 
       # Putting everything together
-      InfoList <- c(InfoList, Deets,
-                    "Pop" = Pop,
+      sectionInfo <- c(sectionInfo, Deets, Pop,
                     "NumSimSubj" = NumSimSubj,
                     "DoseFreq" = DoseFreq,
                     "DoseFreq_inhib" = DoseFreq_inhib,
@@ -120,7 +168,7 @@ getSectionInfo <- function(report_input_file = NA,
                     "StartDoseDay_inhib" = StartDoseDay_inhib,
                     "LastDoseDay_inhib" = LastDoseDay_inhib)
 
-      InfoList <- InfoList[sort(names(InfoList))]
+      sectionInfo <- sectionInfo[sort(names(sectionInfo))]
 
-      return(InfoList)
+      return(sectionInfo)
 }

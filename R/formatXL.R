@@ -152,7 +152,7 @@ formatXL <- function(DF, file, sheet = NA,
       # Defining pipe operator
       `%>%` <- magrittr::`%>%`
 
-      ### Error catching input argument syntax problems
+      ### Error catching input argument syntax problems --------------------------------------------
       # All the columns must be named for this to work well. Checking that.
       if(any(is.na(names(DF)))){
             stop("All the columns in your data.frame must be named.")
@@ -176,7 +176,7 @@ formatXL <- function(DF, file, sheet = NA,
       }
 
 
-      ### Loading the file
+      ### Loading the file --------------------------------------------
       # See whether that file already exists. If it does, load the workbook.
       # Otherwise, create it.
       AllFiles <- list.files(pattern = ".xlsx")
@@ -221,7 +221,7 @@ formatXL <- function(DF, file, sheet = NA,
 
       for(i in 1:length(styles)){
 
-            ### Selecting the cells
+            ### Selecting the cells --------------------------------------------
 
             # If they haven't specified rows or columns, apply to all cells.
             if(is.null(styles[[i]]$rows) &
@@ -253,7 +253,7 @@ formatXL <- function(DF, file, sheet = NA,
                   }
             }
 
-            ### Setting number format
+            ### Setting number format --------------------------------------------
             if(is.null(styles[[i]]$numberFormat)){
                   NumFormatArgs <- NULL
             } else {
@@ -277,7 +277,7 @@ formatXL <- function(DF, file, sheet = NA,
                   }
             }
 
-            ### Setting font preferences
+            ### Setting font preferences --------------------------------------------
             # Filling in defaults for anything unspecified for font.
             if(is.null(styles[[i]]$font)){
                   styles[[i]]$font <- list(color = "#030303",
@@ -307,7 +307,7 @@ formatXL <- function(DF, file, sheet = NA,
                                                  FALSE, styles[[i]]$font$underline)
 
 
-            ### Setting alignment
+            ### Setting alignment --------------------------------------------
             # Filling in defaults for anything unspecified for alignment
             if(is.null(styles[[i]]$textposition)){
                   styles[[i]]$textposition <- list(alignment = "general",
@@ -336,14 +336,14 @@ formatXL <- function(DF, file, sheet = NA,
                                         wrapText = styles[[i]]$textposition$wrapping)
             }
 
-            ### Setting the fill
+            ### Setting the fill --------------------------------------------
             if(is.null(styles[[i]]$fill)){
                   FillArg <- xlsx::Fill(pattern = "NO_FILL")
             } else {
                   FillArg <- xlsx::Fill(foregroundColor = styles[[i]]$fill)
             }
 
-            ### Setting the border
+            ### Setting the border --------------------------------------------
             if(is.null(styles[[i]]$border)){
                   BorderArg <- xlsx::Border(pen = "BORDER_NONE")
             } else {
@@ -359,7 +359,7 @@ formatXL <- function(DF, file, sheet = NA,
             }
 
 
-            ### Applying the styles the user has set
+            ### Applying the styles the user has set -------------------------------
 
             StylesToApply[[i]] <-
                   xlsx::CellStyle(WB,
@@ -387,7 +387,7 @@ formatXL <- function(DF, file, sheet = NA,
             rm(MyCells, FillArg, BorderArg)
       }
 
-      # Setting column widths
+      # Setting column widths --------------------------------------------
 
       # If they've specified column width, then check which columns to apply
       # that to.

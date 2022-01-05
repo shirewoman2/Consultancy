@@ -65,41 +65,99 @@ generateReportInputForm <- function(filename){
       # it DOESN'T do that when you just set the path first and then write.
       setwd(Path)
 
-      formatXL(ReportInputForm[["Overall report form"]],
+      # data(ReportInputForm)
+      HowTo <- ReportInputForm[["how to use this file"]]
+      Overall <- ReportInputForm[["overall report info"]]
+      ObsNoDDI <- ReportInputForm[["observed data - no DDI"]]
+      ObsDDI <- ReportInputForm[["observed data - DDI"]]
+      TabGraph <- ReportInputForm[["table and graph input"]]
+      save(ReportInputForm, file = "data/ReportInputForm.RData")
+
+      HowTo <- HowTo[2:nrow(HowTo),]
+      formatXL(as.data.frame(HowTo) %>% rename("How to use this Excel file" = HowTo),
+               file = filename,
+               sheet = "how to use this file",
+               colWidth = list(colNum = 1,
+                               width = 250),
+               styles = list(
+                     list(rows = 0, font = list(bold = TRUE, size = 16)),
+                     list(rows = 18, font = list(bold = TRUE)),
+                     list(rows = 20, font = list(color = "red"))
+               ))
+
+      Overall <- Overall[2:nrow(Overall),]
+      formatXL(Overall %>% rename("Overall report information" = X1,
+                                  "ignore" = X2, "_" = X3),
                file = filename,
                sheet = "overall report info",
                colWidth = list(colNum = 1:3,
                                width = c(75, 0, 30)),
                styles = list(
                      list(columns = 1, textposition = list(wrapping = TRUE)),
-                     list(rows = 0, font = list(bold = TRUE, size = 12),
+                     list(rows = 0, font = list(bold = TRUE, size = 16)),
+                     list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
+                     list(rows = 1, font = list(italics = TRUE),
+                          textposition = list(wrapping = TRUE)),
+                     list(rows = 3, font = list(bold = TRUE),
                           textposition = list(alignment = "middle"))
                ))
 
-      formatXL(ReportInputForm[["Observed data form"]],
+
+      ObsNoDDI <- ObsNoDDI[2:nrow(ObsNoDDI), ]
+      formatXL(ObsNoDDI %>% rename("Observed data (no DDI involved)" = X1,
+                                   "ignore" = X2, "_" = X3),
                file = filename,
-               sheet = "observed data",
+               sheet = "observed data - no DDI",
                colWidth = list(colNum = 1:3,
                                width = c(75, 0, 30)),
                styles = list(
                      list(columns = 1, textposition = list(wrapping = TRUE)),
-                     list(rows = 0, font = list(bold = TRUE, size = 12),
+                     list(rows = 0, font = list(bold = TRUE, size = 16)),
+                     list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
+                     list(rows = 1, font = list(italics = TRUE),
+                          textposition = list(wrapping = TRUE)),
+                     list(rows = 3, font = list(bold = TRUE),
                           textposition = list(alignment = "middle")),
-                     list(rows = 22, font = list(bold = TRUE),
-                          textposition = list(wrapping = FALSE))
+                     list(rows = c(8, 21), font = list(bold = TRUE))
                ))
 
-
-      formatXL(ReportInputForm[["Section input form"]],
+      ObsDDI <- ObsDDI[2:nrow(ObsDDI), ]
+      formatXL(ObsDDI %>% rename("Observed data with DDI" = X1,
+                                 "ignore" = X2, "_" = X3, "__" = X4,
+                                 "ignore2" = X5, "___" = X6),
                file = filename,
-               sheet = "section input",
+               sheet = "observed data - DDI",
+               colWidth = list(colNum = 1:6,
+                               width = c(75, 0, 30,
+                                         75, 0, 30)),
+               styles = list(
+                     list(columns = c(1, 4), textposition = list(wrapping = TRUE)),
+                     list(rows = 0, font = list(bold = TRUE, size = 16)),
+                     list(rows = 0, columns = 3:6, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
+                     list(rows = 1, font = list(italics = TRUE),
+                          textposition = list(wrapping = TRUE)),
+                     list(rows = 3, font = list(bold = TRUE),
+                          textposition = list(alignment = "middle")),
+                     list(rows = c(15, 28), font = list(bold = TRUE))
+               ))
+
+      TabGraph <- TabGraph[2:nrow(TabGraph), ]
+      formatXL(TabGraph %>% rename("Table and graph input" = X1,
+                                   "ignore" = X2, "_" = X3),
+               file = filename,
+               sheet = "table and graph input",
                colWidth = list(colNum = 1:3,
                                width = c(75, 0, 30)),
                styles = list(
                      list(columns = 1, textposition = list(wrapping = TRUE)),
-                     list(rows = 0, font = list(bold = TRUE, size = 12),
+                     list(rows = 0, font = list(bold = TRUE, size = 16)),
+                     list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
+                     list(rows = 1, font = list(italics = TRUE),
+                          textposition = list(wrapping = TRUE)),
+                     list(rows = 3, font = list(bold = TRUE),
                           textposition = list(alignment = "middle"))
                ))
+
 
       setwd(CurDir)
 }

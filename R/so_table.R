@@ -4,28 +4,31 @@
 #' presentations, including reporting means, CVs, confidence intervals or
 #' percentiles, and ratios of simulated vs. observed mean values. Since this
 #' requires comparing observed data to a simulator output file, setting up the
-#' input for this function requires a few steps: \enumerate{ \item{Use the
-#' function \code{\link{generateReportInputForm}} to create an Excel file where
-#' you can enter information about your project.} \item{Go to the tab "observed
-#' data" and enter details about your observed data. It's ok if you don't have
-#' all the information; anything that's missing won't be included in the final
-#' S/O table. It's also ok to rename this tab and/or make copies of it within
-#' the same Excel file for making other S/O tables.} \item{Go to the tab
-#' "section input" and fill out information here for the specific section you're
-#' making this S/O table for. Make sure that whatever you list for the tab that
-#' contains information about the observed data is exactly the same as the
-#' actual tab name that you filled out in step 2. Also, make sure that the file
+#' input for this function requires a few steps: \enumerate{ \item{Use the function
+#' \code{\link{generateReportInputForm}} to create an Excel file where you can
+#' enter information about your project.} \item{Go to the tab "observed data"
+#' and enter details about your observed data. It's ok if you don't have all the
+#' information; anything that's missing won't be included in the final S/O
+#' table. It's also ok to rename this tab and/or make copies of it within the
+#' same Excel file for making other S/O tables.} \item{Go to the tab "table and
+#' graph input" and fill out information here for the specific report section
+#' you're making this S/O table for. Make sure that whatever you list as the tab
+#' that contains information about the observed data is exactly the same as the
+#' actual tab name that you filled out in step 2. Also make sure that the file
 #' names include the full file path.} \item{Save your Excel file.} \item{Here,
 #' within RStudio (or within the shiny app that we plan to make!), run this
 #' function using the name of that Excel file as input for
-#' \code{report_input_file} and the name of the "section input" tab as the input
-#' for \code{sheet}. Note: If the Excel file lives on SharePoint, you'll need to
-#' close it or this function will just keep running and not generate any output
-#' while it waits for access to the file.} }
+#' \code{report_input_file} and the name of the "table and graph input" tab as
+#' the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
+#' you'll need to close it or this function will just keep running and not
+#' generate any output while it waits for access to the file.} }
 #'
-#' @param report_input_file the name of the Excel file to be piped to
-#'   \code{\link{getSectionInfo}}
-#' @param sheet the sheet name to read
+#' @param report_input_file the name of the Excel file created by running
+#'   \code{\link{generateReportInputForm}}, including the path if it's in any
+#'   other directory than the current one, which you have now filled out
+#' @param sheet the sheet in the Excel file that contains information about this
+#'   section of the report. In the original template, this was the tab titled
+#'   "table and graph input".
 #' @param sectionInfo information about the simulated and observed data. This is
 #'   output from the function \code{\link{getSectionInfo}} and can be used
 #'   instead of listing the Excel file and sheet name as input.
@@ -49,7 +52,8 @@
 #' @return a data.frame
 #' @export
 #' @examples
-#' # No examples yet.
+#' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
+#' #          sheet = "table and graph input", includeTrialMeans = TRUE)
 
 
 so_table <- function(report_input_file = NA,
@@ -58,7 +62,8 @@ so_table <- function(report_input_file = NA,
                      mean_type = NA,
                      variability_option = "90% CI",
                      concatVariability = FALSE,
-                     includeHalfLife = FALSE){
+                     includeHalfLife = FALSE,
+                     includeTrialMeans = FALSE){
 
       # Error catching
       if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) & is.na(report_input_file)){
@@ -127,8 +132,9 @@ so_table <- function(report_input_file = NA,
 
       # Accounting for when mean_type is arithmetic but the user requests that
       # the ratio for + effector over - effector be a GMR.
-      if(MeanType == "arithmetic" &
-         complete.cases(sectionInfo$GMR_mean_type) &
+      if(MeanType == "arithmetic" &&
+         EffectorPresent == TRUE &&
+         complete.cases(sectionInfo$GMR_mean_type) &&
          sectionInfo$GMR_mean_type == "geometric"){
 
             MyPKResults[MyPKResults$Statistic == "Mean",
@@ -191,12 +197,14 @@ so_table <- function(report_input_file = NA,
       MyPKResults$tmax_ss[MyPKResults$Stat == VariabilityNames[2]] <-
             MyPKResults$tmax_ss[MyPKResults$Stat == "Max Val"]
 
-      MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "GMean"] <-
-            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Median"]
-      MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == VariabilityNames[1]] <-
-            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Min Val"]
-      MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == VariabilityNames[2]] <-
-            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Max Val"]
+      if(EffectorPresent){
+            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "GMean"] <-
+                  MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Median"]
+            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == VariabilityNames[1]] <-
+                  MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Min Val"]
+            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == VariabilityNames[2]] <-
+                  MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Max Val"]
+      }
 
       # Formatting
       MyPKResults <- MyPKResults %>%
@@ -212,62 +220,57 @@ so_table <- function(report_input_file = NA,
                                "Q5th", "Q95th", "CV", "MinMean", "MaxMean")) %>%
             pivot_wider(names_from = PKParam, values_from = Value)
 
-      # Observed data. Not included when section is model application.
-      if(tolower(sectionInfo$ModelPurpose) != "application"){
-
-            MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
-            if(EffectorPresent){
-                  MyObsPKParam <- c(MyObsPKParam,
-                                    "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
-                                    "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
-                                    "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
-                                    "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
-            }
-
-            MyObsPK <- sectionInfo[names(sectionInfo)[
-                  names(sectionInfo) %in% MyObsPKParam]] %>%
-                  as.data.frame() %>% t() %>% as.data.frame() %>%
-                  rename("Value" = V1) %>%
-                  mutate(RName = row.names(.),
-                         Value = as.numeric(Value),
-                         Stat = ifelse(str_detect(RName, "CV"), "CV_obs", "GMean"),
-                         Stat = ifelse(str_detect(RName, "CIU"), "CIU_obs", Stat),
-                         Stat = ifelse(str_detect(RName, "CIL"), "CIL_obs", Stat),
-                         RName = sub("_CV|_[0-9]{2}CI[UL]", "", RName),
-                         Value = if_else(Stat == "CV_obs",
-                                         round(Value * 100, 0),
-                                         # Per Christiane: 3 sig figs for everything
-                                         # or full number when > 100
-                                         if_else(Value > 100,
-                                                 round(Value, 0), signif(Value, 3)))) %>%
-                  pivot_wider(names_from = RName, values_from = Value)
-
-            # Only want to keep the columns where there are values for the observed
-            # mean data.
-            MyObsPK <- MyObsPK %>% select(where(function(x) complete.cases(x[1])))
-
-            # Calculating S/O
-            GMeans <- MyPKResults %>% filter(Stat == "GMean") %>%
-                  pivot_longer(names_to = "PKParam_short", values_to = "Sim",
-                               cols = -Stat) %>%
-                  left_join(MyObsPK %>% filter(Stat == "GMean") %>%
-                                  pivot_longer(names_to = "PKParam_short", values_to = "Obs",
-                                               cols = -Stat)) %>%
-                  mutate(S_O = round(Sim / Obs, 2)) %>%
-                  select(PKParam_short, S_O) %>%
-                  pivot_wider(names_from = PKParam_short, values_from = S_O) %>%
-                  mutate(Stat = "S/O")
-
-            # Next, selecting only the appropriate columns for table, making
-            # everything character, and adding % symbols to CV rows
-            MyPKResults <- MyPKResults %>%
-                  bind_rows(MyObsPK %>% mutate(Stat = ifelse(Stat == "GMean",
-                                                             "GMean_obs", Stat))) %>%
-                  bind_rows(GMeans)
-
-            MyPKResults <- MyPKResults[, names(MyObsPK)]
-
+      MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
+      if(EffectorPresent){
+            MyObsPKParam <- c(MyObsPKParam,
+                              "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
+                              "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
+                              "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
+                              "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
       }
+
+      MyObsPK <- sectionInfo[names(sectionInfo)[
+            names(sectionInfo) %in% MyObsPKParam]] %>%
+            as.data.frame() %>% t() %>% as.data.frame() %>%
+            rename("Value" = V1) %>%
+            mutate(RName = row.names(.),
+                   Value = as.numeric(Value),
+                   Stat = ifelse(str_detect(RName, "CV"), "CV_obs", "GMean"),
+                   Stat = ifelse(str_detect(RName, "CIU"), "CIU_obs", Stat),
+                   Stat = ifelse(str_detect(RName, "CIL"), "CIL_obs", Stat),
+                   RName = sub("_CV|_[0-9]{2}CI[UL]", "", RName),
+                   Value = if_else(Stat == "CV_obs",
+                                   round(Value * 100, 0),
+                                   # Per Christiane: 3 sig figs for everything
+                                   # or full number when > 100
+                                   if_else(Value > 100,
+                                           round(Value, 0), signif(Value, 3)))) %>%
+            pivot_wider(names_from = RName, values_from = Value)
+
+      # Only want to keep the columns where there are values for the observed
+      # mean data.
+      MyObsPK <- MyObsPK %>% select(where(function(x) complete.cases(x[1])))
+
+      # Calculating S/O
+      GMeans <- MyPKResults %>% filter(Stat == "GMean") %>%
+            pivot_longer(names_to = "PKParam_short", values_to = "Sim",
+                         cols = -Stat) %>%
+            left_join(MyObsPK %>% filter(Stat == "GMean") %>%
+                            pivot_longer(names_to = "PKParam_short", values_to = "Obs",
+                                         cols = -Stat)) %>%
+            mutate(S_O = round(Sim / Obs, 2)) %>%
+            select(PKParam_short, S_O) %>%
+            pivot_wider(names_from = PKParam_short, values_from = S_O) %>%
+            mutate(Stat = "S/O")
+
+      # Next, selecting only the appropriate columns for table, making
+      # everything character, and adding % symbols to CV rows
+      MyPKResults <- MyPKResults %>%
+            bind_rows(MyObsPK %>% mutate(Stat = ifelse(Stat == "GMean",
+                                                       "GMean_obs", Stat))) %>%
+            bind_rows(GMeans)
+
+      MyPKResults <- MyPKResults[, names(MyObsPK)]
 
       MyPKResults <- MyPKResults %>%
             mutate_all(.funs = as.character) %>%
@@ -288,7 +291,9 @@ so_table <- function(report_input_file = NA,
 
             PKToPull <-  c(PKToPull,
                            "AUCinf_ratio_dose1", "Cmax_ratio_dose1",
-                           "AUCtau_ratio_ss", "Cmax_ratio_ss")
+                           "AUCinf_ratio_ss", "Cmax_ratio_ss",
+                           "AUCtau_ratio_ss", "Cmax_ratio_ss",
+                           "AUCtau_ratio_dose1", "Cmax_ratio_dose1")
 
       }
 

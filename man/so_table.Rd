@@ -11,14 +11,18 @@ so_table(
   mean_type = NA,
   variability_option = "90\% CI",
   concatVariability = FALSE,
-  includeHalfLife = FALSE
+  includeHalfLife = FALSE,
+  includeTrialMeans = FALSE
 )
 }
 \arguments{
-\item{report_input_file}{the name of the Excel file to be piped to
-\code{\link{getSectionInfo}}}
+\item{report_input_file}{the name of the Excel file created by running
+\code{\link{generateReportInputForm}}, including the path if it's in any
+other directory than the current one, which you have now filled out}
 
-\item{sheet}{the sheet name to read}
+\item{sheet}{the sheet in the Excel file that contains information about this
+section of the report. In the original template, this was the tab titled
+"table and graph input".}
 
 \item{sectionInfo}{information about the simulated and observed data. This is
 output from the function \code{\link{getSectionInfo}} and can be used
@@ -53,25 +57,26 @@ a data.frame
 presentations, including reporting means, CVs, confidence intervals or
 percentiles, and ratios of simulated vs. observed mean values. Since this
 requires comparing observed data to a simulator output file, setting up the
-input for this function requires a few steps: \enumerate{ \item{Use the
-function \code{\link{generateReportInputForm}} to create an Excel file where
-you can enter information about your project.} \item{Go to the tab "observed
-data" and enter details about your observed data. It's ok if you don't have
-all the information; anything that's missing won't be included in the final
-S/O table. It's also ok to rename this tab and/or make copies of it within
-the same Excel file for making other S/O tables.} \item{Go to the tab
-"section input" and fill out information here for the specific section you're
-making this S/O table for. Make sure that whatever you list for the tab that
-contains information about the observed data is exactly the same as the
-actual tab name that you filled out in step 2. Also, make sure that the file
+input for this function requires a few steps: \enumerate{ \item{Use the function
+\code{\link{generateReportInputForm}} to create an Excel file where you can
+enter information about your project.} \item{Go to the tab "observed data"
+and enter details about your observed data. It's ok if you don't have all the
+information; anything that's missing won't be included in the final S/O
+table. It's also ok to rename this tab and/or make copies of it within the
+same Excel file for making other S/O tables.} \item{Go to the tab "table and
+graph input" and fill out information here for the specific report section
+you're making this S/O table for. Make sure that whatever you list as the tab
+that contains information about the observed data is exactly the same as the
+actual tab name that you filled out in step 2. Also make sure that the file
 names include the full file path.} \item{Save your Excel file.} \item{Here,
 within RStudio (or within the shiny app that we plan to make!), run this
 function using the name of that Excel file as input for
-\code{report_input_file} and the name of the "section input" tab as the input
-for \code{sheet}. Note: If the Excel file lives on SharePoint, you'll need to
-close it or this function will just keep running and not generate any output
-while it waits for access to the file.} }
+\code{report_input_file} and the name of the "table and graph input" tab as
+the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
+you'll need to close it or this function will just keep running and not
+generate any output while it waits for access to the file.} }
 }
 \examples{
-# No examples yet.
+# so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
+#          sheet = "table and graph input", includeTrialMeans = TRUE)
 }
