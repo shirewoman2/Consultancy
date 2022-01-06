@@ -53,7 +53,6 @@
 #'
 #' @return
 #' @import tidyverse
-#' @import ggthemes
 #' @export
 #'
 #' @examples
