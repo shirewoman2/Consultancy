@@ -572,7 +572,9 @@ ct_plot <- function(sim_data_file = NA,
       # Error catching for when user specifies linetype or shape and doesn't
       # include enough values when effector present
       if((complete.cases(obs_shape[1]) | complete.cases(line_type[1])) &&
-         length(MyEffector) > 0 & (length(obs_shape) < 2 | length(line_type) < 2)){
+         length(MyEffector) > 0 && complete.cases(MyEffector) &&
+         compoundToExtract != "effector" &&
+         (length(obs_shape) < 2 | length(line_type) < 2)){
                warning("There is an effector present and you have specified what the line type and/or shape should be, but you have not listed enough values (you need 2). The default line types and shapes will be used.")
                line_type <- NA
                obs_shape <- NA
@@ -707,7 +709,7 @@ ct_plot <- function(sim_data_file = NA,
                                  ifelse(NumTrials > 10, 0.05, 0.4))
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none"){
+               MyEffector[1] != "none" & compoundToExtract != "effector"){
 
                   ## linear plot
                   A <- ggplot(sim_data_trial,
@@ -768,7 +770,7 @@ ct_plot <- function(sim_data_file = NA,
                                  line_transparency, 0.25)
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none"){
+               MyEffector[1] != "none" & compoundToExtract != "effector"){
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial %in% c("per5", "per95")) %>%
@@ -833,7 +835,7 @@ ct_plot <- function(sim_data_file = NA,
                                  ifelse(NumTrials > 10, 0.05, 0.25))
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none"){
+               MyEffector[1] != "none" & compoundToExtract != "effector"){
 
                   ## linear plot
                   A <- ggplot(data = sim_data_mean %>%
@@ -937,7 +939,7 @@ ct_plot <- function(sim_data_file = NA,
       if(figure_type == "means only"){
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none"){
+               MyEffector[1] != "none" & compoundToExtract != "effector"){
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial == "mean") %>%
