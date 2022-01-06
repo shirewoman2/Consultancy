@@ -563,6 +563,16 @@ ct_plot <- function(sim_data_file = NA,
                   select(-CompoundIsEffector)
       }
 
+      # Error catching for when user specifies linetype or shape and doesn't
+      # include enough values when effector present
+      if((complete.cases(obs_shape[1]) | complete.cases(line_type[1])) &&
+         length(MyEffector) > 0 & (length(obs_shape) < 2 | length(line_type) < 2)){
+               warning("There is an effector present and you have specified what the line type and/or shape should be, but you have not listed enough values (you need 2). The default line types and shapes will be used.")
+               line_type <- NA
+               obs_shape <- NA
+         }
+
+
       MyEffector <- tolower(gsub(
             "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
             "",
