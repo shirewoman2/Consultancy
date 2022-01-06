@@ -26,6 +26,7 @@ ct_plot(
   line_color = NA,
   include_legend = FALSE,
   legend_label = NA,
+  prettify_effector_name = TRUE,
   return_data = FALSE,
   return_indiv_graphs = FALSE
 )
@@ -192,6 +193,15 @@ lines will be black or gray. Hex color codes are also ok to use.}
 an inhibitor or an inducer. Input will be used as the label in the legend
 for the line style and the shape. If left as NA when a legend is included
 and an effector is present, the label in the legend will be "effector".}
+
+\item{prettify_effector_name}{Optionally make the effector name prettier in
+the legend. This was designed for simulations where the effector is one of
+the standard options for the simulator, and leaving
+\code{prettify_effector_name = TRUE} will make the name of the effector be
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
+Set it to the name you'd prefer to see in your legend if you would like
+something different.}
 
 \item{return_data}{TRUE or FALSE: Return the data used in the graphs? If
 TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of

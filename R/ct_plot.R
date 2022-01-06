@@ -157,7 +157,15 @@
 #'   an inhibitor or an inducer. Input will be used as the label in the legend
 #'   for the line style and the shape. If left as NA when a legend is included
 #'   and an effector is present, the label in the legend will be "effector".
-
+#' @param prettify_effector_name Optionally make the effector name prettier in
+#'   the legend. This was designed for simulations where the effector is one of
+#'   the standard options for the simulator, and leaving
+#'   \code{prettify_effector_name = TRUE} will make the name of the effector be
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
+#'   Set it to the name you'd prefer to see in your legend if you would like
+#'   something different.
+#'
 #' @param return_data TRUE or FALSE: Return the data used in the graphs? If
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
@@ -257,6 +265,7 @@ ct_plot <- function(sim_data_file = NA,
                     line_color = NA,
                     include_legend = FALSE,
                     legend_label = NA,
+                    prettify_effector_name = TRUE,
                     return_data = FALSE,
                     return_indiv_graphs = FALSE){
 
@@ -555,30 +564,66 @@ ct_plot <- function(sim_data_file = NA,
       MyEffector <- unique(Data$Effector) %>% as.character()
       MyEffector <- MyEffector[!MyEffector == "none"]
 
-      if(length(MyEffector) > 0){
+      if(length(MyEffector) > 0 && complete.cases(MyEffector)){
 
             Data <- Data %>%
                   mutate(CompoundIsEffector = Compound == MyEffector,
-                         Effector = as.character(ifelse(is.na(Effector), "none", Effector)),
-                         Effector = tolower(gsub(
-                               "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
-                               "",
-                               Effector)),
-                         Compound = ifelse(CompoundIsEffector, Effector, Compound),
+                         Effector = as.character(ifelse(is.na(Effector),
+                                                        "none", Effector)))
+
+            if(class(prettify_effector_name) == "logical" &&
+               prettify_effector_name){
+                  MyEffector <-
+                        tolower(gsub(
+                              "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
+                              "", MyEffector))
+            }
+
+            if(class(prettify_effector_name) == "character"){
+                  MyEffector <- prettify_effector_name
+            }
+
+            Data <- Data %>%
+                  mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
+                         Effector = ifelse(Effector != "none", MyEffector, Effector),
                          Group = paste(Compound, Effector, Trial)) %>%
                   select(-CompoundIsEffector)
       }
 
-      # Error catching for when user specifies linetype or shape and doesn't
-      # include enough values when effector present
-      if((complete.cases(obs_shape[1]) | complete.cases(line_type[1])) &&
-         length(MyEffector) > 0 && complete.cases(MyEffector) &&
+      # Error catching for when user specifies linetype, color or shape and
+      # doesn't include enough values when effector present
+      if(complete.cases(obs_shape[1]) && length(MyEffector) > 0 &&
+         complete.cases(MyEffector) &&
          compoundToExtract != "effector" &&
-         (length(obs_shape) < 2 | length(line_type) < 2)){
-               warning("There is an effector present and you have specified what the line type and/or shape should be, but you have not listed enough values (you need 2). The default line types and shapes will be used.")
-               line_type <- NA
-               obs_shape <- NA
-         }
+         length(complete.cases(obs_shape)) < 2){
+            warning("There is an effector present and you have specified what the symbol shapes should be, but you have not listed enough values (you need 2). The default shapes will be used.")
+            obs_shape <- NA
+      }
+
+      if(complete.cases(obs_color[1]) && length(MyEffector) > 0 &&
+         complete.cases(MyEffector) &&
+         compoundToExtract != "effector" &&
+         length(complete.cases(obs_color)) < 2){
+            warning("There is an effector present and you have specified what the symbol colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
+            obs_color <- NA
+      }
+
+      if(complete.cases(line_color[1]) && length(MyEffector) > 0 &&
+         complete.cases(MyEffector) &&
+         compoundToExtract != "effector" &&
+         length(complete.cases(line_color)) < 2){
+            warning("There is an effector present and you have specified what the line colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
+            line_color <- NA
+      }
+
+      if(complete.cases(line_type[1]) && length(MyEffector) > 0 &&
+         complete.cases(MyEffector) &&
+         compoundToExtract != "effector" &&
+         length(complete.cases(line_type)) < 2){
+            warning("There is an effector present and you have specified what the line types should be, but you have not listed enough values (you need 2). The default line types will be used.")
+            line_type <- NA
+      }
+
 
 
       MyEffector <- tolower(gsub(
@@ -1010,7 +1055,7 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       ## semi-log plot
-      if(is.na(y_axis_limits_log[1])){
+      if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
 
             Ylim_log <- Ylim
 
