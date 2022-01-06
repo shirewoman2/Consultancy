@@ -12,15 +12,17 @@ ct_plot(
   tissue = "plasma",
   compoundToExtract = "substrate",
   figure_type = "trial means",
-  obs_data_option = NA,
-  obs_data_color = NA,
-  substrate_or_effector = "substrate",
-  adjust_obs_time = FALSE,
   time_range = NA,
+  x_axis_interval = NA,
+  pad_x_axis = FALSE,
+  adjust_obs_time = FALSE,
   t0 = "simulation start",
   yaxis_limits_log = NA,
+  obs_data_option = NA,
+  obs_color = NA,
+  obs_shape = NA,
+  line_type = NA,
   line_transparency = NA,
-  pad_x_axis = FALSE,
   include_legend = FALSE,
   legend_label = NA,
   return_data = FALSE,
@@ -82,34 +84,10 @@ this is labeled as "inhibitor 1" in the simulator).}
   sanctioned template at this time, this looks \emph{sharp}, makes it easy to
   see the defining characteristics of the data, and I recommend checking it
   out. If the color is too much for you but you like the rest, try setting
-  \code{obs_data_color = "none"}. -LS}
+  \code{obs_color = "none"}. -LS}}}
 
-  }}
-
-\item{obs_data_option}{Set options for how to view observed data. Options are
-"mean only" to show only a single point at the arithmetic mean value for
-each time point, "geometric mean only" to show a single point at the
-geometric mean, "all" to show all the individual data (equivalently,
-leave \code{obs_data_option} as NA), or "mean bars" to show a point at the
-arithmetic mean for each time point and error bars for the arithmetic
-standard deviation.}
-
-\item{obs_data_color}{If you would like the observed data points to be in
-color, either list a specific color or set this to "default". Points will
-be displayed in semi-transparent blue-purple for default and the
-semi-transparent version of whatever other color you list otherwise.
-Setting this to "none" will also make sure that the color is transparent.}
-
-\item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
-data file to match the last dose administered? This only applies to
-multiple-dosing regimens. If TRUE, the graph will show the observed data
-overlaid with the simulated data such that the dose in the observed data
-was administered at the same time as the last dose in the simulated data.
-If FALSE, the observed data will start at whatever times are listed in the
-Excel file.}
-
-\item{time_range}{time range to graph relative to the start of the
-  simulation. Options: \describe{
+\item{time_range}{time range to show relative to the start of the simulation.
+  Options: \describe{
 
   \item{NA}{entire time range of data}
 
@@ -125,22 +103,8 @@ Excel file.}
   past the dosing interval or data when the substrate was dosed BID and the
   effector was dosed QD} }}
 
-\item{t0}{What event should be used for time zero? Options are: "simulation
-start" (default), "substrate dose 1", "effector dose 1", "substrate last
-dose", "effector last dose", "substrate penultimate dose", or "effector
-penultimate dose". \emph{This does not change which data are included in
-the graph;} instead, this determines whether the x axis numbers are offset
-so that, e.g., the last dose is administered at time 0.}
-
-\item{yaxis_limits_log}{Optionlly manually set the Y axis limits for the
-semi-log plot, e.g., \code{c(10, 1000)}. Values will be rounded down and
-up, respectively, to the nearest order of magnitude. If left as NA, the Y
-axis limits for the semi-log plot will be automatically selected.}
-
-\item{line_transparency}{Optionally specify the transparency for the trial
-mean or percentile lines. Acceptable values are from 0 (fully transparent,
-so no line at all) to 1 (completely opaque or black). If left as NA, this
-value will be automatically determined.}
+\item{x_axis_interval}{Set the x-axis major tick-mark interval. Acceptable
+input: any number or leave as NA to accept default values.}
 
 \item{pad_x_axis}{Optionally add a smidge of padding to the left side of the
 x axis. If left as FALSE, the y axis will be placed right at the beginning
@@ -148,6 +112,74 @@ of your time range. If set to TRUE, there will be a little bit of space
 between the y axis and the start of your time range. NOTE: We could allow
 users to specify exactly how much padding and on which sides of the x axis
 if there's interest from users. -LS}
+
+\item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
+data file to match the last dose administered? This only applies to
+multiple-dosing regimens. If TRUE, the graph will show the observed data
+overlaid with the simulated data such that the dose in the observed data
+was administered at the same time as the last dose in the simulated data.
+If FALSE, the observed data will start at whatever times are listed in the
+Excel file.}
+
+\item{t0}{What event should be used for time zero? Options are: "simulation
+start" (default), "substrate dose 1", "effector dose 1", "substrate last
+dose", "effector last dose", "substrate penultimate dose", or "effector
+penultimate dose". \emph{This does not change which data are included in
+the graph;} instead, this determines whether the x axis numbers are offset
+so that, e.g., the last dose is administered at time 0.}
+
+\item{yaxis_limits_log}{Optionally set the Y axis limits for the semi-log
+plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
+respectively, to the nearest order of magnitude. If left as NA, the Y axis
+limits for the semi-log plot will be automatically selected.}
+
+\item{obs_data_option}{Set options for how to view observed data. Options
+  are:
+
+  \describe{
+
+  \item{"mean only"}{show only a single point at the arithmetic mean value
+  for each time point}
+
+  \item{"geometric mean only"}{show a single point at the geometric mean}
+
+  \item{"all"}{show all the individual data (equivalently, leave
+  \code{obs_data_option} as NA)}
+
+  \item{"mean bars"}{show a point at the arithmetic mean for each time point
+  and error bars for the arithmetic standard deviation}}}
+
+\item{obs_color}{If you would like the observed data points to be in color,
+either list a specific color or set this to "default". Points will be
+displayed in semi-transparent blue-purple for default and the
+semi-transparent version of whatever other color you list otherwise.
+Setting this to "none" will also make sure that the color is transparent.}
+
+\item{obs_shape}{Optionally specify what shapes are used to depict observed
+data for 1. the substrate drug alone and 2. the substrate drug in the
+presence of an effector. Input should look like this, for example:
+\code{c(1, 2)} to get an open circle and an open triangle. To see all the
+possible shapes and what number corresponds to which shape, see
+\url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
+the middle of that page). If left as NA, substrate alone will be an open
+circle and substrate + effector will be an open triangle.}
+
+\item{line_type}{Optionally specify what types of lines are used to depict 1.
+the substrate drug alone and 2. the substrate drug in the presence of an
+effector (when applicable). Input should look like this, for example:
+\code{c("solid", "dashed")} to get a solid line for the substrate drug and
+a dashed line for the effector. To see all possible line types:
+\code{ggpubr::show_line_types()}. If left as NA, substrate alone will be a
+solid line and substrate + effector will be a dashed line. If the graph
+type is "Freddy" and there's no effector present, which is a slightly
+different scenario than the other graph types, the 1st line type specified
+will be for the mean simulated concentration and the trial means, and the
+2nd line type specified will be for the 5th and 95th percentiles.}
+
+\item{line_transparency}{Optionally specify the transparency for the trial
+mean or percentile lines. Acceptable values are from 0 (fully transparent,
+so no line at all) to 1 (completely opaque or black). If left as NA, this
+value will be automatically determined.}
 
 \item{legend_label}{Optionally indicate on the legend whether the effector is
 an inhibitor or an inducer. Input will be used as the label in the legend
@@ -175,10 +207,7 @@ publication-quality graphs that match the consultancy template formatting
 instructions. We've tried to include a fair number of options here for
 flexibility, but many of the function arguments are optional; most of the
 time, you'll get decent-looking graphs while only setting a minimal number of
-arguments. A note: The breaks on the x axis are set up to work nicely for
-time intervals up to 4 weeks; if the time you're monitoring is longer than
-that, you may want to set \code{return_indiv_graphs = TRUE} and set the x
-axis breaks yourself.
+arguments.
 }
 \examples{
 sim_data_file <- "../Example simulator output.xlsx"
@@ -237,7 +266,7 @@ ct_plot(sim_obs_dataframe = ConcTime)
 # if the default settings are clipping your data.
 ct_plot(sim_data_file = "../Example simulator output - MDZ + metabolites + inhibitor.xlsx",
         obs_data_option = "mean bars",
-        Obs_data_color = "red",
+        obs_color = "red",
         yaxis_limits_log = c(1e-05, 0.1),
         pad_x_axis = TRUE,
         include_legend = TRUE,
