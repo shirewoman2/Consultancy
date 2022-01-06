@@ -17,12 +17,13 @@ ct_plot(
   pad_x_axis = FALSE,
   adjust_obs_time = FALSE,
   t0 = "simulation start",
-  yaxis_limits_log = NA,
+  y_axis_limits_log = NA,
   obs_data_option = NA,
   obs_color = NA,
   obs_shape = NA,
   line_type = NA,
   line_transparency = NA,
+  line_color = NA,
   include_legend = FALSE,
   legend_label = NA,
   return_data = FALSE,
@@ -128,7 +129,7 @@ penultimate dose". \emph{This does not change which data are included in
 the graph;} instead, this determines whether the x axis numbers are offset
 so that, e.g., the last dose is administered at time 0.}
 
-\item{yaxis_limits_log}{Optionally set the Y axis limits for the semi-log
+\item{y_axis_limits_log}{Optionally set the Y axis limits for the semi-log
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
@@ -151,9 +152,10 @@ limits for the semi-log plot will be automatically selected.}
 
 \item{obs_color}{If you would like the observed data points to be in color,
 either list a specific color or set this to "default". Points will be
-displayed in semi-transparent blue-purple for default and the
+displayed in semi-transparent blue-purple for "default" and the
 semi-transparent version of whatever other color you list otherwise.
-Setting this to "none" will also make sure that the color is transparent.}
+Setting this to "none" will make sure that the symbols are black outlines
+only with no fill. Hex color codes are also ok to use.}
 
 \item{obs_shape}{Optionally specify what shapes are used to depict observed
 data for 1. the substrate drug alone and 2. the substrate drug in the
@@ -168,18 +170,23 @@ circle and substrate + effector will be an open triangle.}
 the substrate drug alone and 2. the substrate drug in the presence of an
 effector (when applicable). Input should look like this, for example:
 \code{c("solid", "dashed")} to get a solid line for the substrate drug and
-a dashed line for the effector. To see all possible line types:
-\code{ggpubr::show_line_types()}. If left as NA, substrate alone will be a
-solid line and substrate + effector will be a dashed line. If the graph
-type is "Freddy" and there's no effector present, which is a slightly
-different scenario than the other graph types, the 1st line type specified
-will be for the mean simulated concentration and the trial means, and the
-2nd line type specified will be for the 5th and 95th percentiles.}
+a dashed line for the effector. To see all possible \code{line_type}
+options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
+will be a solid line and substrate + effector will be a dashed line. If
+\code{figure_type} is "Freddy" and there's no effector present, which is a
+slightly different scenario than the other graph types, the 1st line type
+specified will be for the mean simulated concentration and the trial means,
+and the 2nd line type specified will be for the 5th and 95th percentiles.}
 
 \item{line_transparency}{Optionally specify the transparency for the trial
 mean or percentile lines. Acceptable values are from 0 (fully transparent,
 so no line at all) to 1 (completely opaque or black). If left as NA, this
 value will be automatically determined.}
+
+\item{line_color}{Optionally specify what colors to use for the lines.
+Acceptable input for, e.g., the substrate alone to be blue and the
+substrate + effector to be red: \code{c("blue", "red")}. If left as NA,
+lines will be black or gray. Hex color codes are also ok to use.}
 
 \item{legend_label}{Optionally indicate on the legend whether the effector is
 an inhibitor or an inducer. Input will be used as the label in the legend
@@ -267,7 +274,7 @@ ct_plot(sim_obs_dataframe = ConcTime)
 ct_plot(sim_data_file = "../Example simulator output - MDZ + metabolites + inhibitor.xlsx",
         obs_data_option = "mean bars",
         obs_color = "red",
-        yaxis_limits_log = c(1e-05, 0.1),
+        y_axis_limits_log = c(1e-05, 0.1),
         pad_x_axis = TRUE,
         include_legend = TRUE,
         legend_label = "Inhibitor")

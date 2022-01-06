@@ -97,7 +97,7 @@
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
 #'
-#' @param yaxis_limits_log Optionally set the Y axis limits for the semi-log
+#' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
@@ -120,9 +120,10 @@
 #'
 #' @param obs_color If you would like the observed data points to be in color,
 #'   either list a specific color or set this to "default". Points will be
-#'   displayed in semi-transparent blue-purple for default and the
+#'   displayed in semi-transparent blue-purple for "default" and the
 #'   semi-transparent version of whatever other color you list otherwise.
-#'   Setting this to "none" will also make sure that the color is transparent.
+#'   Setting this to "none" will make sure that the symbols are black outlines
+#'   only with no fill. Hex color codes are also ok to use.
 #' @param obs_shape Optionally specify what shapes are used to depict observed
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
@@ -140,13 +141,17 @@
 #'   the substrate drug alone and 2. the substrate drug in the presence of an
 #'   effector (when applicable). Input should look like this, for example:
 #'   \code{c("solid", "dashed")} to get a solid line for the substrate drug and
-#'   a dashed line for the effector. To see all possible line types:
-#'   \code{ggpubr::show_line_types()}. If left as NA, substrate alone will be a
-#'   solid line and substrate + effector will be a dashed line. If the graph
-#'   type is "Freddy" and there's no effector present, which is a slightly
-#'   different scenario than the other graph types, the 1st line type specified
-#'   will be for the mean simulated concentration and the trial means, and the
-#'   2nd line type specified will be for the 5th and 95th percentiles.
+#'   a dashed line for the effector. To see all possible \code{line_type}
+#'   options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
+#'   will be a solid line and substrate + effector will be a dashed line. If
+#'   \code{figure_type} is "Freddy" and there's no effector present, which is a
+#'   slightly different scenario than the other graph types, the 1st line type
+#'   specified will be for the mean simulated concentration and the trial means,
+#'   and the 2nd line type specified will be for the 5th and 95th percentiles.
+#' @param line_color Optionally specify what colors to use for the lines.
+#'   Acceptable input for, e.g., the substrate alone to be blue and the
+#'   substrate + effector to be red: \code{c("blue", "red")}. If left as NA,
+#'   lines will be black or gray. Hex color codes are also ok to use.
 #'
 #' @param legend_label Optionally indicate on the legend whether the effector is
 #'   an inhibitor or an inducer. Input will be used as the label in the legend
@@ -226,7 +231,7 @@
 #' ct_plot(sim_data_file = "../Example simulator output - MDZ + metabolites + inhibitor.xlsx",
 #'         obs_data_option = "mean bars",
 #'         obs_color = "red",
-#'         yaxis_limits_log = c(1e-05, 0.1),
+#'         y_axis_limits_log = c(1e-05, 0.1),
 #'         pad_x_axis = TRUE,
 #'         include_legend = TRUE,
 #'         legend_label = "Inhibitor")
@@ -243,12 +248,13 @@ ct_plot <- function(sim_data_file = NA,
                     pad_x_axis = FALSE,
                     adjust_obs_time = FALSE,
                     t0 = "simulation start",
-                    yaxis_limits_log = NA,
+                    y_axis_limits_log = NA,
                     obs_data_option = NA,
                     obs_color = NA,
                     obs_shape = NA,
                     line_type = NA,
                     line_transparency = NA,
+                    line_color = NA,
                     include_legend = FALSE,
                     legend_label = NA,
                     return_data = FALSE,
@@ -628,15 +634,6 @@ ct_plot <- function(sim_data_file = NA,
             )
       }
 
-      # Setting observed data color option.
-      obs_color <- ifelse((complete.cases(obs_color) &
-                                 obs_color == "default") |
-                                (is.na(obs_color) &
-                                       figure_type == "Freddy"),
-                          "#3030FE", obs_color)
-
-
-
       # Setting y axis (concentration) ---------------------------------------
       # Setting Y axis limits for both linear and semi-log plots
       if (figure_type == "trial means") {
@@ -672,7 +669,8 @@ ct_plot <- function(sim_data_file = NA,
 
       # Figure types ---------------------------------------------------------
 
-      # Setting user specifications for shape and linetype where applicable.
+      # Setting user specifications for shape, linetype, and color where
+      # applicable.
       if(is.na(line_type[1])){
             line_type <- c("solid", "dashed")
       }
@@ -681,6 +679,24 @@ ct_plot <- function(sim_data_file = NA,
             obs_shape <- c(21, 24)
       }
 
+      if(complete.cases(line_color[1]) & is.na(obs_color[1])){
+            obs_color <- line_color
+      }
+
+      if(is.na(line_color[1])){
+            line_color <- c("black", "black")
+      }
+
+      if(complete.cases(line_color[1]) && figure_type == "Freddy" &&
+         length(line_color) == 1){
+            line_color <- rep(line_color, 2)
+      }
+
+      obs_color <- ifelse((complete.cases(obs_color) &
+                                 obs_color == "default") |
+                                (is.na(obs_color[1]) &
+                                       figure_type == "Freddy"),
+                          "#3030FE", obs_color)
 
       ## figure_type: trial means -----------------------------------------------------------
       if(figure_type == "trial means"){
@@ -690,26 +706,29 @@ ct_plot <- function(sim_data_file = NA,
                                  line_transparency,
                                  ifelse(NumTrials > 10, 0.05, 0.4))
 
-            if(length(MyEffector) > 0 && MyEffector[1] != "none"){
+            if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+               MyEffector[1] != "none"){
 
                   ## linear plot
                   A <- ggplot(sim_data_trial,
                               aes(x = Time, y = Conc, group = Group,
-                                  linetype = Effector, shape = Effector)) +
+                                  linetype = Effector, shape = Effector,
+                                  color = Effector)) +
                         geom_line(alpha = AlphaToUse, lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
                                   lwd = 1) +
                         scale_shape_manual(values = obs_shape[1:2]) +
-                        scale_linetype_manual(values = line_type[1:2])
+                        scale_linetype_manual(values = line_type[1:2]) +
+                        scale_color_manual(values = line_color[1:2])
 
-                  if(is.na(obs_color) | obs_color == "none"){
+                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
                         A <-  A + geom_point(data = obs_data, size = 2,
                                              stroke = 1)
                   } else {
                         A <- A +
                               geom_point(data = obs_data, size = 2,
-                                         fill = obs_color, alpha = 0.5,
+                                         fill = obs_color[1:2], alpha = 0.5,
                                          stroke = 1) +
                               geom_point(data = obs_data, size = 2,
                                          fill = NA, stroke = 1)
@@ -721,17 +740,19 @@ ct_plot <- function(sim_data_file = NA,
                   A <- ggplot(sim_data_trial,
                               aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(alpha = AlphaToUse, lwd = 1,
-                                  linetype = line_type[1]) +
+                                  linetype = line_type[1],
+                                  color = line_color[1]) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
-                                  lwd = 1, linetype = line_type[1])
+                                  lwd = 1, linetype = line_type[1],
+                                  color = line_color[1])
 
-                  if(is.na(obs_color) | obs_color == "none"){
+                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
                         A <- A + geom_point(data = obs_data, size = 2,
                                             shape = obs_shape[1], stroke = 1)
                   } else {
                         A <- A + geom_point(data = obs_data, size = 2,
-                                            fill = obs_color, alpha = 0.5,
+                                            fill = obs_color[1], alpha = 0.5,
                                             shape = obs_shape[1], stroke = 1) +
                               geom_point(data = obs_data, size = 2,
                                          fill = NA, shape = obs_shape[1], stroke = 1)
@@ -746,22 +767,25 @@ ct_plot <- function(sim_data_file = NA,
             AlphaToUse <- ifelse(complete.cases(line_transparency),
                                  line_transparency, 0.25)
 
-            if(length(MyEffector) > 0 && MyEffector[1] != "none"){
+            if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+               MyEffector[1] != "none"){
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial %in% c("per5", "per95")) %>%
                                     mutate(Group = paste(Group, Trial)),
                               aes(x = Time, y = Conc,
                                   linetype = Effector, shape = Effector,
+                                  color = Effector,
                                   group = Group)) +
                         geom_line(alpha = AlphaToUse, lwd = 0.8) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
                                   lwd = 1)  +
                         scale_shape_manual(values = obs_shape[1:2]) +
-                        scale_linetype_manual(values = line_type[1:2])
+                        scale_linetype_manual(values = line_type[1:2]) +
+                        scale_color_manual(values = line_color[1:2])
 
-                  if(is.na(obs_color) | obs_color == "none"){
+                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
                         A <- A + geom_point(data = obs_data, size = 2,
                                             stroke = 1)
                   } else {
@@ -779,18 +803,20 @@ ct_plot <- function(sim_data_file = NA,
                   A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
                               aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(alpha = AlphaToUse, lwd = 0.8,
-                                  linetype = line_type[1]) +
+                                  linetype = line_type[1],
+                                  color = line_color[1]) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"), lwd = 1,
-                                  linetype = line_type[1])
+                                  linetype = line_type[1],
+                                  color = line_color[1])
 
-                  if(is.na(obs_color) | obs_color == "none"){
+                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
                         A <- A + geom_point(data = obs_data, size = 2,
                                             stroke = 1, shape = obs_shape[1])
                   } else {
                         A <- A +
                               geom_point(data = obs_data, size = 2,
-                                         fill = obs_color, alpha = 0.5,
+                                         fill = obs_color[1], alpha = 0.5,
                                          stroke = 1, shape = obs_shape[1]) +
                               geom_point(data = obs_data, size = 2,
                                          fill = NA, shape = obs_shape[1], stroke = 1)
@@ -806,21 +832,24 @@ ct_plot <- function(sim_data_file = NA,
                                  line_transparency,
                                  ifelse(NumTrials > 10, 0.05, 0.25))
 
-            if(length(MyEffector) > 0 && MyEffector[1] != "none"){
+            if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+               MyEffector[1] != "none"){
 
                   ## linear plot
                   A <- ggplot(data = sim_data_mean %>%
                                     filter(Trial == "mean"),
                               aes(x = Time, y = Conc, group = Group,
-                                  linetype = Effector, shape = Effector)) +
+                                  linetype = Effector, shape = Effector,
+                                  color = Effector)) +
                         geom_line(lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95")),
                                   alpha = AlphaToUse, lwd = 1) +
                         scale_shape_manual(values = obs_shape[1:2]) +
-                        scale_linetype_manual(values = line_type[1:2])
+                        scale_linetype_manual(values = line_type[1:2]) +
+                        scale_color_manual(values = line_color[1:2])
 
-                  if(is.na(obs_color)){
+                  if(is.na(obs_color[1])){
                         A <- A +
                               geom_point(data = obs_data, size = 2,
                                          fill = "#3030FE", alpha = 0.5,
@@ -834,7 +863,7 @@ ct_plot <- function(sim_data_file = NA,
                         # people to have the option to override that, so
                         # setting obs_color to "none" will override the
                         # "Freddy" default. -LS
-                        if(obs_color == "none"){
+                        if(obs_color[1] == "none"){
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   fill = NA, stroke = 1)
                         } else {
@@ -857,15 +886,18 @@ ct_plot <- function(sim_data_file = NA,
                   A <- ggplot(sim_data_trial,
                               aes(x = Time, y = Conc, group = Trial)) +
                         geom_line(alpha = AlphaToUse, lwd = 1,
-                                  linetype = line_type[1]) +
+                                  linetype = line_type[1],
+                                  color = line_color[1]) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
-                                  lwd = 1, linetype = line_type[1]) +
+                                  lwd = 1, linetype = line_type[1],
+                                  color = line_color[1]) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95")),
-                                  linetype = line_type[2])
+                                  linetype = line_type[2],
+                                  color = line_color[2])
 
-                  if(is.na(obs_color)){
+                  if(is.na(obs_color[1])){
                         A <- A +
                               geom_point(data = obs_data, size = 2,
                                          shape = obs_shape[1],
@@ -881,7 +913,7 @@ ct_plot <- function(sim_data_file = NA,
                         # people to have the option to override that, so
                         # setting obs_color to "none" will override the
                         # "Freddy" default. -LS
-                        if(obs_color == "none"){
+                        if(obs_color[1] == "none"){
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   fill = NA, stroke = 1,
                                                   shape = obs_shape[1])
@@ -891,7 +923,7 @@ ct_plot <- function(sim_data_file = NA,
                               # type.
                               A <- A +
                                     geom_point(data = obs_data, size = 2,
-                                               fill = obs_color, alpha = 0.5,
+                                               fill = obs_color[1], alpha = 0.5,
                                                stroke = 1, shape = obs_shape[1]) +
                                     geom_point(data = obs_data, size = 2,
                                                fill = NA, stroke = 1,
@@ -904,21 +936,25 @@ ct_plot <- function(sim_data_file = NA,
       ## figure_type: means only -----------------------------------------------------------
       if(figure_type == "means only"){
 
-            if(length(MyEffector) > 0 && MyEffector[1] != "none"){
+            if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+               MyEffector[1] != "none"){
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial == "mean") %>%
                                     mutate(Group = paste(Group, Trial)),
-                              aes(x = Time, y = Conc, linetype = Effector)) +
+                              aes(x = Time, y = Conc, linetype = Effector,
+                                  color = Effector)) +
                         geom_line(lwd = 1) +
-                        scale_linetype_manual(values = line_type[1:2])
+                        scale_linetype_manual(values = line_type[1:2]) +
+                        scale_color_manual(values = line_color[1:2])
 
             } else {
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial == "mean"),
                               aes(x = Time, y = Conc)) +
-                        geom_line(lwd = 1, linetype = line_type[1])
+                        geom_line(lwd = 1, linetype = line_type[1],
+                                  color = line_color[1])
 
             }
       }
@@ -972,7 +1008,7 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       ## semi-log plot
-      if(is.na(yaxis_limits_log[1])){
+      if(is.na(y_axis_limits_log[1])){
 
             Ylim_log <- Ylim
 
@@ -988,7 +1024,7 @@ ct_plot <- function(sim_data_file = NA,
             # Having trouble w/our current setup sometimes clipping early data,
             # especially when figure type is trial means. Allowing user to
             # specify y axis limits here.
-            Ylim_log <- yaxis_limits_log
+            Ylim_log <- y_axis_limits_log
             Ylim_log[1] <- round_down(Ylim_log[1])
             Ylim_log[2] <- round_up(Ylim[2])
       }
