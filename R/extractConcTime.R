@@ -29,8 +29,9 @@
 #'   "Tissues" in the simulator, e.g., "lung", "brain", etc.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are "substrate" (default), "metabolite 1",
-#'   "metabolite 2", or "effector" (this can be either an inducer or inhibitor;
-#'   this is labeled as "inhibitor 1" in the simulator).
+#'   "metabolite 2", "effector", or "effector 2" (this can be either an inducer
+#'   or inhibitor; this is labeled as "inhibitor 1" or "inhibitor 2" in the
+#'   simulator).
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are one or both of "aggregate" and
 #'   "individual". Aggregated data are not calculated here but are pulled from
@@ -119,7 +120,7 @@ extractConcTime <- function(sim_data_file,
 
       compoundToExtract <- tolower(compoundToExtract)
       if(compoundToExtract %in% c("substrate", "metabolite 1", "metabolite 2",
-                                  "effector") == FALSE){
+                                  "effector", "effector 2") == FALSE){
             stop("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'metabolite 1', 'metabolite 2', or 'effector'.")
       }
 
