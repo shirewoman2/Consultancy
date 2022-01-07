@@ -140,10 +140,10 @@ limits for the semi-log plot will be automatically selected.}
 
   \describe{
 
-  \item{"mean only"}{show only a single point at the arithmetic mean value
+  \item{"means only"}{show only a single point at the arithmetic mean value
   for each time point}
 
-  \item{"geometric mean only"}{show a single point at the geometric mean}
+  \item{"geometric means only"}{show a single point at the geometric mean}
 
   \item{"all"}{show all the individual data (equivalently, leave
   \code{obs_data_option} as NA)}

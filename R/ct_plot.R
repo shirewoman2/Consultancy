@@ -107,10 +107,10 @@
 #'
 #'   \describe{
 #'
-#'   \item{"mean only"}{show only a single point at the arithmetic mean value
+#'   \item{"means only"}{show only a single point at the arithmetic mean value
 #'   for each time point}
 #'
-#'   \item{"geometric mean only"}{show a single point at the geometric mean}
+#'   \item{"geometric means only"}{show a single point at the geometric mean}
 #'
 #'   \item{"all"}{show all the individual data (equivalently, leave
 #'   \code{obs_data_option} as NA)}
@@ -294,6 +294,12 @@ ct_plot <- function(sim_data_file = NA,
       if(all(complete.cases(time_range)) & class(time_range) == "character" &
          !any(time_range %in% c("last dose", "first dose", "penultimate dose"))){
             stop("time_range must be 'first dose', 'last dose', 'penultimate dose', or a numeric time range, e.g., c(12, 24).")
+      }
+
+      if(complete.cases(obs_data_option) &&
+         obs_data_option %in% c("means only", "geometric means only", "all",
+                                "mean bars") == FALSE){
+            stop("The value for obs_data_option must be one of 'means only', 'geometric means only', 'all', or 'mean bars'.")
       }
 
       t0 <- tolower(t0)
@@ -624,13 +630,6 @@ ct_plot <- function(sim_data_file = NA,
             line_type <- NA
       }
 
-
-
-      MyEffector <- tolower(gsub(
-            "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
-            "",
-            MyEffector))
-
       # Always want "none" to be the 1st item on the legend, and we need there
       # to be some value present for "Effector" for function to work correctly.
       Data <- Data %>%
@@ -676,7 +675,7 @@ ct_plot <- function(sim_data_file = NA,
                                   Conc = switch(obs_data_option,
                                                 "means only" = mean(Conc, na.rm = T),
                                                 "mean bars" = mean(Conc, na.rm = T),
-                                                "geometric mean only" = gm_mean(Conc))) %>%
+                                                "geometric means only" = gm_mean(Conc))) %>%
                         ungroup()
             )
       }
