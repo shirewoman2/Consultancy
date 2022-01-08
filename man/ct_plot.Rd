@@ -84,11 +84,11 @@ this is labeled as "inhibitor 1" in the simulator).}
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
   with an effector present lose the trial means, and the percentiles switch
-  to solid, gray lines. While this does not align with the officially
-  sanctioned template at this time, this looks \emph{sharp}, makes it easy to
-  see the defining characteristics of the data, and I recommend checking it
-  out. If the color is too much for you but you like the rest, try setting
-  \code{obs_color = "none"}. -LS}}}
+  to solid, gray lines. \strong{An editorial comment:} While this does not
+  align with the officially sanctioned template at this time, this looks
+  \emph{sharp}, makes it easy to see the defining characteristics of the
+  data, and I recommend checking it out. If the color is too much for you but
+  you like the rest, try setting \code{obs_color = "none"}. -LS}}}
 
 \item{time_range}{time range to show relative to the start of the simulation.
   Options: \describe{
@@ -230,7 +230,8 @@ publication-quality graphs that match the consultancy template formatting
 instructions. We've tried to include a fair number of options here for
 flexibility, but many of the function arguments are optional; most of the
 time, you'll get decent-looking graphs while only setting a minimal number of
-arguments.
+arguments. \strong{If you want to plot enzyme abundance data, please see
+\code{\link{enz_plot}}.}
 }
 \examples{
 sim_data_file <- "../Example simulator output.xlsx"

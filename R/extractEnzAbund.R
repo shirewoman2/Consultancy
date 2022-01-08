@@ -88,8 +88,7 @@ extractEnzAbund <- function(sim_data_file,
                   c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
                     any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)")))]
 
-            if(length(which(complete.cases(GutParts))) > 0 & tissue == "gut"){
-               all(complete.cases(GutParts))){
+            if(all(complete.cases(GutParts)) & tissue == "gut"){
 
                   sim_data_mean <- list()
 

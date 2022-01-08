@@ -9,6 +9,7 @@ enz_plot(
   sim_enz_dataframe = NA,
   enzyme = "CYP3A4",
   tissue = "liver",
+  figure_type = "percentiles",
   ...
 )
 }
@@ -16,26 +17,31 @@ enz_plot(
 \item{sim_data_file}{name of the Excel file containing the simulated
 enzyme-abundance data}
 
-\item{enzyme}{the enzyme, e.g., "CYP3A4", "UGT1A1", etc. Spaces or hyphens in
-enzyme names will be ignored. Not case sensitive.}
+\item{sim_enz_dataframe}{If you have already extracted the concentration-time
+data using the function \code{\link{extractEnzAbund}}, you can enter the
+name of the output data.frame from that function instead of re-reading the
+Excel file, which is the bottleneck step in running this function.}
+
+\item{enzyme}{the enzyme to plot, e.g., "CYP3A4" (default), "UGT1A1", etc.
+Spaces or hyphens in enzyme names will be ignored. Not case sensitive.}
 
 \item{tissue}{the tissue to plot. Options are "liver" (default), "gut", or
 "kidney".}
 
-\item{...}{Other arguments passed to the function \code{\link{ct_plot}}}
+\item{figure_type}{The type of figure to graph. Default is "percentiles". See
+\code{figure_type} options and their explanations for the function
+\code{\link{ct_plot}}.}
 
-\item{sim_obs_dataframe}{If you have already extracted the concentration-time
-data using the function \code{\link{extractEnzAbund}}, you can enter the
-name of the output data.frame from that function instead of re-reading the
-Excel file, which is the bottleneck step in running this function.}
+\item{...}{other arguments passed to the function \code{\link{ct_plot}}}
 }
 \description{
 Using simulated enzyme-abundance data, make publication-quality graphs that
-match the consultancy template formatting instructions. The options in the
-function \code{\link{ct_plot}} will work here as long as they make sense for
-plotting enzyme abundance data.
+match the consultancy template formatting instructions. The options listed in
+the function \code{\link{ct_plot}}, e.g., specifying the figure type or the
+axis limits, etc., work here as long as they make sense for plotting
+enzyme-abundance data.
 }
 \examples{
-extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",
-                enzyme = "CYP3A4", tissue = "liver")
+enz_plot(sim_data_file = "../Example simulator output MD.xlsx",
+         enzyme = "CYP3A4", tissue = "liver", line_type = "dotted")
 }

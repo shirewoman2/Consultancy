@@ -5,7 +5,8 @@
 #' instructions. We've tried to include a fair number of options here for
 #' flexibility, but many of the function arguments are optional; most of the
 #' time, you'll get decent-looking graphs while only setting a minimal number of
-#' arguments.
+#' arguments. \strong{If you want to plot enzyme abundance data, please see
+#' \code{\link{enz_plot}}.}
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data
@@ -52,11 +53,11 @@
 #'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
 #'   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
 #'   with an effector present lose the trial means, and the percentiles switch
-#'   to solid, gray lines. While this does not align with the officially
-#'   sanctioned template at this time, this looks \emph{sharp}, makes it easy to
-#'   see the defining characteristics of the data, and I recommend checking it
-#'   out. If the color is too much for you but you like the rest, try setting
-#'   \code{obs_color = "none"}. -LS}}
+#'   to solid, gray lines. \strong{An editorial comment:} While this does not
+#'   align with the officially sanctioned template at this time, this looks
+#'   \emph{sharp}, makes it easy to see the defining characteristics of the
+#'   data, and I recommend checking it out. If the color is too much for you but
+#'   you like the rest, try setting \code{obs_color = "none"}. -LS}}
 #'
 #' @param time_range time range to show relative to the start of the simulation.
 #'   Options: \describe{
@@ -336,11 +337,9 @@ ct_plot <- function(sim_data_file = NA,
             ObsConcUnits <- "Relative abundance"
             Data <- Data %>% rename(Conc = Abundance) %>%
                   mutate(Simulated = TRUE,
-                         Compound = Enzyme)
-            if("Effector" %in% names(Data) == FALSE){
-                  Data$Effector <- "none" # RETURN TO THIS and update extractEnzAbund to include a column "Effector" that is "none" when none present.
-            }
-
+                         Compound = Enzyme,
+                         Effector = ifelse(EffectorPresent,
+                                           "effector", "none"))
       } else {
             ObsConcUnits <- sort(unique(Data$Conc_units))
       }
@@ -793,16 +792,18 @@ ct_plot <- function(sim_data_file = NA,
                         scale_linetype_manual(values = line_type[1:2]) +
                         scale_color_manual(values = line_color[1:2])
 
-                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
-                        A <-  A + geom_point(data = obs_data, size = 2,
-                                             stroke = 1)
-                  } else {
-                        A <- A +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = obs_color[1:2], alpha = 0.5,
-                                         stroke = 1) +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = NA, stroke = 1)
+                  if(nrow(obs_data) > 0){
+                        if(obs_color[1] == "none"){
+                              A <-  A + geom_point(data = obs_data, size = 2,
+                                                   stroke = 1)
+                        } else {
+                              A <- A +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = obs_color[1:2], alpha = 0.5,
+                                               stroke = 1) +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = NA, stroke = 1)
+                        }
                   }
 
             } else {
@@ -818,15 +819,17 @@ ct_plot <- function(sim_data_file = NA,
                                   lwd = 1, linetype = line_type[1],
                                   color = line_color[1])
 
-                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            shape = obs_shape[1], stroke = 1)
-                  } else {
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            fill = obs_color[1], alpha = 0.5,
-                                            shape = obs_shape[1], stroke = 1) +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = NA, shape = obs_shape[1], stroke = 1)
+                  if(nrow(obs_data) > 0){
+                        if(obs_color[1] == "none"){
+                              A <- A + geom_point(data = obs_data, size = 2,
+                                                  shape = obs_shape[1], stroke = 1)
+                        } else {
+                              A <- A + geom_point(data = obs_data, size = 2,
+                                                  fill = obs_color[1], alpha = 0.5,
+                                                  shape = obs_shape[1], stroke = 1) +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = NA, shape = obs_shape[1], stroke = 1)
+                        }
                   }
             }
       }
@@ -856,16 +859,18 @@ ct_plot <- function(sim_data_file = NA,
                         scale_linetype_manual(values = line_type[1:2]) +
                         scale_color_manual(values = line_color[1:2])
 
-                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            stroke = 1)
-                  } else {
-                        A <- A +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = obs_color, alpha = 0.5,
-                                         stroke = 1) +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = NA, stroke = 1)
+                  if(nrow(obs_data) > 0){
+                        if(obs_color[1] == "none"){
+                              A <- A + geom_point(data = obs_data, size = 2,
+                                                  stroke = 1)
+                        } else {
+                              A <- A +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = obs_color, alpha = 0.5,
+                                               stroke = 1) +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = NA, stroke = 1)
+                        }
                   }
 
             } else {
@@ -881,16 +886,18 @@ ct_plot <- function(sim_data_file = NA,
                                   linetype = line_type[1],
                                   color = line_color[1])
 
-                  if(is.na(obs_color[1]) | obs_color[1] == "none"){
-                        A <- A + geom_point(data = obs_data, size = 2,
-                                            stroke = 1, shape = obs_shape[1])
-                  } else {
-                        A <- A +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = obs_color[1], alpha = 0.5,
-                                         stroke = 1, shape = obs_shape[1]) +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = NA, shape = obs_shape[1], stroke = 1)
+                  if(nrow(obs_data) > 0){
+                        if(obs_color[1] == "none"){
+                              A <- A + geom_point(data = obs_data, size = 2,
+                                                  stroke = 1, shape = obs_shape[1])
+                        } else {
+                              A <- A +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = obs_color[1], alpha = 0.5,
+                                               stroke = 1, shape = obs_shape[1]) +
+                                    geom_point(data = obs_data, size = 2,
+                                               fill = NA, shape = obs_shape[1], stroke = 1)
+                        }
                   }
             }
       }
@@ -920,15 +927,7 @@ ct_plot <- function(sim_data_file = NA,
                         scale_linetype_manual(values = line_type[1:2]) +
                         scale_color_manual(values = line_color[1:2])
 
-                  if(is.na(obs_color[1])){
-                        A <- A +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = "#3030FE", alpha = 0.5,
-                                         stroke = 1) +
-                              geom_point(data = obs_data, size = 2,
-                                         fill = NA, stroke = 1)
-                  } else {
-
+                  if(nrow(obs_data) > 0){
                         # When figure_type == "Freddy", I want the default to be
                         # a blue-purple semi-transparent fill. However, I want
                         # people to have the option to override that, so
@@ -950,7 +949,6 @@ ct_plot <- function(sim_data_file = NA,
                         }
                   }
 
-
             } else {
 
                   ## linear plot
@@ -968,17 +966,7 @@ ct_plot <- function(sim_data_file = NA,
                                   linetype = line_type[2],
                                   color = line_color[2])
 
-                  if(is.na(obs_color[1])){
-                        A <- A +
-                              geom_point(data = obs_data, size = 2,
-                                         shape = obs_shape[1],
-                                         fill = "#3030FE", alpha = 0.5,
-                                         stroke = 1) +
-                              geom_point(data = obs_data, size = 2,
-                                         shape = obs_shape[1],
-                                         fill = NA, stroke = 1)
-                  } else {
-
+                  if(nrow(obs_data) > 0){
                         # When figure_type == "Freddy", I want the default to be
                         # a blue-purple semi-transparent fill. However, I want
                         # people to have the option to override that, so
@@ -1026,7 +1014,6 @@ ct_plot <- function(sim_data_file = NA,
                               aes(x = Time, y = Conc)) +
                         geom_line(lwd = 1, linetype = line_type[1],
                                   color = line_color[1])
-
             }
       }
 
