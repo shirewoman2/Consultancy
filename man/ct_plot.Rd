@@ -17,6 +17,7 @@ ct_plot(
   pad_x_axis = FALSE,
   adjust_obs_time = FALSE,
   t0 = "simulation start",
+  y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   obs_data_option = NA,
   obs_color = NA,
@@ -129,6 +130,10 @@ dose", "effector last dose", "substrate penultimate dose", or "effector
 penultimate dose". \emph{This does not change which data are included in
 the graph;} instead, this determines whether the x axis numbers are offset
 so that, e.g., the last dose is administered at time 0.}
+
+\item{y_axis_limits_lin}{Optionally set the Y axis limits for the linear
+plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
+linear plot will be automatically selected.}
 
 \item{y_axis_limits_log}{Optionally set the Y axis limits for the semi-log
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,

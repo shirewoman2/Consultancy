@@ -97,6 +97,9 @@
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
 #'
+#' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
+#'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
+#'   linear plot will be automatically selected.
 #' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
@@ -256,6 +259,7 @@ ct_plot <- function(sim_data_file = NA,
                     pad_x_axis = FALSE,
                     adjust_obs_time = FALSE,
                     t0 = "simulation start",
+                    y_axis_limits_lin = NA,
                     y_axis_limits_log = NA,
                     obs_data_option = NA,
                     obs_color = NA,
@@ -693,6 +697,10 @@ ct_plot <- function(sim_data_file = NA,
                                          Time_orig <= time_range[2] &
                                          complete.cases(Conc)) %>% pull(Conc) %>%
             range()
+
+      if(any(complete.cases(y_axis_limits_lin))){
+            Ylim <- y_axis_limits_lin[1:2]
+      }
 
       PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
                                          100, 200, 500, 1000, 2000, 5000,
