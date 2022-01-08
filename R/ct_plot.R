@@ -328,7 +328,22 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       TimeUnits <- sort(unique(Data$Time_units))
-      ObsConcUnits <- sort(unique(Data$Conc_units))
+
+      # Check whether the user is plotting enzyme abundance
+      EnzPlot <- names(Data)[1] == "Enzyme"
+      if(EnzPlot){
+            ObsConcUnits <- "Relative abundance"
+            Data <- Data %>% rename(Conc = Abundance) %>%
+                  mutate(Simulated = TRUE,
+                         Compound = Enzyme)
+            if("Effector" %in% names(Data) == FALSE){
+                  Data$Effector <- "none" # RETURN TO THIS and update extractEnzAbund to include a column "Effector" that is "none" when none present.
+            }
+
+      } else {
+            ObsConcUnits <- sort(unique(Data$Conc_units))
+      }
+
 
       # A little more error catching
       if(all(complete.cases(time_range) & class(time_range) == "numeric") &
@@ -356,7 +371,8 @@ ct_plot <- function(sim_data_file = NA,
                      "mg" = "Concentration (mg)",
                      "mg/L" = expression(Concentration~"("*mu*g/mL*")"),
                      "mL" = "mL",
-                     "PD response" = "PD response")
+                     "PD response" = "PD response",
+                     "Relative abundance" = "Relative abundance")
 
       # Setting the breaks for the x axis
       tlast <- ifelse(all(complete.cases(time_range)) &

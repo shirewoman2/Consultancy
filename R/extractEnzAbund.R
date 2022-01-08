@@ -86,7 +86,8 @@ extractEnzAbund <- function(sim_data_file,
                   c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
                     any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)")))]
 
-            if(length(GutParts) > 0 & tissue == "gut"){
+            if(length(GutParts) > 0 && tissue == "gut" &&
+               all(complete.cases(GutParts))){
 
                   sim_data_mean <- list()
 
@@ -149,6 +150,7 @@ extractEnzAbund <- function(sim_data_file,
                   EffectorPresent <- str_detect(sim_data_xl$...1[StartRow_mean + 4],
                                                 "Inh")
                   if(EffectorPresent){
+                        # LEFT OFF HERE -- Will need to extract inhibitor info more safely, similar to how i did it for extractConcTime
                         sim_data_mean_inhib <- sim_data_xl[c(StartRow_mean, (StartRow_mean+4):(StartRow_mean+6)), ] %>%
                               t() %>%
                               as.data.frame() %>% slice(-(1:3)) %>%
