@@ -45,12 +45,13 @@ data.}
 
 \item{obs_effector_data_file}{name of the Excel file containing the observed
 concentration-time data in the presence of an effector. This is the file
-that is ready to be converted to an XML file.}
+that is ready to be converted to an XML file. If your effector data were
+already included in \code{obs_data_file}, leave this as NA.}
 
 \item{sim_obs_dataframe}{If you have already extracted the concentration-time
 data using the function \code{\link{extractConcTime}}, you can enter the
 name of the output data.frame from that function instead of re-reading the
-Excel file.}
+Excel file, which is the bottleneck step in running this function.}
 
 \item{tissue}{the tissue to plot. Default is plasma for typical plasma
 concentration-time data. Other tissues are acceptable, e.g., "lung",

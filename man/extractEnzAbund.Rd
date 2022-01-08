@@ -34,15 +34,17 @@ A data.frame of enzyme abundance with time with the following
 
   \item{Tissue}{the tissue}
 
-  \item{EffectorPresent}{TRUE or FALSE for whether the inhibitor was present
-  at that time point}
+  \item{EffectorPresent}{TRUE or FALSE for whether any effectors were present
+  at that time point (NB: The simulator shows two scenarios only: enzyme
+  abundances 1. in the presence or 2. the absence of the effector(s). If
+  there were multiple effectors, it does not show enzyme abundances with each
+  separately.)}
 
   \item{Time}{the time since the first dose}
 
   \item{Abundance}{abundance of the enzyme listed}
 
-  \item{Time_units}{units used for time}
-}
+  \item{Time_units}{units used for time} }
 }
 \description{
 Extracts enzyme abundance data from a simulator output Excel file. The

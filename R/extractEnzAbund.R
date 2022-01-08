@@ -21,15 +21,17 @@
 #'
 #'   \item{Tissue}{the tissue}
 #'
-#'   \item{EffectorPresent}{TRUE or FALSE for whether the inhibitor was present
-#'   at that time point}
+#'   \item{EffectorPresent}{TRUE or FALSE for whether any effectors were present
+#'   at that time point (NB: The simulator shows two scenarios only: enzyme
+#'   abundances 1. in the presence or 2. the absence of the effector(s). If
+#'   there were multiple effectors, it does not show enzyme abundances with each
+#'   separately.)}
 #'
 #'   \item{Time}{the time since the first dose}
 #'
 #'   \item{Abundance}{abundance of the enzyme listed}
 #'
-#'   \item{Time_units}{units used for time}
-#' }
+#'   \item{Time_units}{units used for time} }
 #'
 #' @import tidyverse
 #' @import readxl
@@ -86,35 +88,44 @@ extractEnzAbund <- function(sim_data_file,
                   c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
                     any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)")))]
 
-            if(length(GutParts) > 0 & tissue == "gut"){
+            if(length(which(complete.cases(GutParts))) > 0 & tissue == "gut"){
 
                   sim_data_mean <- list()
 
                   for(i in GutParts){
 
                         # mean data
-                        TimeRow <- which(sim_data_xl$...1 == "Population Statistics") + 1
-                        StartRow_mean <- which(
-                              str_detect(tolower(sim_data_xl$...1),
-                                         switch(i,
-                                                "colon" = "\\(colon\\)",
-                                                "small intestine" = "\\(si\\)")))
-                        StartRow_mean <- StartRow_mean[which(StartRow_mean > TimeRow)][1]
+                        StartRow_mean <- which(sim_data_xl$...1 == "Population Statistics") + 2
+                        TimeRow <- StartRow_mean - 1
 
-                        sim_data_mean[[i]] <- sim_data_xl[c(TimeRow, StartRow_mean:(StartRow_mean+2)), ] %>%
+                        # Checking which cells contain mean, 5th, and 95th percentile data.
+                        NamesToCheck <- tolower(
+                              sim_data_xl$...1[c(StartRow_mean:(StartRow_mean + 5))])
+                        RowsToUse <-
+                              c("mean" = which(str_detect(NamesToCheck, "enzyme value mean")) + StartRow_mean-1,
+                                "per5" = which(str_detect(NamesToCheck, "enzyme value 5th percentile")) + StartRow_mean-1,
+                                "per95" = which(str_detect(NamesToCheck, "enzyme value 95th percentile")) + StartRow_mean-1)
+
+                        sim_data_mean <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                               t() %>%
                               as.data.frame() %>% slice(-(1:3)) %>%
                               mutate_all(as.numeric) %>%
                               rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
                               pivot_longer(names_to = "Trial", values_to = "Abundance", cols = -Time) %>%
                               mutate(Enzyme = enzyme)
+                        rm(RowsToUse)
 
                         # Checking for inhibitor
-                        EffectorPresent <- str_detect(sim_data_xl$...1[StartRow_mean + 3],
-                                                      "Inh")
+                        EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
+
                         if(EffectorPresent){
-                              sim_data_mean_inhib <- sim_data_xl[c(TimeRow,
-                                                                   (StartRow_mean+3):(StartRow_mean+5)), ] %>%
+
+                              RowsToUse <-
+                                    c("mean_inh" = which(str_detect(NamesToCheck, "enzyme value with inh mean")) + StartRow_mean-1,
+                                      "per5_inh" = which(str_detect(NamesToCheck, "enzyme value with inh 5th percentile")) + StartRow_mean-1,
+                                      "per95_inh" = which(str_detect(NamesToCheck, "enzyme value with inh 95th percentile")) + StartRow_mean-1)
+
+                              sim_data_mean_inhib <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                                     t() %>%
                                     as.data.frame() %>% slice(-(1:3)) %>%
                                     mutate_all(as.numeric) %>%
@@ -124,11 +135,12 @@ extractEnzAbund <- function(sim_data_file,
                                            EffectorPresent = TRUE)
 
                               sim_data_mean[[i]] <- bind_rows(sim_data_mean[[i]], sim_data_mean_inhib)
+                              rm(RowsToUse)
                         }
 
                         sim_data_mean[[i]]$GutPart <- i
 
-                        rm(sim_data_mean_inhib, TimeRow, StartRow_mean)
+                        rm(TimeRow, StartRow_mean)
                   }
 
                   sim_data_mean <- bind_rows(sim_data_mean)
@@ -136,20 +148,37 @@ extractEnzAbund <- function(sim_data_file,
             } else {
 
                   # mean data
-                  StartRow_mean <- which(sim_data_xl$...1 == "Population Statistics") + 1
-                  sim_data_mean <- sim_data_xl[StartRow_mean:(StartRow_mean+3), ] %>%
+                  StartRow_mean <- which(sim_data_xl$...1 == "Population Statistics") + 2
+                  TimeRow <- StartRow_mean - 1
+
+                  # Checking which cells contain mean, 5th, and 95th percentile data.
+                  NamesToCheck <- tolower(
+                        sim_data_xl$...1[c(StartRow_mean:(StartRow_mean + 5))])
+                  RowsToUse <-
+                        c("mean" = which(str_detect(NamesToCheck, "enzyme value mean")) + StartRow_mean-1,
+                          "per5" = which(str_detect(NamesToCheck, "enzyme value 5th percentile")) + StartRow_mean-1,
+                          "per95" = which(str_detect(NamesToCheck, "enzyme value 95th percentile")) + StartRow_mean-1)
+
+                  sim_data_mean <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
                         rename(Time = "V1", mean = "V2", per5 = "V3", per95 = "V4") %>%
                         pivot_longer(names_to = "Trial", values_to = "Abundance", cols = -Time) %>%
                         mutate(Enzyme = enzyme)
+                  rm(RowsToUse)
 
                   # Checking for inhibitor
-                  EffectorPresent <- str_detect(sim_data_xl$...1[StartRow_mean + 4],
-                                                "Inh")
+                  EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
                   if(EffectorPresent){
-                        sim_data_mean_inhib <- sim_data_xl[c(StartRow_mean, (StartRow_mean+4):(StartRow_mean+6)), ] %>%
+
+                        RowsToUse <-
+                              c("mean_inh" = which(str_detect(NamesToCheck, "enzyme value with inh mean")) + StartRow_mean-1,
+                                "per5_inh" = which(str_detect(NamesToCheck, "enzyme value with inh 5th percentile")) + StartRow_mean-1,
+                                "per95_inh" = which(str_detect(NamesToCheck, "enzyme value with inh 95th percentile")) + StartRow_mean-1)
+
+                        sim_data_mean_inhib <-
+                              sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                               t() %>%
                               as.data.frame() %>% slice(-(1:3)) %>%
                               mutate_all(as.numeric) %>%
@@ -159,8 +188,9 @@ extractEnzAbund <- function(sim_data_file,
                                      EffectorPresent = TRUE)
 
                         sim_data_mean <- bind_rows(sim_data_mean, sim_data_mean_inhib)
-
+                        rm(RowsToUse)
                   }
+                  rm(TimeRow)
             }
       }
 
@@ -173,15 +203,19 @@ extractEnzAbund <- function(sim_data_file,
                   c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
                     any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)")))]
 
-            if(length(GutParts) > 0 & tissue == "gut"){
+            if(length(which(complete.cases(GutParts))) > 0 & tissue == "gut"){
 
                   sim_data_ind <- list()
 
                   for(i in GutParts){
 
-                        TimeRow <- which(sim_data_xl$...1 == "Individual Statistics") + 1
-                        TimeRow <- ifelse(sim_data_xl$...1[TimeRow] == "Type",
-                                          TimeRow + 1, TimeRow)
+                        # individual data
+                        StartRow_ind <- which(sim_data_xl$...1 == "Individual Statistics") + 3
+                        TimeRow <- StartRow_ind - 1
+
+                        # Checking which cells contain data w/out inhibitor
+                        NamesToCheck <-
+                              tolower(sim_data_xl$...1[StartRow_ind:nrow(sim_data_xl)])
 
                         RowsToUse <- intersect(
                               which(str_detect(tolower(sim_data_xl$...1),
@@ -214,19 +248,21 @@ extractEnzAbund <- function(sim_data_file,
                               mutate(across(.cols = c("Individual", "Trial"),
                                             .fns = as.numeric))
 
+                        rm(RowsToUse)
+
                         # Checking for inhibitor
-                        EffectorPresent <- str_detect(sim_data_xl$...1[max(RowsToUse)+1], "Inh")
+                        EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
 
                         if(EffectorPresent){
-                              RowsToUse_inhib <- which(
+                              RowsToUse <- which(
                                     str_detect(tolower(sim_data_xl$...1),
                                                switch(i,
                                                       "colon" = "with inh \\(colon\\)",
                                                       "small intestine" = "with inh \\(si\\)")))
-                              RowsToUse_inhib <- RowsToUse_inhib[which(RowsToUse_inhib > TimeRow)]
+                              RowsToUse <- RowsToUse[which(RowsToUse > TimeRow)]
 
                               sim_data_ind_inhib <-
-                                    sim_data_xl[c(TimeRow, RowsToUse_inhib), ] %>%
+                                    sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                                     t() %>%
                                     as.data.frame() %>% slice(-(1:3)) %>%
                                     mutate_all(as.numeric) %>%
@@ -247,11 +283,11 @@ extractEnzAbund <- function(sim_data_file,
 
                               sim_data_ind[[i]] <- bind_rows(sim_data_ind[[i]], sim_data_ind_inhib)
 
-                              rm(RowsToUse_inhib, sim_data_ind_inhib)
+                              rm(RowsToUse, sim_data_ind_inhib)
 
                         }
 
-                        rm(RowsToUse, TimeRow)
+                        rm(TimeRow)
 
                         sim_data_ind[[i]]$GutPart <- i
                   }
@@ -261,23 +297,21 @@ extractEnzAbund <- function(sim_data_file,
             } else {
 
                   # individual data
-                  RowsToUse <- which(str_detect(sim_data_xl$...1,
-                                                paste("Enzyme value",
-                                                      switch(tissue,
-                                                             "liver" = ".Liver.",
-                                                             "gut" = ".Gut.",
-                                                             "kidney" = ".Kidney."))) &
-                                           !str_detect(sim_data_xl$...1, "mean"))
+                  StartRow_ind <- which(sim_data_xl$...1 == "Individual Statistics") + 3
+                  TimeRow <- StartRow_ind - 1
 
-                  RowsToUse <- c(RowsToUse[1]-1, RowsToUse)
+                  # Checking which cells contain data w/out inhibitor
+                  NamesToCheck <-
+                        tolower(sim_data_xl$...1[StartRow_ind:nrow(sim_data_xl)])
+                  RowsToUse <- which(!str_detect(NamesToCheck, "with inh")) + StartRow_ind-1
 
-                  sim_data_ind <- sim_data_xl[RowsToUse, ] %>%
+                  sim_data_ind <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
                         rename(Time = "V1")
 
-                  SubjTrial <- sim_data_xl[RowsToUse[2:length(RowsToUse)], 2:3] %>%
+                  SubjTrial <- sim_data_xl[RowsToUse, 2:3] %>%
                         rename(Individual = ...2, Trial = ...3) %>%
                         mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
 
@@ -293,16 +327,17 @@ extractEnzAbund <- function(sim_data_file,
                         mutate(across(.cols = c("Individual", "Trial"),
                                       .fns = as.numeric))
 
-                  # Checking for inhibitor
-                  EffectorPresent <- str_detect(sim_data_xl$...1[max(RowsToUse)+1], "Inh")
+                  rm(RowsToUse)
 
-                  RowsToUse_inhib <- c(RowsToUse[1],
-                                       which(str_detect(sim_data_xl$...1, "Enzyme value with Inh") &
-                                                   !str_detect(sim_data_xl$...1, "mean|percentile")))
+                  # Checking for inhibitor
+                  EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
 
                   if(EffectorPresent){
+
+                        RowsToUse <- which(str_detect(NamesToCheck, "with inh")) + StartRow_ind-1
+
                         sim_data_ind_inhib <-
-                              sim_data_xl[RowsToUse_inhib, ] %>%
+                              sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                               t() %>%
                               as.data.frame() %>% slice(-(1:3)) %>%
                               mutate_all(as.numeric) %>%
@@ -323,11 +358,9 @@ extractEnzAbund <- function(sim_data_file,
 
                         sim_data_ind <- bind_rows(sim_data_ind, sim_data_ind_inhib)
 
-                        rm(RowsToUse_inhib)
-
+                        rm(RowsToUse)
                   }
-
-                  rm(RowsToUse)
+                  rm(TimeRow, NamesToCheck)
             }
       }
 
