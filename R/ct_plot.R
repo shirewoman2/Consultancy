@@ -5,8 +5,11 @@
 #' instructions. We've tried to include a fair number of options here for
 #' flexibility, but many of the function arguments are optional; most of the
 #' time, you'll get decent-looking graphs while only setting a minimal number of
-#' arguments. \strong{If you want to plot enzyme abundance data, please see
-#' \code{\link{enz_plot}}.}
+#' arguments. If you want to plot enzyme abundance data, please see
+#' \code{\link{enz_plot}}. \strong{Note:} Currently, this only works for
+#' concentration-time data for the substrate, metabolite 1, metabolite 2, or
+#' inhibitor 1. \strong{If your simulation included \emph{anything} other than
+#' those compounds, this is \emph{not} reliable.}
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data

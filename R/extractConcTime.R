@@ -2,9 +2,10 @@
 #'
 #' Extracts concentration-time data from simulator output Excel files and,
 #' optionally, a separately specified clinical data file, and puts all data into
-#' a single, tidy data.frame. \emph{Note: Currently, only set up to extract
+#' a single, tidy data.frame. \strong{Note:} Currently, this only works for
 #' concentration-time data for the substrate, metabolite 1, metabolite 2, or
-#' inhibitor 1.}
+#' inhibitor 1. \strong{If your simulation included \emph{anything} other than
+#' those compounds, this is \emph{not} reliable.}
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data; must be an output file from the Simcyp simulator
@@ -26,7 +27,13 @@
 #' @param tissue From which tissue should the desired concentrations be
 #'   extracted? Default is plasma for typical plasma concentration-time data.
 #'   Other options are "blood" or any tissues included in "Sheet Options",
-#'   "Tissues" in the simulator, e.g., "lung", "brain", etc.
+#'   "Tissues" in the simulator. All possible options: "plasma", "blood",
+#'   "unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
+#'   "brain", "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung",
+#'   "muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
+#'   unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
+#'   vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
+#'   "skin", or "spleen". Not case sensitive.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are "substrate" (default), "metabolite 1",
 #'   "metabolite 2", or "effector" (this can be either an inducer or inhibitor;
@@ -109,12 +116,17 @@ extractConcTime <- function(sim_data_file,
       }
 
       tissue <- tolower(tissue)
+      PossTiss <- c("gi tissue", "lung", "additional organ", "adipose",
+                    "heart", "muscle", "feto-placenta", "bone", "kidney",
+                    "skin", "pancreas", "brain", "liver", "spleen",
+                    "plasma", "blood", "unbound plasma", "unbound blood",
+                    "peripheral plasma", "peripheral blood",
+                    "peripheral unbound plasma", "peripheral unbound blood",
+                    "portal vein plasma", "portal vein blood",
+                    "portal vein unbound plasma", "portal vein unbound blood")
 
-      if(tissue %in% c("gi tissue", "lung", "additional organ", "adipose",
-                       "heart", "muscle", "feto-placenta", "bone", "kidney",
-                       "skin", "pancreas", "brain", "liver", "spleen",
-                       "plasma", "blood") == FALSE){
-            stop("The requested tissue must be plasma, blood, or one of the options listed under 'Sheet Options', 'Tissues' in the Simulator.")
+      if(tissue %in% PossTiss == FALSE){
+            stop("The requested tissue must be plasma, blood, or one of the options listed under 'Sheet Options', 'Tissues' in the Simulator. Please see the help file description for the 'tissue' argument.")
       }
 
       compoundToExtract <- tolower(compoundToExtract)
@@ -133,39 +145,49 @@ extractConcTime <- function(sim_data_file,
       }
 
       # Extracting tissue or plasma/blood data? Sheet format differs.
-      TissueType <- ifelse(tissue %in% c("plasma", "blood"), "systemic", "tissue")
+      TissueType <- ifelse(str_detect(tissue, "plasma|blood|portal|peripheral"),
+                           "systemic", "tissue")
 
       SheetNames <- readxl::excel_sheets(sim_data_file)
+      if(TissueType == "systemic"){
+            Piece1 <- ifelse(str_detect(tissue, "portal vein"), "PV ", "")
 
-      SheetToDetect <-
-            switch(ifelse(TissueType == "systemic",
-                          paste(tissue, sub(" 1| 2", "", compoundToExtract)),
-                          tissue),
-                   "plasma substrate" =
-                         "Conc Profiles CSys\\(CPlasma\\)|Conc Trials Profiles\\(CPlasma\\)",
-                   "plasma effector" =
-                         "Conc Profiles CSys\\(CPlasma\\)|Conc Trials Profiles\\(CPlasma\\)",
-                   "plasma metabolite" = paste0("Sub Pri Met",
-                                                str_extract(compoundToExtract, "1|2"),
-                                                ".*CPlasma"),
-                   "blood substrate" = "Conc Profiles CSys\\(CBlood\\)|Conc Trials Profiles\\(CBlood\\)",
-                   "blood effector" = "Conc Profiles CSys\\(CBlood\\)|Conc Trials Profiles\\(CBlood\\)",
-                   "blood metabolite" = paste0("Sub Pri Met",
-                                               str_extract(compoundToExtract, "1|2"),
-                                               ".*CBlood"),
-                   "gi tissue" = "Gut Tissue Conc",
-                   "lung" = "Lung Conc",
-                   "additional organ" = "Additional Organ Conc",
-                   "adipose" = "Adipose Conc",
-                   "heart" = "Heart Conc",
-                   "muscle" = "Muscle Conc",
-                   "bone" = "Bone Conc",
-                   "kidney" = "Kidney Conc",
-                   "skin" = "Skin Conc",
-                   "pancreas" = "Pancreas Conc",
-                   "brain" = "Brain Conc",
-                   "liver" = "Liver Conc",
-                   "spleen" = "Spleen Conc")
+            Piece2 <- switch(compoundToExtract,
+                             "substrate" = "Conc Profiles",
+                             "metabolite 1" = "Pri Met 1",
+                             "metabolite 2" = "Pri Met 2",
+                             "effector" = "Conc Profiles")
+
+            Piece3 <- ifelse(str_detect(tissue, "peripheral"), " CPeriph", " CSys")
+            Piece3 <- ifelse(str_detect(tissue, "portal vein"),
+                             "", Piece3)
+            Piece4 <- ifelse(str_detect(tissue, "unbound"), "Cu", "C")
+
+            Piece5 <- str_to_title(str_extract(tissue, "blood|plasma"))
+
+            SheetToDetect <- paste0(Piece1, Piece2, Piece3, "\\(", Piece4, Piece5, "\\)")
+            SheetToDetect <- paste0(SheetToDetect, "|",
+                                    sub("Profiles", "Trials Profiles", SheetToDetect))
+      } else {
+            SheetToDetect <-
+                  switch(tissue,
+                         "gi tissue" = "Gut Tissue Conc",
+                         "lung" = "Lung Conc",
+                         "additional organ" = "Additional Organ Conc",
+                         "adipose" = "Adipose Conc",
+                         "heart" = "Heart Conc",
+                         "muscle" = "Muscle Conc",
+                         "bone" = "Bone Conc",
+                         "kidney" = "Kidney Conc",
+                         "skin" = "Skin Conc",
+                         "pancreas" = "Pancreas Conc",
+                         "brain" = "Brain Conc",
+                         "liver" = "Liver Conc",
+                         "spleen" = "Spleen Conc",
+                         "feto-placenta" = "Feto-Placenta" # Need to check this one. I don't ahve an example output file for this yet!
+                  )
+      }
+
       Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
       if(length(Sheet) == 0){
             stop("We cannot find the necessary sheet in the simulator ouput file submitted. Please check that you have submitted the correct file for the tissue and compound requested.")
