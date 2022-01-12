@@ -174,7 +174,9 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   } \emph{NOTE:} The default pulls only parameters that are listed on the
   "Summary" tab. (There are ~50 of them, so I'm not listing them here for
-  brevity. -LS)}
+  brevity. -LS) Also, if you want experimental details on a second inhibitor,
+  try pulling them from the "Input sheet" instead of the "Summary" tab, which
+  doesn't have much information on Inhibitor 2.}
 }
 \value{
 Returns a named list of the experimental details
