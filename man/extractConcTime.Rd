@@ -49,8 +49,13 @@ vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are "substrate" (default), "metabolite 1",
-"metabolite 2", or "effector" (this can be either an inducer or inhibitor;
-this is labeled as "inhibitor 1" in the simulator).}
+"metabolite 2", "effector" (this can be either an inducer or inhibitor;
+this is labeled as "inhibitor 1" in the simulator), "effector 2" for the
+2nd inhibitor or inducer listed in the simulation, "inhibitor 1 metabolite"
+for the primary metabolite of effector 1, or "inhibitor 2 metabolite" for
+the primary metabolite of effector 2. \emph{Note:} Only substrate or
+inhibitor concentrations are available for tissues -- not metabolites.
+(Someone please correct me if that's wrong! -LS)}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and
