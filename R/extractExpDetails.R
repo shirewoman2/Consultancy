@@ -3,7 +3,7 @@
 #' \code{extractExpDetails} looks up experimental design details from the
 #' "Summary" or "Input Sheet" tabs of a Simcyp simulator output file. This is
 #' currently set up to extract details on the substrate, the first inhibitor,
-#' metabolite 1, and/or metabolite 2.
+#' primary metabolite 1, and/or secondary metabolite.
 #'
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
@@ -19,7 +19,7 @@
 #'
 #'   \item{Abs_model_sub, Abs_model_inhib, Abs_model_met1,
 #'   Abs_model_met2}{absorption model used, e.g., "1st order", for either the
-#'   substrate, inhibitor, metabolite 1, or metabolite 2}
+#'   substrate, inhibitor, primary metabolite 1, or secondary metabolite}
 #'
 #'   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
 #'
@@ -32,14 +32,14 @@
 #'
 #'   \item{CLint_sub, CLint_inhib, CLint_met1, CLint_met2}{intrinsic clearance,
 #'   Vmax, Km, fu_mic, and/or half life values used for any CYPs, UGTs, or other
-#'   enzymes listed for the substrate, inhibitor, metabolite 1, or metabolite 2.
+#'   enzymes listed for the substrate, inhibitor, primary metabolite 1, or secondary metabolite.
 #'   Output will be labeled for each enzyme and pathway as, e.g.,
 #'   "CLint_sub_CYP3A4_1-OH" or "Vmax_sub_UGT1A1_Pathway1". Specify, e.g.,
 #'   "CLint_sub" and all the other values (Vmax, Km, fu,mic, half life) will
 #'   also be returned.}
 #'
 #'   \item{CLrenal_sub, CLrenal_inhib, CLrenal_met1, CLrenal_met2}{renal
-#'   clearance (L/hr) for the substrate, inhibitor, metabolite 1, or metabolite
+#'   clearance (L/hr) for the substrate, inhibitor, primary metabolite 1, or metabolite
 #'   2}
 #'
 #'   \item{Dose_sub or Dose_inhib}{dose administered}
@@ -49,11 +49,11 @@
 #'   \item{DoseRoute_sub or DoseRoute_inhib}{dose route, e.g. oral}
 #'
 #'   \item{fa_sub, fa_inhib, fa_met1, fa_met2}{user input value for the fraction
-#'   absorbed for the substrate, inhibitor, metabolite 1, or metabolite 2}
+#'   absorbed for the substrate, inhibitor, primary metabolite 1, or secondary metabolite}
 #'
 #'   \item{fu_gut_sub, fu_gut_inhib, fu_gut_met1, fu_gut_met2}{user input value
 #'   for the fraction escaping gut metabolism for the substrate, inhibitor,
-#'   metabolite 1, or metabolite 2}
+#'   primary metabolite 1, or secondary metabolite}
 #'
 #'   \item{fu_sub, fu_inhib, fu_met1, fu_met2}{fraction unbound}
 #'
@@ -76,22 +76,22 @@
 #'
 #'   \item{Interaction_sub, Interaction_inhib, Interaction_met1,
 #'   Interaction_met2}{interaction parameters for any CYPs, UGTs, or other
-#'   enzymes listed for the substrate, inhibitor, metabolite 1, or metabolite 2.
+#'   enzymes listed for the substrate, inhibitor, primary metabolite 1, or secondary metabolite.
 #'   Output will be labeled for each enzyme and interaction type.}
 #'
 #'   \item{ka_sub, ka_inhib, ka_met1, ka_met2}{user input value for the
-#'   absorption constant ka for the substrate, inhibitor, metabolite 1, or
-#'   metabolite 2}
+#'   absorption constant ka for the substrate, inhibitor, primary metabolite 1, or
+#'   secondary metabolite}
 #'
 #'   \item{kin_sac_sub, kin_sac_inhib, kout_sac_sub, or kout_sac_inhib}{k in and
-#'   k out for SAC (1/hr) for the substrate, inhibitor, metabolite 1, or
-#'   metabolite 2}
+#'   k out for SAC (1/hr) for the substrate, inhibitor, primary metabolite 1, or
+#'   secondary metabolite}
 #'
 #'   \item{kp_scalar_sub, kp_scalar_inhib, kp_scalar_met1, kp_scalar_met2}{kp
-#'   scalar for the substrate, inhibitor, metabolite 1, or metabolite 2}
+#'   scalar for the substrate, inhibitor, primary metabolite 1, or secondary metabolite}
 #'
 #'   \item{logP_sub, logP_inhib, logP_met1, logP_met2}{logP for the substrate,
-#'   inhibitor, metabolite 1, or metabolite 2}
+#'   inhibitor, primary metabolite 1, or secondary metabolite}
 #'
 #'   \item{ModelType_sub, ModelType_inhib, ModelType_met1, ModelType_met2}{the
 #'   type of model, e.g., full PBPK model}
@@ -109,7 +109,7 @@
 #'   \item{Papp_MDCK_sub, Papp_MDCK_inhib, Papp_MDCK_met1, Papp_MDCK_met2,
 #'   Papp_Caco_sub, Papp_Caco_inhib, Papp_Caco_met1, Papp_Caco_met2}{Papp as
 #'   determined in MDCKII or Caco-2 cells (10^-6 cm/s) for the substrate,
-#'   inhibitor, metabolite 1, or metabolite 2}
+#'   inhibitor, primary metabolite 1, or secondary metabolite}
 #'
 #'   \item{Papp_calibrator_sub, Papp_calibrator_inhib, Papp_calibrator_met1,
 #'   Papp_calibrator_met2}{Papp of the calibrator compound (10^-6 cm/s)}
@@ -159,10 +159,10 @@
 #'
 #'   \item{UserAddnOrgan_sub or UserAddnOrgan_inhib}{yes or no: Was a
 #'   user-defined additional organ included for the substrate, inhibitor,
-#'   metabolite 1, or metabolite 2?}
+#'   primary metabolite 1, or secondary metabolite?}
 #'
 #'   \item{Vsac_sub, Vsac_inhib, Vsac_met1, Vsac_met2}{V sac (L/kg) for the
-#'   substrate, inhibitor, metabolite 1, or metabolite 2}
+#'   substrate, inhibitor, primary metabolite 1, or secondary metabolite}
 #'
 #'   \item{Vss_input_sub, Vss_input_inhib, Vss_input_met1, Vss_input_met2}{Vss
 #'   used}
@@ -498,12 +498,12 @@ extractExpDetails <- function(sim_data_file,
                   MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_inhib$")]
             }
 
-            # When metabolite 1 is not present, don't look for those values.
+            # When primary metabolite 1 is not present, don't look for those values.
             if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite1"), na.rm = T) == FALSE){
                   MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met1")]
             }
 
-            # When metabolite 2 is not present, don't look for those values.
+            # When secondary metabolite is not present, don't look for those values.
             if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite2"), na.rm = T) == FALSE){
                   MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met2")]
             }
