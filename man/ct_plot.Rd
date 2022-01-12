@@ -59,8 +59,8 @@ concentration-time data. Other tissues are acceptable, e.g., "lung",
 "Sheet Options", "Tissues" in the simulator.}
 
 \item{compoundToExtract}{For which compound do you want to extract
-concentration-time data? Options are "substrate" (default), "metabolite 1",
-"metabolite 2", or "effector" (this can be either an inducer or inhibitor;
+concentration-time data? Options are "substrate" (default), "primary metabolite 1",
+"secondary metabolite", or "effector" (this can be either an inducer or inhibitor;
 this is labeled as "inhibitor 1" in the simulator).}
 
 \item{figure_type}{type of figure to plot. Options are:
@@ -232,7 +232,7 @@ flexibility, but many of the function arguments are optional; most of the
 time, you'll get decent-looking graphs while only setting a minimal number of
 arguments. If you want to plot enzyme abundance data, please see
 \code{\link{enz_plot}}. \strong{Note:} Currently, this only works for
-concentration-time data for the substrate, metabolite 1, metabolite 2, or
+concentration-time data for the substrate, primary metabolite 1, secondary metabolite, or
 inhibitor 1. \strong{If your simulation included \emph{anything} other than
 those compounds, this is \emph{not} reliable.}
 }

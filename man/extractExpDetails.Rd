@@ -164,7 +164,7 @@ Returns a named list of the experimental details
 \code{extractExpDetails} looks up experimental design details from the
 "Summary" or "Input Sheet" tabs of a Simcyp simulator output file. This is
 currently set up to extract details on the substrate, the first inhibitor,
-metabolite 1, and/or metabolite 2.
+primary metabolite 1, and/or secondary metabolite.
 }
 \examples{
 

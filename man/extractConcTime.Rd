@@ -48,19 +48,19 @@ vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
 "skin", or "spleen". Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
-concentration-time data? Options are "substrate" (default), "metabolite 1",
-"metabolite 2", "effector" (this can be either an inducer or inhibitor;
-this is labeled as "inhibitor 1" in the simulator), "effector 2" for the
-2nd inhibitor or inducer listed in the simulation, "inhibitor 1 metabolite"
-for the primary metabolite of effector 1, or "inhibitor 2 metabolite" for
-the primary metabolite of effector 2. \emph{Note:} Only substrate or
-inhibitor concentrations are available for tissues -- not metabolites.
-(Someone please correct me if that's wrong! -LS)}
+concentration-time data? Options are "substrate" (default), "primary
+metabolite 1", "secondary metabolite", "effector" (this can be either an
+inducer or inhibitor; this is labeled as "inhibitor 1" in the simulator),
+"effector 2" for the 2nd inhibitor or inducer listed in the simulation, or
+"effector 1 metabolite" for the primary metabolite of effector 1.
+\emph{Note:} The simulator will report up to one metabolite for the 1st
+effector but no other effector metabolites. (Someone please correct me if
+that's wrong! -LS)}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and
 "individual". Aggregated data are not calculated here but are pulled from
-the simulator output rows labeled as "mean".}
+the simulator output rows labeled as "Population Statistics".}
 }
 \value{
 A data.frame of concentration-time data with the following columns:
@@ -93,10 +93,7 @@ A data.frame of concentration-time data with the following columns:
 \description{
 Extracts concentration-time data from simulator output Excel files and,
 optionally, a separately specified clinical data file, and puts all data into
-a single, tidy data.frame. \strong{Note:} Currently, this only works for
-concentration-time data for the substrate, metabolite 1, metabolite 2, or
-inhibitor 1. \strong{If your simulation included \emph{anything} other than
-those compounds, this is \emph{not} reliable.}
+a single, tidy data.frame.
 }
 \examples{
 extractConcTime(sim_data_file = "../Example simulator output MD.xlsx")
