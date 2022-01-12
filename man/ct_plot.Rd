@@ -17,6 +17,7 @@ ct_plot(
   pad_x_axis = FALSE,
   adjust_obs_time = FALSE,
   t0 = "simulation start",
+  y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   obs_data_option = NA,
   obs_color = NA,
@@ -44,12 +45,13 @@ data.}
 
 \item{obs_effector_data_file}{name of the Excel file containing the observed
 concentration-time data in the presence of an effector. This is the file
-that is ready to be converted to an XML file.}
+that is ready to be converted to an XML file. If your effector data were
+already included in \code{obs_data_file}, leave this as NA.}
 
 \item{sim_obs_dataframe}{If you have already extracted the concentration-time
 data using the function \code{\link{extractConcTime}}, you can enter the
 name of the output data.frame from that function instead of re-reading the
-Excel file.}
+Excel file, which is the bottleneck step in running this function.}
 
 \item{tissue}{the tissue to plot. Default is plasma for typical plasma
 concentration-time data. Other tissues are acceptable, e.g., "lung",
@@ -82,11 +84,11 @@ this is labeled as "inhibitor 1" in the simulator).}
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
   with an effector present lose the trial means, and the percentiles switch
-  to solid, gray lines. While this does not align with the officially
-  sanctioned template at this time, this looks \emph{sharp}, makes it easy to
-  see the defining characteristics of the data, and I recommend checking it
-  out. If the color is too much for you but you like the rest, try setting
-  \code{obs_color = "none"}. -LS}}}
+  to solid, gray lines. \strong{An editorial comment:} While this does not
+  align with the officially sanctioned template at this time, this looks
+  \emph{sharp}, makes it easy to see the defining characteristics of the
+  data, and I recommend checking it out. If the color is too much for you but
+  you like the rest, try setting \code{obs_color = "none"}. -LS}}}
 
 \item{time_range}{time range to show relative to the start of the simulation.
   Options: \describe{
@@ -130,6 +132,10 @@ penultimate dose". \emph{This does not change which data are included in
 the graph;} instead, this determines whether the x axis numbers are offset
 so that, e.g., the last dose is administered at time 0.}
 
+\item{y_axis_limits_lin}{Optionally set the Y axis limits for the linear
+plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
+linear plot will be automatically selected.}
+
 \item{y_axis_limits_log}{Optionally set the Y axis limits for the semi-log
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
@@ -140,10 +146,10 @@ limits for the semi-log plot will be automatically selected.}
 
   \describe{
 
-  \item{"mean only"}{show only a single point at the arithmetic mean value
+  \item{"means only"}{show only a single point at the arithmetic mean value
   for each time point}
 
-  \item{"geometric mean only"}{show a single point at the geometric mean}
+  \item{"geometric means only"}{show a single point at the geometric mean}
 
   \item{"all"}{show all the individual data (equivalently, leave
   \code{obs_data_option} as NA)}
@@ -224,7 +230,11 @@ publication-quality graphs that match the consultancy template formatting
 instructions. We've tried to include a fair number of options here for
 flexibility, but many of the function arguments are optional; most of the
 time, you'll get decent-looking graphs while only setting a minimal number of
-arguments.
+arguments. If you want to plot enzyme abundance data, please see
+\code{\link{enz_plot}}. \strong{Note:} Currently, this only works for
+concentration-time data for the substrate, metabolite 1, metabolite 2, or
+inhibitor 1. \strong{If your simulation included \emph{anything} other than
+those compounds, this is \emph{not} reliable.}
 }
 \examples{
 sim_data_file <- "../Example simulator output.xlsx"
