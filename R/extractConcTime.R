@@ -945,25 +945,19 @@ extractConcTime <- function(sim_data_file,
                             "Simulated", "Time", "Conc",
                             "Time_units", "Conc_units")))
 
-      if(compoundToExtract %in% c("substrate", "primary metabolite 1",
-                                  "primary metabolite 2",
-                                  "secondary metabolite") &
-         EffectorPresent){
-            Data <- Data %>% filter(Compound !=
-                                          str_c(AllEffectors, collapse = ", "))
-      }
-
-      if(compoundToExtract == "inhibitor 1"){
-            Data <- Data %>% filter(Compound == Deets$Inhibitor1)
-      }
-
-      if(compoundToExtract == "inhibitor 2"){
-            Data <- Data %>% filter(Compound == Deets$Inhibitor2)
-      }
-
-      if(compoundToExtract == "inhibitor 1 metabolite"){
-            Data <- Data %>% filter(Compound == Deets$Inhibitor1Metabolite)
-      }
+      # Filtering to return ONLY the compound the user requested. This is what
+      # works for input to ct_plot at the moment, too, so things get buggered up
+      # if there are multiple compounds.
+      Data <- Data %>%
+            filter(Compound == switch(
+                  compoundToExtract,
+                  "substrate" = Deets$Substrate,
+                  "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                  "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                  "secondary metabolite" = Deets$SecondaryMetabolite,
+                  "inhibitor 1" = Deets$Inhibitor1,
+                  "inhibitor 2" = Deets$Inhibitor2,
+                  "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))
 
       return(Data)
 

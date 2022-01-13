@@ -68,7 +68,7 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   including C0, C1, and C2, where appropriate -- listed on the tab with
   population info. Specifying "HSA" will return all possible HSA details.}
 
-  \item{Inhibitor, Inhibitor2}{inhibitor used, as applicable}
+  \item{Inhibitor1, Inhibitor2}{inhibitor used, as applicable}
 
   \item{Inhibitor1Metabolite}{the primary metabolite of Inhibitor 1, as
   applicable}
