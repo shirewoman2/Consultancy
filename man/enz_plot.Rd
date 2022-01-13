@@ -25,8 +25,8 @@ Excel file, which is the bottleneck step in running this function.}
 \item{enzyme}{the enzyme to plot, e.g., "CYP3A4" (default), "UGT1A1", etc.
 Spaces or hyphens in enzyme names will be ignored. Not case sensitive.}
 
-\item{tissue}{the tissue to plot. Options are "liver" (default), "gut", or
-"kidney".}
+\item{tissue}{the tissue to plot. Options are "liver" (default), "small
+intestine", "colon", or "kidney".}
 
 \item{figure_type}{The type of figure to graph. Default is "percentiles". See
 \code{figure_type} options and their explanations for the function

@@ -19,7 +19,9 @@ enzyme-abundance-time data}
 enzyme names will be ignored. Not case sensitive.}
 
 \item{tissue}{From which tissue should the desired enzyme abundance be
-extracted? Options are "liver" (default), "gut", or "kidney".}
+extracted? Options are "liver" (default), "gut", or "kidney". Note: If
+"gut" is selected, the output will return both colon and small intestine
+concentrations.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 enzyme abundance data? Options are one or both of "aggregate" and
