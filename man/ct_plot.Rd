@@ -7,7 +7,7 @@
 ct_plot(
   sim_data_file = NA,
   obs_data_file = NA,
-  obs_effector_data_file = NA,
+  obs_inhibitor_data_file = NA,
   sim_obs_dataframe = NA,
   tissue = "plasma",
   compoundToExtract = "substrate",
@@ -43,10 +43,11 @@ Otherwise, this is the file that it is ready to be converted to an XML
 file, not the file that contains only the digitized time and concentration
 data.}
 
-\item{obs_effector_data_file}{name of the Excel file containing the observed
-concentration-time data in the presence of an effector. This is the file
-that is ready to be converted to an XML file. If your effector data were
-already included in \code{obs_data_file}, leave this as NA.}
+\item{obs_inhibitor_data_file}{name of the Excel file containing the observed
+concentration-time data in the presence of an effector (labeled "Inhibitor
+1" in the simulator). This is the file that is ready to be converted to an
+XML file. If your Inhibitor 1 data were already included in
+\code{obs_data_file}, leave this as NA.}
 
 \item{sim_obs_dataframe}{If you have already extracted the concentration-time
 data using the function \code{\link{extractConcTime}}, you can enter the
@@ -59,9 +60,10 @@ concentration-time data. Other tissues are acceptable, e.g., "lung",
 "Sheet Options", "Tissues" in the simulator.}
 
 \item{compoundToExtract}{For which compound do you want to extract
-concentration-time data? Options are "substrate" (default), "primary metabolite 1",
-"secondary metabolite", or "effector" (this can be either an inducer or inhibitor;
-this is labeled as "inhibitor 1" in the simulator).}
+concentration-time data? Options are "substrate" (default), "primary
+metabolite 1", "secondary metabolite", or "inhibitor 1" (this actually can
+be an inducer, activator, suppressor, or inhibitor, but it's labeled as
+"Inhibitor 1" in the simulator).}
 
 \item{figure_type}{type of figure to plot. Options are:
 
@@ -77,8 +79,8 @@ this is labeled as "inhibitor 1" in the simulator).}
   observed data}
 
   \item{means only}{plots a black line for the mean data and, if an effector
-  was modeled, a dashed line for the concentration-time data with the the
-  effector.}
+  was modeled, a dashed line for the concentration-time data with Inhibitor
+  1.}
 
   \item{Freddy}{Freddy's favorite style of plot with trial means in light
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
@@ -126,9 +128,9 @@ If FALSE, the observed data will start at whatever times are listed in the
 Excel file.}
 
 \item{t0}{What event should be used for time zero? Options are: "simulation
-start" (default), "substrate dose 1", "effector dose 1", "substrate last
-dose", "effector last dose", "substrate penultimate dose", or "effector
-penultimate dose". \emph{This does not change which data are included in
+start" (default), "substrate dose 1", "inhibitor 1 dose 1", "substrate last
+dose", "inhibitor 1 last dose", "substrate penultimate dose", or "inhibitor
+1 penultimate dose". \emph{This does not change which data are included in
 the graph;} instead, this determines whether the x axis numbers are offset
 so that, e.g., the last dose is administered at time 0.}
 
@@ -171,17 +173,17 @@ presence of an effector. Input should look like this, for example:
 possible shapes and what number corresponds to which shape, see
 \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 the middle of that page). If left as NA, substrate alone will be an open
-circle and substrate + effector will be an open triangle.}
+circle and substrate + inhibitor 1 will be an open triangle.}
 
 \item{line_type}{Optionally specify what types of lines are used to depict 1.
 the substrate drug alone and 2. the substrate drug in the presence of an
 effector (when applicable). Input should look like this, for example:
 \code{c("solid", "dashed")} to get a solid line for the substrate drug and
-a dashed line for the effector. To see all possible \code{line_type}
+a dashed line for inhibitor 1. To see all possible \code{line_type}
 options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
-will be a solid line and substrate + effector will be a dashed line. If
-\code{figure_type} is "Freddy" and there's no effector present, which is a
-slightly different scenario than the other graph types, the 1st line type
+will be a solid line and substrate + inhibitor 1 will be a dashed line. If
+\code{figure_type} is "Freddy" and there's no effector present, which is
+a slightly different scenario than the other graph types, the 1st line type
 specified will be for the mean simulated concentration and the trial means,
 and the 2nd line type specified will be for the 5th and 95th percentiles.}
 
@@ -192,18 +194,19 @@ value will be automatically determined.}
 
 \item{line_color}{Optionally specify what colors to use for the lines.
 Acceptable input for, e.g., the substrate alone to be blue and the
-substrate + effector to be red: \code{c("blue", "red")}. If left as NA,
+substrate + Inhibitor 1 to be red: \code{c("blue", "red")}. If left as NA,
 lines will be black or gray. Hex color codes are also ok to use.}
 
 \item{legend_label}{Optionally indicate on the legend whether the effector is
-an inhibitor or an inducer. Input will be used as the label in the legend
-for the line style and the shape. If left as NA when a legend is included
-and an effector is present, the label in the legend will be "effector".}
+an inhibitor,inducer, activator, or suppressor. Input will be used as the
+label in the legend for the line style and the shape. If left as NA when a
+legend is included and an effector is present, the label in the legend will
+be "Inhibitor 1".}
 
-\item{prettify_effector_name}{Optionally make the effector name prettier in
-the legend. This was designed for simulations where the effector is one of
-the standard options for the simulator, and leaving
-\code{prettify_effector_name = TRUE} will make the name of the effector be
+\item{prettify_effector_name}{Optionally make the Inhibitor 1 name prettier
+in the legend. This was designed for simulations where Inhibitor 1 is one
+of the standard options for the simulator, and leaving
+\code{prettify_effector_name = TRUE} will make the name of Inhibitor 1 be
 something more human readable. For example, "SV-Rifampicin-MD" will become
 "rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
 Set it to the name you'd prefer to see in your legend if you would like
@@ -232,9 +235,9 @@ flexibility, but many of the function arguments are optional; most of the
 time, you'll get decent-looking graphs while only setting a minimal number of
 arguments. If you want to plot enzyme abundance data, please see
 \code{\link{enz_plot}}. \strong{Note:} Currently, this only works for
-concentration-time data for the substrate, primary metabolite 1, secondary metabolite, or
-inhibitor 1. \strong{If your simulation included \emph{anything} other than
-those compounds, this is \emph{not} reliable.}
+concentration-time data for the substrate, primary metabolite 1, secondary
+metabolite, or inhibitor 1. \strong{If your simulation included
+\emph{anything} other than those compounds, this is \emph{not} reliable.}
 }
 \examples{
 sim_data_file <- "../Example simulator output.xlsx"
@@ -268,7 +271,7 @@ ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
         obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
         time_range = "last dose")
 
-# These may be too busy when you've got an effector present:
+# These may be too busy when Inhibitor 1 is present:
 ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
 ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
         figure_type = "trial percentiles")
@@ -277,11 +280,11 @@ ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
         figure_type = "means only")
 
 # You can also add a separate observed concentration-time file for the
-# compound with the effector present. The graph will show those points
+# compound with Inhibitor 1 present. The graph will show those points
 # as open triangles.
 ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-        obs_effector_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
+        obs_inhibitor_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
         time_range = "last dose")
 
 # If you've already got a data.frame formatted like the output

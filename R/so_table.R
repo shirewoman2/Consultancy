@@ -90,8 +90,8 @@ so_table <- function(report_input_file = NA,
       Dcomp <- c("AUCinf_ratio_dose1", "AUCtau_ratio_dose1", "AUCtau_ratio_ss",
                  "Cmax_ratio_dose1", "Cmax_ratio_ss")
 
-      ObsToPull <- c(D1, paste0(D1, "_withEffector"),
-                     D2, paste0(D2, "_withEffector"), Dcomp)
+      ObsToPull <- c(D1, paste0(D1, "_withInhib"),
+                     D2, paste0(D2, "_withInhib"), Dcomp)
 
       PKToPull <- ObsToPull[!str_detect(ObsToPull, "_CV")]
 
@@ -103,10 +103,10 @@ so_table <- function(report_input_file = NA,
             paste(DoseRegimen, EffectorPresent),
             "Single Dose FALSE" = PKToPull[
                   str_detect(PKToPull, "dose1") &
-                        !str_detect(PKToPull, "withEffector")],
+                        !str_detect(PKToPull, "withInhib")],
             "Single Dose TRUE" = PKToPull[
                   str_detect(PKToPull, "dose1")],
-            "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withEffector")],
+            "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withInhib")],
             "Multiple Dose TRUE" = PKToPull)
 
       MyPKResults_all <- extractPK(sim_data_file = sectionInfo$SimFile,
@@ -198,12 +198,12 @@ so_table <- function(report_input_file = NA,
             MyPKResults$tmax_ss[MyPKResults$Stat == "Max Val"]
 
       if(EffectorPresent){
-            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "GMean"] <-
-                  MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Median"]
-            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == VariabilityNames[1]] <-
-                  MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Min Val"]
-            MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == VariabilityNames[2]] <-
-                  MyPKResults$tmax_ss_withEffector[MyPKResults$Stat == "Max Val"]
+            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "GMean"] <-
+                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Median"]
+            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
+                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Min Val"]
+            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
+                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Max Val"]
       }
 
       # Formatting
@@ -405,17 +405,17 @@ so_table <- function(report_input_file = NA,
                    FUN = function(x) ifelse(str_detect(x, "_dose1"),
                                             paste("Dose 1", sub("_dose1", "", x)),
                                             paste("Steady-state", sub("_ss", "", x))))
-      PKToPull_pretty <- sub("_withEffector", " with effector", PKToPull_pretty)
+      PKToPull_pretty <- sub("_withInhib", " with inhibitor", PKToPull_pretty)
       PKToPull_pretty <- sub("CL", "CL/F (L/h)", PKToPull_pretty)
       PKToPull_pretty <- sub("AUCinf", "AUC0 to inf (h*ng/mL)", PKToPull_pretty)
       PKToPull_pretty <- sub("AUCtau", "AUC0 to tau (h*ng/mL)", PKToPull_pretty)
       PKToPull_pretty <- sub("Cmax", "Cmax (ng/mL)", PKToPull_pretty)
       PKToPull_pretty <- sub("HalfLife", "t1/2 (h)", PKToPull_pretty)
       PKToPull_pretty <- sub("tmax", "tmax (h)", PKToPull_pretty)
-      PKToPull_pretty[str_detect(PKToPull_pretty, "with effector")] <-
-            sub(" \\(", " with effector (", PKToPull_pretty[str_detect(PKToPull_pretty, "with effector")])
-      PKToPull_pretty[str_detect(PKToPull_pretty, "with effector")] <-
-            sub(" with effector$", "", PKToPull_pretty[str_detect(PKToPull_pretty, "with effector")])
+      PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
+            sub(" \\(", " with inhibitor (", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
+      PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
+            sub(" with inhibitor$", "", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
       PKToPull_pretty <- sub("GMR_", "geometric mean ratio ", PKToPull_pretty)
 
       PKToPull_pretty <- c("Statistic" = "Statistic", PKToPull_pretty)

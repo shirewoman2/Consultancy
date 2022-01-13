@@ -17,9 +17,8 @@
 #'   as "_X" below): "_sub" for the substrate, "_met1" for the primary
 #'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
 #'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-#'   "_inhib2" for the 2nd inhibitor or inducer listed, "_inh1met" for the
-#'   inhibitor 1 metabolite, or "_inh2met" for the inhibitor 2 metabolite. All
-#'   possible parameters:
+#'   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
+#'   inhibitor 1 metabolite. All possible parameters:
 #'
 #'   \describe{
 #'
@@ -69,8 +68,8 @@
 #'
 #'   \item{Inhibitor, Inhibitor2}{inhibitor used, as applicable}
 #'
-#'   \item{Inhibitor1Metabolite, Inhibitor2Metabolite}{the primary metabolite of
-#'   the inhibitor used, as applicable}
+#'   \item{Inhibitor1Metabolite}{the primary metabolite of Inhibitor 1, as
+#'   applicable}
 #'
 #'   \item{Interaction_x}{interaction parameters for any CYPs, UGTs, or other
 #'   enzymes listed. Output will be labeled for each enzyme and interaction
@@ -84,8 +83,8 @@
 #'
 #'   \item{logP_x}{logP}
 #'
-#'   \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite included, either
-#'   the primary or the secondary, as applicable}
+#'   \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite
+#'   included, either the primary or the secondary, as applicable}
 #'
 #'   \item{ModelType_x}{the type of model, e.g., full PBPK model}
 #'
@@ -183,7 +182,7 @@ extractExpDetails <- function(sim_data_file,
                      "Pop", "SimEndDayTime", "SimStartDayTime",
                      "StudyDuration", "Substrate", "Type_sub",
 
-                     "Inhibitor", "Type_inhib", "Inhibitor2",
+                     "Inhibitor1", "Type_inhib", "Inhibitor2",
                      "PrimaryMetabolite1", "PrimaryMetabolite2",
                      "SecondaryMetabolite", "Inhibitor1Metabolite", # NameCol 18
 
@@ -363,7 +362,7 @@ extractExpDetails <- function(sim_data_file,
                                      "PrimaryMetabolite2" = "Sub Pri Metabolite2",
                                      "SecondaryMetabolite" = "Sub Sec Metabolite",
                                      "Inhibitor1Metabolite" = "Inh 1 Metabolite",
-                                     "Inhibitor" = "Compound Name",
+                                     "Inhibitor1" = "Compound Name",
                                      "Inhibitor2" = "Inhibitor 2",
                                      "MW_sub" = "Mol Weight",
                                      "MW_inhib" = "Mol Weight",
@@ -485,23 +484,28 @@ extractExpDetails <- function(sim_data_file,
                   names(InputTab) <- paste0("...", 1:ncol(InputTab))
             }
 
-            # When effector 1 is not present, don't look for those values.
+            # When Inhibitor 1 is not present, don't look for those values.
             if(any(str_detect(t(InputTab[5, ]), "Inhibitor 1"), na.rm = T) == FALSE){
                   MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_inhib$")]
             }
 
-            # When effector 2 is not present, don't look for those values.
+            # When Inhibitor 2 is not present, don't look for those values.
             if(any(str_detect(t(InputTab[5, ]), "Inhibitor 2"), na.rm = T) == FALSE){
-                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_inhib$")]
+                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_inhib2$")]
             }
 
             # When primary metabolite 1 is not present, don't look for those values.
-            if(any(str_detect(t(InputTab[5, ]), "Sub Pri PrimaryMetabolite1"), na.rm = T) == FALSE){
+            if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite1"), na.rm = T) == FALSE){
                   MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met1")]
             }
 
+            # When primary metabolite 2 is not present, don't look for those values.
+            if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite2"), na.rm = T) == FALSE){
+                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met2")]
+            }
+
             # When secondary metabolite is not present, don't look for those values.
-            if(any(str_detect(t(InputTab[5, ]), "Sub Pri SecondaryMetabolite"), na.rm = T) == FALSE){
+            if(any(str_detect(t(InputTab[5, ]), "Sub Sec Metabolite"), na.rm = T) == FALSE){
                   MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_secmet")]
             }
 
@@ -515,8 +519,9 @@ extractExpDetails <- function(sim_data_file,
                               "Trial Design" = which(t(InputTab[5, ]) == "Trial Design"),
                               "Inhibitor 1" = which(t(InputTab[5, ]) == "Inhibitor 1"),
                               "Inhibitor 2" = which(t(InputTab[5, ]) == "Inhibitor 2"),
-                              "Sub Pri PrimaryMetabolite1" = which(t(InputTab[5, ]) == "Sub Pri PrimaryMetabolite1"),
-                              "Sub Pri SecondaryMetabolite" = which(t(InputTab[5, ]) == "Sub Pri SecondaryMetabolite"),
+                              "Sub Pri Metabolite1" = which(t(InputTab[5, ]) == "Sub Pri Metabolite1"),
+                              "Sub Pri Metabolite2" = which(t(InputTab[5, ]) == "Sub Pri Metabolite2"),
+                              "Sub Sec Metabolite" = which(t(InputTab[5, ]) == "Sub Sec Metabolite"),
                               "Inh 1 Metabolite" = which(t(InputTab[5, ]) == "Inh 1 Metabolite"))
 
             InputDeets$NameCol <- ColLocations[InputDeets$NameColDetect]
@@ -526,7 +531,7 @@ extractExpDetails <- function(sim_data_file,
             pullValue <- function(deet){
 
                   # Setting up regex to search
-                  ToDetect <- switch(sub("_sub|_inhib|_met1|_secmet|_inh1met|_inhib2",
+                  ToDetect <- switch(sub("_sub|_inhib|_met1|_met2|_secmet|_inh1met|_inhib2",
                                          "", deet),
                                      "Abs_model" = "Absorption Model",
                                      "Age_min" = "Minimum Age",

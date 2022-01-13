@@ -7,7 +7,7 @@
 extractConcTime(
   sim_data_file,
   obs_data_file = NA,
-  obs_effector_data_file = NA,
+  obs_inhibitor_data_file = NA,
   adjust_obs_time = FALSE,
   tissue = "plasma",
   compoundToExtract = "substrate",
@@ -25,8 +25,8 @@ output from the simulator, leave this as NA. Otherwise, this is the file
 that it is ready to be converted to an XML file, not the file that contains
 only the digitized time and concentration data.}
 
-\item{obs_effector_data_file}{name of the Excel file containing observed
-concentration-time data for the effector, when appropriate}
+\item{obs_inhibitor_data_file}{name of the Excel file containing observed
+concentration-time data for when an effector is present, when appropriate}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
@@ -49,13 +49,13 @@ vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are "substrate" (default), "primary
-metabolite 1", "primary metabolite 2", "secondary metabolite", "effector"
-(this can be either an inducer or inhibitor; this is labeled as "inhibitor
-1" in the simulator), "effector 2" for the 2nd inhibitor or inducer listed
-in the simulation, or "effector 1 metabolite" for the primary metabolite of
-effector 1. \emph{Note:} The simulator will report up to one metabolite for
-the 1st effector but no other effector metabolites. (Someone please correct
-me if that's wrong! -LS)}
+metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
+1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
+labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
+inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
+primary metabolite of inhibitor 1. \emph{Note:} The simulator will report
+up to one metabolite for the 1st inhibitor but no other inhibitor
+metabolites. (Someone please correct me if that's wrong! -LS)}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are one or both of "aggregate" and
@@ -69,11 +69,11 @@ A data.frame of concentration-time data with the following columns:
   \item{Compound}{the compound whose concentration is listed; this matches
   whatever you named your substrate or inhibitor in the simulator}
 
-  \item{Effector (as applicable)}{the effector of interest; this matches
-  whatever you named "Inhibitor 1" in the simulator}
+  \item{Inhibitor (as applicable)}{the inhibitor or effector of interest;
+  this matches whatever you named "Inhibitor 1" in the simulator}
 
   \item{Individual}{the individual for the given profile, which will be a
-  number for a simulated individual or will be "obs" or "obs+effector" for
+  number for a simulated individual or will be "obs" or "obs+inhibitor1" for
   observed data, "mean" for the mean data, or "per5" or "per95" for the 5th
   and 95th percentile data.}
 
@@ -109,7 +109,7 @@ extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx
 
 extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
                 obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
-                obs_effector_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
+                obs_inhibitor_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
                 returnAggregateOrIndiv = c("aggregate", "individual"))
 
 extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",

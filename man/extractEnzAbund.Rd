@@ -38,9 +38,9 @@ A data.frame of enzyme abundance with time with the following
 
   \item{EffectorPresent}{TRUE or FALSE for whether any effectors were present
   at that time point (NB: The simulator shows two scenarios only: enzyme
-  abundances 1. in the presence or 2. the absence of the effector(s). If
-  there were multiple effectors, it does not show enzyme abundances with each
-  separately.)}
+  abundances 1. in the presence or 2. the absence of Inhibitor 1 and any
+  other effectors. If there were multiple inhibitors or effectors, it does
+  not show enzyme abundances with each separately.)}
 
   \item{Time}{the time since the first dose}
 

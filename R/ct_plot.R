@@ -7,9 +7,9 @@
 #' time, you'll get decent-looking graphs while only setting a minimal number of
 #' arguments. If you want to plot enzyme abundance data, please see
 #' \code{\link{enz_plot}}. \strong{Note:} Currently, this only works for
-#' concentration-time data for the substrate, primary metabolite 1, secondary metabolite, or
-#' inhibitor 1. \strong{If your simulation included \emph{anything} other than
-#' those compounds, this is \emph{not} reliable.}
+#' concentration-time data for the substrate, primary metabolite 1, secondary
+#' metabolite, or inhibitor 1. \strong{If your simulation included
+#' \emph{anything} other than those compounds, this is \emph{not} reliable.}
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data
@@ -19,10 +19,11 @@
 #'   Otherwise, this is the file that it is ready to be converted to an XML
 #'   file, not the file that contains only the digitized time and concentration
 #'   data.
-#' @param obs_effector_data_file name of the Excel file containing the observed
-#'   concentration-time data in the presence of an effector. This is the file
-#'   that is ready to be converted to an XML file. If your effector data were
-#'   already included in \code{obs_data_file}, leave this as NA.
+#' @param obs_inhibitor_data_file name of the Excel file containing the observed
+#'   concentration-time data in the presence of an effector (labeled "Inhibitor
+#'   1" in the simulator). This is the file that is ready to be converted to an
+#'   XML file. If your Inhibitor 1 data were already included in
+#'   \code{obs_data_file}, leave this as NA.
 #' @param sim_obs_dataframe If you have already extracted the concentration-time
 #'   data using the function \code{\link{extractConcTime}}, you can enter the
 #'   name of the output data.frame from that function instead of re-reading the
@@ -32,9 +33,10 @@
 #'   "brain", etc., as long as the tissue is one of the options included in
 #'   "Sheet Options", "Tissues" in the simulator.
 #' @param compoundToExtract For which compound do you want to extract
-#'   concentration-time data? Options are "substrate" (default), "primary metabolite 1",
-#'   "secondary metabolite", or "effector" (this can be either an inducer or inhibitor;
-#'   this is labeled as "inhibitor 1" in the simulator).
+#'   concentration-time data? Options are "substrate" (default), "primary
+#'   metabolite 1", "secondary metabolite", or "inhibitor 1" (this actually can
+#'   be an inducer, activator, suppressor, or inhibitor, but it's labeled as
+#'   "Inhibitor 1" in the simulator).
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -49,8 +51,8 @@
 #'   observed data}
 #'
 #'   \item{means only}{plots a black line for the mean data and, if an effector
-#'   was modeled, a dashed line for the concentration-time data with the the
-#'   effector.}
+#'   was modeled, a dashed line for the concentration-time data with Inhibitor
+#'   1.}
 #'
 #'   \item{Freddy}{Freddy's favorite style of plot with trial means in light
 #'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
@@ -80,9 +82,9 @@
 #'   effector was dosed QD} }
 #'
 #' @param t0 What event should be used for time zero? Options are: "simulation
-#'   start" (default), "substrate dose 1", "effector dose 1", "substrate last
-#'   dose", "effector last dose", "substrate penultimate dose", or "effector
-#'   penultimate dose". \emph{This does not change which data are included in
+#'   start" (default), "substrate dose 1", "inhibitor 1 dose 1", "substrate last
+#'   dose", "inhibitor 1 last dose", "substrate penultimate dose", or "inhibitor
+#'   1 penultimate dose". \emph{This does not change which data are included in
 #'   the graph;} instead, this determines whether the x axis numbers are offset
 #'   so that, e.g., the last dose is administered at time 0.
 #'
@@ -139,7 +141,7 @@
 #'   possible shapes and what number corresponds to which shape, see
 #'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 #'   the middle of that page). If left as NA, substrate alone will be an open
-#'   circle and substrate + effector will be an open triangle.
+#'   circle and substrate + inhibitor 1 will be an open triangle.
 #'
 #' @param line_transparency Optionally specify the transparency for the trial
 #'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
@@ -149,26 +151,27 @@
 #'   the substrate drug alone and 2. the substrate drug in the presence of an
 #'   effector (when applicable). Input should look like this, for example:
 #'   \code{c("solid", "dashed")} to get a solid line for the substrate drug and
-#'   a dashed line for the effector. To see all possible \code{line_type}
+#'   a dashed line for inhibitor 1. To see all possible \code{line_type}
 #'   options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
-#'   will be a solid line and substrate + effector will be a dashed line. If
-#'   \code{figure_type} is "Freddy" and there's no effector present, which is a
-#'   slightly different scenario than the other graph types, the 1st line type
+#'   will be a solid line and substrate + inhibitor 1 will be a dashed line. If
+#'   \code{figure_type} is "Freddy" and there's no effector present, which is
+#'   a slightly different scenario than the other graph types, the 1st line type
 #'   specified will be for the mean simulated concentration and the trial means,
 #'   and the 2nd line type specified will be for the 5th and 95th percentiles.
 #' @param line_color Optionally specify what colors to use for the lines.
 #'   Acceptable input for, e.g., the substrate alone to be blue and the
-#'   substrate + effector to be red: \code{c("blue", "red")}. If left as NA,
+#'   substrate + Inhibitor 1 to be red: \code{c("blue", "red")}. If left as NA,
 #'   lines will be black or gray. Hex color codes are also ok to use.
 #'
 #' @param legend_label Optionally indicate on the legend whether the effector is
-#'   an inhibitor or an inducer. Input will be used as the label in the legend
-#'   for the line style and the shape. If left as NA when a legend is included
-#'   and an effector is present, the label in the legend will be "effector".
-#' @param prettify_effector_name Optionally make the effector name prettier in
-#'   the legend. This was designed for simulations where the effector is one of
-#'   the standard options for the simulator, and leaving
-#'   \code{prettify_effector_name = TRUE} will make the name of the effector be
+#'   an inhibitor,inducer, activator, or suppressor. Input will be used as the
+#'   label in the legend for the line style and the shape. If left as NA when a
+#'   legend is included and an effector is present, the label in the legend will
+#'   be "Inhibitor 1".
+#' @param prettify_effector_name Optionally make the Inhibitor 1 name prettier
+#'   in the legend. This was designed for simulations where Inhibitor 1 is one
+#'   of the standard options for the simulator, and leaving
+#'   \code{prettify_effector_name = TRUE} will make the name of Inhibitor 1 be
 #'   something more human readable. For example, "SV-Rifampicin-MD" will become
 #'   "rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
 #'   Set it to the name you'd prefer to see in your legend if you would like
@@ -221,7 +224,7 @@
 #'         obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
 #'         time_range = "last dose")
 #'
-#' # These may be too busy when you've got an effector present:
+#' # These may be too busy when Inhibitor 1 is present:
 #' ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
 #' ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'         figure_type = "trial percentiles")
@@ -230,11 +233,11 @@
 #'         figure_type = "means only")
 #'
 #' # You can also add a separate observed concentration-time file for the
-#' # compound with the effector present. The graph will show those points
+#' # compound with Inhibitor 1 present. The graph will show those points
 #' # as open triangles.
 #' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
 #'         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-#'         obs_effector_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
+#'         obs_inhibitor_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
 #'         time_range = "last dose")
 #'
 #' # If you've already got a data.frame formatted like the output
@@ -254,7 +257,7 @@
 
 ct_plot <- function(sim_data_file = NA,
                     obs_data_file = NA,
-                    obs_effector_data_file = NA,
+                    obs_inhibitor_data_file = NA,
                     sim_obs_dataframe = NA,
                     tissue = "plasma",
                     compoundToExtract = "substrate",
@@ -312,9 +315,9 @@ ct_plot <- function(sim_data_file = NA,
       }
 
       t0 <- tolower(t0)
-      t0_opts <- c("simulation start", "substrate dose 1", "effector dose 1",
-                   "substrate last dose", "effector last dose",
-                   "substrate penultimate dose", "effector penultimate dose")
+      t0_opts <- c("simulation start", "substrate dose 1", "inhibitor 1 dose 1",
+                   "substrate last dose", "inhibitor 1 last dose",
+                   "substrate penultimate dose", "inhibitor 1 penultimate dose")
       if(t0 %in% t0_opts == FALSE){
             stop(paste0("t0 must be set to ",
                         sub("and", "or", str_comma(t0_opts)), "."))
@@ -328,7 +331,7 @@ ct_plot <- function(sim_data_file = NA,
                                     obs_data_file = obs_data_file,
                                     tissue = tissue,
                                     compoundToExtract = compoundToExtract,
-                                    obs_effector_data_file = obs_effector_data_file,
+                                    obs_inhibitor_data_file = obs_inhibitor_data_file,
                                     adjust_obs_time = adjust_obs_time)
       }
 
@@ -341,8 +344,8 @@ ct_plot <- function(sim_data_file = NA,
             Data <- Data %>% rename(Conc = Abundance) %>%
                   mutate(Simulated = TRUE,
                          Compound = Enzyme,
-                         Effector = ifelse(EffectorPresent,
-                                           "effector", "none"))
+                         Inhibitor = ifelse(EffectorPresent,
+                                           "inhibitor 1", "none"))
       } else {
             ObsConcUnits <- sort(unique(Data$Conc_units))
       }
@@ -434,10 +437,10 @@ ct_plot <- function(sim_data_file = NA,
                   }
 
                   if(time_range_input[1] == "first dose"){
-                        Start <- ifelse(compoundToExtract == "effector",
+                        Start <- ifelse(compoundToExtract == "inhibitor 1",
                                         DayTime_t0[["Inhib"]],
                                         DayTime_t0[["Sub"]])
-                        End <- ifelse(compoundToExtract == "effector",
+                        End <- ifelse(compoundToExtract == "inhibitor 1",
                                       StartDose2[["Inhib"]],
                                       StartDose2[["Sub"]])
                         time_range <- c(Start, End)
@@ -445,7 +448,7 @@ ct_plot <- function(sim_data_file = NA,
                   }
 
                   if(time_range_input[1] == "last dose"){
-                        Start <- ifelse(compoundToExtract == "effector",
+                        Start <- ifelse(compoundToExtract == "inhibitor 1",
                                         StartLastDose[["Inhib"]],
                                         StartLastDose[["Sub"]])
                         End <- max(Data$Time)
@@ -454,13 +457,13 @@ ct_plot <- function(sim_data_file = NA,
                   }
 
                   if(time_range_input[1] == "penultimate dose"){
-                        DoseIntToUse <- ifelse(compoundToExtract == "effector",
+                        DoseIntToUse <- ifelse(compoundToExtract == "inhibitor 1",
                                                DoseInt["Inhib"], DoseInt["Sub"])
 
-                        Start <- ifelse(compoundToExtract == "effector",
+                        Start <- ifelse(compoundToExtract == "inhibitor 1",
                                         StartLastDose[["Inhib"]] - DoseIntToUse,
                                         StartLastDose[["Sub"]] - DoseIntToUse)
-                        End <- ifelse(compoundToExtract == "effector",
+                        End <- ifelse(compoundToExtract == "inhibitor 1",
                                       StartLastDose[["Inhib"]],
                                       StartLastDose[["Sub"]])
                         time_range <- c(Start, End)
@@ -558,13 +561,13 @@ ct_plot <- function(sim_data_file = NA,
                   t0,
                   "substrate dose 1" = difftime_sim(Deets$SimStartDayTime,
                                                     Deets$StartDayTime_sub),
-                  "effector dose 1" = difftime_sim(Deets$SimStartDayTime,
+                  "inhibitor 1 dose 1" = difftime_sim(Deets$SimStartDayTime,
                                                    Deets$StartDayTime_inhib),
                   "substrate last dose" =
                         ifelse(StartLastDose["Sub"] == max(Data$Time),
                                StartLastDose["Sub"] - DoseInt["Sub"],
                                StartLastDose["Sub"]),
-                  "effector last dose" =
+                  "inhibitor 1 last dose" =
                         ifelse(StartLastDose["Inhib"] == max(Data$Time),
                                StartLastDose["Inhib"] - DoseInt["Inhib"],
                                StartLastDose["Inhib"]),
@@ -572,7 +575,7 @@ ct_plot <- function(sim_data_file = NA,
                         ifelse(StartLastDose["Sub"] == max(Data$Time),
                                StartLastDose["Sub"] - 2*DoseInt["Sub"],
                                StartLastDose["Sub"] - DoseInt["Sub"]),
-                  "effector penultimate dose"  =
+                  "inhibitor 1 penultimate dose"  =
                         ifelse(StartLastDose["Inhib"] == max(Data$Time),
                                StartLastDose["Inhib"] - 2*DoseInt["Inhib"],
                                StartLastDose["Inhib"] - DoseInt["Inhib"]))
@@ -587,18 +590,18 @@ ct_plot <- function(sim_data_file = NA,
       XLabels[seq(2,length(XLabels),2)] <- ""
       XLabels[which(XBreaks == 0)] <- "0"
 
-      # Dealing with possible effector data ---------------------------------
-      # Adding a grouping variable to data and also making the effector name
+      # Dealing with possible inhibitor 1 data ---------------------------------
+      # Adding a grouping variable to data and also making the inhibitor 1 name
       # prettier for the graphs.
-      MyEffector <- unique(Data$Effector) %>% as.character()
+      MyEffector <- unique(Data$Inhibitor) %>% as.character()
       MyEffector <- MyEffector[!MyEffector == "none"]
 
       if(length(MyEffector) > 0 && complete.cases(MyEffector)){
 
             Data <- Data %>%
                   mutate(CompoundIsEffector = Compound == MyEffector,
-                         Effector = as.character(ifelse(is.na(Effector),
-                                                        "none", Effector)))
+                         Inhibitor = as.character(ifelse(is.na(Inhibitor),
+                                                        "none", Inhibitor)))
 
             if(class(prettify_effector_name) == "logical" &&
                prettify_effector_name){
@@ -614,8 +617,8 @@ ct_plot <- function(sim_data_file = NA,
 
             Data <- Data %>%
                   mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
-                         Effector = ifelse(Effector != "none", MyEffector, Effector),
-                         Group = paste(Compound, Effector, Trial)) %>%
+                         Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
+                         Group = paste(Compound, Inhibitor, Trial)) %>%
                   select(-CompoundIsEffector)
       }
 
@@ -623,43 +626,43 @@ ct_plot <- function(sim_data_file = NA,
       # doesn't include enough values when effector present
       if(complete.cases(obs_shape[1]) && length(MyEffector) > 0 &&
          complete.cases(MyEffector) &&
-         compoundToExtract != "effector" &&
+         compoundToExtract != "inhibitor 1" &&
          length(complete.cases(obs_shape)) < 2){
-            warning("There is an effector present and you have specified what the symbol shapes should be, but you have not listed enough values (you need 2). The default shapes will be used.")
+            warning("There is an inhibitor or effector present and you have specified what the symbol shapes should be, but you have not listed enough values (you need 2). The default shapes will be used.")
             obs_shape <- NA
       }
 
       if(complete.cases(obs_color[1]) && length(MyEffector) > 0 &&
          complete.cases(MyEffector) &&
-         compoundToExtract != "effector" &&
+         compoundToExtract != "inhibitor 1" &&
          length(complete.cases(obs_color)) < 2){
-            warning("There is an effector present and you have specified what the symbol colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
+            warning("There is an inhibitor or effector present and you have specified what the symbol colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
             obs_color <- NA
       }
 
       if(complete.cases(line_color[1]) && length(MyEffector) > 0 &&
          complete.cases(MyEffector) &&
-         compoundToExtract != "effector" &&
+         compoundToExtract != "inhibitor 1" &&
          length(complete.cases(line_color)) < 2){
-            warning("There is an effector present and you have specified what the line colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
+            warning("There is an inhibitor or effector present and you have specified what the line colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
             line_color <- NA
       }
 
       if(complete.cases(line_type[1]) && length(MyEffector) > 0 &&
          complete.cases(MyEffector) &&
-         compoundToExtract != "effector" &&
+         compoundToExtract != "inhibitor 1" &&
          length(complete.cases(line_type)) < 2){
-            warning("There is an effector present and you have specified what the line types should be, but you have not listed enough values (you need 2). The default line types will be used.")
+            warning("There is an inhibitor or effector present and you have specified what the line types should be, but you have not listed enough values (you need 2). The default line types will be used.")
             line_type <- NA
       }
 
       # Always want "none" to be the 1st item on the legend, and we need there
-      # to be some value present for "Effector" for function to work correctly.
+      # to be some value present for "Inhibitor" for function to work correctly.
       Data <- Data %>%
-            mutate(Effector = ifelse(is.na(Effector), "none", Effector))
+            mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
       if(length(MyEffector) > 0){
             Data <- Data %>%
-                  mutate(Effector = factor(Effector, levels = c("none", MyEffector)))
+                  mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
       }
 
       # Setting up data.frames to graph ---------------------------------------
@@ -668,7 +671,7 @@ ct_plot <- function(sim_data_file = NA,
             sim_data_trial <- Data %>%
                   filter(Simulated == TRUE &
                                Trial %in% c("mean", "per5", "per95") == FALSE) %>%
-                  group_by(across(any_of(c("Compound", "Tissue", "Effector",
+                  group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
                                            "Simulated", "Trial", "Group",
                                            "Time", "Time_orig",
                                            "Time_units", "Conc_units")))) %>%
@@ -679,7 +682,7 @@ ct_plot <- function(sim_data_file = NA,
       sim_data_mean <- Data %>%
             filter(Simulated == TRUE  &
                          Trial %in% c("mean", "per5", "per95")) %>%
-            mutate(Group = paste(Compound, Effector, Trial))
+            mutate(Group = paste(Compound, Inhibitor, Trial))
 
       # Setting up observed data per user input -------------------------------
 
@@ -690,7 +693,7 @@ ct_plot <- function(sim_data_file = NA,
 
             suppressMessages(
                   obs_data <- obs_data %>%
-                        group_by(across(any_of(c("Compound", "Tissue", "Effector",
+                        group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
                                                  "Simulated", "Trial", "Group",
                                                  "Time", "Time_orig",
                                                  "Time_units", "Conc_units")))) %>%
@@ -765,10 +768,8 @@ ct_plot <- function(sim_data_file = NA,
             line_color <- rep(line_color, 2)
       }
 
-      obs_color <- ifelse((complete.cases(obs_color) &
-                                 obs_color == "default") |
-                                (is.na(obs_color[1]) &
-                                       figure_type == "Freddy"),
+      obs_color <- ifelse((complete.cases(obs_color) & obs_color == "default") |
+                                (is.na(obs_color[1]) & figure_type == "Freddy"),
                           "#3030FE", obs_color)
 
       ## figure_type: trial means -----------------------------------------------------------
@@ -780,13 +781,13 @@ ct_plot <- function(sim_data_file = NA,
                                  ifelse(NumTrials > 10, 0.05, 0.4))
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none" & compoundToExtract != "effector"){
+               MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
 
                   ## linear plot
                   A <- ggplot(sim_data_trial,
                               aes(x = Time, y = Conc, group = Group,
-                                  linetype = Effector, shape = Effector,
-                                  color = Effector)) +
+                                  linetype = Inhibitor, shape = Inhibitor,
+                                  color = Inhibitor)) +
                         geom_line(alpha = AlphaToUse, lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial == "mean"),
@@ -796,7 +797,7 @@ ct_plot <- function(sim_data_file = NA,
                         scale_color_manual(values = line_color[1:2])
 
                   if(nrow(obs_data) > 0){
-                        if(obs_color[1] == "none"){
+                        if(all(is.na(obs_color)) | obs_color[1] == "none"){
                               A <-  A + geom_point(data = obs_data, size = 2,
                                                    stroke = 1)
                         } else {
@@ -823,7 +824,7 @@ ct_plot <- function(sim_data_file = NA,
                                   color = line_color[1])
 
                   if(nrow(obs_data) > 0){
-                        if(obs_color[1] == "none"){
+                        if(all(is.na(obs_color)) | obs_color[1] == "none"){
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   shape = obs_shape[1], stroke = 1)
                         } else {
@@ -845,14 +846,14 @@ ct_plot <- function(sim_data_file = NA,
                                  line_transparency, 0.25)
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none" & compoundToExtract != "effector"){
+               MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial %in% c("per5", "per95")) %>%
                                     mutate(Group = paste(Group, Trial)),
                               aes(x = Time, y = Conc,
-                                  linetype = Effector, shape = Effector,
-                                  color = Effector,
+                                  linetype = Inhibitor, shape = Inhibitor,
+                                  color = Inhibitor,
                                   group = Group)) +
                         geom_line(alpha = AlphaToUse, lwd = 0.8) +
                         geom_line(data = sim_data_mean %>%
@@ -863,7 +864,7 @@ ct_plot <- function(sim_data_file = NA,
                         scale_color_manual(values = line_color[1:2])
 
                   if(nrow(obs_data) > 0){
-                        if(obs_color[1] == "none"){
+                        if(all(is.na(obs_color)) | obs_color[1] == "none"){
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   stroke = 1)
                         } else {
@@ -890,7 +891,7 @@ ct_plot <- function(sim_data_file = NA,
                                   color = line_color[1])
 
                   if(nrow(obs_data) > 0){
-                        if(obs_color[1] == "none"){
+                        if(all(is.na(obs_color)) | obs_color[1] == "none"){
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   stroke = 1, shape = obs_shape[1])
                         } else {
@@ -914,14 +915,14 @@ ct_plot <- function(sim_data_file = NA,
                                  ifelse(NumTrials > 10, 0.05, 0.25))
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none" & compoundToExtract != "effector"){
+               MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
 
                   ## linear plot
                   A <- ggplot(data = sim_data_mean %>%
                                     filter(Trial == "mean"),
                               aes(x = Time, y = Conc, group = Group,
-                                  linetype = Effector, shape = Effector,
-                                  color = Effector)) +
+                                  linetype = Inhibitor, shape = Inhibitor,
+                                  color = Inhibitor)) +
                         geom_line(lwd = 1) +
                         geom_line(data = sim_data_mean %>%
                                         filter(Trial %in% c("per5", "per95")),
@@ -936,7 +937,7 @@ ct_plot <- function(sim_data_file = NA,
                         # people to have the option to override that, so
                         # setting obs_color to "none" will override the
                         # "Freddy" default. -LS
-                        if(obs_color[1] == "none"){
+                        if(all(is.na(obs_color)) | obs_color[1] == "none"){
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   fill = NA, stroke = 1)
                         } else {
@@ -975,7 +976,7 @@ ct_plot <- function(sim_data_file = NA,
                         # people to have the option to override that, so
                         # setting obs_color to "none" will override the
                         # "Freddy" default. -LS
-                        if(obs_color[1] == "none"){
+                        if(all(is.na(obs_color)) | obs_color[1] == "none"){
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   fill = NA, stroke = 1,
                                                   shape = obs_shape[1])
@@ -999,13 +1000,13 @@ ct_plot <- function(sim_data_file = NA,
       if(figure_type == "means only"){
 
             if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-               MyEffector[1] != "none" & compoundToExtract != "effector"){
+               MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
 
                   A <- ggplot(sim_data_mean %>%
                                     filter(Trial == "mean") %>%
                                     mutate(Group = paste(Group, Trial)),
-                              aes(x = Time, y = Conc, linetype = Effector,
-                                  color = Effector)) +
+                              aes(x = Time, y = Conc, linetype = Inhibitor,
+                                  color = Inhibitor)) +
                         geom_line(lwd = 1) +
                         scale_linetype_manual(values = line_type[1:2]) +
                         scale_color_manual(values = line_color[1:2])
@@ -1049,9 +1050,9 @@ ct_plot <- function(sim_data_file = NA,
                                expand = expansion(mult = c(0, 0.1))) +
             labs(x = xlab, y = ylab,
                  linetype = ifelse(complete.cases(legend_label),
-                                   legend_label, "Effector"),
+                                   legend_label, "Inhibitor"),
                  shape = ifelse(complete.cases(legend_label),
-                                legend_label, "Effector")) +
+                                legend_label, "Inhibitor")) +
             coord_cartesian(xlim = time_range_relative) +
             theme(panel.background = element_rect(fill="white", color=NA),
                   legend.key = element_rect(fill = "white"),
@@ -1062,9 +1063,9 @@ ct_plot <- function(sim_data_file = NA,
                   axis.line.y.left = element_line(color = "black"),
                   text = element_text(family = "Calibri"))
 
-      # If the user didn't want the legend or if the graph is of the effector,
+      # If the user didn't want the legend or if the graph is of Inhibitor1,
       # remove legend.
-      if(include_legend == FALSE | compoundToExtract == "effector"){
+      if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){
             A <- A + theme(legend.position = "none")
       }
 
@@ -1103,7 +1104,7 @@ ct_plot <- function(sim_data_file = NA,
       )
 
       # both plots together, aligned vertically
-      if(compoundToExtract == "effector"){
+      if(compoundToExtract == "inhibitor 1"){
             AB <- suppressWarnings(
                   ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
                                     align = "v")

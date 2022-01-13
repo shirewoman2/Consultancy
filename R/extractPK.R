@@ -11,55 +11,63 @@
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are "all" for all possible parameters, "AUC tab" for
 #'   only those parameters on the "AUC" tab (default), "Absorption tab" for only
-#'   those parameters on the "Absorption" tab, or any combination of the
-#'   following:
+#'   those parameters on the "Absorption" tab, or any combination of specific,
+#'   individual parameters. When individual parameters are specifically for the
+#'   substrate, inhibitor, metabolite, etc., they should have a suffix appended
+#'   (listed as "_X" below): "_sub" for the substrate, "_met1" for the primary
+#'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
+#'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
+#'   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
+#'   inhibitor 1 metabolite. (NOTE: Under construction. Currently only extracts
+#'   PK for substrate and substrate in presence of inhibitor.) Possible
+#'   parameters to extract:
 #'
 #'   \describe{
 #'
-#'   \item{AccumulationIndex, AccumulationIndex_withEffector}{Accumulation index
+#'   \item{AccumulationIndex, AccumulationIndex_withInhib}{Accumulation index
 #'   (AUC infinity for dose 1 / AUC tau at steady state). By default, data are
 #'   pulled from the sheet "AUC", column titled "Accumulation Index" or, for the
-#'   accumulation index in the presence of an effector, "Accumulation
-#'   Index_Inh". UNDER CONSTRUCTION.}
+#'   accumulation index in the presence of an inhibitor or effector,
+#'   "Accumulation Index_Inh". UNDER CONSTRUCTION.}
 #'
-#'   \item{AccumulationRatio, AccumulationRatio_withEffector}{Accumulation ratio
+#'   \item{AccumulationRatio, AccumulationRatio_withInhib}{Accumulation ratio
 #'   (AUC tau for dose 1 / AUC tau at steady state). By default, data are pulled
 #'   from the sheet "AUC", column titled "Accumluation Ratio" or, for the
-#'   accumulation ratio in the presence of an effector, "Accumulation
-#'   Ratio_Inh".}
+#'   accumulation ratio in the presence of an inhibitor or effector,
+#'   "Accumulation Ratio_Inh".}
 #'
-#'   \item{AUCinf_dose1, AUCinf_dose1_withEffector}{AUC from 0 to infinity for
-#'   dose 1, in the absence or presence of an effector, respectively. By
-#'   default, data are pulled from the sheet "AUC", column titled, e.g.,
-#'   "AUC_INF (mg/L.h)"}
+#'   \item{AUCinf_dose1, AUCinf_dose1_withInhib}{AUC from 0 to infinity for dose
+#'   1, in the absence or presence of an inhibitor, respectively. By default,
+#'   data are pulled from the sheet "AUC", column titled, e.g., "AUC_INF
+#'   (mg/L.h)"}
 #'
 #'   \item{AUCinf_ratio_dose1, AUCtau_ratio_dose1, AUCtau_ratio_ss,
 #'   Cmax_ratio_dose1, Cmax_ratio_ss}{The ratio of either the AUC or Cmax for
-#'   dose 1 or at steady state with effector present / without effector
+#'   dose 1 or at steady state with an inhibitor present / without an inhibitor
 #'   present.}
 #'
-#'   \item{AUCtau_dose1, AUCtau_dose1_withEffector, AUCtau_ss,
-#'   AUCtau_ss_withEffector}{AUC from 0 to tau for dose 1 or the last dose in
-#'   the absence or presence of an effector. By default, dose 1 data are pulled
+#'   \item{AUCtau_dose1, AUCtau_dose1_withInhib, AUCtau_ss,
+#'   AUCtau_ss_withInhib}{AUC from 0 to tau for dose 1 or the last dose in the
+#'   absence or presence of an inhibitor. By default, dose 1 data are pulled
 #'   from sheet "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)", and
 #'   steady-state data are pulled from the "AUC" tab}
 #'
-#'   \item{CL_dose1, CL_dose1_withEffector}{Clearance as calculated by dose /
+#'   \item{CL_dose1, CL_dose1_withInhib}{Clearance as calculated by dose /
 #'   AUCinf for dose 1. Data are pulled from the sheet "AUC" and the column
 #'   titled, e.g., "CL (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF
 #'   for the first dose".}
 #'
-#'   \item{CL_ss, CL_ss_withEffector}{Clearance as calculated by dose / AUCtau
-#'   for the last dose simulated. By default, data are pulled from the sheet
-#'   "AUC", column titled, e.g., "CL (Dose/AUC) (L/h)")}
+#'   \item{CL_ss, CL_ss_withInhib}{Clearance as calculated by dose / AUCtau for
+#'   the last dose simulated. By default, data are pulled from the sheet "AUC",
+#'   column titled, e.g., "CL (Dose/AUC) (L/h)")}
 #'
 #'   \item{CL_hepatic}{I'm not actually positive that this is the total hepatic
 #'   clearance, but I think that's what it is... By default, data are pulled
 #'   from the "Clearance Trials SS" tab. Sorry for the uncertain explanation;
 #'   I'll update this when I know better what this is! -LS}
 #'
-#'   \item{Cmax_dose1, Cmax_dose1_withEffector}{Cmax for dose 1 with or without
-#'   an effector. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
+#'   \item{Cmax_dose1, Cmax_dose1_withInhib}{Cmax for dose 1 with or without an
+#'   inhibitor. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
 #'   column titled, e.g., "CMax (mg/L)".}
 #'
 #'   \item{Cmax_ss}{Cmax for the last dose. By default, data are pulled from
@@ -72,21 +80,20 @@
 #'   \item{F_sub}{bioavailability (F) of substrate. By default, data are pulled
 #'   from the sheet "Clearance Trials SS".}
 #'
-#'   \item{fa_sub or fa_inhib}{fraction absorbed for the substrate or inhibitor.
-#'   By default, data are pulled from the sheet "Absorption".}
+#'   \item{fa_x}{fraction absorbed for the specified compound. By default, data
+#'   are pulled from the sheet "Absorption".}
 #'
-#'   \item{fg_sub}{fraction of substrate escaping gut metabolism. By default,
-#'   data are pulled from the sheet "Clearance Trials SS".}
-#'
-#'   \item{fh_sub}{fraction of substrate escaping hepatic metabolism. By
+#'   \item{fg_x}{fraction of the specified compound escaping gut metabolism. By
 #'   default, data are pulled from the sheet "Clearance Trials SS".}
 #'
-#'   \item{ka_sub or ka_inhib}{absorption rate constant ka for the substrate or
-#'   the 1st inhibitor. By default, data are pulled from the sheet
-#'   "Absorption".}
+#'   \item{fh_x}{fraction of the specified compound escaping hepatic metabolism.
+#'   By default, data are pulled from the sheet "Clearance Trials SS".}
 #'
-#'   \item{tlag_sub or tlag_inhib}{lag time for the substrate or inhibitor 1. By
+#'   \item{ka_x}{absorption rate constant ka for the specified compound. By
 #'   default, data are pulled from the sheet "Absorption".}
+#'
+#'   \item{tlag_x}{lag time for the specified compound. By default, data are
+#'   pulled from the sheet "Absorption".}
 #'
 #'   \item{tmax_dose1}{tmax for dose 1. By default, data are pulled from sheet
 #'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
@@ -97,6 +104,8 @@
 #'
 #'   } The default is only those parameters present on the "AUC" sheet in the
 #'   simulator output.
+#'
+#'
 #' @param sheet Which sheet should be used for pulling the PK parameters?
 #'   \strong{Note:} Unless you want a very specific Excel sheet that's not what
 #'   the usual sheet name would be for a first or last dose, this function will
@@ -165,27 +174,27 @@ extractPK <- function(sim_data_file,
       }
 
       ParamAUC <- c("AccumulationIndex",
-                    "AccumulationIndex_withEffector",
+                    "AccumulationIndex_withInhib",
                     "AccumulationRatio",
-                    "AccumulationRatio_withEffector",
+                    "AccumulationRatio_withInhib",
                     "AUCinf_dose1",
-                    "AUCinf_dose1_withEffector",
+                    "AUCinf_dose1_withInhib",
                     "AUCinf_ratio_dose1",
                     "AUCtau_dose1",
-                    "AUCtau_dose1_withEffector",
+                    "AUCtau_dose1_withInhib",
                     "AUCtau_ratio_dose1",
                     "AUCtau_ss",
-                    "AUCtau_ss_withEffector",
+                    "AUCtau_ss_withInhib",
                     "CL_dose1",
-                    "CL_dose1_withEffector",
+                    "CL_dose1_withInhib",
                     "CL_ss",
-                    "CL_ss_withEffector",
+                    "CL_ss_withInhib",
                     "Cmax_dose1",
-                    "Cmax_dose1_withEffector",
+                    "Cmax_dose1_withInhib",
                     "Cmax_ratio_dose1",
                     "Cmax_ss",
                     "Cmax_ratio_ss",
-                    "Cmax_ss_withEffector",
+                    "Cmax_ss_withInhib",
                     "HalfLife_dose1",
                     "tmax_dose1")
 
@@ -194,27 +203,27 @@ extractPK <- function(sim_data_file,
                            "tlag_sub", "tlag_inhib")
 
       ParamAUC0 <- c("AUCtau_dose1",
-                     "AUCtau_dose1_withEffector",
+                     "AUCtau_dose1_withInhib",
                      "AUCtau_ratio_dose1",
                      "Cmax_dose1",
-                     "Cmax_dose1_withEffector",
+                     "Cmax_dose1_withInhib",
                      "Cmax_ratio_dose1",
                      "tmax_dose1")
 
       ParamAUCX <- c("AUCtau_ss",
-                     "AUCtau_ss_withEffector",
+                     "AUCtau_ss_withInhib",
                      "AUCtau_ratio_ss",
                      "CL_ss",
-                     "CL_ss_withEffector",
+                     "CL_ss_withInhib",
                      "CL_ratio_ss",
                      "Cmax_ss",
-                     "Cmax_ss_withEffector",
+                     "Cmax_ss_withInhib",
                      "Cmax_ratio_ss",
                      "tmax_ss",
-                     "tmax_ss_withEffector")
+                     "tmax_ss_withInhib")
 
       ParamCLTSS <- c("F_sub", "fh_sub", "fg_sub", "CL_hepatic",
-                         "CLpo")
+                      "CLpo")
 
       ParamSummary <- c("CL_hepatic")
 
@@ -235,9 +244,9 @@ extractPK <- function(sim_data_file,
       # Checking experimental details to only pull details that apply
       Deets <- extractExpDetails(sim_data_file)
 
-      if(is.na(Deets$Inhibitor)){
+      if(is.na(Deets$Inhibitor1)){
             PKparameters <- PKparameters[!str_detect(PKparameters,
-                                                     "Effector|inhib|ratio")]
+                                                     "Inhibitor1|inhib|ratio")]
       }
 
       if(Deets$Regimen_sub == "Single Dose"){
@@ -256,7 +265,7 @@ extractPK <- function(sim_data_file,
       if(Deets$Regimen_sub == "Multiple Dose"){
             ParamAUC <- setdiff(ParamAUC,
                                 c("AUCtau_ratio_dose1",
-                                  "Cmax_dose1", "Cmax_dose1_withEffector",
+                                  "Cmax_dose1", "Cmax_dose1_withInhib",
                                   "Cmax_ratio_dose1", "tmax_dose1"))
       }
 
@@ -285,7 +294,7 @@ extractPK <- function(sim_data_file,
                   # think this will be easier to code. -LS
                   if(tissue == "blood"){
                         PlasmaCols <- c(which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1]:
-                                             (which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1] -1))
+                                              (which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1] -1))
                         if(length(PlasmaCols) > 0){
                               AUC_xl <- AUC_xl[, -PlasmaCols]
                         }
@@ -297,38 +306,38 @@ extractPK <- function(sim_data_file,
                         ToDetect <- switch(PKparam,
                                            "AccumulationIndex" = "Accumulation Index$",
                                            "AccumulationRatio" = "Accumulation Ratio$",
-                                           "AccumulationIndex_withEffector" = "Accumulation Index_Inh",
-                                           "AccumulationRatio_withEffector" = "Accumulation Ratio_Inh",
+                                           "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
+                                           "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
                                            "AUCtau_dose1" = "^AUC \\(|AUCt.0. \\(",
-                                           "AUCtau_dose1_withEffector" = "^AUCt.0._Inh \\(|^AUCinh \\(",
+                                           "AUCtau_dose1_withInhib" = "^AUCt.0._Inh \\(|^AUCinh \\(",
                                            "AUCtau_ratio_dose1" = "^AUC Ratio$",
                                            "AUCinf_dose1" = "^AUC_INF",
-                                           "AUCinf_dose1_withEffector" = "^AUC_INF",
+                                           "AUCinf_dose1_withInhib" = "^AUC_INF",
                                            "AUCinf_ratio_dose1" = "^AUC_INF ratio$",
                                            "AUCtau_ss" = "AUCt\\(n\\) \\(|^AUC \\(",
-                                           "AUCtau_ss_withEffector" = "AUCt\\(n\\)_Inh|AUCinh \\(",
+                                           "AUCtau_ss_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
                                            "CL_dose1" = "CL .Dose/AUC_INF",
-                                           "CL_dose1_withEffector" = "CL \\(Dose/AUC_INF_Inh\\)",
+                                           "CL_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
                                            "CL_ss" = "CL \\(Dose/AUC\\)",
-                                           "CL_ss_withEffector" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
+                                           "CL_ss_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
                                            "Cmax_dose1" = "CMax \\(",
-                                           "Cmax_dose1_withEffector" = "CMaxinh \\(",
+                                           "Cmax_dose1_withInhib" = "CMaxinh \\(",
                                            "Cmax_ratio_dose1" = "^CMax Ratio$",
                                            "Cmax_ss" = "^CMax",
-                                           "Cmax_ss_withEffector" = "^CMax",
+                                           "Cmax_ss_withInhib" = "^CMax",
                                            "Cmax_ratio_ss" = "^CMax Ratio$",
                                            "HalfLife_dose1" = "Half-life",
                                            "tmax_dose1" = "^TMax \\(")
 
                         # The AUC and Cmax ratios are listed with the parameters
-                        # with effector present and need those columns to be
-                        # searched, even though "_withEffector" is not in the
+                        # with inhibitor present and need those columns to be
+                        # searched, even though "_withInhib" is not in the
                         # name. Temporarily changing the parameter name to
                         # search the appropriate columns. Note that this regex
                         # will catch, e.g., "AUCinf_ratio_dose1" but NOT
                         # "AccumulationRatio".
                         PKparam <- ifelse(str_detect(PKparam, "ratio"),
-                                          paste0(PKparam, "_withEffector"),
+                                          paste0(PKparam, "_withInhib"),
                                           PKparam)
 
                         # Dose 1 CL should be the clearance calculated using
@@ -345,14 +354,14 @@ extractPK <- function(sim_data_file,
                                           sub("max", "maxtau", PKparam),
                                           PKparam)
 
-                        if(str_detect(PKparam, "_withEffector")){
+                        if(str_detect(PKparam, "_withInhib")){
 
-                              # If there is an effector involved, need to start
+                              # If there is an inhibitor involved, need to start
                               # looking for the correct column after "for the
                               # Xth dose in the presence of inhibitor".
 
                               # dose1 data
-                              if(str_detect(PKparam, "dose1_withEffector")){
+                              if(str_detect(PKparam, "dose1_withInhib")){
                                     if(str_detect(PKparam, "inf")){
                                           StartCol <-
                                                 which(str_detect(as.vector(t(AUC_xl[2, ])),
@@ -367,7 +376,7 @@ extractPK <- function(sim_data_file,
                               }
 
                               # ss data
-                              if(str_detect(PKparam, "_ss_withEffector")){
+                              if(str_detect(PKparam, "_ss_withInhib")){
                                     StartCol <-
                                           which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                            "for the last dose in the presence of inhibitor|^Inhibited$"))[1]
@@ -528,13 +537,13 @@ extractPK <- function(sim_data_file,
 
                         ToDetect <- switch(PKparam,
                                            "AUCtau_dose1" = "^AUC \\(",
-                                           "AUCtau_dose1_withEffector" = "^AUCinh \\(",
+                                           "AUCtau_dose1_withInhib" = "^AUCinh \\(",
                                            "AUCtau_ratio_dose1" = "AUC Ratio",
                                            "Cmax_dose1" = "CMax \\(",
-                                           "Cmax_dose1_withEffector" = "CMaxinh",
+                                           "Cmax_dose1_withInhib" = "CMaxinh",
                                            "Cmax_ratio_dose1" = "^CMax Ratio$",
                                            "tmax_dose1" = "TMax",
-                                           "tmax_dose1_withEffector" = "TMaxinh")
+                                           "tmax_dose1_withInhib" = "TMaxinh")
 
                         which(str_detect(as.vector(t(AUC0_xl[2, ])), ToDetect))[1]
                   }
@@ -596,7 +605,7 @@ extractPK <- function(sim_data_file,
             PKparameters_AUCX <- intersect("A", "B")
       }
 
-      if(length(PKparameters_AUC0) > 0){
+      if(length(PKparameters_AUCX) > 0){
 
             # Error catching
             if(ssNum == 0 | length(ssNum) == 0){
@@ -615,16 +624,16 @@ extractPK <- function(sim_data_file,
 
                         ToDetect <- switch(PKparam,
                                            "AUCtau_ss" = "AUC \\(",
-                                           "AUCtau_ss_withEffector" = "AUCinh \\(",
+                                           "AUCtau_ss_withInhib" = "AUCinh \\(",
                                            "AUCtau_ratio_ss" = "AUC Ratio",
                                            "CL_ss" = "CL \\(Dose/AUC",
-                                           "CL_ss_withEffector" = "CLinh \\(Dose/AUCinh",
+                                           "CL_ss_withInhib" = "CLinh \\(Dose/AUCinh",
                                            "CL_ratio_ss" = "CL Ratio",
                                            "Cmax_ss" = "CMax \\(",
-                                           "Cmax_ss_withEffector" = "CMaxinh \\(",
+                                           "Cmax_ss_withInhib" = "CMaxinh \\(",
                                            "Cmax_ratio_ss" = "CMax Ratio",
                                            "tmax_ss" = "^TMax \\(",
-                                           "tmax_ss_withEffector" = "TMaxinh \\(")
+                                           "tmax_ss_withInhib" = "TMaxinh \\(")
 
                         which(str_detect(as.vector(t(AUCX_xl[2, ])), ToDetect))[1]
                   }
@@ -984,18 +993,18 @@ extractPK <- function(sim_data_file,
 
                   ToDetect <- switch(PKparam,
                                      "AUCinf_dose1" = "^AUC_INF",
-                                     "AUCinf_dose1_withEffector" = "^AUC_INF",
+                                     "AUCinf_dose1_withInhib" = "^AUC_INF",
                                      "AUCtau_dose1" = "AUC \\(",
                                      "AUCtau_ss" = "AUCt\\(n\\) \\(|^AUC \\(",
-                                     "AUCtau_ss_withEffector" = "AUCt\\(n\\)_Inh|AUCinh \\(",
+                                     "AUCtau_ss_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
                                      "CL_dose1" = "CL .Dose/AUC_INF",
-                                     "CL_dose1_withEffector" = "CL \\(Dose/AUC_INF_Inh\\)",
+                                     "CL_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
                                      "CL_ss" = "CL \\(Dose/AUC\\)",
-                                     "CL_ss_withEffector" = "CL \\(Dose/AUC\\)",
+                                     "CL_ss_withInhib" = "CL \\(Dose/AUC\\)",
                                      "Cmax_dose1" = "CMax \\(",
-                                     "Cmax_dose1_withEffector" = "CMaxinh",
+                                     "Cmax_dose1_withInhib" = "CMaxinh",
                                      "Cmax_ss" = "^CMax",
-                                     "Cmax_ss_withEffector" = "^CMaxinh",
+                                     "Cmax_ss_withInhib" = "^CMaxinh",
                                      "fa_sub" = "^fa$",
                                      "fa_inhib" = "^fa$",
                                      "HalfLife_dose1" = "Half-life",
@@ -1015,17 +1024,17 @@ extractPK <- function(sim_data_file,
                         StartCol <- 1
                   } else {
 
-                        if(str_detect(PKparam, "Effector")){
+                        if(str_detect(PKparam, "Inhibitor1")){
 
                               # dose1 data
-                              if(str_detect(PKparam, "_dose1_withEffector")){
+                              if(str_detect(PKparam, "_dose1_withInhib")){
                                     StartCol <-
                                           which(str_detect(as.vector(t(XL[2, ])),
                                                            "for the first dose in the presence of inhibitor"))
                               }
 
                               # ss data
-                              if(str_detect(PKparam, "_ss_withEffector")){
+                              if(str_detect(PKparam, "_ss_withInhib")){
                                     StartCol <-
                                           which(str_detect(as.vector(t(XL[2, ])),
                                                            "for the last dose in the presence of inhibitor|^Inhibited$"))

@@ -19,9 +19,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   as "_X" below): "_sub" for the substrate, "_met1" for the primary
   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-  "_inhib2" for the 2nd inhibitor or inducer listed, "_inh1met" for the
-  inhibitor 1 metabolite, or "_inh2met" for the inhibitor 2 metabolite. All
-  possible parameters:
+  "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
+  inhibitor 1 metabolite. All possible parameters:
 
   \describe{
 
@@ -71,8 +70,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{Inhibitor, Inhibitor2}{inhibitor used, as applicable}
 
-  \item{Inhibitor1Metabolite, Inhibitor2Metabolite}{the primary metabolite of
-  the inhibitor used, as applicable}
+  \item{Inhibitor1Metabolite}{the primary metabolite of Inhibitor 1, as
+  applicable}
 
   \item{Interaction_x}{interaction parameters for any CYPs, UGTs, or other
   enzymes listed. Output will be labeled for each enzyme and interaction
@@ -86,8 +85,8 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{logP_x}{logP}
 
-  \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite included, either
-  the primary or the secondary, as applicable}
+  \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite
+  included, either the primary or the secondary, as applicable}
 
   \item{ModelType_x}{the type of model, e.g., full PBPK model}
 
