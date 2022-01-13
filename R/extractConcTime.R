@@ -293,6 +293,7 @@ extractConcTime <- function(sim_data_file,
             }
       }
 
+      # aggregate data -------------------------------------------------------
       if("aggregate" %in% returnAggregateOrIndiv){
             # Substrate or substrate metabolites
             TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
@@ -545,6 +546,7 @@ extractConcTime <- function(sim_data_file,
             }
       }
 
+      # individual data ------------------------------------------------------
       if("individual" %in% returnAggregateOrIndiv){
 
             # substrate data
@@ -647,6 +649,7 @@ extractConcTime <- function(sim_data_file,
                         # Need to do this for each effector present
                         sim_data_ind_Effector <- list()
                         TimeRow <- which(str_detect(sim_data_xl$...1, "^Time.*Inhibitor "))
+                        TimeRow <- TimeRow[TimeRow > StartIndiv]
                         if(length(TimeRow) == 0 || is.na(TimeRow)){ # This occurs when the tissue is not systemic or w/portal vein
                               TimeRow <- which(str_detect(sim_data_xl$...1,
                                                           "Time "))
