@@ -17,10 +17,11 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   simulated), "all" to extract all possible parameters, or a string of the
   specific parameters you want. Parameters are reported with a suffix (listed
   as "_X" below): "_sub" for the substrate, "_met1" for the primary
-  metabolite, "_met2" for the secondary metabolite, "_inhib" for the 1st
-  inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
-  listed, "_inh1met" for the inhibitor 1 metabolite, or "_inh2met" for the
-  inhibitor 2 metabolite. All possible parameters:
+  metabolite, "_met2" for the second primary metabolite, "_secmet" for the
+  secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
+  "_inhib2" for the 2nd inhibitor or inducer listed, "_inh1met" for the
+  inhibitor 1 metabolite, or "_inh2met" for the inhibitor 2 metabolite. All
+  possible parameters:
 
   \describe{
 
@@ -85,7 +86,7 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{logP_x}{logP}
 
-  \item{Metabolite1, Metabolite2}{the substrate metabolite included, either
+  \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite included, either
   the primary or the secondary, as applicable}
 
   \item{ModelType_x}{the type of model, e.g., full PBPK model}

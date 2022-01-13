@@ -15,10 +15,11 @@
 #'   simulated), "all" to extract all possible parameters, or a string of the
 #'   specific parameters you want. Parameters are reported with a suffix (listed
 #'   as "_X" below): "_sub" for the substrate, "_met1" for the primary
-#'   metabolite, "_met2" for the secondary metabolite, "_inhib" for the 1st
-#'   inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
-#'   listed, "_inh1met" for the inhibitor 1 metabolite, or "_inh2met" for the
-#'   inhibitor 2 metabolite. All possible parameters:
+#'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
+#'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
+#'   "_inhib2" for the 2nd inhibitor or inducer listed, "_inh1met" for the
+#'   inhibitor 1 metabolite, or "_inh2met" for the inhibitor 2 metabolite. All
+#'   possible parameters:
 #'
 #'   \describe{
 #'
@@ -83,7 +84,7 @@
 #'
 #'   \item{logP_x}{logP}
 #'
-#'   \item{Metabolite1, Metabolite2}{the substrate metabolite included, either
+#'   \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite included, either
 #'   the primary or the secondary, as applicable}
 #'
 #'   \item{ModelType_x}{the type of model, e.g., full PBPK model}
@@ -183,7 +184,8 @@ extractExpDetails <- function(sim_data_file,
                      "StudyDuration", "Substrate", "Type_sub",
 
                      "Inhibitor", "Type_inhib", "Inhibitor2",
-                     "Metabolite1", "Metabolite2", "Inhibitor1Metabolite", # NameCol 17
+                     "PrimaryMetabolite1", "PrimaryMetabolite2",
+                     "SecondaryMetabolite", "Inhibitor1Metabolite", # NameCol 18
 
                      "DoseRoute_sub", "GIAbsModel_sub", "ModelType_sub",
                      "PrandialSt_sub", "Regimen_sub", "StartDayTime_sub",
@@ -203,15 +205,15 @@ extractExpDetails <- function(sim_data_file,
                      "Dose_sub", "DoseInt_sub", "NumDoses_sub", "Vss_input_sub",
 
                      "Dose_inhib", "DoseInt_inhib", "NumDoses_inhib", "Vss_input_inhib"),
-            NameCol = c(rep(1, 17),
+            NameCol = c(rep(1, 18),
                         rep(5, 16),
                         rep(1, 17),
                         rep(5, 8)),
-            ValueCol = c(rep(1, 5), rep(2, 6), rep(3, 2), rep(2, 4), # NameCol 17
+            ValueCol = c(rep(1, 5), rep(2, 6), rep(3, 2), rep(2, 5), # NameCol 18
                          rep(6, 8), rep(7, 8),
                          rep(2, 11), rep(3, 6), rep(6, 4), rep(7, 4)),
             Sheet = "Summary",
-            Class = c(rep("character", 33), rep("numeric", 25)))
+            Class = c(rep("character", 34), rep("numeric", 25)))
       # !!!! There is almost no info on inhibitor 2 on the Summary tab!!!!
 
       InputDeets <- data.frame(
@@ -248,9 +250,12 @@ extractExpDetails <- function(sim_data_file,
       InputDeets_met2 <- InputDeets_inhib %>%
             mutate(Deet = sub("_inhib", "_met2", Deet),
                    NameColDetect = "Sub Pri Metabolite2")
+      InputDeets_secmet <- InputDeets_inhib %>%
+            mutate(Deet = sub("_inhib", "_secmet", Deet),
+                   NameColDetect = "Sub Sec Metabolite")
 
       InputDeets <- bind_rows(InputDeets, InputDeets_inhib, InputDeets_inhib2,
-                              InputDeets_met1, InputDeets_met2) %>%
+                              InputDeets_met1, InputDeets_met2, InputDeets_secmet) %>%
             bind_rows(data.frame(Deet = c("StartDayTime_sub",
                                           "StartDayTime_inhib",
                                           "StartDayTime_inhib2"),
@@ -354,8 +359,9 @@ extractExpDetails <- function(sim_data_file,
                   # Setting up regex to search
                   ToDetect <- switch(deet,
                                      "Substrate" = "Compound Name",
-                                     "Metabolite1" = "Sub Pri Metabolite1",
-                                     "Metabolite2" = "Sub Pri Metabolite2",
+                                     "PrimaryMetabolite1" = "Sub Pri Metabolite1",
+                                     "PrimaryMetabolite2" = "Sub Pri Metabolite2",
+                                     "SecondaryMetabolite" = "Sub Sec Metabolite",
                                      "Inhibitor1Metabolite" = "Inh 1 Metabolite",
                                      "Inhibitor" = "Compound Name",
                                      "Inhibitor2" = "Inhibitor 2",
@@ -490,13 +496,13 @@ extractExpDetails <- function(sim_data_file,
             }
 
             # When primary metabolite 1 is not present, don't look for those values.
-            if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite1"), na.rm = T) == FALSE){
+            if(any(str_detect(t(InputTab[5, ]), "Sub Pri PrimaryMetabolite1"), na.rm = T) == FALSE){
                   MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met1")]
             }
 
             # When secondary metabolite is not present, don't look for those values.
-            if(any(str_detect(t(InputTab[5, ]), "Sub Pri Metabolite2"), na.rm = T) == FALSE){
-                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_met2")]
+            if(any(str_detect(t(InputTab[5, ]), "Sub Pri SecondaryMetabolite"), na.rm = T) == FALSE){
+                  MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_secmet")]
             }
 
             # When Inhibitor 1 metabolite is not present, don't look for those values.
@@ -509,8 +515,8 @@ extractExpDetails <- function(sim_data_file,
                               "Trial Design" = which(t(InputTab[5, ]) == "Trial Design"),
                               "Inhibitor 1" = which(t(InputTab[5, ]) == "Inhibitor 1"),
                               "Inhibitor 2" = which(t(InputTab[5, ]) == "Inhibitor 2"),
-                              "Sub Pri Metabolite1" = which(t(InputTab[5, ]) == "Sub Pri Metabolite1"),
-                              "Sub Pri Metabolite2" = which(t(InputTab[5, ]) == "Sub Pri Metabolite2"),
+                              "Sub Pri PrimaryMetabolite1" = which(t(InputTab[5, ]) == "Sub Pri PrimaryMetabolite1"),
+                              "Sub Pri SecondaryMetabolite" = which(t(InputTab[5, ]) == "Sub Pri SecondaryMetabolite"),
                               "Inh 1 Metabolite" = which(t(InputTab[5, ]) == "Inh 1 Metabolite"))
 
             InputDeets$NameCol <- ColLocations[InputDeets$NameColDetect]
@@ -520,7 +526,7 @@ extractExpDetails <- function(sim_data_file,
             pullValue <- function(deet){
 
                   # Setting up regex to search
-                  ToDetect <- switch(sub("_sub|_inhib|_met1|_met2|_inh1met|_inhib2",
+                  ToDetect <- switch(sub("_sub|_inhib|_met1|_secmet|_inh1met|_inhib2",
                                          "", deet),
                                      "Abs_model" = "Absorption Model",
                                      "Age_min" = "Minimum Age",
@@ -584,7 +590,7 @@ extractExpDetails <- function(sim_data_file,
 
                   for(j in MyInputDeets2){
 
-                        Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_met2$|_inh1met$")
+                        Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
                         NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                         ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
                         CLRows <- which(
@@ -716,7 +722,7 @@ extractExpDetails <- function(sim_data_file,
 
                   for(j in MyInputDeets3){
 
-                        Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_met2$|_inh1met$")
+                        Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
                         NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                         IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
                                                     "^Enzyme$|^Transporter$"))
