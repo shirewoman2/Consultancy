@@ -71,7 +71,6 @@ generateReportInputForm <- function(filename){
       ObsNoDDI <- ReportInputForm[["observed data - no DDI"]]
       ObsDDI <- ReportInputForm[["observed data - DDI"]]
       TabGraph <- ReportInputForm[["table and graph input"]]
-      save(ReportInputForm, file = "data/ReportInputForm.RData")
 
       HowTo <- HowTo[2:nrow(HowTo),]
       formatXL(as.data.frame(HowTo) %>% rename("How to use this Excel file" = HowTo),

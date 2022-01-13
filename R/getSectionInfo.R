@@ -39,13 +39,13 @@
 getSectionInfo <- function(report_input_file = NA,
                            sheet = "table and graph input"){
 
-      if("data.frame" %in% class(section_input_DF)){# RETURN TO THIS AND ADJUST FOR SITUATIONS WHEN ONLY INCLUDING DF. Need to decide how to determine whether DDI involved.
-            InputXL <- section_input_DF
-      } else {
-            InputXL <- suppressMessages(
-                  readxl::read_excel(path = report_input_file,
-                                     sheet = sheet, skip = 3))
-      }
+      # if("data.frame" %in% class(section_input_DF)){# RETURN TO THIS AND ADJUST FOR SITUATIONS WHEN ONLY INCLUDING DF. Need to decide how to determine whether DDI involved.
+      #       InputXL <- section_input_DF
+      # } else {
+      InputXL <- suppressMessages(
+            readxl::read_excel(path = report_input_file,
+                               sheet = sheet, skip = 3))
+      # }
 
       # Making each of the items in InputXL its own named item in a list so that
       # output from getSectionInfo will be exclusively a list rather than a list

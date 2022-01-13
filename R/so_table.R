@@ -317,6 +317,19 @@ so_table <- function(report_input_file = NA,
                   filter(!Stat %in% unlist(VarOpts_tableRows[VarOptsNotChosen]))
       }
 
+      # If the user selected variability options that were not calculated in the
+      # simulator output, give them a warning about that.
+      VarOptsChosen <- unlist(VarOpts_tableRows[variability_option])
+      MissingOpts <- setdiff(VarOptsChosen, unique(MyPKResults$Stat))
+      if(length(MissingOpts) > 0){
+            MissingOpts <- unlist(VarOpts_tableRows) == MissingOpts
+            MissingOpts <- unique(sub("1$|2$", "", names(MissingOpts)[MissingOpts]))
+            MissingOpts <- str_comma(MissingOpts)
+            warning(paste0("The ",
+                           MissingOpts,
+                           " was/were requested but is/are not present in the simulator output. This will not be included in the table."))
+            }
+
       # Putting trial means into appropriate format
       if(includeTrialMeans){
             TM <- MyPKResults %>% filter(Stat %in% c("MinMean", "MaxMean")) %>%
@@ -346,7 +359,7 @@ so_table <- function(report_input_file = NA,
                                Stat = switch(j,
                                              "90% CI" = "CI90concat",
                                              "95% CI" = "CI95concat",
-                                             "95th percentile" = "Q95thconcat",
+                                             "95th percentiles" = "Q95thconcat",
                                              "obs" = "CIobsconcat"))
 
                   MyPKResults[which(MyPKResults$Stat == VarRows[[j]][1]), ] <-
