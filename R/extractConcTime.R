@@ -26,11 +26,14 @@
 #'   Other options are "blood" or any tissues included in "Sheet Options",
 #'   "Tissues" in the simulator. All possible options: "plasma", "blood",
 #'   "unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
-#'   "brain", "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung",
-#'   "muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
-#'   unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
-#'   vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
-#'   "skin", or "spleen". Not case sensitive.
+#'   "brain", "feto-placenta", "GI tissue" (this is for a 1st-order absorption
+#'   model; not ADAM model), "heart", "kidney", "liver", "lung", "muscle",
+#'   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
+#'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
+#'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
+#'   or "spleen". If you have an ADAM model, additional options are: "stomach",
+#'   "duodenum", "jejunum I", "jejunum II", "ileum I", "ileum II", "ileum III",
+#'   "ileum IV", "colon", "faeces", or "gut tissue". Not case sensitive.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are "substrate" (default), "primary
 #'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
@@ -125,10 +128,13 @@ extractConcTime <- function(sim_data_file,
                     "peripheral plasma", "peripheral blood",
                     "peripheral unbound plasma", "peripheral unbound blood",
                     "portal vein plasma", "portal vein blood",
-                    "portal vein unbound plasma", "portal vein unbound blood")
+                    "portal vein unbound plasma", "portal vein unbound blood",
+                    "stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
+                    "ileum ii", "ileum iii", "ileum iv", "colon", "faeces",
+                    "gut tissue")
 
       if(tissue %in% PossTiss == FALSE){
-            stop("The requested tissue must be plasma, blood, or one of the options listed under 'Sheet Options', 'Tissues' in the Simulator. Please see the help file description for the 'tissue' argument.")
+            stop("The requested tissue must be plasma, blood, or one of the options listed under 'Sheet Options', 'Tissues' in the Simulator or one of the ADAM model tissues. Please see the help file description for the 'tissue' argument.")
       }
 
       compoundToExtract <- tolower(compoundToExtract)
@@ -154,8 +160,11 @@ extractConcTime <- function(sim_data_file,
       # Extracting tissue or plasma/blood data? Sheet format differs.
       TissueType <- ifelse(str_detect(tissue, "plasma|blood|portal|peripheral"),
                            "systemic", "tissue")
-      if(str_detect(compoundToExtract, "metabolite") & TissueType == "tissue"){
-            warning("You have requested metabolite concentrations in a solid tissue, which the simulator does not provide. Substrate or Inhibitor 1 concentrations will be provided instead, depending on whether you requested a substrate or inhibitor metabolite.")
+      if(str_detect(compoundToExtract, "metabolite") & TissueType == "tissue" &
+         !tissue %in% c("liver")){
+            warning("You have requested metabolite concentrations in a tissue other than blood, plasma, or liver, but the simulator does not provide that. Substrate or Inhibitor 1 concentrations will be provided instead, depending on whether you requested a substrate or inhibitor metabolite.")
+            compoundToExtract <- ifelse(str_detect(compoundToExtract, "substrate"),
+                                        "substrate", "inhibitor 1")
       }
 
       SheetNames <- readxl::excel_sheets(sim_data_file)
@@ -209,8 +218,27 @@ extractConcTime <- function(sim_data_file,
                          "brain" = "Brain Conc",
                          "liver" = "Liver Conc",
                          "spleen" = "Spleen Conc",
-                         "feto-placenta" = "Feto-Placenta" # Need to check this one. I don't ahve an example output file for this yet!
+                         "feto-placenta" = "Feto-Placenta", # Need to check this one. I don't have an example output file for this yet!
+                         "stomach" = "Stomach Prof",
+                         "duodenum" = "Duodenum Prof",
+                         "jejunum i" = "Jejunum I Prof",
+                         "jejunum ii" = "Jejunum II Prof",
+                         "ileum i" = "Ileum I Prof",
+                         "ileum ii" = "Ileum II Prof",
+                         "ileum iii" = "Ileum III Prof",
+                         "ileum iv" = "Ileum IV Prof",
+                         "colon" = "Colon Prof",
+                         "faeces" = "Faeces Prof",
+                         "gut tissue" = "Gut Tissue Conc"
                   )
+      }
+
+      if(tissue == "faeces"){
+            SheetToDetect <- ifelse(
+                  str_detect(compoundToExtract, "inhibitor"),
+                  ifelse(str_detect(compoundToExtract, "inhibitor 1"),
+                                    "Faeces Prof. .Inh 1", "Faeces Prof. .Inh 2"),
+                  "Faeces Prof. .Sub")
       }
 
       Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
@@ -313,14 +341,15 @@ extractConcTime <- function(sim_data_file,
 
             # NOTE: I'm pulling SUBSTRATE or SUBSTRATE METABOLITE data here.
             # That's why the options for inhibitor 1 et al are actually for the
-            # SUBSTRATE. Inhibitor 1 data are pulled lower down.
+            # SUBSTRATE. Inhibitor 1 data are pulled lower down. It was easier
+            # to make sure I was using the correct regex this way. -LS
             if(str_detect(tissue, "portal") | TissueType == "tissue"){
                   Include <-
                         which(str_detect(
                               NamesToCheck,
                               switch(compoundToExtract,
                                      "substrate" =
-                                           paste0("^cpv|^ctissue|^c", tolower(tissue)),
+                                           paste0("^cpv|^ctissue|^c lumen free|^c", tolower(tissue)),
                                      "primary metabolite 1" =
                                            paste0("^mpv |^mpv\\+|^mtissue|^m", tolower(tissue)),
                                      "primary metabolite 2" =
