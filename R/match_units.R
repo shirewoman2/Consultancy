@@ -99,26 +99,26 @@ match_units <- function(DF_to_adjust, goodunits){
             Factor = c(1, 60, 1/60, 1))
 
       if(class(goodunits)[1] == "character"){
-            if(unique(goodunits["Time_units"]) %in% ConvTable_conc$ToAdjustUnits == FALSE |
-               unique(DF_to_adjust$Time_units) %in% ConvTable_conc$GoodUnits == FALSE){
+            if(goodunits["Time_units"] %in% ConvTable_time$ToAdjustUnits == FALSE |
+               unique(DF_to_adjust$Time_units) %in% ConvTable_time$GoodUnits == FALSE){
                   stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
             }
 
-            ConvFactor_conc <-
-                  ConvTable_conc$Factor[
-                        which(ConvTable_conc$ToAdjustUnits == unique(DF_to_adjust$Time_units) &
-                                    ConvTable_conc$GoodUnits == unique(goodunits["Time_units"]))]
+            ConvFactor_time <-
+                  ConvTable_time$Factor[
+                        which(ConvTable_time$ToAdjustUnits == unique(DF_to_adjust$Time_units) &
+                                    ConvTable_time$GoodUnits == unique(goodunits["Time_units"]))]
 
       } else {
-            if(unique(goodunits$Time_units) %in% ConvTable_conc$ToAdjustUnits == FALSE |
-               unique(DF_to_adjust$Time_units) %in% ConvTable_conc$GoodUnits == FALSE){
+            if(unique(goodunits$Time_units) %in% ConvTable_time$ToAdjustUnits == FALSE |
+               unique(DF_to_adjust$Time_units) %in% ConvTable_time$GoodUnits == FALSE){
                   stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
             }
 
-            ConvFactor_conc <-
-                  ConvTable_conc$Factor[
-                        which(ConvTable_conc$ToAdjustUnits == unique(DF_to_adjust$Time_units) &
-                                    ConvTable_conc$GoodUnits == unique(goodunits$Time_units))]
+            ConvFactor_time <-
+                  ConvTable_time$Factor[
+                        which(ConvTable_time$ToAdjustUnits == unique(DF_to_adjust$Time_units) &
+                                    ConvTable_time$GoodUnits == unique(goodunits$Time_units))]
       }
 
       DF_to_adjust <- DF_to_adjust %>% mutate(Time = Time*ConvFactor_time,

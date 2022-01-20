@@ -6,10 +6,18 @@
 #' flexibility, but many of the function arguments are optional; most of the
 #' time, you'll get decent-looking graphs while only setting a minimal number of
 #' arguments. If you want to plot enzyme abundance data, please see
-#' \code{\link{enz_plot}}. \strong{Note:} Currently, this only works for
-#' concentration-time data for the substrate, primary metabolite 1, secondary
-#' metabolite, or inhibitor 1. \strong{If your simulation included
-#' \emph{anything} other than those compounds, this is \emph{not} reliable.}
+#' \code{\link{enz_plot}}. \strong{A few notes:} \enumerate{\item{Not all
+#' substrate metabolites, inhibitors, or inhibitor metabolites are available in
+#' all tissues.} \item{When observed data are included in a simulator output
+#' file, because the simulator output does not explicitly say whether those
+#' observed data were in the presence of an inhibitor or effector, this function
+#' cannot tell the difference and will thus assume all observed data included in
+#' the simulator output were for the substrate in the \emph{absence} of any
+#' effector. It will further assume that the compound the observed data is for
+#' is the same as \code{compoundToExtract}. If you want to specify which
+#' compound the observed data were for and/or whether any effectors were
+#' present, please supply an observed data file to the argument
+#' \code{obs_data_file}.}}
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data
@@ -117,15 +125,15 @@
 #'
 #'   \describe{
 #'
-#'   \item{"means only"}{show only a single point at the arithmetic mean value
+#'   \item{means only}{show only a single point at the arithmetic mean value
 #'   for each time point}
 #'
-#'   \item{"geometric means only"}{show a single point at the geometric mean}
+#'   \item{geometric means only}{show a single point at the geometric mean}
 #'
-#'   \item{"all"}{show all the individual data (equivalently, leave
+#'   \item{all}{show all the individual data (equivalently, leave
 #'   \code{obs_data_option} as NA)}
 #'
-#'   \item{"mean bars"}{show a point at the arithmetic mean for each time point
+#'   \item{mean bars}{show a point at the arithmetic mean for each time point
 #'   and error bars for the arithmetic standard deviation}}
 #'
 #' @param obs_color If you would like the observed data points to be in color,
@@ -154,8 +162,8 @@
 #'   a dashed line for inhibitor 1. To see all possible \code{line_type}
 #'   options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
 #'   will be a solid line and substrate + inhibitor 1 will be a dashed line. If
-#'   \code{figure_type} is "Freddy" and there's no effector present, which is
-#'   a slightly different scenario than the other graph types, the 1st line type
+#'   \code{figure_type} is "Freddy" and there's no effector present, which is a
+#'   slightly different scenario than the other graph types, the 1st line type
 #'   specified will be for the mean simulated concentration and the trial means,
 #'   and the 2nd line type specified will be for the 5th and 95th percentiles.
 #' @param line_color Optionally specify what colors to use for the lines.
@@ -284,7 +292,7 @@ ct_plot <- function(sim_data_file = NA,
       # Error catching
       if(length(figure_type) != 1 |
          figure_type %in% c("trial means", "percentiles", "trial percentiles",
-                            "Freddy", "means only") == FALSE){
+                            "Freddy", "means only", "overlay") == FALSE){
             stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'means only', or 'Freddy'.")
       }
 
@@ -1034,6 +1042,14 @@ ct_plot <- function(sim_data_file = NA,
                                   color = line_color[1])
             }
       }
+
+
+      ## figure_type: multiple -----------------------------------------------
+      # This is piped from the function ct_plot_overlay.
+
+
+
+
 
       if(nrow(obs_data) == 0){
             A <- A + guides(shape = "none")

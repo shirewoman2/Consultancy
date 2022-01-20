@@ -23,11 +23,7 @@ concentration-time data for the substrate or metabolite you're extracting.
 If the observed data you want to plot were already included in the Excel
 output from the simulator, leave this as NA. Otherwise, this is the file
 that it is ready to be converted to an XML file, not the file that contains
-only the digitized time and concentration data. \strong{Note:} Because the
-simulator output does not explicitly say whether observed data were in the
-presence of an inhibitor or effector, this function cannot tell the
-difference and will thus assume all observed data included in the simulator
-output were for the substrate in the absence of any effector.}
+only the digitized time and concentration data.}
 
 \item{obs_inhibitor_data_file}{name of the Excel file containing observed
 concentration-time data for when an effector is present, when appropriate.
@@ -99,7 +95,14 @@ A data.frame of concentration-time data with the following columns:
 \description{
 Extracts concentration-time data from simulator output Excel files and,
 optionally, a separately specified clinical data file, and puts all data into
-a single, tidy data.frame.
+a single, tidy data.frame. \strong{A note on observed data:} When observed
+data are included in a simulator output file, because the simulator output
+does not explicitly say whether those observed data were in the presence of
+an inhibitor or effector, this function cannot tell the difference and will
+thus assume all observed data included in the simulator output were for the
+substrate in the \emph{absence} of any effector. It will further assume that
+the compound the observed data is for is the same as
+\code{compoundToExtract}.
 }
 \examples{
 extractConcTime(sim_data_file = "../Example simulator output MD.xlsx")

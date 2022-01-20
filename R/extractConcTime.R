@@ -2,7 +2,14 @@
 #'
 #' Extracts concentration-time data from simulator output Excel files and,
 #' optionally, a separately specified clinical data file, and puts all data into
-#' a single, tidy data.frame.
+#' a single, tidy data.frame. \strong{A note on observed data:} When observed
+#' data are included in a simulator output file, because the simulator output
+#' does not explicitly say whether those observed data were in the presence of
+#' an inhibitor or effector, this function cannot tell the difference and will
+#' thus assume all observed data included in the simulator output were for the
+#' substrate in the \emph{absence} of any effector. It will further assume that
+#' the compound the observed data is for is the same as
+#' \code{compoundToExtract}.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data; must be an output file from the Simcyp simulator
@@ -11,11 +18,7 @@
 #'   If the observed data you want to plot were already included in the Excel
 #'   output from the simulator, leave this as NA. Otherwise, this is the file
 #'   that it is ready to be converted to an XML file, not the file that contains
-#'   only the digitized time and concentration data. \strong{Note:} Because the
-#'   simulator output does not explicitly say whether observed data were in the
-#'   presence of an inhibitor or effector, this function cannot tell the
-#'   difference and will thus assume all observed data included in the simulator
-#'   output were for the substrate in the absence of any effector.
+#'   only the digitized time and concentration data.
 #' @param obs_inhibitor_data_file name of the Excel file containing observed
 #'   concentration-time data for when an effector is present, when appropriate.
 #'   Only bother with this if the observed data in the presence of an inhibitor
@@ -275,24 +278,25 @@ extractConcTime <- function(sim_data_file,
                   FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
                   NamesToCheck <- sim_data_xl$...1[(TimeRow+1):(FirstBlank-1)]
 
+                  EffString <- gsub("_|\\-|\\+|\\(|\\)",
+                                    ".",
+                                    AllEffectors)
                   temp <- data.frame(Name = NamesToCheck[
                         which(str_detect(NamesToCheck,
-                                         gsub("_|\\-|\\+|\\(|\\)",
-                                              ".", str_c(AllEffectors,
-                                                         collapse = "|"))))]) %>%
+                                         str_c(EffString, collapse = "|")))]) %>%
                         mutate(Number = str_extract(Name, "ISys [0-9]|I[a-z]* [0-9]|InhM"),
-                               Inhibitor = str_extract(
-                                     Name, gsub("_|\\-|\\+|\\(|\\)",
-                                                ".",
-                                                str_c(paste0(AllEffectors, "$"),
-                                                      collapse = "|")))) %>%
+                               Inhibitor =
+                                     str_extract(Name,
+                                                 str_c(paste0(EffString, "( \\(.*\\))?$"),
+                                                       collapse = "|")),
+                               Inhibitor = sub("( \\(.*\\))?$", "", Inhibitor)) %>%
                         select(Number, Inhibitor) %>% unique()
                   NumCheck <- temp$Number
                   names(NumCheck) <- temp$Inhibitor
 
                   if(length(NumCheck) == 0){
                         NumCheck <- "Inh 1"
-                        names(NumCheck) <- Deets$Inhibitor
+                        names(NumCheck) <- Deets$Inhibitor1
                   }
 
                   rm(temp, TimeRow, FirstBlank, NamesToCheck)
@@ -300,6 +304,14 @@ extractConcTime <- function(sim_data_file,
                   rm(TimeRow)
             }
       }
+
+      # Determining concentration and time units
+      SimConcUnits <- as.character(
+            sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]), "CMax"))])[1]
+      SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
+
+      SimTimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
+      SimTimeUnits <- ifelse(str_detect(SimTimeUnits, "Time.* \\(h\\)"), "hours", "minutes")
 
       # aggregate data -------------------------------------------------------
       if("aggregate" %in% returnAggregateOrIndiv){
@@ -385,7 +397,9 @@ extractConcTime <- function(sim_data_file,
                                cols = -c(Time)) %>%
                   mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
                                            Deets$Substrate, MyCompound),
-                         Inhibitor = "none")
+                         Inhibitor = "none",
+                         Time_units = SimTimeUnits,
+                         Conc_units = SimConcUnits)
 
             rm(RowsToUse, Include)
 
@@ -464,7 +478,9 @@ extractConcTime <- function(sim_data_file,
                                      cols = -c(Time)) %>%
                         mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor"),
                                                  Deets$Substrate, MyCompound),
-                               Inhibitor = str_c(AllEffectors, collapse = ", "))
+                               Inhibitor = str_c(AllEffectors, collapse = ", "),
+                               Time_units = SimTimeUnits,
+                               Conc_units = SimConcUnits)
 
                   rm(RowsToUse, NamesToCheck, TimeRow, Include)
 
@@ -473,7 +489,8 @@ extractConcTime <- function(sim_data_file,
                   # inhibitor 1 concentrations any time substrate concentrations
                   # requested. Filtering out any unwanted results lower in
                   # script.
-                  if(compoundToExtract %in% c("substrate", "inhibitor")){
+                  if(compoundToExtract %in% c("substrate", "inhibitor 1",
+                                              "inhibitor 2", "inhibitor 1 metabolite")){
 
                         # Need to do this for each inhibitor present
                         sim_data_mean_Effector <- list()
@@ -530,7 +547,9 @@ extractConcTime <- function(sim_data_file,
                                     pivot_longer(names_to = "Trial", values_to = "Conc",
                                                  cols = -c(Time)) %>%
                                     mutate(Compound = i,
-                                           Inhibitor = str_c(AllEffectors, collapse = ", "))
+                                           Inhibitor = str_c(AllEffectors, collapse = ", "),
+                                           Time_units = SimTimeUnits,
+                                           Conc_units = SimConcUnits)
 
                               rm(RowsToUse, Include)
                         }
@@ -605,7 +624,9 @@ extractConcTime <- function(sim_data_file,
                   mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
                                            Deets$Substrate, MyCompound),
                          Inhibitor = "none",
-                         SubjTrial = sub("ID", "", SubjTrial)) %>%
+                         SubjTrial = sub("ID", "", SubjTrial),
+                         Time_units = SimTimeUnits,
+                         Conc_units = SimConcUnits) %>%
                   separate(SubjTrial, into = c("Individual", "Trial"),
                            sep = "_")
             rm(RowsToUse)
@@ -648,7 +669,9 @@ extractConcTime <- function(sim_data_file,
                         mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
                                                  Deets$Substrate, MyCompound),
                                Inhibitor = str_c(AllEffectors, collapse = ", "),
-                               SubjTrial = sub("ID", "", SubjTrial)) %>%
+                               SubjTrial = sub("ID", "", SubjTrial),
+                               Time_units = SimTimeUnits,
+                               Conc_units = SimConcUnits) %>%
                         separate(SubjTrial, into = c("Individual", "Trial"),
                                  sep = "_")
 
@@ -707,7 +730,9 @@ extractConcTime <- function(sim_data_file,
                                                  cols = -Time) %>%
                                     mutate(Compound = i,
                                            Inhibitor = str_c(AllEffectors, collapse = ", "),
-                                           SubjTrial = sub("ID", "", SubjTrial)) %>%
+                                           SubjTrial = sub("ID", "", SubjTrial),
+                                           Time_units = SimTimeUnits,
+                                           Conc_units = SimConcUnits) %>%
                                     separate(SubjTrial, into = c("Individual", "Trial"),
                                              sep = "_")
 
@@ -736,14 +761,6 @@ extractConcTime <- function(sim_data_file,
                   mutate(Trial = as.character(Trial))
             rm(SubjTrial)
       }
-
-      # Determining concentration units
-      SimConcUnits <- as.character(
-            sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]), "CMax"))])[1]
-      SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
-
-      TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
-      TimeUnits <- ifelse(str_detect(TimeUnits, "Time.* \\(h\\)"), "hours", "minutes")
 
       # observed data -------------------------------------------------------
       # only applies to systemic concs
@@ -873,7 +890,14 @@ extractConcTime <- function(sim_data_file,
                                     filter(complete.cases(Time)) %>%
                                     mutate(Trial = "obs",
                                            Inhibitor = "none",
-                                           Individual = sub("^Subject", "", Individual)) %>%
+                                           Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
+                                           # The simulator doesn't provide much
+                                           # info on the identity of the
+                                           # compound for the observed data
+                                           # included in a simjlator file.
+                                           Individual = sub("^Subject", "", Individual),
+                                           Time_units = SimTimeUnits,
+                                           Conc_units = SimConcUnits) %>%
                                     select(-ID)
                         )
                   }
@@ -885,127 +909,81 @@ extractConcTime <- function(sim_data_file,
                         mutate(Compound = ObsCompounds[CompoundID],
                                Inhibitor = ObsEffectors[CompoundID])
 
-                  TimeUnits <- unique(obs_data$Time_units)
+                  # As necessary, convert simulated data units to match the
+                  # observed data
+                  if("individual" %in% returnAggregateOrIndiv){
+                        sim_data_ind <-
+                              match_units(DF_to_adjust = sim_data_ind,
+                                          goodunits = obs_data)
+                  }
 
-                  # Converting to appropriate ObsConcUnits as necessary
-                  ObsConcUnits <- unique(obs_data$Conc_units)
-
-                  if(ObsConcUnits != SimConcUnits){
-
-                        # Starting with this table of conversion factors, which is assuredly not
-                        # exhaustive. Add to this as needed.
-                        PossUnits <- c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
-                                       "ng/mL", "µM", "nM", "mg", "µg", "mL",
-                                       "PD response")
-                        ConvTable <- data.frame(
-                              ObsUnits = c(
-                                    rep("mg/L", 6),
-                                    rep("mg/mL", 6),
-                                    rep("µg/L", 6),
-                                    rep("µg/mL", 6),
-                                    rep("ng/L", 6),
-                                    rep("ng/mL", 6),
-
-                                    rep("µM", 2),
-                                    rep("nM", 2),
-
-                                    rep("mg", 2),
-                                    rep("µg", 2),
-
-                                    "mL", "PD response"),
-
-                              SimUnits = c(
-                                    rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
-                                          "ng/mL"), 6),
-
-                                    rep(c("µM", "nM"), 2),
-
-                                    rep(c("mg", "µg"), 2),
-
-                                    "mL", "PD response"),
-
-                              Factor = c(1,    10^3, 10^-3, 1,     10^6,  10^3, # mg/L
-                                         10^3, 1,    10^-6, 10^-3, 10^9,  10^6, # mg/mL
-                                         10^3, 10^6, 1,     10^3,  10^-3, 1,    # ug/L
-                                         1,    10^3, 10^-3, 1,     10^-6, 10^-3,# ug/mL
-                                         10^6, 10^9, 10^3,  10^6,  1,     10^3, # ng/L
-                                         10^3, 10^6, 1,     10^3,  10^-3, 1,    # ng/mL
-
-                                         1,    10^-3, # uM
-                                         10^3, 1,     # nM
-
-                                         1, 10^-3, # mg
-                                         1^3, 1,   # ug
-
-                                         1, # mL
-                                         1 # PD response
-                                         ) )
-
-                        if(SimConcUnits %in% ConvTable$SimUnits == FALSE |
-                           ObsConcUnits %in% ConvTable$ObsUnits == FALSE |
-                           all(c(SimConcUnits, ObsConcUnits) %in%
-                               c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
-                                 "ng/mL", "µM", "nM", "mg", "µg", "mL",
-                                 "PD response") == FALSE)){
-                              stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
-                        }
-
-                        ConversionFactor <-
-                              ConvTable$Factor[which(ConvTable$SimUnits == SimConcUnits &
-                                                           ConvTable$ObsUnits == ObsConcUnits)]
-
-                        if("individual" %in% returnAggregateOrIndiv){
-                              sim_data_ind <- sim_data_ind %>%
-                                    mutate(Conc = Conc*ConversionFactor)
-                        }
-
-                        if("aggregate" %in% returnAggregateOrIndiv){
-                              sim_data_mean <- sim_data_mean %>%
-                                    mutate(Conc = Conc*ConversionFactor)
-                        }
+                  if("aggregate" %in% returnAggregateOrIndiv){
+                        sim_data_mean <-
+                              match_units(DF_to_adjust = sim_data_mean,
+                                          goodunits = obs_data)
                   }
             }
+      }
 
-            if(complete.cases(obs_inhibitor_data_file)){
+      if(complete.cases(obs_inhibitor_data_file)){
 
-                  obs_eff_data <- extractObsConcTime(obs_data_file =
-                                                           obs_inhibitor_data_file) %>%
-                        mutate(Simulated = FALSE, Trial = "obs+inhibitor",
-                               Compound = MyCompound,
-                               Inhibitor = AllEffectors_comma)
-            }
+            obs_eff_data <- extractObsConcTime(
+                  obs_data_file = obs_inhibitor_data_file) %>%
+                  mutate(Simulated = FALSE, Trial = "obs+inhibitor",
+                         Compound = MyCompound,
+                         Inhibitor = AllEffectors_comma)
 
+            # As necessary, convert simulated data units to match the observed
+            # data.
             if(exists("obs_data", inherits = FALSE)){
-                  obs_data <- obs_data %>%
-                        mutate(Simulated = FALSE,
-                               Trial = ifelse(Inhibitor == "none",
-                                              "obs", "obs+inhibitor"))
-
-
-                  if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
-                        warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?")
+                  obs_eff_data <- match_units(DF_to_adjust = obs_eff_data,
+                                              goodunits = obs_data)
+            } else {
+                  # If there was no obs_data_file, then match units in
+                  # obs_inhibitor_data_file.
+                  if("individual" %in% returnAggregateOrIndiv){
+                        sim_data_ind <-
+                              match_units(DF_to_adjust = sim_data_ind,
+                                          goodunits = obs_eff_data)
                   }
 
-                  if(exists("obs_eff_data", inherits = FALSE)){
-                        obs_data <- bind_rows(obs_data, obs_eff_data)
+                  if("aggregate" %in% returnAggregateOrIndiv){
+                        sim_data_mean <-
+                              match_units(DF_to_adjust = sim_data_mean,
+                                          goodunits = obs_eff_data)
                   }
             }
+      }
 
-            DosingScenario <- Deets[["Regimen_sub"]]
+      if(exists("obs_data", inherits = FALSE)){
+            obs_data <- obs_data %>%
+                  mutate(Simulated = FALSE,
+                         Trial = ifelse(Inhibitor == "none",
+                                        "obs", "obs+inhibitor"))
 
-            if(adjust_obs_time & DosingScenario == "Multiple Dose" &
-               exists("obs_data", inherits = FALSE)){
-                  # If this were a multiple-dose simulation, the observed data is,
-                  # presumably, at steady state. The simulated time we'd want those
-                  # data to match would be the *last* dose. Adjusting the time for the
-                  # obs data.
-
-                  DoseFreq <- Deets[["DoseInt_sub"]]
-                  NumDoses <- Deets[["NumDoses_sub"]]
-                  LastDoseTime <- DoseFreq * (NumDoses - 1)
-
-                  obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
+            if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
+                  warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?")
             }
+
+            if(exists("obs_eff_data", inherits = FALSE)){
+                  obs_data <- bind_rows(obs_data, obs_eff_data)
+            }
+      }
+
+      DosingScenario <- Deets[["Regimen_sub"]]
+
+      if(adjust_obs_time & DosingScenario == "Multiple Dose" &
+         exists("obs_data", inherits = FALSE)){
+            # If this were a multiple-dose simulation, the observed data is,
+            # presumably, at steady state. The simulated time we'd want those
+            # data to match would be the *last* dose. Adjusting the time for the
+            # obs data.
+
+            DoseFreq <- Deets[["DoseInt_sub"]]
+            NumDoses <- Deets[["NumDoses_sub"]]
+            LastDoseTime <- DoseFreq * (NumDoses - 1)
+
+            obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
       }
 
       Data <- list()
@@ -1047,16 +1025,13 @@ extractConcTime <- function(sim_data_file,
       }
 
       Data <- Data %>%
-            mutate(Time_units = TimeUnits,
-                   Conc_units = ifelse(exists("ObsConcUnits", inherits = FALSE),
-                                       ObsConcUnits, SimConcUnits),
-                   Trial = factor(Trial, levels = c(
-                         c("obs", "obs+inhibitor1", "mean", "median",
-                           "geomean", "per5", "per95", "per10", "per90"),
-                         setdiff(unique(Trial),
-                                 c("obs", "obs+inhibitor1", "mean", "median",
-                                   "geomean", "per5", "per95", "per10", "per90")))),
-                   Tissue = tissue) %>%
+            mutate(Trial = factor(Trial, levels = c(
+                  c("obs", "obs+inhibitor1", "mean", "median",
+                    "geomean", "per5", "per95", "per10", "per90"),
+                  setdiff(unique(Trial),
+                          c("obs", "obs+inhibitor1", "mean", "median",
+                            "geomean", "per5", "per95", "per10", "per90")))),
+                  Tissue = tissue) %>%
             arrange(across(any_of(c("Compound", "Inhibitor",
                                     "Individual", "Trial", "Time")))) %>%
             select(any_of(c("Compound", "Inhibitor", "Tissue",

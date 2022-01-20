@@ -23,9 +23,9 @@ a data.frame with the following columns:
 
   \item{Conc}{concentration}
 
-  \item{TimeUnits}{the units of measurement for the time column}
+  \item{Time_units}{the units of measurement for the time column}
 
-  \item{ConcUnits}{the units of measurement for the concentration column}
+  \item{Conc_units}{the units of measurement for the concentration column}
 
   \item{Period, Age, Weight_kg, Height_cm, Sex, SerumCreatinine_umolL,
   HSA_gL, Haematocrit, PhenotypeCYP2D6, SmokingStatus}{the columns in the
