@@ -13,9 +13,8 @@ converted to an XML file, not the file that contains only the digitized
 time and concentration data.}
 }
 \value{
-a data.frame with the following columns: \describe{
-
-  \item{Individual}{the individual ID for the data point}
+a data.frame with the following columns:
+  \describe{\item{Individual}{the individual ID for the data point}
 
   \item{CompoundID}{the compound ID listed in the observed file, e.g., "Sub
   Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma"}
@@ -28,8 +27,12 @@ a data.frame with the following columns: \describe{
 
   \item{ConcUnits}{the units of measurement for the concentration column}
 
-  \item{the columns in the template for "Period" and "Covariates".
-  (Currently, no dosing information is pulled, but we could change that.)}}
+  \item{Period, Age, Weight_kg, Height_cm, Sex, SerumCreatinine_umolL,
+  HSA_gL, Haematocrit, PhenotypeCYP2D6, SmokingStatus}{the columns in the
+  template for "Period" and "Covariates" but with R-friendly names.
+  (Currently, no dosing information is pulled because the data format is
+  different from what we need for other functions related to
+  concentration-time data.)}}
 }
 \description{
 Extract observed data from an Excel file that follows the Simcyp Simulator
