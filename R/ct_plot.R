@@ -285,7 +285,7 @@ ct_plot <- function(sim_data_file = NA,
       if(length(figure_type) != 1 |
          figure_type %in% c("trial means", "percentiles", "trial percentiles",
                             "Freddy", "means only") == FALSE){
-            stop("The only acceptable options for figure_type are 'trial means', 'trial percentiles', 'means only', or 'Freddy'.")
+            stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'means only', or 'Freddy'.")
       }
 
       if(all(complete.cases(time_range)) & class(time_range) == "numeric" &
@@ -333,6 +333,16 @@ ct_plot <- function(sim_data_file = NA,
                                     compoundToExtract = compoundToExtract,
                                     obs_inhibitor_data_file = obs_inhibitor_data_file,
                                     adjust_obs_time = adjust_obs_time)
+      }
+
+      # You can't graph trial means if you didn't extract the individual data
+      # (this is one of the rare instances where we DO calculate things rather
+      # than pulling directly from the simulator output), so issuing an error if
+      # that's the case.
+      if(figure_type %in% c("trial means", "Freddy") &
+         suppressWarnings(length(sort(as.numeric(
+               as.character(unique(Data$Trial)))))) == 0){
+            warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.")
       }
 
       TimeUnits <- sort(unique(Data$Time_units))
@@ -714,6 +724,10 @@ ct_plot <- function(sim_data_file = NA,
             Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
       } else if (figure_type == "means only") {
             Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
+
+      if(nrow(Ylim_data) == 0){
+            Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
+      }
 
       Ylim <- Ylim_data %>% filter(Time_orig >= time_range[1] &
                                          Time_orig <= time_range[2] &

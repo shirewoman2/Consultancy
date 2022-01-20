@@ -11,9 +11,15 @@
 #'   If the observed data you want to plot were already included in the Excel
 #'   output from the simulator, leave this as NA. Otherwise, this is the file
 #'   that it is ready to be converted to an XML file, not the file that contains
-#'   only the digitized time and concentration data.
+#'   only the digitized time and concentration data. \strong{Note:} Because the
+#'   simulator output does not explicitly say whether observed data were in the
+#'   presence of an inhibitor or effector, this function cannot tell the
+#'   difference and will thus assume all observed data included in the simulator
+#'   output were for the substrate in the absence of any effector.
 #' @param obs_inhibitor_data_file name of the Excel file containing observed
-#'   concentration-time data for when an effector is present, when appropriate
+#'   concentration-time data for when an effector is present, when appropriate.
+#'   Only bother with this if the observed data in the presence of an inhibitor
+#'   were not already included in the \code{obs_data_file}.
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -378,7 +384,7 @@ extractConcTime <- function(sim_data_file,
                   pivot_longer(names_to = "Trial", values_to = "Conc",
                                cols = -c(Time)) %>%
                   mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
-                                                      Deets$Substrate, MyCompound),
+                                           Deets$Substrate, MyCompound),
                          Inhibitor = "none")
 
             rm(RowsToUse, Include)
@@ -714,7 +720,7 @@ extractConcTime <- function(sim_data_file,
                                                   sim_data_ind_SubPlusEffector,
                                                   sim_data_ind_Effector)  %>%
                               mutate(Inhibitor = ifelse(is.na(Inhibitor),
-                                                       "none", Inhibitor))
+                                                        "none", Inhibitor))
 
                         rm(TimeRow)
 
@@ -722,7 +728,7 @@ extractConcTime <- function(sim_data_file,
                         sim_data_ind <- bind_rows(sim_data_ind,
                                                   sim_data_ind_SubPlusEffector)  %>%
                               mutate(Inhibitor = ifelse(is.na(Inhibitor),
-                                                       "none", Inhibitor))
+                                                        "none", Inhibitor))
                   }
             }
 
@@ -733,13 +739,102 @@ extractConcTime <- function(sim_data_file,
 
       # Determining concentration units
       SimConcUnits <- as.character(
-            sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]), "CMax"))])
+            sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]), "CMax"))])[1]
       SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
 
       TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
       TimeUnits <- ifelse(str_detect(TimeUnits, "Time.* \\(h\\)"), "hours", "minutes")
 
-      # Observed data -- only applies to systemic concs
+      # observed data -------------------------------------------------------
+      # only applies to systemic concs
+
+      # Setting up some names of observed data for use later
+      ObsCompounds <-
+            c("Sub Plasma" = Deets$Substrate,
+              "Sub Unbound Plasma" = Deets$Substrate,
+              "Sub Blood" = Deets$Substrate,
+              "Sub PD Response" = "Sub PD Response",
+              "Sub (Inb) Plasma" = Deets$Substrate,
+              "Sub (Inb) Blood" = Deets$Substrate,
+              "Inh 1 Plasma" = Deets$Inhibitor1,
+              "Inh 1 Blood" = Deets$Inhibitor1,
+              "Sub PM1 Plasma" = Deets$PrimaryMetabolite1,
+              "Sub PM1 Blood" = Deets$PrimaryMetabolite1,
+              "Adipose (Sub)" = Deets$Substrate,
+              "Spinal CSF (Sub)" = Deets$Substrate,
+              "Organ Conc" = Deets$Substrate,
+              "Organ Conc (Inb)" = Deets$Substrate,
+              "Sub SM plasma" = Deets$SecondaryMetabolite,
+              "Sub SM blood" = Deets$SecondaryMetabolite,
+              "Sub Urine" = Deets$Substrate,
+              "Inh 1 Urine" = Deets$Inhibitor1,
+              "Met (Sub) Urine" = Deets$Substrate,
+              "Sub PM2 Plasma" = Deets$PrimaryMetabolite2,
+              "Sub PM2 Blood" = Deets$PrimaryMetabolite2,
+              "Inh1 Met Plasma" = Deets$Inhibitor1Metabolite,
+              "Inh1 Met Blood" = Deets$Inhibitor1Metabolite,
+              "Inh 2 Plasma" = Deets$Inhibitor2,
+              "Inh 2 Blood" = Deets$Inhibitor2,
+              # "Inh 3 Plasma" = Deets$Inhibitor3, # we haven't set up extractConcTime or extractExpDetails to pull inhibitor 3 yet.
+              # "Inh 3 Blood" = Deets$Inhibitor3,
+              "Sub (Inb) Urine" = Deets$Substrate,
+              "Met(Inh 1) Urine" = Deets$Inhibitor1Metabolite,
+              "Inh 1 PD Response" = "Inh 1 PD Response",
+              "Sub (Inb) PD Response" = "Sub (Inb) PD Response",
+              "ADC Plasma Free" = "ADC Plasma Free",
+              "Conjugated Antibody Plasma Free" = "Conjugated Antibody Plasma Free",
+              "Conjugated Drug Plasma Free" = "Conjugated Drug Plasma Free",
+              "PM1(Sub) PD Response" = "PM1(Sub) PD Response",
+              "ADC Plasma Total" = "ADC Plasma Total",
+              "Conjugated Antibody Plasma Total" = "Conjugated Antibody Plasma Total",
+              "Sub Plasma Total Drug" = "Sub Plasma Total Drug",
+              "Tumour Volume" = "Tumour Volume",
+              "Tumour Volume (Inb)" = "Tumour Volume (Inb)")
+
+      AllEffectors_comma <- ifelse(length(AllEffectors) == 0,
+                                   NA, str_comma(AllEffectors))
+
+      ObsEffectors <- c("Sub Plasma" = "none",
+                        "Sub Unbound Plasma" = "none",
+                        "Sub Blood" = "none",
+                        "Sub PD Response" = "none",
+                        "Sub (Inb) Plasma" = AllEffectors_comma,
+                        "Sub (Inb) Blood" = AllEffectors_comma,
+                        "Inh 1 Plasma" = AllEffectors_comma,
+                        "Inh 1 Blood" = AllEffectors_comma,
+                        "Sub PM1 Plasma" = "none",
+                        "Sub PM1 Blood" = "none",
+                        "Adipose (Sub)" = "none",
+                        "Spinal CSF (Sub)" = "none",
+                        "Organ Conc" = "none",
+                        "Organ Conc (Inb)" = AllEffectors_comma,
+                        "Sub SM plasma" = "none",
+                        "Sub SM blood" = "none",
+                        "Sub Urine" = "none",
+                        "Inh 1 Urine" = AllEffectors_comma,
+                        "Met (Sub) Urine" = "none",
+                        "Sub PM2 Plasma" = "none",
+                        "Sub PM2 Blood" = "none",
+                        "Inh1 Met Plasma" = AllEffectors_comma,
+                        "Inh1 Met Blood" = AllEffectors_comma,
+                        "Inh 2 Plasma" = AllEffectors_comma,
+                        "Inh 2 Blood" = AllEffectors_comma,
+                        # "Inh 3 Plasma" = AllEffectors_comma, # we haven't set up extractConcTime or extractExpDetails to pull inhibitor 3 yet.
+                        # "Inh 3 Blood" = AllEffectors_comma,
+                        "Sub (Inb) Urine" = "none",
+                        "Met(Inh 1) Urine" = AllEffectors_comma,
+                        "Inh 1 PD Response" = AllEffectors_comma,
+                        "Sub (Inb) PD Response" = AllEffectors_comma,
+                        "ADC Plasma Free" = "none",
+                        "Conjugated Antibody Plasma Free" = "none",
+                        "Conjugated Drug Plasma Free" = "none",
+                        "PM1(Sub) PD Response" = "none",
+                        "ADC Plasma Total" = "none",
+                        "Conjugated Antibody Plasma Total" = "none",
+                        "Sub Plasma Total Drug" = "none",
+                        "Tumour Volume" = "none",
+                        "Tumour Volume (Inb)" = AllEffectors_comma)
+
       if(TissueType == "systemic"){
 
             # If the user did not specify a file to use for observed data, use the
@@ -750,11 +845,13 @@ extractConcTime <- function(sim_data_file,
 
                   if(length(StartRow_obs) != 0){
 
-                        obs_data <- sim_data_xl[StartRow_obs:nrow(sim_data_xl), ] %>% t() %>%
+                        obs_data <-
+                              sim_data_xl[StartRow_obs:nrow(sim_data_xl), ] %>%
+                              t() %>%
                               as.data.frame()
                         NewNamesObs <- obs_data[1, ]
                         NewNamesObs[str_detect(NewNamesObs, "Time")] <- "Time"
-                        NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
+                        # NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
                         TimeCols <- which(NewNamesObs == "Time")
                         ConcCols <- which(NewNamesObs != "Time")
                         NewNamesObs[TimeCols] <- paste0("Time_", NewNamesObs[ConcCols])
@@ -781,10 +878,9 @@ extractConcTime <- function(sim_data_file,
                   }
 
             } else {
-                  # If the user did specify an observed data file, read in observed data.
-                  obs_data <- extractObsConcTime(obs_data_file) %>%
-                        mutate(Trial = "obs", Simulated = FALSE,
-                               Compound = MyCompound)
+                  # If the user did specify an observed data file, read in
+                  # observed data.
+                  obs_data <- extractObsConcTime(obs_data_file)
 
                   TimeUnits <- unique(obs_data$Time_units)
 
@@ -795,36 +891,59 @@ extractConcTime <- function(sim_data_file,
 
                         # Starting with this table of conversion factors, which is assuredly not
                         # exhaustive. Add to this as needed.
-                        ConvTable <- data.frame(ObsUnits = c("ng/mL",
-                                                             "ng/mL",
-                                                             "ng/mL",
-                                                             "pg/mL",
-                                                             "µg/mL",
-                                                             "mg/L",
-                                                             "µg/mL",
-                                                             "ng/mL"),
-                                                SimUnits = c("mg/L",
-                                                             "µg/mL",
-                                                             "ng/L",
-                                                             "mg/L",
-                                                             "ng/mL",
-                                                             "µg/mL",
-                                                             "mg/L",
-                                                             "mg/L"),
-                                                Factor = c(10^3,
-                                                           10^3,
-                                                           10^-3,
-                                                           10^6,
-                                                           10^-3,
-                                                           1,
-                                                           1,
-                                                           10^3))
+                        PossUnits <- c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
+                                       "ng/mL", "µM", "nM", "mg", "µg", "mL",
+                                       "PD response")
+                        ConvTable <- data.frame(
+                              ObsUnits = c(
+                                    rep("mg/L", 6),
+                                    rep("mg/mL", 6),
+                                    rep("µg/L", 6),
+                                    rep("µg/mL", 6),
+                                    rep("ng/L", 6),
+                                    rep("ng/mL", 6),
+
+                                    rep("µM", 2),
+                                    rep("nM", 2),
+
+                                    rep("mg", 2),
+                                    rep("µg", 2),
+
+                                    "mL", "PD response"),
+
+                              SimUnits = c(
+                                    rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
+                                          "ng/mL"), 6),
+
+                                    rep(c("µM", "nM"), 2),
+
+                                    rep(c("mg", "µg"), 2),
+
+                                    "mL", "PD response"),
+
+                              Factor = c(1,    10^3, 10^-3, 1,     10^6,  10^3, # mg/L
+                                         10^3, 1,    10^-6, 10^-3, 10^9,  10^6, # mg/mL
+                                         10^3, 10^6, 1,     10^3,  10^-3, 1,    # ug/L
+                                         1,    10^3, 10^-3, 1,     10^-6, 10^-3,# ug/mL
+                                         10^6, 10^9, 10^3,  10^6,  1,     10^3, # ng/L
+                                         10^3, 10^6, 1,     10^3,  10^-3, 1,    # ng/mL
+
+                                         1,    10^-3, # uM
+                                         10^3, 1,     # nM
+
+                                         1, 10^-3, # mg
+                                         1^3, 1,   # ug
+
+                                         1, # mL
+                                         1 # PD response
+                                         ) )
 
                         if(SimConcUnits %in% ConvTable$SimUnits == FALSE |
                            ObsConcUnits %in% ConvTable$ObsUnits == FALSE |
-                           all(c(SimConcUnits, ObsConcUnits) %in% c("µg/mL", "ng/mL", "ng/L",
-                                                                    "µM", "nM", "mg", "mL", "mg/L",
-                                                                    "PD response") == FALSE)){
+                           all(c(SimConcUnits, ObsConcUnits) %in%
+                               c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
+                                 "ng/mL", "µM", "nM", "mg", "µg", "mL",
+                                 "PD response") == FALSE)){
                               stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
                         }
 
@@ -844,19 +963,31 @@ extractConcTime <- function(sim_data_file,
                   }
             }
 
-            if(exists("obs_data", inherits = FALSE)){
-                  obs_data$Compound <- Deets[["Substrate"]]
-                  obs_data$Simulated <- FALSE
-            }
-
             if(complete.cases(obs_inhibitor_data_file)){
 
                   obs_eff_data <- extractObsConcTime(obs_data_file =
                                                            obs_inhibitor_data_file) %>%
-                        mutate(Simulated = FALSE, Trial = "obs+inhibitor1",
+                        mutate(Simulated = FALSE, Trial = "obs+inhibitor",
                                Compound = MyCompound,
-                               Inhibitor = Deets[["Inhibitor1"]])
+                               Inhibitor = AllEffectors_comma)
+            }
 
+            if(exists("obs_data", inherits = FALSE)){
+                  obs_data <- obs_data %>%
+                        mutate(Simulated = FALSE,
+                               Compound = ObsCompounds[CompoundID],
+                               Inhibitor = ObsEffectors[CompoundID],
+                               Trial = ifelse(Inhibitor == "none",
+                                              "obs", "obs+inhibitor"))
+
+
+                  if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
+                        warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?")
+                  }
+
+                  if(exists("obs_eff_data", inherits = FALSE)){
+                        obs_data <- bind_rows(obs_data, obs_eff_data)
+                  }
             }
 
             DosingScenario <- Deets[["Regimen_sub"]]
@@ -873,10 +1004,6 @@ extractConcTime <- function(sim_data_file,
                   LastDoseTime <- DoseFreq * (NumDoses - 1)
 
                   obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
-
-                  if(complete.cases(obs_inhibitor_data_file)){
-                        obs_eff_data <- obs_eff_data %>% mutate(Time = Time + LastDoseTime)
-                  }
             }
       }
 
@@ -898,15 +1025,6 @@ extractConcTime <- function(sim_data_file,
 
       if(exists("obs_data", inherits = FALSE)){
             Data[["obs"]] <- obs_data
-
-            if(any(c(exists("sim_data_mean_Effector", inherits = FALSE),
-                     exists("sim_data_ind_Effector", inherits = FALSE)))){
-                  Data[["obs"]]$Inhibitor <- "none"
-            }
-      }
-
-      if(exists("obs_eff_data", inherits = FALSE)){
-            Data[["obs_eff"]] <- obs_eff_data
       }
 
       Data <- bind_rows(Data)
@@ -915,16 +1033,16 @@ extractConcTime <- function(sim_data_file,
             Data <- Data %>%
                   mutate(Individual = ifelse(is.na(Individual), Trial, Individual),
                          Individual = factor(Individual, levels = c(
-                               c("obs", "obs+inhibitor1", "mean", "median",
+                               c("obs", "obs+inhibitor", "mean", "median",
                                  "geomean", "per5", "per95", "per10", "per90"),
                                setdiff(unique(Individual),
-                                       c("obs", "obs+inhibitor1", "mean", "median",
+                                       c("obs", "obs+inhibitor", "mean", "median",
                                          "geomean", "per5", "per95", "per10", "per90")))))
 
       }
 
       if(EffectorPresent){
-            Data$Inhibitor[Data$Trial == "obs+inhibitor1"] <- str_c(AllEffectors, collapse = ", ")
+            Data$Inhibitor[Data$Trial == "obs+inhibitor"] <- AllEffectors_comma
       }
 
       Data <- Data %>%
