@@ -252,7 +252,7 @@ extractConcTime <- function(sim_data_file,
             as.character()
 
       if(EffectorPresent){
-            # When the simulator output is for inhibitor1, for reasons I *cannot
+            # When the simulator output is for an inhibitor, for reasons I *cannot
             # fathom*, they include a number after "ISys" to designate which
             # inhibitor the data pertain to and, *sometimes*, they will list
             # the name of the inhibitor and *sometimes* they will only list
@@ -484,10 +484,10 @@ extractConcTime <- function(sim_data_file,
 
                   rm(RowsToUse, NamesToCheck, TimeRow, Include)
 
-                  # Inhibitor 1 concentrations are only present on tabs
-                  # w/substrate info for systemic tissues so extracting
-                  # inhibitor 1 concentrations any time substrate concentrations
-                  # requested. Filtering out any unwanted results lower in
+                  # Inhibitor concentrations are only present on tabs
+                  # w/substrate info for systemic tissues, so we're extracting
+                  # inhibitor concentrations anytime substrate concentrations
+                  # were requested. Filtering out any unwanted results lower in
                   # script.
                   if(compoundToExtract %in% c("substrate", "inhibitor 1",
                                               "inhibitor 2", "inhibitor 1 metabolite")){
@@ -677,8 +677,9 @@ extractConcTime <- function(sim_data_file,
 
                   rm(RowsToUse, TimeRow)
 
-                  # Inhibitor1 conc time data -- only present on substrate tabs
-                  if(compoundToExtract %in% c("substrate", "inhibitor 1")){
+                  # Inhibitor conc time data -- only present on substrate tabs
+                  if(compoundToExtract %in% c("substrate", "inhibitor 1",
+                                              "inhibitor 2", "inhibitor 1 metabolite")){
 
                         # Need to do this for each inhibitor present
                         sim_data_ind_Effector <- list()
