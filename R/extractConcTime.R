@@ -473,7 +473,8 @@ extractConcTime <- function(sim_data_file,
                   # inhibitor concentrations anytime substrate concentrations
                   # were requested. Filtering out any unwanted results lower in
                   # script.
-                  if(compoundToExtract %in% c("substrate", "inhibitor 1")){
+                  if(compoundToExtract %in% c("substrate", "inhibitor 1",
+                                              "inhibitor 2", "inhibitor 1 metabolite")){
 
                         # Need to do this for each inhibitor present
                         sim_data_mean_Effector <- list()
@@ -654,8 +655,9 @@ extractConcTime <- function(sim_data_file,
 
                   rm(RowsToUse, TimeRow)
 
-                  # Inhibitor1 conc time data -- only present on substrate tabs
-                  if(compoundToExtract %in% c("substrate", "inhibitor 1")){
+                  # Inhibitor conc time data -- only present on substrate tabs
+                  if(compoundToExtract %in% c("substrate", "inhibitor 1",
+                                              "inhibitor 2", "inhibitor 1 metabolite")){
 
                         # Need to do this for each inhibitor present
                         sim_data_ind_Effector <- list()
