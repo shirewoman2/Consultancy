@@ -284,7 +284,7 @@ extractConcTime <- function(sim_data_file,
                                Inhibitor = str_extract(
                                      Name, gsub("_|\\-|\\+|\\(|\\)",
                                                 ".",
-                                                str_c(AllEffectors,
+                                                str_c(paste0(AllEffectors, "$"),
                                                       collapse = "|")))) %>%
                         select(Number, Inhibitor) %>% unique()
                   NumCheck <- temp$Number
@@ -462,7 +462,7 @@ extractConcTime <- function(sim_data_file,
                   sim_data_mean_SubPlusEffector <- sim_data_mean_SubPlusEffector %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc",
                                      cols = -c(Time)) %>%
-                        mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
+                        mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor"),
                                                  Deets$Substrate, MyCompound),
                                Inhibitor = str_c(AllEffectors, collapse = ", "))
 
@@ -473,7 +473,7 @@ extractConcTime <- function(sim_data_file,
                   # inhibitor 1 concentrations any time substrate concentrations
                   # requested. Filtering out any unwanted results lower in
                   # script.
-                  if(compoundToExtract %in% c("substrate", "inhibitor 1")){
+                  if(compoundToExtract %in% c("substrate", "inhibitor")){
 
                         # Need to do this for each inhibitor present
                         sim_data_mean_Effector <- list()
@@ -872,6 +872,7 @@ extractConcTime <- function(sim_data_file,
                                                 values_from = Value) %>%
                                     filter(complete.cases(Time)) %>%
                                     mutate(Trial = "obs",
+                                           Inhibitor = "none",
                                            Individual = sub("^Subject", "", Individual)) %>%
                                     select(-ID)
                         )
@@ -880,7 +881,9 @@ extractConcTime <- function(sim_data_file,
             } else {
                   # If the user did specify an observed data file, read in
                   # observed data.
-                  obs_data <- extractObsConcTime(obs_data_file)
+                  obs_data <- extractObsConcTime(obs_data_file) %>%
+                        mutate(Compound = ObsCompounds[CompoundID],
+                               Inhibitor = ObsEffectors[CompoundID])
 
                   TimeUnits <- unique(obs_data$Time_units)
 
@@ -975,8 +978,6 @@ extractConcTime <- function(sim_data_file,
             if(exists("obs_data", inherits = FALSE)){
                   obs_data <- obs_data %>%
                         mutate(Simulated = FALSE,
-                               Compound = ObsCompounds[CompoundID],
-                               Inhibitor = ObsEffectors[CompoundID],
                                Trial = ifelse(Inhibitor == "none",
                                               "obs", "obs+inhibitor"))
 

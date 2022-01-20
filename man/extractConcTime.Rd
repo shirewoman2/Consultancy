@@ -23,10 +23,16 @@ concentration-time data for the substrate or metabolite you're extracting.
 If the observed data you want to plot were already included in the Excel
 output from the simulator, leave this as NA. Otherwise, this is the file
 that it is ready to be converted to an XML file, not the file that contains
-only the digitized time and concentration data.}
+only the digitized time and concentration data. \strong{Note:} Because the
+simulator output does not explicitly say whether observed data were in the
+presence of an inhibitor or effector, this function cannot tell the
+difference and will thus assume all observed data included in the simulator
+output were for the substrate in the absence of any effector.}
 
 \item{obs_inhibitor_data_file}{name of the Excel file containing observed
-concentration-time data for when an effector is present, when appropriate}
+concentration-time data for when an effector is present, when appropriate.
+Only bother with this if the observed data in the presence of an inhibitor
+were not already included in the \code{obs_data_file}.}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
