@@ -8,8 +8,7 @@ extractConcTime_mult(
   sim_data_files,
   conctime_DF,
   overwrite = FALSE,
-  returnAggregateOrIndiv = "aggregate",
-  ...
+  returnAggregateOrIndiv = "aggregate"
 )
 }
 \arguments{
@@ -18,13 +17,13 @@ e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 with the file names if they are located somewhere other than your working
 directory.}
 
-\item{conctime_DF}{the data.frame that will contain the output, in quotes.
-Because we can see scenarios where you might want to extract some
-concentration-time data, play around with those data, and then later decide
-you want to pull more concentration-time data for comparisons, this
-data.frame can already exist. When that is the case, this function will
-\emph{add} data to that data.frame. It will \emph{not} overwrite existing
-data unless \code{overwrite} is set to TRUE.}
+\item{conctime_DF}{the data.frame that will contain the output. Because we
+can see scenarios where you might want to extract some concentration-time
+data, play around with those data, and then later decide you want to pull
+more concentration-time data for comparisons, this data.frame can already
+exist. When that is the case, this function will \emph{add} data to that
+data.frame. It will \emph{not} overwrite existing data unless
+\code{overwrite} is set to TRUE.}
 
 \item{overwrite}{TRUE or FALSE on whether to re-extract the
 concentration-time data from output files that are already included in
