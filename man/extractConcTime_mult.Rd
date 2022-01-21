@@ -8,7 +8,8 @@ extractConcTime_mult(
   sim_data_files,
   conctime_DF,
   overwrite = FALSE,
-  returnAggregateOrIndiv = "aggregate"
+  returnAggregateOrIndiv = "aggregate",
+  ...
 )
 }
 \arguments{
@@ -35,6 +36,30 @@ input parameters for simulations and re-run them.}
 
 \item{...}{other arguments passed to the function
 \code{\link{extractConcTime}}}
+
+\item{tissue}{From which tissue(s) should the desired concentrations be
+extracted? The default is plasma for typical plasma concentration-time
+data. Other options are "blood" or any tissues included in "Sheet Options",
+"Tissues" in the simulator. All possible options: "plasma", "blood",
+"unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
+"brain", "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung",
+"muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
+unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
+vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
+"skin", or "spleen". Not case sensitive. List all tissues desired as a
+character vector, e.g., \code{c("plasma", "blood", "liver")}.}
+
+\item{compoundToExtract}{For which compound(s) do you want to extract
+concentration-time data? Options are "substrate" (default), "primary
+metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
+1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
+labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
+inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
+primary metabolite of inhibitor 1. List all desired compounds as a
+character vector, e.g., \code{c("substrate", "primary metabolite 1")}.
+\emph{Note:} The simulator will report up to one metabolite for the 1st
+inhibitor but no other inhibitor metabolites. (Someone please correct me if
+that's wrong! -LS)}
 }
 \value{
 a large data.frame with multiple sets of concentration-time data,
@@ -48,11 +73,11 @@ concentration-time data from multiple Simcyp Simulator output files for easy
 comparisons. \strong{A couple of notes:}\enumerate{\item{If any of the time
 or concentration units differ between files, the units from the 1st file
 listed will be used and all other files' data will be adjusted to match.}
-\item{We plan to expand this function to include options such as pulling
-multiple \emph{kinds} of data from a \emph{single} output file so that you
-could, for example, overlay bound and unbound plasma drug concentrations or
-blood vs. plasma concentrations, etc., but that is still under construction.
--LS}}
+\item{If you list multiple files, multiple tissues, and/or multiple compounds
+to extract (see options below), this will extract \emph{all} possible
+variations of them. For example, if you ask for "File A" and "File B" and
+then also ask for "substrate" and "primary metabolite 1", you will get the
+substrate and primary metabolite 1 data from \emph{both} files.}}
 }
 \examples{
 ConcTimeData <-

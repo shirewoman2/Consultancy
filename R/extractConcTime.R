@@ -122,8 +122,22 @@ extractConcTime <- function(sim_data_file,
             stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
       }
 
-      if(length(tissue) != 1){
-            stop("You must enter one and only one tissue option. (Default is plasma.)")
+      # The "exists" call in the next line is how we're checking whether this
+      # function was called on its own (the result will be FALSE) or called from
+      # extractConcTime_mult (result will be TRUE), where you can have multiple
+      # tissues, files, and compounds. We need extractConcTime to ONLY give ONE
+      # set of concentration-time data when called on alone so that it will work
+      # as expected with, e.g., ct_plot.
+      FromMultFun <- all(c(exists("compoundsToExtract", where = -1),
+                           exists("tissues", where = -1),
+                           exists("sim_data_files", where = -1)))
+
+      if(length(tissue) != 1 & FromMultFun == FALSE){
+            stop("You must enter one and only one option for 'tissue'. (Default is plasma.)")
+      }
+
+      if(length(compoundToExtract) != 1 & FromMultFun == FALSE){
+            stop("You must enter one and only one option for 'compoundToExtract'. (Default is the substrate.)")
       }
 
       tissue <- tolower(tissue)
@@ -148,12 +162,12 @@ extractConcTime <- function(sim_data_file,
             stop("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'primary metabolite 1', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'.")
       }
 
-      # Getting summary data for the simulation
+      # Getting summary data for the simulation(s)
       Deets <- extractExpDetails(sim_data_file)
 
       # inhibitor 1 present?
       EffectorPresent <- complete.cases(Deets[["Inhibitor1"]])
-      if(EffectorPresent == FALSE & compoundToExtract == "inhibitor 1"){
+      if(EffectorPresent == FALSE & compoundToExtract %in% "inhibitor 1"){
             stop("There are no inhibitor 1 data in the simulator output file supplied. Please either submit a different output file or request concentration-time data for a substrate or metabolite.")
       }
       AllEffectors <- c(Deets[["Inhibitor1"]], Deets[["Inhibitor2"]],
@@ -315,7 +329,19 @@ extractConcTime <- function(sim_data_file,
 
       # aggregate data -------------------------------------------------------
       if("aggregate" %in% returnAggregateOrIndiv){
-            # Substrate or substrate metabolites
+            ## Substrate or substrate metabolite aggregate data ---------------
+
+            # A note of explanation on the coding choices here: I set this up to
+            # extract substrate-related compounds separately from
+            # inhibitor-related compounds b/c, often in simulator output, the
+            # way the data are laid out is just very different. I wanted the
+            # code for extracting them to be quite distinct for that reason.
+            # Historically, this function also used to give output for BOTH the
+            # substrate and inhibitor, when it was present, so the framework was
+            # already set up that way. I'm now wondering whether we should
+            # change this and make it all conditional. -LS
+
+
             TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
             TimeRow <- TimeRow[TimeRow > which(sim_data_xl$...1 == "Population Statistics")][1]
 
@@ -395,8 +421,19 @@ extractConcTime <- function(sim_data_file,
             sim_data_mean <- sim_data_mean %>%
                   pivot_longer(names_to = "Trial", values_to = "Conc",
                                cols = -c(Time)) %>%
-                  mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
+                  mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor"),
                                            Deets$Substrate, MyCompound),
+                         CompoundID = ifelse(str_detect(compoundToExtract, "inhibitor"),
+                                             # If the user requested any of the
+                                             # inhibitors or metabolites, then
+                                             # the compound that was just
+                                             # extracted here was the substrate.
+                                             # If the user requested anything
+                                             # else -- the substrate or any of
+                                             # the metabolites -- then the
+                                             # compound extracted here was
+                                             # compoundToExtract.
+                                             "substrate", compoundToExtract),
                          Inhibitor = "none",
                          Time_units = SimTimeUnits,
                          Conc_units = SimConcUnits)
@@ -479,6 +516,7 @@ extractConcTime <- function(sim_data_file,
                         mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor"),
                                                  Deets$Substrate, MyCompound),
                                Inhibitor = str_c(AllEffectors, collapse = ", "),
+                               CompoundID = compoundToExtract,
                                Time_units = SimTimeUnits,
                                Conc_units = SimConcUnits)
 
@@ -547,6 +585,7 @@ extractConcTime <- function(sim_data_file,
                                     pivot_longer(names_to = "Trial", values_to = "Conc",
                                                  cols = -c(Time)) %>%
                                     mutate(Compound = i,
+                                           CompoundID = compoundToExtract,
                                            Inhibitor = str_c(AllEffectors, collapse = ", "),
                                            Time_units = SimTimeUnits,
                                            Conc_units = SimConcUnits)
@@ -623,6 +662,7 @@ extractConcTime <- function(sim_data_file,
                                cols = -Time) %>%
                   mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
                                            Deets$Substrate, MyCompound),
+                         CompoundID = compoundToExtract,
                          Inhibitor = "none",
                          SubjTrial = sub("ID", "", SubjTrial),
                          Time_units = SimTimeUnits,
@@ -668,6 +708,7 @@ extractConcTime <- function(sim_data_file,
                                      cols = -Time) %>%
                         mutate(Compound = ifelse(str_detect(compoundToExtract, "inhibitor 1"),
                                                  Deets$Substrate, MyCompound),
+                               CompoundID = compoundToExtract,
                                Inhibitor = str_c(AllEffectors, collapse = ", "),
                                SubjTrial = sub("ID", "", SubjTrial),
                                Time_units = SimTimeUnits,
@@ -730,6 +771,7 @@ extractConcTime <- function(sim_data_file,
                                     pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                                  cols = -Time) %>%
                                     mutate(Compound = i,
+                                           CompoundID = compoundToExtract,
                                            Inhibitor = str_c(AllEffectors, collapse = ", "),
                                            SubjTrial = sub("ID", "", SubjTrial),
                                            Time_units = SimTimeUnits,
@@ -797,6 +839,48 @@ extractConcTime <- function(sim_data_file,
               # "Inh 3 Blood" = Deets$Inhibitor3,
               "Sub (Inb) Urine" = Deets$Substrate,
               "Met(Inh 1) Urine" = Deets$Inhibitor1Metabolite,
+              "Inh 1 PD Response" = "Inh 1 PD Response",
+              "Sub (Inb) PD Response" = "Sub (Inb) PD Response",
+              "ADC Plasma Free" = "ADC Plasma Free",
+              "Conjugated Antibody Plasma Free" = "Conjugated Antibody Plasma Free",
+              "Conjugated Drug Plasma Free" = "Conjugated Drug Plasma Free",
+              "PM1(Sub) PD Response" = "PM1(Sub) PD Response",
+              "ADC Plasma Total" = "ADC Plasma Total",
+              "Conjugated Antibody Plasma Total" = "Conjugated Antibody Plasma Total",
+              "Sub Plasma Total Drug" = "Sub Plasma Total Drug",
+              "Tumour Volume" = "Tumour Volume",
+              "Tumour Volume (Inb)" = "Tumour Volume (Inb)")
+
+      ObsCompoundIDs <-
+            c("Sub Plasma" = "substrate",
+              "Sub Unbound Plasma" = "substrate",
+              "Sub Blood" = "substrate",
+              "Sub PD Response" = "Sub PD Response",
+              "Sub (Inb) Plasma" = "substrate",
+              "Sub (Inb) Blood" = "substrate",
+              "Inh 1 Plasma" = "inhibitor 1",
+              "Inh 1 Blood" = "inhibitor 1",
+              "Sub PM1 Plasma" = "primary metabolite 1",
+              "Sub PM1 Blood" = "primary metabolite 1",
+              "Adipose (Sub)" = "substrate",
+              "Spinal CSF (Sub)" = "substrate",
+              "Organ Conc" = "substrate",
+              "Organ Conc (Inb)" = "substrate",
+              "Sub SM plasma" = "secondary metabolite",
+              "Sub SM blood" = "secondary metabolite",
+              "Sub Urine" = "substrate",
+              "Inh 1 Urine" = "inhibitor 1",
+              "Met (Sub) Urine" = "substrate",
+              "Sub PM2 Plasma" = "primary metabolite 2",
+              "Sub PM2 Blood" = "primary metabolite 2",
+              "Inh1 Met Plasma" = "inhibitor 1 metabolite",
+              "Inh1 Met Blood" = "inhibitor 1 metabolite",
+              "Inh 2 Plasma" = "inhibitor 2",
+              "Inh 2 Blood" = "inhibitor 2",
+              # "Inh 3 Plasma" = "inhibitor 3", # we haven't set up extractConcTime or extractExpDetails to pull inhibitor 3 yet.
+              # "Inh 3 Blood" = "inhibitor 3",
+              "Sub (Inb) Urine" = "substrate",
+              "Met(Inh 1) Urine" = "inhibitor 1 metabolite",
               "Inh 1 PD Response" = "Inh 1 PD Response",
               "Sub (Inb) PD Response" = "Sub (Inb) PD Response",
               "ADC Plasma Free" = "ADC Plasma Free",
@@ -891,6 +975,7 @@ extractConcTime <- function(sim_data_file,
                                     filter(complete.cases(Time)) %>%
                                     mutate(Trial = "obs",
                                            Inhibitor = "none",
+                                           CompoundID = compoundToExtract,
                                            Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
                                            # The simulator doesn't provide much
                                            # info on the identity of the
@@ -908,7 +993,8 @@ extractConcTime <- function(sim_data_file,
                   # observed data.
                   obs_data <- extractObsConcTime(obs_data_file) %>%
                         mutate(Compound = ObsCompounds[CompoundID],
-                               Inhibitor = ObsEffectors[CompoundID])
+                               Inhibitor = ObsEffectors[CompoundID] ,
+                               CompoundID = ObsCompoundIDs[CompoundID])
 
                   # As necessary, convert simulated data units to match the
                   # observed data
@@ -1032,13 +1118,14 @@ extractConcTime <- function(sim_data_file,
                   setdiff(unique(Trial),
                           c("obs", "obs+inhibitor1", "mean", "median",
                             "geomean", "per5", "per95", "per10", "per90")))),
-                  Tissue = tissue) %>%
+                  Tissue = tissue,
+                  File = sim_data_file) %>%
             arrange(across(any_of(c("Compound", "Inhibitor",
                                     "Individual", "Trial", "Time")))) %>%
             select(any_of(c("Compound", "Inhibitor", "Tissue",
                             "Individual", "Trial",
                             "Simulated", "Time", "Conc",
-                            "Time_units", "Conc_units")))
+                            "Time_units", "Conc_units", "File")))
 
       # Filtering to return ONLY the compound the user requested. This is what
       # works for input to ct_plot at the moment, too, so things get buggered up
