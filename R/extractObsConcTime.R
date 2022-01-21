@@ -59,23 +59,38 @@ extractObsConcTime <- function(obs_data_file){
                         "2" = as.character(obs_data_xl[6, 4]),
                         "3" = as.character(obs_data_xl[7, 4]))
 
-      obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:20]
-      names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                           "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                           "InfDuration", "Period", "Age", "Weight_kg",
-                           "Height_cm", "Sex", "SerumCreatinine_umolL",
-                           "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                           "SmokingStatus")
+      obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:ncol(obs_data_xl)]
+      if(any(str_detect(t(obs_data_xl[12, ]), "Period"), na.rm = TRUE)){
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "InfDuration", "Period", "Age", "Weight_kg",
+                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus")
+      } else {
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "InfDuration", "Age", "Weight_kg",
+                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus")
+
+      }
 
       obs_data <- obs_data %>%
             filter(complete.cases(DVID)) %>%
             mutate(across(.cols = c(Time, Conc), .fns = as.numeric)) %>%
             mutate(CompoundID = ObsCompoundID[as.character(DVID)],
+                   File = obs_data_file,
                    SmokingStatus = Smoke[SmokingStatus],
-                  Time_units = TimeUnits,
+                   Time_units = TimeUnits,
                    Conc_units = ObsConcUnits[as.character(DVID)]) %>%
-            select(Individual, CompoundID, Time, Conc,
-                   Time_units, Conc_units, Period:SmokingStatus)
+            select(any_of(c("Compound", "Individual", "Time", "Conc", "DVID",
+                            "File", "Weighting",
+                            "Period", "Age", "Weight_kg",
+                            "Height_cm", "Sex", "SerumCreatinine_umolL",
+                            "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                            "SmokingStatus")))
 
 }
 
