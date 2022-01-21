@@ -102,7 +102,11 @@ an inhibitor or effector, this function cannot tell the difference and will
 thus assume all observed data included in the simulator output were for the
 substrate in the \emph{absence} of any effector. It will further assume that
 the compound the observed data is for is the same as
-\code{compoundToExtract}.
+\code{compoundToExtract}. If \code{compoundToExtract} was an inhibitor or
+inhibitor metabolite, the observed data from the simulator output will NOT be
+pulled since it is unlikely to be inhibitor concentrations. It's generally
+much safer to supply an observed data file here to make sure the data are
+what you're expecting.
 }
 \examples{
 extractConcTime(sim_data_file = "../Example simulator output MD.xlsx")
