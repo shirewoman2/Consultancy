@@ -6,6 +6,7 @@
 \usage{
 extractConcTime_mult(
   sim_data_files,
+  obs_data_files = NA,
   conctime_DF,
   overwrite = FALSE,
   tissues = "plasma",
@@ -19,6 +20,8 @@ extractConcTime_mult(
 e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 with the file names if they are located somewhere other than your working
 directory.}
+
+\item{obs_data_files}{TO BE ADDED SOON}
 
 \item{conctime_DF}{the data.frame that will contain the output. Because we
 can see scenarios where you might want to extract some concentration-time

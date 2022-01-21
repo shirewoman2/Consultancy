@@ -11,11 +11,12 @@
 #' variations of them. For example, if you ask for "File A" and "File B" and
 #' then also ask for "substrate" and "primary metabolite 1", you will get the
 #' substrate and primary metabolite 1 data from \emph{both} files.}}
+#'
 #' @param sim_data_files a character vector of the files you'd like to compare,
 #'   e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 #'   with the file names if they are located somewhere other than your working
 #'   directory.
-#' @param obs_data_files
+#' @param obs_data_files TO BE ADDED SOON
 #' @param conctime_DF the data.frame that will contain the output. Because we
 #'   can see scenarios where you might want to extract some concentration-time
 #'   data, play around with those data, and then later decide you want to pull
@@ -70,6 +71,7 @@
 #'
 
 extractConcTime_mult <- function(sim_data_files,
+                                 obs_data_files = NA,
                                  conctime_DF,
                                  overwrite = FALSE,
                                  tissues = "plasma",
@@ -174,6 +176,8 @@ extractConcTime_mult <- function(sim_data_files,
                                           tissue = j,
                                           returnAggregateOrIndiv = returnAggregateOrIndiv) %>%
                                     mutate(File = n)
+
+                              # NEED TO ADDRESS UNITS
 
                               # if(i != sim_data_files_topull[1]){
                               #       n[[k]] <-
