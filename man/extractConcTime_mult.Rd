@@ -8,6 +8,8 @@ extractConcTime_mult(
   sim_data_files,
   conctime_DF,
   overwrite = FALSE,
+  tissues = "plasma",
+  compoundsToExtract = "substrate",
   returnAggregateOrIndiv = "aggregate",
   ...
 )
@@ -34,10 +36,7 @@ add data from any Excel files that aren't already included. A situation
 where you might want to set this to TRUE would be when you have changed
 input parameters for simulations and re-run them.}
 
-\item{...}{other arguments passed to the function
-\code{\link{extractConcTime}}}
-
-\item{tissue}{From which tissue(s) should the desired concentrations be
+\item{tissues}{From which tissue(s) should the desired concentrations be
 extracted? The default is plasma for typical plasma concentration-time
 data. Other options are "blood" or any tissues included in "Sheet Options",
 "Tissues" in the simulator. All possible options: "plasma", "blood",
@@ -49,7 +48,7 @@ vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
 "skin", or "spleen". Not case sensitive. List all tissues desired as a
 character vector, e.g., \code{c("plasma", "blood", "liver")}.}
 
-\item{compoundToExtract}{For which compound(s) do you want to extract
+\item{compoundsToExtract}{For which compound(s) do you want to extract
 concentration-time data? Options are "substrate" (default), "primary
 metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
 1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
@@ -60,6 +59,9 @@ character vector, e.g., \code{c("substrate", "primary metabolite 1")}.
 \emph{Note:} The simulator will report up to one metabolite for the 1st
 inhibitor but no other inhibitor metabolites. (Someone please correct me if
 that's wrong! -LS)}
+
+\item{...}{other arguments passed to the function
+\code{\link{extractConcTime}}}
 }
 \value{
 a large data.frame with multiple sets of concentration-time data,

@@ -15,6 +15,7 @@
 #'   e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 #'   with the file names if they are located somewhere other than your working
 #'   directory.
+#' @param obs_data_files
 #' @param conctime_DF the data.frame that will contain the output. Because we
 #'   can see scenarios where you might want to extract some concentration-time
 #'   data, play around with those data, and then later decide you want to pull
@@ -29,7 +30,7 @@
 #'   add data from any Excel files that aren't already included. A situation
 #'   where you might want to set this to TRUE would be when you have changed
 #'   input parameters for simulations and re-run them.
-#' @param tissue From which tissue(s) should the desired concentrations be
+#' @param tissues From which tissue(s) should the desired concentrations be
 #'   extracted? The default is plasma for typical plasma concentration-time
 #'   data. Other options are "blood" or any tissues included in "Sheet Options",
 #'   "Tissues" in the simulator. All possible options: "plasma", "blood",
@@ -40,7 +41,7 @@
 #'   vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
 #'   "skin", or "spleen". Not case sensitive. List all tissues desired as a
 #'   character vector, e.g., \code{c("plasma", "blood", "liver")}.
-#' @param compoundToExtract For which compound(s) do you want to extract
+#' @param compoundsToExtract For which compound(s) do you want to extract
 #'   concentration-time data? Options are "substrate" (default), "primary
 #'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
 #'   1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
@@ -71,42 +72,37 @@
 extractConcTime_mult <- function(sim_data_files,
                                  conctime_DF,
                                  overwrite = FALSE,
-                                 tissue = "plasma",
-                                 compoundToExtract = "substrate",
+                                 tissues = "plasma",
+                                 compoundsToExtract = "substrate",
                                  returnAggregateOrIndiv = "aggregate",
                                  ...){
 
       # Checking on what combinations of data the user has requested and what
       # data are already present in conctime_DF.
-      Requested <- expand.grid(Tissue = tissue,
-                              Compound = compoundToExtract,
-                              File = sim_data_files)
-      # NOTE: Since the object "Requested" is going to be created in this
-      # function environment *every time* the user calls on extractConcTime_mult
-      # but NOT when the user only calls on extractConcTime, I'm using this as a
-      # handle to determine whether to give an error within extractConcTime if
-      # the user has requested multiple tissues, compounds, or files. We need
-      # extractConcTime to ONLY give ONE set of concentration-time data so that
-      # it will work as expected with, e.g., ct_plot. -LS
+      Requested <- expand.grid(Tissue = tissues,
+                               CompoundID = compoundsToExtract,
+                               File = sim_data_files)
 
       if(exists(substitute(conctime_DF))){
             if("File" %in% names(conctime_DF) == FALSE){
                   conctime_DF$File <- "unknown file"
             }
 
-            DataToFetch <- conctime_DF %>% select(File, Tissue, Compound) %>%
+            conctime_DF <- conctime_DF %>%
+                  mutate(ID = paste(File, Tissue, CompoundID))
+
+            DataToFetch <- conctime_DF %>% select(File, Tissue, CompoundID) %>%
                   unique() %>% mutate(ExistsAlready = TRUE) %>%
-                  right_join(Requested)
-
-
+                  right_join(Requested) %>%
+                  filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
+                  mutate(ID = paste(File, Tissue, CompoundID))
 
             if(overwrite == FALSE){
-                  sim_data_files_topull <- setdiff(sim_data_files,
-                                                   conctime_DF$File)
+                  sim_data_files_topull <- unique(DataToFetch$File)
             } else {
                   sim_data_files_topull <- sim_data_files
                   conctime_DF <- conctime_DF %>%
-                        filter(!File %in% sim_data_files)
+                        filter(!ID %in% DataToFetch$ID)
             }
       } else {
             DataToFetch <- Requested
@@ -114,22 +110,96 @@ extractConcTime_mult <- function(sim_data_files,
             conctime_DF <- data.frame()
       }
 
-      Data <- list()
+      MultData <- list()
 
-      for(i in sim_data_files_topull){
+      for(n in sim_data_files_topull){
 
-            Data[[i]] <- extractConcTime(
-                  sim_data_file = i,
-                  returnAggregateOrIndiv = returnAggregateOrIndiv, ...) %>%
-                  mutate(File = i)
-            if(i != sim_data_files_topull[1]){
-                  Data[[i]] <- match_units(DF_to_adjust = Data[[i]],
-                                           goodunits = Data[[1]])
+            MultData[[n]] <- list()
+
+            # Getting summary data for the simulation(s)
+            Deets <- extractExpDetails(n)
+
+            # Each tissue will be on its own sheet in the Excel file, so each
+            # will need their own iterations of the loop for reading different
+            # sheets.
+            for(j in tissues){
+
+                  # Depending on both the tissue AND which compound the user
+                  # requests, that could be on multiple sheets or on a single
+                  # sheet. Figuring out which sheet to read.
+
+                  # Extracting tissue or plasma/blood data? Sheet format differs.
+                  TissueType <- ifelse(str_detect(j, "plasma|blood|portal|peripheral"),
+                                       "systemic", "tissue")
+
+                  if(TissueType == "tissue"){
+                        # If the tissue type is a solid tissue, then any
+                        # compound concentrations available will be on that
+                        # sheet and that requires only one iteration of the
+                        # loop.
+                        MultData[[n]][[j]] <- extractConcTime(
+                              sim_data_file = n,
+                              obs_data_file = NA,
+                              obs_inhibitor_data_file = NA,
+                              compoundToExtract = compoundsToExtract,
+                              tissue = j,
+                              returnAggregateOrIndiv = returnAggregateOrIndiv, ...) %>%
+                              mutate(File = n)
+
+                        # if(i != sim_data_files_topull[1]){
+                        #       n <- match_units(DF_to_adjust = n,
+                        #                                goodunits = MultData[[1]])
+                        # }
+
+                  } else {
+                        # If TissueType is systemic, then substrate and
+                        # inhibitor concs are on the same sheet, but metabolite
+                        # concs are elsewhere.
+                        CompoundTypes <-
+                              ifelse(compoundsToExtract %in%
+                                           c("substrate", "inhibitor 1",
+                                             "inhibitor 2", "inhibitor 1 metabolite"),
+                                     "substrate", compoundToExtract) %>%
+                              unique()
+
+                        MultData[[n]][[j]] <- list()
+
+                        for(k in CompoundTypes){
+                              MultData[[n]][[j]][[k]] <-
+                                    extractConcTime(
+                                          sim_data_file = n,
+                                          obs_data_file = NA,
+                                          obs_inhibitor_data_file = NA,
+                                          compoundToExtract = compoundsToExtract,
+                                          tissue = j,
+                                          returnAggregateOrIndiv = returnAggregateOrIndiv) %>%
+                                    mutate(File = n)
+
+                              # if(i != sim_data_files_topull[1]){
+                              #       n[[k]] <-
+                              #             match_units(DF_to_adjust = n,
+                              #                                goodunits = MultData[[1]])
+                              # }
+                        }
+
+                        MultData[[n]][[j]] <- bind_rows(MultData[[n]][[j]])
+                  }
             }
+
+            rm(Deets)
+            MultData[[n]] <- bind_rows(MultData[[n]])
       }
 
-      conctime_DF <- bind_rows(conctime_DF,
-                               bind_rows(Data))
+      MultData <- bind_rows(MultData) %>% filter(Simulated == TRUE)
+
+      # add obs data here
+
+      # LEFT OFF HERE
+      conctime_DF <- bind_rows(conctime_DF, MultData) %>% select(-ID)
+
+      # Also update extractObsConcTime to include file, compoundID
+
+      # Just remove all obs data. don't pipe obsdatafiles into extractConcTime. Instead, only extract them here. That should be safest.
 
       return(conctime_DF)
 
