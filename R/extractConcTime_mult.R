@@ -49,7 +49,8 @@
 extractConcTime_mult <- function(sim_data_files,
                                  conctime_DF,
                                  overwrite = FALSE,
-                                 returnAggregateOrIndiv = "aggregate"){
+                                 returnAggregateOrIndiv = "aggregate",
+                                 ...){
 
       if(exists(substitute(conctime_DF))){
             if("File" %in% names(conctime_DF) == FALSE){
@@ -62,7 +63,7 @@ extractConcTime_mult <- function(sim_data_files,
             } else {
                   sim_data_files_topull <- sim_data_files
                   conctime_DF <- conctime_DF %>%
-                        filter(!Files %in% sim_data_files)
+                        filter(!File %in% sim_data_files)
             }
       } else {
             sim_data_files_topull <- sim_data_files
@@ -75,8 +76,12 @@ extractConcTime_mult <- function(sim_data_files,
 
             Data[[i]] <- extractConcTime(
                   sim_data_file = i,
-                  returnAggregateOrIndiv = returnAggregateOrIndiv) %>%
+                  returnAggregateOrIndiv = returnAggregateOrIndiv, ...) %>%
                   mutate(File = i)
+            if(i != sim_data_files_topull[1]){
+                  Data[[i]] <- match_units(DF_to_adjust = Data[[i]],
+                                           goodunits = Data[[1]])
+            }
       }
 
       conctime_DF <- bind_rows(conctime_DF,
