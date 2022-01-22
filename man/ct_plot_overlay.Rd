@@ -6,14 +6,22 @@
 \usage{
 ct_plot_overlay(
   conctime_DF,
+  aggregate_option = "geomean",
   colorBy = File,
-  facet_column1 = NA,
-  facet_column2 = NA
+  facet_column1,
+  facet_column2
 )
 }
 \arguments{
 \item{conctime_DF}{the data.frame with multiple sets of concentration-time
 data}
+
+\item{aggregate_option}{What type of aggregate measure should be shown?
+Options are any combination of "mean" (arithmetic mean), "geomean"
+(geometric mean), "median", "per5" (5th percentile), "per95" (95th
+percentile), "per10" (10th percentile), or "per90" (90th percentile).
+Default is "geomean". Example of useage: \code{aggregate_option = c("mean",
+"per5", "per95")}}
 
 \item{colorBy}{What column in \code{conctime_DF} should be used for coloring
 the lines and/or points on the graph? This should be unquoted, e.g.,
@@ -38,6 +46,8 @@ comparisons. UNDER CONSTRUCTION.
 }
 \examples{
 # No examples yet
+# ct_plot_overlay(conctime_DF = CT, facet_column1 = Compound,
+#                 facet_column2 = Tissue)
 
 
 }

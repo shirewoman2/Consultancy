@@ -7,6 +7,12 @@
 #'
 #' @param conctime_DF the data.frame with multiple sets of concentration-time
 #'   data
+#' @param aggregate_option What type of aggregate measure should be shown?
+#'   Options are any combination of "mean" (arithmetic mean), "geomean"
+#'   (geometric mean), "median", "per5" (5th percentile), "per95" (95th
+#'   percentile), "per10" (10th percentile), or "per90" (90th percentile).
+#'   Default is "geomean". Example of useage: \code{aggregate_option = c("mean",
+#'   "per5", "per95")}
 #' @param colorBy What column in \code{conctime_DF} should be used for coloring
 #'   the lines and/or points on the graph? This should be unquoted, e.g.,
 #'   \code{colorBy = Tissue}.
@@ -22,35 +28,44 @@
 #'
 #' @examples
 #' # No examples yet
+#' # ct_plot_overlay(conctime_DF = CT, facet_column1 = Compound,
+#' #                 facet_column2 = Tissue)
 #'
 #'
 ct_plot_overlay <- function(conctime_DF,
+                            aggregate_option = "geomean",
                             colorBy = File,
-                            facet_column1 = NA,
-                            facet_column2 = NA){
+                            facet_column1,
+                            facet_column2){
 
       colorBy <- rlang::enquo(colorBy)
       facet_column1 <- rlang::enquo(facet_column1)
       facet_column2 <- rlang::enquo(facet_column2)
 
-      # You can leave one column as NA but not 2, so I'm only checking whether
-      # facet_column2 is complete. I'm having trouble doing this -- nonstandard
-      # evalution is not my forte -- so this was the most reliable method I came
-      # up with. -LS
-      Facet2_na <- sub("\\~", "", deparse(facet_column2)) == "NA"
+      conctime_DF <- conctime_DF %>% #filter(Trial %in% aggregate_option) %>%
+            mutate(Group = paste(File, Trial, Tissue, CompoundID))
 
-      if(Facet2_na){
-            ggplot(conctime_DF %>% filter(Trial == "mean"),
-                   aes(x = Time, y = Conc, color = !!colorBy)) +
-                  geom_line() +
-                  facet_wrap(vars(!!facet_column1))
-      } else {
-            ggplot(conctime_DF %>% filter(Trial == "mean"),
-                   aes(x = Time, y = Conc, color = !!colorBy)) +
-                  geom_line() +
-                  facet_wrap(vars(!!facet_column1, !!facet_column2))
-      }
+      ggplot(conctime_DF,
+             aes(x = Time, y = Conc, color = !!colorBy, group = Group)) +
+            geom_line() +
+            facet_grid(rows = vars(!!facet_column1),
+                       cols = vars(!!facet_column2)) +
+            theme(panel.background = element_rect(fill = "white", color = NA),
+                  panel.border = element_rect(color = "black", fill = NA),
+                  strip.background = element_rect(fill = "white"),
+                  legend.key = element_rect(fill = "white"),
+                  axis.ticks = element_line(color = "black"),
+                  axis.text = element_text(color = "black"),
+                  axis.title = element_text(color = "black", face = "bold"),
+                  axis.line.y = element_line(color = "black"),
+                  axis.line.x.bottom = element_line(color = "black"),
+                  text = element_text(family = "Calibri"))
+
 }
 
-# ct_plot_overlay(conctime_DF = conctime_DF, facet_column1 = File, facet_column2 = Tissue)
+
+
+
+
+
 
