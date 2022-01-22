@@ -11,6 +11,8 @@ extractConcTime_mult(
   overwrite = FALSE,
   tissues = "plasma",
   compoundsToExtract = "substrate",
+  conc_units_to_use = "ng/mL",
+  time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
   ...
 )
@@ -62,6 +64,15 @@ character vector, e.g., \code{c("substrate", "primary metabolite 1")}.
 \emph{Note:} The simulator will report up to one metabolite for the 1st
 inhibitor but no other inhibitor metabolites. (Someone please correct me if
 that's wrong! -LS)}
+
+\item{conc_units_to_use}{concentration units to use so that all data will be
+comparable. Options are the same as the ones in the Excel form for PE data
+entry. Default is "ng/mL".}
+
+\item{time_units_to_use}{time units to use so that all data will be
+comparable. Options are "hours" or "minutes". Default is "hours".}
+
+\item{returnAggregateOrIndiv}{}
 
 \item{...}{other arguments passed to the function
 \code{\link{extractConcTime}}}

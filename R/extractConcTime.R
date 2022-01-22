@@ -186,17 +186,21 @@ extractConcTime <- function(sim_data_file,
                            "systemic", "tissue")
       if(any(str_detect(compoundToExtract, "metabolite")) & TissueType == "tissue"){
             warning("You have requested metabolite concentrations in a solid tissue, which the simulator does not provide. Substrate or Inhibitor 1 concentrations will be provided instead, depending on whether you requested a substrate or inhibitor metabolite.")
+            compoundToExtract <- compoundToExtract[!str_detect(compoundToExtract,
+                                                               "metabolite")]
       }
 
       SheetNames <- readxl::excel_sheets(sim_data_file)
 
-      if(FromMultFun){
+      if(FromMultFun & exists("k", where = -1)){
             CompoundType <- k
       } else {
-            CompoundType <-
-                  ifelse(any(compoundToExtract %in% c("substrate", "inhibitor 1",
-                                                      "inhibitor 2", "inhibitor 1 metabolite")),
-                         "substrate", compoundToExtract)
+            if(any(compoundToExtract %in% c("substrate", "inhibitor 1",
+                                            "inhibitor 2", "inhibitor 1 metabolite"))){
+                  CompoundType <- "substrate"
+            } else {
+                  CompoundType <- compoundToExtract
+            }
       }
 
       if(TissueType == "systemic"){
@@ -250,29 +254,30 @@ extractConcTime <- function(sim_data_file,
       }
 
       Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
-      if(length(Sheet) == 0 | is.na(Sheet)){
-            stop("We cannot find the necessary sheet in the simulator ouput file submitted. Please check that you have submitted the correct file for the tissue and compound requested.")
+      if((length(Sheet) == 0 | is.na(Sheet))){
+            if(FromMultFun == FALSE){
+                  stop("We cannot find the necessary sheet in the simulator ouput file submitted. Please check that you have submitted the correct file for the tissue and compound requested.")
+            } else {
+                  warning(paste0("You requested data for ", str_comma(compoundToExtract),
+                                 " in ", tissue,
+                                 " from the file '",
+                                 sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped."))
+                  return(data.frame())
+            }
       }
-
       # Reading in simulated concentration-time profile data
       sim_data_xl <- suppressMessages(
             readxl::read_excel(path = sim_data_file,
                                sheet = Sheet,
                                col_names = FALSE))
 
-
       # Extracting each compound ----------------------------------------------
 
       # Note: This is a loop for use by extractConcTime_mult. For just running
       # extractConcTime, this will only have a single iteration.
 
-      if("aggregate" %in% returnAggregateOrIndiv){
-            sim_data_mean <- list()
-      }
-
-      if("individual" %in% returnAggregateOrIndiv){
-            sim_data_ind <- list()
-      }
+      sim_data_mean <- list()
+      sim_data_ind <- list()
 
       for(m in compoundToExtract){
 
@@ -282,6 +287,8 @@ extractConcTime <- function(sim_data_file,
                                  "inhibitor 1 systemic" = Deets$Inhibitor1,
                                  "inhibitor 1 tissue" = Deets$Inhibitor1,
                                  "inhibitor 1 metabolite systemic" = Deets$Inhibitor1Metabolite,
+                                 "inhibitor 2 systemic" = Deets$Inhibitor2,
+                                 "inhibitor 2 tissue" = Deets$Inhibitor2,
                                  "primary metabolite 1 systemic" = Deets$PrimaryMetabolite1,
                                  "primary metabolite 2 systemic" = Deets$PrimaryMetabolite2,
                                  "secondary metabolite systemic" = Deets$SecondaryMetabolite,
@@ -1138,6 +1145,5 @@ extractConcTime <- function(sim_data_file,
       }
 
       return(Data)
-
 }
 

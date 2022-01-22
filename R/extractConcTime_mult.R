@@ -55,6 +55,12 @@
 #'   that's wrong! -LS)
 #' @param ... other arguments passed to the function
 #'   \code{\link{extractConcTime}}
+#' @param conc_units_to_use concentration units to use so that all data will be
+#'   comparable. Options are the same as the ones in the Excel form for PE data
+#'   entry. Default is "ng/mL".
+#' @param time_units_to_use time units to use so that all data will be
+#'   comparable. Options are "hours" or "minutes". Default is "hours".
+#' @param returnAggregateOrIndiv
 #'
 #' @return a large data.frame with multiple sets of concentration-time data,
 #'   formatted the same way as output from the function
@@ -76,6 +82,8 @@ extractConcTime_mult <- function(sim_data_files,
                                  overwrite = FALSE,
                                  tissues = "plasma",
                                  compoundsToExtract = "substrate",
+                                 conc_units_to_use = "ng/mL",
+                                 time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate",
                                  ...){
 
@@ -121,6 +129,26 @@ extractConcTime_mult <- function(sim_data_files,
             # Getting summary data for the simulation(s)
             Deets <- extractExpDetails(n)
 
+            # Names of compounds requested for checking whether the data exist
+            CompoundCheck <- c("substrate" = Deets$Substrate,
+                               "inhibitor 1" = Deets$Inhibitor1,
+                               "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite,
+                               "inhibitor 2" = Deets$Inhibitor2,
+                               "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                               "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                               "secondary metabolite" = Deets$SecondaryMetabolite)
+
+            # If the requested compound is not present in the Excel file, remove
+            # it from consideration.
+            compoundsToExtract_n <- intersect(compoundsToExtract,
+                                              names(CompoundCheck)[complete.cases(CompoundCheck)])
+
+            if(all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
+                  warning(paste0("For the file ", n, ", only the compound(s) ",
+                                 str_comma(compoundsToExtract_n),
+                                 " was/were available."))
+            }
+
             # Each tissue will be on its own sheet in the Excel file, so each
             # will need their own iterations of the loop for reading different
             # sheets.
@@ -139,51 +167,85 @@ extractConcTime_mult <- function(sim_data_files,
                         # compound concentrations available will be on that
                         # sheet and that requires only one iteration of the
                         # loop.
+
                         MultData[[n]][[j]] <- extractConcTime(
                               sim_data_file = n,
                               obs_data_file = NA,
                               obs_inhibitor_data_file = NA,
-                              compoundToExtract = compoundsToExtract,
+                              compoundToExtract = compoundsToExtract_n,
                               tissue = j,
-                              returnAggregateOrIndiv = returnAggregateOrIndiv, ...) %>%
-                              mutate(File = n)
+                              returnAggregateOrIndiv = returnAggregateOrIndiv)
 
-                        # if(i != sim_data_files_topull[1]){
-                        #       n <- match_units(DF_to_adjust = n,
-                        #                                goodunits = MultData[[1]])
-                        # }
+                        # When the particular combination of compound and
+                        # tissue is not available in that file,
+                        # extractConcTime will return an empty data.frame,
+                        # which we don't want to be included in the final
+                        # data. Not adding info for File in that scenario
+                        # b/c it would add a row to what would have been
+                        # an empty data.frame.
+                        if(nrow(MultData[[n]][[j]]) > 0){
+                              MultData[[n]][[j]] <-
+                                    MultData[[n]][[j]] %>%
+                                    mutate(File = n)
+
+                              MultData[[n]][[j]] <-
+                                    match_units(DF_to_adjust = MultData[[n]][[j]],
+                                                goodunits = list("Conc_units" = conc_units_to_use,
+                                                                 "Time_units" = time_units_to_use))
+                        }
 
                   } else {
                         # If TissueType is systemic, then substrate and
                         # inhibitor concs are on the same sheet, but metabolite
                         # concs are elsewhere.
                         CompoundTypes <-
-                              ifelse(compoundsToExtract %in%
+                              data.frame(PossCompounds =
+                                               c("substrate", "inhibitor 1",
+                                                 "inhibitor 2", "inhibitor 1 metabolite",
+                                                 "primary metabolite 1",
+                                                 "primary metabolite 2",
+                                                 "secondary metabolite")) %>%
+                              mutate(Type = ifelse(PossCompounds %in%
                                            c("substrate", "inhibitor 1",
                                              "inhibitor 2", "inhibitor 1 metabolite"),
-                                     "substrate", compoundToExtract) %>%
-                              unique()
+                                     "substrate", PossCompounds)) %>%
+                              filter(PossCompounds %in% compoundsToExtract_n)
 
                         MultData[[n]][[j]] <- list()
 
-                        for(k in CompoundTypes){
+                        for(k in unique(CompoundTypes$Type)){
+
+                              compoundsToExtract_k <-
+                                    CompoundTypes %>% filter(Type == k) %>%
+                                    pull(PossCompounds)
+
                               MultData[[n]][[j]][[k]] <-
                                     extractConcTime(
                                           sim_data_file = n,
                                           obs_data_file = NA,
                                           obs_inhibitor_data_file = NA,
-                                          compoundToExtract = compoundsToExtract,
+                                          compoundToExtract = compoundsToExtract_k,
                                           tissue = j,
-                                          returnAggregateOrIndiv = returnAggregateOrIndiv) %>%
-                                    mutate(File = n)
+                                          returnAggregateOrIndiv = returnAggregateOrIndiv)
 
-                              # NEED TO ADDRESS UNITS
+                              # When the particular combination of compound and
+                              # tissue is not available in that file,
+                              # extractConcTime will return an empty data.frame,
+                              # which we don't want to be included in the final
+                              # data. Not adding info for File in that scenario
+                              # b/c it would add a row to what would have been
+                              # an empty data.frame.
+                              if(nrow(MultData[[n]][[j]][[k]]) > 0){
+                                    MultData[[n]][[j]][[k]] <-
+                                          MultData[[n]][[j]][[k]] %>%
+                                          mutate(File = n)
 
-                              # if(i != sim_data_files_topull[1]){
-                              #       n[[k]] <-
-                              #             match_units(DF_to_adjust = n,
-                              #                                goodunits = MultData[[1]])
-                              # }
+                                    MultData[[n]][[j]][[k]] <-
+                                          match_units(DF_to_adjust = MultData[[n]][[j]][[k]],
+                                                      goodunits = list("Conc_units" = conc_units_to_use,
+                                                                       "Time_units" = time_units_to_use))
+                              }
+                              rm(compoundsToExtract_k)
                         }
 
                         MultData[[n]][[j]] <- bind_rows(MultData[[n]][[j]])
@@ -199,7 +261,7 @@ extractConcTime_mult <- function(sim_data_files,
       # add obs data here
 
       # LEFT OFF HERE
-      conctime_DF <- bind_rows(conctime_DF, MultData) %>% select(-ID)
+      conctime_DF <- bind_rows(conctime_DF, MultData) %>% select(-any_of("ID"))
 
       # Also update extractObsConcTime to include file, compoundID
 
