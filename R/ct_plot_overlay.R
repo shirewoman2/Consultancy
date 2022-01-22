@@ -6,7 +6,7 @@
 #' comparisons. UNDER CONSTRUCTION.
 #'
 #' @param conctime_DF the data.frame with multiple sets of concentration-time
-#'   data
+#'   data, including observed data where appropriate
 #' @param aggregate_option What type of aggregate measure should be shown?
 #'   Options are any combination of "mean" (arithmetic mean), "geomean"
 #'   (geometric mean), "median", "per5" (5th percentile), "per95" (95th
@@ -44,15 +44,21 @@ ct_plot_overlay <- function(conctime_DF,
       facet_column1 <- rlang::enquo(facet_column1)
       facet_column2 <- rlang::enquo(facet_column2)
 
-      conctime_DF <- conctime_DF %>% filter(Trial %in% aggregate_option) %>%
+      conctime_DF <- conctime_DF %>%
             mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor))
+
+      obs_data <- conctime_DF %>% filter(Simulated == FALSE)
+      conctime_DF <- conctime_DF %>%
+            filter(Trial %in% aggregate_option & Simulated == TRUE)
 
       ggplot(conctime_DF,
              aes(x = Time, y = Conc, color = !!colorBy, linetype = !!linetypeBy,
                  group = Group)) +
             geom_line() +
+            geom_point(data = obs_data) +
             facet_grid(rows = vars(!!facet_column1),
-                       cols = vars(!!facet_column2)) +
+                       cols = vars(!!facet_column2),
+                       scales = "free") +
             theme(panel.background = element_rect(fill = "white", color = NA),
                   panel.border = element_rect(color = "black", fill = NA),
                   strip.background = element_rect(fill = "white"),

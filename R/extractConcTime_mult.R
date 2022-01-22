@@ -16,7 +16,13 @@
 #'   e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 #'   with the file names if they are located somewhere other than your working
 #'   directory.
-#' @param obs_data_files TO BE ADDED SOON
+#' @param obs_data_files a character vector of the observed data files that
+#'   you'd like to compare, e.g., \code{c("MyObsFile1.xlsx",
+#'   "MyObsFile2.xlsx")}. The path should be included with the file names if
+#'   they are located somewhere other than your working directory. This is the
+#'   file that it is ready to be converted to an XML file, not the file that
+#'   contains only the digitized time and concentration data. The names of the
+#'   observed data files are piped into \link{\code{extractObsConcTime}}.
 #' @param conctime_DF the data.frame that will contain the output. Because we
 #'   can see scenarios where you might want to extract some concentration-time
 #'   data, play around with those data, and then later decide you want to pull
@@ -258,14 +264,27 @@ extractConcTime_mult <- function(sim_data_files,
 
       MultData <- bind_rows(MultData) %>% filter(Simulated == TRUE)
 
-      # add obs data here
+      # Observed data ------------------------------------------------------
+      if(length(obs_data_files) > 0){
+            MultObsData <- list()
+            if(overwrite){
+                  conctime_DF <- conctime_DF %>% filter(!File %in% obs_data_files)
+                  for(n in obs_data_files){
+                        MultObsData[[n]] <- extractObsConcTime(n)
+                  }
+            } else {
+                  for(n in setdiff(obs_data_files, unique(conctime_DF$File))){
+                        MultObsData[[n]] <- extractObsConcTime(n)
+                  }
+            }
+            conctime_DF <- bind_rows(conctime_DF, bind_rows(MultObsData))
+      }
 
-      # LEFT OFF HERE
+      # LEFT OFF HERE. I need a way to determine what the compound is for each
+      # of the observed files and which obs data go with which sim file.
+
+      # all data together -------------------------------------------------
       conctime_DF <- bind_rows(conctime_DF, MultData) %>% select(-any_of("ID"))
-
-      # Also update extractObsConcTime to include file, compoundID
-
-      # Just remove all obs data. don't pipe obsdatafiles into extractConcTime. Instead, only extract them here. That should be safest.
 
       return(conctime_DF)
 

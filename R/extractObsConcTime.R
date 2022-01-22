@@ -60,7 +60,7 @@ extractObsConcTime <- function(obs_data_file){
                         "3" = as.character(obs_data_xl[7, 4]))
 
       obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:ncol(obs_data_xl)]
-      if(any(str_detect(t(obs_data_xl[12, ]), "Period"), na.rm = TRUE)){
+      if(any(str_detect(t(obs_data_xl[11, ]), "Period"), na.rm = TRUE)){
             names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
                                  "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
                                  "InfDuration", "Period", "Age", "Weight_kg",
