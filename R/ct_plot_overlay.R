@@ -35,18 +35,21 @@
 ct_plot_overlay <- function(conctime_DF,
                             aggregate_option = "geomean",
                             colorBy = File,
+                            linetypeBy = Inhibitor,
                             facet_column1,
                             facet_column2){
 
       colorBy <- rlang::enquo(colorBy)
+      linetypeBy <- rlang::enquo(linetypeBy)
       facet_column1 <- rlang::enquo(facet_column1)
       facet_column2 <- rlang::enquo(facet_column2)
 
-      conctime_DF <- conctime_DF %>% #filter(Trial %in% aggregate_option) %>%
-            mutate(Group = paste(File, Trial, Tissue, CompoundID))
+      conctime_DF <- conctime_DF %>% filter(Trial %in% aggregate_option) %>%
+            mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor))
 
       ggplot(conctime_DF,
-             aes(x = Time, y = Conc, color = !!colorBy, group = Group)) +
+             aes(x = Time, y = Conc, color = !!colorBy, linetype = !!linetypeBy,
+                 group = Group)) +
             geom_line() +
             facet_grid(rows = vars(!!facet_column1),
                        cols = vars(!!facet_column2)) +
@@ -63,9 +66,12 @@ ct_plot_overlay <- function(conctime_DF,
 
 }
 
-
-
-
+# ct_plot_overlay(conctime_DF = CT, facet_column1 = Compound,
+#                 facet_column2 = Tissue)
+#
+# ct_plot_overlay(conctime_DF = CT, aggregate_option = c("mean", "per5", "per95"),
+#                 facet_column1 = Compound,
+#                 facet_column2 = Tissue, linetype = Trial)
 
 
 
