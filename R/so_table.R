@@ -2,9 +2,12 @@
 #'
 #' \code{so_table} creates simulated vs. observed tables for reports and
 #' presentations, including reporting means, CVs, confidence intervals or
-#' percentiles, and ratios of simulated vs. observed mean values. Since this
-#' requires comparing observed data to a simulator output file, setting up the
-#' input for this function requires a few steps: \enumerate{ \item{Use the function
+#' percentiles, and ratios of simulated vs. observed mean values. There are two
+#' main ways to approach using this function 1. Select which data you want to
+#' compare (\code{PKparameters} argument) and leave blank rows for observed data
+#' to fill in later and calculate by hand, or 2. Fill out an Excel form with
+#' information about your observed data. Setting up the input for this approach
+#' requires a few steps:\enumerate{\item{Use the function
 #' \code{\link{generateReportInputForm}} to create an Excel file where you can
 #' enter information about your project.} \item{Go to the tab "observed data"
 #' and enter details about your observed data. It's ok if you don't have all the
@@ -15,7 +18,7 @@
 #' you're making this S/O table for. Make sure that whatever you list as the tab
 #' that contains information about the observed data is exactly the same as the
 #' actual tab name that you filled out in step 2. Also make sure that the file
-#' names include the full file path.} \item{Save your Excel file.} \item{Here,
+#' names include the full file path.}\item{Save your Excel file.} \item{Here,
 #' within RStudio (or within the shiny app that we plan to make!), run this
 #' function using the name of that Excel file as input for
 #' \code{report_input_file} and the name of the "table and graph input" tab as
@@ -32,6 +35,16 @@
 #' @param sectionInfo information about the simulated and observed data. This is
 #'   output from the function \code{\link{getSectionInfo}} and can be used
 #'   instead of listing the Excel file and sheet name as input.
+#' @param sim_data_file the simulator output file. This is only necessary if you
+#'   are planning to leave blank the rows for the observed data values and fill
+#'   them in yourself.
+#' @param PKparameters the PK parameters to include as a character vector. For a
+#'   full list of options, please see the help file for \link{\code{extractPK}}
+#'   to see all possible options. By default, the PK parameters included are
+#'   only those included in the observed data, but if no observed data are
+#'   included, the PK parameters will be automatically selected. An example of
+#'   acceptable input here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib",
+#'   "Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}
 #' @param mean_type Arithmetic or geometric means? Only specify this if you'd
 #'   like to override the value listed in \code{sectionInfo}. If no value is
 #'   specified here or in \code{sectionInfo}, the default is "geometric".
@@ -48,6 +61,8 @@
 #' @param includeTrialMeans TRUE or FALSE for whether to include the range of
 #'   trial means for a given parameter. Note: This is calculated from individual
 #'   values rather than pulled directly from the output.
+#' @param includeCV TRUE or FALSE for whether to include rows for CV in the
+#'   table
 #'
 #' @return a data.frame
 #' @export
@@ -59,15 +74,19 @@
 so_table <- function(report_input_file = NA,
                      sheet = NA,
                      sectionInfo = NA,
+                     sim_data_file = NA,
+                     PKparameters = NA,
                      mean_type = NA,
                      variability_option = "90% CI",
                      concatVariability = FALSE,
                      includeHalfLife = FALSE,
-                     includeTrialMeans = FALSE){
+                     includeTrialMeans = FALSE,
+                     includeCV = TRUE){
 
       # Error catching
-      if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) & is.na(report_input_file)){
-            stop("You must enter a value for either 'sectionInfo' or 'report_input_file'.")
+      if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
+         is.na(report_input_file) & is.na(sim_data_file)){
+            stop("You must enter a value for either 'sectionInfo' or 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
       }
 
       if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
@@ -76,11 +95,19 @@ so_table <- function(report_input_file = NA,
       }
 
       if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
-         complete.cases(report_input_file)){
+         complete.cases(report_input_file) & is.na(sim_data_file)){
             sectionInfo <- getSectionInfo(report_input_file = report_input_file,
                                           sheet = sheet)
+
+            # Should we add an error catch here for when user fills out
+            # report_input_file but doesn't include any observed data to
+            # compare? If the user doesn't want to include any obs data there,
+            # just fill out sim_data_file.
       }
 
+
+      # LEFT OFF HERE. Will need to expand this to encompass ALL the possible
+      # parameters.
       D1 <- c("AUCinf", "CL", "Cmax", "HalfLife", "tmax")
       D2 <- sub("AUCinf", "AUCtau", D1)
 
@@ -95,8 +122,27 @@ so_table <- function(report_input_file = NA,
 
       PKToPull <- ObsToPull[!str_detect(ObsToPull, "_CV")]
 
-      EffectorPresent <- complete.cases(sectionInfo$Inhibitor)
-      DoseRegimen <- sectionInfo$Regimen_sub
+      # sectionInfo is logical if it's not filled out.
+      if(class(sectionInfo) == "logical"){
+            Deets <- extractExpDetails(sim_data_file)
+            EffectorPresent <- complete.cases(Deets$Inhibitor1)
+            DoseRegimen <- Deets$Regimen_sub
+            SimFile <- sim_data_file
+            MeanType <- ifelse(is.na(mean_type),
+                               "geometric", MeanType)
+            GMR_mean_type <- "geometric"
+
+      } else {
+            EffectorPresent <- complete.cases(sectionInfo$Inhibitor)
+            DoseRegimen <- sectionInfo$Regimen_sub
+            SimFile <- sectionInfo$SimFile
+            MeanType <- ifelse(is.na(mean_type),
+                               sectionInfo$MeanType,
+                               mean_type)
+            MeanType <- ifelse(is.na(MeanType), "geometric", MeanType)
+            GMR_mean_type <- sectionInfo$GMR_mean_type
+
+      }
 
       # Getting PK parameters from the AUC tab
       MyPKParam <- switch(
@@ -109,7 +155,7 @@ so_table <- function(report_input_file = NA,
             "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withInhib")],
             "Multiple Dose TRUE" = PKToPull)
 
-      MyPKResults_all <- extractPK(sim_data_file = sectionInfo$SimFile,
+      MyPKResults_all <- extractPK(sim_data_file = SimFile,
                                    PKparameters = MyPKParam,
                                    returnAggregateOrIndiv =
                                          switch(as.character(includeTrialMeans),
@@ -118,11 +164,6 @@ so_table <- function(report_input_file = NA,
       MyPKResults <- switch(as.character(includeTrialMeans),
                             "TRUE" = MyPKResults_all$Aggregate,
                             "FALSE" = MyPKResults_all)
-
-      MeanType <- ifelse(is.na(mean_type),
-                         sectionInfo$MeanType,
-                         mean_type)
-      MeanType <- ifelse(is.na(MeanType), "geometric", MeanType)
 
       VarOpt1 <- variability_option[1]
       VariabilityNames <- switch(VarOpt1,
@@ -134,8 +175,8 @@ so_table <- function(report_input_file = NA,
       # the ratio for + effector over - effector be a GMR.
       if(MeanType == "arithmetic" &&
          EffectorPresent == TRUE &&
-         complete.cases(sectionInfo$GMR_mean_type) &&
-         sectionInfo$GMR_mean_type == "geometric"){
+         complete.cases(GMR_mean_type) &&
+         GMR_mean_type == "geometric"){
 
             MyPKResults[MyPKResults$Statistic == "Mean",
                         str_detect(names(MyPKResults), "ratio")] <-
@@ -183,27 +224,42 @@ so_table <- function(report_input_file = NA,
       # Adjusting tmax values since the geometric mean row will actually be the
       # median, VariabilityNames[1] will be the min, and VariabilityNames[2] will
       # be the max.
-      MyPKResults$tmax_dose1[MyPKResults$Stat == "GMean"] <-
-            MyPKResults$tmax_dose1[MyPKResults$Stat == "Median"]
-      MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[1]] <-
-            MyPKResults$tmax_dose1[MyPKResults$Stat == "Min Val"]
-      MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[2]] <-
-            MyPKResults$tmax_dose1[MyPKResults$Stat == "Max Val"]
+      if("tmax_dose1" %in% names(MyPKResults)){
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "GMean"] <-
+                  MyPKResults$tmax_dose1[MyPKResults$Stat == "Median"]
+            MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[1]] <-
+                  MyPKResults$tmax_dose1[MyPKResults$Stat == "Min Val"]
+            MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[2]] <-
+                  MyPKResults$tmax_dose1[MyPKResults$Stat == "Max Val"]
 
-      MyPKResults$tmax_ss[MyPKResults$Stat == "GMean"] <-
-            MyPKResults$tmax_ss[MyPKResults$Stat == "Median"]
-      MyPKResults$tmax_ss[MyPKResults$Stat == VariabilityNames[1]] <-
-            MyPKResults$tmax_ss[MyPKResults$Stat == "Min Val"]
-      MyPKResults$tmax_ss[MyPKResults$Stat == VariabilityNames[2]] <-
-            MyPKResults$tmax_ss[MyPKResults$Stat == "Max Val"]
+            if(EffectorPresent){
+                  MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "GMean"] <-
+                        MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "Median"]
+                  MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
+                        MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "Min Val"]
+                  MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
+                        MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "Max Val"]
+            }
 
-      if(EffectorPresent){
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "GMean"] <-
-                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Median"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
-                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Min Val"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
-                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Max Val"]
+      }
+
+      if("tmax_ss" %in% names(MyPKResults)){
+            MyPKResults$tmax_ss[MyPKResults$Stat == "GMean"] <-
+                  MyPKResults$tmax_ss[MyPKResults$Stat == "Median"]
+            MyPKResults$tmax_ss[MyPKResults$Stat == VariabilityNames[1]] <-
+                  MyPKResults$tmax_ss[MyPKResults$Stat == "Min Val"]
+            MyPKResults$tmax_ss[MyPKResults$Stat == VariabilityNames[2]] <-
+                  MyPKResults$tmax_ss[MyPKResults$Stat == "Max Val"]
+
+            if(EffectorPresent){
+                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "GMean"] <-
+                        MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Median"]
+                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
+                        MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Min Val"]
+                  MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
+                        MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "Max Val"]
+            }
+
       }
 
       # Formatting
@@ -229,48 +285,90 @@ so_table <- function(report_input_file = NA,
                               "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
       }
 
-      MyObsPK <- sectionInfo[names(sectionInfo)[
-            names(sectionInfo) %in% MyObsPKParam]] %>%
-            as.data.frame() %>% t() %>% as.data.frame() %>%
-            rename("Value" = V1) %>%
-            mutate(RName = row.names(.),
-                   Value = as.numeric(Value),
-                   Stat = ifelse(str_detect(RName, "CV"), "CV_obs", "GMean"),
-                   Stat = ifelse(str_detect(RName, "CIU"), "CIU_obs", Stat),
-                   Stat = ifelse(str_detect(RName, "CIL"), "CIL_obs", Stat),
-                   RName = sub("_CV|_[0-9]{2}CI[UL]", "", RName),
-                   Value = if_else(Stat == "CV_obs",
-                                   round(Value * 100, 0),
-                                   # Per Christiane: 3 sig figs for everything
-                                   # or full number when > 100
-                                   if_else(Value > 100,
-                                           round(Value, 0), signif(Value, 3)))) %>%
-            pivot_wider(names_from = RName, values_from = Value)
 
-      # Only want to keep the columns where there are values for the observed
-      # mean data.
-      MyObsPK <- MyObsPK %>% select(where(function(x) complete.cases(x[1])))
+      # observed data -----------------------------------------------------
+      if(class(sectionInfo) != "logical"){
 
-      # Calculating S/O
-      GMeans <- MyPKResults %>% filter(Stat == "GMean") %>%
-            pivot_longer(names_to = "PKParam_short", values_to = "Sim",
-                         cols = -Stat) %>%
-            left_join(MyObsPK %>% filter(Stat == "GMean") %>%
-                            pivot_longer(names_to = "PKParam_short", values_to = "Obs",
-                                         cols = -Stat)) %>%
-            mutate(S_O = round(Sim / Obs, 2)) %>%
-            select(PKParam_short, S_O) %>%
-            pivot_wider(names_from = PKParam_short, values_from = S_O) %>%
-            mutate(Stat = "S/O")
+            MyObsPK <- sectionInfo[names(sectionInfo)[
+                  names(sectionInfo) %in% MyObsPKParam]] %>%
+                  as.data.frame() %>% t() %>% as.data.frame() %>%
+                  rename("Value" = V1) %>%
+                  mutate(RName = row.names(.),
+                         Value = as.numeric(Value),
+                         Stat = ifelse(str_detect(RName, "CV"), "CV_obs", "GMean"),
+                         Stat = ifelse(str_detect(RName, "CIU"), "CIU_obs", Stat),
+                         Stat = ifelse(str_detect(RName, "CIL"), "CIL_obs", Stat),
+                         RName = sub("_CV|_[0-9]{2}CI[UL]", "", RName),
+                         Value = if_else(Stat == "CV_obs",
+                                         round(Value * 100, 0),
+                                         # Per Christiane: 3 sig figs for everything
+                                         # or full number when > 100
+                                         if_else(Value > 100,
+                                                 round(Value, 0), signif(Value, 3)))) %>%
+                  pivot_wider(names_from = RName, values_from = Value)
 
-      # Next, selecting only the appropriate columns for table, making
-      # everything character, and adding % symbols to CV rows
-      MyPKResults <- MyPKResults %>%
-            bind_rows(MyObsPK %>% mutate(Stat = ifelse(Stat == "GMean",
-                                                       "GMean_obs", Stat))) %>%
-            bind_rows(GMeans)
+            # Only want to keep the columns where there are values for the observed
+            # mean data.
+            MyObsPK <- MyObsPK %>% select(where(function(x) complete.cases(x[1])))
 
-      MyPKResults <- MyPKResults[, names(MyObsPK)]
+            # Calculating S/O
+            GMeans <- MyPKResults %>% filter(Stat == "GMean") %>%
+                  pivot_longer(names_to = "PKParam_short", values_to = "Sim",
+                               cols = -Stat) %>%
+                  left_join(MyObsPK %>% filter(Stat == "GMean") %>%
+                                  pivot_longer(names_to = "PKParam_short", values_to = "Obs",
+                                               cols = -Stat)) %>%
+                  mutate(S_O = round(Sim / Obs, 2)) %>%
+                  select(PKParam_short, S_O) %>%
+                  pivot_wider(names_from = PKParam_short, values_from = S_O) %>%
+                  mutate(Stat = "S/O")
+
+            # Next, selecting only the appropriate columns for table, making
+            # everything character, and adding % symbols to CV rows
+            MyPKResults <- MyPKResults %>%
+                  bind_rows(MyObsPK %>% mutate(Stat = ifelse(Stat == "GMean",
+                                                             "GMean_obs", Stat))) %>%
+                  bind_rows(GMeans)
+
+            MyPKResults <- MyPKResults[, names(MyObsPK)]
+
+            if(EffectorPresent){
+                  # Only want AUC, Cmax, tmax, t12, GMR w/ and w/out effector
+                  MyPKResults <- MyPKResults %>%
+                        select(Stat, matches("AUC|[tC]max|HalfLife|ratio"))
+
+                  PKToPull <-  c(PKToPull,
+                                 "AUCinf_ratio_dose1", "Cmax_ratio_dose1",
+                                 "AUCinf_ratio_ss", "Cmax_ratio_ss",
+                                 "AUCtau_ratio_ss", "Cmax_ratio_ss",
+                                 "AUCtau_ratio_dose1", "Cmax_ratio_dose1")
+
+            }
+
+      } else {
+            # If the user did not fill out the Excel form, then keep whatever PK
+            # parameters they requested or keep whichever parameters would be
+            # sensible for that regimen.
+            if(length(PKparameters) == 1 && is.na(PKparameters)){
+                  PKparameters <- switch(
+                        paste(EffectorPresent, Deets$Regimen_sub),
+                        "TRUE Single Dose" = c("AUCinf_dose1", "AUCinf_dose1_withInhib",
+                                               "Cmax_dose1", "Cmax_dose1_withInhib",
+                                               "tmax_dose1", "tmax_dose1_withInhib",
+                                               "Cmax_ratio_dose1", "AUCinf_ratio_dose1"),
+                        "TRUE Multiple Dose" = c("AUCinf_ss", "AUCinf_ss_withInhib",
+                                                 "Cmax_ss", "Cmax_ss_withInhib",
+                                                 "tmax_ss", "tmax_ss_withInhib",
+                                                 "Cmax_ratio_ss", "AUCinf_ratio_ss"),
+                        "FALSE Single Dose" = c("AUCinf_dose1", "Cmax_dose1",
+                                                "CL_dose1", "tmax_dose1"),
+                        "FALSE Multiple Dose" = c("AUCinf_ss", "Cmax_ss",
+                                                  "CL_ss", "tmax_ss"))
+            }
+
+            MyPKResults <- MyPKResults[, c("Stat", PKparameters)]
+            PKToPull <- PKparameters
+      }
 
       MyPKResults <- MyPKResults %>%
             mutate_all(.funs = as.character) %>%
@@ -284,18 +382,6 @@ so_table <- function(report_input_file = NA,
       # F10), and then paste the output (something like
       # "install.packages(c("dbplyr", "dplyr", "dtplyr", ... ") and execute.
 
-      if(EffectorPresent){
-            # Only want AUC, Cmax, tmax, t12, GMR w/ and w/out effector
-            MyPKResults <- MyPKResults %>%
-                  select(Stat, matches("AUC|[tC]max|HalfLife|ratio"))
-
-            PKToPull <-  c(PKToPull,
-                           "AUCinf_ratio_dose1", "Cmax_ratio_dose1",
-                           "AUCinf_ratio_ss", "Cmax_ratio_ss",
-                           "AUCtau_ratio_ss", "Cmax_ratio_ss",
-                           "AUCtau_ratio_dose1", "Cmax_ratio_dose1")
-
-      }
 
       # Talked w/Christiane about including t1/2 since that's included in the table,
       # and she said that Massoud prefers to NOT include it b/c there can be glitches
@@ -328,7 +414,7 @@ so_table <- function(report_input_file = NA,
             warning(paste0("The ",
                            MissingOpts,
                            " was/were requested but is/are not present in the simulator output. This will not be included in the table."))
-            }
+      }
 
       # Putting trial means into appropriate format
       if(includeTrialMeans){
@@ -399,6 +485,11 @@ so_table <- function(report_input_file = NA,
       MyPKResults <- MyPKResults %>%
             select(any_of(c("Statistic", PKToPull)))
 
+      if(includeCV == FALSE){
+            MyPKResults <- MyPKResults %>%
+                  filter(!str_detect(Statistic, "^CV"))
+      }
+
       # Adding final column names
       PKToPull_pretty <-
             sapply(PKToPull,
@@ -424,3 +515,6 @@ so_table <- function(report_input_file = NA,
 
       return(MyPKResults)
 }
+
+
+

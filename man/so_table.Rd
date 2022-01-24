@@ -8,11 +8,14 @@ so_table(
   report_input_file = NA,
   sheet = NA,
   sectionInfo = NA,
+  sim_data_file = NA,
+  PKparameters = NA,
   mean_type = NA,
   variability_option = "90\% CI",
   concatVariability = FALSE,
   includeHalfLife = FALSE,
-  includeTrialMeans = FALSE
+  includeTrialMeans = FALSE,
+  includeCV = TRUE
 )
 }
 \arguments{
@@ -27,6 +30,18 @@ section of the report. In the original template, this was the tab titled
 \item{sectionInfo}{information about the simulated and observed data. This is
 output from the function \code{\link{getSectionInfo}} and can be used
 instead of listing the Excel file and sheet name as input.}
+
+\item{sim_data_file}{the simulator output file. This is only necessary if you
+are planning to leave blank the rows for the observed data values and fill
+them in yourself.}
+
+\item{PKparameters}{the PK parameters to include as a character vector. For a
+full list of options, please see the help file for \link{\code{extractPK}}
+to see all possible options. By default, the PK parameters included are
+only those included in the observed data, but if no observed data are
+included, the PK parameters will be automatically selected. An example of
+acceptable input here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib",
+"Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}}
 
 \item{mean_type}{Arithmetic or geometric means? Only specify this if you'd
 like to override the value listed in \code{sectionInfo}. If no value is
@@ -48,6 +63,9 @@ parameter in the output table}
 \item{includeTrialMeans}{TRUE or FALSE for whether to include the range of
 trial means for a given parameter. Note: This is calculated from individual
 values rather than pulled directly from the output.}
+
+\item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
+table}
 }
 \value{
 a data.frame
@@ -55,9 +73,12 @@ a data.frame
 \description{
 \code{so_table} creates simulated vs. observed tables for reports and
 presentations, including reporting means, CVs, confidence intervals or
-percentiles, and ratios of simulated vs. observed mean values. Since this
-requires comparing observed data to a simulator output file, setting up the
-input for this function requires a few steps: \enumerate{ \item{Use the function
+percentiles, and ratios of simulated vs. observed mean values. There are two
+main ways to approach using this function 1. Select which data you want to
+compare (\code{PKparameters} argument) and leave blank rows for observed data
+to fill in later and calculate by hand, or 2. Fill out an Excel form with
+information about your observed data. Setting up the input for this approach
+requires a few steps:\enumerate{\item{Use the function
 \code{\link{generateReportInputForm}} to create an Excel file where you can
 enter information about your project.} \item{Go to the tab "observed data"
 and enter details about your observed data. It's ok if you don't have all the
@@ -68,7 +89,7 @@ graph input" and fill out information here for the specific report section
 you're making this S/O table for. Make sure that whatever you list as the tab
 that contains information about the observed data is exactly the same as the
 actual tab name that you filled out in step 2. Also make sure that the file
-names include the full file path.} \item{Save your Excel file.} \item{Here,
+names include the full file path.}\item{Save your Excel file.} \item{Here,
 within RStudio (or within the shiny app that we plan to make!), run this
 function using the name of that Excel file as input for
 \code{report_input_file} and the name of the "table and graph input" tab as
