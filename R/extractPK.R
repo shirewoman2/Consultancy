@@ -95,12 +95,10 @@
 #'   \item{tlag_x}{lag time for the specified compound. By default, data are
 #'   pulled from the sheet "Absorption".}
 #'
-#'   \item{tmax_dose1}{tmax for dose 1. By default, data are pulled from sheet
-#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-#'
-#'   \item{tmax_ss}{tmax for the last dose. By default, data are pulled from
-#'   sheet "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which there
-#'   is a sheet, from the column titled, e.g., "TMax (h)".}
+#'   \item{tmax_dose1, tmax_dose1_Inhib, tmax_ss, tmax_ss_Inhib}{tmax for dose 1
+#'   or for the last dose, with or without inhibitors present. By default, data
+#'   are pulled from sheet "AUC", column titled, e.g., "TMax (h)" or "TMaxinh
+#'   (h)".}
 #'
 #'   } The default is only those parameters present on the "AUC" sheet in the
 #'   simulator output.
@@ -196,7 +194,10 @@ extractPK <- function(sim_data_file,
                     "Cmax_ratio_ss",
                     "Cmax_ss_withInhib",
                     "HalfLife_dose1",
-                    "tmax_dose1")
+                    "tmax_dose1",
+                    "tmax_dose1_withInhib",
+                    "tmax_ss",
+                    "tmax_ss_withInhib")
 
       ParamAbsorption <- c("ka_sub", "ka_inhib",
                            "fa_sub", "fa_inhib",
@@ -208,7 +209,8 @@ extractPK <- function(sim_data_file,
                      "Cmax_dose1",
                      "Cmax_dose1_withInhib",
                      "Cmax_ratio_dose1",
-                     "tmax_dose1")
+                     "tmax_dose1",
+                     "tmax_dose1_withInhib")
 
       ParamAUCX <- c("AUCtau_ss",
                      "AUCtau_ss_withInhib",
@@ -229,8 +231,8 @@ extractPK <- function(sim_data_file,
 
 
       if(PKparameters[1] == "all"){
-            PKparameters <- c(ParamAbsorption, ParamAUC, ParamAUC0, ParamAUCX,
-                              ParamCLTSS, ParamSummary)
+            PKparameters <- unique(c(ParamAbsorption, ParamAUC, ParamAUC0,
+                                     ParamAUCX, ParamCLTSS, ParamSummary))
       }
 
       if(PKparameters[1] == "AUC tab"){
@@ -258,10 +260,7 @@ extractPK <- function(sim_data_file,
       # NOTE: I am NOT removing "AUCinf_ratio_dose1" from this list b/c it is
       # not available when the regimen is MD (at least, nowhere I've found in
       # the output). By NOT removing it, there will be a warning to the user
-      # that that parameter was not found. TO CONSIDER FOR FUTURE: We *could*
-      # calculate it. It's not like it's complicated math, but calculating the
-      # aggregate values could be problematic given that there's that weirdness
-      # in how the 90% CI is calculated by the simulator. -LS
+      # that that parameter was not found.
       if(Deets$Regimen_sub == "Multiple Dose"){
             ParamAUC <- setdiff(ParamAUC,
                                 c("AUCtau_ratio_dose1",
@@ -327,7 +326,11 @@ extractPK <- function(sim_data_file,
                                            "Cmax_ss_withInhib" = "^CMax",
                                            "Cmax_ratio_ss" = "^CMax Ratio$",
                                            "HalfLife_dose1" = "Half-life",
-                                           "tmax_dose1" = "^TMax \\(")
+                                           "tmax_dose1" = "^TMax \\(",
+                                           "tmax_dose1_withInhib" = "^TMaxinh \\(",
+                                           "tmax_ss" = "^TMax \\(", # RETURN TO THIS. Need to make sure it's going to pull the correct tmax.
+                                           "tmax_ss_withInhib" = "TMaxinh \\("
+                                           )
 
                         # The AUC and Cmax ratios are listed with the parameters
                         # with inhibitor present and need those columns to be
@@ -349,7 +352,7 @@ extractPK <- function(sim_data_file,
 
                         # Dose 1 tmax and Cmax are only available for the 0 to
                         # tau columns, so changing those parameter names
-                        # temporarily.
+                        # temporarily. RETURN TO THIS: If the user requests integration of the last dose, doesn't that show up here? CHECK.
                         PKparam <- ifelse(str_detect(PKparam, "[Ct]max"),
                                           sub("max", "maxtau", PKparam),
                                           PKparam)
