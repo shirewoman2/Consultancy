@@ -8,7 +8,8 @@ extractConcTime_mult(
   sim_data_files,
   conctime_DF,
   overwrite = FALSE,
-  returnAggregateOrIndiv = "aggregate"
+  returnAggregateOrIndiv = "aggregate",
+  ...
 )
 }
 \arguments{
