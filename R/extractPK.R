@@ -153,6 +153,10 @@ extractPK <- function(sim_data_file,
       ssNum <- suppressWarnings(max(ssNum[ssNum != 0]))
       Tab_last <- paste0("AUC", ssNum, "(Sub)(CPlasma)")
 
+      # Need to keep track of the original PK parameters requested so that we
+      # don't waste time reading more sheets than necessary
+      PKparameters_orig <- PKparameters
+
       # If the user supplied a sheet but it's just one of the sheets built in,
       # then use *that* sheet instead b/c that code is more versatile than the
       # generic one.
@@ -273,7 +277,8 @@ extractPK <- function(sim_data_file,
       Out_agg <- list()
 
       # Pulling data from the "AUC" sheet ------------------------------------------
-      if(any(PKparameters %in% ParamAUC) & is.na(sheet)){
+      if(any(PKparameters %in% ParamAUC) & is.na(sheet) &
+         PKparameters_orig != "Absorption tab"){
 
             PKparameters_AUC <- intersect(PKparameters, ParamAUC)
 
@@ -420,7 +425,11 @@ extractPK <- function(sim_data_file,
                               }
                         }
 
-                        StartCol <- StartCol[1]
+                        if(exists("StartCol", inherits = FALSE)){
+                              StartCol <- StartCol[1]
+                        } else {
+                              StartCol <- 1
+                        }
 
                         if(length(StartCol) == 0){
 
@@ -516,7 +525,8 @@ extractPK <- function(sim_data_file,
             PKparameters_AUC0 <- intersect("A", "B")
       }
 
-      if(length(PKparameters_AUC0) > 0){
+      if(length(PKparameters_AUC0) > 0 &
+         PKparameters_orig %in% c("AUC tab", "Absorption tab") == FALSE){
             # Error catching
             if(any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
 
@@ -605,7 +615,8 @@ extractPK <- function(sim_data_file,
             PKparameters_AUCX <- intersect("A", "B")
       }
 
-      if(length(PKparameters_AUCX) > 0){
+      if(length(PKparameters_AUCX) > 0 &
+         PKparameters_orig %in% c("AUC tab", "Absorption tab") == FALSE){
 
             # Error catching
             if(ssNum == 0 | length(ssNum) == 0){
@@ -696,7 +707,8 @@ extractPK <- function(sim_data_file,
             PKparameters_Abs <- intersect("A", "B")
       }
 
-      if(length(PKparameters_Abs) > 0){
+      if(length(PKparameters_Abs) > 0 &
+         PKparameters_orig %in% c("AUC tab") == FALSE){
             # Error catching
             if("Absorption" %in% AllSheets == FALSE){
                   warning(paste0("The sheet 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
@@ -853,7 +865,8 @@ extractPK <- function(sim_data_file,
             PKparameters_CLTSS <- intersect("A", "B")
       }
 
-      if(length(PKparameters_CLTSS) > 0){
+      if(length(PKparameters_CLTSS) > 0 &
+         PKparameters_orig %in% c("AUC tab", "Absorption tab") == FALSE){
             # Error catching
             if("Clearance Trials SS" %in% AllSheets == FALSE){
                   warning(paste0("The sheet 'Clearance Trials SS' must be present in the Excel simulated data file to extract the PK parameters ",
