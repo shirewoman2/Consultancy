@@ -26,6 +26,7 @@
 #' you'll need to close it or this function will just keep running and not
 #' generate any output while it waits for access to the file.} }
 #'
+#'
 #' @param report_input_file the name of the Excel file created by running
 #'   \code{\link{generateReportInputForm}}, including the path if it's in any
 #'   other directory than the current one, which you have now filled out
@@ -39,7 +40,7 @@
 #'   are planning to leave blank the rows for the observed data values and fill
 #'   them in yourself.
 #' @param PKparameters the PK parameters to include as a character vector. For a
-#'   full list of options, please see the help file for \link{\code{extractPK}}
+#'   full list of options, please see the help file for \code{\link{extractPK}}
 #'   to see all possible options. By default, the PK parameters included are
 #'   only those included in the observed data, but if no observed data are
 #'   included, the PK parameters will be automatically selected. An example of
@@ -48,7 +49,7 @@
 #' @param mean_type Arithmetic or geometric means? Only specify this if you'd
 #'   like to override the value listed in \code{sectionInfo}. If no value is
 #'   specified here or in \code{sectionInfo}, the default is "geometric".
-#' @param variability_option  What type of variability would you like the table
+#' @param variability_option What type of variability would you like the table
 #'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 #'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
 #'   percentiles"). The arithmetic CV will automatically be included.}

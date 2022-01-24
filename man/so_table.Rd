@@ -36,7 +36,7 @@ are planning to leave blank the rows for the observed data values and fill
 them in yourself.}
 
 \item{PKparameters}{the PK parameters to include as a character vector. For a
-full list of options, please see the help file for \link{\code{extractPK}}
+full list of options, please see the help file for \code{\link{extractPK}}
 to see all possible options. By default, the PK parameters included are
 only those included in the observed data, but if no observed data are
 included, the PK parameters will be automatically selected. An example of
