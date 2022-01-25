@@ -66,11 +66,11 @@
 #'   from the "Clearance Trials SS" tab. Sorry for the uncertain explanation;
 #'   I'll update this when I know better what this is! -LS}
 #'
-#'   \item{Cmax_dose1, Cmax_dose1_withInhib}{Cmax for dose 1 with or without an
-#'   inhibitor. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
-#'   column titled, e.g., "CMax (mg/L)".}
+#'   \item{Cmax_dose1, Cmax_dose1_withInhib}{Cmax for dose 1 or at steady state
+#'   with or without an inhibitor. By default, data are pulled from sheet
+#'   "AUC0(Sub)(CPlasma)", column titled, e.g., "CMax (mg/L)".}
 #'
-#'   \item{Cmax_ss}{Cmax for the last dose. By default, data are pulled from
+#'   \item{Cmax_ss, Cmax_ss_withInhib}{Cmax for the last dose. By default, data are pulled from
 #'   sheet "AUC", column titled, e.g., "CMax (mg/L)", under the subheading
 #'   "Truncated AUCt for the last dose.}
 #'
