@@ -144,12 +144,25 @@ extractPK <- function(sim_data_file,
 
       # Determining the name of the tab that contains PK data for the last dose
       # of the substrate (not the inhibitor, at least, not at this point).
-      Tab_last <- AllSheets[str_detect(AllSheets, "AUC[0-9]{1,}") &
+      Tab_last <- AllSheets[str_detect(AllSheets, "AUC(t)?[0-9]{1,}") &
                                   !str_detect(AllSheets, "Inh")]
       ssNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
       # It's the highest dose number and it can't be 0 b/c that's dose 1.
       ssNum <- suppressWarnings(max(ssNum[ssNum != 0]))
+      # If ssNum is now "-Inf" b/c it was all zeroes in the previous line but
+      # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
+      # that one.
       Tab_last <- paste0("AUC", ssNum, "(Sub)(CPlasma)")
+      Tab_last <- ifelse(ssNum == -Inf &
+                               any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
+                                         !str_detect(AllSheets, "Inh")),
+                         AllSheets[str_detect(AllSheets, "AUCt[0-9]{1,}") &
+                                         !str_detect(AllSheets, "Inh")],
+                         Tab_last)
+
+      # Need to keep track of the original PK parameters requested so that we
+      # don't waste time reading more sheets than necessary
+      PKparameters_orig <- PKparameters
 
       # If the user supplied a sheet but it's just one of the sheets built in,
       # then use *that* sheet instead b/c that code is more versatile than the
@@ -260,7 +273,9 @@ extractPK <- function(sim_data_file,
       # NOTE: I am NOT removing "AUCinf_ratio_dose1" from this list b/c it is
       # not available when the regimen is MD (at least, nowhere I've found in
       # the output). By NOT removing it, there will be a warning to the user
-      # that that parameter was not found.
+      # that that parameter was not found. Also, I'm removing some parameters
+      # that are not completely clearly and unequivocably labeled so that they
+      # can be pulled from sheets where they are so labeled.
       if(Deets$Regimen_sub == "Multiple Dose"){
             ParamAUC <- setdiff(ParamAUC,
                                 c("AUCtau_ratio_dose1",
@@ -272,7 +287,8 @@ extractPK <- function(sim_data_file,
       Out_agg <- list()
 
       # Pulling data from the "AUC" sheet ------------------------------------------
-      if(any(PKparameters %in% ParamAUC) & is.na(sheet)){
+      if(any(PKparameters %in% ParamAUC) & is.na(sheet) &
+         PKparameters_orig[1] != "Absorption tab"){
 
             PKparameters_AUC <- intersect(PKparameters, ParamAUC)
 
@@ -330,7 +346,7 @@ extractPK <- function(sim_data_file,
                                            "tmax_dose1_withInhib" = "^TMaxinh \\(",
                                            "tmax_ss" = "^TMax \\(", # RETURN TO THIS. Need to make sure it's going to pull the correct tmax.
                                            "tmax_ss_withInhib" = "TMaxinh \\("
-                                           )
+                        )
 
                         # The AUC and Cmax ratios are listed with the parameters
                         # with inhibitor present and need those columns to be
@@ -423,7 +439,11 @@ extractPK <- function(sim_data_file,
                               }
                         }
 
-                        StartCol <- StartCol[1]
+                        if(exists("StartCol", inherits = FALSE)){
+                              StartCol <- StartCol[1]
+                        } else {
+                              StartCol <- 1
+                        }
 
                         if(length(StartCol) == 0){
 
@@ -467,6 +487,7 @@ extractPK <- function(sim_data_file,
                   StartRow_agg <- which(AUC_xl$...2 == "Statistics") + 2
                   EndRow_agg <- which(is.na(AUC_xl$...2))
                   EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+                  EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl))
 
                   for(i in PKparameters_AUC){
                         ColNum <- findCol(i)
@@ -519,7 +540,8 @@ extractPK <- function(sim_data_file,
             PKparameters_AUC0 <- intersect("A", "B")
       }
 
-      if(length(PKparameters_AUC0) > 0){
+      if(length(PKparameters_AUC0) > 0 &
+         PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
             # Error catching
             if(any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
 
@@ -556,6 +578,7 @@ extractPK <- function(sim_data_file,
                   StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
                   EndRow_agg <- which(is.na(AUC0_xl$...2))
                   EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+                  EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl))
 
                   for(i in PKparameters_AUC0){
                         ColNum <- findCol(i)
@@ -608,7 +631,8 @@ extractPK <- function(sim_data_file,
             PKparameters_AUCX <- intersect("A", "B")
       }
 
-      if(length(PKparameters_AUCX) > 0){
+      if(length(PKparameters_AUCX) > 0 &
+         PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
 
             # Error catching
             if(ssNum == 0 | length(ssNum) == 0){
@@ -699,7 +723,8 @@ extractPK <- function(sim_data_file,
             PKparameters_Abs <- intersect("A", "B")
       }
 
-      if(length(PKparameters_Abs) > 0){
+      if(length(PKparameters_Abs) > 0 &
+         PKparameters_orig[1] %in% c("AUC tab") == FALSE){
             # Error catching
             if("Absorption" %in% AllSheets == FALSE){
                   warning(paste0("The sheet 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
@@ -856,7 +881,8 @@ extractPK <- function(sim_data_file,
             PKparameters_CLTSS <- intersect("A", "B")
       }
 
-      if(length(PKparameters_CLTSS) > 0){
+      if(length(PKparameters_CLTSS) > 0 &
+         PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
             # Error catching
             if("Clearance Trials SS" %in% AllSheets == FALSE){
                   warning(paste0("The sheet 'Clearance Trials SS' must be present in the Excel simulated data file to extract the PK parameters ",
@@ -1137,23 +1163,26 @@ extractPK <- function(sim_data_file,
 
       } else {
 
-            # Putting objects in alphabetical order
-            Out_ind <- Out_ind[order(names(Out_ind))]
+            if(length(Out_ind) > 1){
 
-            if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
-                  Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
-                  Out_ind <- bind_rows(Out_ind) %>%
-                        pivot_longer(cols = -(c(Individual, Trial)),
-                                     names_to = "Parameter",
-                                     values_to = "Value") %>%
-                        filter(complete.cases(Value)) %>%
-                        arrange(Parameter, as.numeric(Trial),
-                                as.numeric(Individual)) %>%
-                        pivot_wider(names_from = Parameter,
-                                    values_from = Value)
-            } else {
-                  Out_ind <- Out_ind[names(Out_ind)[!str_detect(names(Out_ind), "tab$")]] %>%
-                        as.data.frame()
+                  # Putting objects in alphabetical order
+                  Out_ind <- Out_ind[order(names(Out_ind))]
+
+                  if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
+                        Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
+                        Out_ind <- bind_rows(Out_ind) %>%
+                              pivot_longer(cols = -(c(Individual, Trial)),
+                                           names_to = "Parameter",
+                                           values_to = "Value") %>%
+                              filter(complete.cases(Value)) %>%
+                              arrange(Parameter, as.numeric(Trial),
+                                      as.numeric(Individual)) %>%
+                              pivot_wider(names_from = Parameter,
+                                          values_from = Value)
+                  } else {
+                        Out_ind <- Out_ind[names(Out_ind)[!str_detect(names(Out_ind), "tab$")]] %>%
+                              as.data.frame()
+                  }
             }
       }
 
