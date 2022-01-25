@@ -583,13 +583,13 @@ extractConcTime <- function(sim_data_file,
       # individual data ------------------------------------------------------
       if("individual" %in% returnAggregateOrIndiv){
 
+            StartIndiv <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))
+
             ## compoundtoExtract is substrate or substrate metabolite -----------
             if(str_detect(compoundToExtract, "substrate|metabolite") &
                !str_detect(compoundToExtract, "inhibitor")){
 
                   # substrate data
-                  StartIndiv <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))
-
                   TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
                   TimeRow <- TimeRow[TimeRow > StartIndiv][1]
 
