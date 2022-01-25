@@ -178,6 +178,14 @@ extractConcTime <- function(sim_data_file,
                         Deets[["Inhibitor1Metabolite"]])
       AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
 
+      # For matching the correct effector to the correct names in
+      # the output file
+      Eff_DF <- data.frame(CompoundID = c("inhibitor 1", "inhibitor 2",
+                                          "inhibitor 1 metabolite"),
+                           Compound = c(Deets$Inhibitor1,
+                                        Deets$Inhibitor2,
+                                        Deets$Inhibitor1Metabolite))
+
       # Extracting tissue or plasma/blood data? Sheet format differs.
       TissueType <- ifelse(str_detect(tissue, "plasma|blood|portal|peripheral"),
                            "systemic", "tissue")
@@ -256,6 +264,8 @@ extractConcTime <- function(sim_data_file,
                            "substrate tissue" = Deets$Substrate,
                            "inhibitor 1 systemic" = Deets$Inhibitor1,
                            "inhibitor 1 tissue" = Deets$Inhibitor1,
+                           "inhibitor 2 systemic" = Deets$Inhibitor2,
+                           "inhibitor 2 tissue" = Deets$Inhibitor2,
                            "inhibitor 1 metabolite systemic" = Deets$Inhibitor1Metabolite,
                            "primary metabolite 1 systemic" = Deets$PrimaryMetabolite1,
                            "primary metabolite 2 systemic" = Deets$PrimaryMetabolite2,
@@ -566,7 +576,7 @@ extractConcTime <- function(sim_data_file,
                               pivot_longer(names_to = "Trial", values_to = "Conc",
                                            cols = -c(Time)) %>%
                               mutate(Compound = i,
-                                     CompoundID = compoundToExtract,
+                                     CompoundID = Eff_DF %>% filter(Compound == i) %>% pull(CompoundID),
                                      Inhibitor = str_c(AllEffectors, collapse = ", "),
                                      Time_units = SimTimeUnits,
                                      Conc_units = SimConcUnits)
@@ -748,7 +758,7 @@ extractConcTime <- function(sim_data_file,
                               pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                            cols = -Time) %>%
                               mutate(Compound = i,
-                                     CompoundID = compoundToExtract,
+                                     CompoundID = Eff_DF %>% filter(Compound == i) %>% pull(CompoundID),
                                      Inhibitor = str_c(AllEffectors, collapse = ", "),
                                      SubjTrial = sub("ID", "", SubjTrial),
                                      Time_units = SimTimeUnits,
