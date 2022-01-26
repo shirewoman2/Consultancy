@@ -11,7 +11,8 @@ extractPK(
   sheet = NA,
   tissue = "plasma",
   returnAggregateOrIndiv = "aggregate",
-  includeTrialInfo = TRUE
+  includeTrialInfo = TRUE,
+  checkDataSource = TRUE
 )
 }
 \arguments{
@@ -129,10 +130,16 @@ statistics reported exactly as in the simulator output file.}
 \item{includeTrialInfo}{TRUE or FALSE: Include which individual and trial the
 data describe? This only applies when \code{returnAggregateOrIndiv}
 includes "individual".}
+
+\item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
+lists exactly where the data were pulled from the simulator output file.
+Useful for QCing.}
 }
 \value{
 Depending on the options selected, returns a list of numerical
-  vectors or a list of data.frames.
+  vectors or a list of data.frames. If \code{checkDataSource} is TRUE, this
+  will also return a list indicating where in the simulator output file the
+  data came from.
 }
 \description{
 Pull calculated substrate PK parameters from a Simcyp simulation output Excel

@@ -118,9 +118,14 @@
 #' @param includeTrialInfo TRUE or FALSE: Include which individual and trial the
 #'   data describe? This only applies when \code{returnAggregateOrIndiv}
 #'   includes "individual".
+#' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
+#'   lists exactly where the data were pulled from the simulator output file.
+#'   Useful for QCing.
 #'
 #' @return Depending on the options selected, returns a list of numerical
-#'   vectors or a list of data.frames.
+#'   vectors or a list of data.frames. If \code{checkDataSource} is TRUE, this
+#'   will also return a list indicating where in the simulator output file the
+#'   data came from.
 #'
 #' @import tidyverse
 #' @import readxl
@@ -138,7 +143,8 @@ extractPK <- function(sim_data_file,
                       sheet = NA,
                       tissue = "plasma",
                       returnAggregateOrIndiv = "aggregate",
-                      includeTrialInfo = TRUE){
+                      includeTrialInfo = TRUE,
+                      checkDataSource = TRUE){
 
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
@@ -285,6 +291,16 @@ extractPK <- function(sim_data_file,
 
       Out_ind <- list()
       Out_agg <- list()
+      DataCheck <- data.frame(PKparam = as.character(NA),
+                              Tab = as.character(NA),
+                              StartColText = as.character(NA),
+                              SearchText = as.character(NA),
+                              Column = as.numeric(NA),
+                              StartRow_agg = as.numeric(NA),
+                              EndRow_agg = as.numeric(NA),
+                              StartRow_ind = as.numeric(NA),
+                              EndRow_ind = as.numeric(NA),
+                              Note = as.character(NA))
 
       # Pulling data from the "AUC" sheet ------------------------------------------
       if(any(PKparameters %in% ParamAUC) & is.na(sheet) &
@@ -385,12 +401,18 @@ extractPK <- function(sim_data_file,
                                           StartCol <-
                                                 which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                  "for the first dose in the presence of inhibitor"))
+                                          StartColText <- "for the first dose in the presence of inhibitor"
+
                                     } else {
                                           StartCol <-
                                                 which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                  ifelse(Deets$Regimen_sub == "Single Dose",
                                                                         "^Inhibited$",
                                                                         "Truncated AUCt_inh for the first dose")))
+                                          StartColText <- ifelse(Deets$Regimen_sub == "Single Dose",
+                                                                 "^Inhibited$",
+                                                                 "Truncated AUCt_inh for the first dose")
+
                                     }
                               }
 
@@ -399,6 +421,7 @@ extractPK <- function(sim_data_file,
                                     StartCol <-
                                           which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                            "for the last dose in the presence of inhibitor|^Inhibited$"))[1]
+                                    StartColText <- "for the last dose in the presence of inhibitor|^Inhibited$"
                               }
 
                         } else {
@@ -407,18 +430,21 @@ extractPK <- function(sim_data_file,
                               if(str_detect(PKparam, "inf.*_dose1")){
                                     StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                   "^Extrapolated AUC_INF for the first dose$"))
+                                    StartColText <- "^Extrapolated AUC_INF for the first dose$"
                               }
 
                               if(str_detect(PKparam, "tau.*_dose1") &
                                  Deets$Regimen_sub == "Single Dose"){
                                     StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                   "^AUC integrated from"))
+                                    StartColText <- "^AUC integrated from"
                               }
 
                               if(str_detect(PKparam, "tau.*_dose1") &
                                  Deets$Regimen_sub == "Multiple Dose"){
                                     StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                   "^Truncated AUCt for the first dose"))
+                                    StartColText <- "^Truncated AUCt for the first dose"
                               }
 
                               # last dose
@@ -426,9 +452,11 @@ extractPK <- function(sim_data_file,
 
                                     StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                  "^Truncated AUCt for the last dose$"))
+                                    StartColText <- "^Truncated AUCt for the first dose"
                                     if(length(StartCol) == 0){
                                           StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                                        "^AUC integrated from"))
+                                          StartColText <- "^AUC integrated from"
                                     }
                               }
 
@@ -474,23 +502,30 @@ extractPK <- function(sim_data_file,
                                           which(str_detect(as.vector(t(
                                                 AUC_xl[3, PossCol])), ToDetect) &
                                                       !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
-
                               }
                         }
 
+                        if(checkDataSource){
+                              assign("SearchText4Col", value = StartColText,
+                                     pos = 1)
+                              assign("SearchText", value = ToDetect,
+                                     pos = 1)
+                        }
+
                         return(OutCol)
+
                   }
                   # end of subfunction
-
 
                   # finding the PK parameters requested
                   StartRow_agg <- which(AUC_xl$...2 == "Statistics") + 2
                   EndRow_agg <- which(is.na(AUC_xl$...2))
                   EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-                  EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl))
+                  EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl), EndRow_agg)
 
                   for(i in PKparameters_AUC){
                         ColNum <- findCol(i)
+
                         if(length(ColNum) == 0 | is.na(ColNum)){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
@@ -511,7 +546,20 @@ extractPK <- function(sim_data_file,
                         names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
                               pull(1)
 
-                        rm(ColNum)
+                        if(checkDataSource){
+                              DataCheck <- DataCheck %>%
+                                    bind_rows(data.frame(PKparam = i, Tab = "AUC",
+                                                         StartColText = SearchText4Col,
+                                                         SearchText = SearchText,
+                                                         Column = ColNum,
+                                                         StartRow_agg = StartRow_agg,
+                                                         EndRow_agg = EndRow_agg,
+                                                         StartRow_ind = 4,
+                                                         EndRow_ind = EndRow_ind,
+                                                         Note = "StartColText is looking in row 2."))
+                        }
+
+                        rm(ColNum, SearchText4Col, SearchText)
                   }
 
                   if(includeTrialInfo){
@@ -570,7 +618,13 @@ extractPK <- function(sim_data_file,
                                            "tmax_dose1" = "TMax",
                                            "tmax_dose1_withInhib" = "TMaxinh")
 
-                        which(str_detect(as.vector(t(AUC0_xl[2, ])), ToDetect))[1]
+                        if(checkDataSource){
+                              assign("SearchText", value = ToDetect,
+                                     pos = 1)
+                        }
+
+                        return(which(str_detect(as.vector(t(AUC0_xl[2, ])),
+                                                ToDetect))[1])
                   }
                   # end of subfunction
 
@@ -578,7 +632,8 @@ extractPK <- function(sim_data_file,
                   StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
                   EndRow_agg <- which(is.na(AUC0_xl$...2))
                   EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-                  EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl))
+                  EndRow_agg <- ifelse(is.na(EndRow_agg),
+                                       nrow(AUC_xl), EndRow_agg)
 
                   for(i in PKparameters_AUC0){
                         ColNum <- findCol(i)
@@ -602,7 +657,19 @@ extractPK <- function(sim_data_file,
                         names(Out_agg[[i]]) <- AUC0_xl[StartRow_agg:EndRow_agg, 2] %>%
                               pull(1)
 
-                        rm(ColNum)
+                        if(checkDataSource){
+                              DataCheck <- DataCheck %>%
+                                    bind_rows(data.frame(PKparam = i,
+                                                         Tab = Sheet,
+                                                         SearchText = SearchText,
+                                                         Column = ColNum,
+                                                         StartRow_agg = StartRow_agg,
+                                                         EndRow_agg = EndRow_agg,
+                                                         StartRow_ind = 3,
+                                                         EndRow_ind = EndRow_ind))
+                        }
+
+                        rm(ColNum, SearchText)
                   }
 
                   if(includeTrialInfo){
@@ -662,7 +729,13 @@ extractPK <- function(sim_data_file,
                                            "tmax_ss" = "^TMax \\(",
                                            "tmax_ss_withInhib" = "TMaxinh \\(")
 
-                        which(str_detect(as.vector(t(AUCX_xl[2, ])), ToDetect))[1]
+                        if(checkDataSource){
+                              assign("SearchText", value = ToDetect,
+                                     pos = 1)
+                        }
+
+                        return(which(str_detect(as.vector(t(AUCX_xl[2, ])),
+                                                ToDetect))[1])
                   }
                   # end subfunction
 
@@ -694,8 +767,22 @@ extractPK <- function(sim_data_file,
                         names(Out_agg[[i]]) <- AUCX_xl[StartRow_agg:EndRow_agg, 2] %>%
                               pull(1)
 
-                        rm(ColNum)
+                        if(checkDataSource){
+                              DataCheck <- DataCheck %>%
+                                    bind_rows(data.frame(PKparam = i,
+                                                         Tab = Tab_last,
+                                                         SearchText = SearchText,
+                                                         Column = ColNum,
+                                                         StartRow_agg = StartRow_agg,
+                                                         EndRow_agg = EndRow_agg,
+                                                         StartRow_ind = 3,
+                                                         EndRow_ind = EndRow_ind))
+                        }
+
+                        rm(ColNum, SearchText)
                   }
+
+
 
                   if(includeTrialInfo){
                         # Subject and trial info
@@ -750,12 +837,16 @@ extractPK <- function(sim_data_file,
                                            "tlag_sub" = "lag time \\(",
                                            "tlag_inhib" = "lag time \\(")
 
-
                         StartCol <- ifelse(str_detect(PKparam, "sub"),
                                            SubCols, InhibCols)
                         OutCol <- which(str_detect(
                               as.character(Abs_xl[9, StartCol:(StartCol+2)]),
                               ToDetect)) + StartCol - 1
+
+                        if(checkDataSource){
+                              assign("SearchText", value = ToDetect,
+                                     pos = 1)
+                        }
 
                         return(OutCol)
                   }
@@ -777,7 +868,19 @@ extractPK <- function(sim_data_file,
                                     filter(complete.cases(Values)) %>% pull(Values) %>% as.numeric
                         )
 
-                        rm(ColNum)
+                        if(checkDataSource){
+                              DataCheck <- DataCheck %>%
+                                    bind_rows(data.frame(PKparam = i,
+                                                         Tab = "Absorption",
+                                                         SearchText = SearchText,
+                                                         Column = ColNum,
+                                                         StartRow_agg = NA,
+                                                         EndRow_agg = NA,
+                                                         StartRow_ind = 10,
+                                                         EndRow_ind = nrow(Abs_xl)))
+                        }
+
+                        rm(ColNum, SearchText)
                   }
 
                   if(includeTrialInfo){
@@ -842,6 +945,11 @@ extractPK <- function(sim_data_file,
                                     as.character(Abs_xl[StartRow_agg, MyCols]),
                                     ToDetect))]
 
+                        if(checkDataSource){
+                              assign("SearchText", value = ToDetect,
+                                     pos = 1)
+                        }
+
                         return(OutCol)
                   }
                   # end of subfunction
@@ -864,7 +972,19 @@ extractPK <- function(sim_data_file,
                         names(Out_agg[[i]]) <- Abs_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg - 1] %>%
                               pull(1)
 
-                        rm(ColNum)
+                        if(checkDataSource){
+                              DataCheck <- DataCheck %>%
+                                    bind_rows(data.frame(PKparam = i,
+                                                         Tab = "Absorption",
+                                                         SearchText = SearchText,
+                                                         Column = ColNum,
+                                                         StartRow_agg = StartRow_agg + 1,
+                                                         EndRow_agg = EndRow_agg,
+                                                         StartRow_ind = NA,
+                                                         EndRow_ind = NA))
+                        }
+
+                        rm(ColNum, SearchText)
                   }
             }
       }
@@ -906,6 +1026,12 @@ extractPK <- function(sim_data_file,
 
                         OutCol <- which(str_detect(as.vector(t(CLTSS_xl[1, ])),
                                                    ToDetect))
+
+                        if(checkDataSource){
+                              assign("SearchText", value = ToDetect,
+                                     pos = 1)
+                        }
+
                         return(OutCol)
                   }
                   # end of subfunction
@@ -926,7 +1052,22 @@ extractPK <- function(sim_data_file,
                                     rename(Values = 1) %>%
                                     pull(Values) %>% as.numeric
                         )
-                        rm(ColNum)
+
+
+                        if(checkDataSource){
+                              DataCheck <- DataCheck %>%
+                                    bind_rows(data.frame(PKparam = i,
+                                                         Tab = "Clearance Trials SS",
+                                                         SearchText = SearchText,
+                                                         Column = ColNum,
+                                                         StartRow_agg = NA,
+                                                         EndRow_agg = NA,
+                                                         StartRow_ind = 2,
+                                                         EndRow_ind = nrow(CLTSS_xl)))
+                        }
+
+                        rm(ColNum, SearchText)
+
                   }
 
                   if(includeTrialInfo){
@@ -962,6 +1103,12 @@ extractPK <- function(sim_data_file,
 
                         OutCol <- which(str_detect(as.vector(t(CLTSS_xl[StartRow_agg, ])),
                                                    ToDetect))
+
+                        if(checkDataSource){
+                              assign("SearchText", value = ToDetect,
+                                     pos = 1)
+                        }
+
                         return(OutCol)
                   }
                   # end of subfunction
@@ -984,7 +1131,19 @@ extractPK <- function(sim_data_file,
                         names(Out_agg[[i]]) <- CLTSS_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg] %>%
                               pull(1)
 
-                        rm(ColNum)
+                        if(checkDataSource){
+                              DataCheck <- DataCheck %>%
+                                    bind_rows(data.frame(PKparam = i,
+                                                         Tab = "Clearance Trials SS",
+                                                         SearchText = SearchText,
+                                                         Column = ColNum,
+                                                         StartRow_agg = StartRow_agg + 1,
+                                                         EndRow_agg = EndRow_agg,
+                                                         StartRow_ind = NA,
+                                                         EndRow_ind = NA))
+                        }
+
+                        rm(ColNum, SearchText)
                   }
 
 
@@ -1060,6 +1219,7 @@ extractPK <- function(sim_data_file,
                                     StartCol <-
                                           which(str_detect(as.vector(t(XL[2, ])),
                                                            "for the first dose in the presence of inhibitor"))
+                                    StartColText <- "for the first dose in the presence of inhibitor"
                               }
 
                               # ss data
@@ -1067,15 +1227,18 @@ extractPK <- function(sim_data_file,
                                     StartCol <-
                                           which(str_detect(as.vector(t(XL[2, ])),
                                                            "for the last dose in the presence of inhibitor|^Inhibited$"))
+                                    StartColText <- "for the last dose in the presence of inhibitor|^Inhibited$"
 
                                     if(length(StartCol) == 0){
                                           StartCol <- which(str_detect(as.vector(t(XL[2, ])),
                                                                        "^AUC integrated from"))
+                                          StartColText <- "^AUC integrated from"
                                     }
 
                                     if(length(StartCol) == 0){
                                           StartCol <- which(str_detect(as.vector(t(XL[1, ])),
                                                                        "^AUC(.*)? integrated from"))
+                                          StartColText <- "^AUC(.*)? integrated from"
                                     }
                               }
 
@@ -1085,19 +1248,25 @@ extractPK <- function(sim_data_file,
                               if(str_detect(PKparam, "_dose1")){
                                     StartCol <-  which(str_detect(as.vector(t(XL[2, ])),
                                                                   "^Extrapolated AUC_INF for the first dose$"))
+                                    StartColText <- "^Extrapolated AUC_INF for the first dose$"
                               }
 
                               # last dose
                               if(str_detect(PKparam, "_ss")){
                                     StartCol <- which(str_detect(as.vector(t(XL[2, ])),
                                                                  "^Truncated AUCt for the last dose$"))
+                                    StartColText <- "^Truncated AUCt for the last dose$"
+
                                     if(length(StartCol) == 0){
                                           StartCol <- which(str_detect(as.vector(t(XL[2, ])),
                                                                        "^AUC integrated from"))
+                                          StartColText <- "^AUC integrated from"
                                     }
+
                                     if(length(StartCol) == 0){
                                           StartCol <- which(str_detect(as.vector(t(XL[1, ])),
                                                                        "^AUC(.*)? integrated from"))
+                                          StartColText <- "^AUC(.*)? integrated from"
                                     }
                               }
                         }
@@ -1106,11 +1275,19 @@ extractPK <- function(sim_data_file,
                   # Now should have StartCol. Finding OutCol.
                   if(length(StartCol) == 0){
                         StartCol <- 1
+                        StartColText <- NA
                   }
 
                   OutCol <- which(str_detect(as.vector(t(
                         XL[HeaderRow, ])), ToDetect) &
                               !str_detect(as.vector(t(XL[HeaderRow, ])), "%"))
+
+                  if(checkDataSource){
+                        assign("SearchText4Col", value = StartColText,
+                               pos = 1)
+                        assign("SearchText", value = ToDetect,
+                               pos = 1)
+                  }
 
                   return(OutCol)
             }
@@ -1138,7 +1315,20 @@ extractPK <- function(sim_data_file,
                   names(Out_agg[[i]]) <- XL[StartRow_agg:EndRow_agg, 2] %>%
                         pull(1)
 
-                  rm(ColNum)
+                  if(checkDataSource){
+                        DataCheck <- DataCheck %>%
+                              bind_rows(data.frame(PKparam = i, Tab = sheet,
+                                                   StartColText = SearchText4Col,
+                                                   SearchText = SearchText,
+                                                   Column = ColNum,
+                                                   StartRow_agg = StartRow_agg,
+                                                   EndRow_agg = EndRow_agg,
+                                                   StartRow_ind = HeaderRow+1,
+                                                   EndRow_ind = EndRow_ind,
+                                                   Note = "StartColText is looking in row 2."))
+                  }
+
+                  rm(ColNum, SearchText4Col, SearchText)
             }
 
             if(includeTrialInfo){
@@ -1222,6 +1412,17 @@ extractPK <- function(sim_data_file,
       if(length(returnAggregateOrIndiv) == 2){
             Out <- list("Individual" = Out_ind,
                         "Aggregate" = Out_agg)
+      }
+
+      if(checkDataSource){
+            DataCheck <- DataCheck %>% filter(complete.cases(PKparam))
+
+            if(class(Out) == "list"){
+                  Out[["QC"]] <- DataCheck
+            } else {
+                  Out <- list(returnAggregateOrIndiv = Out,
+                              "QC" = DataCheck)
+            }
       }
 
       return(Out)
