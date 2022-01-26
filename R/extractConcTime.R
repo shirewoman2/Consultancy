@@ -167,7 +167,7 @@ extractConcTime <- function(sim_data_file,
       }
 
       # Getting summary data for the simulation(s)
-      Deets <- extractExpDetails(sim_data_file)
+      Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
 
       # inhibitor 1 present?
       EffectorPresent <- complete.cases(Deets[["Inhibitor1"]])
@@ -1026,6 +1026,7 @@ extractConcTime <- function(sim_data_file,
 
       DosingScenario <- Deets[["Regimen_sub"]]
 
+
       if(adjust_obs_time & DosingScenario == "Multiple Dose" &
          exists("obs_data", inherits = FALSE)){
             # If this were a multiple-dose simulation, the observed data is,
@@ -1036,7 +1037,6 @@ extractConcTime <- function(sim_data_file,
             DoseFreq <- Deets[["DoseInt_sub"]]
             NumDoses <- Deets[["NumDoses_sub"]]
             LastDoseTime <- DoseFreq * (NumDoses - 1)
-
             obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
       }
 
@@ -1080,6 +1080,38 @@ extractConcTime <- function(sim_data_file,
             Data$Inhibitor[Data$Trial == "obs+inhibitor"] <- AllEffectors_comma
       }
 
+      # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when
+      # the user requests a specific dose.
+      MyIntervals <- c("substrate" = Deets$DoseInt_sub,
+                       "primary metabolite 1" = Deets$DoseInt_sub,
+                       "primary metabolite 2" = Deets$DoseInt_sub,
+                       "secondary metabolite" = Deets$DoseInt_sub,
+                       "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
+                                             NA, Deets$DoseInt_inhib),
+                       "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
+                                             NA, Deets$DoseInt_inhib),
+                       "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
+                                             NA, Deets$DoseInt_inhib2))
+      MyStartTimes <- c("substrate" = Deets$StartHr_sub,
+                        "primary metabolite 1" = Deets$StartHr_sub,
+                        "primarymetabolite 2" = Deets$StartHr_sub,
+                        "secondary metabolite" = Deets$StartHr_sub,
+                        "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                              Deets$StartHr_inhib),
+                        "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
+                                              Deets$StartHr_inhib2),
+                        "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                                        Deets$StartHr_inhib))
+
+      Data <- Data %>%
+            mutate(StartHr = MyStartTimes[CompoundID],
+                   TimeSinceDose1 = Time - StartHr,
+                   DoseInt = MyIntervals[CompoundID],
+                   DoseNum = Time %/% DoseInt + 1,
+                   # Taking care of possible artifacts
+                   DoseNum = ifelse(DoseNum < 0, 0, DoseNum))
+
+      # Finalizing
       Data <- Data %>%
             mutate(Trial = factor(Trial, levels = c(
                   c("obs", "obs+inhibitor", "mean", "median",
@@ -1094,7 +1126,8 @@ extractConcTime <- function(sim_data_file,
             select(any_of(c("Compound", "CompoundID", "Inhibitor", "Tissue",
                             "Individual", "Trial",
                             "Simulated", "Time", "Conc",
-                            "Time_units", "Conc_units", "File")))
+                            "Time_units", "Conc_units", "DoseNum", "DoseInt",
+                            "File")))
 
       # Filtering to return ONLY the compound the user requested. This is what
       # works for input to ct_plot at the moment, too, so things get buggered up
