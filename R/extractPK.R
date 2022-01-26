@@ -159,12 +159,15 @@ extractPK <- function(sim_data_file,
       # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
       # that one.
       Tab_last <- paste0("AUC", ssNum, "(Sub)(CPlasma)")
-      Tab_last <- ifelse(ssNum == -Inf &
-                               any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
-                                         !str_detect(AllSheets, "Inh")),
-                         AllSheets[str_detect(AllSheets, "AUCt[0-9]{1,}") &
-                                         !str_detect(AllSheets, "Inh")],
-                         Tab_last)
+      if(ssNum == -Inf){
+            if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
+                   !str_detect(AllSheets, "Inh"))){
+                  Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[0-9]{1,}") &
+                                              !str_detect(AllSheets, "Inh")]
+            } else {
+                  Tab_last <- NA
+            }
+      }
 
       # Need to keep track of the original PK parameters requested so that we
       # don't waste time reading more sheets than necessary
@@ -173,7 +176,7 @@ extractPK <- function(sim_data_file,
       # If the user supplied a sheet but it's just one of the sheets built in,
       # then use *that* sheet instead b/c that code is more versatile than the
       # generic one.
-      if(complete.cases(sheet) &
+      if(complete.cases(sheet) &&
          sheet %in% c(Tab_last, "AUC", "AUC0(Sub)(CPlasma)",
                       "AUCt0(Sub)(CPlasma)",
                       "Absorption", "Clearance Trials SS")){
@@ -464,6 +467,7 @@ extractPK <- function(sim_data_file,
                               if(str_detect(PKparam, "_dose1") == FALSE &
                                  str_detect(PKparam, "_ss") == FALSE){
                                     StartCol <- 1
+                                    StartColText <- NA
                               }
                         }
 
@@ -702,7 +706,7 @@ extractPK <- function(sim_data_file,
          PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
 
             # Error catching
-            if(ssNum == 0 | length(ssNum) == 0){
+            if(ssNum %in% c(0, -Inf) | length(ssNum) == 0){
                   warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
                                  str_c(PKparameters_AUCX, collapse = ", "),
                                  ". None of these parameters can be extracted."))
@@ -1345,6 +1349,8 @@ extractPK <- function(sim_data_file,
             rm(EndRow_ind, findCol)
       }
 
+
+      # Putting all data together ------------------------------------------
       # If user only wanted one parameter and includeTrialInfo was FALSE, make
       # the output a vector instead of a list
       if(length(Out_ind) == 1 & includeTrialInfo == FALSE){
@@ -1417,11 +1423,14 @@ extractPK <- function(sim_data_file,
       if(checkDataSource){
             DataCheck <- DataCheck %>% filter(complete.cases(PKparam))
 
-            if(class(Out) == "list"){
+            if(class(Out)[1] == "list"){
                   Out[["QC"]] <- DataCheck
             } else {
-                  Out <- list(returnAggregateOrIndiv = Out,
-                              "QC" = DataCheck)
+                  # If Out is not a list, it is a single data.frame of whichever
+                  # the user wanted -- aggregate or individual information. Name
+                  # the items in Out accordingly.
+                  Out <- list(Out, DataCheck)
+                  names(Out) <- c(returnAggregateOrIndiv, "QC")
             }
       }
 
