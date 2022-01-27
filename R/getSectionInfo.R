@@ -129,7 +129,7 @@ getSectionInfo <- function(report_input_file = NA,
       Deets <- extractExpDetails(sim_data_file = sectionInfo$SimFile)
 
       # Tidying up the names used for populations so that they look nice in report
-      Pop <- tidyPop(Deets$Pop)
+      Population <- tidyPop(Deets$Population)
       NumSimSubj <- Deets[["NumSubjTrial"]] * Deets[["NumTrials"]]
       DoseFreq <- switch(as.character(Deets[["DoseInt_sub"]]),
                          "12" = "BID",
@@ -160,7 +160,7 @@ getSectionInfo <- function(report_input_file = NA,
 
 
       # Putting everything together
-      sectionInfo <- c(sectionInfo, Deets, Pop,
+      sectionInfo <- c(sectionInfo, Deets, Population,
                     "NumSimSubj" = NumSimSubj,
                     "DoseFreq" = DoseFreq,
                     "DoseFreq_inhib" = DoseFreq_inhib,

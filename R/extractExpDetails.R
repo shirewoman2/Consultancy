@@ -10,7 +10,7 @@
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output file. Options are "Summary tab" to extract details only from the
 #'   "Summary tab" (default), "Input Sheet" to extract details only from the
-#'   "Input Sheet" tab, "population" to extract details about the population
+#'   "Input Sheet" tab, "population tab" to extract details about the population
 #'   used (data come from the tab with the same name as the population
 #'   simulated), "all" to extract all possible parameters, or a string of the
 #'   specific parameters you want. Parameters are reported with a suffix (listed
@@ -107,7 +107,7 @@
 #'
 #'   \item{pKa1_x, pKa2_x}{the pertinent pKa}
 #'
-#'   \item{Pop}{the population modeled}
+#'   \item{Population}{the population modeled}
 #'
 #'   \item{PopSize}{the size of population modeled}
 #'
@@ -181,7 +181,7 @@ extractExpDetails <- function(sim_data_file,
             Deet = c("SimulatorVersion", "Units_AUC", "Units_CL",
                      "Units_Cmax", "Units_tmax",
 
-                     "Pop", "SimEndDayTime", "SimStartDayTime",
+                     "Population", "SimEndDayTime", "SimStartDayTime",
                      "StudyDuration", "Substrate", "Type_sub",
 
                      "Inhibitor1", "Type_inhib", "Inhibitor2",
@@ -325,7 +325,7 @@ extractExpDetails <- function(sim_data_file,
                              "StartHr_inhib2")
       }
 
-      if(exp_details_input == "population"){
+      if(exp_details_input == "population tab"){
             exp_details <- PopDeets$Deet
       }
       # Need to note original exp_details requested b/c I'm adding to it if
@@ -369,7 +369,7 @@ extractExpDetails <- function(sim_data_file,
       Out <- list()
 
       if(any(exp_details %in% PopDeets$Deet)){
-            exp_details <- c(exp_details, "Pop")
+            exp_details <- c(exp_details, "Population")
             exp_details <- unique(exp_details)
       }
 
@@ -379,7 +379,7 @@ extractExpDetails <- function(sim_data_file,
       # bother reading this sheet b/c that takes more processing time. (Some
       # details show up on multiple sheets, so there are redundancies in this
       # function to deal with that.)
-      if(exp_details_input %in% c("input sheet", "population")){
+      if(exp_details_input %in% c("input sheet", "population tab")){
             MySumDeets <- intersect("A", "B")
       }
 
@@ -428,7 +428,7 @@ extractExpDetails <- function(sim_data_file,
                                      "fu_inhib" = "^fu$",
                                      "ModelType_sub" = "Distribution Model",
                                      "ModelType_inhib" = "Distribution Model",
-                                     "Pop" = "Population Name",
+                                     "Population" = "Population Name",
                                      "PopSize" = "Population Size",
                                      "NumTrials" = "Number of Trials",
                                      "NumSubjTrial" = "No. of Subjects per Trial",
@@ -499,7 +499,7 @@ extractExpDetails <- function(sim_data_file,
       # bother reading this sheet b/c that takes more processing time. (Some
       # details show up on multiple sheets, so there are redundancies in this
       # function to deal with that.)
-      if(exp_details_input %in% c("population", "summary tab")){
+      if(exp_details_input %in% c("population tab", "summary tab")){
             MyInputDeets <- intersect("A", "B")
       }
 
@@ -922,7 +922,7 @@ extractExpDetails <- function(sim_data_file,
             }
       }
 
-      # Pulling details from the Pop Sheet tab -------------------------------
+      # Pulling details from the population tab -------------------------------
       MyPopDeets <- intersect(exp_details, PopDeets$Deet)
       # If all of the details are from one of the other sheets, then don't
       # bother reading this sheet b/c that takes more processing time. (Some
@@ -936,7 +936,7 @@ extractExpDetails <- function(sim_data_file,
             # Getting name of that tab.
             SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
                                    error = openxlsx::getSheetNames(sim_data_file))
-            PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Pop, 1, 20))]
+            PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Population, 1, 20))]
 
             PopTab <- suppressMessages(tryCatch(
                   readxl::read_excel(path = sim_data_file, sheet = PopSheet,
@@ -950,8 +950,8 @@ extractExpDetails <- function(sim_data_file,
 
             # Removing population from output if the user didn't specifically request
             # it.
-            if("Pop" %in% exp_details_orig == FALSE){
-                  Out$Pop <- NULL
+            if("Population" %in% exp_details_orig == FALSE){
+                  Out$Population <- NULL
             }
 
             if("HSA" %in% exp_details_orig){
