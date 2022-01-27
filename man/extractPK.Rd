@@ -11,7 +11,8 @@ extractPK(
   sheet = NA,
   tissue = "plasma",
   returnAggregateOrIndiv = "aggregate",
-  includeTrialInfo = TRUE
+  includeTrialInfo = TRUE,
+  checkDataSource = TRUE
 )
 }
 \arguments{
@@ -104,12 +105,10 @@ extractPK(
   \item{tlag_x}{lag time for the specified compound. By default, data are
   pulled from the sheet "Absorption".}
 
-  \item{tmax_dose1}{tmax for dose 1. By default, data are pulled from sheet
-  "AUC0(Sub)(CPlasma)", column titled, e.g., "TMax (h)".}
-
-  \item{tmax_ss}{tmax for the last dose. By default, data are pulled from
-  sheet "AUCX(Sub)(CPlasma)", where "X" is the largest dose for which there
-  is a sheet, from the column titled, e.g., "TMax (h)".}
+  \item{tmax_dose1, tmax_dose1_Inhib, tmax_ss, tmax_ss_Inhib}{tmax for dose 1
+  or for the last dose, with or without inhibitors present. By default, data
+  are pulled from sheet "AUC", column titled, e.g., "TMax (h)" or "TMaxinh
+  (h)".}
 
   } The default is only those parameters present on the "AUC" sheet in the
   simulator output.}
@@ -131,10 +130,16 @@ statistics reported exactly as in the simulator output file.}
 \item{includeTrialInfo}{TRUE or FALSE: Include which individual and trial the
 data describe? This only applies when \code{returnAggregateOrIndiv}
 includes "individual".}
+
+\item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
+lists exactly where the data were pulled from the simulator output file.
+Useful for QCing.}
 }
 \value{
 Depending on the options selected, returns a list of numerical
-  vectors or a list of data.frames.
+  vectors or a list of data.frames. If \code{checkDataSource} is TRUE, this
+  will also return a list indicating where in the simulator output file the
+  data came from.
 }
 \description{
 Pull calculated substrate PK parameters from a Simcyp simulation output Excel

@@ -125,11 +125,10 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{SimulatorVersion}{Simulator version number}
 
-  \item{StartDayTime_x}{Starting day and time for administering the substrate
-  or inhbitor}
+  \item{StartDayTime_x}{Starting day and time for administering compound X}
 
   \item{StartHr_x}{Starting time in hours since the start of the simulation
-  for administering the substrate or inhibitor}
+  for administering compound X}
 
   \item{StudyDuration}{study duration in hours}
 
