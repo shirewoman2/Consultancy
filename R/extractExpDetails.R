@@ -952,12 +952,6 @@ extractExpDetails <- function(sim_data_file,
                   names(PopTab) <- paste0("...", 1:ncol(PopTab))
             }
 
-            # Removing population from output if the user didn't specifically request
-            # it.
-            if("Population" %in% exp_details_orig == FALSE){
-                  Out$Population <- NULL
-            }
-
             if("HSA" %in% exp_details_orig){
                   exp_details <- unique(c(exp_details, "HSA_C0_female",
                                           "HSA_C0_male", "HSA_C1_female",
