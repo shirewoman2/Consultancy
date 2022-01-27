@@ -1022,8 +1022,9 @@ extractConcTime <- function(sim_data_file,
       if(exists("obs_data", inherits = FALSE)){
             obs_data <- obs_data %>%
                   mutate(Simulated = FALSE,
-                         Trial = ifelse(Inhibitor == "none",
-                                        "obs", "obs+inhibitor"))
+                         Trial = as.character(
+                               ifelse(Inhibitor == "none",
+                                        "obs", "obs+inhibitor")))
 
             if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
                   warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?")
@@ -1035,7 +1036,6 @@ extractConcTime <- function(sim_data_file,
       }
 
       DosingScenario <- Deets[["Regimen_sub"]]
-
 
       if(adjust_obs_time & DosingScenario == "Multiple Dose" &
          exists("obs_data", inherits = FALSE)){
@@ -1120,8 +1120,11 @@ extractConcTime <- function(sim_data_file,
                    DoseNum = Time %/% DoseInt + 1,
                    # Taking care of possible artifacts
                    DoseNum = ifelse(DoseNum < 0, 0, DoseNum),
-                   # If it was a single dose, make everything dose 1.
-                   DoseNum = ifelse(is.na(DoseNum), 1, DoseNum))
+                   # If it was a single dose, make everything after StartHr dose
+                   # 1 and everything before StartHr dose 0. if it was a single
+                   # dose, then DoseInt is NA.
+                   DoseNum = ifelse(is.na(DoseInt),
+                                    ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
 
       # Checking for when the simulation ends right at the last dose b/c
       # then, setting that number to 1 dose lower

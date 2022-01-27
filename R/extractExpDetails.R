@@ -1019,7 +1019,7 @@ extractExpDetails <- function(sim_data_file,
             }
       }
 
-      # Dealing with the calculated details
+      # Calculated details ------------------------------------------------
       if("StartHr_sub" %in% exp_details){
             if("SimStartDayTime" %in% names(Out)){
                   Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
@@ -1028,9 +1028,9 @@ extractExpDetails <- function(sim_data_file,
                   if("Inhibitor1" %in% names(Out)){
                         if("Inhibitor2" %in% names(Out)){
                               TimeHr1 <- difftime_sim(Out$StartDayTime_inhib,
-                                                       Out$StartDayTime_sub)
+                                                      Out$StartDayTime_sub)
                               TimeHr2 <- difftime_sim(Out$StartDayTime_inhib2,
-                                                       Out$StartDayTime_sub)
+                                                      Out$StartDayTime_sub)
                               Out$StartHr_sub <- TimeHr
                               Out$StartHr_inhib <- -1*TimeHr1
                               Out$StartHr_inhib2 <- -1*TimeHr2
@@ -1041,12 +1041,12 @@ extractExpDetails <- function(sim_data_file,
                               Out$StartHr_sub <- TimeHr
                               Out$StartHr_inhib <- -1*TimeHr
                         }
+                  } else {
+                        # If no inhibitors were present, then the substrate should
+                        # have been administered at t0 (would this ever not be the
+                        # case?)
+                        Out$StartHr_sub <- 0
                   }
-
-                  # If no inhibitors were present, then the substrate should
-                  # have been administered at t0 (would this ever not be the
-                  # case?)
-                  Out$StartHr_sub <- 0
             }
       }
 
