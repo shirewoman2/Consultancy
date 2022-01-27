@@ -87,7 +87,11 @@
 #'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
 #'   which can be useful for BID data where the end of the simulation extended
 #'   past the dosing interval or data when the substrate was dosed BID and the
-#'   effector was dosed QD} }
+#'   effector was dosed QD}
+#'
+#'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
+#'   range encompassing the requested doses, e.g., "dose 3" for the 3rd dose or
+#'   "doses 1 to 4" for doses 1 to 4}}
 #'
 #' @param t0 What event should be used for time zero? Options are: "simulation
 #'   start" (default), "substrate dose 1", "inhibitor 1 dose 1", "substrate last
@@ -125,8 +129,8 @@
 #'
 #'   \describe{
 #'
-#'   \item{means only}{show only a single point at the arithmetic mean value
-#'   for each time point}
+#'   \item{means only}{show only a single point at the arithmetic mean value for
+#'   each time point}
 #'
 #'   \item{geometric means only}{show a single point at the geometric mean}
 #'
@@ -311,9 +315,10 @@ ct_plot <- function(sim_data_file = NA,
             time_range <- time_range[1]
       }
 
-      if(all(complete.cases(time_range)) & class(time_range) == "character" &
-         !any(time_range %in% c("last dose", "first dose", "penultimate dose"))){
-            stop("time_range must be 'first dose', 'last dose', 'penultimate dose', or a numeric time range, e.g., c(12, 24).")
+      if(all(complete.cases(time_range)) && class(time_range) == "character" &
+         !any(time_range %in% c("last dose", "first dose", "penultimate dose")) &
+         !str_detect(tolower(time_range), "^dose")){
+            stop("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), or a numeric time range, e.g., c(12, 24).")
       }
 
       if(complete.cases(obs_data_option) &&
@@ -334,6 +339,17 @@ ct_plot <- function(sim_data_file = NA,
       # Extract the data to plot
       if(is.data.frame(sim_obs_dataframe)){
             Data <- sim_obs_dataframe
+
+            if(unique(sim_obs_dataframe$Tissue) %in% tissue == FALSE){
+                  stop(paste0("You requested ", tissue,
+                              "for the tissue, but this tissue was not included in the supplied data.frame."))
+            }
+
+            if(unique(sim_obs_dataframe$CompoundID) %in% compoundToExtract == FALSE){
+                  stop(paste0("You requested a graph of the ", compoundToExtract,
+                              ", but this compound was not included in the supplied data.frame."))
+            }
+
       } else {
             Data <- extractConcTime(sim_data_file = sim_data_file,
                                     obs_data_file = obs_data_file,
@@ -363,7 +379,7 @@ ct_plot <- function(sim_data_file = NA,
                   mutate(Simulated = TRUE,
                          Compound = Enzyme,
                          Inhibitor = ifelse(EffectorPresent,
-                                           "inhibitor 1", "none"))
+                                            "inhibitor 1", "none"))
       } else {
             ObsConcUnits <- sort(unique(Data$Conc_units))
       }
@@ -405,95 +421,63 @@ ct_plot <- function(sim_data_file = NA,
 
       time_range_input <- time_range
 
-      if(time_range_input[1] %in% c("first dose", "last dose",
-                                    "penultimate dose") |
-         t0 != "simulation start"){
-            Deets <- extractExpDetails(sim_data_file)
+      if(class(time_range_input) == "character" | t0 != "simulation start"){
 
-            # start of last dose simulated of substrate and inhibitor
-            NumDoses <- c("Sub" = Deets$NumDoses_sub,
-                          "Inhib" = Deets$NumDoses_inhib)
-            DoseInt <- c("Sub" = Deets$DoseInt_sub,
-                         "Inhib" = Deets$DoseInt_inhib)
-            StartLastDose <- DoseInt * (NumDoses - 1) # Time starts at 0, not 1, so that's why it's "NumDoses - 1" rather than "NumDoses" alone.
+            DoseTimes <- Data %>%
+                  group_by(CompoundID) %>%
+                  summarize(FirstDoseEnd = min(DoseNum) * unique(DoseInt),
+                            PenultDoseStart = (max(DoseNum) - 2) * unique(DoseInt),
+                            LastDoseStart = (max(DoseNum)-1) * unique(DoseInt)) %>%
+                  unique()
 
-      }
-
-      if(time_range_input[1] %in% c("first dose", "last dose",
-                                    "penultimate dose")){
-
-            if(Deets$Regimen_sub == "Single Dose"){
-
-                  time_range <- c(difftime_sim(Deets$SimStartDayTime,
-                                               Deets$StartDayTime_sub),
-                                  tlast)
-                  warning(paste0("You requested the ", time_range_input[1],
+            if(length(unique(Data$DoseNum)) == 1 &&
+               unique(Data$DoseNum) == 1 &
+               time_range_input %in% c("last dose", "penultimate dose")){
+                  warning(paste0("You requested the ", time_range_input,
                                  ", but the substrate was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."))
-            } else {
+            }
 
-                  DayTime_t0 <- difftime_sim(
-                        time1 = c(Deets[["SimStartDayTime"]], Deets[["SimStartDayTime"]]),
-                        time2 = c(Deets[["StartDayTime_sub"]], Deets[["StartDayTime_inhib"]]),
-                        units = TimeUnits)
-                  names(DayTime_t0) <- c("Sub", "Inhib")
+            if(time_range_input == "first dose"){
+                  time_range <- c(0,
+                                  DoseTimes %>%
+                                        filter(CompoundID == compoundToExtract) %>%
+                                        pull(FirstDoseEnd))
+            }
 
-                  # start of 2nd dose of substrate and inhibitor
-                  StartDose2 <- DayTime_t0 + DoseInt
+            if(time_range_input == "penultimate dose"){
+                  time_range <-
+                        DoseTimes %>% ungroup() %>%
+                        filter(CompoundID == compoundToExtract) %>%
+                        select(PenultDoseStart, LastDoseStart) %>%
+                        t() %>% as.numeric()
+            }
 
-                  # There's a possibility that the user set up the simulation to
-                  # start the last dose right at the end of the simulation;
-                  # adjusting for that.
-                  if(StartLastDose[["Sub"]] == max(Data$Time, na.rm = T)){
-                        StartLastDose[["Sub"]] <-
-                              StartLastDose[["Sub"]] - DoseInt[["Sub"]]
+            if(time_range_input == "last dose"){
+                  time_range <-
+                        c(DoseTimes %>%
+                                filter(CompoundID == compoundToExtract) %>%
+                                pull(LastDoseStart),
+                          max(Data$Time))
+            }
+
+            if(str_detect(tolower(time_range_input), "^dose")){
+                  DoseNum <- as.numeric(
+                        str_trim(gsub("dose(s)?", "", time_range_input)))
+
+                  if(str_detect(DoseNum, "to")){
+                        DoseNum <- as.numeric(
+                              str_trim(str_split(DoseNum, "to")[[1]]))
                   }
 
-                  if(complete.cases(StartLastDose[["Inhib"]]) &
-                     StartLastDose[["Inhib"]] == max(Data$Time, na.rm = T)){
-                        StartLastDose[["Inhib"]] <-
-                              StartLastDose[["Inhib"]] - DoseInt[["Inhib"]]
-                  }
-
-                  if(time_range_input[1] == "first dose"){
-                        Start <- ifelse(compoundToExtract == "inhibitor 1",
-                                        DayTime_t0[["Inhib"]],
-                                        DayTime_t0[["Sub"]])
-                        End <- ifelse(compoundToExtract == "inhibitor 1",
-                                      StartDose2[["Inhib"]],
-                                      StartDose2[["Sub"]])
-                        time_range <- c(Start, End)
-                        rm(Start, End)
-                  }
-
-                  if(time_range_input[1] == "last dose"){
-                        Start <- ifelse(compoundToExtract == "inhibitor 1",
-                                        StartLastDose[["Inhib"]],
-                                        StartLastDose[["Sub"]])
-                        End <- max(Data$Time)
-                        time_range <- c(Start, End)
-                        rm(Start, End)
-                  }
-
-                  if(time_range_input[1] == "penultimate dose"){
-                        DoseIntToUse <- ifelse(compoundToExtract == "inhibitor 1",
-                                               DoseInt["Inhib"], DoseInt["Sub"])
-
-                        Start <- ifelse(compoundToExtract == "inhibitor 1",
-                                        StartLastDose[["Inhib"]] - DoseIntToUse,
-                                        StartLastDose[["Sub"]] - DoseIntToUse)
-                        End <- ifelse(compoundToExtract == "inhibitor 1",
-                                      StartLastDose[["Inhib"]],
-                                      StartLastDose[["Sub"]])
-                        time_range <- c(Start, End)
-
-                        rm(Start, End)
-                  }
+                  time_range <-
+                        (DoseNum-c(1,0))*
+                        unique(Data$DoseInt[Data$CompoundID == compoundToExtract])
             }
       }
 
-      # This doesn't work well if the time range starts at something other than
-      # 0 or ends somewhere other than the max time, so adjusting for that
-      # situation.
+      # Setting the x axis intervals using tlast doesn't work well if the time
+      # range starts at something other than 0 or ends somewhere other than the
+      # max time, so adjusting for that situation.
       if(all(complete.cases(time_range)) &
          (time_range[1] != 0 | time_range[2] != max(Data$Time))){
 
@@ -580,7 +564,7 @@ ct_plot <- function(sim_data_file = NA,
                   "substrate dose 1" = difftime_sim(Deets$SimStartDayTime,
                                                     Deets$StartDayTime_sub),
                   "inhibitor 1 dose 1" = difftime_sim(Deets$SimStartDayTime,
-                                                   Deets$StartDayTime_inhib),
+                                                      Deets$StartDayTime_inhib),
                   "substrate last dose" =
                         ifelse(StartLastDose["Sub"] == max(Data$Time),
                                StartLastDose["Sub"] - DoseInt["Sub"],
@@ -619,7 +603,7 @@ ct_plot <- function(sim_data_file = NA,
             Data <- Data %>%
                   mutate(CompoundIsEffector = Compound == MyEffector,
                          Inhibitor = as.character(ifelse(is.na(Inhibitor),
-                                                        "none", Inhibitor)))
+                                                         "none", Inhibitor)))
 
             if(class(prettify_effector_name) == "logical" &&
                prettify_effector_name){
@@ -823,9 +807,17 @@ ct_plot <- function(sim_data_file = NA,
                               A <-  A + geom_point(data = obs_data, size = 2,
                                                    stroke = 1)
                         } else {
+                              # Glitch when the user has supplied observed data
+                              # with a different number of inhibitors than
+                              # sim_data_trial, e.g., when the obs data came
+                              # with the simulator output file. Addressing that.
+                              if(length(unique(obs_data$Inhibitor)) == 1){
+                                    obs_color <- obs_color[1]
+                              }
+
                               A <- A +
                                     geom_point(data = obs_data, size = 2,
-                                               fill = obs_color[1:2], alpha = 0.5,
+                                               fill = obs_color, alpha = 0.5,
                                                stroke = 1) +
                                     geom_point(data = obs_data, size = 2,
                                                fill = NA, stroke = 1)
@@ -850,6 +842,7 @@ ct_plot <- function(sim_data_file = NA,
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   shape = obs_shape[1], stroke = 1)
                         } else {
+
                               A <- A + geom_point(data = obs_data, size = 2,
                                                   fill = obs_color[1], alpha = 0.5,
                                                   shape = obs_shape[1], stroke = 1) +
@@ -1044,13 +1037,7 @@ ct_plot <- function(sim_data_file = NA,
       }
 
 
-      ## figure_type: multiple -----------------------------------------------
-      # This is piped from the function ct_plot_overlay.
-
-
-
-
-
+      # Applying aesthetics ------------------------------------------------
       if(nrow(obs_data) == 0){
             A <- A + guides(shape = "none")
       }
@@ -1064,17 +1051,26 @@ ct_plot <- function(sim_data_file = NA,
                                 width = (time_range[2] - time_range[1])/80)
       }
 
-      # Applying aesthetics ------------------------------------------------
       if(t0 != "simulation start"){
             time_range_relative <- time_range - t0_num
       } else {
             time_range_relative <- time_range
       }
 
+      # If the user requested specific doses, don't pad the x axis b/c it's just
+      # not what they requested.
+      if(str_detect(tolower(time_range_input), "dose") &
+         pad_x_axis == FALSE){
+            A <- A + scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                        expand = c(0,0))
+      } else {
+            A <- A +
+                  scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                     expand = expansion(
+                                           mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04)))
+      }
+
       A <- A +
-            scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                               expand = expansion(
-                                     mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04))) +
             scale_y_continuous(limits = c(0, YmaxRnd), breaks = YBreaks,
                                labels = YLabels,
                                expand = expansion(mult = c(0, 0.1))) +

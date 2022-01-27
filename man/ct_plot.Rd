@@ -107,7 +107,11 @@ be an inducer, activator, suppressor, or inhibitor, but it's labeled as
   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
-  effector was dosed QD} }}
+  effector was dosed QD}
+
+  \item{a specific dose number with "dose" or "doses" as the prefix}{the time
+  range encompassing the requested doses, e.g., "dose 3" for the 3rd dose or
+  "doses 1 to 4" for doses 1 to 4}}}
 
 \item{x_axis_interval}{Set the x-axis major tick-mark interval. Acceptable
 input: any number or leave as NA to accept default values.}
@@ -148,8 +152,8 @@ limits for the semi-log plot will be automatically selected.}
 
   \describe{
 
-  \item{means only}{show only a single point at the arithmetic mean value
-  for each time point}
+  \item{means only}{show only a single point at the arithmetic mean value for
+  each time point}
 
   \item{geometric means only}{show a single point at the geometric mean}
 
