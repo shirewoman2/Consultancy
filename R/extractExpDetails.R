@@ -379,8 +379,12 @@ extractExpDetails <- function(sim_data_file,
       # bother reading this sheet b/c that takes more processing time. (Some
       # details show up on multiple sheets, so there are redundancies in this
       # function to deal with that.)
-      if(exp_details_input %in% c("input sheet", "population tab")){
+      if(exp_details_input %in% c("input sheet")){
             MySumDeets <- intersect("A", "B")
+      }
+
+      if(exp_details_input %in% c("population tab")){
+            MySumDeets <- "Population"
       }
 
       if(length(MySumDeets) > 0){

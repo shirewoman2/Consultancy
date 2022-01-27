@@ -12,7 +12,7 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 \item{exp_details}{Experiment details you want to extract from the simulator
   output file. Options are "Summary tab" to extract details only from the
   "Summary tab" (default), "Input Sheet" to extract details only from the
-  "Input Sheet" tab, "population" to extract details about the population
+  "Input Sheet" tab, "population tab" to extract details about the population
   used (data come from the tab with the same name as the population
   simulated), "all" to extract all possible parameters, or a string of the
   specific parameters you want. Parameters are reported with a suffix (listed
@@ -109,7 +109,7 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 
   \item{pKa1_x, pKa2_x}{the pertinent pKa}
 
-  \item{Pop}{the population modeled}
+  \item{Population}{the population modeled}
 
   \item{PopSize}{the size of population modeled}
 
