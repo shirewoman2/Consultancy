@@ -22,14 +22,13 @@ extractPK(
   output file. Options are "all" for all possible parameters, "AUC tab" for
   only those parameters on the "AUC" tab (default), "Absorption tab" for only
   those parameters on the "Absorption" tab, or any combination of specific,
-  individual parameters. When individual parameters are specifically for the
-  substrate, inhibitor, metabolite, etc., they should have a suffix appended
-  (listed as "_X" below): "_sub" for the substrate, "_met1" for the primary
-  metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-  secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-  "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-  inhibitor 1 metabolite. (NOTE: Under construction. Currently only extracts
-  PK for substrate and substrate in presence of inhibitor.) Possible
+  individual parameters. Currently, the PK data are only for the substrate
+  unless noted below. If the data are for a different compound, e.g.,
+  Inhibitor 1, Primary Metabolite 2, etc., they should have a suffix appended
+  (listed as "_x" below): "_met1" for the primary metabolite, "_met2" for the
+  second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
+  for the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
+  inducer listed, or "_inh1met" for the inhibitor 1 metabolite. Possible
   parameters to extract:
 
   \describe{
@@ -105,16 +104,21 @@ extractPK(
   \item{tlag_x}{lag time for the specified compound. By default, data are
   pulled from the sheet "Absorption".}
 
-  \item{tmax_dose1, tmax_dose1_Inhib, tmax_ss, tmax_ss_Inhib}{tmax for dose 1
-  or for the last dose, with or without inhibitors present. By default, data
-  are pulled from sheet "AUC", column titled, e.g., "TMax (h)" or "TMaxinh
-  (h)".}
+  \item{tmax_dose1, tmax_dose1_withInhib, tmax_ss, tmax_ss_withInhib}{tmax
+  for dose 1 or for the last dose, with or without inhibitors present. By
+  default, data are pulled from sheet "AUC", column titled, e.g., "TMax (h)"
+  or "TMaxinh (h)". NOTE: tmax value extraction is UNDER CONSTRUCTION and not
+  yet fully operational for all possible dose-regimen scenarios and doses.
+  -LS}
 
   } The default is only those parameters present on the "AUC" sheet in the
-  simulator output.}
+  simulator output. NOTE: UNDER CONSTRUCTION. This currently generally only
+  extracts PK parameters for the substrate with or without an effector
+  present and a \emph{few} parameters from the "Absorption" and
+  "Clearance Trials SS" tabs for other compounds.}
 
 \item{sheet}{Which sheet should be used for pulling the PK parameters?
-\strong{Note:} Unless you want a very specific Excel sheet that's not what
+\emph{Note:} Unless you want a very specific Excel sheet that's not what
 the usual sheet name would be for a first or last dose, this function will
 work best if this is left as NA.}
 
@@ -138,8 +142,8 @@ Useful for QCing.}
 \value{
 Depending on the options selected, returns a list of numerical
   vectors or a list of data.frames. If \code{checkDataSource} is TRUE, this
-  will also return a list indicating where in the simulator output file the
-  data came from.
+  will also return a data.frame indicating where in the simulator output file
+  the data came from.
 }
 \description{
 Pull calculated substrate PK parameters from a Simcyp simulation output Excel
