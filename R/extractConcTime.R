@@ -1109,7 +1109,19 @@ extractConcTime <- function(sim_data_file,
                    DoseInt = MyIntervals[CompoundID],
                    DoseNum = Time %/% DoseInt + 1,
                    # Taking care of possible artifacts
-                   DoseNum = ifelse(DoseNum < 0, 0, DoseNum))
+                   DoseNum = ifelse(DoseNum < 0, 0, DoseNum),
+                   # If it was a single dose, make everything dose 1.
+                   DoseNum = ifelse(is.na(DoseNum), 1, DoseNum))
+
+      # Checking for when the simulation ends right at the last dose b/c
+      # then, setting that number to 1 dose lower
+      if(length(Data %>% filter(DoseNum == max(Data$DoseNum)) %>%
+            pull(Time) %>% unique()) == 1){
+            MaxDoseNum <- max(Data$DoseNum)
+            Data <- Data %>%
+                  mutate(DoseNum = ifelse(DoseNum == MaxDoseNum,
+                                          MaxDoseNum - 1, DoseNum))
+      }
 
       # Finalizing
       Data <- Data %>%
