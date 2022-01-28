@@ -1170,11 +1170,18 @@ ct_plot <- function(sim_data_file = NA,
             )
 
       } else {
-            AB <- suppressWarnings(
-                  ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
-                                    common.legend = TRUE, legend = "right",
-                                    align = "v")
-            )
+            # If the user didn't want the legend or if the graph is of Inhibitor1,
+            # remove legend.
+            if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){
+                  AB <- suppressWarnings(
+                        ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
+                                          legend = "none", align = "v"))
+            } else {
+                  AB <- suppressWarnings(
+                        ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
+                                          common.legend = TRUE, legend = "right",
+                                          align = "v"))
+            }
       }
 
       Out <- list("Graphs" = AB)
