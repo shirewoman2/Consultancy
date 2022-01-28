@@ -341,13 +341,21 @@ ct_plot <- function(sim_data_file = NA,
             Data <- sim_obs_dataframe
 
             if(unique(sim_obs_dataframe$Tissue) %in% tissue == FALSE){
-                  stop(paste0("You requested ", tissue,
-                              "for the tissue, but this tissue was not included in the supplied data.frame."))
+                  warning(paste0("The tissue requested (or the default if a specific one was not requested) was ",
+                                 tissue,
+                                 ", but this tissue was not included in the supplied data.frame. The tissue graphed will be the tissue in the supplied data.frame: ",
+                                 unique(sim_obs_dataframe$Tissue), "."))
+
+                  tissue <- unique(sim_obs_dataframe$Tissue)
             }
 
             if(unique(sim_obs_dataframe$CompoundID) %in% compoundToExtract == FALSE){
-                  stop(paste0("You requested a graph of the ", compoundToExtract,
-                              ", but this compound was not included in the supplied data.frame."))
+                  warning(paste0("The compound requested (or the default if a specific one was not requested) was the ",
+                                 compoundToExtract,
+                                 ", but this compound was not included in the supplied data.frame. The compound graphed will be the compound in the supplied data.frame: the ",
+                                 unique(sim_obs_dataframe$CompoundID), "."))
+
+                  compoundToExtract <- unique(sim_obs_dataframe$CompoundID)
             }
 
       } else {

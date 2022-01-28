@@ -108,14 +108,15 @@ extractPK(
   for dose 1 or for the last dose, with or without inhibitors present. By
   default, data are pulled from sheet "AUC", column titled, e.g., "TMax (h)"
   or "TMaxinh (h)". NOTE: tmax value extraction is UNDER CONSTRUCTION and not
-  yet fully operational for all possible dose-regimen scenarios and doses.
-  -LS}
+  yet fully operational for all possible dose-regimen scenarios and doses. It
+  should, however, either give you the correct data or just not be able to
+  give you any data at all. -LS}
 
   } The default is only those parameters present on the "AUC" sheet in the
-  simulator output. NOTE: UNDER CONSTRUCTION. This currently generally only
-  extracts PK parameters for the substrate with or without an effector
-  present and a \emph{few} parameters from the "Absorption" and
-  "Clearance Trials SS" tabs for other compounds.}
+  simulator output. This currently generally only extracts PK parameters for
+  the substrate with or without an effector present and a \emph{few}
+  parameters from the "Absorption" and "Clearance Trials SS" tabs for other
+  compounds.}
 
 \item{sheet}{Which sheet should be used for pulling the PK parameters?
 \emph{Note:} Unless you want a very specific Excel sheet that's not what

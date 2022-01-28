@@ -98,14 +98,15 @@
 #'   for dose 1 or for the last dose, with or without inhibitors present. By
 #'   default, data are pulled from sheet "AUC", column titled, e.g., "TMax (h)"
 #'   or "TMaxinh (h)". NOTE: tmax value extraction is UNDER CONSTRUCTION and not
-#'   yet fully operational for all possible dose-regimen scenarios and doses.
-#'   -LS}
+#'   yet fully operational for all possible dose-regimen scenarios and doses. It
+#'   should, however, either give you the correct data or just not be able to
+#'   give you any data at all. -LS}
 #'
 #'   } The default is only those parameters present on the "AUC" sheet in the
-#'   simulator output. NOTE: UNDER CONSTRUCTION. This currently generally only
-#'   extracts PK parameters for the substrate with or without an effector
-#'   present and a \emph{few} parameters from the "Absorption" and
-#'   "Clearance Trials SS" tabs for other compounds.
+#'   simulator output. This currently generally only extracts PK parameters for
+#'   the substrate with or without an effector present and a \emph{few}
+#'   parameters from the "Absorption" and "Clearance Trials SS" tabs for other
+#'   compounds.
 #'
 #'
 #' @param sheet Which sheet should be used for pulling the PK parameters?
@@ -153,7 +154,7 @@ extractPK <- function(sim_data_file,
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
       # Determining the name of the tab that contains PK data for the last dose
-      # of the substrate (not the inhibitor, at least, not at this point).
+      # of the substrate (not the inhibitor... at least, not at this point).
       Tab_last <- AllSheets[str_detect(AllSheets, "AUC(t)?[0-9]{1,}") &
                                   !str_detect(AllSheets, "Inh")]
       ssNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))

@@ -224,6 +224,7 @@ extractExpDetails <- function(sim_data_file,
                      "CLint_sub", "Interaction_sub", "Qgut_sub",
                      "kin_sac_sub", "kout_sac_sub", "Vsac_sub", "kp_scalar_sub",
                      "StartDayTime_sub", "Regimen_sub", "DoseInt_sub",
+                     "NumDoses_sub",
 
                      # Trial Design details start here
                      "PercFemale", "Age_min", "Age_max",
@@ -231,9 +232,9 @@ extractExpDetails <- function(sim_data_file,
             # NameCol and ValueCol change depending on whether there are
             # metabolites or inhibitors present, so noting what to detect using
             # RegEx in row 4 to determine position of those columns.
-            NameColDetect = c(rep("Substrate", 21), rep("Trial Design", 4)),
+            NameColDetect = c(rep("Substrate", 22), rep("Trial Design", 4)),
             Class = c("character", "character", rep("numeric", 16),
-                      "numeric", "character", "numeric",
+                      "numeric", "character", rep("numeric", 2),
 
                       # Trial Design details start here
                       rep("numeric", 3), "character"),
@@ -260,7 +261,7 @@ extractExpDetails <- function(sim_data_file,
             mutate(Deet = sub("_inhib", "_met1", Deet),
                    NameColDetect = "Sub Pri Metabolite1") %>%
             filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_")) %>%
+            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
             bind_rows(data.frame(Deet = "PrimaryMetabolite1",
                                  NameColDetect = "Sub Pri Metabolite1",
                                  Class = "character", Sheet = "Input Sheet"))
@@ -269,7 +270,7 @@ extractExpDetails <- function(sim_data_file,
             mutate(Deet = sub("_inhib", "_met2", Deet),
                    NameColDetect = "Sub Pri Metabolite2") %>%
             filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_")) %>%
+            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
             bind_rows(data.frame(Deet = "PrimaryMetabolite2",
                                  NameColDetect = "Sub Pri Metabolite2",
                                  Class = "character", Sheet = "Input Sheet"))
@@ -278,7 +279,7 @@ extractExpDetails <- function(sim_data_file,
             mutate(Deet = sub("_inhib", "_secmet", Deet),
                    NameColDetect = "Sub Sec Metabolite") %>%
             filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_")) %>%
+            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
             bind_rows(data.frame(Deet = "SecondaryMetabolite",
                                  NameColDetect = "Sub Sec Metabolite",
                                  Class = "character", Sheet = "Input Sheet"))
@@ -287,7 +288,7 @@ extractExpDetails <- function(sim_data_file,
             mutate(Deet = sub("_inhib", "_inhib1met", Deet),
                    NameColDetect = "Inh 1 Metabolite") %>%
             filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_")) %>%
+            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
             bind_rows(data.frame(Deet = "Inhibitor1Metabolite",
                                  NameColDetect = "Inh 1 Metabolite",
                                  Class = "character", Sheet = "Input Sheet"))
@@ -566,37 +567,39 @@ extractExpDetails <- function(sim_data_file,
             pullValue <- function(deet){
 
                   # Setting up regex to search
-                  ToDetect <- switch(sub("_sub|_inhib|_met1|_met2|_secmet|_inhib1met|_inhib2",
-                                         "", deet),
-                                     "Abs_model" = "Absorption Model",
-                                     "Age_min" = "Minimum Age",
-                                     "Age_max" = "Maximum Age",
-                                     "CLrenal" = "CL R \\(L/h",
-                                     "DoseInt" = "Dose Interval",
-                                     "fa" = "^fa$",
-                                     "ka" = "^ka \\(",
-                                     "kp_scalar" = "Kp Scalar",
-                                     "tlag" = "lag time \\(",
-                                     "fu_gut" = "fu\\(Gut\\)$",
-                                     "Ontogeny" = "Ontogeny Profile",
-                                     "Papp_MDCK" = "MDCK\\(10E-06 cm/s\\)",
-                                     "Papp_Caco" = "PCaco-2",
-                                     "Papp_calibrator" = "Reference Compound Value \\(10E-06 cm/s\\)",
-                                     "PercFemale" = "Propn. of Females",
-                                     "UserAddnOrgan" = "User-defined Additional",
-                                     "SimulatorVersion" = "Version number",
-                                     "Qgut" = "Q\\(Gut\\) \\(L/h",
-                                     "Regimen" = "Dosing Regimen",
-                                     "kin_sac" = "SAC kin",
-                                     "kout_sac" = "SAC kout",
-                                     "Vsac" = "Volume .Vsac",
-                                     "Substrate" = "Compound Name",
-                                     "PrimaryMetabolite1" = "Compound Name",
-                                     "PrimaryMetabolite2" = "Compound Name",
-                                     "SecondaryMetabolite" = "Compound Name",
-                                     "Inhibitor1" = "Compound Name",
-                                     "Inhibitor2" = "Compound Name",
-                                     "Inhibitor1Metabolite" = "Compound Name")
+                  ToDetect <-
+                        switch(sub("_sub|_inhib|_met1|_met2|_secmet|_inhib1met|_inhib2",
+                                   "", deet),
+                               "Abs_model" = "Absorption Model",
+                               "Age_min" = "Minimum Age",
+                               "Age_max" = "Maximum Age",
+                               "CLrenal" = "CL R \\(L/h",
+                               "DoseInt" = "Dose Interval",
+                               "fa" = "^fa$",
+                               "ka" = "^ka \\(",
+                               "kp_scalar" = "Kp Scalar",
+                               "tlag" = "lag time \\(",
+                               "fu_gut" = "fu\\(Gut\\)$",
+                               "Ontogeny" = "Ontogeny Profile",
+                               "Papp_MDCK" = "MDCK\\(10E-06 cm/s\\)",
+                               "Papp_Caco" = "PCaco-2",
+                               "Papp_calibrator" = "Reference Compound Value \\(10E-06 cm/s\\)",
+                               "PercFemale" = "Propn. of Females",
+                               "UserAddnOrgan" = "User-defined Additional",
+                               "SimulatorVersion" = "Version number",
+                               "Qgut" = "Q\\(Gut\\) \\(L/h",
+                               "Regimen" = "Dosing Regimen",
+                               "NumDoses" = "Number of Doses",
+                               "kin_sac" = "SAC kin",
+                               "kout_sac" = "SAC kout",
+                               "Vsac" = "Volume .Vsac",
+                               "Substrate" = "Compound Name",
+                               "PrimaryMetabolite1" = "Compound Name",
+                               "PrimaryMetabolite2" = "Compound Name",
+                               "SecondaryMetabolite" = "Compound Name",
+                               "Inhibitor1" = "Compound Name",
+                               "Inhibitor2" = "Compound Name",
+                               "Inhibitor1Metabolite" = "Compound Name")
 
                   NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
                   Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
