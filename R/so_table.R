@@ -102,13 +102,11 @@ so_table <- function(report_input_file = NA,
 
             # Should we add an error catch here for when user fills out
             # report_input_file but doesn't include any observed data to
-            # compare? If the user doesn't want to include any obs data there,
-            # just fill out sim_data_file.
+            # compare? Maybe not. If the user doesn't want to include any obs
+            # data there, just fill out sim_data_file.
       }
 
-
-      # LEFT OFF HERE. Will need to expand this to encompass ALL the possible
-      # parameters.
+      data("AllPKParameters")
       D1 <- c("AUCinf", "CL", "Cmax", "HalfLife", "tmax")
       D2 <- sub("AUCinf", "AUCtau", D1)
 
