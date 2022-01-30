@@ -15,13 +15,14 @@ so_table(
   concatVariability = FALSE,
   includeHalfLife = FALSE,
   includeTrialMeans = FALSE,
-  includeCV = TRUE
+  includeCV = TRUE,
+  checkDataSource = TRUE
 )
 }
 \arguments{
 \item{report_input_file}{the name of the Excel file created by running
-\code{\link{generateReportInputForm}}, including the path if it's in any
-other directory than the current one, which you have now filled out}
+\code{\link{generateReportInputForm}}, which you have now filled out,
+including the path if it's in any other directory than the current one}
 
 \item{sheet}{the sheet in the Excel file that contains information about this
 section of the report. In the original template, this was the tab titled
@@ -31,17 +32,21 @@ section of the report. In the original template, this was the tab titled
 output from the function \code{\link{getSectionInfo}} and can be used
 instead of listing the Excel file and sheet name as input.}
 
-\item{sim_data_file}{the simulator output file. This is only necessary if you
-are planning to leave blank the rows for the observed data values and fill
-them in yourself.}
+\item{sim_data_file}{the simulator output file. This is for when you DON'T
+fill out a report input form and instead plan to add information about the
+observed data later manually.}
 
-\item{PKparameters}{the PK parameters to include as a character vector. For a
-full list of options, please see the help file for \code{\link{extractPK}}
-to see all possible options. By default, the PK parameters included are
-only those included in the observed data, but if no observed data are
-included, the PK parameters will be automatically selected. An example of
-acceptable input here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib",
-"Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}}
+\item{PKparameters}{the PK parameters to include as a character vector. To
+see the full set of possible parameters to extract, enter
+\code{data(AllPKParameters)} into the console. By default, if you supply a
+file for \code{report_input_file}, the PK parameters included are only
+those included for the observed data in that file. Otherwise, the PK
+parameters will be automatically selected. An example of acceptable input
+here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss",
+"Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}. Parameters that
+don't make sense for your scenario -- like asking for
+\code{AUCinf_ss_withInhib} when your simulation did not include an
+inhibitor or effector -- will not be included.}
 
 \item{mean_type}{Arithmetic or geometric means? Only specify this if you'd
 like to override the value listed in \code{sectionInfo}. If no value is
@@ -66,6 +71,10 @@ values rather than pulled directly from the output.}
 
 \item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
 table}
+
+\item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
+lists exactly where the data were pulled from the simulator output file.
+Useful for QCing.}
 }
 \value{
 a data.frame
@@ -74,11 +83,12 @@ a data.frame
 \code{so_table} creates simulated vs. observed tables for reports and
 presentations, including reporting means, CVs, confidence intervals or
 percentiles, and ratios of simulated vs. observed mean values. There are two
-main ways to approach using this function 1. Select which data you want to
-compare (\code{PKparameters} argument) and leave blank rows for observed data
-to fill in later and calculate by hand, or 2. Fill out an Excel form with
-information about your observed data. Setting up the input for this approach
-requires a few steps:\enumerate{\item{Use the function
+main ways to approach using this function 1. Select which PK parameters you
+want to compare (\code{PKparameters} argument) and, later, manually fill out
+rows for observed data that you've calculated elsewhere, or 2. Fill out an
+Excel form with information about your observed data, in which case R will
+calculate the comparisons for you here. Setting up the input for this
+approach requires a few steps:\enumerate{\item{Use the function
 \code{\link{generateReportInputForm}} to create an Excel file where you can
 enter information about your project.} \item{Go to the tab "observed data"
 and enter details about your observed data. It's ok if you don't have all the
@@ -87,11 +97,11 @@ table. It's also ok to rename this tab and/or make copies of it within the
 same Excel file for making other S/O tables.} \item{Go to the tab "table and
 graph input" and fill out information here for the specific report section
 you're making this S/O table for. Make sure that whatever you list as the tab
-that contains information about the observed data is exactly the same as the
-actual tab name that you filled out in step 2. Also make sure that the file
-names include the full file path.}\item{Save your Excel file.} \item{Here,
-within RStudio (or within the shiny app that we plan to make!), run this
-function using the name of that Excel file as input for
+that contains information about the observed data is \emph{exactly} the same
+as the actual tab name that you filled out in step 2. Also make sure that the
+file names include the full file path.}\item{Save your Excel file.}
+\item{Here, within RStudio (or within the shiny app that we plan to make!),
+run this function using the name of that Excel file as input for
 \code{report_input_file} and the name of the "table and graph input" tab as
 the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
 you'll need to close it or this function will just keep running and not

@@ -1,8 +1,7 @@
-#' Extract PK data for specific parameters from a simulator output
-#' Excel file
+#' Extract PK data for specific parameters from a simulator output Excel file
 #'
-#' Pull calculated PK parameters from a Simcyp simulation output Excel
-#' file. Note: Nearly all parameters are for the substrate.
+#' Pull calculated PK parameters from a Simcyp simulation output Excel file.
+#' Note: Nearly all parameters are for the substrate.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
@@ -13,8 +12,8 @@
 #'   only those parameters on the "AUC" tab (default), "Absorption tab" for only
 #'   those parameters on the "Absorption" tab, or any combination of specific,
 #'   individual parameters. Currently, the PK data are only for the substrate
-#'   unless noted. To see the full set of possible parameters to extract:
-#'   \code{data(AllPKParameters)}
+#'   unless noted. To see the full set of possible parameters to extract, enter
+#'   \code{data(AllPKParameters)} into the console.
 #' @param sheet Which sheet should be used for pulling the PK parameters?
 #'   \emph{Note:} Unless you want a very specific Excel sheet that's not what
 #'   the usual sheet name would be for a first or last dose, this function will
@@ -1321,8 +1320,8 @@ extractPK <- function(sim_data_file,
       }
 
       if(length(returnAggregateOrIndiv) == 2){
-            Out <- list("Individual" = Out_ind,
-                        "Aggregate" = Out_agg)
+            Out <- list("individual" = Out_ind,
+                        "aggregate" = Out_agg)
       }
 
       if(checkDataSource){

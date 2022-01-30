@@ -2,8 +2,7 @@
 % Please edit documentation in R/extractPK.R
 \name{extractPK}
 \alias{extractPK}
-\title{Extract PK data for specific parameters from a simulator output
-Excel file}
+\title{Extract PK data for specific parameters from a simulator output Excel file}
 \usage{
 extractPK(
   sim_data_file,
@@ -23,8 +22,8 @@ output file. Options are "all" for all possible parameters, "AUC tab" for
 only those parameters on the "AUC" tab (default), "Absorption tab" for only
 those parameters on the "Absorption" tab, or any combination of specific,
 individual parameters. Currently, the PK data are only for the substrate
-unless noted. To see the full set of possible parameters to extract:
-\code{data(AllPKParameters)}}
+unless noted. To see the full set of possible parameters to extract, enter
+\code{data(AllPKParameters)} into the console.}
 
 \item{sheet}{Which sheet should be used for pulling the PK parameters?
 \emph{Note:} Unless you want a very specific Excel sheet that's not what
@@ -55,8 +54,8 @@ Depending on the options selected, returns a list of numerical
   the data came from.
 }
 \description{
-Pull calculated PK parameters from a Simcyp simulation output Excel
-file. Note: Nearly all parameters are for the substrate.
+Pull calculated PK parameters from a Simcyp simulation output Excel file.
+Note: Nearly all parameters are for the substrate.
 }
 \examples{
 

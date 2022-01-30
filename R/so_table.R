@@ -3,11 +3,12 @@
 #' \code{so_table} creates simulated vs. observed tables for reports and
 #' presentations, including reporting means, CVs, confidence intervals or
 #' percentiles, and ratios of simulated vs. observed mean values. There are two
-#' main ways to approach using this function 1. Select which data you want to
-#' compare (\code{PKparameters} argument) and leave blank rows for observed data
-#' to fill in later and calculate by hand, or 2. Fill out an Excel form with
-#' information about your observed data. Setting up the input for this approach
-#' requires a few steps:\enumerate{\item{Use the function
+#' main ways to approach using this function 1. Select which PK parameters you
+#' want to compare (\code{PKparameters} argument) and, later, manually fill out
+#' rows for observed data that you've calculated elsewhere, or 2. Fill out an
+#' Excel form with information about your observed data, in which case R will
+#' calculate the comparisons for you here. Setting up the input for this
+#' approach requires a few steps:\enumerate{\item{Use the function
 #' \code{\link{generateReportInputForm}} to create an Excel file where you can
 #' enter information about your project.} \item{Go to the tab "observed data"
 #' and enter details about your observed data. It's ok if you don't have all the
@@ -16,11 +17,11 @@
 #' same Excel file for making other S/O tables.} \item{Go to the tab "table and
 #' graph input" and fill out information here for the specific report section
 #' you're making this S/O table for. Make sure that whatever you list as the tab
-#' that contains information about the observed data is exactly the same as the
-#' actual tab name that you filled out in step 2. Also make sure that the file
-#' names include the full file path.}\item{Save your Excel file.} \item{Here,
-#' within RStudio (or within the shiny app that we plan to make!), run this
-#' function using the name of that Excel file as input for
+#' that contains information about the observed data is \emph{exactly} the same
+#' as the actual tab name that you filled out in step 2. Also make sure that the
+#' file names include the full file path.}\item{Save your Excel file.}
+#' \item{Here, within RStudio (or within the shiny app that we plan to make!),
+#' run this function using the name of that Excel file as input for
 #' \code{report_input_file} and the name of the "table and graph input" tab as
 #' the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
 #' you'll need to close it or this function will just keep running and not
@@ -28,24 +29,28 @@
 #'
 #'
 #' @param report_input_file the name of the Excel file created by running
-#'   \code{\link{generateReportInputForm}}, including the path if it's in any
-#'   other directory than the current one, which you have now filled out
+#'   \code{\link{generateReportInputForm}}, which you have now filled out,
+#'   including the path if it's in any other directory than the current one
 #' @param sheet the sheet in the Excel file that contains information about this
 #'   section of the report. In the original template, this was the tab titled
 #'   "table and graph input".
 #' @param sectionInfo information about the simulated and observed data. This is
 #'   output from the function \code{\link{getSectionInfo}} and can be used
 #'   instead of listing the Excel file and sheet name as input.
-#' @param sim_data_file the simulator output file. This is only necessary if you
-#'   are planning to leave blank the rows for the observed data values and fill
-#'   them in yourself.
-#' @param PKparameters the PK parameters to include as a character vector. For a
-#'   full list of options, please see the help file for \code{\link{extractPK}}
-#'   to see all possible options. By default, the PK parameters included are
-#'   only those included in the observed data, but if no observed data are
-#'   included, the PK parameters will be automatically selected. An example of
-#'   acceptable input here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib",
-#'   "Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}
+#' @param sim_data_file the simulator output file. This is for when you DON'T
+#'   fill out a report input form and instead plan to add information about the
+#'   observed data later manually.
+#' @param PKparameters the PK parameters to include as a character vector. To
+#'   see the full set of possible parameters to extract, enter
+#'   \code{data(AllPKParameters)} into the console. By default, if you supply a
+#'   file for \code{report_input_file}, the PK parameters included are only
+#'   those included for the observed data in that file. Otherwise, the PK
+#'   parameters will be automatically selected. An example of acceptable input
+#'   here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss",
+#'   "Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}. Parameters that
+#'   don't make sense for your scenario -- like asking for
+#'   \code{AUCinf_ss_withInhib} when your simulation did not include an
+#'   inhibitor or effector -- will not be included.
 #' @param mean_type Arithmetic or geometric means? Only specify this if you'd
 #'   like to override the value listed in \code{sectionInfo}. If no value is
 #'   specified here or in \code{sectionInfo}, the default is "geometric".
@@ -64,6 +69,9 @@
 #'   values rather than pulled directly from the output.
 #' @param includeCV TRUE or FALSE for whether to include rows for CV in the
 #'   table
+#' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
+#'   lists exactly where the data were pulled from the simulator output file.
+#'   Useful for QCing.
 #'
 #' @return a data.frame
 #' @export
@@ -82,7 +90,8 @@ so_table <- function(report_input_file = NA,
                      concatVariability = FALSE,
                      includeHalfLife = FALSE,
                      includeTrialMeans = FALSE,
-                     includeCV = TRUE){
+                     includeCV = TRUE,
+                     checkDataSource = TRUE){
 
       # Error catching
       if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
@@ -106,15 +115,6 @@ so_table <- function(report_input_file = NA,
             # data there, just fill out sim_data_file.
       }
 
-      # All possible PK parameters
-      data("AllPKParameters")
-
-      # Just most commonly requestd PK parameters
-      PKToPull <- AllPKParameters %>%
-            filter(str_detect(PKparameter, "AUCinf|AUCtau|CL|Cmax|HalfLife|tmax")) %>%
-            filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
-            pull(PKparameter) %>% unique()
-
       # sectionInfo is logical if it's not filled out.
       if(class(sectionInfo) == "logical"){
             Deets <- extractExpDetails(sim_data_file)
@@ -137,18 +137,44 @@ so_table <- function(report_input_file = NA,
 
       }
 
-      # If dose regimen were single-dose, then only pull dose 1 data except for
-      # AUCtau since, most of the time, we need AUCinf instead. For multiple
-      # dose, only pull ss parameters.
-      if(Deets$Regimen_sub == "Single Dose"){
-            PKToPull <- PKToPull[!str_detect(PKToPull, "_ss|tau")]
+      # All possible PK parameters
+      data("AllPKParameters")
+
+      if(complete.cases(PKparameters[1])){
+            PKToPull <- PKparameters
       } else {
-            PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
+            # Just the most commonly requested PK parameters
+            PKToPull <- AllPKParameters %>%
+                  filter(str_detect(PKparameter, "AUCinf|AUCtau|CL|Cmax|HalfLife|tmax")) %>%
+                  filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
+                  pull(PKparameter) %>% unique()
+
+            # If dose regimen were single dose, we don't generally want AUCtau
+            # since, most of the time, we need AUCinf instead.
+            if(Deets$Regimen_sub == "Single Dose"){
+                  PKtoPull <- PKToPull[!str_detect(PKToPull, "tau")]
+            } else {
+                  # If the regimen were multiple dose, only pull ss parameters.
+                  PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
+            }
+      }
+
+      # If dose regimen were single-dose, then only pull dose 1 data.
+      if(Deets$Regimen_sub == "Single Dose"){
+            SDParam <- AllPKParameters %>%
+                  filter(AppliesToSingleDose == TRUE) %>%
+                  pull(PKparameter)
+
+            PKToPull <- PKToPull[PKToPull %in% SDParam]
       }
 
       # If there was no effector, then don't pull any interaction info
       if(is.na(Deets$Inhibitor1)){
-            PKToPull <- PKToPull[!str_detect(PKToPull, "_withInhib|_ratio")]
+            EffParam <- AllPKParameters %>%
+                  filter(AppliesOnlyWhenEffectorPresent == TRUE) %>%
+                  pull(PKparameter)
+
+            PKToPull <- PKToPull[!PKToPull %in% EffParam]
       }
 
       # Getting PK parameters from the AUC tab
@@ -182,7 +208,7 @@ so_table <- function(report_input_file = NA,
 
       # Trial means
       if(includeTrialMeans){
-            TrialMeans <- MyPKResults_all$Individual %>%
+            TrialMeans <- MyPKResults_all$individual %>%
                   group_by(Trial) %>%
                   summarize(across(.cols = -Individual,
                                    .fns = switch(MeanType,
@@ -341,29 +367,6 @@ so_table <- function(report_input_file = NA,
 
             }
 
-      } else {
-            # If the user did not fill out the Excel form, then keep whatever PK
-            # parameters they requested or keep whichever parameters would be
-            # sensible for that regimen.
-            if(length(PKparameters) == 1 && is.na(PKparameters)){
-                  PKparameters <- switch(
-                        paste(EffectorPresent, Deets$Regimen_sub),
-                        "TRUE Single Dose" = c("AUCinf_dose1", "AUCinf_dose1_withInhib",
-                                               "Cmax_dose1", "Cmax_dose1_withInhib",
-                                               "tmax_dose1", "tmax_dose1_withInhib",
-                                               "Cmax_ratio_dose1", "AUCinf_ratio_dose1"),
-                        "TRUE Multiple Dose" = c("AUCinf_ss", "AUCinf_ss_withInhib",
-                                                 "Cmax_ss", "Cmax_ss_withInhib",
-                                                 "tmax_ss", "tmax_ss_withInhib",
-                                                 "Cmax_ratio_ss", "AUCinf_ratio_ss"),
-                        "FALSE Single Dose" = c("AUCinf_dose1", "Cmax_dose1",
-                                                "CL_dose1", "tmax_dose1"),
-                        "FALSE Multiple Dose" = c("AUCinf_ss", "Cmax_ss",
-                                                  "CL_ss", "tmax_ss"))
-            }
-
-            MyPKResults <- MyPKResults[, c("Stat", PKparameters)]
-            PKToPull <- PKparameters
       }
 
       MyPKResults <- MyPKResults %>%
@@ -508,6 +511,11 @@ so_table <- function(report_input_file = NA,
       PKToPull_pretty <- c("Statistic" = "Statistic", PKToPull_pretty)
 
       names(MyPKResults) <- PKToPull_pretty[names(MyPKResults)]
+
+      if(checkDataSource){
+            MyPKResults <- list("so_table" = MyPKResults,
+                                "QC" = MyPKResults_all$QC)
+      }
 
       return(MyPKResults)
 }
