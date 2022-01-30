@@ -106,20 +106,14 @@ so_table <- function(report_input_file = NA,
             # data there, just fill out sim_data_file.
       }
 
+      # All possible PK parameters
       data("AllPKParameters")
-      D1 <- c("AUCinf", "CL", "Cmax", "HalfLife", "tmax")
-      D2 <- sub("AUCinf", "AUCtau", D1)
 
-      D1 <- paste0(D1, "_dose1")
-      D2 <- paste0(D2, "_ss")
-
-      Dcomp <- c("AUCinf_ratio_dose1", "AUCtau_ratio_dose1", "AUCtau_ratio_ss",
-                 "Cmax_ratio_dose1", "Cmax_ratio_ss")
-
-      ObsToPull <- c(D1, paste0(D1, "_withInhib"),
-                     D2, paste0(D2, "_withInhib"), Dcomp)
-
-      PKToPull <- ObsToPull[!str_detect(ObsToPull, "_CV")]
+      # Just most commonly requestd PK parameters
+      PKToPull <- AllPKParameters %>%
+            filter(str_detect(PKparameter, "AUCinf|AUCtau|CL|Cmax|HalfLife|tmax")) %>%
+            filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
+            pull(PKparameter) %>% unique()
 
       # sectionInfo is logical if it's not filled out.
       if(class(sectionInfo) == "logical"){
@@ -143,26 +137,29 @@ so_table <- function(report_input_file = NA,
 
       }
 
-      # Getting PK parameters from the AUC tab
-      MyPKParam <- switch(
-            paste(DoseRegimen, EffectorPresent),
-            "Single Dose FALSE" = PKToPull[
-                  str_detect(PKToPull, "dose1") &
-                        !str_detect(PKToPull, "withInhib")],
-            "Single Dose TRUE" = PKToPull[
-                  str_detect(PKToPull, "dose1")],
-            "Multiple Dose FALSE" = PKToPull[!str_detect(PKToPull, "withInhib")],
-            "Multiple Dose TRUE" = PKToPull)
+      # If dose regimen were single-dose, then only pull dose 1 data except for
+      # AUCtau since, most of the time, we need AUCinf instead. For multiple
+      # dose, only pull ss parameters.
+      if(Deets$Regimen_sub == "Single Dose"){
+            PKToPull <- PKToPull[!str_detect(PKToPull, "_ss|tau")]
+      } else {
+            PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
+      }
 
+      # If there was no effector, then don't pull any interaction info
+      if(is.na(Deets$Inhibitor1)){
+            PKToPull <- PKToPull[!str_detect(PKToPull, "_withInhib|_ratio")]
+      }
+
+      # Getting PK parameters from the AUC tab
       MyPKResults_all <- extractPK(sim_data_file = SimFile,
-                                   PKparameters = MyPKParam,
+                                   PKparameters = PKToPull,
                                    returnAggregateOrIndiv =
                                          switch(as.character(includeTrialMeans),
                                                 "TRUE" = c("aggregate", "individual"),
                                                 "FALSE" = "aggregate"))
-      MyPKResults <- switch(as.character(includeTrialMeans),
-                            "TRUE" = MyPKResults_all$Aggregate,
-                            "FALSE" = MyPKResults_all)
+
+      MyPKResults <- MyPKResults_all$aggregate
 
       VarOpt1 <- variability_option[1]
       VariabilityNames <- switch(VarOpt1,
@@ -275,7 +272,7 @@ so_table <- function(report_input_file = NA,
                                "Q5th", "Q95th", "CV", "MinMean", "MaxMean")) %>%
             pivot_wider(names_from = PKParam, values_from = Value)
 
-      MyObsPKParam <- c(MyPKParam, paste0(MyPKParam, "_CV"))
+      MyObsPKParam <- c(PKToPull, paste0(PKToPull, "_CV"))
       if(EffectorPresent){
             MyObsPKParam <- c(MyObsPKParam,
                               "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",

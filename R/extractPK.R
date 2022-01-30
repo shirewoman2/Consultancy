@@ -444,7 +444,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0 | is.na(ColNum)){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText4Col, SearchText))
                               PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                               next
                         }
@@ -472,9 +472,8 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = 4,
                                                          EndRow_ind = EndRow_ind,
                                                          Note = "StartColText is looking in row 2."))
+                              suppressWarnings(rm(SearchText4Col, SearchText))
                         }
-
-                        rm(ColNum, SearchText4Col, SearchText)
                   }
 
                   if(includeTrialInfo){
@@ -485,7 +484,6 @@ extractPK <- function(sim_data_file,
                         Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
                                                      as.data.frame(Out_ind[PKparameters_AUC]))
                   }
-
                   rm(EndRow_ind, findCol, StartRow_agg, EndRow_agg)
             }
       }
@@ -556,7 +554,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_AUC0 <- setdiff(PKparameters_AUC0, i)
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -583,8 +581,7 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = 3,
                                                          EndRow_ind = EndRow_ind))
                         }
-
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
 
                   if(includeTrialInfo){
@@ -666,7 +663,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_AUCX <- setdiff(PKparameters_AUCX, i)
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -693,14 +690,8 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = 3,
                                                          EndRow_ind = EndRow_ind))
                         }
-
-                        rm(ColNum, SearchText)
-                        }
-
-
-
-
-
+                        suppressWarnings(rm(ColNum, SearchText))
+                  }
 
                   if(includeTrialInfo){
                         # Subject and trial info
@@ -777,7 +768,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_Abs <- setdiff(PKparameters_Abs, i)
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -798,7 +789,7 @@ extractPK <- function(sim_data_file,
                                                          EndRow_ind = nrow(Abs_xl)))
                         }
 
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
 
                   if(includeTrialInfo){
@@ -878,7 +869,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -901,8 +892,7 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = NA,
                                                          EndRow_ind = NA))
                         }
-
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
             }
       }
@@ -961,7 +951,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
-                              rm(ColNum)
+                              suppressWarninsg(rm(ColNum, SearchText))
                               next
                         }
 
@@ -984,7 +974,7 @@ extractPK <- function(sim_data_file,
                                                          EndRow_ind = nrow(CLTSS_xl)))
                         }
 
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
 
                   }
 
@@ -1037,7 +1027,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -1061,7 +1051,7 @@ extractPK <- function(sim_data_file,
                                                          EndRow_ind = NA))
                         }
 
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
 
 
@@ -1244,9 +1234,10 @@ extractPK <- function(sim_data_file,
                                                    StartRow_ind = HeaderRow+1,
                                                    EndRow_ind = EndRow_ind,
                                                    Note = "StartColText is looking in row 2."))
+                        rm(SearchText4Col)
                   }
 
-                  rm(ColNum, SearchText4Col, SearchText)
+                  rm(ColNum, SearchText)
             }
 
             if(includeTrialInfo){
