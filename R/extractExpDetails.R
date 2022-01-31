@@ -51,7 +51,6 @@ extractExpDetails <- function(sim_data_file,
 
       # Noting exp_details requested for later
       exp_details_input <- tolower(exp_details)
-
       # Noting which details are possible, which columns to search for their
       # names, which columns contain their values for substrates or
       # inhibitors, and what kind of data to format the output as at the end
@@ -68,23 +67,23 @@ extractExpDetails <- function(sim_data_file,
       InputDeets <- AllExpDetails %>% filter(Sheet == "Input Sheet") %>% 
           rename(Deet = Detail)
       
-      if(exp_details_input == "all"){
+      if(exp_details_input[1] == "all"){
             exp_details <- unique(AllExpDetails$Detail)
       }
 
-      if(exp_details_input == "summary tab"){
+      if(exp_details_input[1] == "summary tab"){
             exp_details <- c(SumDeets$Deet, "StartHr_sub", "StartHr_inhib")
             # Note that StartHr_inhib2, even if there were an inhibitor 2, is
             # not available from the Summary Sheet. It IS available from the
             # Input Sheet, though.
       }
 
-      if(exp_details_input == "input sheet"){
+      if(exp_details_input[1] == "input sheet"){
             exp_details <- c(InputDeets$Deet, "StartHr_sub", "StartHr_inhib",
                                          "StartHr_inhib2")
       }
 
-      if(exp_details_input == "population tab"){
+      if(exp_details_input[1] == "population tab"){
             exp_details <- PopDeets$Deet
       }
       # Need to note original exp_details requested b/c I'm adding to it if
@@ -97,15 +96,15 @@ extractExpDetails <- function(sim_data_file,
       # extract. If the user wanted "Input Sheet" details, we can actually
       # calculate this without reading the summary tab, which takes more time,
       # so omitting in that instance.
-      if("StartHr_sub" %in% exp_details & exp_details_input != "input sheet"){
+      if("StartHr_sub" %in% exp_details & exp_details_input[1] != "input sheet"){
             exp_details <- unique(c(exp_details, "StartDayTime_sub",
                                     "SimStartDayTime"))
       }
-      if("StartHr_inhib" %in% exp_details & exp_details_input != "input sheet"){
+      if("StartHr_inhib" %in% exp_details & exp_details_input[1] != "input sheet"){
             exp_details <- unique(c(exp_details, "StartDayTime_inhib",
                                     "SimStartDayTime"))
       }
-      if("StartHr_inhib2" %in% exp_details & exp_details_input != "input sheet"){
+      if("StartHr_inhib2" %in% exp_details & exp_details_input[1] != "input sheet"){
             exp_details <- unique(c(exp_details, "StartDayTime_inhib2",
                                     "SimStartDayTime"))
       }
@@ -135,11 +134,11 @@ extractExpDetails <- function(sim_data_file,
       # bother reading this sheet b/c that takes more processing time. (Some
       # details show up on multiple sheets, so there are redundancies in this
       # function to deal with that.)
-      if(exp_details_input %in% c("input sheet")){
+      if(exp_details_input[1] %in% c("input sheet")){
             MySumDeets <- intersect("A", "B")
       }
 
-      if(exp_details_input %in% c("population tab")){
+      if(exp_details_input[1] %in% c("population tab")){
             MySumDeets <- "Population"
       }
 
@@ -259,7 +258,7 @@ extractExpDetails <- function(sim_data_file,
       # bother reading this sheet b/c that takes more processing time. (Some
       # details show up on multiple sheets, so there are redundancies in this
       # function to deal with that.)
-      if(exp_details_input %in% c("population tab", "summary tab")){
+      if(exp_details_input[1] %in% c("population tab", "summary tab")){
             MyInputDeets <- intersect("A", "B")
       }
 
@@ -690,7 +689,7 @@ extractExpDetails <- function(sim_data_file,
       # bother reading this sheet b/c that takes more processing time. (Some
       # details show up on multiple sheets, so there are redundancies in this
       # function to deal with that.)
-      if(exp_details_input %in% c("summary tab", "input sheet")){
+      if(exp_details_input[1] %in% c("summary tab", "input sheet")){
             MyInputDeets <- intersect("A", "B")
       }
 

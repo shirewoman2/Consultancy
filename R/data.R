@@ -83,7 +83,7 @@
 #'   \item{CDSInputMatch}{FOR INTERNAL USE: Which compound data sheet item on
 #'   the "Simcyp Inputs and QC" tab match this experimental detail}
 #'
-#'   \item{ADME}{FOR INTERNAL USE: For matching with the CDS, which section does
+#'   \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which section does
 #'   this detail belong? Options: Absorption, Distribution, Elimination,
 #'   Interaction, Phys Chem and Blood Binding.}
 #'
