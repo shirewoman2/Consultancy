@@ -404,6 +404,9 @@ extractExpDetails <- function(sim_data_file,
                         str_detect(InputTab[ , NameCol] %>%
                                        pull(),
                                    "^Biliary CLint") |
+                        str_detect(InputTab[ , NameCol] %>%
+                                       pull(),
+                                   "^Additional HLM CLint") |
                         str_detect(InputTab[ , ValueCol] %>%
                                        pull(),
                                    "In Vivo Clear"))
@@ -497,27 +500,34 @@ extractExpDetails <- function(sim_data_file,
                             next
                         }
                         
+                    } 
+                    
+                    if(str_detect(as.character(InputTab[i, NameCol]), "^Biliary CLint")){
+                        # biliary CL
+                        suppressWarnings(
+                            Out[[paste0("CLint_biliary", Suffix)]] <-
+                                as.numeric(InputTab[i, NameCol + 1])
+                        )
                     }
+                    
+                    if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HLM CLint")){
+                        # Other HLM CL
+                        suppressWarnings(
+                            Out[[paste0("CLint_AddHLM", Suffix)]] <-
+                                as.numeric(InputTab[i, NameCol + 1])
+                        )
+                    }
+                    
+                    if(str_detect(as.character(InputTab[i, ValueCol]),
+                                  "In Vivo Clear")){
+                        suppressWarnings(
+                            Out[[paste0("CLint_InVivo", Suffix)]] <- 
+                                as.numeric(InputTab[i, NameCol + 1])
+                        )
+                    }
+                    
+                    rm(CLRows, IntRowStart, NameCol, Suffix)
                 }
-                
-                if(str_detect(as.character(InputTab[i, NameCol]), "^Biliary CLint")){
-                    # biliary CL
-                    suppressWarnings(
-                        Out[[paste0("CLint_biliary", Suffix)]] <-
-                            as.numeric(InputTab[i, NameCol + 1])
-                    )
-                }
-                
-                if(str_detect(as.character(InputTab[i, ValueCol]),
-                              "In Vivo Clear")){
-                    suppressWarnings(
-                        Out[[paste0("what should we call this?")]]
-                        # LEFT OFF HERE -- Need to look for CL (po), CL (iv), any active hepatic scalar, and CL R.
-                    )
-                }
-                
-                
-                rm(CLRows, IntRowStart, NameCol, Suffix)
             }
         }
         
@@ -681,7 +691,9 @@ extractExpDetails <- function(sim_data_file,
             }
             
         }
+        
     }
+    
     
     # Pulling details from the population tab -------------------------------
     MyPopDeets <- intersect(exp_details, PopDeets$Deet)
@@ -754,13 +766,13 @@ extractExpDetails <- function(sim_data_file,
                                "Haematocrit_male" = "Haematocrit Mean : Male",
                                "Haematocrit_female" = "Haematocrit Mean : Female", 
                                "Abund_CYP1A2_mean" = "Abundance : CYP1A2 EM Mean",
-                               "Abund_CYP1A2_CV" = "Abundance : CYP1A2 EM CV (%)",
+                               "Abund_CYP1A2_CV" = "Abundance : CYP1A2 EM CV",
                                "Abund_CYP3A4_mean" = "Abundance : CYP3A4 EM Mean",
-                               "Abund_CYP3A4_CV" = "Abundance : CYP3A4 EM CV (%)",
+                               "Abund_CYP3A4_CV" = "Abundance : CYP3A4 EM CV",
                                "Abund_CYP2C9_mean" = "Abundance : CYP2C9 EM Mean",
-                               "Abund_CYP2C9_CV" = "Abundance : CYP2C9 EM CV (%)",
+                               "Abund_CYP2C9_CV" = "Abundance : CYP2C9 EM CV",
                                "Abund_CYP2D6_mean" = "Abundance : CYP2D6 EM Mean",
-                               "Abund_CYP2D6_CV" = "Abundance : CYP2D6 EM CV (%)")
+                               "Abund_CYP2D6_CV" = "Abundance : CYP2D6 EM CV")
             
             NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
             Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
