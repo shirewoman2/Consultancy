@@ -10,7 +10,7 @@
 #' # in the console. Just type the following:
 #' shiny_ct_plot()
 #'
-shiny_ct_plot <- function(){
+ct_plot_gui <- function(){
 
       appDir <- system.file("shiny", "ct_plot_app", package = "SimcypConsultancy")
 

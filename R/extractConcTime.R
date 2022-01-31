@@ -1071,8 +1071,9 @@ extractConcTime <- function(sim_data_file,
             if(exists("obs_data", inherits = FALSE)){
                   obs_data <- obs_data %>%
                         mutate(Simulated = FALSE,
-                               Trial = ifelse(Inhibitor == "none",
-                                              "obs", "obs+inhibitor"))
+                         Trial = as.character(
+                               ifelse(Inhibitor == "none",
+                                      "obs", "obs+inhibitor")))
 
                   if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
                         warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?")
@@ -1083,15 +1084,21 @@ extractConcTime <- function(sim_data_file,
                   }
             }
 
-            DosingScenario <- Deets[["Regimen_sub"]]
-
+      DosingScenario <- switch(compoundToExtract,
+                               "substrate" = Deets$Regimen_sub,
+                               "primary metabolite 1" = Deets$Regimen_sub,
+                               "primary metabolite 2" = Deets$Regimen_sub,
+                               "secondary metabolite" = Deets$Regimen_sub,
+                               "inhibitor 1" = Deets$Regimen_inhib,
+                               "inhibitor 2" = Deets$Regimen_inhib2,
+                               "inhibitor 1 metabolite" = Deets$Regimen_inhib1met)
 
             if(adjust_obs_time & DosingScenario == "Multiple Dose" &
                exists("obs_data", inherits = FALSE)){
                   # If this were a multiple-dose simulation, the observed data is,
                   # presumably, at steady state. The simulated time we'd want those
                   # data to match would be the *last* dose. Adjusting the time for the
-                  # obs data.
+            # obs data if the user requested that.
 
                   DoseFreq <- Deets[["DoseInt_sub"]]
                   NumDoses <- Deets[["NumDoses_sub"]]
@@ -1148,36 +1155,52 @@ extractConcTime <- function(sim_data_file,
                        "primary metabolite 2" = Deets$DoseInt_sub,
                        "secondary metabolite" = Deets$DoseInt_sub,
                        "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
-                                             NA, Deets$DoseInt_inhib),
+                                              NA, Deets$DoseInt_inhib),
                        "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
-                                             NA, Deets$DoseInt_inhib),
+                                                         NA, Deets$DoseInt_inhib),
                        "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
-                                             NA, Deets$DoseInt_inhib2))
+                                              NA, Deets$DoseInt_inhib2))
       MyStartTimes <- c("substrate" = Deets$StartHr_sub,
                         "primary metabolite 1" = Deets$StartHr_sub,
                         "primarymetabolite 2" = Deets$StartHr_sub,
                         "secondary metabolite" = Deets$StartHr_sub,
                         "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                              Deets$StartHr_inhib),
+                                               Deets$StartHr_inhib),
                         "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
-                                              Deets$StartHr_inhib2),
+                                               Deets$StartHr_inhib2),
                         "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                                        Deets$StartHr_inhib))
+                                                          Deets$StartHr_inhib))
+
+      MyMaxDoseNum <- c("substrate" = Deets$NumDoses_sub,
+                        "primary metabolite 1" = Deets$NumDoses_sub,
+                        "primarymetabolite 2" = Deets$NumDoses_sub,
+                        "secondary metabolite" = Deets$NumDoses_sub,
+                        "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                               Deets$NumDoses_inhib),
+                        "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
+                                               Deets$NumDoses_inhib2),
+                        "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                                          Deets$NumDoses_inhib))
 
       Data <- Data %>%
             mutate(StartHr = MyStartTimes[CompoundID],
                    TimeSinceDose1 = Time - StartHr,
                    DoseInt = MyIntervals[CompoundID],
+                   MaxDoseNum = MyMaxDoseNum[CompoundID],
                    DoseNum = Time %/% DoseInt + 1,
                    # Taking care of possible artifacts
                    DoseNum = ifelse(DoseNum < 0, 0, DoseNum),
-                   # If it was a single dose, make everything dose 1.
-                   DoseNum = ifelse(is.na(DoseNum), 1, DoseNum))
+                   DoseNum = ifelse(DoseNum > MaxDoseNum, MaxDoseNum, DoseNum),
+                   # If it was a single dose, make everything after StartHr dose
+                   # 1 and everything before StartHr dose 0. if it was a single
+                   # dose, then DoseInt is NA.
+                   DoseNum = ifelse(is.na(DoseInt),
+                                    ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
 
       # Checking for when the simulation ends right at the last dose b/c
       # then, setting that number to 1 dose lower
       if(length(Data %>% filter(DoseNum == max(Data$DoseNum)) %>%
-            pull(Time) %>% unique()) == 1){
+                pull(Time) %>% unique()) == 1){
             MaxDoseNum <- max(Data$DoseNum)
             Data <- Data %>%
                   mutate(DoseNum = ifelse(DoseNum == MaxDoseNum,

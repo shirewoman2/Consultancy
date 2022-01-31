@@ -300,17 +300,17 @@ ct_plot <- function(sim_data_file = NA,
             stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'means only', or 'Freddy'.")
       }
 
-      if(all(complete.cases(time_range)) & class(time_range) == "numeric" &
+      if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
          length(time_range) != 2){
             stop("You must enter a start and stop time for 'time_range', e.g., 'c(0, 24)' or enter 'last dose' to plot only the time range for the last dose.")
       }
 
-      if(all(complete.cases(time_range)) & class(time_range) == "numeric" &
+      if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
          time_range[1] >= time_range[2]){
             stop("The 1st value for 'time_range' must be less than the 2nd value.")
       }
 
-      if(all(complete.cases(time_range)) & class(time_range) == "character" &
+      if(all(complete.cases(time_range)) && class(time_range) == "character" &
          length(time_range != 1)){
             time_range <- time_range[1]
       }
@@ -341,13 +341,21 @@ ct_plot <- function(sim_data_file = NA,
             Data <- sim_obs_dataframe
 
             if(unique(sim_obs_dataframe$Tissue) %in% tissue == FALSE){
-                  stop(paste0("You requested ", tissue,
-                              "for the tissue, but this tissue was not included in the supplied data.frame."))
+                  warning(paste0("The tissue requested (or the default if a specific one was not requested) was ",
+                                 tissue,
+                                 ", but this tissue was not included in the supplied data.frame. The tissue graphed will be the tissue in the supplied data.frame: ",
+                                 unique(sim_obs_dataframe$Tissue), "."))
+
+                  tissue <- unique(sim_obs_dataframe$Tissue)
             }
 
             if(unique(sim_obs_dataframe$CompoundID) %in% compoundToExtract == FALSE){
-                  stop(paste0("You requested a graph of the ", compoundToExtract,
-                              ", but this compound was not included in the supplied data.frame."))
+                  warning(paste0("The compound requested (or the default if a specific one was not requested) was the ",
+                                 compoundToExtract,
+                                 ", but this compound was not included in the supplied data.frame. The compound graphed will be the compound in the supplied data.frame: the ",
+                                 unique(sim_obs_dataframe$CompoundID), "."))
+
+                  compoundToExtract <- unique(sim_obs_dataframe$CompoundID)
             }
 
       } else {
@@ -423,16 +431,26 @@ ct_plot <- function(sim_data_file = NA,
 
       if(class(time_range_input) == "character" | t0 != "simulation start"){
 
-            DoseTimes <- Data %>%
-                  group_by(CompoundID) %>%
-                  summarize(FirstDoseEnd = min(DoseNum) * unique(DoseInt),
-                            PenultDoseStart = (max(DoseNum) - 2) * unique(DoseInt),
-                            LastDoseStart = (max(DoseNum)-1) * unique(DoseInt)) %>%
+            SingleDose <- Data %>% filter(DoseNum > 0) %>% pull(DoseNum) %>%
                   unique()
+            SingleDose <- length(SingleDose) == 1 && SingleDose == 1
 
-            if(length(unique(Data$DoseNum)) == 1 &&
-               unique(Data$DoseNum) == 1 &
-               time_range_input %in% c("last dose", "penultimate dose")){
+            if(SingleDose){
+                  DoseTimes <- data.frame(
+                        CompoundID = unique(Data$CompoundID),
+                        FirstDoseEnd = max(Data$Time),
+                        PenultDoseStart = floor(min(Data$Time[Data$DoseNum == 1])),
+                        LastDoseStart = floor(min(Data$Time[Data$DoseNum == 1])))
+            } else {
+                  DoseTimes <- Data %>% filter(DoseNum > 0) %>%
+                        group_by(CompoundID) %>%
+                        summarize(FirstDoseEnd = min(DoseNum) * unique(DoseInt),
+                                  PenultDoseStart = (max(DoseNum) - 2) * unique(DoseInt),
+                                  LastDoseStart = (max(DoseNum)-1) * unique(DoseInt)) %>%
+                        unique()
+            }
+
+            if(SingleDose & time_range_input %in% c("last dose", "penultimate dose")){
                   warning(paste0("You requested the ", time_range_input,
                                  ", but the substrate was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."))
             }
@@ -445,11 +463,19 @@ ct_plot <- function(sim_data_file = NA,
             }
 
             if(time_range_input == "penultimate dose"){
-                  time_range <-
-                        DoseTimes %>% ungroup() %>%
-                        filter(CompoundID == compoundToExtract) %>%
-                        select(PenultDoseStart, LastDoseStart) %>%
-                        t() %>% as.numeric()
+                  if(SingleDose){
+                        time_range <-
+                              c(DoseTimes %>%
+                                      filter(CompoundID == compoundToExtract) %>%
+                                      pull(LastDoseStart),
+                                max(Data$Time))
+                  } else {
+                        time_range <-
+                              DoseTimes %>% ungroup() %>%
+                              filter(CompoundID == compoundToExtract) %>%
+                              select(PenultDoseStart, LastDoseStart) %>%
+                              t() %>% as.numeric()
+                  }
             }
 
             if(time_range_input == "last dose"){
@@ -716,7 +742,6 @@ ct_plot <- function(sim_data_file = NA,
             Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
       } else if (figure_type == "means only") {
             Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
-
       if(nrow(Ylim_data) == 0){
             Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
       }
@@ -728,6 +753,13 @@ ct_plot <- function(sim_data_file = NA,
 
       if(any(complete.cases(y_axis_limits_lin))){
             Ylim <- y_axis_limits_lin[1:2]
+      }
+
+      # Some users are sometimes getting Inf for possible upper limit of data,
+      # although I haven't been able to reproduce this error. Trying to catch
+      # that nonetheless.
+      if(is.infinite(Ylim[2]) | is.na(Ylim[2])){
+            Ylim[2] <- max(Data$Conc, na.rm = T)
       }
 
       PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
@@ -1059,7 +1091,8 @@ ct_plot <- function(sim_data_file = NA,
 
       # If the user requested specific doses, don't pad the x axis b/c it's just
       # not what they requested.
-      if(str_detect(tolower(time_range_input), "dose") &
+      if(complete.cases(time_range_input) &&
+         str_detect(tolower(time_range_input), "dose") &
          pad_x_axis == FALSE){
             A <- A + scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                         expand = c(0,0))
@@ -1137,11 +1170,18 @@ ct_plot <- function(sim_data_file = NA,
             )
 
       } else {
-            AB <- suppressWarnings(
-                  ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
-                                    common.legend = TRUE, legend = "right",
-                                    align = "v")
-            )
+            # If the user didn't want the legend or if the graph is of Inhibitor1,
+            # remove legend.
+            if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){
+                  AB <- suppressWarnings(
+                        ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
+                                          legend = "none", align = "v"))
+            } else {
+                  AB <- suppressWarnings(
+                        ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
+                                          common.legend = TRUE, legend = "right",
+                                          align = "v"))
+            }
       }
 
       Out <- list("Graphs" = AB)

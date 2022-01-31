@@ -3,7 +3,7 @@
 #' \code{tidyPop}
 #'
 #' @param input_pop input population to tidy up; this has been designed to work
-#'   with \code{\link{extractExpDetails}} with the output item named "Pop"
+#'   with \code{\link{extractExpDetails}} with the output item named "Population"
 #'
 #' @return
 #' @export
@@ -37,28 +37,28 @@ tidyPop <- function(input_pop){
             "Rheumatoid Arthritis" = "rheumatoid arthritis patients")
 
 
-      Pop <- sub("Sim-", "", input_pop)
+      Population <- sub("Sim-", "", input_pop)
 
-      Pop <- as.character(PopNiceNames[Pop])
-      PopulationSimple <- ifelse(str_detect(tolower(Pop), "patients|subjects"),
+      Population <- as.character(PopNiceNames[Population])
+      PopulationSimple <- ifelse(str_detect(tolower(Population), "patients|subjects"),
                                  str_trim(
                                        str_extract(
-                                             Pop,
+                                             Population,
                                              "patients|(morbidly obese|obese|pediatric|pregnant)? subjects")),
                                  "healthy volunteers")
-      PopulationSimple <- ifelse(Pop == "preterm infants",
+      PopulationSimple <- ifelse(Population == "preterm infants",
                                  "preterm infants", PopulationSimple)
-      PopulationCap <- str_to_title(Pop)
-      PopulationCap <- ifelse(str_detect(Pop, "CP"),
+      PopulationCap <- str_to_title(Population)
+      PopulationCap <- ifelse(str_detect(Population, "CP"),
                               sub("Cp", "CP", PopulationCap), PopulationCap)
-      PopulationCap <- ifelse(str_detect(Pop, "GFR"),
+      PopulationCap <- ifelse(str_detect(Population, "GFR"),
                               sub("Gfr", "GFR", PopulationCap), PopulationCap)
       PopulationCap <- gsub("Of", "of", PopulationCap)
       PopulationCap <- gsub("With", "with", PopulationCap)
       PopulationSimpleLower <- tolower(PopulationSimple)
       PopulationSimpleCap <- str_to_title(PopulationSimple)
 
-      MyPops <- list(Population = Pop,
+      MyPops <- list(Population = Population,
                      PopulationSimple = PopulationSimple,
                      PopulationCap = PopulationCap,
                      PopulationSimpleLower = PopulationSimpleLower,

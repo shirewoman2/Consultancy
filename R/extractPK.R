@@ -1,8 +1,7 @@
-#' Extract substrate PK data for specific parameters from a simulator output
-#' Excel file
+#' Extract PK data for specific parameters from a simulator output Excel file
 #'
-#' Pull calculated substrate PK parameters from a Simcyp simulation output Excel
-#' file.
+#' Pull calculated PK parameters from a Simcyp simulation output Excel file.
+#' Note: Nearly all parameters are for the substrate.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
@@ -12,100 +11,11 @@
 #'   output file. Options are "all" for all possible parameters, "AUC tab" for
 #'   only those parameters on the "AUC" tab (default), "Absorption tab" for only
 #'   those parameters on the "Absorption" tab, or any combination of specific,
-#'   individual parameters. When individual parameters are specifically for the
-#'   substrate, inhibitor, metabolite, etc., they should have a suffix appended
-#'   (listed as "_X" below): "_sub" for the substrate, "_met1" for the primary
-#'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-#'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-#'   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-#'   inhibitor 1 metabolite. (NOTE: Under construction. Currently only extracts
-#'   PK for substrate and substrate in presence of inhibitor.) Possible
-#'   parameters to extract:
-#'
-#'   \describe{
-#'
-#'   \item{AccumulationIndex, AccumulationIndex_withInhib}{Accumulation index
-#'   (AUC infinity for dose 1 / AUC tau at steady state). By default, data are
-#'   pulled from the sheet "AUC", column titled "Accumulation Index" or, for the
-#'   accumulation index in the presence of an inhibitor or effector,
-#'   "Accumulation Index_Inh". UNDER CONSTRUCTION.}
-#'
-#'   \item{AccumulationRatio, AccumulationRatio_withInhib}{Accumulation ratio
-#'   (AUC tau for dose 1 / AUC tau at steady state). By default, data are pulled
-#'   from the sheet "AUC", column titled "Accumluation Ratio" or, for the
-#'   accumulation ratio in the presence of an inhibitor or effector,
-#'   "Accumulation Ratio_Inh".}
-#'
-#'   \item{AUCinf_dose1, AUCinf_dose1_withInhib}{AUC from 0 to infinity for dose
-#'   1, in the absence or presence of an inhibitor, respectively. By default,
-#'   data are pulled from the sheet "AUC", column titled, e.g., "AUC_INF
-#'   (mg/L.h)"}
-#'
-#'   \item{AUCinf_ratio_dose1, AUCtau_ratio_dose1, AUCtau_ratio_ss,
-#'   Cmax_ratio_dose1, Cmax_ratio_ss}{The ratio of either the AUC or Cmax for
-#'   dose 1 or at steady state with an inhibitor present / without an inhibitor
-#'   present.}
-#'
-#'   \item{AUCtau_dose1, AUCtau_dose1_withInhib, AUCtau_ss,
-#'   AUCtau_ss_withInhib}{AUC from 0 to tau for dose 1 or the last dose in the
-#'   absence or presence of an inhibitor. By default, dose 1 data are pulled
-#'   from sheet "AUC0(Sub)(CPlasma)", column titled, e.g., "AUC (mg/L.h)", and
-#'   steady-state data are pulled from the "AUC" tab}
-#'
-#'   \item{CL_dose1, CL_dose1_withInhib}{Clearance as calculated by dose /
-#'   AUCinf for dose 1. Data are pulled from the sheet "AUC" and the column
-#'   titled, e.g., "CL (Dose/AUC_INF) (L/h)", subheading "Extrapolated AUC_INF
-#'   for the first dose".}
-#'
-#'   \item{CL_ss, CL_ss_withInhib}{Clearance as calculated by dose / AUCtau for
-#'   the last dose simulated. By default, data are pulled from the sheet "AUC",
-#'   column titled, e.g., "CL (Dose/AUC) (L/h)")}
-#'
-#'   \item{CL_hepatic}{I'm not actually positive that this is the total hepatic
-#'   clearance, but I think that's what it is... By default, data are pulled
-#'   from the "Clearance Trials SS" tab. Sorry for the uncertain explanation;
-#'   I'll update this when I know better what this is! -LS}
-#'
-#'   \item{Cmax_dose1, Cmax_dose1_withInhib}{Cmax for dose 1 with or without an
-#'   inhibitor. By default, data are pulled from sheet "AUC0(Sub)(CPlasma)",
-#'   column titled, e.g., "CMax (mg/L)".}
-#'
-#'   \item{Cmax_ss}{Cmax for the last dose. By default, data are pulled from
-#'   sheet "AUC", column titled, e.g., "CMax (mg/L)", under the subheading
-#'   "Truncated AUCt for the last dose.}
-#'
-#'   \item{HalfLife_dose1}{half life for dose 1. By default, data are pulled
-#'   from the sheet "AUC", column titled, e.g., "Half-life (h)")}
-#'
-#'   \item{F_sub}{bioavailability (F) of substrate. By default, data are pulled
-#'   from the sheet "Clearance Trials SS".}
-#'
-#'   \item{fa_x}{fraction absorbed for the specified compound. By default, data
-#'   are pulled from the sheet "Absorption".}
-#'
-#'   \item{fg_x}{fraction of the specified compound escaping gut metabolism. By
-#'   default, data are pulled from the sheet "Clearance Trials SS".}
-#'
-#'   \item{fh_x}{fraction of the specified compound escaping hepatic metabolism.
-#'   By default, data are pulled from the sheet "Clearance Trials SS".}
-#'
-#'   \item{ka_x}{absorption rate constant ka for the specified compound. By
-#'   default, data are pulled from the sheet "Absorption".}
-#'
-#'   \item{tlag_x}{lag time for the specified compound. By default, data are
-#'   pulled from the sheet "Absorption".}
-#'
-#'   \item{tmax_dose1, tmax_dose1_Inhib, tmax_ss, tmax_ss_Inhib}{tmax for dose 1
-#'   or for the last dose, with or without inhibitors present. By default, data
-#'   are pulled from sheet "AUC", column titled, e.g., "TMax (h)" or "TMaxinh
-#'   (h)".}
-#'
-#'   } The default is only those parameters present on the "AUC" sheet in the
-#'   simulator output.
-#'
-#'
+#'   individual parameters. Currently, the PK data are only for the substrate
+#'   unless noted. To see the full set of possible parameters to extract, enter
+#'   \code{data(AllPKParameters)} into the console.
 #' @param sheet Which sheet should be used for pulling the PK parameters?
-#'   \strong{Note:} Unless you want a very specific Excel sheet that's not what
+#'   \emph{Note:} Unless you want a very specific Excel sheet that's not what
 #'   the usual sheet name would be for a first or last dose, this function will
 #'   work best if this is left as NA.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
@@ -124,8 +34,8 @@
 #'
 #' @return Depending on the options selected, returns a list of numerical
 #'   vectors or a list of data.frames. If \code{checkDataSource} is TRUE, this
-#'   will also return a list indicating where in the simulator output file the
-#'   data came from.
+#'   will also return a data.frame indicating where in the simulator output file
+#'   the data came from.
 #'
 #' @import tidyverse
 #' @import readxl
@@ -149,7 +59,7 @@ extractPK <- function(sim_data_file,
       AllSheets <- readxl::excel_sheets(path = sim_data_file)
 
       # Determining the name of the tab that contains PK data for the last dose
-      # of the substrate (not the inhibitor, at least, not at this point).
+      # of the substrate (not the inhibitor... at least, not at this point).
       Tab_last <- AllSheets[str_detect(AllSheets, "AUC(t)?[0-9]{1,}") &
                                   !str_detect(AllSheets, "Inh")]
       ssNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
@@ -533,7 +443,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0 | is.na(ColNum)){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText4Col, SearchText))
                               PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                               next
                         }
@@ -561,9 +471,8 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = 4,
                                                          EndRow_ind = EndRow_ind,
                                                          Note = "StartColText is looking in row 2."))
+                              suppressWarnings(rm(SearchText4Col, SearchText))
                         }
-
-                        rm(ColNum, SearchText4Col, SearchText)
                   }
 
                   if(includeTrialInfo){
@@ -574,7 +483,6 @@ extractPK <- function(sim_data_file,
                         Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
                                                      as.data.frame(Out_ind[PKparameters_AUC]))
                   }
-
                   rm(EndRow_ind, findCol, StartRow_agg, EndRow_agg)
             }
       }
@@ -645,7 +553,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_AUC0 <- setdiff(PKparameters_AUC0, i)
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -672,8 +580,7 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = 3,
                                                          EndRow_ind = EndRow_ind))
                         }
-
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
 
                   if(includeTrialInfo){
@@ -755,7 +662,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_AUCX <- setdiff(PKparameters_AUCX, i)
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -782,14 +689,8 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = 3,
                                                          EndRow_ind = EndRow_ind))
                         }
-
-                        rm(ColNum, SearchText)
-                        }
-
-
-
-
-
+                        suppressWarnings(rm(ColNum, SearchText))
+                  }
 
                   if(includeTrialInfo){
                         # Subject and trial info
@@ -866,7 +767,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_Abs <- setdiff(PKparameters_Abs, i)
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -887,7 +788,7 @@ extractPK <- function(sim_data_file,
                                                          EndRow_ind = nrow(Abs_xl)))
                         }
 
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
 
                   if(includeTrialInfo){
@@ -967,7 +868,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -990,8 +891,7 @@ extractPK <- function(sim_data_file,
                                                          StartRow_ind = NA,
                                                          EndRow_ind = NA))
                         }
-
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
             }
       }
@@ -1050,7 +950,7 @@ extractPK <- function(sim_data_file,
                               message(paste("The column with information for", i,
                                             "cannot be found."))
                               PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
-                              rm(ColNum)
+                              suppressWarninsg(rm(ColNum, SearchText))
                               next
                         }
 
@@ -1073,7 +973,7 @@ extractPK <- function(sim_data_file,
                                                          EndRow_ind = nrow(CLTSS_xl)))
                         }
 
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
 
                   }
 
@@ -1126,7 +1026,7 @@ extractPK <- function(sim_data_file,
                         if(length(ColNum) == 0){
                               message(paste("The column with information for", i,
                                             "cannot be found."))
-                              rm(ColNum)
+                              suppressWarnings(rm(ColNum, SearchText))
                               next
                         }
 
@@ -1150,7 +1050,7 @@ extractPK <- function(sim_data_file,
                                                          EndRow_ind = NA))
                         }
 
-                        rm(ColNum, SearchText)
+                        suppressWarnings(rm(ColNum, SearchText))
                   }
 
 
@@ -1333,9 +1233,10 @@ extractPK <- function(sim_data_file,
                                                    StartRow_ind = HeaderRow+1,
                                                    EndRow_ind = EndRow_ind,
                                                    Note = "StartColText is looking in row 2."))
+                        rm(SearchText4Col)
                   }
 
-                  rm(ColNum, SearchText4Col, SearchText)
+                  rm(ColNum, SearchText)
             }
 
             if(includeTrialInfo){
@@ -1419,8 +1320,8 @@ extractPK <- function(sim_data_file,
       }
 
       if(length(returnAggregateOrIndiv) == 2){
-            Out <- list("Individual" = Out_ind,
-                        "Aggregate" = Out_agg)
+            Out <- list("individual" = Out_ind,
+                        "aggregate" = Out_agg)
       }
 
       if(checkDataSource){

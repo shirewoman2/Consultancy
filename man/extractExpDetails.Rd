@@ -10,160 +10,39 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{exp_details}{Experiment details you want to extract from the simulator
-  output file. Options are "Summary tab" to extract details only from the
-  "Summary tab" (default), "Input Sheet" to extract details only from the
-  "Input Sheet" tab, "population" to extract details about the population
-  used (data come from the tab with the same name as the population
-  simulated), "all" to extract all possible parameters, or a string of the
-  specific parameters you want. Parameters are reported with a suffix (listed
-  as "_X" below): "_sub" for the substrate, "_met1" for the primary
-  metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-  secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-  "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-  inhibitor 1 metabolite. All possible parameters:
+  output file. Options are \describe{
 
-  \describe{
+  \item{"Summary tab"}{Extract details only from the "Summary tab" (default)}
 
-  \item{Abs_model_x}{absorption model used, e.g., "1st order"}
+  \item{"Input Sheet"}{Extract details only from the "Input Sheet" tab}
 
-  \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
+  \item{"population tab"}{Extract details about the population used (data
+  come from the tab with the same name as the population simulated)}
 
-  \item{AGP_male or AGP_female}{AGP mean value for males or females. Values
-  are pulled from the tab with information on the population simulated.
-  Specifying "AGP" will return data for both sexes.}
+  \item{"all"}{Extract all possible parameters}
 
-  \item{BPratio_x}{blood-to-plasma ratio}
+  \item{a string of the specific parameters you want}{For a complete list,
+  type \code{data(AllExpDetails)} into the console. Parameters are reported
+  with a suffix depending on which compound they pertain to: "_sub" for the
+  substrate, "_met1" for the primary metabolite, "_met2" for the second
+  primary metabolite, "_secmet" for the secondary metabolite, "_inhib" for
+  the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
+  inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+  acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 
-  \item{CLint_x}{intrinsic clearance, Vmax, Km, fu_mic, and/or half life
-  values used for any CYPs, UGTs, or other enzymes listed. Output will be
-  labeled for each enzyme and pathway as, e.g., "CLint_sub_CYP3A4_1-OH" or
-  "Vmax_sub_UGT1A1_Pathway1". Specify, e.g., "CLint_sub" and all the other
-  values (Vmax, Km, fu,mic, half life) will also be returned.}
-
-  \item{CLrenal_x}{renal clearance (L/hr)}
-
-  \item{Dose_x}{dose administered}
-
-  \item{DoseInt_x}{dosing interval}
-
-  \item{DoseRoute_x}{dose route, e.g. oral}
-
-  \item{fa_x}{user input value for the fraction absorbed}
-
-  \item{fu_gut_x}{user input value for the fraction escaping gut metabolism}
-
-  \item{fu_x}{fraction unbound}
-
-  \item{GIAbsModel_x}{GI absorption model used}
-
-  \item{Hematocrit or Haematocrit}{the hematocrit listed on the "Summary"
-  tab}
-
-  \item{Hematocrit_male, Hematocrit_female, Haematocrit_male, or
-  Haematocrit_female}{the hematocrit listed on the tab with population info.
-  Note from LS: Can someone tell me how this differs from the "Haematocrit"
-  value listed on the Summary tab?}
-
-  \item{HSA_male or HSA_female}{the HSA value for the sex specified --
-  including C0, C1, and C2, where appropriate -- listed on the tab with
-  population info. Specifying "HSA" will return all possible HSA details.}
-
-  \item{Inhibitor1, Inhibitor2}{inhibitor used, as applicable}
-
-  \item{Inhibitor1Metabolite}{the primary metabolite of Inhibitor 1, as
-  applicable}
-
-  \item{Interaction_x}{interaction parameters for any CYPs, UGTs, or other
-  enzymes listed. Output will be labeled for each enzyme and interaction
-  type.}
-
-  \item{ka_x}{user input value for the absorption constant ka}
-
-  \item{kin_sac_x}{k in and k out for SAC (1/hr)}
-
-  \item{kp_scalar_x}{kp scalar}
-
-  \item{logP_x}{logP}
-
-  \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite
-  included, either the primary or the secondary, as applicable}
-
-  \item{ModelType_x}{the type of model, e.g., full PBPK model}
-
-  \item{MW_x}{molecular weight}
-
-  \item{NumDoses_x}{number of doses}
-
-  \item{NumSubjTrial}{number of subjects per trial}
-
-  \item{NumTrials}{the number of trials performed}
-
-  \item{Ontogeny}{ontogeny profile used}
-
-  \item{Papp_MDCK_x, Papp_Caco_x}{Papp as determined in MDCKII or Caco-2
-  cells (10^-6 cm/s)}
-
-  \item{Papp_calibrator_x}{Papp of the calibrator compound (10^-6 cm/s)}
-
-  \item{PercFemale}{Percent of females in simulated population}
-
-  \item{pKa1_x, pKa2_x}{the pertinent pKa}
-
-  \item{Pop}{the population modeled}
-
-  \item{PopSize}{the size of population modeled}
-
-  \item{PrandialSt_sub or PrandialSt_inhib}{prandial state upon dosing}
-
-  \item{Qgut_x}{Qgut (L/hr)}
-
-  \item{Regimen_x}{dosing regimen}
-
-  \item{SimEndDayTime}{ending day and time of the simulation}
-
-  \item{SimStartDayTime}{starting day and time of the simulation}
-
-  \item{SimulatorVersion}{Simulator version number}
-
-  \item{StartDayTime_x}{Starting day and time for administering compound X}
-
-  \item{StartHr_x}{Starting time in hours since the start of the simulation
-  for administering compound X}
-
-  \item{StudyDuration}{study duration in hours}
-
-  \item{Substrate}{the substrate used}
-
-  \item{tlag_x}{user input value for the lag time}
-
-  \item{Type_x}{type of compound, e.g., monoprotic base}
-
-  \item{Units_dose_x, Units_AUC_x, Units_Cmax_x Units_tmax_x,
-  Units_CL_x}{Units for dose, AUC, Cmax, tmax, or CL}
-
-  \item{UserAddnOrgan_x}{yes or no: Was a user-defined additional organ
-  included?}
-
-  \item{Vsac_x}{Volume of single-adjusting compartment (L/kg)}
-
-  \item{Vss_input_x}{Vss used}
-
-  \item{VssPredMeth_x}{method used for predicting Vss}
-
-  } \emph{NOTE:} The default pulls only parameters that are listed on the
-  "Summary" tab. (There are ~50 of them, so I'm not listing them here for
-  brevity. -LS) Also, if you want experimental details on a second inhibitor,
-  try pulling them from the "Input sheet" instead of the "Summary" tab, which
-  doesn't have much information on Inhibitor 2.}
+  \emph{NOTE:} The default pulls only parameters that are listed on the
+  "Summary" tab. If you want experimental details on a second inhibitor or
+  more information on metabolites, try pulling them from the "Input sheet"
+  instead of the "Summary" tab, which doesn't have as much information on
+  those compounds.}
 }
 \value{
 Returns a named list of the experimental details
 }
 \description{
 \code{extractExpDetails} looks up experimental design details from the
-"Summary" or "Input Sheet" tabs of a Simcyp simulator output file. This is
-currently set up to extract details on the substrate, the first inhibitor,
-primary metabolite 1, and/or secondary metabolite.
+"Summary" or "Input Sheet" tabs or the population tab of a Simcyp simulator
+output file.
 }
 \examples{
 
