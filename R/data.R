@@ -49,9 +49,38 @@
 #' All possible PK parameters that can be extracted from a simulator output file
 #' using \code{\link{extractPK}}.
 #'
-#' @format A data.frame 3 columns: \describe{ \item{PKparameter}{the PK
+#' @format A data.frame with 3 columns: \describe{ \item{PKparameter}{the PK
 #'   parameter name to use with \code{\link{extractPK}} for the argument
 #'   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
-#'   where the PK parameter will be extracted, if possible}
-#'   \item{Notes}{an explanation of what the parameter is}}
+#'   where the PK parameter will be extracted, if possible} \item{Notes}{an
+#'   explanation of what the parameter is}}
 "AllPKParameters"
+
+#' All possible experimental details that can be extracted from a simulator
+#' output file using \code{\link{extractExpDetails}}.
+#'
+#' @format A data.frame with 9 columns: \describe{
+#'
+#'   \item{Detail}{the experimental detail name to use with
+#'   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
+#'
+#'   \item{Compound}{the specific compound this experimental detail applies to}
+#'
+#'   \item{Notes}{an explanation of what the experimental detail is}
+#'
+#'   \item{NameColDetect}{FOR INTERNAL USE}
+#'
+#'   \item{Class}{Data class}
+#'
+#'   \item{Sheet}{Which simulator output sheet this detail is extracted from}
+#'
+#'   \item{NameCol}{Which column in the simulator output tab will be searched
+#'   for this detail}
+#'
+#'   \item{ValueCol}{Which column in the simulator output tab will contains the
+#'   value used for this detail}
+#'
+#'   \item{CDSInputMatch}{FOR INTERNAL USE: Which compound data sheet item on
+#'   the "Simcyp Inputs and QC" tab match this experimental detail} }
+"AllExpDetails"
+

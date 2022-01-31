@@ -6,11 +6,11 @@
 \title{All possible PK parameters that can be extracted from a simulator output file
 using \code{\link{extractPK}}.}
 \format{
-A data.frame 3 columns: \describe{ \item{PKparameter}{the PK
+A data.frame with 3 columns: \describe{ \item{PKparameter}{the PK
   parameter name to use with \code{\link{extractPK}} for the argument
   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
-  where the PK parameter will be extracted, if possible}
-  \item{Notes}{an explanation of what the parameter is}}
+  where the PK parameter will be extracted, if possible} \item{Notes}{an
+  explanation of what the parameter is}}
 }
 \usage{
 AllPKParameters

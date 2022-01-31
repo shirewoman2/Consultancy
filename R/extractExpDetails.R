@@ -1,158 +1,36 @@
 #' Extract details about the experimental design
 #'
 #' \code{extractExpDetails} looks up experimental design details from the
-#' "Summary" or "Input Sheet" tabs of a Simcyp simulator output file. This is
-#' currently set up to extract details on the substrate, the first inhibitor,
-#' primary metabolite 1, and/or secondary metabolite.
-#'
+#' "Summary" or "Input Sheet" tabs or the population tab of a Simcyp simulator
+#' output file.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param exp_details Experiment details you want to extract from the simulator
-#'   output file. Options are "Summary tab" to extract details only from the
-#'   "Summary tab" (default), "Input Sheet" to extract details only from the
-#'   "Input Sheet" tab, "population tab" to extract details about the population
-#'   used (data come from the tab with the same name as the population
-#'   simulated), "all" to extract all possible parameters, or a string of the
-#'   specific parameters you want. Parameters are reported with a suffix (listed
-#'   as "_X" below): "_sub" for the substrate, "_met1" for the primary
-#'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-#'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-#'   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-#'   inhibitor 1 metabolite. All possible parameters:
+#'   output file. Options are \describe{
 #'
-#'   \describe{
+#'   \item{"Summary tab"}{Extract details only from the "Summary tab" (default)}
 #'
-#'   \item{Abs_model_x}{absorption model used, e.g., "1st order"}
+#'   \item{"Input Sheet"}{Extract details only from the "Input Sheet" tab}
 #'
-#'   \item{Age_min, Age_max}{Minimum or maximum age in simulated population}
+#'   \item{"population tab"}{Extract details about the population used (data
+#'   come from the tab with the same name as the population simulated)}
 #'
-#'   \item{AGP_male or AGP_female}{AGP mean value for males or females. Values
-#'   are pulled from the tab with information on the population simulated.
-#'   Specifying "AGP" will return data for both sexes.}
+#'   \item{"all"}{Extract all possible parameters}
 #'
-#'   \item{BPratio_x}{blood-to-plasma ratio}
+#'   \item{a string of the specific parameters you want}{For a complete list,
+#'   type \code{data(AllExpDetails)} into the console. Parameters are reported
+#'   with a suffix depending on which compound they pertain to: "_sub" for the
+#'   substrate, "_met1" for the primary metabolite, "_met2" for the second
+#'   primary metabolite, "_secmet" for the secondary metabolite, "_inhib" for
+#'   the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
+#'   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+#'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
-#'   \item{CLint_x}{intrinsic clearance, Vmax, Km, fu_mic, and/or half life
-#'   values used for any CYPs, UGTs, or other enzymes listed. Output will be
-#'   labeled for each enzyme and pathway as, e.g., "CLint_sub_CYP3A4_1-OH" or
-#'   "Vmax_sub_UGT1A1_Pathway1". Specify, e.g., "CLint_sub" and all the other
-#'   values (Vmax, Km, fu,mic, half life) will also be returned.}
-#'
-#'   \item{CLrenal_x}{renal clearance (L/hr)}
-#'
-#'   \item{Dose_x}{dose administered}
-#'
-#'   \item{DoseInt_x}{dosing interval}
-#'
-#'   \item{DoseRoute_x}{dose route, e.g. oral}
-#'
-#'   \item{fa_x}{user input value for the fraction absorbed}
-#'
-#'   \item{fu_gut_x}{user input value for the fraction escaping gut metabolism}
-#'
-#'   \item{fu_x}{fraction unbound}
-#'
-#'   \item{GIAbsModel_x}{GI absorption model used}
-#'
-#'   \item{Hematocrit or Haematocrit}{the hematocrit listed on the "Summary"
-#'   tab}
-#'
-#'   \item{Hematocrit_male, Hematocrit_female, Haematocrit_male, or
-#'   Haematocrit_female}{the hematocrit listed on the tab with population info.
-#'   Note from LS: Can someone tell me how this differs from the "Haematocrit"
-#'   value listed on the Summary tab?}
-#'
-#'   \item{HSA_male or HSA_female}{the HSA value for the sex specified --
-#'   including C0, C1, and C2, where appropriate -- listed on the tab with
-#'   population info. Specifying "HSA" will return all possible HSA details.}
-#'
-#'   \item{Inhibitor1, Inhibitor2}{inhibitor used, as applicable}
-#'
-#'   \item{Inhibitor1Metabolite}{the primary metabolite of Inhibitor 1, as
-#'   applicable}
-#'
-#'   \item{Interaction_x}{interaction parameters for any CYPs, UGTs, or other
-#'   enzymes listed. Output will be labeled for each enzyme and interaction
-#'   type.}
-#'
-#'   \item{ka_x}{user input value for the absorption constant ka}
-#'
-#'   \item{kin_sac_x}{k in and k out for SAC (1/hr)}
-#'
-#'   \item{kp_scalar_x}{kp scalar}
-#'
-#'   \item{logP_x}{logP}
-#'
-#'   \item{PrimaryMetabolite1, SecondaryMetabolite}{the substrate metabolite
-#'   included, either the primary or the secondary, as applicable}
-#'
-#'   \item{ModelType_x}{the type of model, e.g., full PBPK model}
-#'
-#'   \item{MW_x}{molecular weight}
-#'
-#'   \item{NumDoses_x}{number of doses}
-#'
-#'   \item{NumSubjTrial}{number of subjects per trial}
-#'
-#'   \item{NumTrials}{the number of trials performed}
-#'
-#'   \item{Ontogeny}{ontogeny profile used}
-#'
-#'   \item{Papp_MDCK_x, Papp_Caco_x}{Papp as determined in MDCKII or Caco-2
-#'   cells (10^-6 cm/s)}
-#'
-#'   \item{Papp_calibrator_x}{Papp of the calibrator compound (10^-6 cm/s)}
-#'
-#'   \item{PercFemale}{Percent of females in simulated population}
-#'
-#'   \item{pKa1_x, pKa2_x}{the pertinent pKa}
-#'
-#'   \item{Population}{the population modeled}
-#'
-#'   \item{PopSize}{the size of population modeled}
-#'
-#'   \item{PrandialSt_sub or PrandialSt_inhib}{prandial state upon dosing}
-#'
-#'   \item{Qgut_x}{Qgut (L/hr)}
-#'
-#'   \item{Regimen_x}{dosing regimen}
-#'
-#'   \item{SimEndDayTime}{ending day and time of the simulation}
-#'
-#'   \item{SimStartDayTime}{starting day and time of the simulation}
-#'
-#'   \item{SimulatorVersion}{Simulator version number}
-#'
-#'   \item{StartDayTime_x}{Starting day and time for administering compound X}
-#'
-#'   \item{StartHr_x}{Starting time in hours since the start of the simulation
-#'   for administering compound X}
-#'
-#'   \item{StudyDuration}{study duration in hours}
-#'
-#'   \item{Substrate}{the substrate used}
-#'
-#'   \item{tlag_x}{user input value for the lag time}
-#'
-#'   \item{Type_x}{type of compound, e.g., monoprotic base}
-#'
-#'   \item{Units_dose_x, Units_AUC_x, Units_Cmax_x Units_tmax_x,
-#'   Units_CL_x}{Units for dose, AUC, Cmax, tmax, or CL}
-#'
-#'   \item{UserAddnOrgan_x}{yes or no: Was a user-defined additional organ
-#'   included?}
-#'
-#'   \item{Vsac_x}{Volume of single-adjusting compartment (L/kg)}
-#'
-#'   \item{Vss_input_x}{Vss used}
-#'
-#'   \item{VssPredMeth_x}{method used for predicting Vss}
-#'
-#'   } \emph{NOTE:} The default pulls only parameters that are listed on the
-#'   "Summary" tab. (There are ~50 of them, so I'm not listing them here for
-#'   brevity. -LS) Also, if you want experimental details on a second inhibitor,
-#'   try pulling them from the "Input sheet" instead of the "Summary" tab, which
-#'   doesn't have much information on Inhibitor 2.
+#'   \emph{NOTE:} The default pulls only parameters that are listed on the
+#'   "Summary" tab. If you want experimental details on a second inhibitor or
+#'   more information on metabolites, try pulling them from the "Input sheet"
+#'   instead of the "Summary" tab, which doesn't have as much information on
+#'   those compounds.
 #'
 #' @return Returns a named list of the experimental details
 #' @import tidyverse
@@ -167,7 +45,7 @@
 #'                   exp_details = "all")
 #'
 #'
-#'
+#' 
 extractExpDetails <- function(sim_data_file,
                               exp_details = "Summary tab"){
 
@@ -177,141 +55,21 @@ extractExpDetails <- function(sim_data_file,
       # Noting which details are possible, which columns to search for their
       # names, which columns contain their values for substrates or
       # inhibitors, and what kind of data to format the output as at the end
-      SumDeets <- data.frame(
-            Deet = c("SimulatorVersion", "Units_AUC", "Units_CL",
-                     "Units_Cmax", "Units_tmax",
-
-                     "Population", "SimEndDayTime", "SimStartDayTime",
-                     "StudyDuration", "Substrate", "Type_sub",
-
-                     "Inhibitor1", "Type_inhib", "Inhibitor2",
-                     "PrimaryMetabolite1", "PrimaryMetabolite2",
-                     "SecondaryMetabolite", "Inhibitor1Metabolite", # NameCol 18
-
-                     "DoseRoute_sub", "GIAbsModel_sub", "ModelType_sub",
-                     "PrandialSt_sub", "Regimen_sub", "StartDayTime_sub",
-                     "Units_dose_sub", "VssPredMeth_sub",
-
-                     "DoseRoute_inhib", "GIAbsModel_inhib", "ModelType_inhib",
-                     "PrandialSt_inhib", "Regimen_inhib", "StartDayTime_inhib",
-                     "Units_dose_inhib", "VssPredMeth_inhib", # NameCol 16
-
-                     "BPratio_sub", "fu_sub", "Haematocrit", "Hematocrit", "logP_sub",
-                     "MW_sub", "NumSubjTrial", "NumTrials", "pKa1_sub", "pKa2_sub",
-                     "PopSize",
-
-                     "BPratio_inhib", "fu_inhib", "logP_inhib", "MW_inhib",
-                     "pKa1_inhib", "pKa2_inhib", #NameCol 33
-
-                     "Dose_sub", "DoseInt_sub", "NumDoses_sub", "Vss_input_sub",
-
-                     "Dose_inhib", "DoseInt_inhib", "NumDoses_inhib", "Vss_input_inhib"),
-            NameCol = c(rep(1, 18),
-                        rep(5, 16),
-                        rep(1, 17),
-                        rep(5, 8)),
-            ValueCol = c(rep(1, 5), rep(2, 6), rep(3, 2), rep(2, 5), # NameCol 18
-                         rep(6, 8), rep(7, 8),
-                         rep(2, 11), rep(3, 6), rep(6, 4), rep(7, 4)),
-            Sheet = "Summary",
-            Class = c(rep("character", 34), rep("numeric", 25)))
-      # !!!! There is almost no info on inhibitor 2 on the Summary tab!!!!
-
-      InputDeets_sub <- data.frame(
-            Deet = c("Substrate", "Abs_model_sub", "fa_sub", "ka_sub", "tlag_sub",
-                     "fu_gut_sub", "Papp_MDCK_sub", "Papp_calibrator_sub",
-                     "Papp_Caco_sub", "UserAddnOrgan_sub", "CLrenal_sub",
-                     "CLint_sub", "Interaction_sub", "Qgut_sub",
-                     "kin_sac_sub", "kout_sac_sub", "Vsac_sub", "kp_scalar_sub",
-                     "StartDayTime_sub", "Regimen_sub", "DoseInt_sub",
-                     "NumDoses_sub",
-
-                     # Trial Design details start here
-                     "PercFemale", "Age_min", "Age_max",
-                     "Ontogeny"),
-            # NameCol and ValueCol change depending on whether there are
-            # metabolites or inhibitors present, so noting what to detect using
-            # RegEx in row 4 to determine position of those columns.
-            NameColDetect = c(rep("Substrate", 22), rep("Trial Design", 4)),
-            Class = c("character", "character", rep("numeric", 16),
-                      "numeric", "character", rep("numeric", 2),
-
-                      # Trial Design details start here
-                      rep("numeric", 3), "character"),
-            Sheet = "Input Sheet")
-
-      # Inhibitor 1 data
-      InputDeets_inhib <- InputDeets_sub %>% filter(str_detect(Deet, "_sub")) %>%
-            mutate(Deet = sub("_sub", "_inhib", Deet),
-                   NameColDetect = "Inhibitor 1") %>%
-            filter(Deet != "Substrate") %>%
-            bind_rows(data.frame(Deet = "Inhibitor1", NameColDetect = "Inhibitor 1",
-                                 Class = "character", Sheet = "Input Sheet"))
-
-      # Inhibitor 2 data
-      InputDeets_inhib2 <- InputDeets_inhib %>%
-            mutate(Deet = sub("_inhib", "_inhib2", Deet),
-                   NameColDetect = "Inhibitor 2") %>%
-            filter(Deet != "Inhibitor1") %>%
-            bind_rows(data.frame(Deet = "Inhibitor2", NameColDetect = "Inhibitor 2",
-                                 Class = "character", Sheet = "Input Sheet"))
-
-      # Metabolite data
-      InputDeets_met1 <- InputDeets_inhib %>%
-            mutate(Deet = sub("_inhib", "_met1", Deet),
-                   NameColDetect = "Sub Pri Metabolite1") %>%
-            filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
-            bind_rows(data.frame(Deet = "PrimaryMetabolite1",
-                                 NameColDetect = "Sub Pri Metabolite1",
-                                 Class = "character", Sheet = "Input Sheet"))
-
-      InputDeets_met2 <- InputDeets_inhib %>%
-            mutate(Deet = sub("_inhib", "_met2", Deet),
-                   NameColDetect = "Sub Pri Metabolite2") %>%
-            filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
-            bind_rows(data.frame(Deet = "PrimaryMetabolite2",
-                                 NameColDetect = "Sub Pri Metabolite2",
-                                 Class = "character", Sheet = "Input Sheet"))
-
-      InputDeets_secmet <- InputDeets_inhib %>%
-            mutate(Deet = sub("_inhib", "_secmet", Deet),
-                   NameColDetect = "Sub Sec Metabolite") %>%
-            filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
-            bind_rows(data.frame(Deet = "SecondaryMetabolite",
-                                 NameColDetect = "Sub Sec Metabolite",
-                                 Class = "character", Sheet = "Input Sheet"))
-
-      InputDeets_inhib1met <- InputDeets_inhib %>%
-            mutate(Deet = sub("_inhib", "_inhib1met", Deet),
-                   NameColDetect = "Inh 1 Metabolite") %>%
-            filter(Deet != "Inhibitor1") %>%
-            filter(!str_detect(Deet, "StartDayTime_|Regimen_|DoseInt_|NumDoses_")) %>%
-            bind_rows(data.frame(Deet = "Inhibitor1Metabolite",
-                                 NameColDetect = "Inh 1 Metabolite",
-                                 Class = "character", Sheet = "Input Sheet"))
-
-      InputDeets <- bind_rows(InputDeets_sub, InputDeets_inhib, InputDeets_inhib2,
-                              InputDeets_met1, InputDeets_met2,
-                              InputDeets_secmet, InputDeets_inhib1met) %>%
-            arrange(Deet)
-
-      PopDeets <- data.frame(
-            Deet = c("AGP", "AGP_female", "AGP_male",
-                     "Haematocrit_female", "Haematocrit_male",
-                     "Hematocrit_female", "Hematocrit_male",
-                     "HSA", "HSA_female", "HSA_male",
-                     "HSA_C0_female", "HSA_C0_male",
-                     "HSA_C1_female", "HSA_C1_male",
-                     "HSA_C2_female", "HSA_C2_male"),
-            NameCol = 15, ValueCol = 16,
-            Class = "numeric", Sheet = "population")
-
+      data(AllExpDetails)
+      
+      # Still need to add info for searching for some details. Removing those
+      # from consideration for now.
+      AllExpDetails <- AllExpDetails %>% filter(!str_detect(Sheet, "NEED TO ADD"))
+      
+      SumDeets <- AllExpDetails %>% filter(Sheet == "Summary") %>% 
+          rename(Deet = Detail)
+      PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
+          rename(Deet = Detail)
+      InputDeets <- AllExpDetails %>% filter(Sheet == "Input Sheet") %>% 
+          rename(Deet = Detail)
+      
       if(exp_details_input == "all"){
-            exp_details <- c(SumDeets$Deet, InputDeets$Deet, PopDeets$Deet,
-                             "StartHr_sub", "StartHr_inhib", "StartHr_inhib2")
+            exp_details <- unique(AllExpDetails$Detail)
       }
 
       if(exp_details_input == "summary tab"){
@@ -323,7 +81,7 @@ extractExpDetails <- function(sim_data_file,
 
       if(exp_details_input == "input sheet"){
             exp_details <- c(InputDeets$Deet, "StartHr_sub", "StartHr_inhib",
-                             "StartHr_inhib2")
+                                         "StartHr_inhib2")
       }
 
       if(exp_details_input == "population tab"){
@@ -351,13 +109,10 @@ extractExpDetails <- function(sim_data_file,
             exp_details <- unique(c(exp_details, "StartDayTime_inhib2",
                                     "SimStartDayTime"))
       }
-
-      if(any(exp_details %in% c(SumDeets$Deet, InputDeets$Deet,
-                                PopDeets$Deet,
-                                "StartHr_sub", "StartHr_inhib",
-                                "StartHr_inhib2") == FALSE)){
+      
+      if(any(exp_details %in% AllExpDetails$Detail == FALSE)){
             Problem <- str_comma(setdiff(exp_details,
-                                         c(SumDeets$Deet, InputDeets$Deet, PopDeets$Deet)))
+                                         AllExpDetails$Detail))
             stop(paste0("These study details are not among the possible options: ",
                         Problem,
                         ". The study details to extract must be among the options listed. (Please see help file for all options.)"))
@@ -366,7 +121,7 @@ extractExpDetails <- function(sim_data_file,
       if(length(exp_details) == 0){
             stop("You must enter at least one study detail to extract.")
       }
-
+     
       Out <- list()
 
       if(any(exp_details %in% PopDeets$Deet)){
