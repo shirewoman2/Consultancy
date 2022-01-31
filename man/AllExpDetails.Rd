@@ -6,7 +6,7 @@
 \title{All possible experimental details that can be extracted from a simulator
 output file using \code{\link{extractExpDetails}}.}
 \format{
-A data.frame with 9 columns: \describe{
+A data.frame with 10 columns: \describe{
 
   \item{Detail}{the experimental detail name to use with
   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
@@ -28,7 +28,13 @@ A data.frame with 9 columns: \describe{
   value used for this detail}
 
   \item{CDSInputMatch}{FOR INTERNAL USE: Which compound data sheet item on
-  the "Simcyp Inputs and QC" tab match this experimental detail} }
+  the "Simcyp Inputs and QC" tab match this experimental detail}
+
+  \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which section does
+  this detail belong? Options: Absorption, Distribution, Elimination,
+  Interaction, Phys Chem and Blood Binding.}
+
+  }
 }
 \usage{
 AllExpDetails
