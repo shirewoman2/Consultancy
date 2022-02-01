@@ -14,10 +14,12 @@ time and concentration data.}
 }
 \value{
 a data.frame with the following columns:
-  \describe{\item{Individual}{the individual ID for the data point}
+  \describe{\item{Individual}{the individual ID}
 
   \item{CompoundID}{the compound ID listed in the observed file, e.g., "Sub
   Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma"}
+  
+  \item{Tissue}{the tissue}
 
   \item{Time}{time since dosing}
 
