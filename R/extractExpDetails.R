@@ -1,8 +1,8 @@
 #' Extract details about the experimental design
 #'
 #' \code{extractExpDetails} looks up experimental design details from the
-#' "Summary" or "Input Sheet" tabs or the population tab of a Simcyp simulator
-#' output file.
+#' "Summary", "Input Sheet", custom dosing, or population tabs of a Simcyp
+#' simulator output file.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param exp_details Experiment details you want to extract from the simulator
@@ -26,11 +26,14 @@
 #'   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
 #'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
-#'   \emph{NOTE:} The default pulls only parameters that are listed on the
-#'   "Summary" tab. If you want experimental details on a second inhibitor or
-#'   more information on metabolites, try pulling them from the "Input sheet"
-#'   instead of the "Summary" tab, which doesn't have as much information on
-#'   those compounds.
+#'   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
+#'   listed on the "Summary" tab. If you want experimental details on a second
+#'   inhibitor or more information on metabolites, try pulling them from the
+#'   "Input sheet" instead of the "Summary" tab, which doesn't have as much
+#'   information on those compounds.} \item{We have limited experience with
+#'   extracting these data when a custom dosing regimen was used, so it would be
+#'   a good idea to carefully check that the data are being pulled correctly in
+#'   that scenario.}}
 #'
 #' @return Returns a named list of the experimental details
 #' @import tidyverse
@@ -341,6 +344,7 @@ extractExpDetails <- function(sim_data_file,
                        "PercFemale" = "Propn. of Females",
                        "UserAddnOrgan" = "User-defined Additional",
                        "SimulatorVersion" = "Version number",
+                       "SimStartDayTime" = "Start Day/Time",
                        "Qgut" = "Q\\(Gut\\) \\(L/h",
                        "Regimen" = "Dosing Regimen",
                        "NumDoses" = "Number of Doses",
@@ -381,7 +385,7 @@ extractExpDetails <- function(sim_data_file,
         
         # pullValue doesn't work for CL, so those are separate. Also need
         # to do StartDayTime_x separately.
-        MyInputDeets1 <- MyInputDeets[!str_detect(MyInputDeets, "CLint_|Interaction_|StartDayTime")]
+        MyInputDeets1 <- MyInputDeets[!str_detect(MyInputDeets, "CLint_|Interaction_|^StartDayTime")]
         
         if(length(MyInputDeets1) > 0){
             for(i in MyInputDeets1){
@@ -525,9 +529,9 @@ extractExpDetails <- function(sim_data_file,
                                 as.numeric(InputTab[i, NameCol + 1])
                         )
                     }
-                    
-                    rm(CLRows, IntRowStart, NameCol, Suffix)
                 }
+                
+                rm(CLRows, IntRowStart, NameCol, Suffix)
             }
         }
         
@@ -669,31 +673,99 @@ extractExpDetails <- function(sim_data_file,
         }
         
         # Dealing with StartDayTime_x
-        MyInputDeets4 <- MyInputDeets[str_detect(MyInputDeets, "StartDayTime")]
+        MyInputDeets4 <- MyInputDeets[str_detect(MyInputDeets, "^StartDayTime")]
+        CustomDosing <- NA
         
         if(length(MyInputDeets4) > 0){
             for(j in MyInputDeets4){
                 
                 NameCol <- InputDeets$NameCol[which(InputDeets$Deet == j)]
                 Row_day <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Day"))
-                Val_day <- InputTab[Row_day, InputDeets$ValueCol[
-                    which(InputDeets$Deet == j)]] %>% pull()
-                Row_time <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Time"))
-                Val_time <- InputTab[Row_time, InputDeets$ValueCol[
-                    which(InputDeets$Deet == j)]] %>% pull()
-                # Dealing with inconsistencies in time format
-                Val_time <- sub("m", "", Val_time)
-                Val_time <- str_split(Val_time, pattern = "h")[[1]]
-                Val_time <- str_c(str_pad(Val_time, width = 2, pad = "0"),
-                                  collapse = ":")
-                Out[[j]] <- paste(paste0("Day ", Val_day),
-                                  Val_time, sep = ", ")
+                # If this is not present, which happens with a custom dosing
+                # schedule, then will need to pull info from custom dosing sheet
+                # lower in script.
+                if(length(Row_day) == 0){
+                    CustomDosing <- c(CustomDosing, TRUE)
+                } else {
+                    Val_day <- InputTab[Row_day, InputDeets$ValueCol[
+                        which(InputDeets$Deet == j)]] %>% pull()
+                    Row_time <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Time"))
+                    Val_time <- InputTab[Row_time, InputDeets$ValueCol[
+                        which(InputDeets$Deet == j)]] %>% pull()
+                    
+                    # Dealing with inconsistencies in time format
+                    Val_time <- sub("m", "", Val_time)
+                    Val_time <- str_split(Val_time, pattern = "h")[[1]]
+                    Val_time <- str_c(str_pad(Val_time, width = 2, pad = "0"),
+                                      collapse = ":")
+                    
+                    Out[[j]] <- paste(paste0("Day ", Val_day),
+                                      Val_time, sep = ", ")
+                }
             }
-            
         }
-        
     }
     
+    # Dealing with custom dosing schedules ---------------------------------
+    if(any(str_detect(exp_details, "StartDayTime")) & 
+       any(str_detect(names(Out), "StartDayTime")) == FALSE |
+       any(CustomDosing, na.rm = TRUE)){
+        
+        # When there's custom dosing for any of the substrate or inhibitors,
+        # then the dosing start time should be pulled from a "Custom Dosing"
+        # tab. Pulling any custom dosing sheets here.
+        
+        SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                               error = openxlsx::getSheetNames(sim_data_file))
+        CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
+        
+        for(j in CustomDoseSheets){
+            
+            Suffix <- switch(str_extract(j, "Inh [12]|Sub"), 
+                             "Inh 1" = "_inhib", 
+                             "Inh 2" = "_inhib2", 
+                             "Sub" = "_sub")
+            
+            Dose_xl <- suppressMessages(tryCatch(
+                readxl::read_excel(path = sim_data_file, sheet = j,
+                                   col_names = FALSE),
+                error = openxlsx::read.xlsx(sim_data_file, sheet = j,
+                                            colNames = FALSE)))
+            
+            Dosing <- Dose_xl[4:nrow(Dose_xl), ]
+            names(Dosing) <- make.names(Dose_xl[3,])
+            Dosing <- Dosing %>% 
+                rename(DoseNum = Dose.Number, 
+                       Time1 = Time,
+                       Dose = Dose, 
+                       Dose_units = Dose.Units) 
+            names(Dosing)[names(Dosing) == "Dose"] <-
+                paste0("Dose", Suffix)
+            names(Dosing)[names(Dosing) == "Route.of.Administration"] <-
+                paste0("DoseRoute", Suffix)
+            TimeUnits <- names(Dosing)[str_detect(names(Dosing), "Offset")]
+            names(Dosing)[str_detect(names(Dosing), "Offset")] <- "Time"
+            Dosing <- Dosing %>% 
+                mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
+                                           "h", "min")) %>% 
+                mutate(across(.cols = matches("DoseNum|Time$|Dose_sub|Dose_inhib|Dose_inhib2"), 
+                              .fns = as.numeric)) %>% 
+                select(any_of(c("Time", "Time_units", "DoseNum", "Dose_sub", "Dose_inhib", 
+                                "Dose_inhib2", "Dose_units", "DoseRoute_sub", 
+                                "DoseRoute_inhib", "DoseRoute_inhib2")))
+            
+            Out[[paste0("CustomDosing", Suffix)]] <- Dosing
+            Out[[paste0("Dose", Suffix)]] <- "custom dosing"
+            Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
+            Out[[paste0("StartHr", Suffix)]] <- Dosing$Time[Dosing$DoseNum == 1]
+            Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
+            Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
+            Out[[paste0("Regimen", Suffix)]] <- "custom dosing"
+            
+            rm(Dosing, Suffix, Dose_xl)
+            
+        }
+    }
     
     # Pulling details from the population tab -------------------------------
     MyPopDeets <- intersect(exp_details, PopDeets$Deet)
@@ -707,8 +779,12 @@ extractExpDetails <- function(sim_data_file,
     
     if(length(MyPopDeets) > 0){
         # Getting name of that tab.
-        SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                               error = openxlsx::getSheetNames(sim_data_file))
+        if(exists("SheetNames", inherit = FALSE)){
+            SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                                   error = openxlsx::getSheetNames(sim_data_file))
+            
+        }
+        
         PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Population, 1, 20))]
         
         PopTab <- suppressMessages(tryCatch(
@@ -797,34 +873,22 @@ extractExpDetails <- function(sim_data_file,
     }
     
     # Calculated details ------------------------------------------------
-    if("StartHr_sub" %in% exp_details){
-        if("SimStartDayTime" %in% names(Out)){
-            Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                                 time2 = Out$StartDayTime_sub)
-        } else {
-            if("Inhibitor1" %in% names(Out)){
-                if("Inhibitor2" %in% names(Out)){
-                    TimeHr1 <- difftime_sim(Out$StartDayTime_inhib,
-                                            Out$StartDayTime_sub)
-                    TimeHr2 <- difftime_sim(Out$StartDayTime_inhib2,
-                                            Out$StartDayTime_sub)
-                    Out$StartHr_sub <- TimeHr
-                    Out$StartHr_inhib <- -1*TimeHr1
-                    Out$StartHr_inhib2 <- -1*TimeHr2
-                    
-                } else {
-                    TimeHr <- difftime_sim(Out$StartDayTime_inhib,
-                                           Out$StartDayTime_sub)
-                    Out$StartHr_sub <- TimeHr
-                    Out$StartHr_inhib <- -1*TimeHr
-                }
-            } else {
-                # If no inhibitors were present, then the substrate should
-                # have been administered at t0 (would this ever not be the
-                # case?)
-                Out$StartHr_sub <- 0
-            }
-        }
+    if("StartHr_sub" %in% exp_details && 
+       Out$StartDayTime_sub != "custom dosing"){
+        Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                             time2 = Out$StartDayTime_sub)
+    }
+    
+    if("Inhibitor1" %in% names(Out) && 
+       Out$StartDayTime_inhib != "custom dosing"){
+        Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                               time2 = Out$StartDayTime_inhib)
+    }
+    
+    if("Inhibitor2" %in% names(Out) && 
+       Out$StartDayTime_inhib != "custom dosing"){
+        Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                                time2 = Out$StartDayTime_inhib2)
     }
     
     if("StartHr_inhib" %in% exp_details & "SimStartDayTime" %in% names(Out)){
