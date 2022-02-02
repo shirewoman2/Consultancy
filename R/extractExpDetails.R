@@ -131,6 +131,9 @@ extractExpDetails <- function(sim_data_file,
         exp_details <- unique(exp_details)
     }
     
+    # Need to note when to look for custom dosing tabs
+    CustomDosing <- NA
+    
     # Pulling details from the summary tab ----------------------------------
     MySumDeets <- intersect(exp_details, SumDeets$Deet)
     # If all of the details are from one of the other sheets, then don't
@@ -250,6 +253,9 @@ extractExpDetails <- function(sim_data_file,
         
         for(i in MySumDeets){
             Out[[i]] <- pullValue(i)
+            if(str_detect(i, "^StartDayTime") & is.na(Out[[i]])){
+                CustomDosing <- c(CustomDosing, TRUE)
+            }
         }
     }
     
@@ -674,7 +680,6 @@ extractExpDetails <- function(sim_data_file,
         
         # Dealing with StartDayTime_x
         MyInputDeets4 <- MyInputDeets[str_detect(MyInputDeets, "^StartDayTime")]
-        CustomDosing <- NA
         
         if(length(MyInputDeets4) > 0){
             for(j in MyInputDeets4){
@@ -873,30 +878,38 @@ extractExpDetails <- function(sim_data_file,
     }
     
     # Calculated details ------------------------------------------------
-    if("StartHr_sub" %in% exp_details && 
+    if("StartHr_sub" %in% exp_details & 
        Out$StartDayTime_sub != "custom dosing"){
         Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                              time2 = Out$StartDayTime_sub)
     }
     
-    if("Inhibitor1" %in% names(Out) && 
+    if(all(c("Inhibitor1", "StartDayTime_inhib") %in% names(Out)) &&
+       complete.cases(Out$StartDayTime_inhib) &&
        Out$StartDayTime_inhib != "custom dosing"){
         Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                                time2 = Out$StartDayTime_inhib)
     }
     
-    if("Inhibitor2" %in% names(Out) && 
+    if(all(c("Inhibitor2", "StartDayTime_inhib2") %in% names(Out)) && 
+       complete.cases(Out$StartDayTime_inhib2) &&
        Out$StartDayTime_inhib != "custom dosing"){
         Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                                 time2 = Out$StartDayTime_inhib2)
     }
     
-    if("StartHr_inhib" %in% exp_details & "SimStartDayTime" %in% names(Out)){
+    if("StartHr_inhib" %in% exp_details & 
+       all(c("StartDayTime_inhib", "SimStartDayTime") %in% names(Out)) &&
+       complete.cases(Out$StartDayTime_inhib) &&
+       Out$StartDayTime_inhib != "custom dosing"){
         Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                                time2 = Out$StartDayTime_inhib)
     }
     
-    if("StartHr_inhib2" %in% exp_details & "SimStartDayTime" %in% names(Out)){
+    if("StartHr_inhib2" %in% exp_details & 
+       all(c("SimStartDayTime", "StartDayTime_inhib2") %in% names(Out)) &&
+       complete.cases(Out$StartDayTime_inhib2) &&
+       Out$StartDayTime_inhib2 != "custom dosing"){
         Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                                 time2 = Out$StartDayTime_inhib2)
     }
