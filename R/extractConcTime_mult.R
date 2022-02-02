@@ -22,7 +22,7 @@
 #'   they are located somewhere other than your working directory. This is the
 #'   file that it is ready to be converted to an XML file, not the file that
 #'   contains only the digitized time and concentration data. The names of the
-#'   observed data files are piped into \link{\code{extractObsConcTime}}.
+#'   observed data files are piped into \code{\link{extractObsConcTime}}.
 #' @param conctime_DF the data.frame that will contain the output. Because we
 #'   can see scenarios where you might want to extract some concentration-time
 #'   data, play around with those data, and then later decide you want to pull

@@ -29,7 +29,7 @@ you'd like to compare, e.g., \code{c("MyObsFile1.xlsx",
 they are located somewhere other than your working directory. This is the
 file that it is ready to be converted to an XML file, not the file that
 contains only the digitized time and concentration data. The names of the
-observed data files are piped into \link{\code{extractObsConcTime}}.}
+observed data files are piped into \code{\link{extractObsConcTime}}.}
 
 \item{conctime_DF}{the data.frame that will contain the output. Because we
 can see scenarios where you might want to extract some concentration-time
