@@ -16,8 +16,8 @@ for time units are "hours" and "minutes".}
 
 \item{DF}{the data.frame of concentration-time data with units that may need
 to be adjusted. This must include the columns "Conc", "Conc_units", "Time",
-and "Time_units". (Outputs from \link{\code{extractConcTime}},
-\link{\code{extractConcTime_mult}}, and \link{\code{extractObsConcTime}}
+and "Time_units". (Outputs from \code{\link{extractConcTime}},
+\code{\link{extractConcTime_mult}}, and \code{\link{extractObsConcTime}}
 work here.)}
 }
 \value{
