@@ -424,7 +424,7 @@ extractExpDetails <- function(sim_data_file,
                 
                 # Checking for interaction data
                 IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
-                                                    pull(), "Ind max|^Ki |^MBI"))[1] - 1
+                                                    pull(), "Ind max|^Ki |^MBI|Interaction"))[1] - 1
                 
                 if(complete.cases(IntRowStart)){
                     CLRows <- CLRows[CLRows < min(IntRowStart)]

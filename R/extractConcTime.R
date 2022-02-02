@@ -167,7 +167,7 @@ extractConcTime <- function(sim_data_file,
     }
     
     # Getting summary data for the simulation(s)
-    if(exists("Deets", where = -1) == FALSE){
+    if(FromMultFun == FALSE && exists("Deets", where = -1) == FALSE){
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     }
     
@@ -626,13 +626,14 @@ extractConcTime <- function(sim_data_file,
         
         # individual data ------------------------------------------------------
         if("individual" %in% returnAggregateOrIndiv){
+
+            StartIndiv <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))
             
             ## m is substrate or substrate metabolite -----------
             if(str_detect(m, "substrate|metabolite") &
                !str_detect(m, "inhibitor")){
                 
                 # substrate data
-                StartIndiv <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))
                 TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
                 TimeRow <- TimeRow[TimeRow > StartIndiv][1]
                 
