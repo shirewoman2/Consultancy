@@ -167,7 +167,9 @@ extractConcTime <- function(sim_data_file,
     }
     
     # Getting summary data for the simulation(s)
-    Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+    if(exists("Deets", where = -1) == FALSE){
+        Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+    }
     
     # Effector present?
     EffectorPresent <- complete.cases(Deets[["Inhibitor1"]])
@@ -1021,8 +1023,7 @@ extractConcTime <- function(sim_data_file,
     
     # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when
     # the user requests a specific dose.
-    suppressWarnings(
-        MyIntervals <- as.numeric(
+    MyIntervals <- 
         c("substrate" = Deets$DoseInt_sub,
           "primary metabolite 1" = Deets$DoseInt_sub,
           "primary metabolite 2" = Deets$DoseInt_sub,
@@ -1032,11 +1033,9 @@ extractConcTime <- function(sim_data_file,
           "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
                                             NA, Deets$DoseInt_inhib),
           "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
-                                 NA, Deets$DoseInt_inhib2)))
-    )
+                                 NA, Deets$DoseInt_inhib2))
     
-    suppressWarnings(
-        MyStartTimes <- as.numeric(
+    MyStartTimes <- 
         c("substrate" = Deets$StartHr_sub,
           "primary metabolite 1" = Deets$StartHr_sub,
           "primarymetabolite 2" = Deets$StartHr_sub,
@@ -1046,11 +1045,9 @@ extractConcTime <- function(sim_data_file,
           "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
                                  Deets$StartHr_inhib2),
           "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                            Deets$StartHr_inhib)))
-    )
+                                            Deets$StartHr_inhib))
     
-    suppressWarnings(
-        MyMaxDoseNum <- as.numeric(
+    MyMaxDoseNum <- 
         c("substrate" = Deets$NumDoses_sub,
           "primary metabolite 1" = Deets$NumDoses_sub,
           "primarymetabolite 2" = Deets$NumDoses_sub,
@@ -1060,8 +1057,15 @@ extractConcTime <- function(sim_data_file,
           "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
                                  Deets$NumDoses_inhib2),
           "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                            Deets$NumDoses_inhib)))
-    )
+                                            Deets$NumDoses_inhib))
+    
+    # Converting data to numeric while also retaining names
+    suppressWarnings(
+        MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
+    suppressWarnings(
+        MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
+    suppressWarnings(
+        MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
     
     Data <- Data %>%
         mutate(StartHr = MyStartTimes[CompoundID],
@@ -1148,7 +1152,7 @@ extractConcTime <- function(sim_data_file,
         MyMaxDoseNum <- max(Data$DoseNum)
         Data <- Data %>%
             mutate(DoseNum = ifelse(DoseNum == MyMaxDoseNum,
-                                     MyMaxDoseNum - 1, DoseNum))
+                                    MyMaxDoseNum - 1, DoseNum))
     }
     
     # Finalizing

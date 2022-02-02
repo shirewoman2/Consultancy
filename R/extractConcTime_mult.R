@@ -16,13 +16,14 @@
 #'   e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 #'   with the file names if they are located somewhere other than your working
 #'   directory.
-#' @param obs_data_files a character vector of the observed data files that
-#'   you'd like to compare, e.g., \code{c("MyObsFile1.xlsx",
-#'   "MyObsFile2.xlsx")}. The path should be included with the file names if
-#'   they are located somewhere other than your working directory. This is the
-#'   file that it is ready to be converted to an XML file, not the file that
-#'   contains only the digitized time and concentration data. The names of the
-#'   observed data files are piped into \code{\link{extractObsConcTime}}.
+#' @param obs_data_files UNDER CONSTRUCTION and not yet working. a character
+#'   vector of the observed data files that you'd like to compare, e.g.,
+#'   \code{c("MyObsFile1.xlsx", "MyObsFile2.xlsx")}. The path should be included
+#'   with the file names if they are located somewhere other than your working
+#'   directory. This is the file that it is ready to be converted to an XML
+#'   file, not the file that contains only the digitized time and concentration
+#'   data. The names of the observed data files are piped into
+#'   \code{\link{extractObsConcTime}}.
 #' @param conctime_DF the data.frame that will contain the output. Because we
 #'   can see scenarios where you might want to extract some concentration-time
 #'   data, play around with those data, and then later decide you want to pull
@@ -80,7 +81,7 @@
 #'             conctime_DF = "ConcTimeData",
 #'             overwrite = FALSE,
 #'             tissue = "unbound plasma") # Note that "tissue" is passed to "extractConcTime".
-#'
+#' 
 
 extractConcTime_mult <- function(sim_data_files,
                                  obs_data_files = NA,
@@ -133,7 +134,7 @@ extractConcTime_mult <- function(sim_data_files,
             MultData[[n]] <- list()
 
             # Getting summary data for the simulation(s)
-            Deets <- extractExpDetails(n)
+            Deets <- extractExpDetails(n, exp_details = "Input Sheet")
 
             # Names of compounds requested for checking whether the data exist
             CompoundCheck <- c("substrate" = Deets$Substrate,
@@ -150,7 +151,7 @@ extractConcTime_mult <- function(sim_data_files,
                                               names(CompoundCheck)[complete.cases(CompoundCheck)])
 
             if(all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
-                  warning(paste0("For the file ", n, ", only the compound(s) ",
+                  warning(paste0("For the file ", n, ", only the ",
                                  str_comma(compoundsToExtract_n),
                                  " was/were available."))
             }
@@ -265,7 +266,7 @@ extractConcTime_mult <- function(sim_data_files,
       MultData <- bind_rows(MultData) %>% filter(Simulated == TRUE)
 
       # Observed data ------------------------------------------------------
-      if(length(obs_data_files) > 0){
+      if(length(obs_data_files) > 0 && any(complete.cases(obs_data_files))){
             MultObsData <- list()
             if(overwrite){
                   conctime_DF <- conctime_DF %>% filter(!File %in% obs_data_files)
@@ -280,8 +281,9 @@ extractConcTime_mult <- function(sim_data_files,
             conctime_DF <- bind_rows(conctime_DF, bind_rows(MultObsData))
       }
 
-      # LEFT OFF HERE. I need a way to determine what the compound is for each
-      # of the observed files and which obs data go with which sim file.
+      # LEFT OFF HERE for obs data. I need a way to determine what the compound
+      # is for each of the observed files and which obs data go with which sim
+      # file. Really not sure how to do that.
 
       # all data together -------------------------------------------------
       conctime_DF <- bind_rows(conctime_DF, MultData) %>% select(-any_of("ID"))
