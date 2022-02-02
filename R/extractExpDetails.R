@@ -784,7 +784,7 @@ extractExpDetails <- function(sim_data_file,
     
     if(length(MyPopDeets) > 0){
         # Getting name of that tab.
-        if(exists("SheetNames", inherit = FALSE)){
+        if(exists("SheetNames", inherit = FALSE) == FALSE){
             SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
                                    error = openxlsx::getSheetNames(sim_data_file))
             
