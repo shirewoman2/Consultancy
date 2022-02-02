@@ -172,13 +172,13 @@ extractConcTime <- function(sim_data_file,
     }
     
     # Effector present?
-    EffectorPresent <- complete.cases(Deets[["Inhibitor1"]])
+    EffectorPresent <- complete.cases(Deets$Inhibitor1)
     if(EffectorPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor")) &
        FromMultFun == FALSE){
         stop("There are no inhibitor data in the simulator output file supplied. Please either submit a different output file or request concentration-time data for a substrate or metabolite.")
     }
-    AllEffectors <- c(Deets[["Inhibitor1"]], Deets[["Inhibitor2"]],
-                      Deets[["Inhibitor1Metabolite"]])
+    AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
+                      Deets$Inhibitor1Metabolite)
     AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
     
     # For matching the correct effector to the correct names in
@@ -1108,7 +1108,19 @@ extractConcTime <- function(sim_data_file,
                 if(max(Data$Time) > max(Dosing[[j]]$Time)){
                     Dosing[[j]] <- Dosing[[j]] %>% 
                         bind_rows(data.frame(Time = max(Data$Time) + 1, 
-                                             DoseNum = max(Dosing$DoseNum)))
+                                             DoseNum = max(Dosing[[j]]$DoseNum)))
+                }
+                
+                # If there was a loading dose or something (not really sure what
+                # this would be), then there are two dose numbers listed for t0.
+                # Removing the earlier one so that this will work.
+                if(any(duplicated(Dosing[[j]]$Time))){
+                    warning(paste0("There were multiple dose numbers listed at the same time for the ",
+                                   j," in the file ", sim_data_file, 
+                                   "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed."))
+                    TimeToRemove <- which(duplicated(
+                        Dosing[[j]]$Time, fromLast = TRUE))
+                    Dosing[[j]] <- Dosing[[j]] %>% slice(-TimeToRemove)
                 }
                 
                 Dosing[[j]]$Breaks <-
