@@ -10,15 +10,15 @@ match_units(DF_to_adjust, goodunits)
 \item{goodunits}{either a data.frame that has the desired concentration and
 time units OR a named list with the desired units. Example:
 \code{list("Conc_units" = "ng/mL", "Time_units" = "hours")}. Names of the
-list must be "Conc_units" and "Time_units". Options for concentration
-units are the same as the ones in the Excel form for PE data entry, and
-options for time units are "hours" and "minutes".}
+list must be "Conc_units" and "Time_units". Options for concentration units
+are the same as the ones in the Excel form for PE data entry, and options
+for time units are "hours" and "minutes".}
 
 \item{DF}{the data.frame of concentration-time data with units that may need
 to be adjusted. This must include the columns "Conc", "Conc_units", "Time",
-and "Time_units". (Output from \link{\code{extractConcTime}},
+and "Time_units". (Outputs from \link{\code{extractConcTime}},
 \link{\code{extractConcTime_mult}}, and \link{\code{extractObsConcTime}}
-works here.)}
+work here.)}
 }
 \value{
 a data.frame with the corrected units

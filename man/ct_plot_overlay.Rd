@@ -8,13 +8,14 @@ ct_plot_overlay(
   conctime_DF,
   aggregate_option = "geomean",
   colorBy = File,
+  linetypeBy = Inhibitor,
   facet_column1,
   facet_column2
 )
 }
 \arguments{
 \item{conctime_DF}{the data.frame with multiple sets of concentration-time
-data}
+data, including observed data where appropriate}
 
 \item{aggregate_option}{What type of aggregate measure should be shown?
 Options are any combination of "mean" (arithmetic mean), "geomean"

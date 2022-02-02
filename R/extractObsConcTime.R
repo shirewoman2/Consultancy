@@ -209,17 +209,19 @@ extractObsConcTime <- function(obs_data_file){
       obs_data <- obs_data %>%
             filter(complete.cases(DVID)) %>%
             mutate(across(.cols = c(Time, Conc), .fns = as.numeric)) %>%
-            mutate(CompoundID_temp = CompoundCode[as.character(DVID)],
-                   CompoundID = ObsCompoundIDs[CompoundID_temp],
-                   Inhibitor = ObsEffectors[CompoundID_temp],
-                   Tissue = Tissue[CompoundID_temp],
+            mutate(CompoundID_obsfile = CompoundCode[as.character(DVID)],
+                   CompoundID = ObsCompoundIDs[CompoundID_obsfile],
+                   Inhibitor = ObsEffectors[CompoundID_obsfile],
+                   Tissue = Tissue[CompoundID_obsfile],
                    File = obs_data_file,
                    SmokingStatus = Smoke[SmokingStatus],
                    Time_units = TimeUnits,
                    Conc_units = ObsConcUnits[as.character(DVID)]) %>%
-            select(any_of(c("CompoundID", "Individual", "Tissue",
-                            "Inhibitor",
-                            "Time", "Conc", "DVID",
+            select(any_of(c("CompoundID", 
+                            # "CompoundID_obsfile",
+                            "Individual",
+                            "Tissue", "Inhibitor",
+                            "Time", "Time_units", "Conc", "Conc_units", "DVID",
                             "File", "Weighting",
                             "Period", "Age", "Weight_kg",
                             "Height_cm", "Sex", "SerumCreatinine_umolL",
