@@ -1021,37 +1021,47 @@ extractConcTime <- function(sim_data_file,
     
     # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when
     # the user requests a specific dose.
-    MyIntervals <- c("substrate" = Deets$DoseInt_sub,
-                     "primary metabolite 1" = Deets$DoseInt_sub,
-                     "primary metabolite 2" = Deets$DoseInt_sub,
-                     "secondary metabolite" = Deets$DoseInt_sub,
-                     "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
+    suppressWarnings(
+        MyIntervals <- as.numeric(
+        c("substrate" = Deets$DoseInt_sub,
+          "primary metabolite 1" = Deets$DoseInt_sub,
+          "primary metabolite 2" = Deets$DoseInt_sub,
+          "secondary metabolite" = Deets$DoseInt_sub,
+          "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
+                                 NA, Deets$DoseInt_inhib),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
                                             NA, Deets$DoseInt_inhib),
-                     "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
-                                                       NA, Deets$DoseInt_inhib),
-                     "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
-                                            NA, Deets$DoseInt_inhib2))
-    MyStartTimes <- c("substrate" = Deets$StartHr_sub,
-                      "primary metabolite 1" = Deets$StartHr_sub,
-                      "primarymetabolite 2" = Deets$StartHr_sub,
-                      "secondary metabolite" = Deets$StartHr_sub,
-                      "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                             Deets$StartHr_inhib),
-                      "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
-                                             Deets$StartHr_inhib2),
-                      "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                                        Deets$StartHr_inhib))
+          "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
+                                 NA, Deets$DoseInt_inhib2)))
+    )
     
-    MyMaxDoseNum <- c("substrate" = Deets$NumDoses_sub,
-                      "primary metabolite 1" = Deets$NumDoses_sub,
-                      "primarymetabolite 2" = Deets$NumDoses_sub,
-                      "secondary metabolite" = Deets$NumDoses_sub,
-                      "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                             Deets$NumDoses_inhib),
-                      "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
-                                             Deets$NumDoses_inhib2),
-                      "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                                        Deets$NumDoses_inhib))
+    suppressWarnings(
+        MyStartTimes <- as.numeric(
+        c("substrate" = Deets$StartHr_sub,
+          "primary metabolite 1" = Deets$StartHr_sub,
+          "primarymetabolite 2" = Deets$StartHr_sub,
+          "secondary metabolite" = Deets$StartHr_sub,
+          "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                 Deets$StartHr_inhib),
+          "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
+                                 Deets$StartHr_inhib2),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                            Deets$StartHr_inhib)))
+    )
+    
+    suppressWarnings(
+        MyMaxDoseNum <- as.numeric(
+        c("substrate" = Deets$NumDoses_sub,
+          "primary metabolite 1" = Deets$NumDoses_sub,
+          "primarymetabolite 2" = Deets$NumDoses_sub,
+          "secondary metabolite" = Deets$NumDoses_sub,
+          "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                 Deets$NumDoses_inhib),
+          "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
+                                 Deets$NumDoses_inhib2),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                            Deets$NumDoses_inhib)))
+    )
     
     Data <- Data %>%
         mutate(StartHr = MyStartTimes[CompoundID],
@@ -1068,14 +1078,77 @@ extractConcTime <- function(sim_data_file,
                DoseNum = ifelse(is.na(DoseInt),
                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
     
+    # Checking for any custom dosing
+    if(any(str_detect(names(Deets), "CustomDosing"))){
+        CDCompounds <-
+            data.frame(CompoundSuffix = 
+                           str_extract(names(Deets)[str_detect(names(Deets),
+                                                               "CustomDosing")],
+                                       "_sub|_inhib(2)?")) %>% 
+            mutate(CompoundID = recode(CompoundSuffix, "_sub" = "substrate", 
+                                       "_inhib" = "inhibitor 1", 
+                                       "_inhib2" = "inhibitor 2"))
+        
+        if(any(unique(Data$CompoundID) %in% CDCompounds$CompoundID)){
+            
+            Dosing <- list()
+            # This is kind of a disaster... Looking for a better way to code this.
+            
+            for(j in CDCompounds$CompoundID){
+                Dosing[[j]] <-
+                    Deets[[paste0("CustomDosing", 
+                                  CDCompounds$CompoundSuffix[CDCompounds$CompoundID == j])]] %>% 
+                    mutate(CompoundID = CDCompounds$CompoundID[CDCompounds$CompoundID == j])
+                
+                if(max(Data$Time) > max(Dosing[[j]]$Time)){
+                    Dosing[[j]] <- Dosing[[j]] %>% 
+                        bind_rows(data.frame(Time = max(Data$Time) + 1, 
+                                             DoseNum = max(Dosing$DoseNum)))
+                }
+                
+                Dosing[[j]]$Breaks <-
+                    as.character(cut(Dosing[[j]]$Time, breaks = Dosing[[j]]$Time,
+                                     right = FALSE))
+            }
+            
+            OrigCompounds <- unique(Data$CompoundID)
+            Data <- Data %>% 
+                mutate(CD = ifelse(CompoundID %in% CDCompounds$CompoundID, 
+                                   CompoundID, "not CD"))
+            
+            MyData <- list()
+            MyData[["not CD"]] <- Data %>% filter(CD == "not CD")
+            
+            for(j in unique(Data$CD)[!unique(Data$CD) == "not CD"]){
+                MyData[[j]] <- Data %>% filter(CD == j) %>% select(-DoseNum)
+                # This should make the right breaks for each possible compound
+                # with custom dosing. They should match the breaks in the
+                # appropriate list item in Dosing.
+                MyData[[j]]$Breaks <-
+                    as.character(cut(MyData[[j]]$Time, breaks = Dosing[[j]]$Time,
+                                     right = FALSE))
+                
+                MyData[[j]] <- MyData[[j]] %>% 
+                    left_join(Dosing[[j]] %>% select(CompoundID, Breaks, DoseNum))
+                
+            }
+            
+            Data <- bind_rows(MyData)
+            if(length(setdiff(unique(OrigCompounds),
+                              unique(Data$CompoundID))) > 0){
+                warning("PROBLEM WITH CUSTOM DOSING! Please tell Laura Shireman if you see this message.")
+            }
+        }
+    }
+    
     # Checking for when the simulation ends right at the last dose b/c
     # then, setting that number to 1 dose lower
     if(length(Data %>% filter(DoseNum == max(Data$DoseNum)) %>%
               pull(Time) %>% unique()) == 1){
-        MaxDoseNum <- max(Data$DoseNum)
+        MyMaxDoseNum <- max(Data$DoseNum)
         Data <- Data %>%
-            mutate(DoseNum = ifelse(DoseNum == MaxDoseNum,
-                                    MaxDoseNum - 1, DoseNum))
+            mutate(DoseNum = ifelse(DoseNum == MyMaxDoseNum,
+                                     MyMaxDoseNum - 1, DoseNum))
     }
     
     # Finalizing
