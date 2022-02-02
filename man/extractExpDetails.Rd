@@ -30,19 +30,22 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 
-  \emph{NOTE:} The default pulls only parameters that are listed on the
-  "Summary" tab. If you want experimental details on a second inhibitor or
-  more information on metabolites, try pulling them from the "Input sheet"
-  instead of the "Summary" tab, which doesn't have as much information on
-  those compounds.}
+  \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
+  listed on the "Summary" tab. If you want experimental details on a second
+  inhibitor or more information on metabolites, try pulling them from the
+  "Input sheet" instead of the "Summary" tab, which doesn't have as much
+  information on those compounds.} \item{We have limited experience with
+  extracting these data when a custom dosing regimen was used, so it would be
+  a good idea to carefully check that the data are being pulled correctly in
+  that scenario.}}}
 }
 \value{
 Returns a named list of the experimental details
 }
 \description{
 \code{extractExpDetails} looks up experimental design details from the
-"Summary" or "Input Sheet" tabs or the population tab of a Simcyp simulator
-output file.
+"Summary", "Input Sheet", custom dosing, or population tabs of a Simcyp
+simulator output file.
 }
 \examples{
 
