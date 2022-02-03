@@ -293,7 +293,13 @@ so_table <- function(report_input_file = NA,
                                    # Per Christiane: 3 sig figs for everything
                                    # or full number when > 100
                                    if_else(Value > 100,
-                                           round(Value, 0), signif(Value, 3)))) %>%
+                                           round(Value, 0), 
+                                           # This next convoluted bit will
+                                           # retain trailing zeroes since
+                                           # "signif" alone will not
+                                           print(formatC(signif(Value,digits=3), 
+                                                         digits=3,format="fg", 
+                                                         flag="#"))))) %>%
             filter(Stat %in% c("GMean", "CI_10", "CI_90", "CI_05", "CI_95",
                                "Q5th", "Q95th", "CV", "MinMean", "MaxMean")) %>%
             pivot_wider(names_from = PKParam, values_from = Value)
@@ -326,7 +332,14 @@ so_table <- function(report_input_file = NA,
                                          # Per Christiane: 3 sig figs for everything
                                          # or full number when > 100
                                          if_else(Value > 100,
-                                                 round(Value, 0), signif(Value, 3)))) %>%
+                                                 round(Value, 0), 
+                                                 round(Value, 0), 
+                                                 # This next convoluted bit will
+                                                 # retain trailing zeroes since
+                                                 # "signif" alone will not
+                                                 print(formatC(signif(Value,digits=3), 
+                                                               digits=3,format="fg", 
+                                                               flag="#"))))) %>%
                   pivot_wider(names_from = RName, values_from = Value)
 
             # Only want to keep the columns where there are values for the observed
