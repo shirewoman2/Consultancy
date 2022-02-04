@@ -257,21 +257,18 @@ present, please supply an observed data file to the argument
 \code{obs_data_file}.}}
 }
 \examples{
-sim_data_file <- "../Example simulator output.xlsx"
-obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
+# # Normal syntax with a fake file: 
+# sim_data_file <- "../Example simulator output.xlsx"
+# obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
 
-ct_plot(sim_data_file)
-ct_plot(sim_data_file, figure_type = "percentiles")
-ct_plot(sim_data_file, return_data = TRUE)
-ct_plot(sim_data_file, return_indiv_graphs = TRUE)
+# However, since we can't load an Excel file as an example, here are
+# some data to play with:
+data(LMVct)
 
-# Here's where adjusting or not adjusting the observed data time comes
-# into play:
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-        adjust_obs_time = FALSE)
+ct_plot(sim_obs_dataframe = LMVct)
+ct_plot(sim_obs_dataframe = LMVct, figure_type = "percentiles")
+ct_plot(sim_obs_dataframe = LMVct, return_data = TRUE)
+ct_plot(sim_obs_dataframe = LMVct, return_indiv_graphs = TRUE)
 
 # Perhaps you don't want to show *all* the data but instead want to
 # limit the time interval that is graphed. Use \code{time_range} here:
@@ -279,41 +276,24 @@ ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
         adjust_obs_time = FALSE, time_range = c(0, 24))
 
-# Or you can let it automatically calculate the time frame for the first or
-# last dose simulated
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+# Or you can let it automatically calculate the time frame 
+# for a given set of doses
+ct_plot(sim_obs_dataframe = LMVct
         time_range = "first dose")
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
+ct_plot(sim_obs_dataframe = LMVct,
         time_range = "last dose")
 
-# These may be too busy when Inhibitor 1 is present:
-ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
-ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
-        figure_type = "trial percentiles")
+# The default graph may be too busy when Inhibitor 1 is present,
 # so you may want to consider only plotting means as an alternative:
-ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+ct_plot(sim_obs_dataframe = LMVct,
         figure_type = "means only")
-
-# You can also add a separate observed concentration-time file for the
-# compound with Inhibitor 1 present. The graph will show those points
-# as open triangles.
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-        obs_inhibitor_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
-        time_range = "last dose")
-
-# If you've already got a data.frame formatted like the output
-# from extractConcTime...
-data(ConcTime)
-ct_plot(sim_obs_dataframe = ConcTime)
 
 # Add some further options for the look of your graph -- especially useful
 # if the default settings are clipping your data.
-ct_plot(sim_data_file = "../Example simulator output - MDZ + metabolites + inhibitor.xlsx",
+ct_plot(sim_obs_dataframe = LMVct,
         obs_data_option = "mean bars",
         obs_color = "red",
+        line_color = "blue",
         y_axis_limits_log = c(1e-05, 0.1),
         pad_x_axis = TRUE,
         include_legend = TRUE,
