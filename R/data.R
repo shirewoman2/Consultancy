@@ -7,20 +7,11 @@
 #' \item{FoldInduction}{Fold induction observed compared to control}}
 "IndData"
 
-#' Dummy plasma concentration-time data after a 5 mg PO MDZ dose. Format of the
-#' data are the same as the output from \code{\link{extractConcTime}}.
+#' Plasma concentration-time data after 8 days of 60 mg PO QD letermovir. Format
+#' of the data are the same as the output from \code{\link{extractConcTime}}.
 #'
-#' @format A data.frame with 2211 rows and 7 columns:
-#' \describe{
-#' \item{Compound}{the name of the compound}
-#' \item{Individual}{a unique ID for each simulated individual}
-#' \item{Simulated}{TRUE or FALSE for whether the data were simulated (all TRUE
-#' in this dummy example)}
-#' \item{Time}{time since dose}
-#' \item{Conc}{plasma drug concentration}
-#' \item{Time_units}{units for the time column}
-#' \item{Conc_units}{units for the concentration column}}
-"MDZConcTime"
+#' @format A data.frame with 14 columns "LMVct"
+"LMVct"
 
 #' Simcyp colors used in the PowerPoint template
 #'
