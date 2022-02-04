@@ -38,38 +38,38 @@ ct_plot_overlay <- function(conctime_DF,
                             linetypeBy = Inhibitor,
                             facet_column1,
                             facet_column2){
-
-      colorBy <- rlang::enquo(colorBy)
-      linetypeBy <- rlang::enquo(linetypeBy)
-      facet_column1 <- rlang::enquo(facet_column1)
-      facet_column2 <- rlang::enquo(facet_column2)
-
-      conctime_DF <- conctime_DF %>%
-            mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor))
-
-      obs_data <- conctime_DF %>% filter(Simulated == FALSE)
-      conctime_DF <- conctime_DF %>%
-            filter(Trial %in% aggregate_option & Simulated == TRUE)
-
-      ggplot(conctime_DF,
-             aes(x = Time, y = Conc, color = !!colorBy, linetype = !!linetypeBy,
-                 group = Group)) +
-            geom_line() +
-            geom_point(data = obs_data) +
-            facet_grid(rows = vars(!!facet_column1),
-                       cols = vars(!!facet_column2),
-                       scales = "free") +
-            theme(panel.background = element_rect(fill = "white", color = NA),
-                  panel.border = element_rect(color = "black", fill = NA),
-                  strip.background = element_rect(fill = "white"),
-                  legend.key = element_rect(fill = "white"),
-                  axis.ticks = element_line(color = "black"),
-                  axis.text = element_text(color = "black"),
-                  axis.title = element_text(color = "black", face = "bold"),
-                  axis.line.y = element_line(color = "black"),
-                  axis.line.x.bottom = element_line(color = "black"),
-                  text = element_text(family = "Calibri"))
-
+    
+    colorBy <- rlang::enquo(colorBy)
+    linetypeBy <- rlang::enquo(linetypeBy)
+    facet_column1 <- rlang::enquo(facet_column1)
+    facet_column2 <- rlang::enquo(facet_column2)
+    
+    conctime_DF <- conctime_DF %>%
+        mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor))
+    
+    obs_data <- conctime_DF %>% filter(Simulated == FALSE)
+    conctime_DF <- conctime_DF %>%
+        filter(Trial %in% aggregate_option & Simulated == TRUE)
+    
+    ggplot(conctime_DF,
+           aes(x = Time, y = Conc, color = !!colorBy, linetype = !!linetypeBy,
+               group = Group)) +
+        geom_line() +
+        geom_point(data = obs_data) +
+        facet_grid(rows = vars(!!facet_column1),
+                   cols = vars(!!facet_column2),
+                   scales = "free") +
+        theme(panel.background = element_rect(fill = "white", color = NA),
+              panel.border = element_rect(color = "black", fill = NA),
+              strip.background = element_rect(fill = "white"),
+              legend.key = element_rect(fill = "white"),
+              axis.ticks = element_line(color = "black"),
+              axis.text = element_text(color = "black"),
+              axis.title = element_text(color = "black", face = "bold"),
+              axis.line.y = element_line(color = "black"),
+              axis.line.x.bottom = element_line(color = "black"),
+              text = element_text(family = "Calibri"))
+    
 }
 
 # ct_plot_overlay(conctime_DF = CT, facet_column1 = Compound,

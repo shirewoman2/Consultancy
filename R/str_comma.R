@@ -26,20 +26,20 @@
 #'
 #'
 str_comma <- function(x, oxford = TRUE){
-
-      if(length(x) <= 2){
-            Out <- stringr::str_c(x, collapse = " and ")
-      } else {
-            Last <- x[length(x)]
-            Others <- x[1:(length(x) - 1)]
-            Out <- stringr::str_c(
-                  paste0(c(stringr::str_c(Others, collapse = ", "),
-                           "and", Last), collapse = " "))
-            if(oxford){
-                  Out <- sub(" and", ", and", Out)
-            }
-      }
-
-      return(Out)
+    
+    if(length(x) <= 2){
+        Out <- stringr::str_c(x, collapse = " and ")
+    } else {
+        Last <- x[length(x)]
+        Others <- x[1:(length(x) - 1)]
+        Out <- stringr::str_c(
+            paste0(c(stringr::str_c(Others, collapse = ", "),
+                     "and", Last), collapse = " "))
+        if(oxford){
+            Out <- sub(" and", ", and", Out)
+        }
+    }
+    
+    return(Out)
 }
 

@@ -16,23 +16,23 @@
 #'               "Pharmacogenetic variation in drug-metabolizing enzymes"))
 #'
 countWords <- function(x){
-
-      # Checking whether there are any words
-      WordsFound <-  stringr::str_detect(x, " |-")
-      Count <- rep(NA, length(x))
-      for(i in 1:length(x)){
-            if(is.na(WordsFound[i])){
-                  Count[i] <- 1
+    
+    # Checking whether there are any words
+    WordsFound <-  stringr::str_detect(x, " |-")
+    Count <- rep(NA, length(x))
+    for(i in 1:length(x)){
+        if(is.na(WordsFound[i])){
+            Count[i] <- 1
+        } else {
+            if(WordsFound[i]){
+                Count[i] <- sapply(stringr::str_split(x[i], " |-"), length)
             } else {
-                  if(WordsFound[i]){
-                        Count[i] <- sapply(stringr::str_split(x[i], " |-"), length)
-                  } else {
-                        Count[i] <- 1
-                  }
+                Count[i] <- 1
             }
-      }
-
-      return(Count)
+        }
+    }
+    
+    return(Count)
 }
 
 

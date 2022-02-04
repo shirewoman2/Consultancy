@@ -626,7 +626,7 @@ extractConcTime <- function(sim_data_file,
         
         # individual data ------------------------------------------------------
         if("individual" %in% returnAggregateOrIndiv){
-
+            
             StartIndiv <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))
             
             ## m is substrate or substrate metabolite -----------

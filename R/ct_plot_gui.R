@@ -11,14 +11,14 @@
 #' shiny_ct_plot()
 #'
 ct_plot_gui <- function(){
-
-      appDir <- system.file("shiny", "ct_plot_app", package = "SimcypConsultancy")
-
-      if (appDir == "") {
-            stop("Could not find shiny directory for the SimcypConsultancy package. Please try re-installing 'SimcypConsultancy'.", call. = FALSE)
-      }
-
-      shiny::runApp(appDir, display.mode = "normal")
+    
+    appDir <- system.file("shiny", "ct_plot_app", package = "SimcypConsultancy")
+    
+    if (appDir == "") {
+        stop("Could not find shiny directory for the SimcypConsultancy package. Please try re-installing 'SimcypConsultancy'.", call. = FALSE)
+    }
+    
+    shiny::runApp(appDir, display.mode = "normal")
 }
 
 

@@ -105,140 +105,140 @@ graph_boxplot <- function(DF,
                           color_set = "default",
                           filename = NA,
                           outwidth = 6, outheight = 4){
-
-      # Adding options for colors
-      colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                       "darkorange", "green3", "seagreen3",
-                                       "cadetblue", "dodgerblue3", "royalblue4",
-                                       "darkorchid4"))
-
-      blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", "dodgerblue3",
-                                      "royalblue4"))
-
-      # Maybe change this to tidyverse column name selection with "!!"?
-      names(DF)[names(DF) == category_column] <- "CATCOL"
-      names(DF)[names(DF) == value_column] <- "VALCOL"
-
-      if(complete.cases(facet_column1)){
-            names(DF)[names(DF) == facet_column1] <- "FACETCOL1"
-      }
-
-      if(complete.cases(facet_column2)){
-            names(DF)[names(DF) == facet_column2] <- "FACETCOL2"
-      }
-
-      DF <- DF %>%
-            select(any_of(c("CATCOL", "VALCOL", "FACETCOL1", "FACETCOL2")))
-
-      # Building graph layers
-      if(color_set == "black"){
-            G <- ggplot(DF, aes(x = CATCOL, y = VALCOL))
-      } else {
-            G <- ggplot(DF, aes(x = CATCOL, y = VALCOL,
-                                fill = CATCOL, color = CATCOL))
-      }
-
-      G <- G + theme(legend.position = "none")
-
-      if(include_errorbars == TRUE){
-            G <- G + stat_boxplot(geom = "errorbar", color = "black")
-      }
-
-      if(graph_type == "boxplot"){
-            G <- G + geom_boxplot(color = "black")
-      }
-
-      if(graph_type == "jittered points"){
-
-            JitterWidth = 0.5/length(unique(DF$CATCOL))
-
-            G <- G + geom_boxplot(color = "black", fill = NA,
-                                  outlier.shape = NA) +
-                  geom_point(position = position_jitter(width = JitterWidth,
-                                                        height = 0))
-      }
-
-      if(graph_type == "jittered points, filled boxes"){
-            JitterWidth = 0.5/length(unique(DF$CATCOL))
-
-            G <- G + geom_boxplot(color = "black", outlier.shape = NA) +
-                  geom_point(position = position_jitter(width = JitterWidth,
-                                                        height = 0),
-                             shape = 1, color = "black")
-      }
-
-      if(complete.cases(facet_column1)){
-            if(is.na(facet_column2)){
-                  G <- G + facet_wrap(~ FACETCOL1)
-            } else {
-                  G <- G + facet_grid(FACETCOL1 ~ FACETCOL2)
-            }
-      }
-
-      if(complete.cases(xlabel)){
-            G <- G + xlab(xlabel)
-      } else {
-            G <- G + xlab(category_column)
-      }
-
-      if(complete.cases(ylabel)){
-            G <- G + ylab(ylabel)
-      } else {
-            G <- G + ylab(value_column)
-      }
-
-      # Adding some aesthetic preferences
-      G <- G + theme(
-            panel.background = element_rect(fill="white", color=NA),
-            panel.grid.minor.y = element_line(color = NA),
-            panel.grid.minor.x = element_line(color = NA),
-            panel.grid.major = element_line(colour = NA),
-            plot.background = element_rect(fill="white", colour=NA),
-            panel.border = element_rect(color="black", fill=NA),
-            strip.background = element_rect(color=NA, fill="white"),
-            axis.text = element_text(color = "black", size = 12),
-            axis.title = element_text(color = "black",
-                                      face = "bold", size = 14),
-            text = element_text(family = "Calibri"),
-            legend.background = element_rect(color=NA, fill=NA),
-            legend.key = element_rect(color=NA, fill=NA))
-
-      if(color_set == "default"){
-            G <- G + scale_color_brewer(palette = "Set1") +
-                  scale_fill_brewer(palette="Set1")
-      }
-
-      if(color_set == "blue-green"){
-            G <- G + scale_color_manual(
-                  values = blueGreen(length(unique(DF$CATCOL)))) +
-                  scale_fill_manual(
-                        values = blueGreen(length(unique(DF$CATCOL))))
-      }
-
-      if(color_set == "rainbow"){
-            G <- G + scale_color_manual(
-                  values = colRainbow(length(unique(DF$CATCOL)))) +
-                  scale_fill_manual(
-                        values = colRainbow(length(unique(DF$CATCOL))))
-      }
-
-      if(color_set == "Brewer set 2"){
-            G <- G + scale_fill_brewer(palette = "Set2") +
-                  scale_color_brewer(palette = "Set2")
-      }
-
-      if(color_set == "Tableau"){
-            G <- G + ggthemes::scale_color_tableau() +
-                  ggthemes::scale_fill_tableau()
-      }
-
-      if(complete.cases(filename)){
-            print(G)
-            ggsave(filename, height = outheight, width = outwidth, dpi = 600)
-      }
-
-      return(G)
-
+    
+    # Adding options for colors
+    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
+                                     "darkorange", "green3", "seagreen3",
+                                     "cadetblue", "dodgerblue3", "royalblue4",
+                                     "darkorchid4"))
+    
+    blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", "dodgerblue3",
+                                    "royalblue4"))
+    
+    # Maybe change this to tidyverse column name selection with "!!"?
+    names(DF)[names(DF) == category_column] <- "CATCOL"
+    names(DF)[names(DF) == value_column] <- "VALCOL"
+    
+    if(complete.cases(facet_column1)){
+        names(DF)[names(DF) == facet_column1] <- "FACETCOL1"
+    }
+    
+    if(complete.cases(facet_column2)){
+        names(DF)[names(DF) == facet_column2] <- "FACETCOL2"
+    }
+    
+    DF <- DF %>%
+        select(any_of(c("CATCOL", "VALCOL", "FACETCOL1", "FACETCOL2")))
+    
+    # Building graph layers
+    if(color_set == "black"){
+        G <- ggplot(DF, aes(x = CATCOL, y = VALCOL))
+    } else {
+        G <- ggplot(DF, aes(x = CATCOL, y = VALCOL,
+                            fill = CATCOL, color = CATCOL))
+    }
+    
+    G <- G + theme(legend.position = "none")
+    
+    if(include_errorbars == TRUE){
+        G <- G + stat_boxplot(geom = "errorbar", color = "black")
+    }
+    
+    if(graph_type == "boxplot"){
+        G <- G + geom_boxplot(color = "black")
+    }
+    
+    if(graph_type == "jittered points"){
+        
+        JitterWidth = 0.5/length(unique(DF$CATCOL))
+        
+        G <- G + geom_boxplot(color = "black", fill = NA,
+                              outlier.shape = NA) +
+            geom_point(position = position_jitter(width = JitterWidth,
+                                                  height = 0))
+    }
+    
+    if(graph_type == "jittered points, filled boxes"){
+        JitterWidth = 0.5/length(unique(DF$CATCOL))
+        
+        G <- G + geom_boxplot(color = "black", outlier.shape = NA) +
+            geom_point(position = position_jitter(width = JitterWidth,
+                                                  height = 0),
+                       shape = 1, color = "black")
+    }
+    
+    if(complete.cases(facet_column1)){
+        if(is.na(facet_column2)){
+            G <- G + facet_wrap(~ FACETCOL1)
+        } else {
+            G <- G + facet_grid(FACETCOL1 ~ FACETCOL2)
+        }
+    }
+    
+    if(complete.cases(xlabel)){
+        G <- G + xlab(xlabel)
+    } else {
+        G <- G + xlab(category_column)
+    }
+    
+    if(complete.cases(ylabel)){
+        G <- G + ylab(ylabel)
+    } else {
+        G <- G + ylab(value_column)
+    }
+    
+    # Adding some aesthetic preferences
+    G <- G + theme(
+        panel.background = element_rect(fill="white", color=NA),
+        panel.grid.minor.y = element_line(color = NA),
+        panel.grid.minor.x = element_line(color = NA),
+        panel.grid.major = element_line(colour = NA),
+        plot.background = element_rect(fill="white", colour=NA),
+        panel.border = element_rect(color="black", fill=NA),
+        strip.background = element_rect(color=NA, fill="white"),
+        axis.text = element_text(color = "black", size = 12),
+        axis.title = element_text(color = "black",
+                                  face = "bold", size = 14),
+        text = element_text(family = "Calibri"),
+        legend.background = element_rect(color=NA, fill=NA),
+        legend.key = element_rect(color=NA, fill=NA))
+    
+    if(color_set == "default"){
+        G <- G + scale_color_brewer(palette = "Set1") +
+            scale_fill_brewer(palette="Set1")
+    }
+    
+    if(color_set == "blue-green"){
+        G <- G + scale_color_manual(
+            values = blueGreen(length(unique(DF$CATCOL)))) +
+            scale_fill_manual(
+                values = blueGreen(length(unique(DF$CATCOL))))
+    }
+    
+    if(color_set == "rainbow"){
+        G <- G + scale_color_manual(
+            values = colRainbow(length(unique(DF$CATCOL)))) +
+            scale_fill_manual(
+                values = colRainbow(length(unique(DF$CATCOL))))
+    }
+    
+    if(color_set == "Brewer set 2"){
+        G <- G + scale_fill_brewer(palette = "Set2") +
+            scale_color_brewer(palette = "Set2")
+    }
+    
+    if(color_set == "Tableau"){
+        G <- G + ggthemes::scale_color_tableau() +
+            ggthemes::scale_fill_tableau()
+    }
+    
+    if(complete.cases(filename)){
+        print(G)
+        ggsave(filename, height = outheight, width = outwidth, dpi = 600)
+    }
+    
+    return(G)
+    
 }
 
 

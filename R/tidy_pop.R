@@ -11,57 +11,57 @@
 #' @examples
 #' # No examples yet
 tidyPop <- function(input_pop){
-
-      PopNiceNames <- c(
-            "Healthy Volunteers" = "healthy volunteers",
-            "Cancer" = "cancer patients",
-            # not sure whether they're HVs since there's *also* an entry for "Chinese
-            # Healthy Volunteers"
-            "Chinese" = "Chinese subjects",
-            "Chinese Healthy Volunteers" = "Chinese healthy volunteers",
-            "CirrhosisCP - A" = "cirrhosis patients with CP score of A",
-            "CirrhosisCP - B" = "cirrhosis patients with CP score of B",
-            "CirrhosisCP - C" = "cirrhosis patients with CP score of C",
-            "Geriatric NEC" = "normal elderly control subjects",
-            "Japanese" = "Japanese healthy volunteers",
-            "Japanese Paediatric" = "Japanese pediatric subjects",
-            "Morbidly Obese" = "morbidly obese subjects",
-            "NEurCaucasian" = "Northern European Caucasian subjects",
-            "Obese" = "obese subjects",
-            "Paediatric" = "pediatric subjects",
-            "Pregnancy" = "pregnant subjects",
-            "Preterm" = "preterm infants",
-            "PsoriasisDermal" = "dermal psoriasis patients",
-            "RenalGFR_30-60" = "patients with renal GFR of 30-60",
-            "RenalGFR_less_30" = "patients with renal GFR less than 30",
-            "Rheumatoid Arthritis" = "rheumatoid arthritis patients")
-
-
-      Population <- sub("Sim-", "", input_pop)
-
-      Population <- as.character(PopNiceNames[Population])
-      PopulationSimple <- ifelse(str_detect(tolower(Population), "patients|subjects"),
-                                 str_trim(
-                                       str_extract(
-                                             Population,
-                                             "patients|(morbidly obese|obese|pediatric|pregnant)? subjects")),
-                                 "healthy volunteers")
-      PopulationSimple <- ifelse(Population == "preterm infants",
-                                 "preterm infants", PopulationSimple)
-      PopulationCap <- str_to_title(Population)
-      PopulationCap <- ifelse(str_detect(Population, "CP"),
-                              sub("Cp", "CP", PopulationCap), PopulationCap)
-      PopulationCap <- ifelse(str_detect(Population, "GFR"),
-                              sub("Gfr", "GFR", PopulationCap), PopulationCap)
-      PopulationCap <- gsub("Of", "of", PopulationCap)
-      PopulationCap <- gsub("With", "with", PopulationCap)
-      PopulationSimpleLower <- tolower(PopulationSimple)
-      PopulationSimpleCap <- str_to_title(PopulationSimple)
-
-      MyPops <- list(Population = Population,
-                     PopulationSimple = PopulationSimple,
-                     PopulationCap = PopulationCap,
-                     PopulationSimpleLower = PopulationSimpleLower,
-                     PopulationSimpleCap = PopulationSimpleCap)
-      return(MyPops)
+    
+    PopNiceNames <- c(
+        "Healthy Volunteers" = "healthy volunteers",
+        "Cancer" = "cancer patients",
+        # not sure whether they're HVs since there's *also* an entry for "Chinese
+        # Healthy Volunteers"
+        "Chinese" = "Chinese subjects",
+        "Chinese Healthy Volunteers" = "Chinese healthy volunteers",
+        "CirrhosisCP - A" = "cirrhosis patients with CP score of A",
+        "CirrhosisCP - B" = "cirrhosis patients with CP score of B",
+        "CirrhosisCP - C" = "cirrhosis patients with CP score of C",
+        "Geriatric NEC" = "normal elderly control subjects",
+        "Japanese" = "Japanese healthy volunteers",
+        "Japanese Paediatric" = "Japanese pediatric subjects",
+        "Morbidly Obese" = "morbidly obese subjects",
+        "NEurCaucasian" = "Northern European Caucasian subjects",
+        "Obese" = "obese subjects",
+        "Paediatric" = "pediatric subjects",
+        "Pregnancy" = "pregnant subjects",
+        "Preterm" = "preterm infants",
+        "PsoriasisDermal" = "dermal psoriasis patients",
+        "RenalGFR_30-60" = "patients with renal GFR of 30-60",
+        "RenalGFR_less_30" = "patients with renal GFR less than 30",
+        "Rheumatoid Arthritis" = "rheumatoid arthritis patients")
+    
+    
+    Population <- sub("Sim-", "", input_pop)
+    
+    Population <- as.character(PopNiceNames[Population])
+    PopulationSimple <- ifelse(str_detect(tolower(Population), "patients|subjects"),
+                               str_trim(
+                                   str_extract(
+                                       Population,
+                                       "patients|(morbidly obese|obese|pediatric|pregnant)? subjects")),
+                               "healthy volunteers")
+    PopulationSimple <- ifelse(Population == "preterm infants",
+                               "preterm infants", PopulationSimple)
+    PopulationCap <- str_to_title(Population)
+    PopulationCap <- ifelse(str_detect(Population, "CP"),
+                            sub("Cp", "CP", PopulationCap), PopulationCap)
+    PopulationCap <- ifelse(str_detect(Population, "GFR"),
+                            sub("Gfr", "GFR", PopulationCap), PopulationCap)
+    PopulationCap <- gsub("Of", "of", PopulationCap)
+    PopulationCap <- gsub("With", "with", PopulationCap)
+    PopulationSimpleLower <- tolower(PopulationSimple)
+    PopulationSimpleCap <- str_to_title(PopulationSimple)
+    
+    MyPops <- list(Population = Population,
+                   PopulationSimple = PopulationSimple,
+                   PopulationCap = PopulationCap,
+                   PopulationSimpleLower = PopulationSimpleLower,
+                   PopulationSimpleCap = PopulationSimpleCap)
+    return(MyPops)
 }

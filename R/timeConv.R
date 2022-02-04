@@ -21,23 +21,23 @@
 #'
 
 timeConv <- function(x, tz = "UTC", dataSource = "Excel") {
-
-      if(dataSource %in% c("Excel", "Unix", "R") == FALSE){
-            stop("Invalid selection for dataSource. Valid selections are 'Excel', 'Unix', or 'R'.")
-      }
-
-      output <-
-            lubridate::ymd_hms(
-                  format(
-                        as.POSIXct(
-                              as.Date(
-                                    x,
-                                    origin =
-                                          ifelse(dataSource == "Excel",
-                                                 "1899-12-30", "1970-01-01")),
-                              tzone = tz), tz = tz))
-
-      return(output)
+    
+    if(dataSource %in% c("Excel", "Unix", "R") == FALSE){
+        stop("Invalid selection for dataSource. Valid selections are 'Excel', 'Unix', or 'R'.")
+    }
+    
+    output <-
+        lubridate::ymd_hms(
+            format(
+                as.POSIXct(
+                    as.Date(
+                        x,
+                        origin =
+                            ifelse(dataSource == "Excel",
+                                   "1899-12-30", "1970-01-01")),
+                    tzone = tz), tz = tz))
+    
+    return(output)
 }
 
 

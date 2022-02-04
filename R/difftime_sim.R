@@ -17,31 +17,31 @@
 #'              units = "days")
 #'
 difftime_sim <- function(time1, time2, units = "hours"){
-
-      Days_t1 <- as.numeric(sub("Day ", "",
-                                str_extract(time1, "Day [0-9]{1,3}"))) - 1
-      Hrs_t1 <- as.numeric(sub(":[0-9]{2}", "",
-                               str_extract(time1, "[0-9]{2}:[0-9]{2}")))
-      Mins_t1 <- as.numeric(sub("[0-9]{2}:", "",
-                                str_extract(time1, "[0-9]{2}:[0-9]{2}")))
-
-      Days_t2 <- as.numeric(sub("Day ", "",
-                                str_extract(time2, "Day [0-9]{1,3}"))) - 1
-      Hrs_t2 <- as.numeric(sub(":[0-9]{2}", "",
-                               str_extract(time2, "[0-9]{2}:[0-9]{2}")))
-      Mins_t2 <- as.numeric(sub("[0-9]{2}:", "",
-                                str_extract(time2, "[0-9]{2}:[0-9]{2}")))
-
-      Out_hr <- (Days_t2 - Days_t1) * 24 + (Hrs_t2 - Hrs_t1) +
-            (Mins_t2 - Mins_t1)/60
-
-      Out <- Out_hr * switch(units,
-                             "hours" = 1,
-                             "minutes" = 60,
-                             "days" = 1/24)
-
-      return(Out)
-
+    
+    Days_t1 <- as.numeric(sub("Day ", "",
+                              str_extract(time1, "Day [0-9]{1,3}"))) - 1
+    Hrs_t1 <- as.numeric(sub(":[0-9]{2}", "",
+                             str_extract(time1, "[0-9]{2}:[0-9]{2}")))
+    Mins_t1 <- as.numeric(sub("[0-9]{2}:", "",
+                              str_extract(time1, "[0-9]{2}:[0-9]{2}")))
+    
+    Days_t2 <- as.numeric(sub("Day ", "",
+                              str_extract(time2, "Day [0-9]{1,3}"))) - 1
+    Hrs_t2 <- as.numeric(sub(":[0-9]{2}", "",
+                             str_extract(time2, "[0-9]{2}:[0-9]{2}")))
+    Mins_t2 <- as.numeric(sub("[0-9]{2}:", "",
+                              str_extract(time2, "[0-9]{2}:[0-9]{2}")))
+    
+    Out_hr <- (Days_t2 - Days_t1) * 24 + (Hrs_t2 - Hrs_t1) +
+        (Mins_t2 - Mins_t1)/60
+    
+    Out <- Out_hr * switch(units,
+                           "hours" = 1,
+                           "minutes" = 60,
+                           "days" = 1/24)
+    
+    return(Out)
+    
 }
 
 

@@ -93,14 +93,15 @@ a large data.frame with multiple sets of concentration-time data,
 \code{extractConcTime_mult} is meant to be used in conjunction with
 \code{\link{ct_plot_overlay}} to create single graphs with overlaid
 concentration-time data from multiple Simcyp Simulator output files for easy
-comparisons. \strong{A couple of notes:}\enumerate{\item{If any of the time
-or concentration units differ between files, the units from the 1st file
-listed will be used and all other files' data will be adjusted to match.}
-\item{If you list multiple files, multiple tissues, and/or multiple compounds
-to extract (see options below), this will extract \emph{all} possible
-variations of them. For example, if you ask for "File A" and "File B" and
-then also ask for "substrate" and "primary metabolite 1", you will get the
-substrate and primary metabolite 1 data from \emph{both} files.}}
+comparisons. \strong{A couple of notes:}\enumerate{\item{If ANY of the Excel
+files you wish to extract data from are open, this WILL CRASH and WILL NOT
+save whatever progress it has made so far. BE SURE TO CLOSE ALL OF THE
+SOURCE-DATA EXCEL FILES.} \item{If you list multiple files, multiple tissues,
+and/or multiple compounds to extract (see options below), this will extract
+\emph{all} possible variations of them. For example, if you ask for "File A"
+and "File B" and then also ask for "substrate" and "primary metabolite 1",
+you will get the substrate and primary metabolite 1 data from \emph{both}
+files.}}
 }
 \examples{
 ConcTimeData <-

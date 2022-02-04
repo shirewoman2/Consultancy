@@ -18,6 +18,6 @@
 #'
 
 calcKi <- function(IC50, S, Km = NA){
-      Ki <- IC50/(1+S/Km)
-      return(Ki)
+    Ki <- IC50/(1+S/Km)
+    return(Ki)
 }

@@ -18,30 +18,30 @@
 #'
 #'
 getReferences <- function(main_directory){
-
-      RefDirs <- list.dirs(main_directory)
-      RefDirs <- RefDirs[!str_detect(RefDirs, "DataRec/Forms")]
-
-      Refs <- list()
-
-      for(i in RefDirs){
-
-            MyFiles <- list.files(i, pattern = "pdf$|doc$|docx$|xls",
-                                  include.dirs = FALSE,
-                                  recursive = FALSE,
-                                  full.names = FALSE)
-
-            Refs[[i]] <- data.frame(Dir = i,
-                                    File = as.character(unlist(MyFiles)) )
-
-            rm(MyFiles)
-      }
-
-      Refs <- bind_rows(Refs) %>%
-            mutate(Dir = sub("\\.\\./DataRec", "DataRec", Dir)) %>%
-            arrange(Dir, File)
-
-      return(Refs)
+    
+    RefDirs <- list.dirs(main_directory)
+    RefDirs <- RefDirs[!str_detect(RefDirs, "DataRec/Forms")]
+    
+    Refs <- list()
+    
+    for(i in RefDirs){
+        
+        MyFiles <- list.files(i, pattern = "pdf$|doc$|docx$|xls",
+                              include.dirs = FALSE,
+                              recursive = FALSE,
+                              full.names = FALSE)
+        
+        Refs[[i]] <- data.frame(Dir = i,
+                                File = as.character(unlist(MyFiles)) )
+        
+        rm(MyFiles)
+    }
+    
+    Refs <- bind_rows(Refs) %>%
+        mutate(Dir = sub("\\.\\./DataRec", "DataRec", Dir)) %>%
+        arrange(Dir, File)
+    
+    return(Refs)
 }
 
 
