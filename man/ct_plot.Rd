@@ -25,6 +25,7 @@ ct_plot(
   line_type = NA,
   line_transparency = NA,
   line_color = NA,
+  line_width = NA,
   include_legend = FALSE,
   legend_label = NA,
   prettify_effector_name = TRUE,
@@ -201,6 +202,10 @@ Acceptable input for, e.g., the substrate alone to be blue and the
 substrate + Inhibitor 1 to be red: \code{c("blue", "red")}. If left as NA,
 lines will be black or gray. Hex color codes are also ok to use.}
 
+\item{line_width}{Optionally specify how thick to make the lines. Acceptable
+input is a number; the default is 1 for most lines and 0.8 for some, to
+give you an idea of where to start.}
+
 \item{legend_label}{Optionally indicate on the legend whether the effector is
 an inhibitor,inducer, activator, or suppressor. Input will be used as the
 label in the legend for the line style and the shape. If left as NA when a
@@ -242,9 +247,9 @@ arguments. If you want to plot enzyme abundance data, please see
 substrate metabolites, inhibitors, or inhibitor metabolites are available in
 all tissues.} \item{When observed data are included in a simulator output
 file, because the simulator output does not explicitly say whether those
-observed data were in the presence of an inhibitor or effector, this function
-cannot tell the difference and will thus assume all observed data included in
-the simulator output were for the substrate in the \emph{absence} of any
+observed data were in the presence of an effector, this function cannot tell
+the difference and will thus assume all observed data included in the
+simulator output were for the substrate in the \emph{absence} of any
 effector. It will further assume that the compound the observed data is for
 is the same as \code{compoundToExtract}. If you want to specify which
 compound the observed data were for and/or whether any effectors were

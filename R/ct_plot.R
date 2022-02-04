@@ -10,9 +10,9 @@
 #' substrate metabolites, inhibitors, or inhibitor metabolites are available in
 #' all tissues.} \item{When observed data are included in a simulator output
 #' file, because the simulator output does not explicitly say whether those
-#' observed data were in the presence of an inhibitor or effector, this function
-#' cannot tell the difference and will thus assume all observed data included in
-#' the simulator output were for the substrate in the \emph{absence} of any
+#' observed data were in the presence of an effector, this function cannot tell
+#' the difference and will thus assume all observed data included in the
+#' simulator output were for the substrate in the \emph{absence} of any
 #' effector. It will further assume that the compound the observed data is for
 #' is the same as \code{compoundToExtract}. If you want to specify which
 #' compound the observed data were for and/or whether any effectors were
@@ -174,7 +174,9 @@
 #'   Acceptable input for, e.g., the substrate alone to be blue and the
 #'   substrate + Inhibitor 1 to be red: \code{c("blue", "red")}. If left as NA,
 #'   lines will be black or gray. Hex color codes are also ok to use.
-#'
+#' @param line_width Optionally specify how thick to make the lines. Acceptable
+#'   input is a number; the default is 1 for most lines and 0.8 for some, to
+#'   give you an idea of where to start.
 #' @param legend_label Optionally indicate on the legend whether the effector is
 #'   an inhibitor,inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as NA when a
@@ -287,6 +289,7 @@ ct_plot <- function(sim_data_file = NA,
                     line_type = NA,
                     line_transparency = NA,
                     line_color = NA,
+                    line_width = NA,
                     include_legend = FALSE,
                     legend_label = NA,
                     prettify_effector_name = TRUE,
@@ -817,6 +820,7 @@ ct_plot <- function(sim_data_file = NA,
                             (is.na(obs_color[1]) & figure_type == "Freddy"),
                         "#3030FE", obs_color)
     
+    
     ## figure_type: trial means -----------------------------------------------------------
     if(figure_type == "trial means"){
         
@@ -833,10 +837,11 @@ ct_plot <- function(sim_data_file = NA,
                         aes(x = Time, y = Conc, group = Group,
                             linetype = Inhibitor, shape = Inhibitor,
                             color = Inhibitor)) +
-                geom_line(alpha = AlphaToUse, lwd = 1) +
+                geom_line(alpha = AlphaToUse, 
+                          lwd = ifelse(is.na(line_width), 1, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == "mean"),
-                          lwd = 1) +
+                          lwd = ifelse(is.na(line_width), 1, line_width)) +
                 scale_shape_manual(values = obs_shape[1:2]) +
                 scale_linetype_manual(values = line_type[1:2]) +
                 scale_color_manual(values = line_color[1:2])
@@ -868,12 +873,14 @@ ct_plot <- function(sim_data_file = NA,
             ## linear plot
             A <- ggplot(sim_data_trial,
                         aes(x = Time, y = Conc, group = Trial)) +
-                geom_line(alpha = AlphaToUse, lwd = 1,
+                geom_line(alpha = AlphaToUse,
+                          lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == "mean"),
-                          lwd = 1, linetype = line_type[1],
+                          lwd = ifelse(is.na(line_width), 1, line_width),
+                          linetype = line_type[1],
                           color = line_color[1])
             
             if(nrow(obs_data) > 0){
@@ -909,10 +916,10 @@ ct_plot <- function(sim_data_file = NA,
                             linetype = Inhibitor, shape = Inhibitor,
                             color = Inhibitor,
                             group = Group)) +
-                geom_line(alpha = AlphaToUse, lwd = 0.8) +
+                geom_line(alpha = AlphaToUse, lwd = ifelse(is.na(line_width), 0.8, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == "mean"),
-                          lwd = 1)  +
+                          lwd = ifelse(is.na(line_width), 1, line_width))  +
                 scale_shape_manual(values = obs_shape[1:2]) +
                 scale_linetype_manual(values = line_type[1:2]) +
                 scale_color_manual(values = line_color[1:2])
@@ -936,11 +943,13 @@ ct_plot <- function(sim_data_file = NA,
             ## linear plot
             A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
                         aes(x = Time, y = Conc, group = Trial)) +
-                geom_line(alpha = AlphaToUse, lwd = 0.8,
+                geom_line(alpha = AlphaToUse, 
+                          lwd = ifelse(is.na(line_width), 0.8, line_width),
                           linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"), lwd = 1,
+                              filter(Trial == "mean"),
+                          lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
             
@@ -977,10 +986,11 @@ ct_plot <- function(sim_data_file = NA,
                         aes(x = Time, y = Conc, group = Group,
                             linetype = Inhibitor, shape = Inhibitor,
                             color = Inhibitor)) +
-                geom_line(lwd = 1) +
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial %in% c("per5", "per95")),
-                          alpha = AlphaToUse, lwd = 1) +
+                          alpha = AlphaToUse, 
+                          lwd = ifelse(is.na(line_width), 1, line_width)) +
                 scale_shape_manual(values = obs_shape[1:2]) +
                 scale_linetype_manual(values = line_type[1:2]) +
                 scale_color_manual(values = line_color[1:2])
@@ -1012,12 +1022,13 @@ ct_plot <- function(sim_data_file = NA,
             ## linear plot
             A <- ggplot(sim_data_trial,
                         aes(x = Time, y = Conc, group = Trial)) +
-                geom_line(alpha = AlphaToUse, lwd = 1,
+                geom_line(alpha = AlphaToUse, 
+                          lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == "mean"),
-                          lwd = 1, linetype = line_type[1],
+                          lwd = ifelse(is.na(line_width), 1, line_width), linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial %in% c("per5", "per95")),
@@ -1061,7 +1072,7 @@ ct_plot <- function(sim_data_file = NA,
                             mutate(Group = paste(Group, Trial)),
                         aes(x = Time, y = Conc, linetype = Inhibitor,
                             color = Inhibitor)) +
-                geom_line(lwd = 1) +
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
                 scale_linetype_manual(values = line_type[1:2]) +
                 scale_color_manual(values = line_color[1:2])
             
@@ -1070,7 +1081,8 @@ ct_plot <- function(sim_data_file = NA,
             A <- ggplot(sim_data_mean %>%
                             filter(Trial == "mean"),
                         aes(x = Time, y = Conc)) +
-                geom_line(lwd = 1, linetype = line_type[1],
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
+                          linetype = line_type[1],
                           color = line_color[1])
         }
     }
