@@ -93,6 +93,18 @@ extractPK <- function(sim_data_file,
         sheet <- NA
     }
     
+    if(PKparameters_orig[1] == "AUC tab" & 
+       "AUC" %in% AllSheets == FALSE & 
+       any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets)){
+        Sheet <- intersect(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)"), AllSheets)[1]
+        
+        warning(paste0("You requested all the parameters from the 'AUC' sheet, but that sheet is not present in ",
+                       sim_data_file, ". However, the tab ", Sheet, 
+                       " *is* present; all PK parameters will be extracted from that sheet."))
+        
+        PKparameters <- "AUC0"
+    }
+    
     # Error catching
     if(complete.cases(sheet) & sheet %in% AllSheets == FALSE){
         stop("The sheet requested could not be found in the Excel file.")
@@ -175,12 +187,19 @@ extractPK <- function(sim_data_file,
         PKparameters <- ParamAbsorption
     }
     
+    if(PKparameters[1] == "AUC0"){
+        # This will happen if user requests PKparameters = "AUC" but "AUC" tab
+        # is not present but a tab for AUC0 *is*.
+        PKparameters <- ParamAUC0
+        
+    }
+    
     # Checking experimental details to only pull details that apply
     Deets <- extractExpDetails(sim_data_file)
     
     if(is.na(Deets$Inhibitor1)){
         PKparameters <- PKparameters[!str_detect(PKparameters,
-                                                 "Inhibitor1|inhib|ratio")]
+                                                 "Inhibitor1|inhib|withInhib|ratio")]
     }
     
     if(Deets$Regimen_sub == "Single Dose"){
@@ -217,7 +236,8 @@ extractPK <- function(sim_data_file,
     
     # Pulling data from the "AUC" sheet ------------------------------------------
     if(any(PKparameters %in% ParamAUC) & is.na(sheet) &
-       PKparameters_orig[1] != "Absorption tab"){
+       PKparameters_orig[1] != "Absorption tab" &
+       (PKparameters_orig == "AUC tab" & "AUC" %in% AllSheets == FALSE) == FALSE){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
@@ -501,7 +521,8 @@ extractPK <- function(sim_data_file,
     }
     
     if(length(PKparameters_AUC0) > 0 &
-       PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
+       (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
+        PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE)){
         # Error catching
         if(any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
             
