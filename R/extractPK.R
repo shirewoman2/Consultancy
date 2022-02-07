@@ -115,64 +115,25 @@ extractPK <- function(sim_data_file,
         stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
     }
     
-    ParamAUC <- c("AccumulationIndex",
-                  "AccumulationIndex_withInhib",
-                  "AccumulationRatio",
-                  "AccumulationRatio_withInhib",
-                  "AUCinf_dose1",
-                  "AUCinf_dose1_withInhib",
-                  "AUCinf_ratio_dose1",
-                  "AUCtau_dose1",
-                  "AUCtau_dose1_withInhib",
-                  "AUCtau_ratio_dose1",
-                  "AUCtau_ss",
-                  "AUCtau_ss_withInhib",
-                  "CL_dose1",
-                  "CL_dose1_withInhib",
-                  "CL_ss",
-                  "CL_ss_withInhib",
-                  "Cmax_dose1",
-                  "Cmax_dose1_withInhib",
-                  "Cmax_ratio_dose1",
-                  "Cmax_ss",
-                  "Cmax_ratio_ss",
-                  "Cmax_ss_withInhib",
-                  "HalfLife_dose1",
-                  "tmax_dose1",
-                  "tmax_dose1_withInhib",
-                  "tmax_ss",
-                  "tmax_ss_withInhib")
+    data("AllPKParameters")
     
-    ParamAbsorption <- c("ka_sub", "ka_inhib",
-                         "fa_sub", "fa_inhib",
-                         "tlag_sub", "tlag_inhib")
+    ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
+        pull(PKparameter)
     
-    ParamAUC0 <- c("AUCtau_dose1",
-                   "AUCtau_dose1_withInhib",
-                   "AUCtau_ratio_dose1",
-                   "Cmax_dose1",
-                   "Cmax_dose1_withInhib",
-                   "Cmax_ratio_dose1",
-                   "tmax_dose1",
-                   "tmax_dose1_withInhib")
+    ParamAbsorption <- AllPKParameters %>% filter(Sheet == "Absorption") %>% 
+        pull(PKparameter)
     
-    ParamAUCX <- c("AUCtau_ss",
-                   "AUCtau_ss_withInhib",
-                   "AUCtau_ratio_ss",
-                   "CL_ss",
-                   "CL_ss_withInhib",
-                   "CL_ratio_ss",
-                   "Cmax_ss",
-                   "Cmax_ss_withInhib",
-                   "Cmax_ratio_ss",
-                   "tmax_ss",
-                   "tmax_ss_withInhib")
+    ParamAUC0 <- AllPKParameters %>% filter(Sheet == "AUC0") %>% 
+        pull(PKparameter)
+        
+    ParamAUCX <- AllPKParameters %>% filter(Sheet == "AUCX") %>% 
+        pull(PKparameter)
+
+    ParamCLTSS <- AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
+        pull(PKparameter)
     
-    ParamCLTSS <- c("F_sub", "fh_sub", "fg_sub", "CL_hepatic",
-                    "CLpo")
-    
-    ParamSummary <- c("CL_hepatic")
-    
+    ParamSummary <- AllPKParameters %>% filter(Sheet == "Summary") %>% 
+        pull(PKparameter)
     
     if(PKparameters[1] == "all"){
         PKparameters <- unique(c(ParamAbsorption, ParamAUC, ParamAUC0,
@@ -237,7 +198,7 @@ extractPK <- function(sim_data_file,
     # Pulling data from the "AUC" sheet ------------------------------------------
     if(any(PKparameters %in% ParamAUC) & is.na(sheet) &
        PKparameters_orig[1] != "Absorption tab" &
-       (PKparameters_orig == "AUC tab" & "AUC" %in% AllSheets == FALSE) == FALSE){
+       (PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE) == FALSE){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
@@ -658,6 +619,9 @@ extractPK <- function(sim_data_file,
                                    "Cmax_ss" = "CMax \\(",
                                    "Cmax_ss_withInhib" = "CMaxinh \\(",
                                    "Cmax_ratio_ss" = "CMax Ratio",
+                                   "Cmin_ss" = "CMin \\(",
+                                   "Cmin_ss_withInhib" = "CMininh \\(",
+                                   "Cmin_ratio_ss" = "CMin Ratio",
                                    "tmax_ss" = "^TMax \\(",
                                    "tmax_ss_withInhib" = "TMaxinh \\(")
                 
