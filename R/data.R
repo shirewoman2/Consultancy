@@ -43,8 +43,11 @@
 #' @format A data.frame with 3 columns: \describe{ \item{PKparameter}{the PK
 #'   parameter name to use with \code{\link{extractPK}} for the argument
 #'   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
-#'   where the PK parameter will be extracted, if possible} \item{Notes}{an
-#'   explanation of what the parameter is}}
+#'   where the PK parameter will be extracted, if possible}
+#'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
+#'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
+#'   for whether this item only applies when an effector is present in the
+#'   simulation} \item{Notes}{an explanation of what the parameter is}}
 "AllPKParameters"
 
 #' All possible experimental details that can be extracted from a simulator
