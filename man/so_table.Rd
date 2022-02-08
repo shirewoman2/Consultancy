@@ -16,6 +16,8 @@ so_table(
   includeHalfLife = FALSE,
   includeTrialMeans = FALSE,
   includeCV = TRUE,
+  knit = FALSE,
+  knit_file = NA,
   checkDataSource = TRUE
 )
 }
@@ -72,9 +74,14 @@ values rather than pulled directly from the output.}
 \item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
 table}
 
-\item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
-lists exactly where the data were pulled from the simulator output file.
-Useful for QCing.}
+\item{knit}{TRUE or FALSE for whether to make a Word document with this table}
+
+\item{knit_file}{file name to use for the knitted Word document
+\emph{without} the file extension.}
+
+\item{checkDataSource}{TRUE or FALSE for whether to include in the output a
+data.frame that lists exactly where the data were pulled from the simulator
+output file. Useful for QCing.}
 }
 \value{
 a data.frame

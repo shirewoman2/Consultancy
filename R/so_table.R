@@ -69,9 +69,12 @@
 #'   values rather than pulled directly from the output.
 #' @param includeCV TRUE or FALSE for whether to include rows for CV in the
 #'   table
-#' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
-#'   lists exactly where the data were pulled from the simulator output file.
-#'   Useful for QCing.
+#' @param knit TRUE or FALSE for whether to make a Word document with this table
+#' @param knit_file file name to use for the knitted Word document
+#'   \emph{without} the file extension.
+#' @param checkDataSource TRUE or FALSE for whether to include in the output a
+#'   data.frame that lists exactly where the data were pulled from the simulator
+#'   output file. Useful for QCing.
 #'
 #' @return a data.frame
 #' @export
@@ -91,6 +94,8 @@ so_table <- function(report_input_file = NA,
                      includeHalfLife = FALSE,
                      includeTrialMeans = FALSE,
                      includeCV = TRUE,
+                     knit = FALSE,
+                     knit_file = NA,
                      checkDataSource = TRUE){
     
     # Error catching
@@ -523,6 +528,19 @@ so_table <- function(report_input_file = NA,
     PKToPull_pretty <- c("Statistic" = "Statistic", PKToPull_pretty)
     
     names(MyPKResults) <- PKToPull_pretty[names(MyPKResults)]
+    
+    if(knit){
+        
+        MyDir <- getwd()
+        rmarkdown::render(input = 
+                              paste0(system.file(package = "SimcypConsultancy"), 
+                                     "/rmarkdown/templates/so_table/skeleton/skeleton.Rmd"),
+                         output_file = knit_file, 
+                         output_dir = MyDir, 
+                         params = list("sim_file" = sim_data_file,
+                                       "SOtable" = MyPKResults, 
+                                       "QC" = MyPKResults_all$QC))
+    }
     
     if(checkDataSource){
         MyPKResults <- list("so_table" = MyPKResults,

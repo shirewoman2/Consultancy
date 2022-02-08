@@ -1,0 +1,58 @@
+---
+params:
+    SOtable: 
+    QC: 
+    sim_file: 
+title: "S/O table"
+author: "Consultancy team"
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')` from so_table function"
+output: word_document
+    
+---
+
+```{r set-options, echo=FALSE}
+
+suppressWarnings(library(knitr))
+
+opts_chunk$set(echo = FALSE, 
+               fig.width = 4,
+               fig.height = 6.5,
+               fig.align = "center",
+               dpi = 600,
+               message = FALSE, warning = FALSE)
+
+knit_print.data.frame = function(x, ...) {
+    res = paste(c("", "", kable(x, row.names = FALSE)), collapse = "\n")
+    asis_output(res)
+}
+
+
+```
+```{r Housekeeping}
+
+library(tidyverse)
+library(SimcypConsultancy)
+
+
+```
+
+Simulator output file: `r params$sim_file`
+
+# Table
+
+```{r}
+
+params$SOtable %>% kable()
+
+```
+
+## QC info
+
+```{r}
+
+params$QC %>% kable()
+
+```
+
+
+
