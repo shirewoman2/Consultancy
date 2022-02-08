@@ -260,7 +260,11 @@ extractConcTime_mult <- function(sim_data_files,
             }
         }
         
-        rm(Deets)
+        # rm(Deets) # I had removed Deets here for safety just to make sure that
+        # it didn't get applied to the wrong file, but it was giving me an error
+        # when I had removed it here, and, now that it's commented out, it's
+        # working. Really check that this is applying the correct details to the
+        # correct files. I don't see why it's a problem to remove Deets here.
         MultData[[n]] <- bind_rows(MultData[[n]])
     }
     
