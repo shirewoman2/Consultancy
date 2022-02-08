@@ -2,7 +2,8 @@
 % Please edit documentation in R/so_table.R
 \name{so_table}
 \alias{so_table}
-\title{Make simulated vs. observed tables for reports}
+\title{Make tables of PK parameters, including simulated vs. observed values, for
+reports}
 \usage{
 so_table(
   report_input_file = NA,
@@ -16,7 +17,6 @@ so_table(
   includeHalfLife = FALSE,
   includeTrialMeans = FALSE,
   includeCV = TRUE,
-  knit = FALSE,
   knit_file = NA,
   checkDataSource = TRUE
 )
@@ -74,10 +74,9 @@ values rather than pulled directly from the output.}
 \item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
 table}
 
-\item{knit}{TRUE or FALSE for whether to make a Word document with this table}
-
-\item{knit_file}{file name to use for the knitted Word document
-\emph{without} the file extension.}
+\item{knit_file}{file name to use for writing a Word document version of this
+table in your current working directory; do not include the file extension.
+If left as NA, no Word document will be created.}
 
 \item{checkDataSource}{TRUE or FALSE for whether to include in the output a
 data.frame that lists exactly where the data were pulled from the simulator
@@ -87,14 +86,16 @@ output file. Useful for QCing.}
 a data.frame
 }
 \description{
-\code{so_table} creates simulated vs. observed tables for reports and
+\code{so_table} creates tables of PK parameters for reports and
 presentations, including reporting means, CVs, confidence intervals or
-percentiles, and ratios of simulated vs. observed mean values. There are two
-main ways to approach using this function 1. Select which PK parameters you
-want to compare (\code{PKparameters} argument) and, later, manually fill out
-rows for observed data that you've calculated elsewhere, or 2. Fill out an
-Excel form with information about your observed data, in which case R will
-calculate the comparisons for you here. Setting up the input for this
+percentiles, and ratios of simulated vs. observed mean values. Optionally, it
+will create a Word document of that table for easy copying and pasting into a
+report or presentation (see argument \code{knit_file}). There are two main
+ways to approach using this function 1. Select which PK parameters you want
+to compare (\code{PKparameters} argument) and, later, manually fill out rows
+for observed data that you've calculated elsewhere, or 2. Fill out an Excel
+form with information about your observed data, in which case R will
+calculate the comparisons for you here. Setting up the input for this 2nd
 approach requires a few steps:\enumerate{\item{Use the function
 \code{\link{generateReportInputForm}} to create an Excel file where you can
 enter information about your project.} \item{Go to the tab "observed data"

@@ -4,7 +4,6 @@ params:
     QC: 
     sim_file: 
 title: "S/O table"
-author: "Consultancy team"
 date: "Compiled on `r format(Sys.time(), '%B %d, %Y')` from so_table function"
 output: word_document
     
