@@ -845,49 +845,59 @@ extractConcTime <- function(sim_data_file,
                     
                     StartRow_obs <- which(sim_data_xl$...1 == "Observed Data") + 1
                     
-                    if(length(StartRow_obs) != 0){
+                    if(length(StartRow_obs) != 0 & 
+                       StartRow_obs - 1 != nrow(sim_data_xl)){
                         
                         obs_data <-
                             sim_data_xl[StartRow_obs:nrow(sim_data_xl), ] %>%
                             t() %>%
                             as.data.frame()
-                        NewNamesObs <- obs_data[1, ]
-                        NewNamesObs[str_detect(NewNamesObs, "Time")] <- "Time"
-                        # NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
-                        TimeCols <- which(NewNamesObs == "Time")
-                        ConcCols <- which(NewNamesObs != "Time")
-                        NewNamesObs[TimeCols] <- paste0("Time_", NewNamesObs[ConcCols])
-                        NewNamesObs[ConcCols] <- paste0("Conc_", NewNamesObs[ConcCols])
-                        names(obs_data) <- NewNamesObs
-                        
-                        suppressWarnings(
-                            obs_data <- obs_data %>%
-                                mutate_all(as.numeric) %>%
-                                mutate(ID = 1:nrow(.)) %>%
-                                pivot_longer(cols = -ID,
-                                             names_to = "Param",
-                                             values_to = "Value") %>%
-                                separate(col = Param,
-                                         into = c("Parameter", "Individual"),
-                                         sep = "_") %>%
-                                pivot_wider(names_from = Parameter,
-                                            values_from = Value) %>%
-                                filter(complete.cases(Time)) %>%
-                                mutate(Trial = "obs",
-                                       Inhibitor = "none",
-                                       CompoundID = m,
-                                       Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
-                                       # The simulator doesn't provide much
-                                       # info on the identity of the
-                                       # compound for the observed data
-                                       # included in a simjlator file.
-                                       Individual = sub("^Subject", "", Individual),
-                                       Time_units = SimTimeUnits,
-                                       Conc_units = SimConcUnits) %>%
-                                select(-ID)
-                        )
+                        if(all(is.na(obs_data[,1]))){
+                            
+                            # Sometimes, there will be a single cell that says
+                            # "Observed Data" but then nothing else for obs
+                            # data. Removing the basically empty data.frame of
+                            # obs data in that situation.
+                            rm(obs_data)
+                        } else {
+                            
+                            NewNamesObs <- obs_data[1, ]
+                            NewNamesObs[str_detect(NewNamesObs, "Time")] <- "Time"
+                            # NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
+                            TimeCols <- which(NewNamesObs == "Time")
+                            ConcCols <- which(NewNamesObs != "Time")
+                            NewNamesObs[TimeCols] <- paste0("Time_", NewNamesObs[ConcCols])
+                            NewNamesObs[ConcCols] <- paste0("Conc_", NewNamesObs[ConcCols])
+                            names(obs_data) <- NewNamesObs
+                            
+                            suppressWarnings(
+                                obs_data <- obs_data %>%
+                                    mutate_all(as.numeric) %>%
+                                    mutate(ID = 1:nrow(.)) %>%
+                                    pivot_longer(cols = -ID,
+                                                 names_to = "Param",
+                                                 values_to = "Value") %>%
+                                    separate(col = Param,
+                                             into = c("Parameter", "Individual"),
+                                             sep = "_") %>%
+                                    pivot_wider(names_from = Parameter,
+                                                values_from = Value) %>%
+                                    filter(complete.cases(Time)) %>%
+                                    mutate(Trial = "obs",
+                                           Inhibitor = "none",
+                                           CompoundID = m,
+                                           Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
+                                           # The simulator doesn't provide much
+                                           # info on the identity of the
+                                           # compound for the observed data
+                                           # included in a simjlator file.
+                                           Individual = sub("^Subject", "", Individual),
+                                           Time_units = SimTimeUnits,
+                                           Conc_units = SimConcUnits) %>%
+                                    select(-ID)
+                            )
+                        }
                     }
-                    
                 }
                 
             } else {
