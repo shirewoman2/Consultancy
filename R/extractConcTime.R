@@ -845,7 +845,7 @@ extractConcTime <- function(sim_data_file,
                     
                     StartRow_obs <- which(sim_data_xl$...1 == "Observed Data") + 1
                     
-                    if(length(StartRow_obs) != 0 & 
+                    if(length(StartRow_obs) != 0 && 
                        StartRow_obs - 1 != nrow(sim_data_xl)){
                         
                         obs_data <-
