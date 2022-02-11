@@ -93,6 +93,14 @@ so_table <- function(report_input_file = NA,
                      includeCV = TRUE,
                      checkDataSource = TRUE){
     
+    # If they didn't include ".xlsx" at the end, add that.
+    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
+                            sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
+    # If they didn't include ".xlsx" at the end, add that.
+    report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
+                                report_input_file, paste0(report_input_file, ".xlsx"))
+    
     # Error catching
     if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
        is.na(report_input_file) & is.na(sim_data_file)){

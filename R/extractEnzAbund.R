@@ -50,6 +50,10 @@ extractEnzAbund <- function(sim_data_file,
                             returnAggregateOrIndiv = c("aggregate",
                                                        "individual")){
     
+    # If they didn't include ".xlsx" at the end, add that.
+    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
+                            sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
     # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,
              length(returnAggregateOrIndiv) > 2,

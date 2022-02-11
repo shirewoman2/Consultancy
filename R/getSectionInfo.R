@@ -39,6 +39,10 @@
 getSectionInfo <- function(report_input_file = NA,
                            sheet = "table and graph input"){
     
+    # If they didn't include ".xlsx" at the end, add that.
+    report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
+                                report_input_file, paste0(report_input_file, ".xlsx"))
+    
     # if("data.frame" %in% class(section_input_DF)){# RETURN TO THIS AND ADJUST FOR SITUATIONS WHEN ONLY INCLUDING DF. Need to decide how to determine whether DDI involved.
     #       InputXL <- section_input_DF
     # } else {

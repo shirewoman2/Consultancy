@@ -17,7 +17,9 @@ This does not return an R object; it saves an Excel file that serves
 \description{
 Creates an Excel file with three forms to fill out. Those forms can be fed
 into \code{\link{getSectionInfo}} and \code{\link{so_table}} to automate some
-of the calculations and graph creation for writing a report.
+of the calculations and graph creation for writing a report. \strong{A note:}
+This generates a warning that we're just not able to get rid of that says
+"Workbook has no sheets!" Please disregard that.
 }
 \details{
 The three tabs in the Excel file this function creates are: \describe{

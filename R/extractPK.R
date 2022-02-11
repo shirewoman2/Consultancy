@@ -57,6 +57,10 @@ extractPK <- function(sim_data_file,
                       includeTrialInfo = TRUE,
                       checkDataSource = TRUE){
     
+    # If they didn't include ".xlsx" at the end, add that.
+    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
+                            sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
     AllSheets <- readxl::excel_sheets(path = sim_data_file)
     
     # Determining the name of the tab that contains PK data for the last dose

@@ -126,6 +126,10 @@ extractConcTime <- function(sim_data_file,
         stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
     }
     
+    # If they didn't include ".xlsx" at the end, add that.
+    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
+                            sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
     # The "exists" call in the next line is how we're checking whether this
     # function was called on its own (the result will be FALSE) or called from
     # extractConcTime_mult (result will be TRUE), where you can have multiple

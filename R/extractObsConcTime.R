@@ -42,6 +42,10 @@
 #'
 extractObsConcTime <- function(obs_data_file){
     
+    # If they didn't include ".xlsx" at the end, add that.
+    obs_data_file <- ifelse(str_detect(obs_data_file, "xlsx$"), 
+                            obs_data_file, paste0(obs_data_file, ".xlsx"))
+    
     obs_data_xl <- suppressMessages(
         readxl::read_excel(path = obs_data_file, col_names = FALSE))
     

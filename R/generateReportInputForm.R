@@ -2,7 +2,9 @@
 #'
 #' Creates an Excel file with three forms to fill out. Those forms can be fed
 #' into \code{\link{getSectionInfo}} and \code{\link{so_table}} to automate some
-#' of the calculations and graph creation for writing a report.
+#' of the calculations and graph creation for writing a report. \strong{A note:}
+#' This generates a warning that we're just not able to get rid of that says
+#' "Workbook has no sheets!" Please disregard that.
 #'
 #' The three tabs in the Excel file this function creates are: \describe{
 #'
@@ -34,7 +36,7 @@
 #' generateReportInputForm(paste0(SimcypDir$LgFileDir, "abc-1a/Ultraconazole report input.xlsx"))
 #' generateReportInputForm(paste0(SimcypDir$SharePtDir, "def-2b/Superstatin report input.xlsx"))
 #'
-#'
+#' 
 
 generateReportInputForm <- function(filename){
     
@@ -45,6 +47,10 @@ generateReportInputForm <- function(filename){
     # part of the share point drive, that doesn't work well. Switch that.
     filename <- sub("https:..s08sharepoint.certara.com.sites.consult.",
                     SimcypDir$SharePtDir, filename)
+    
+    # If they didn't include ".xlsx" at the end, add that.
+    filename <- ifelse(str_detect(filename, "xlsx$"), 
+                       filename, paste0(filename, ".xlsx"))
     
     # Check whether file exists and stop if it does so that no one
     # accidentally overwrites something they've spent time filling out

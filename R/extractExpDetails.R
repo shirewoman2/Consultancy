@@ -52,6 +52,10 @@
 extractExpDetails <- function(sim_data_file,
                               exp_details = "Summary tab"){
     
+    # If they didn't include ".xlsx" at the end, add that.
+    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
+                            sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
     # Noting exp_details requested for later
     exp_details_input <- tolower(exp_details)
     # Noting which details are possible, which columns to search for their
