@@ -34,32 +34,32 @@ enz_plot <- function(sim_data_file = NA,
                      tissue = "liver",
                      figure_type = "percentiles",
                      ...){
-
-      # Error catching
-      if(is.na(sim_data_file) & !("data.frame" %in% class(sim_enz_dataframe))){
-            stop("You cannot leave both sim_data_file and sim_enz_dataframe as NA. You must list one of these to specify which data to include in the graph.")
-      }
-
-      if(tissue %in% c("colon", "small intestine", "liver", "kidney") == FALSE){
-            stop("The tissue you entered is not one of the options. Please select one of 'colon', 'small intestine', 'liver', or 'kidney' for the tissue.")
-      }
-
-      if("data.frame" %in% class(sim_enz_dataframe)){
-            Data <- sim_enz_dataframe
-      } else {
-            Data <- extractEnzAbund(
-                  sim_data_file = sim_data_file,
-                  enzyme = enzyme,
-                  tissue = ifelse(tissue %in% c("colon", "small intestine"),
-                                  "gut", tissue),
-                  returnAggregateOrIndiv = c("aggregate", "individual"))
-      }
-
-      if(tissue %in% c("colon", "small intestine")){
-            Data <- Data %>% filter(Tissue == tissue)
-      }
-
-      ct_plot(sim_obs_dataframe = Data, figure_type = figure_type, ...)
+    
+    # Error catching
+    if(is.na(sim_data_file) & !("data.frame" %in% class(sim_enz_dataframe))){
+        stop("You cannot leave both sim_data_file and sim_enz_dataframe as NA. You must list one of these to specify which data to include in the graph.")
+    }
+    
+    if(tissue %in% c("colon", "small intestine", "liver", "kidney") == FALSE){
+        stop("The tissue you entered is not one of the options. Please select one of 'colon', 'small intestine', 'liver', or 'kidney' for the tissue.")
+    }
+    
+    if("data.frame" %in% class(sim_enz_dataframe)){
+        Data <- sim_enz_dataframe
+    } else {
+        Data <- extractEnzAbund(
+            sim_data_file = sim_data_file,
+            enzyme = enzyme,
+            tissue = ifelse(tissue %in% c("colon", "small intestine"),
+                            "gut", tissue),
+            returnAggregateOrIndiv = c("aggregate", "individual"))
+    }
+    
+    if(tissue %in% c("colon", "small intestine")){
+        Data <- Data %>% filter(Tissue == tissue)
+    }
+    
+    ct_plot(sim_obs_dataframe = Data, figure_type = figure_type, ...)
 }
 
 

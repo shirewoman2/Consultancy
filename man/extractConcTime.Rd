@@ -26,7 +26,9 @@ that it is ready to be converted to an XML file, not the file that contains
 only the digitized time and concentration data.}
 
 \item{obs_inhibitor_data_file}{name of the Excel file containing observed
-concentration-time data for when an effector is present, when appropriate}
+concentration-time data for when an effector is present, when appropriate.
+Only bother with this if the observed data in the presence of an inhibitor
+were not already included in the \code{obs_data_file}.}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
@@ -93,7 +95,18 @@ A data.frame of concentration-time data with the following columns:
 \description{
 Extracts concentration-time data from simulator output Excel files and,
 optionally, a separately specified clinical data file, and puts all data into
-a single, tidy data.frame.
+a single, tidy data.frame. \strong{A note on observed data:} When observed
+data are included in a simulator output file, because the simulator output
+does not explicitly say whether those observed data were in the presence of
+an inhibitor or effector, this function cannot tell the difference and will
+thus assume all observed data included in the simulator output were for the
+substrate in the \emph{absence} of any effector. It will further assume that
+the compound the observed data is for is the same as
+\code{compoundToExtract}. If \code{compoundToExtract} was an inhibitor or
+inhibitor metabolite, the observed data from the simulator output will NOT be
+pulled since it is unlikely to be inhibitor concentrations. It's generally
+much safer to supply an observed data file here to make sure the data are
+what you're expecting.
 }
 \examples{
 extractConcTime(sim_data_file = "../Example simulator output MD.xlsx")

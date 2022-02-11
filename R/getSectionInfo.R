@@ -38,137 +38,141 @@
 #'
 getSectionInfo <- function(report_input_file = NA,
                            sheet = "table and graph input"){
-
-      # if("data.frame" %in% class(section_input_DF)){# RETURN TO THIS AND ADJUST FOR SITUATIONS WHEN ONLY INCLUDING DF. Need to decide how to determine whether DDI involved.
-      #       InputXL <- section_input_DF
-      # } else {
-      InputXL <- suppressMessages(
-            readxl::read_excel(path = report_input_file,
-                               sheet = sheet, skip = 3))
-      # }
-
-      # Making each of the items in InputXL its own named item in a list so that
-      # output from getSectionInfo will be exclusively a list rather than a list
-      # that contains a data.frame, since the latter is annoying to code
-      # namewise.
-      sectionInfo <- InputXL %>% select(-Item) %>%
-            mutate(Value = gsub("\\\\", "/", Value),
-                   Value = sub("(https://)?s08sharepoint.certara.com/sites/consult/",
-                               SimcypDir$SharePtDir, Value)) %>%
+    
+    # If they didn't include ".xlsx" at the end, add that.
+    report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
+                                report_input_file, paste0(report_input_file, ".xlsx"))
+    
+    # if("data.frame" %in% class(section_input_DF)){# RETURN TO THIS AND ADJUST FOR SITUATIONS WHEN ONLY INCLUDING DF. Need to decide how to determine whether DDI involved.
+    #       InputXL <- section_input_DF
+    # } else {
+    InputXL <- suppressMessages(
+        readxl::read_excel(path = report_input_file,
+                           sheet = sheet, skip = 3))
+    # }
+    
+    # Making each of the items in InputXL its own named item in a list so that
+    # output from getSectionInfo will be exclusively a list rather than a list
+    # that contains a data.frame, since the latter is annoying to code
+    # namewise.
+    sectionInfo <- InputXL %>% select(-Item) %>%
+        mutate(Value = gsub("\\\\", "/", Value),
+               Value = sub("(https://)?s08sharepoint.certara.com/sites/consult/",
+                           SimcypDir$SharePtDir, Value)) %>%
+        pivot_wider(names_from = RName, values_from = Value) %>%
+        as.list()
+    
+    # Checking whether DDI involved.
+    DDI <- readxl::read_excel(path = report_input_file,
+                              sheet = sectionInfo$ClinStudyTab,
+                              range = "A1")
+    DDI <- stringr::str_detect(names(DDI), "Observed data with DDI")
+    
+    ClinXL <- suppressMessages(
+        readxl::read_excel(path = report_input_file,
+                           sheet = sectionInfo$ClinStudyTab,
+                           col_types = "text",
+                           skip = 3))
+    
+    if(DDI){
+        
+        StartPK <- which(str_detect(ClinXL[, 1] %>% pull(1),
+                                    "^Victim PK data"))
+        # StartRatio <- which(str_detect(ClinXL[, 1] %>% pull(1),
+        #                                "^Mean ratios of PK"))
+        
+        ClinXL_main <- ClinXL[1:StartPK, 1:3]
+        ClinXL_vic <- ClinXL[StartPK:nrow(ClinXL), 1:3]
+        ClinXL_perp <- ClinXL[StartPK:nrow(ClinXL), 4:6]
+        names(ClinXL_main) <- c("Item", "RName", "Value")
+        names(ClinXL_vic) <- c("Item", "RName", "Value")
+        names(ClinXL_perp) <- c("Item", "RName", "Value")
+        # names(ClinXL_rat) <- c("Item", "RName", "Value")
+        
+        # Adjusting to deal w/multiple scenarios
+        DDIScenario <- unique(ClinXL_main$RName[
+            which(str_detect(ClinXL_main$RName, "Scenario") &
+                      complete.cases(ClinXL_main$Value))])
+        DDIScenario_pretty <- switch(DDIScenario,
+                                     "ScenarioA" = "SD victim, SD perpetrator",
+                                     "ScenarioB" = "MD victim, SD perpetrator",
+                                     "ScenarioC" = "SD victim, MD perpetrator",
+                                     "ScenarioD" = "MD victim, MD perpetrator")
+        Suffix <- switch(DDIScenario,
+                         "ScenarioA" = "_dose1",
+                         "ScenarioB" = "_ss",
+                         "ScenarioC" = "_dose1",
+                         "ScenarioD" = "_ss")
+        
+        ClinXL_vic$RName <- paste0(ClinXL_vic$RName, Suffix)
+        ClinXL_perp$RName <- paste0(ClinXL_perp$RName, Suffix, "_withEffector")
+        ClinXL_main <- ClinXL_main %>%
+            mutate(RName = ifelse(str_detect(RName, "Scenario"),
+                                  "DDIScenario", RName),
+                   Value = ifelse(RName == "DDIScenario", DDIScenario_pretty, Value))
+        
+        ClinXL <- bind_rows(ClinXL_main, ClinXL_vic, ClinXL_perp) %>%
+            filter(!str_detect(RName, "^blank")) %>%
+            mutate(RName = sub("_CV_ss", "_ss_CV", RName),
+                   RName = sub("_CV_dose1", "_dose1_CV", RName),
+                   RName = ifelse(str_detect(RName, "_CV_"),
+                                  paste0(RName, "_CV"), RName),
+                   RName = sub("_CV_", "_", RName))
+    }
+    
+    sectionInfo <- c(
+        sectionInfo,
+        ClinXL %>% select(-Item)  %>% unique() %>%
             pivot_wider(names_from = RName, values_from = Value) %>%
-      as.list()
-
-      # Checking whether DDI involved.
-      DDI <- readxl::read_excel(path = report_input_file,
-                                sheet = sectionInfo$ClinStudyTab,
-                                range = "A1")
-      DDI <- stringr::str_detect(names(DDI), "Observed data with DDI")
-
-      ClinXL <- suppressMessages(
-            readxl::read_excel(path = report_input_file,
-                               sheet = sectionInfo$ClinStudyTab,
-                               col_types = "text",
-                               skip = 3))
-
-      if(DDI){
-
-            StartPK <- which(str_detect(ClinXL[, 1] %>% pull(1),
-                                        "^Victim PK data"))
-            # StartRatio <- which(str_detect(ClinXL[, 1] %>% pull(1),
-            #                                "^Mean ratios of PK"))
-
-            ClinXL_main <- ClinXL[1:StartPK, 1:3]
-            ClinXL_vic <- ClinXL[StartPK:nrow(ClinXL), 1:3]
-            ClinXL_perp <- ClinXL[StartPK:nrow(ClinXL), 4:6]
-            names(ClinXL_main) <- c("Item", "RName", "Value")
-            names(ClinXL_vic) <- c("Item", "RName", "Value")
-            names(ClinXL_perp) <- c("Item", "RName", "Value")
-            # names(ClinXL_rat) <- c("Item", "RName", "Value")
-
-            # Adjusting to deal w/multiple scenarios
-            DDIScenario <- unique(ClinXL_main$RName[
-                  which(str_detect(ClinXL_main$RName, "Scenario") &
-                              complete.cases(ClinXL_main$Value))])
-            DDIScenario_pretty <- switch(DDIScenario,
-                                         "ScenarioA" = "SD victim, SD perpetrator",
-                                         "ScenarioB" = "MD victim, SD perpetrator",
-                                         "ScenarioC" = "SD victim, MD perpetrator",
-                                         "ScenarioD" = "MD victim, MD perpetrator")
-            Suffix <- switch(DDIScenario,
-                             "ScenarioA" = "_dose1",
-                             "ScenarioB" = "_ss",
-                             "ScenarioC" = "_dose1",
-                             "ScenarioD" = "_ss")
-
-            ClinXL_vic$RName <- paste0(ClinXL_vic$RName, Suffix)
-            ClinXL_perp$RName <- paste0(ClinXL_perp$RName, Suffix, "_withEffector")
-            ClinXL_main <- ClinXL_main %>%
-                  mutate(RName = ifelse(str_detect(RName, "Scenario"),
-                                        "DDIScenario", RName),
-                         Value = ifelse(RName == "DDIScenario", DDIScenario_pretty, Value))
-
-            ClinXL <- bind_rows(ClinXL_main, ClinXL_vic, ClinXL_perp) %>%
-                  filter(!str_detect(RName, "^blank")) %>%
-                  mutate(RName = sub("_CV_ss", "_ss_CV", RName),
-                         RName = sub("_CV_dose1", "_dose1_CV", RName),
-                         RName = ifelse(str_detect(RName, "_CV_"),
-                                        paste0(RName, "_CV"), RName),
-                         RName = sub("_CV_", "_", RName))
-      }
-
-      sectionInfo <- c(
-            sectionInfo,
-            ClinXL %>% select(-Item)  %>% unique() %>%
-                  pivot_wider(names_from = RName, values_from = Value) %>%
-                  mutate(across(.cols = -any_of(
-                        c("ClinStudy", "MeanType", "Tissue", "DDIRole",
-                          "DDIScenario", "GMR_mean_type")),
-                        .fns = as.numeric)) %>%
-                  as.list())
-
-      Deets <- extractExpDetails(sim_data_file = sectionInfo$SimFile)
-
-      # Tidying up the names used for populations so that they look nice in report
-      Pop <- tidyPop(Deets$Pop)
-      NumSimSubj <- Deets[["NumSubjTrial"]] * Deets[["NumTrials"]]
-      DoseFreq <- switch(as.character(Deets[["DoseInt_sub"]]),
-                         "12" = "BID",
-                         "24" = "QD",
-                         "8" = "TID",
-                         "Single Dose" = "single dose")
-      Deets[["Inhibitor"]] <- tolower(gsub(
-            "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
-            "",
-            Deets[["Inhibitor"]]))
-      DoseFreq_inhib <- switch(as.character(Deets[["DoseInt_inhib"]]),
-                               "12" = "BID",
-                               "24" = "QD",
-                               "8" = "TID",
-                               "Single Dose" = "single dose")
-
-      # Day substrate was administered
-      StartDoseDay_sub <-
-            as.numeric(sub("Day ", "",
-                           str_split(Deets[["StartDayTime_sub"]], ", ")[[1]][1]))
-
-      # Days inhibitor was administered
-      StartDoseDay_inhib <- as.numeric(sub("Day ", "",
-                                           str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]][1]))
-
-      LastDoseDay_inhib <-
-            (Deets[["DoseInt_inhib"]] * Deets[["NumDoses_inhib"]])/24
-
-
-      # Putting everything together
-      sectionInfo <- c(sectionInfo, Deets, Pop,
-                    "NumSimSubj" = NumSimSubj,
-                    "DoseFreq" = DoseFreq,
-                    "DoseFreq_inhib" = DoseFreq_inhib,
-                    "StartDoseDay_sub" = StartDoseDay_sub,
-                    "StartDoseDay_inhib" = StartDoseDay_inhib,
-                    "LastDoseDay_inhib" = LastDoseDay_inhib)
-
-      sectionInfo <- sectionInfo[sort(names(sectionInfo))]
-
-      return(sectionInfo)
+            mutate(across(.cols = -any_of(
+                c("ClinStudy", "MeanType", "Tissue", "DDIRole",
+                  "DDIScenario", "GMR_mean_type")),
+                .fns = as.numeric)) %>%
+            as.list())
+    
+    Deets <- extractExpDetails(sim_data_file = sectionInfo$SimFile)
+    
+    # Tidying up the names used for populations so that they look nice in report
+    Population <- tidyPop(Deets$Population)
+    NumSimSubj <- Deets[["NumSubjTrial"]] * Deets[["NumTrials"]]
+    DoseFreq <- switch(as.character(Deets[["DoseInt_sub"]]),
+                       "12" = "BID",
+                       "24" = "QD",
+                       "8" = "TID",
+                       "Single Dose" = "single dose")
+    Deets[["Inhibitor"]] <- tolower(gsub(
+        "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
+        "",
+        Deets[["Inhibitor"]]))
+    DoseFreq_inhib <- switch(as.character(Deets[["DoseInt_inhib"]]),
+                             "12" = "BID",
+                             "24" = "QD",
+                             "8" = "TID",
+                             "Single Dose" = "single dose")
+    
+    # Day substrate was administered
+    StartDoseDay_sub <-
+        as.numeric(sub("Day ", "",
+                       str_split(Deets[["StartDayTime_sub"]], ", ")[[1]][1]))
+    
+    # Days inhibitor was administered
+    StartDoseDay_inhib <- as.numeric(sub("Day ", "",
+                                         str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]][1]))
+    
+    LastDoseDay_inhib <-
+        (Deets[["DoseInt_inhib"]] * Deets[["NumDoses_inhib"]])/24
+    
+    
+    # Putting everything together
+    sectionInfo <- c(sectionInfo, Deets, Population,
+                     "NumSimSubj" = NumSimSubj,
+                     "DoseFreq" = DoseFreq,
+                     "DoseFreq_inhib" = DoseFreq_inhib,
+                     "StartDoseDay_sub" = StartDoseDay_sub,
+                     "StartDoseDay_inhib" = StartDoseDay_inhib,
+                     "LastDoseDay_inhib" = LastDoseDay_inhib)
+    
+    sectionInfo <- sectionInfo[sort(names(sectionInfo))]
+    
+    return(sectionInfo)
 }

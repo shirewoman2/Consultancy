@@ -32,14 +32,14 @@
 #'
 #'
 round_up      <- function(x) {
-      # function to round up to the nearest power of 10
-
-      ## NOTE TO DEVELOPERS: If you change any of the text for the description,
-      ## please copy and paste that texe above all the other functions included in
-      ## this script. That way, when people search for any of the functions here,
-      ## they'll see the same help file.
-
-      10^ceiling(log10(x))
+    # function to round up to the nearest power of 10
+    
+    ## NOTE TO DEVELOPERS: If you change any of the text for the description,
+    ## please copy and paste that texe above all the other functions included in
+    ## this script. That way, when people search for any of the functions here,
+    ## they'll see the same help file.
+    
+    10^ceiling(log10(x))
 }
 
 #' Round a number or vector of numbers up or down to nice intervals
@@ -109,13 +109,13 @@ round_down    <- function(x) 10^floor(log10(x))
 #'
 #'
 round_up_nice <- function(x, nice=seq(1, 10, 0.1)) {    # function to round up to the nearest "nice" value (obtained
-      if(length(x) == 1){
-            10^floor(log10(x)) * nice[[which(x <= 10^floor(log10(x)) * nice)[[1]]]]
-      } else {
-            sapply(x,
-                   FUN = function(x){10^floor(log10(x)) *
-                               nice[[which(x <= 10^floor(log10(x)) * nice)[[1]]]]})
-      }
+    if(length(x) == 1){
+        10^floor(log10(x)) * nice[[which(x <= 10^floor(log10(x)) * nice)[[1]]]]
+    } else {
+        sapply(x,
+               FUN = function(x){10^floor(log10(x)) *
+                       nice[[which(x <= 10^floor(log10(x)) * nice)[[1]]]]})
+    }
 }
 
 
@@ -152,18 +152,18 @@ round_up_nice <- function(x, nice=seq(1, 10, 0.1)) {    # function to round up t
 #'
 #'
 round_up_unit <- function(x, b) { # round x up to nearest b
-
-      subfun <- function(x){
-            rounded <- round(x/b)*b
-            if (rounded < x) {rounded <- rounded + b}
-            return(rounded)
-      }
-
-      if(length(x) == 1){
-            return(subfun(x))
-      } else {
-            return(sapply(x, FUN = subfun))
-      }
+    
+    subfun <- function(x){
+        rounded <- round(x/b)*b
+        if (rounded < x) {rounded <- rounded + b}
+        return(rounded)
+    }
+    
+    if(length(x) == 1){
+        return(subfun(x))
+    } else {
+        return(sapply(x, FUN = subfun))
+    }
 }
 
 #' Round a number or vector of numbers up or down to nice intervals
@@ -199,19 +199,19 @@ round_up_unit <- function(x, b) { # round x up to nearest b
 #'
 #'
 round_down_unit <- function(x, b) { # round x down to nearest b
-      subfun <- function(x){
-            rounded <- round(x/b)*b
-            if(rounded %% b == 0 & rounded < x){
-                  return(rounded)
-            } else {
-                  if (rounded > x) {rounded <- rounded - b}
-                  return(rounded)
-            }
-      }
-
-      if(length(x) == 1){
-            return(subfun(x))
-      } else {
-            return(sapply(x, FUN = subfun))
-      }
+    subfun <- function(x){
+        rounded <- round(x/b)*b
+        if(rounded %% b == 0 & rounded < x){
+            return(rounded)
+        } else {
+            if (rounded > x) {rounded <- rounded - b}
+            return(rounded)
+        }
+    }
+    
+    if(length(x) == 1){
+        return(subfun(x))
+    } else {
+        return(sapply(x, FUN = subfun))
+    }
 }

@@ -14,16 +14,33 @@ time and concentration data.}
 }
 \value{
 a data.frame with the following columns:
-  \describe{\item{Individual}{the individual ID for the data point}
-  \item{Time}{time since dosing} \item{Conc}{concentration}
-  \item{TimeUnits}{the units of measurement for the time column}
-  \item{ConcUnits}{the units of measurement for the concentration column}}
+  \describe{\item{Individual}{the individual ID}
+
+  \item{CompoundID}{the compound ID listed in the observed file, e.g., "Sub
+  Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma"}
+  
+  \item{Tissue}{the tissue}
+
+  \item{Time}{time since dosing}
+
+  \item{Conc}{concentration}
+
+  \item{Time_units}{the units of measurement for the time column}
+
+  \item{Conc_units}{the units of measurement for the concentration column}
+
+  \item{Period, Age, Weight_kg, Height_cm, Sex, SerumCreatinine_umolL,
+  HSA_gL, Haematocrit, PhenotypeCYP2D6, SmokingStatus}{the columns in the
+  template for "Period" and "Covariates" but with R-friendly names.
+  (Currently, no dosing information is pulled because the data format is
+  different from what we need for other functions related to
+  concentration-time data.)}}
 }
 \description{
 Extract observed data from an Excel file that follows the Simcyp Simulator
-template for converting concentration-time data into an XML file.
-\emph{Important caveat:} This function has only been set up for really simple
-files with only a single substrate concentration in plasma.
+template for converting concentration-time data into an XML file. Note: This
+does not pull dosing information at this time, but we could change that if
+there's interest.
 }
 \examples{
 obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx"

@@ -25,6 +25,7 @@ ct_plot(
   line_type = NA,
   line_transparency = NA,
   line_color = NA,
+  line_width = NA,
   include_legend = FALSE,
   legend_label = NA,
   prettify_effector_name = TRUE,
@@ -107,7 +108,11 @@ be an inducer, activator, suppressor, or inhibitor, but it's labeled as
   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
-  effector was dosed QD} }}
+  effector was dosed QD}
+
+  \item{a specific dose number with "dose" or "doses" as the prefix}{the time
+  range encompassing the requested doses, e.g., "dose 3" for the 3rd dose or
+  "doses 1 to 4" for doses 1 to 4}}}
 
 \item{x_axis_interval}{Set the x-axis major tick-mark interval. Acceptable
 input: any number or leave as NA to accept default values.}
@@ -148,15 +153,15 @@ limits for the semi-log plot will be automatically selected.}
 
   \describe{
 
-  \item{"means only"}{show only a single point at the arithmetic mean value
-  for each time point}
+  \item{means only}{show only a single point at the arithmetic mean value for
+  each time point}
 
-  \item{"geometric means only"}{show a single point at the geometric mean}
+  \item{geometric means only}{show a single point at the geometric mean}
 
-  \item{"all"}{show all the individual data (equivalently, leave
+  \item{all}{show all the individual data (equivalently, leave
   \code{obs_data_option} as NA)}
 
-  \item{"mean bars"}{show a point at the arithmetic mean for each time point
+  \item{mean bars}{show a point at the arithmetic mean for each time point
   and error bars for the arithmetic standard deviation}}}
 
 \item{obs_color}{If you would like the observed data points to be in color,
@@ -182,8 +187,8 @@ effector (when applicable). Input should look like this, for example:
 a dashed line for inhibitor 1. To see all possible \code{line_type}
 options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
 will be a solid line and substrate + inhibitor 1 will be a dashed line. If
-\code{figure_type} is "Freddy" and there's no effector present, which is
-a slightly different scenario than the other graph types, the 1st line type
+\code{figure_type} is "Freddy" and there's no effector present, which is a
+slightly different scenario than the other graph types, the 1st line type
 specified will be for the mean simulated concentration and the trial means,
 and the 2nd line type specified will be for the 5th and 95th percentiles.}
 
@@ -196,6 +201,10 @@ value will be automatically determined.}
 Acceptable input for, e.g., the substrate alone to be blue and the
 substrate + Inhibitor 1 to be red: \code{c("blue", "red")}. If left as NA,
 lines will be black or gray. Hex color codes are also ok to use.}
+
+\item{line_width}{Optionally specify how thick to make the lines. Acceptable
+input is a number; the default is 1 for most lines and 0.8 for some, to
+give you an idea of where to start.}
 
 \item{legend_label}{Optionally indicate on the legend whether the effector is
 an inhibitor,inducer, activator, or suppressor. Input will be used as the
@@ -234,27 +243,32 @@ instructions. We've tried to include a fair number of options here for
 flexibility, but many of the function arguments are optional; most of the
 time, you'll get decent-looking graphs while only setting a minimal number of
 arguments. If you want to plot enzyme abundance data, please see
-\code{\link{enz_plot}}. \strong{Note:} Currently, this only works for
-concentration-time data for the substrate, primary metabolite 1, secondary
-metabolite, or inhibitor 1. \strong{If your simulation included
-\emph{anything} other than those compounds, this is \emph{not} reliable.}
+\code{\link{enz_plot}}. \strong{A few notes:} \enumerate{\item{Not all
+substrate metabolites, inhibitors, or inhibitor metabolites are available in
+all tissues.} \item{When observed data are included in a simulator output
+file, because the simulator output does not explicitly say whether those
+observed data were in the presence of an effector, this function cannot tell
+the difference and will thus assume all observed data included in the
+simulator output were for the substrate in the \emph{absence} of any
+effector. It will further assume that the compound the observed data is for
+is the same as \code{compoundToExtract}. If you want to specify which
+compound the observed data were for and/or whether any effectors were
+present, please supply an observed data file to the argument
+\code{obs_data_file}.}}
 }
 \examples{
-sim_data_file <- "../Example simulator output.xlsx"
-obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
+# # Normal syntax with a fake file: 
+# sim_data_file <- "../Example simulator output.xlsx"
+# obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
 
-ct_plot(sim_data_file)
-ct_plot(sim_data_file, figure_type = "percentiles")
-ct_plot(sim_data_file, return_data = TRUE)
-ct_plot(sim_data_file, return_indiv_graphs = TRUE)
+# However, since we can't load an Excel file as an example, here are
+# some data to play with:
+data(LMVct)
 
-# Here's where adjusting or not adjusting the observed data time comes
-# into play:
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-        adjust_obs_time = FALSE)
+ct_plot(sim_obs_dataframe = LMVct)
+ct_plot(sim_obs_dataframe = LMVct, figure_type = "percentiles")
+ct_plot(sim_obs_dataframe = LMVct, return_data = TRUE)
+ct_plot(sim_obs_dataframe = LMVct, return_indiv_graphs = TRUE)
 
 # Perhaps you don't want to show *all* the data but instead want to
 # limit the time interval that is graphed. Use \code{time_range} here:
@@ -262,41 +276,24 @@ ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
         adjust_obs_time = FALSE, time_range = c(0, 24))
 
-# Or you can let it automatically calculate the time frame for the first or
-# last dose simulated
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
+# Or you can let it automatically calculate the time frame 
+# for a given set of doses
+ct_plot(sim_obs_dataframe = LMVct
         time_range = "first dose")
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
+ct_plot(sim_obs_dataframe = LMVct,
         time_range = "last dose")
 
-# These may be too busy when Inhibitor 1 is present:
-ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx")
-ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
-        figure_type = "trial percentiles")
+# The default graph may be too busy when Inhibitor 1 is present,
 # so you may want to consider only plotting means as an alternative:
-ct_plot(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+ct_plot(sim_obs_dataframe = LMVct,
         figure_type = "means only")
-
-# You can also add a separate observed concentration-time file for the
-# compound with Inhibitor 1 present. The graph will show those points
-# as open triangles.
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-        obs_inhibitor_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
-        time_range = "last dose")
-
-# If you've already got a data.frame formatted like the output
-# from extractConcTime...
-data(ConcTime)
-ct_plot(sim_obs_dataframe = ConcTime)
 
 # Add some further options for the look of your graph -- especially useful
 # if the default settings are clipping your data.
-ct_plot(sim_data_file = "../Example simulator output - MDZ + metabolites + inhibitor.xlsx",
+ct_plot(sim_obs_dataframe = LMVct,
         obs_data_option = "mean bars",
         obs_color = "red",
+        line_color = "blue",
         y_axis_limits_log = c(1e-05, 0.1),
         pad_x_axis = TRUE,
         include_legend = TRUE,

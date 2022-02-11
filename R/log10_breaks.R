@@ -26,27 +26,27 @@
 #'
 #'
 log10_breaks <- function(min, max, prettify = FALSE) {
-      if(any(c(min, max) <= 0)){
-            stop("Neither 'min' nor 'max' may be less than or equal to zero since log(0) and log(negative numbers) are undefined.")
-      }
-
-      if(length(log10(min):log10(max)) > 1){
-            breaks <- as.vector(outer(1:9, 10^(log10(min):log10(max))))
-      } else {
-            breaks <- seq(min, max, length.out = 10)
-      }
-
-      breaks <- breaks[breaks >= min & breaks <= max]
-
-      if(prettify){
-            breaks <- round_up_nice(breaks)
-      }
-
-      if(length(breaks) > 10){
-            breaks <- breaks[round(seq(1, length(breaks), length.out = 10))]
-      }
-
-      return(breaks)
+    if(any(c(min, max) <= 0)){
+        stop("Neither 'min' nor 'max' may be less than or equal to zero since log(0) and log(negative numbers) are undefined.")
+    }
+    
+    if(length(log10(min):log10(max)) > 1){
+        breaks <- as.vector(outer(1:9, 10^(log10(min):log10(max))))
+    } else {
+        breaks <- seq(min, max, length.out = 10)
+    }
+    
+    breaks <- breaks[breaks >= min & breaks <= max]
+    
+    if(prettify){
+        breaks <- round_up_nice(breaks)
+    }
+    
+    if(length(breaks) > 10){
+        breaks <- breaks[round(seq(1, length(breaks), length.out = 10))]
+    }
+    
+    return(breaks)
 }
 
 
