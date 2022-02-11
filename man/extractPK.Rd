@@ -25,10 +25,14 @@ individual parameters. Currently, the PK data are only for the substrate
 unless noted. To see the full set of possible parameters to extract, enter
 \code{data(AllPKParameters)} into the console.}
 
-\item{sheet}{Which sheet should be used for pulling the PK parameters?
-\emph{Note:} Unless you want a very specific Excel sheet that's not what
-the usual sheet name would be for a first or last dose, this function will
-work best if this is left as NA.}
+\item{sheet}{optionally specify the name of the sheet where you'd like to
+pull the PK data; for example, specify the tab where you have a
+user-defined AUC integration. If left as NA, it will automatically be
+selected and could come from multiple tabs. If you specify a sheet, you'll
+get all the possible parameters on that sheet, so no need to specify
+anything for \code{PKparameters}. \emph{Note:} Unless you want a very
+specific Excel sheet that's not what the usual sheet name would be for a
+first or last dose, this function will work best if this is left as NA.}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" or "blood".}
