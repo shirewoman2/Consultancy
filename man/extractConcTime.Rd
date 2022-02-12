@@ -43,11 +43,14 @@ extracted? Default is plasma for typical plasma concentration-time data.
 Other options are "blood" or any tissues included in "Sheet Options",
 "Tissues" in the simulator. All possible options: "plasma", "blood",
 "unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
-"brain", "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung",
-"muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
-unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
-vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
-"skin", or "spleen". Not case sensitive.}
+"brain", "feto-placenta", "GI tissue" (this is for a 1st-order absorption
+model; not ADAM model), "heart", "kidney", "liver", "lung", "muscle",
+"pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
+blood", "peripheral unbound plasma", "portal vein blood", "portal vein
+plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
+or "spleen". If you have an ADAM model, additional options are: "stomach",
+"duodenum", "jejunum I", "jejunum II", "ileum I", "ileum II", "ileum III",
+"ileum IV", "colon", "faeces", or "gut tissue". Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are "substrate" (default), "primary
@@ -90,7 +93,10 @@ A data.frame of concentration-time data with the following columns:
 
   \item{Time_units}{units used for time}
 
-  \item{Conc_units}{units used for concentrations}}
+  \item{Conc_units}{units used for concentrations},
+
+  \item{ConcType}{type of concentration (only applies to ADAM model
+  simulations), e.g., solid compound, free compound in lumen, Heff, etc.}}
 }
 \description{
 Extracts concentration-time data from simulator output Excel files and,
