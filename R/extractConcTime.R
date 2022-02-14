@@ -136,6 +136,12 @@ extractConcTime <- function(sim_data_file,
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
     
+    # If they used the American spelling of feces, change to the British version
+    # for compatibility with simulator output
+    if(tissue == "feces"){
+        tissue <- "faeces"
+    }
+    
     # The "exists" call in the next line is how we're checking whether this
     # function was called on its own (the result will be FALSE) or called from
     # extractConcTime_mult (result will be TRUE), where you can have multiple
@@ -179,6 +185,38 @@ extractConcTime <- function(sim_data_file,
         stop("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'primary metabolite 1', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'.")
     }
     
+    # Noting whether the tissue was from an ADAM model
+    ADAM <- tissue %in% c("stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
+                          "ileum ii", "ileum iii", "ileum iv", "colon", "faeces")
+    
+    if(ADAM & compoundToExtract != "substrate"){
+        if(tissue == "faeces"){
+            if(compoundToExtract != "inhibitor 1"){
+                if(FromMultFun){
+                    warning(paste0(str_to_title(compoundToExtract), 
+                                   " concentrations are not available for ",
+                                   tissue, " and thus will not be extracted."))
+                    return(data.frame())
+                } else {
+                    stop(paste0(str_to_title(compoundToExtract), 
+                                " concentrations are not available for ",
+                                tissue, " and thus cannot be extracted."))
+                }
+            }
+        } else {
+            if(FromMultFun){
+                warning(paste0(str_to_title(compoundToExtract), 
+                               " concentrations are not available for ",
+                               tissue, " and thus will not be extracted.")) 
+                return(data.frame())
+            } else {
+                stop(paste0(str_to_title(compoundToExtract), 
+                            " concentrations are not available for ",
+                            tissue, " and thus cannot be extracted.")) 
+            }
+        }
+    }
+    
     # Getting summary data for the simulation(s)
     if(FromMultFun == FALSE && exists("Deets", where = -1) == FALSE){
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
@@ -188,6 +226,8 @@ extractConcTime <- function(sim_data_file,
     EffectorPresent <- complete.cases(Deets$Inhibitor1)
     if(EffectorPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor")) &
        FromMultFun == FALSE){
+        # Note: This asking for a non-existant effector from the mult function
+        # will result in an empty data.frame for that, which is fine. 
         stop("There are no inhibitor data in the simulator output file supplied. Please either submit a different output file or request concentration-time data for a substrate or metabolite.")
     }
     AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
@@ -288,7 +328,7 @@ extractConcTime <- function(sim_data_file,
     if(tissue == "faeces"){
         SheetToDetect <- switch(compoundToExtract, 
                                 "inhibitor 1" = "Faeces Prof. .Inh 1", 
-                                "inhibitor 2" = "Faeces Prof. .Inh 2", 
+                                # inhibitor 2 does not appear to be available
                                 "substrate" = "Faeces Prof. .Sub")
     }
     
@@ -304,6 +344,7 @@ extractConcTime <- function(sim_data_file,
             return(data.frame())
         }
     }
+    
     # Reading in simulated concentration-time profile data
     sim_data_xl <- suppressMessages(
         readxl::read_excel(path = sim_data_file,
@@ -317,9 +358,6 @@ extractConcTime <- function(sim_data_file,
     
     # ADAM model -- except for gut tissue -- has different units depending on
     # what parameter you want.
-    ADAM <- tissue %in% c("stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
-                          "ileum ii", "ileum iii", "ileum iv", "colon", "faeces")
-    
     if(ADAM){
         PopStatRow <- which(sim_data_xl$...1 == "Population Statistics")
         Blank1 <- which(is.na(sim_data_xl$...1))
@@ -328,11 +366,10 @@ extractConcTime <- function(sim_data_file,
             rename(OrigVal = ...1) %>% 
             mutate(TypeCode = str_extract(
                 OrigVal, 
-                "^Ms|^C Lumen Free|^Inh C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue"), 
+                "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue"), 
                 Type = recode(TypeCode, 
                               "Ms" = "solid compound", 
                               "C Lumen Free" = "free compound in lumen", 
-                              "Inh C Lumen Free" = "free inhibitor in lumen",
                               "Heff" = "Heff", 
                               "Absorption Rate" = "absorption rate", 
                               "Mur" = "unreleased substrate in faeces", 
@@ -430,6 +467,14 @@ extractConcTime <- function(sim_data_file,
             } 
         }
         
+        # ADAM data include multiple types of concentrations. Dealing
+        # with that and extracting each one.
+        if(ADAM){
+            ConcTypes <- SimConcUnits$Type
+        } else {
+            ConcTypes <- "regular"
+        }
+        
         # aggregate data -------------------------------------------------------
         if("aggregate" %in% returnAggregateOrIndiv){
             
@@ -445,12 +490,6 @@ extractConcTime <- function(sim_data_file,
                                         which(1:nrow(sim_data_xl) > TimeRow))[1]
                 FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
                 NamesToCheck <- tolower(sim_data_xl$...1[TimeRow:(FirstBlank-1)])
-                
-                if(ADAM){
-                    ConcTypes <- SimConcUnits$Type
-                } else {
-                    ConcTypes <- "regular"
-                }
                 
                 sim_data_mean[[m]] <- list()
                 
@@ -541,117 +580,113 @@ extractConcTime <- function(sim_data_file,
                                                    SimConcUnits), 
                                ConcType = ifelse(ADAM, ii, NA))
                 }
-            }
-            
-            rm(RowsToUse, Include)
-            
-            if(EffectorPresent){
                 
-                for(ii in ConcTypes){
+                rm(RowsToUse, Include)
+                
+                if(EffectorPresent){
                     
-                    # Some sheets have all compounds included, so need to narrow
-                    # down which rows to check. Others don't have metabolites
-                    # listed on the same sheet, so that's why there are these
-                    # options.
-                    if(str_detect(tissue, "portal") | TissueType == "tissue"){
-                        if(ADAM){
-                            Include <- which(str_detect(NamesToCheck,
-                                                        paste0("^", 
-                                                               tolower(SimConcUnits$TypeCode[
-                                                                   SimConcUnits$Type == ii]))))
+                    for(ii in ConcTypes){
+                        
+                        # Some sheets have all compounds included, so need to narrow
+                        # down which rows to check. Others don't have metabolites
+                        # listed on the same sheet, so that's why there are these
+                        # options.
+                        if(str_detect(tissue, "portal") | TissueType == "tissue"){
+                            if(ADAM){
+                                Include <- which(str_detect(NamesToCheck,
+                                                            paste0("^", 
+                                                                   tolower(SimConcUnits$TypeCode[
+                                                                       SimConcUnits$Type == ii]))))
+                            } else {
+                                Include <-
+                                    which(str_detect(
+                                        NamesToCheck,
+                                        switch(m,
+                                               "substrate" =
+                                                   paste0("^cpv|^ctissue|^c", tolower(tissue)),
+                                               "primary metabolite 1" =
+                                                   paste0("^mpv |^mpv\\+|^mtissue|^m", tolower(tissue)),
+                                               "primary metabolite 2" =
+                                                   paste0("^pm2pv |^pm2pb\\+|^pm2tissue|^pm2", tolower(tissue)),
+                                               "secondary metabolite" =
+                                                   paste0("^miipv|^miitissue|^mii", tolower(tissue)),
+                                               "inhibitor 1" =
+                                                   paste0("^cpv|^ctissue|^c", tolower(tissue)),
+                                               "inhibitor 2" =
+                                                   paste0("^cpv|^ctissue|^c", tolower(tissue)),
+                                               "inhibitor 1 metabolite" =
+                                                   paste0("^cpv|^ctissue|^c", tolower(tissue)))))
+                            }
                         } else {
-                            Include <-
-                                which(str_detect(
-                                    NamesToCheck,
-                                    switch(m,
-                                           "substrate" =
-                                               paste0("^cpv|^ctissue|^c", tolower(tissue)),
-                                           "primary metabolite 1" =
-                                               paste0("^mpv |^mpv\\+|^mtissue|^m", tolower(tissue)),
-                                           "primary metabolite 2" =
-                                               paste0("^pm2pv |^pm2pb\\+|^pm2tissue|^pm2", tolower(tissue)),
-                                           "secondary metabolite" =
-                                               paste0("^miipv|^miitissue|^mii", tolower(tissue)),
-                                           "inhibitor 1" =
-                                               paste0("^cpv|^ctissue|^c", tolower(tissue)),
-                                           "inhibitor 2" =
-                                               paste0("^cpv|^ctissue|^c", tolower(tissue)),
-                                           "inhibitor 1 metabolite" =
-                                               paste0("^cpv|^ctissue|^c", tolower(tissue)))))
+                            Include <- which(str_detect(NamesToCheck, "^csys"))
                         }
-                    } else {
-                        Include <- which(str_detect(NamesToCheck, "^csys"))
+                        
+                        RowsToUse <- c(
+                            "mean" = intersect(
+                                which(str_detect(NamesToCheck, "mean") &
+                                          str_detect(NamesToCheck, "interaction") &
+                                          !str_detect(NamesToCheck, "geometric")),
+                                Include) + TimeRow-1,
+                            "per5" = intersect(
+                                which(str_detect(NamesToCheck," 5(th)? percentile|5th ptile") &
+                                          str_detect(NamesToCheck, "interaction") &
+                                          !str_detect(NamesToCheck, "95")),
+                                Include) + TimeRow-1,
+                            "per95" = intersect(
+                                which(str_detect(NamesToCheck, " 95(th)? percentile|95th ptile") &
+                                          str_detect(NamesToCheck, "interaction")),
+                                Include) + TimeRow-1,
+                            "per10" = intersect(
+                                which(str_detect(NamesToCheck," 10(th)? percentile|10th ptile") &
+                                          str_detect(NamesToCheck, "interaction")),
+                                Include) + TimeRow-1,
+                            "per90" = intersect(
+                                which(str_detect(NamesToCheck, " 90(th)? percentile|90th ptile") &
+                                          str_detect(NamesToCheck, "interaction")),
+                                Include) + TimeRow-1,
+                            "geomean" = intersect(
+                                which(str_detect(NamesToCheck, "geometric mean") &
+                                          str_detect(NamesToCheck, "interaction")),
+                                Include) + TimeRow-1,
+                            "median" = intersect(
+                                which(str_detect(NamesToCheck, "median") &
+                                          str_detect(NamesToCheck, "interaction")),
+                                Include) + TimeRow-1)
+                        if(length(RowsToUse) > 0){
+                            
+                            sim_data_mean_SubPlusEffector <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                                t() %>%
+                                as.data.frame() %>% slice(-(1:3)) %>%
+                                mutate_all(as.numeric)
+                            names(sim_data_mean_SubPlusEffector) <- c("Time", names(RowsToUse))
+                            sim_data_mean_SubPlusEffector <- sim_data_mean_SubPlusEffector %>%
+                                pivot_longer(names_to = "Trial", values_to = "Conc",
+                                             cols = -c(Time)) %>%
+                                mutate(Compound = MyCompound,
+                                       Inhibitor = str_c(AllEffectors, collapse = ", "),
+                                       CompoundID = m,
+                                       Time_units = SimTimeUnits,
+                                       Conc_units = ifelse(ADAM, 
+                                                           SimConcUnits$ConcUnit[
+                                                               SimConcUnits$Type == ii],
+                                                           SimConcUnits), 
+                                       ConcType = ifelse(ADAM, ii, NA))
+                            
+                            sim_data_mean[[m]][[ii]] <- bind_rows(sim_data_mean[[m]][[ii]],
+                                                                  sim_data_mean_SubPlusEffector)
+                            
+                        }
                     }
                     
-                    RowsToUse <- c(
-                        "mean" = intersect(
-                            which(str_detect(NamesToCheck, "mean") &
-                                      str_detect(NamesToCheck, "interaction") &
-                                      !str_detect(NamesToCheck, "geometric")),
-                            Include) + TimeRow-1,
-                        "per5" = intersect(
-                            which(str_detect(NamesToCheck," 5(th)? percentile|5th ptile") &
-                                      str_detect(NamesToCheck, "interaction") &
-                                      !str_detect(NamesToCheck, "95")),
-                            Include) + TimeRow-1,
-                        "per95" = intersect(
-                            which(str_detect(NamesToCheck, " 95(th)? percentile|95th ptile") &
-                                      str_detect(NamesToCheck, "interaction")),
-                            Include) + TimeRow-1,
-                        "per10" = intersect(
-                            which(str_detect(NamesToCheck," 10(th)? percentile|10th ptile") &
-                                      str_detect(NamesToCheck, "interaction")),
-                            Include) + TimeRow-1,
-                        "per90" = intersect(
-                            which(str_detect(NamesToCheck, " 90(th)? percentile|90th ptile") &
-                                      str_detect(NamesToCheck, "interaction")),
-                            Include) + TimeRow-1,
-                        "geomean" = intersect(
-                            which(str_detect(NamesToCheck, "geometric mean") &
-                                      str_detect(NamesToCheck, "interaction")),
-                            Include) + TimeRow-1,
-                        "median" = intersect(
-                            which(str_detect(NamesToCheck, "median") &
-                                      str_detect(NamesToCheck, "interaction")),
-                            Include) + TimeRow-1)
-                    if(length(RowsToUse) > 0){
-                        
-                        sim_data_mean_SubPlusEffector <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                            t() %>%
-                            as.data.frame() %>% slice(-(1:3)) %>%
-                            mutate_all(as.numeric)
-                        names(sim_data_mean_SubPlusEffector) <- c("Time", names(RowsToUse))
-                        sim_data_mean_SubPlusEffector <- sim_data_mean_SubPlusEffector %>%
-                            pivot_longer(names_to = "Trial", values_to = "Conc",
-                                         cols = -c(Time)) %>%
-                            mutate(Compound = MyCompound,
-                                   Inhibitor = str_c(AllEffectors, collapse = ", "),
-                                   CompoundID = m,
-                                   Time_units = SimTimeUnits,
-                                   Conc_units = ifelse(ADAM, 
-                                                       SimConcUnits$ConcUnit[
-                                                           SimConcUnits$Type == ii],
-                                                       SimConcUnits), 
-                                   ConcType = ifelse(ADAM, ii, NA))
-                        
-                        sim_data_mean[[m]][[ii]] <- bind_rows(sim_data_mean[[m]][[ii]],
-                                                              sim_data_mean_SubPlusEffector)
-                        
-                    }
+                    rm(RowsToUse, NamesToCheck, TimeRow, Include,
+                       FirstBlank, sim_data_mean_SubPlusEffector)
+                    
+                    sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
+                    
                 }
-                
-                rm(RowsToUse, NamesToCheck, TimeRow, Include,
-                   FirstBlank, sim_data_mean_SubPlusEffector)
-                
-                sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
-                
             }
             
             ## m is an inhibitor or inhibitor metabolite -----------
-            
-            # LEFT OFF HERE -- I haven't done much to account for ADAM model for
-            # inhibitors
-            
             
             # Inhibitor concentrations are only present on tabs
             # w/substrate info for systemic tissues.
@@ -661,13 +696,18 @@ extractConcTime <- function(sim_data_file,
                 
                 # Need to do this for each inhibitor present
                 sim_data_mean[[m]] <- list()
+                
                 TimeRow <- which(str_detect(sim_data_xl$...1,
                                             "^Time.*Inhibitor "))[1]
                 if(is.na(TimeRow)){ # This occurs when the tissue is not systemic
                     TimeRow <- which(str_detect(sim_data_xl$...1,
                                                 "Time "))
-                    TimeRow <- TimeRow[which(str_detect(sim_data_xl$...1[TimeRow + 1],
-                                                        "^I|CTissue"))][1]
+                    if(ADAM){
+                        TimeRow <- TimeRow[1]
+                    } else {
+                        TimeRow <- TimeRow[which(str_detect(sim_data_xl$...1[TimeRow + 1],
+                                                            "^I|CTissue"))][1]
+                    }
                 }
                 
                 # Figuring out which rows contain which data
@@ -678,56 +718,80 @@ extractConcTime <- function(sim_data_file,
                 
                 for(i in AllEffectors){
                     
-                    Include <- which(str_detect(NamesToCheck, NumCheck[i]))
+                    sim_data_mean[[m]][[i]] <- list()
                     
-                    RowsToUse <- c(
-                        "mean" = intersect(
-                            which(str_detect(NamesToCheck, "Mean") &
-                                      !str_detect(NamesToCheck, "Geome(t)?ric")), # There's a spelling error in some simulator output, and geometric is listed as "geomeric".
-                            Include) + TimeRow,
-                        "per5" = intersect(
-                            which(str_detect(NamesToCheck," 5(th)? percentile") &
-                                      !str_detect(NamesToCheck, "95")),
-                            Include) + TimeRow,
-                        "per95" = intersect(
-                            which(str_detect(NamesToCheck, " 95(th)? percentile")),
-                            Include) + TimeRow,
-                        "per10" = intersect(
-                            which(str_detect(NamesToCheck," 10(th)? percentile")),
-                            Include) + TimeRow,
-                        "per90" = intersect(
-                            which(str_detect(NamesToCheck, " 90(th)? percentile")),
-                            Include) + TimeRow,
-                        "geomean" = intersect(
-                            which(str_detect(NamesToCheck, "Geome(t)?ric Mean")),
-                            Include) + TimeRow,
-                        "median" = intersect(
-                            which(str_detect(NamesToCheck, "Median")),
-                            Include) + TimeRow)
+                    for(ii in ConcTypes){
+                        
+                        # Some sheets have all compounds included, so need to narrow
+                        # down which rows to check. Others don't have metabolites
+                        # listed on the same sheet, so that's why there are these
+                        # options.
+                        if(str_detect(tissue, "portal") | TissueType == "tissue"){
+                            if(ADAM){
+                                Include <- which(str_detect(NamesToCheck,
+                                                            paste0("^", 
+                                                                   SimConcUnits$TypeCode[
+                                                                       SimConcUnits$Type == ii])))
+                            } else {
+                                Include <- which(str_detect(NamesToCheck, NumCheck[i]))
+                            }
+                        } else {
+                            Include <- which(str_detect(NamesToCheck, NumCheck[i]))
+                        }
+                        
+                        RowsToUse <- c(
+                            "mean" = intersect(
+                                which(str_detect(NamesToCheck, "Mean") &
+                                          !str_detect(NamesToCheck, "Geome(t)?ric")), # There's a spelling error in some simulator output, and geometric is listed as "geomeric".
+                                Include) + TimeRow,
+                            "per5" = intersect(
+                                which(str_detect(NamesToCheck," 5(th)? percentile|5th ptile") &
+                                          !str_detect(NamesToCheck, "95")),
+                                Include) + TimeRow,
+                            "per95" = intersect(
+                                which(str_detect(NamesToCheck, " 95(th)? percentile|95th ptile")),
+                                Include) + TimeRow,
+                            "per10" = intersect(
+                                which(str_detect(NamesToCheck," 10(th)? percentile|10th ptile")),
+                                Include) + TimeRow,
+                            "per90" = intersect(
+                                which(str_detect(NamesToCheck, " 90(th)? percentile|90th ptile")),
+                                Include) + TimeRow,
+                            "geomean" = intersect(
+                                which(str_detect(NamesToCheck, "Geome(t)?ric Mean")),
+                                Include) + TimeRow,
+                            "median" = intersect(
+                                which(str_detect(NamesToCheck, "Median")),
+                                Include) + TimeRow)
+                        
+                        sim_data_mean[[m]][[i]][[ii]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                            t() %>%
+                            as.data.frame() %>% slice(-(1:3)) %>%
+                            mutate_all(as.numeric)
+                        names(sim_data_mean[[m]][[i]][[ii]]) <-
+                            c("Time", names(RowsToUse))
+                        sim_data_mean[[m]][[i]][[ii]] <- sim_data_mean[[m]][[i]][[ii]] %>%
+                            pivot_longer(names_to = "Trial", values_to = "Conc",
+                                         cols = -c("Time")) %>%
+                            mutate(Compound = i,
+                                   CompoundID = m,
+                                   Inhibitor = str_c(AllEffectors, collapse = ", "),
+                                   Time_units = SimTimeUnits,
+                                   Conc_units = ifelse(ADAM, 
+                                                       SimConcUnits$ConcUnit[
+                                                           SimConcUnits$Type == ii],
+                                                       SimConcUnits), 
+                                   ConcType = ifelse(ADAM, ii, NA))
+                        rm(RowsToUse, Include)
+                    }
                     
-                    sim_data_mean[[m]][[i]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                        t() %>%
-                        as.data.frame() %>% slice(-(1:3)) %>%
-                        mutate_all(as.numeric)
-                    names(sim_data_mean[[m]][[i]]) <- c("Time", names(RowsToUse))
-                    sim_data_mean[[m]][[i]] <- sim_data_mean[[m]][[i]] %>%
-                        pivot_longer(names_to = "Trial", values_to = "Conc",
-                                     cols = -c(Time)) %>%
-                        mutate(Compound = i,
-                               CompoundID = m,
-                               Inhibitor = str_c(AllEffectors, collapse = ", "),
-                               Time_units = SimTimeUnits,
-                               Conc_units = ifelse(ADAM, 
-                                                   SimConcUnits$ConcUnit[
-                                                       SimConcUnits$Type == ii],
-                                                   SimConcUnits), 
-                               ConcType = ifelse(ADAM, ii, NA))
-                    rm(RowsToUse, Include)
+                    sim_data_mean[[m]][[i]] <- bind_rows(sim_data_mean[[m]][[i]])
+                    
                 }
                 
                 sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
-                
                 rm(NamesToCheck, TimeRow, FirstBlank)
+                
             }
         }
         
@@ -744,6 +808,8 @@ extractConcTime <- function(sim_data_file,
                 TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
                 TimeRow <- TimeRow[TimeRow > StartIndiv][1]
                 
+                # ADAM data include multiple types of concentrations. Dealing
+                # with that and extracting each one.
                 if(ADAM){
                     ConcTypes <- SimConcUnits$Type
                 } else {
@@ -886,12 +952,10 @@ extractConcTime <- function(sim_data_file,
                     }
                 }
                 
-                rm(RowsToUse, TimeRow, sim_data_ind_SubPlusEffector)
+                rm(RowsToUse, TimeRow)
             }
             
-            ## m is an inhibitor or inhibitor metabolite -----------
-            
-            # LEFT OFF HERE - haven't done much to account for ADAM for inhibs
+            ## m is an inhibitor or inhibitor metabolite ----------------------
             
             # Inhibitor concentrations are only present on tabs
             # w/substrate info for systemic tissues.
@@ -901,44 +965,80 @@ extractConcTime <- function(sim_data_file,
                 
                 sim_data_ind[[m]] <- list()
                 
-                if(compoundToExtract %in% c("inhibitor 1", "inhibitor 2",
-                                            "inhibitor 1 metabolite")){
-                    
-                    TimeRow <- which(str_detect(sim_data_xl$...1, "^Time.*Inhibitor "))
+                TimeRow <- which(str_detect(sim_data_xl$...1, "^Time.*Inhibitor "))
+                TimeRow <- TimeRow[TimeRow > StartIndiv]
+                
+                # TimeRow has length 0 when the tissue is not systemic or
+                # w/portal vein
+                if(length(TimeRow) == 0 || is.na(TimeRow)){ 
+                    TimeRow <- which(str_detect(sim_data_xl$...1,
+                                                "Time "))
                     TimeRow <- TimeRow[TimeRow > StartIndiv]
-                    if(length(TimeRow) == 0 || is.na(TimeRow)){ # This occurs when the tissue is not systemic or w/portal vein
-                        TimeRow <- which(str_detect(sim_data_xl$...1,
-                                                    "Time "))
-                        TimeRow <- TimeRow[TimeRow > StartIndiv]
+                    
+                    if(ADAM){
+                        TimeRow <- TimeRow[1]
+                    } else {
                         TimeRow <- TimeRow[which(str_detect(sim_data_xl$...1[TimeRow + 1],
                                                             "^I|^CTissue"))][1]
                     }
+                }
+                
+                # Figuring out which rows contain which data
+                FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
+                                        which(1:nrow(sim_data_xl) > TimeRow))[1]
+                FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl) + 1, FirstBlank)
+                NamesToCheck <- sim_data_xl$...1[(TimeRow+1):(FirstBlank-1)]
+                
+                # Need to do this for each inhibitor present
+                for(i in AllEffectors){
                     
-                    # Figuring out which rows contain which data
-                    FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
-                                            which(1:nrow(sim_data_xl) > TimeRow))[1]
-                    FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
-                    NamesToCheck <- sim_data_xl$...1[(TimeRow+1):(FirstBlank-1)]
+                    sim_data_ind[[m]][[i]] <- list()
                     
-                    # Need to do this for each inhibitor present
-                    # Need to do this for each inhibitor present
-                    for(i in AllEffectors){
-                        Include <- which(str_detect(NamesToCheck, NumCheck[i]))
+                    for(ii in ConcTypes){
+                        
+                        # Some sheets have all compounds included, so need to
+                        # narrow down which rows to check. Others don't have
+                        # metabolites listed on the same sheet, so that's why
+                        # there are these options.
+                        if(str_detect(tissue, "portal") | TissueType == "tissue"){
+                            if(ADAM){
+                                Include <- 
+                                    which(str_detect(NamesToCheck,
+                                                     paste0("^", 
+                                                            SimConcUnits$TypeCode[
+                                                                SimConcUnits$Type == ii])))
+                            } else {
+                                Include <- which(str_detect(NamesToCheck, NumCheck[i]))
+                            }
+                        } else {
+                            Include <- which(str_detect(NamesToCheck, NumCheck[i]))
+                        }
+                        
                         if(length(Include) == 0){
                             Include <- 1:length(NamesToCheck)
                         }
                         
-                        RowsToUse <- which(str_detect(
-                            sim_data_xl$...1,
-                            switch(TissueType,
-                                   "systemic" = paste0(NumCheck[i], " \\(|",
-                                                       i),
-                                   "tissue" = paste0("ITissue\\(Inh 1|",
-                                                     "I", tissue, " 1 \\("))
-                        ))
+                        if(ADAM){
+                            RowsToUse <- 
+                                which(
+                                    str_detect(sim_data_xl$...1, 
+                                               paste0("^", 
+                                                      SimConcUnits$TypeCode[
+                                                          SimConcUnits$Type == ii])))
+                        } else {
+                            RowsToUse <- which(str_detect(
+                                sim_data_xl$...1,
+                                switch(TissueType,
+                                       "systemic" = paste0(NumCheck[i], " \\(|",
+                                                           i),
+                                       "tissue" = paste0("ITissue\\(Inh 1|",
+                                                         "I", tissue, " 1 \\("))
+                            ))
+                        }
+                        
                         RowsToUse <- RowsToUse[which(RowsToUse > TimeRow)]
                         
-                        sim_data_ind[[m]][[i]] <-
+                        sim_data_ind[[m]][[i]][[ii]] <-
                             sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                             t() %>%
                             as.data.frame() %>% slice(-(1:3)) %>%
@@ -949,11 +1049,11 @@ extractConcTime <- function(sim_data_file,
                             rename(Individual = ...2, Trial = ...3) %>%
                             mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
                         
-                        names(sim_data_ind[[m]][[i]])[2:ncol(sim_data_ind[[m]][[i]])] <-
+                        names(sim_data_ind[[m]][[i]][[ii]])[2:ncol(sim_data_ind[[m]][[i]][[ii]])] <-
                             SubjTrial$SubjTrial
                         
-                        sim_data_ind[[m]][[i]] <-
-                            sim_data_ind[[m]][[i]] %>%
+                        sim_data_ind[[m]][[i]][[ii]] <-
+                            sim_data_ind[[m]][[i]][[ii]] %>%
                             pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                          cols = -Time) %>%
                             mutate(Compound = i,
@@ -971,11 +1071,13 @@ extractConcTime <- function(sim_data_file,
                         
                         rm(RowsToUse)
                     }
+                    
+                    sim_data_ind[[m]][[i]] <- bind_rows(sim_data_ind[[m]][[i]])
                 }
+                
+                sim_data_ind[[m]] <- bind_rows(sim_data_ind[[m]])
+                
             }
-            
-            sim_data_ind[[m]] <- bind_rows(sim_data_ind[[m]])
-            rm(TimeRow)
         }
         
         # observed data -------------------------------------------------------
