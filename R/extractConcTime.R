@@ -478,6 +478,8 @@ extractConcTime <- function(sim_data_file,
         # aggregate data -------------------------------------------------------
         if("aggregate" %in% returnAggregateOrIndiv){
             
+            sim_data_mean[[m]] <- list()
+            
             ## m is substrate or substrate metabolite -----------
             if(str_detect(m, "substrate|metabolite") &
                !str_detect(m, "inhibitor")){
@@ -491,9 +493,7 @@ extractConcTime <- function(sim_data_file,
                 FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
                 NamesToCheck <- tolower(sim_data_xl$...1[TimeRow:(FirstBlank-1)])
                 
-                sim_data_mean[[m]] <- list()
-                
-                for(ii in ConcTypes){
+                for(n in ConcTypes){
                     
                     # Some sheets have all compounds included, so need to narrow
                     # down which rows to check. Others don't have metabolites
@@ -504,7 +504,7 @@ extractConcTime <- function(sim_data_file,
                             Include <- which(str_detect(NamesToCheck,
                                                         paste0("^", 
                                                                tolower(SimConcUnits$TypeCode[
-                                                                   SimConcUnits$Type == ii]))))
+                                                                   SimConcUnits$Type == n]))))
                         } else {
                             Include <-
                                 which(str_detect(
@@ -562,12 +562,12 @@ extractConcTime <- function(sim_data_file,
                                       !str_detect(NamesToCheck, "interaction")),
                             Include) + TimeRow-1)
                     
-                    sim_data_mean[[m]][[ii]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                    sim_data_mean[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric)
-                    names(sim_data_mean[[m]][[ii]]) <- c("Time", names(RowsToUse))
-                    sim_data_mean[[m]][[ii]] <- sim_data_mean[[m]][[ii]] %>%
+                    names(sim_data_mean[[m]][[n]]) <- c("Time", names(RowsToUse))
+                    sim_data_mean[[m]][[n]] <- sim_data_mean[[m]][[n]] %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc",
                                      cols = -c(Time)) %>%
                         mutate(Compound = MyCompound,
@@ -576,16 +576,16 @@ extractConcTime <- function(sim_data_file,
                                Time_units = SimTimeUnits,
                                Conc_units = ifelse(ADAM, 
                                                    SimConcUnits$ConcUnit[
-                                                       SimConcUnits$Type == ii],
+                                                       SimConcUnits$Type == n],
                                                    SimConcUnits), 
-                               ConcType = ifelse(ADAM, ii, NA))
+                               ConcType = ifelse(ADAM, n, NA))
+                    
+                    rm(RowsToUse, Include)
                 }
-                
-                rm(RowsToUse, Include)
                 
                 if(EffectorPresent){
                     
-                    for(ii in ConcTypes){
+                    for(n in ConcTypes){
                         
                         # Some sheets have all compounds included, so need to narrow
                         # down which rows to check. Others don't have metabolites
@@ -596,7 +596,7 @@ extractConcTime <- function(sim_data_file,
                                 Include <- which(str_detect(NamesToCheck,
                                                             paste0("^", 
                                                                    tolower(SimConcUnits$TypeCode[
-                                                                       SimConcUnits$Type == ii]))))
+                                                                       SimConcUnits$Type == n]))))
                             } else {
                                 Include <-
                                     which(str_detect(
@@ -652,6 +652,7 @@ extractConcTime <- function(sim_data_file,
                                 which(str_detect(NamesToCheck, "median") &
                                           str_detect(NamesToCheck, "interaction")),
                                 Include) + TimeRow-1)
+                        
                         if(length(RowsToUse) > 0){
                             
                             sim_data_mean_SubPlusEffector <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
@@ -668,22 +669,21 @@ extractConcTime <- function(sim_data_file,
                                        Time_units = SimTimeUnits,
                                        Conc_units = ifelse(ADAM, 
                                                            SimConcUnits$ConcUnit[
-                                                               SimConcUnits$Type == ii],
+                                                               SimConcUnits$Type == n],
                                                            SimConcUnits), 
-                                       ConcType = ifelse(ADAM, ii, NA))
+                                       ConcType = ifelse(ADAM, n, NA))
                             
-                            sim_data_mean[[m]][[ii]] <- bind_rows(sim_data_mean[[m]][[ii]],
+                            sim_data_mean[[m]][[n]] <- bind_rows(sim_data_mean[[m]][[n]],
                                                                   sim_data_mean_SubPlusEffector)
                             
+                        rm(RowsToUse, NamesToCheck, TimeRow, Include,
+                           FirstBlank)
+                        
                         }
                     }
-                    
-                    rm(RowsToUse, NamesToCheck, TimeRow, Include,
-                       FirstBlank, sim_data_mean_SubPlusEffector)
-                    
-                    sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
-                    
                 }
+                
+                sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
             }
             
             ## m is an inhibitor or inhibitor metabolite -----------
@@ -693,9 +693,6 @@ extractConcTime <- function(sim_data_file,
             if(m %in% c("inhibitor 1", "inhibitor 2",
                         "inhibitor 1 metabolite") &
                length(AllEffectors) > 0){
-                
-                # Need to do this for each inhibitor present
-                sim_data_mean[[m]] <- list()
                 
                 TimeRow <- which(str_detect(sim_data_xl$...1,
                                             "^Time.*Inhibitor "))[1]
@@ -716,11 +713,12 @@ extractConcTime <- function(sim_data_file,
                 FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
                 NamesToCheck <- sim_data_xl$...1[(TimeRow+1):(FirstBlank-1)]
                 
+                # Need to do this for each inhibitor present
                 for(i in AllEffectors){
                     
                     sim_data_mean[[m]][[i]] <- list()
                     
-                    for(ii in ConcTypes){
+                    for(n in ConcTypes){
                         
                         # Some sheets have all compounds included, so need to narrow
                         # down which rows to check. Others don't have metabolites
@@ -731,7 +729,7 @@ extractConcTime <- function(sim_data_file,
                                 Include <- which(str_detect(NamesToCheck,
                                                             paste0("^", 
                                                                    SimConcUnits$TypeCode[
-                                                                       SimConcUnits$Type == ii])))
+                                                                       SimConcUnits$Type == n])))
                             } else {
                                 Include <- which(str_detect(NamesToCheck, NumCheck[i]))
                             }
@@ -764,13 +762,13 @@ extractConcTime <- function(sim_data_file,
                                 which(str_detect(NamesToCheck, "Median")),
                                 Include) + TimeRow)
                         
-                        sim_data_mean[[m]][[i]][[ii]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                        sim_data_mean[[m]][[i]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                             t() %>%
                             as.data.frame() %>% slice(-(1:3)) %>%
                             mutate_all(as.numeric)
-                        names(sim_data_mean[[m]][[i]][[ii]]) <-
+                        names(sim_data_mean[[m]][[i]][[n]]) <-
                             c("Time", names(RowsToUse))
-                        sim_data_mean[[m]][[i]][[ii]] <- sim_data_mean[[m]][[i]][[ii]] %>%
+                        sim_data_mean[[m]][[i]][[n]] <- sim_data_mean[[m]][[i]][[n]] %>%
                             pivot_longer(names_to = "Trial", values_to = "Conc",
                                          cols = -c("Time")) %>%
                             mutate(Compound = i,
@@ -779,9 +777,10 @@ extractConcTime <- function(sim_data_file,
                                    Time_units = SimTimeUnits,
                                    Conc_units = ifelse(ADAM, 
                                                        SimConcUnits$ConcUnit[
-                                                           SimConcUnits$Type == ii],
+                                                           SimConcUnits$Type == n],
                                                        SimConcUnits), 
-                                   ConcType = ifelse(ADAM, ii, NA))
+                                   ConcType = ifelse(ADAM, n, NA))
+                        
                         rm(RowsToUse, Include)
                     }
                     
@@ -800,6 +799,8 @@ extractConcTime <- function(sim_data_file,
             
             StartIndiv <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))
             
+            sim_data_ind[[m]] <- list()
+            
             ## m is substrate or substrate metabolite -----------
             if(str_detect(m, "substrate|metabolite") &
                !str_detect(m, "inhibitor")){
@@ -816,16 +817,14 @@ extractConcTime <- function(sim_data_file,
                     ConcTypes <- "regular"
                 }
                 
-                sim_data_ind[[m]] <- list()
-                
-                for(ii in ConcTypes){
+                for(n in ConcTypes){
                     
                     if(ADAM){
                         RowsToUse <- which(
                             str_detect(tolower(sim_data_xl$...1), 
                                        paste0("^", 
                                               tolower(SimConcUnits$TypeCode[
-                                                  SimConcUnits$Type == ii]))) &
+                                                  SimConcUnits$Type == n]))) &
                                 !str_detect(sim_data_xl$...1, 
                                             "with interaction|Inh C Lumen Free"))
                     } else {
@@ -851,7 +850,7 @@ extractConcTime <- function(sim_data_file,
                     
                     RowsToUse <- RowsToUse[RowsToUse > TimeRow]
                     
-                    sim_data_ind[[m]][[ii]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                    sim_data_ind[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                         t() %>%
                         as.data.frame() %>% slice(-(1:3)) %>%
                         mutate_all(as.numeric) %>%
@@ -861,9 +860,9 @@ extractConcTime <- function(sim_data_file,
                         rename(Individual = ...2, Trial = ...3) %>%
                         mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
                     
-                    names(sim_data_ind[[m]][[ii]])[2:ncol(sim_data_ind[[m]][[ii]])] <- SubjTrial$SubjTrial
+                    names(sim_data_ind[[m]][[n]])[2:ncol(sim_data_ind[[m]][[n]])] <- SubjTrial$SubjTrial
                     
-                    sim_data_ind[[m]][[ii]] <- sim_data_ind[[m]][[ii]] %>%
+                    sim_data_ind[[m]][[n]] <- sim_data_ind[[m]][[n]] %>%
                         pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
                         mutate(Compound = MyCompound,
@@ -873,18 +872,19 @@ extractConcTime <- function(sim_data_file,
                                Time_units = SimTimeUnits,
                                Conc_units = ifelse(ADAM, 
                                                    SimConcUnits$ConcUnit[
-                                                       SimConcUnits$Type == ii],
+                                                       SimConcUnits$Type == n],
                                                    SimConcUnits), 
-                               ConcType = ifelse(ADAM, ii, NA)) %>%
+                               ConcType = ifelse(ADAM, n, NA)) %>%
                         separate(SubjTrial, into = c("Individual", "Trial"),
                                  sep = "_")
+                    
                     rm(RowsToUse)
                     
                 }
                 
                 if(EffectorPresent){
                     
-                    for(ii in ConcTypes){
+                    for(n in ConcTypes){
                         
                         if(ADAM){
                             RowsToUse <- intersect(
@@ -892,7 +892,7 @@ extractConcTime <- function(sim_data_file,
                                     str_detect(tolower(sim_data_xl$...1), 
                                                paste0("^", 
                                                       tolower(SimConcUnits$TypeCode[
-                                                          SimConcUnits$Type == ii])))), 
+                                                          SimConcUnits$Type == n])))), 
                                 which(
                                     str_detect(sim_data_xl$...1, 
                                                "with interaction|Inh C Lumen")) )
@@ -940,19 +940,21 @@ extractConcTime <- function(sim_data_file,
                                        Time_units = SimTimeUnits,
                                        Conc_units = ifelse(ADAM, 
                                                            SimConcUnits$ConcUnit[
-                                                               SimConcUnits$Type == ii],
+                                                               SimConcUnits$Type == n],
                                                            SimConcUnits), 
-                                       ConcType = ifelse(ADAM, ii, NA)) %>%
+                                       ConcType = ifelse(ADAM, n, NA)) %>%
                                 separate(SubjTrial, into = c("Individual", "Trial"),
                                          sep = "_")
                             
-                            sim_data_ind[[m]] <- bind_rows(sim_data_ind[[m]],
+                            sim_data_ind[[m]][[n]] <- bind_rows(sim_data_ind[[m]][[n]],
                                                            sim_data_ind_SubPlusEffector)
+                            
+                            rm(RowsToUse, TimeRow)
                         }
                     }
                 }
                 
-                rm(RowsToUse, TimeRow)
+                sim_data_ind[[m]] <- bind_rows(sim_data_ind[[m]])
             }
             
             ## m is an inhibitor or inhibitor metabolite ----------------------
@@ -994,7 +996,7 @@ extractConcTime <- function(sim_data_file,
                     
                     sim_data_ind[[m]][[i]] <- list()
                     
-                    for(ii in ConcTypes){
+                    for(n in ConcTypes){
                         
                         # Some sheets have all compounds included, so need to
                         # narrow down which rows to check. Others don't have
@@ -1006,7 +1008,7 @@ extractConcTime <- function(sim_data_file,
                                     which(str_detect(NamesToCheck,
                                                      paste0("^", 
                                                             SimConcUnits$TypeCode[
-                                                                SimConcUnits$Type == ii])))
+                                                                SimConcUnits$Type == n])))
                             } else {
                                 Include <- which(str_detect(NamesToCheck, NumCheck[i]))
                             }
@@ -1024,7 +1026,7 @@ extractConcTime <- function(sim_data_file,
                                     str_detect(sim_data_xl$...1, 
                                                paste0("^", 
                                                       SimConcUnits$TypeCode[
-                                                          SimConcUnits$Type == ii])))
+                                                          SimConcUnits$Type == n])))
                         } else {
                             RowsToUse <- which(str_detect(
                                 sim_data_xl$...1,
@@ -1038,7 +1040,7 @@ extractConcTime <- function(sim_data_file,
                         
                         RowsToUse <- RowsToUse[which(RowsToUse > TimeRow)]
                         
-                        sim_data_ind[[m]][[i]][[ii]] <-
+                        sim_data_ind[[m]][[i]][[n]] <-
                             sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                             t() %>%
                             as.data.frame() %>% slice(-(1:3)) %>%
@@ -1049,11 +1051,11 @@ extractConcTime <- function(sim_data_file,
                             rename(Individual = ...2, Trial = ...3) %>%
                             mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
                         
-                        names(sim_data_ind[[m]][[i]][[ii]])[2:ncol(sim_data_ind[[m]][[i]][[ii]])] <-
+                        names(sim_data_ind[[m]][[i]][[n]])[2:ncol(sim_data_ind[[m]][[i]][[n]])] <-
                             SubjTrial$SubjTrial
                         
-                        sim_data_ind[[m]][[i]][[ii]] <-
-                            sim_data_ind[[m]][[i]][[ii]] %>%
+                        sim_data_ind[[m]][[i]][[n]] <-
+                            sim_data_ind[[m]][[i]][[n]] %>%
                             pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                          cols = -Time) %>%
                             mutate(Compound = i,
@@ -1063,9 +1065,9 @@ extractConcTime <- function(sim_data_file,
                                    Time_units = SimTimeUnits,
                                    Conc_units = ifelse(ADAM, 
                                                        SimConcUnits$ConcUnit[
-                                                           SimConcUnits$Type == ii],
+                                                           SimConcUnits$Type == n],
                                                        SimConcUnits), 
-                                   ConcType = ifelse(ADAM, ii, NA)) %>%
+                                   ConcType = ifelse(ADAM, n, NA)) %>%
                             separate(SubjTrial, into = c("Individual", "Trial"),
                                      sep = "_")
                         
@@ -1323,16 +1325,23 @@ extractConcTime <- function(sim_data_file,
                                             Deets$StartHr_inhib))
     
     MyMaxDoseNum <- 
-        c("substrate" = Deets$NumDoses_sub,
-          "primary metabolite 1" = Deets$NumDoses_sub,
-          "primarymetabolite 2" = Deets$NumDoses_sub,
-          "secondary metabolite" = Deets$NumDoses_sub,
+        c("substrate" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                               1, Deets$NumDoses_sub),
+          "primary metabolite 1" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                          1, Deets$NumDoses_sub),
+          "primarymetabolite 2" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                         1, Deets$NumDoses_sub),
+          "secondary metabolite" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                          1, Deets$NumDoses_sub),
           "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                 Deets$NumDoses_inhib),
+                                 ifelse(Deets$Regimen_inhib == "Single Dose", 
+                                        1, Deets$NumDoses_inhib)),
           "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
-                                 Deets$NumDoses_inhib2),
+                                 ifelse(Deets$Regimen_inhib2 == "Single Dose", 
+                                        1, Deets$NumDoses_inhib2)),
           "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                            Deets$NumDoses_inhib))
+                                            ifelse(Deets$Regimen_inhib == "Single Dose", 
+                                                   1, Deets$NumDoses_inhib)))
     
     # Converting data to numeric while also retaining names
     suppressWarnings(
