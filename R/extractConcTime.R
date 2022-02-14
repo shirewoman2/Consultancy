@@ -675,15 +675,16 @@ extractConcTime <- function(sim_data_file,
                             
                             sim_data_mean[[m]][[n]] <- bind_rows(sim_data_mean[[m]][[n]],
                                                                   sim_data_mean_SubPlusEffector)
-                            
-                        rm(RowsToUse, NamesToCheck, TimeRow, Include,
-                           FirstBlank)
                         
                         }
                     }
                 }
                 
                 sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
+                
+                rm(RowsToUse, NamesToCheck, TimeRow, Include,
+                   FirstBlank)
+                
             }
             
             ## m is an inhibitor or inhibitor metabolite -----------
@@ -948,13 +949,15 @@ extractConcTime <- function(sim_data_file,
                             
                             sim_data_ind[[m]][[n]] <- bind_rows(sim_data_ind[[m]][[n]],
                                                            sim_data_ind_SubPlusEffector)
-                            
-                            rm(RowsToUse, TimeRow)
                         }
+                        
+                        rm(RowsToUse)
                     }
                 }
                 
                 sim_data_ind[[m]] <- bind_rows(sim_data_ind[[m]])
+                
+                rm(TimeRow)
             }
             
             ## m is an inhibitor or inhibitor metabolite ----------------------
@@ -1460,6 +1463,11 @@ extractConcTime <- function(sim_data_file,
                     c("obs", "obs+inhibitor", "mean", "median",
                       "geomean", "per5", "per95", "per10", "per90")))),
             Tissue = tissue,
+            Tissue = recode(Tissue, "jejunum i" = "jejunum I",
+                            "jejunum ii" = "jejunum II",
+                            "ileum i" = "ileum I", "ileum ii" = "ileum II",
+                            "ileum iii" = "ileum III", 
+                            "ileum iv" = "ileum IV"),
             File = sim_data_file) %>%
         arrange(across(any_of(c("Compound", "Inhibitor",
                                 "Individual", "Trial", "Time")))) %>%
