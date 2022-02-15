@@ -1094,7 +1094,8 @@ ct_plot <- function(sim_data_file = NA,
        str_detect(tolower(time_range_input), "dose") &
        pad_x_axis == FALSE){
         A <- A + scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                                    expand = c(0,0))
+                                    expand = c(0,0)) +
+            theme(plot.margin = unit(c(0.1, 0.1, 0.1, 0.75), "cm"))
     } else {
         A <- A +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
@@ -1137,10 +1138,23 @@ ct_plot <- function(sim_data_file = NA,
         Ylim_log[1] <- Ylim_data %>%
             filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
             pull(Conc) %>% min()
+        
+        # If Ylim_log[1] is 0, which can happen when the concs are really low, that
+        # is undefined for log transformations. Setting it to be max value / 100
+        # when that happens.
+        Ylim_log[1] <- ifelse(Ylim_log[1] == 0, 
+                              Ylim_log[2]/100, Ylim_log[1])
         Ylim_log[1] <- round_down(Ylim_log[1])
         Ylim_log[2] <- round_up(Ylim[2])
         
     } else {
+        # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and
+        # tell them we can't use 0.
+        if(y_axis_limits_log[1] <= 0){
+            y_axis_limits_log[1] <- y_axis_limits_log[2]/100
+            warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.")
+        }
+        
         # Having trouble w/our current setup sometimes clipping early data,
         # especially when figure type is trial means. Allowing user to
         # specify y axis limits here.
