@@ -96,7 +96,9 @@ A data.frame of concentration-time data with the following columns:
   \item{Conc_units}{units used for concentrations},
 
   \item{ConcType}{type of concentration (only applies to ADAM model
-  simulations), e.g., solid compound, free compound in lumen, Heff, etc.}}
+  simulations), e.g., "solid compound", "free compound in lumen", "Heff",
+  "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
+  in faeces", "dissolved compound", or "luminal CLint of compound". }}
 }
 \description{
 Extracts concentration-time data from simulator output Excel files and,

@@ -89,7 +89,9 @@
 #'   \item{Conc_units}{units used for concentrations},
 #'
 #'   \item{ConcType}{type of concentration (only applies to ADAM model
-#'   simulations), e.g., solid compound, free compound in lumen, Heff, etc.}}
+#'   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
+#'   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
+#'   in faeces", "dissolved compound", or "luminal CLint of compound". }}
 #'
 #' @import tidyverse
 #' @import readxl
