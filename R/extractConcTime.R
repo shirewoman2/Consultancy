@@ -191,6 +191,7 @@ extractConcTime <- function(sim_data_file,
     ADAM <- tissue %in% c("stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
                           "ileum ii", "ileum iii", "ileum iv", "colon", "faeces")
     
+    # Need to adjust this to deal with extractConcTime_mult! 
     if(ADAM & compoundToExtract != "substrate"){
         if(tissue == "faeces"){
             if(compoundToExtract != "inhibitor 1"){
@@ -220,8 +221,14 @@ extractConcTime <- function(sim_data_file,
     }
     
     # Getting summary data for the simulation(s)
-    if(FromMultFun == FALSE && exists("Deets", where = -1) == FALSE){
+    # if(FromMultFun == FALSE && exists("Deets_mult", where = -1) == FALSE){
+    #     Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+    # }
+    
+    if(FromMultFun == FALSE | exists("Deets_mult", where = -1) == FALSE){
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+    } else {
+        Deets <- Deets_mult
     }
     
     # Effector present?
@@ -676,16 +683,13 @@ extractConcTime <- function(sim_data_file,
                                        ConcType = ifelse(ADAM, n, NA))
                             
                             sim_data_mean[[m]][[n]] <- bind_rows(sim_data_mean[[m]][[n]],
-                                                                  sim_data_mean_SubPlusEffector)
-                        
+                                                                 sim_data_mean_SubPlusEffector)
+                            
                         }
                     }
                 }
                 
                 sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
-                
-                rm(RowsToUse, NamesToCheck, TimeRow, Include,
-                   FirstBlank)
                 
             }
             
@@ -950,7 +954,7 @@ extractConcTime <- function(sim_data_file,
                                          sep = "_")
                             
                             sim_data_ind[[m]][[n]] <- bind_rows(sim_data_ind[[m]][[n]],
-                                                           sim_data_ind_SubPlusEffector)
+                                                                sim_data_ind_SubPlusEffector)
                         }
                         
                         rm(RowsToUse)

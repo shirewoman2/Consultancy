@@ -61,7 +61,6 @@ extractExpDetails <- function(sim_data_file,
     # Noting which details are possible, which columns to search for their
     # names, which columns contain their values for substrates or
     # inhibitors, and what kind of data to format the output as at the end
-    data(AllExpDetails)
     
     # Still need to add info for searching for some details. Removing those
     # from consideration for now.

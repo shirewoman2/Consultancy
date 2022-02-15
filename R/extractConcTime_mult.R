@@ -135,16 +135,16 @@ extractConcTime_mult <- function(sim_data_files,
         MultData[[n]] <- list()
         
         # Getting summary data for the simulation(s)
-        Deets <- extractExpDetails(n, exp_details = "Input Sheet")
+        Deets_mult <- extractExpDetails(n, exp_details = "Input Sheet")
         
         # Names of compounds requested for checking whether the data exist
-        CompoundCheck <- c("substrate" = Deets$Substrate,
-                           "inhibitor 1" = Deets$Inhibitor1,
-                           "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite,
-                           "inhibitor 2" = Deets$Inhibitor2,
-                           "primary metabolite 1" = Deets$PrimaryMetabolite1,
-                           "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                           "secondary metabolite" = Deets$SecondaryMetabolite)
+        CompoundCheck <- c("substrate" = Deets_mult$Substrate,
+                           "inhibitor 1" = Deets_mult$Inhibitor1,
+                           "inhibitor 1 metabolite" = Deets_mult$Inhibitor1Metabolite,
+                           "inhibitor 2" = Deets_mult$Inhibitor2,
+                           "primary metabolite 1" = Deets_mult$PrimaryMetabolite1,
+                           "primary metabolite 2" = Deets_mult$PrimaryMetabolite2,
+                           "secondary metabolite" = Deets_mult$SecondaryMetabolite)
         
         # If the requested compound is not present in the Excel file, remove
         # it from consideration.
@@ -260,11 +260,12 @@ extractConcTime_mult <- function(sim_data_files,
             }
         }
         
-        # rm(Deets) # I had removed Deets here for safety just to make sure that
+        # rm(Deets_mult) # I had removed Deets_mult here for safety just to make sure that
         # it didn't get applied to the wrong file, but it was giving me an error
         # when I had removed it here, and, now that it's commented out, it's
         # working. Really check that this is applying the correct details to the
-        # correct files. I don't see why it's a problem to remove Deets here.
+        # correct files. I don't see why it's a problem to remove Deets_mult here.
+        
         MultData[[n]] <- bind_rows(MultData[[n]])
     }
     
