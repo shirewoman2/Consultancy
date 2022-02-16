@@ -860,9 +860,10 @@ ct_plot <- function(sim_obs_dataframe = NA,
                             linetype = Inhibitor, shape = Inhibitor,
                             color = Inhibitor)) +
                 geom_line(alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 1, line_width)) +
+                          lwd = ifelse(is.na(line_width), 1, line_width), 
+                          show.legend = FALSE) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"), show.legend = FALSE,
+                              filter(Trial == "mean"), 
                           lwd = ifelse(is.na(line_width), 1, line_width)) +
                 scale_shape_manual(values = obs_shape[1:2]) +
                 scale_linetype_manual(values = line_type[1:2]) +
@@ -1154,6 +1155,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
              linetype = ifelse(complete.cases(legend_label),
                                legend_label, "Inhibitor"),
              shape = ifelse(complete.cases(legend_label),
+                            legend_label, "Inhibitor"),
+             color = ifelse(complete.cases(legend_label), 
                             legend_label, "Inhibitor")) +
         coord_cartesian(xlim = time_range_relative) +
         theme(panel.background = element_rect(fill="white", color=NA),
