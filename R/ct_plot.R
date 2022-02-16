@@ -1165,11 +1165,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
         A <- A + theme(legend.position = "none")
     }
     
+    near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
+    
     if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
         
         Ylim_log <- Ylim
-        
-        near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
         
         Ylim_log[1] <- Ylim_data %>%
             filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
@@ -1191,18 +1191,44 @@ ct_plot <- function(sim_obs_dataframe = NA,
             warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.")
         }
         
-        # Having trouble w/our current setup sometimes clipping early data,
-        # especially when figure type is trial means. Allowing user to
-        # specify y axis limits here.
         Ylim_log <- y_axis_limits_log
-        Ylim_log[1] <- round_down(Ylim_log[1])
-        Ylim_log[2] <- round_up(Ylim[2])
+        
+        # Previously, we *had* been rounding here, but I think the user may
+        # actually want a specific set of limits, so commenting that out for
+        # now. -LS 
+        # Ylim_log[1] <- round_down(Ylim_log[1]) 
+        # Ylim_log[2] <- round_up(Ylim[2])
+        
     }
     
     YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
     YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
     YLogLabels   <- rep("",length(YLogBreaks))
-    YLogLabels[seq(1,length(YLogLabels),9)] <- YLogBreaks[seq(1,length(YLogLabels),9)]    # add labels at order of magnitude
+    
+    
+    if(is.na(y_axis_limits_log[1]) |
+       # checking whether Ylim_log values are a factor of 10 b/c, if they are,
+       # then just use the Ylim_log that we would have come up with using the
+       # other method b/c that makes prettier breaks
+       all(log10(Ylim_log) == round(log10(Ylim_log)))){
+        
+        # add labels at order of magnitude
+        YLogLabels[seq(1,length(YLogLabels),9)] <- YLogBreaks[seq(1,length(YLogLabels),9)]
+        
+    } else {
+        
+        # add labels for the 1st and last YLogBreaks and also 3 in between. The
+        # odd fractions are b/c I want to have them spaced out somewhat
+        # regularly, and that requires nonlinear intervals since it's log
+        # transformed.
+        YLogLabels[1] <- YLogBreaks[1]
+        Nbreaks <- length(YLogBreaks)
+        YLogLabels[Nbreaks] <- YLogBreaks[Nbreaks]
+        YLogLabels[round(Nbreaks/4)] <- YLogBreaks[round(Nbreaks/4)]
+        YLogLabels[round(2*Nbreaks/3)] <- YLogBreaks[round(2*Nbreaks/3)]
+        YLogLabels[round(5*Nbreaks/6)] <- YLogBreaks[round(5*Nbreaks/6)]
+        
+    } 
     
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
