@@ -74,7 +74,9 @@ that's wrong! -LS)}
 
 \item{conc_units_to_use}{concentration units to use so that all data will be
 comparable. Options are the same as the ones in the Excel form for PE data
-entry. Default is "ng/mL".}
+entry. Default is "ng/mL". NOTE: ADAM model data concentration units are
+not converted because there are simply too many units to manage easily, so
+please check that the units are what you expected in the end.}
 
 \item{time_units_to_use}{time units to use so that all data will be
 comparable. Options are "hours" or "minutes". Default is "hours".}

@@ -191,45 +191,10 @@ extractConcTime <- function(sim_data_file,
     ADAM <- tissue %in% c("stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
                           "ileum ii", "ileum iii", "ileum iv", "colon", "faeces")
     
-    # Need to adjust this to deal with extractConcTime_mult! 
-    if(ADAM & compoundToExtract != "substrate"){
-        if(tissue == "faeces"){
-            if(compoundToExtract != "inhibitor 1"){
-                if(FromMultFun){
-                    warning(paste0(str_to_title(compoundToExtract), 
-                                   " concentrations are not available for ",
-                                   tissue, " and thus will not be extracted."))
-                    return(data.frame())
-                } else {
-                    stop(paste0(str_to_title(compoundToExtract), 
-                                " concentrations are not available for ",
-                                tissue, " and thus cannot be extracted."))
-                }
-            }
-        } else {
-            if(FromMultFun){
-                warning(paste0(str_to_title(compoundToExtract), 
-                               " concentrations are not available for ",
-                               tissue, " and thus will not be extracted.")) 
-                return(data.frame())
-            } else {
-                stop(paste0(str_to_title(compoundToExtract), 
-                            " concentrations are not available for ",
-                            tissue, " and thus cannot be extracted.")) 
-            }
-        }
-    }
-    
     # Getting summary data for the simulation(s)
-    # if(FromMultFun == FALSE && exists("Deets_mult", where = -1) == FALSE){
-    #     Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
-    # }
-    
-    if(FromMultFun == FALSE | exists("Deets_mult", where = -1) == FALSE){
+    if(FromMultFun == FALSE | exists("Deets", where = -1) == FALSE){
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
-    } else {
-        Deets <- Deets_mult
-    }
+    } 
     
     # Effector present?
     EffectorPresent <- complete.cases(Deets$Inhibitor1)
@@ -402,6 +367,45 @@ extractConcTime <- function(sim_data_file,
     
     for(m in compoundToExtract){
         
+        # "NotAvail" is a hack to skip this iteration of the loop if it's ADAM
+        # concentrations that the user requested but they're not available for
+        # this tissue/compound combination.
+        NotAvail <- FALSE
+        
+        if(ADAM & m != "substrate"){
+            if(tissue == "faeces"){
+                if(m != "inhibitor 1"){
+                    if(FromMultFun){
+                        warning(paste0(str_to_title(m), 
+                                       " concentrations are not available for ",
+                                       tissue, " and thus will not be extracted."))
+                        NotAvail <- TRUE
+                    } else {
+                        stop(paste0(str_to_title(m), 
+                                    " concentrations are not available for ",
+                                    tissue, " and thus cannot be extracted."))
+                    }
+                }
+            } else {
+                if(FromMultFun){
+                    warning(paste0(str_to_title(m), 
+                                   " concentrations are not available for ",
+                                   tissue, " and thus will not be extracted.")) 
+                    NotAvail <- TRUE
+                } else {
+                    stop(paste0(str_to_title(m), 
+                                " concentrations are not available for ",
+                                tissue, " and thus cannot be extracted.")) 
+                }
+            }
+        }
+        
+        # Here's where we're skipping this iteration if it's ADAM and that
+        # tissue/compound combo isn't available.
+        if(NotAvail){
+            next
+        }
+        
         MyCompound <- switch(paste(m, TissueType),
                              "substrate systemic" = Deets$Substrate,
                              "substrate tissue" = Deets$Substrate,
@@ -425,13 +429,15 @@ extractConcTime <- function(sim_data_file,
             as.character()
         
         if(EffectorPresent){
-            # When the simulator output is for an inhibitor, for reasons I *cannot
-            # fathom*, they include a number after "ISys" to designate which
-            # inhibitor the data pertain to and, *sometimes*, they will list
-            # the name of the inhibitor and *sometimes* they will only list
-            # that number. I cannot determine exactly how they decide what that
-            # number will be, so we need to figure out what that number is,
-            # assign it to the correct inhibitor, and extract appropriately.
+            # When the simulator output is for an inhibitor, for reasons I
+            # *cannot fathom*, they include a number after "ISys" to designate
+            # which inhibitor the data pertain to and, *sometimes*, they will
+            # list the name of the inhibitor and *sometimes* they will only list
+            # that number *and* that number is not necessarily "1" for
+            # "inhibitor 1" and "2" for "inhibitor 2". I cannot determine
+            # exactly how they decide what that number will be, so we need to
+            # figure out what that number is, assign it to the correct
+            # inhibitor, and extract appropriately.
             TimeRow <- which(str_detect(sim_data_xl$...1,
                                         "^Time.*Inhibitor "))[1]
             if(is.na(TimeRow)){ # This occurs when the tissue is not systemic

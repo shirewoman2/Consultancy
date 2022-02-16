@@ -65,7 +65,9 @@
 #'   \code{\link{extractConcTime}}
 #' @param conc_units_to_use concentration units to use so that all data will be
 #'   comparable. Options are the same as the ones in the Excel form for PE data
-#'   entry. Default is "ng/mL".
+#'   entry. Default is "ng/mL". NOTE: ADAM model data concentration units are
+#'   not converted because there are simply too many units to manage easily, so
+#'   please check that the units are what you expected in the end.
 #' @param time_units_to_use time units to use so that all data will be
 #'   comparable. Options are "hours" or "minutes". Default is "hours".
 #' @param returnAggregateOrIndiv
@@ -135,16 +137,16 @@ extractConcTime_mult <- function(sim_data_files,
         MultData[[n]] <- list()
         
         # Getting summary data for the simulation(s)
-        Deets_mult <- extractExpDetails(n, exp_details = "Input Sheet")
+        Deets <- extractExpDetails(n, exp_details = "Input Sheet")
         
         # Names of compounds requested for checking whether the data exist
-        CompoundCheck <- c("substrate" = Deets_mult$Substrate,
-                           "inhibitor 1" = Deets_mult$Inhibitor1,
-                           "inhibitor 1 metabolite" = Deets_mult$Inhibitor1Metabolite,
-                           "inhibitor 2" = Deets_mult$Inhibitor2,
-                           "primary metabolite 1" = Deets_mult$PrimaryMetabolite1,
-                           "primary metabolite 2" = Deets_mult$PrimaryMetabolite2,
-                           "secondary metabolite" = Deets_mult$SecondaryMetabolite)
+        CompoundCheck <- c("substrate" = Deets$Substrate,
+                           "inhibitor 1" = Deets$Inhibitor1,
+                           "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite,
+                           "inhibitor 2" = Deets$Inhibitor2,
+                           "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                           "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                           "secondary metabolite" = Deets$SecondaryMetabolite)
         
         # If the requested compound is not present in the Excel file, remove
         # it from consideration.
@@ -184,22 +186,44 @@ extractConcTime_mult <- function(sim_data_files,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv)
                 
-                # When the particular combination of compound and
-                # tissue is not available in that file,
-                # extractConcTime will return an empty data.frame,
-                # which we don't want to be included in the final
-                # data. Not adding info for File in that scenario
-                # b/c it would add a row to what would have been
-                # an empty data.frame.
+                # When the particular combination of compound and tissue is not
+                # available in that file, extractConcTime will return an empty
+                # data.frame, which we don't want to be included in the final
+                # data. Not adding info for File in that scenario b/c it would
+                # add a row to what would have been an empty data.frame.
                 if(nrow(MultData[[n]][[j]]) > 0){
                     MultData[[n]][[j]] <-
                         MultData[[n]][[j]] %>%
                         mutate(File = n)
                     
-                    MultData[[n]][[j]] <-
-                        match_units(DF_to_adjust = MultData[[n]][[j]],
-                                    goodunits = list("Conc_units" = conc_units_to_use,
-                                                     "Time_units" = time_units_to_use))
+                    # Need to handle ADAM data specially
+                    ADAMtissue <- c("stomach", "duodenum", "jejunum i",
+                                    "jejunum ii", "ileum i", "ileum ii",
+                                    "ileum iii", "ileum iv", "colon", "faeces")
+                    if(any(MultData[[n]][[j]]$Tissue %in% ADAMtissue)){
+                        CT_adam <- MultData[[n]][[j]] %>% 
+                            filter(Tissue %in% ADAMtissue)
+                        
+                        
+                        CT_nonadam <- MultData[[n]][[j]] %>% 
+                            filter(Tissue %in% ADAMtissue == FALSE)
+                        
+                        if(nrow(CT_nonadam) > 0){
+                            CT_nonadam <- CT_nonadam %>% 
+                                match_units(DF_to_adjust = CT_nonadam,
+                                            goodunits = list("Conc_units" = conc_units_to_use,
+                                                             "Time_units" = time_units_to_use))
+                        }
+                        
+                        MultData[[n]][[j]] <- bind_rows(CT_adam, CT_nonadam)
+                        
+                    } else {
+                        
+                        MultData[[n]][[j]] <-
+                            match_units(DF_to_adjust = MultData[[n]][[j]],
+                                        goodunits = list("Conc_units" = conc_units_to_use,
+                                                         "Time_units" = time_units_to_use))
+                    }
                 }
                 
             } else {
@@ -260,11 +284,11 @@ extractConcTime_mult <- function(sim_data_files,
             }
         }
         
-        # rm(Deets_mult) # I had removed Deets_mult here for safety just to make sure that
+        # rm(Deets) # I had removed Deets here for safety just to make sure that
         # it didn't get applied to the wrong file, but it was giving me an error
         # when I had removed it here, and, now that it's commented out, it's
         # working. Really check that this is applying the correct details to the
-        # correct files. I don't see why it's a problem to remove Deets_mult here.
+        # correct files. I don't see why it's a problem to remove Deets here.
         
         MultData[[n]] <- bind_rows(MultData[[n]])
     }
