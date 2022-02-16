@@ -5,34 +5,34 @@
 \title{Plots of enzyme abundance changes over time to match Consultancy template}
 \usage{
 enz_plot(
-  sim_data_file = NA,
   sim_enz_dataframe = NA,
-  enzyme = "CYP3A4",
-  tissue = "liver",
   figure_type = "percentiles",
-  ...
+  ...,
+  sim_data_file = NA,
+  enzyme = "CYP3A4",
+  tissue = "liver"
 )
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulated
-enzyme-abundance data}
-
-\item{sim_enz_dataframe}{If you have already extracted the concentration-time
-data using the function \code{\link{extractEnzAbund}}, you can enter the
-name of the output data.frame from that function instead of re-reading the
-Excel file, which is the bottleneck step in running this function.}
-
-\item{enzyme}{the enzyme to plot, e.g., "CYP3A4" (default), "UGT1A1", etc.
-Spaces or hyphens in enzyme names will be ignored. Not case sensitive.}
-
-\item{tissue}{the tissue to plot. Options are "liver" (default), "small
-intestine", "colon", or "kidney".}
+\item{sim_enz_dataframe}{the data.frame of enzyme abundance data obtained
+from running the function \code{\link{extractEnzAbund}}}
 
 \item{figure_type}{The type of figure to graph. Default is "percentiles". See
 \code{figure_type} options and their explanations for the function
 \code{\link{ct_plot}}.}
 
 \item{...}{other arguments passed to the function \code{\link{ct_plot}}}
+
+\item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
+the Excel file containing the simulated enzyme-abundance data}
+
+\item{enzyme}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the enzyme to
+plot, e.g., "CYP3A4" (default), "UGT1A1", etc. Spaces or hyphens in enzyme
+names will be ignored. Not case sensitive.}
+
+\item{tissue}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the tissue to
+plot. Options are "liver" (default), "small intestine", "colon", or
+"kidney".}
 }
 \description{
 Using simulated enzyme-abundance data, make publication-quality graphs that

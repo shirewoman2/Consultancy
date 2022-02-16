@@ -209,29 +209,29 @@ set of graphs} }}
 graphs? This can be useful if you want to modify the graphs further or only
 use one, etc.}
 
-\item{sim_data_file}{HISTORICAL BACK-COMPATIBILITY PURPOSES ONLY: name of the
+\item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of the
 Excel file containing the simulated concentration-time data}
 
-\item{obs_data_file}{HISTORICAL BACK-COMPATIBILITY PURPOSES ONLY: name of the
+\item{obs_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of the
 Excel file containing the observed concentration-time data. If the observed
 data you want to plot were already included in the Excel output from the
 simulator, leave this as NA. Otherwise, this is the file that it is ready
 to be converted to an XML file, not the file that contains only the
 digitized time and concentration data.}
 
-\item{obs_inhibitor_data_file}{HISTORICAL BACK-COMPATIBILITY PURPOSES ONLY:
+\item{obs_inhibitor_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY:
 name of the Excel file containing the observed concentration-time data in
 the presence of an effector (labeled "Inhibitor 1" in the simulator). This
 is the file that is ready to be converted to an XML file. If your Inhibitor
 1 data were already included in \code{obs_data_file}, leave this as NA.}
 
-\item{tissue}{HISTORICAL BACK-COMPATIBILITY PURPOSES ONLY: the tissue to
+\item{tissue}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the tissue to
 plot. Default is plasma for typical plasma concentration-time data. Other
 tissues are acceptable, e.g., "lung", "brain", etc., as long as the tissue
 is one of the options included in "Sheet Options", "Tissues" in the
 simulator.}
 
-\item{compoundToExtract}{HISTORICAL BACK-COMPATIBILITY PURPOSES ONLY: For
+\item{compoundToExtract}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: For
 which compound do you want to extract concentration-time data? Options are
 "substrate" (default), "primary metabolite 1", "secondary metabolite", or
 "inhibitor 1" (this actually can be an inducer, activator, suppressor, or
