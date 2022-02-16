@@ -449,10 +449,16 @@ extractExpDetails <- function(sim_data_file,
                                               "CLint|Vmax|t1/2|Ind max")
                         
                         if(CLType == "CLint"){
+                            
+                            Units <- str_extract(InputTab[CLrow, NameCol], 
+                                                 "\\(.*\\)")
+                            Units <- gsub("\\(|\\)", "", Units)
+                            Units <- gsub("/| ", "_", Units)
+                            
                             suppressWarnings(
                                 Out[[paste0(
                                     paste("CLint", Enzyme,
-                                          Pathway, sep = "_"),
+                                          Pathway, Units, sep = "_"),
                                     Suffix)]] <-
                                     as.numeric(InputTab[CLrow, NameCol + 1])
                             )
