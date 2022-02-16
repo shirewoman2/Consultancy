@@ -510,12 +510,18 @@ ct_plot <- function(sim_obs_dataframe = NA,
         }
         
         if(str_detect(tolower(time_range_input), "^dose")){
-            DoseNumToPull <- as.numeric(
-                str_trim(gsub("dose(s)?", "", time_range_input)))
             
-            if(str_detect(DoseNumToPull, "to")){
+            if(str_detect(time_range_input, "to")){
+                
                 DoseNumToPull <- as.numeric(
-                    str_trim(str_split(DoseNumToPull, "to")[[1]]))
+                    str_trim(str_split(
+                        gsub("dose(s)?", "", time_range_input), "to")[[1]]))
+                
+            } else {
+                
+                DoseNumToPull <- as.numeric(
+                    str_trim(gsub("dose(s)?", "", time_range_input)))
+                
             }
             
             time_range <- Data %>% 
@@ -856,7 +862,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 geom_line(alpha = AlphaToUse, 
                           lwd = ifelse(is.na(line_width), 1, line_width)) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"),
+                              filter(Trial == "mean"), show.legend = FALSE,
                           lwd = ifelse(is.na(line_width), 1, line_width)) +
                 scale_shape_manual(values = obs_shape[1:2]) +
                 scale_linetype_manual(values = line_type[1:2]) +
