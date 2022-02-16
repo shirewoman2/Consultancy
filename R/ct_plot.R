@@ -307,7 +307,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     if(all(complete.cases(time_range)) && class(time_range) == "character" &
        !any(time_range %in% c("last dose", "first dose", "penultimate dose")) &
-       !str_detect(tolower(time_range), "^dose")){
+       !any(str_detect(tolower(time_range), "^dose"))){
         stop("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), or a numeric time range, e.g., c(12, 24).")
     }
     
@@ -810,7 +810,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
     YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
                                  round_up_unit(Ylim[2], YInterval),
                            y_axis_limits_lin[2])
-    YBreaks      <- seq(Ylim[1], YmaxRnd, YInterval/2)                    # create labels at major and minor points
+    YBreaks      <- seq(ifelse(is.na(y_axis_limits_lin[1]), 
+                               0, y_axis_limits_lin[1]),
+                        YmaxRnd, YInterval/2)                    # create labels at major and minor points
     YLabels      <- YBreaks
     YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
     
