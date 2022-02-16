@@ -36,7 +36,7 @@
 #'   \item{Slope}{slope only: \deqn{fold induction = I * n}}
 #'
 #'   \item{Sig3Param}{Sigmoidal 3-parameter model (often used by Xenotech):
-#'   \deqn{fold induction = Emax / (1 + exp( -(I - IndC50)/n ))}}
+#'   \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))}}
 #'
 #'   \item{all}{All 4 models will be fitted to the data.} }
 #'

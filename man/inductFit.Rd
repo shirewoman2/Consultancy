@@ -23,10 +23,11 @@ please see \code{data(IndData)}.}
 \item{conc_column}{the name of the column within DF that contains
 concentration data. This should be unquoted.}
 
-\item{fold_change_column}{the name of the column within DF that contains fold-change
-data, e.g., mRNA measurements or activity.}
+\item{fold_change_column}{the name of the column within DF that contains
+fold-change data, e.g., mRNA measurements or activity.}
 
-\item{model}{which model(s) you would like to use. The four model options
+\item{model}{which model(s) you would like to use. (Pay attention to
+  capitalization when specifying the one you want.) The four model options
   are: \describe{
 
   \item{Indmax}{the Indmax model. This assumes a hyperbolic shape to the
@@ -42,7 +43,7 @@ data, e.g., mRNA measurements or activity.}
   \item{Slope}{slope only: \deqn{fold induction = I * n}}
 
   \item{Sig3Param}{Sigmoidal 3-parameter model (often used by Xenotech):
-  \deqn{fold induction = Emax / (1 + exp( -(I - IndC50)/n ))}}
+  \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))}}
 
   \item{all}{All 4 models will be fitted to the data.} }}
 

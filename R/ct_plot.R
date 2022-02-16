@@ -77,11 +77,10 @@
 #'   "doses 1 to 4" for doses 1 to 4}}
 #'
 #' @param t0 What event should be used for time zero? Options are: "simulation
-#'   start" (default), "substrate dose 1", "inhibitor 1 dose 1", "substrate last
-#'   dose", "inhibitor 1 last dose", "substrate penultimate dose", or "inhibitor
-#'   1 penultimate dose". \emph{This does not change which data are included in
-#'   the graph;} instead, this determines whether the x axis numbers are offset
-#'   so that, e.g., the last dose is administered at time 0.
+#'   start" (default), "dose 1", "penultimate dose", or "last dose". \emph{This
+#'   does not change which data are included in the graph;} instead, this
+#'   determines whether the x axis numbers are offset so that, e.g., the last
+#'   dose is administered at time 0.
 #'
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
@@ -318,9 +317,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     t0 <- tolower(t0)
-    t0_opts <- c("simulation start", "substrate dose 1", "inhibitor 1 dose 1",
-                 "substrate last dose", "inhibitor 1 last dose",
-                 "substrate penultimate dose", "inhibitor 1 penultimate dose")
+    t0_opts <- c("simulation start", "dose 1", "last dose", "penultimate dose")
     if(t0 %in% t0_opts == FALSE){
         stop(paste0("t0 must be set to ",
                     sub("and", "or", str_comma(t0_opts)), "."))
@@ -450,7 +447,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     if(class(time_range_input) == "character" | t0 != "simulation start"){
         
-        if(time_range == "dose 1"){
+        if(complete.cases(time_range) && time_range == "dose 1"){
             time_range = "first dose"
         }
         
@@ -460,7 +457,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
         
         if(SingleDose){
             DoseTimes <- data.frame(
+                FirstDoseStart = Data %>%
+                    filter(CompoundID == compoundToExtract & 
+                               DoseNum == 1) %>% 
+                    summarize(Min = min(Time)) %>% pull(Min), 
+                
                 FirstDoseEnd = max(Data$Time[Data$CompoundID == compoundToExtract]),
+                
                 PenultDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
                                                           Data$CompoundID == compoundToExtract])),
                 LastDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
@@ -476,12 +479,15 @@ ct_plot <- function(sim_obs_dataframe = NA,
             MaxNumDoses <- max(Data$DoseNum[Data$CompoundID == compoundToExtract])
             
             DoseTimes <- 
-                data.frame(FirstDoseEnd = DoseTimes1 %>% 
-                               filter(DoseNum == 1) %>% pull(tlast),
-                           PenultDoseStart = DoseTimes1 %>% 
-                               filter(DoseNum == MaxNumDoses - 1) %>% pull(t0),
-                           LastDoseStart = DoseTimes1 %>% 
-                               filter(DoseNum == MaxNumDoses) %>% pull(t0))
+                data.frame(
+                    FirstDoseStart = DoseTimes1 %>% 
+                        filter(DoseNum == 1) %>% pull(t0),
+                    FirstDoseEnd = DoseTimes1 %>% 
+                        filter(DoseNum == 1) %>% pull(tlast),
+                    PenultDoseStart = DoseTimes1 %>% 
+                        filter(DoseNum == MaxNumDoses - 1) %>% pull(t0),
+                    LastDoseStart = DoseTimes1 %>% 
+                        filter(DoseNum == MaxNumDoses) %>% pull(t0))
         }
         
         if(SingleDose & time_range_input %in% c("last dose", "penultimate dose")){
@@ -489,11 +495,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
                            ", but the substrate was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."))
         }
         
-        if(time_range_input == "first dose"){
+        if(all(complete.cases(time_range_input)) && 
+           time_range_input == "first dose"){
             time_range <- c(0, DoseTimes$FirstDoseEnd)
         }
         
-        if(time_range_input == "penultimate dose"){
+        if(all(complete.cases(time_range_input)) &&
+           time_range_input == "penultimate dose"){
             if(SingleDose){
                 time_range <-
                     c(DoseTimes$LastDoseStart, max(Data$Time))
@@ -505,11 +513,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
             }
         }
         
-        if(time_range_input == "last dose"){
+        if(all(complete.cases(time_range_input)) &&
+           time_range_input == "last dose"){
             time_range <- c(DoseTimes$LastDoseStart, max(Data$Time))
         }
         
-        if(str_detect(tolower(time_range_input), "^dose")){
+        if(all(complete.cases(time_range_input)) && 
+           str_detect(tolower(time_range_input), "^dose")){
             
             if(str_detect(time_range_input, "to")){
                 
@@ -617,28 +627,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     # If t0 isn't "simulation start", need to adjust x axis.
     if(t0 != "simulation start"){
+        
         t0_num <- switch(
             t0,
-            "substrate dose 1" = difftime_sim(Deets$SimStartDayTime,
-                                              Deets$StartDayTime_sub),
-            "inhibitor 1 dose 1" = difftime_sim(Deets$SimStartDayTime,
-                                                Deets$StartDayTime_inhib),
-            "substrate last dose" =
-                ifelse(StartLastDose["Sub"] == max(Data$Time),
-                       StartLastDose["Sub"] - DoseInt["Sub"],
-                       StartLastDose["Sub"]),
-            "inhibitor 1 last dose" =
-                ifelse(StartLastDose["Inhib"] == max(Data$Time),
-                       StartLastDose["Inhib"] - DoseInt["Inhib"],
-                       StartLastDose["Inhib"]),
-            "substrate penultimate dose" =
-                ifelse(StartLastDose["Sub"] == max(Data$Time),
-                       StartLastDose["Sub"] - 2*DoseInt["Sub"],
-                       StartLastDose["Sub"] - DoseInt["Sub"]),
-            "inhibitor 1 penultimate dose"  =
-                ifelse(StartLastDose["Inhib"] == max(Data$Time),
-                       StartLastDose["Inhib"] - 2*DoseInt["Inhib"],
-                       StartLastDose["Inhib"] - DoseInt["Inhib"]))
+            "dose 1" = DoseTimes$FirstDoseStart,
+            "last dose" = DoseTimes$LastDoseStart,
+            "penultimate dose" = DoseTimes$PenultDoseStart)
+        
         Data$Time_orig <- Data$Time
         Data$Time <- Data$Time - t0_num
         XBreaks <- XBreaks - t0_num
@@ -808,7 +803,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     YInterval    <- YBreaksToUse
     YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
-                                 round_up_unit(Ylim[2], YInterval),
+                           round_up_unit(Ylim[2], YInterval),
                            y_axis_limits_lin[2])
     YBreaks      <- seq(ifelse(is.na(y_axis_limits_lin[1]), 
                                0, y_axis_limits_lin[1]),
@@ -826,7 +821,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
             YLabels <- c(YLabels, YBreaks[length(YBreaks)])
         }
     }
-        
+    
     # Figure types ---------------------------------------------------------
     
     # Setting user specifications for shape, linetype, and color where

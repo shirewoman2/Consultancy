@@ -113,11 +113,10 @@ If FALSE, the observed data will start at whatever times are listed in the
 Excel file.}
 
 \item{t0}{What event should be used for time zero? Options are: "simulation
-start" (default), "substrate dose 1", "inhibitor 1 dose 1", "substrate last
-dose", "inhibitor 1 last dose", "substrate penultimate dose", or "inhibitor
-1 penultimate dose". \emph{This does not change which data are included in
-the graph;} instead, this determines whether the x axis numbers are offset
-so that, e.g., the last dose is administered at time 0.}
+start" (default), "dose 1", "penultimate dose", or "last dose". \emph{This
+does not change which data are included in the graph;} instead, this
+determines whether the x axis numbers are offset so that, e.g., the last
+dose is administered at time 0.}
 
 \item{y_axis_limits_lin}{Optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
