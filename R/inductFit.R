@@ -1,4 +1,3 @@
-
 #' Fit induction data to calculate IndC50, Indmax, and/or slope
 #'
 #' \code{inductFit} is an adaptation of Howie's script
@@ -18,9 +17,10 @@
 #'   please see \code{data(IndData)}.
 #' @param conc_column the name of the column within DF that contains
 #'   concentration data. This should be unquoted.
-#' @param fold_change_column the name of the column within DF that contains fold-change
-#'   data, e.g., mRNA measurements or activity.
-#' @param model which model(s) you would like to use. The four model options
+#' @param fold_change_column the name of the column within DF that contains
+#'   fold-change data, e.g., mRNA measurements or activity.
+#' @param model which model(s) you would like to use. (Pay attention to
+#'   capitalization when specifying the one you want.) The four model options
 #'   are: \describe{
 #'
 #'   \item{Indmax}{the Indmax model. This assumes a hyperbolic shape to the
@@ -77,7 +77,7 @@
 #' MyFit$Fit; MyFit$Fit_means; MyFit$Graph
 #'
 #'
-#'
+#' 
 
 
 inductFit <- function(DF,
@@ -339,7 +339,7 @@ inductFit <- function(DF,
             )
         
         if(model == "all"){
-            G <- G + facet_wrap(~ Model_ch)
+            G <- G + facet_wrap(~ Model_ch, scales = "free")
         }
         
         Out <- list("Fit" = IndFit,
