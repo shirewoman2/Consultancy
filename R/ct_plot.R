@@ -803,16 +803,28 @@ ct_plot <- function(sim_obs_dataframe = NA,
                                                500, 1000, 2000, 5000, 10000,
                                                20000, 50000, 100000, 200000))
     
-    YBreaksToUse <- PossYBreaks %>% filter(Ymax >= Ylim[2]) %>%
+    YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
         slice(which.min(Ymax)) %>% pull(YBreaksToUse)
     
     YInterval    <- YBreaksToUse
-    YmaxRnd      <- round_up_unit(Ylim[2], YInterval)
-    YBreaks      <- seq(0, YmaxRnd, YInterval/2)                    # create labels at major and minor points
+    YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
+                                 round_up_unit(Ylim[2], YInterval),
+                           y_axis_limits_lin[2])
+    YBreaks      <- seq(Ylim[1], YmaxRnd, YInterval/2)                    # create labels at major and minor points
     YLabels      <- YBreaks
     YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
     
-    
+    # If the user specified a y axis interval, make sure there's an axis label
+    # for the top of the y axis
+    if(any(complete.cases(y_axis_limits_lin))){
+        YBreaks <- unique(c(YBreaks, y_axis_limits_lin[2]))
+        if(length(YLabels) == length(YBreaks)){
+            YLabels[length(YLabels)] <- YBreaks[length(YBreaks)]
+        } else {
+            YLabels <- c(YLabels, YBreaks[length(YBreaks)])
+        }
+    }
+        
     # Figure types ---------------------------------------------------------
     
     # Setting user specifications for shape, linetype, and color where
@@ -1148,7 +1160,10 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     A <- A +
-        scale_y_continuous(limits = c(0, YmaxRnd), breaks = YBreaks,
+        scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                             0, y_axis_limits_lin[1]),
+                                      YmaxRnd), 
+                           breaks = YBreaks,
                            labels = YLabels,
                            expand = expansion(mult = c(0, 0.1))) +
         labs(x = xlab, y = ylab,
