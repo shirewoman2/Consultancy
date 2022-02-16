@@ -861,7 +861,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
         NumTrials <- length(unique(sim_data_trial$Trial))
         AlphaToUse <- ifelse(complete.cases(line_transparency),
                              line_transparency,
-                             ifelse(NumTrials > 10, 0.05, 0.4))
+                             ifelse(NumTrials > 10, 0.05, 0.2))
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
