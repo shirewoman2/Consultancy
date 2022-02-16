@@ -101,7 +101,7 @@ extractConcTime_mult <- function(sim_data_files,
                              CompoundID = compoundsToExtract,
                              File = sim_data_files)
     
-    if(exists(substitute(conctime_DF))){
+    if(exists(substitute(conctime_DF)) && "data.frame" %in% class(conctime_DF)){
         if("File" %in% names(conctime_DF) == FALSE){
             conctime_DF$File <- "unknown file"
         }
@@ -297,6 +297,5 @@ extractConcTime_mult <- function(sim_data_files,
     return(conctime_DF)
     
 }
-
 
 
