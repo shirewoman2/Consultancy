@@ -366,7 +366,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     # Noting whether the tissue was from an ADAM model
     ADAM <- tissue %in% c("stomach", "duodenum", "jejunum I", "jejunum II", "ileum I",
-                          "ileum II", "ileum III", "ileum IV", "colon", "faeces")
+                          "ileum II", "ileum III", "ileum IV", "colon", "faeces") &&
+        EnzPlot == FALSE
     
     # If the tissue was an ADAM tissue, only include the concType_ADAM they requested. 
     if(ADAM){
@@ -679,8 +680,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
            prettify_effector_name){
             MyEffector <-
                 tolower(gsub(
-                    "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
-                    "", MyEffector))
+                    "sv-|sim-|_ec|_sr|-md|-sd|_fo|-[1-9]00 mg [qmstbi]{1,2}D|_fasted soln|_fed capsule",
+                    "", tolower(MyEffector)))
         }
         
         if(class(prettify_effector_name) == "character"){
