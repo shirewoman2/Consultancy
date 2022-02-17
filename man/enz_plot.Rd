@@ -7,6 +7,7 @@
 enz_plot(
   sim_enz_dataframe = NA,
   figure_type = "percentiles",
+  gut_tissue = "colon",
   ...,
   sim_data_file = NA,
   enzyme = "CYP3A4",
@@ -20,6 +21,11 @@ from running the function \code{\link{extractEnzAbund}}}
 \item{figure_type}{The type of figure to graph. Default is "percentiles". See
 \code{figure_type} options and their explanations for the function
 \code{\link{ct_plot}}.}
+
+\item{gut_tissue}{Which of the two types of gut tissue would you like to
+plot? Acceptable options are "colon" or "small intestine". Applicable only
+when the tissue extracted with \code{\link{extractEnzAbund}} was gut and
+ignored in all other cases.}
 
 \item{...}{other arguments passed to the function \code{\link{ct_plot}}}
 
@@ -39,7 +45,9 @@ Using simulated enzyme-abundance data, make publication-quality graphs that
 match the consultancy template formatting instructions. The options listed in
 the function \code{\link{ct_plot}}, e.g., specifying the figure type or the
 axis limits, etc., work here as long as they make sense for plotting
-enzyme-abundance data.
+enzyme-abundance data. If you would like to plot a specific dose number for
+"time_range", you must also specify which compound's dose number you want,
+e.g., "dose 1 substrate", "last dose inhibitor 1", "doses 4 to 6 substrate".
 }
 \examples{
 enz_plot(sim_data_file = "../Example simulator output MD.xlsx",

@@ -61,6 +61,10 @@ extractEnzAbund <- function(sim_data_file,
         stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
     }
     
+    if(tissue %in% c("colon", "small intestine", "liver", "kidney") == FALSE){
+        stop("The tissue you entered is not one of the options. Please select one of 'colon', 'small intestine', 'liver', or 'kidney' for the tissue.")
+    }
+    
     if(length(tissue) != 1){
         stop("You must enter one and only one tissue option. (Default is liver.)")
     }
@@ -68,9 +72,8 @@ extractEnzAbund <- function(sim_data_file,
     tissue <- tolower(tissue)
     enzyme <- gsub(" |_|-", "", toupper(enzyme))
     
-    if(tissue %in% c("liver", "gut", "kidney") == FALSE){
-        stop("The requested tissue must be one of the options listed under 'Sheet Options', 'Tissues' in the Simulator.")
-    }
+    # Getting experimental details
+    Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     
     AllSheets <- readxl::excel_sheets(sim_data_file)
     
@@ -523,6 +526,8 @@ extractEnzAbund <- function(sim_data_file,
         }
     }
     
+    # Putting everything together ------------------------------------------
+    
     TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
     TimeUnits <- ifelse(TimeUnits == "Time (h)", "Hours", "Minutes")
     
@@ -547,14 +552,209 @@ extractEnzAbund <- function(sim_data_file,
             mutate(Individual = ifelse(is.na(Individual), Trial, Individual))
     }
     
+    # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when
+    # the user requests a specific dose.
+    MyIntervals <- 
+        c("substrate" = Deets$DoseInt_sub,
+          "primary metabolite 1" = Deets$DoseInt_sub,
+          "primary metabolite 2" = Deets$DoseInt_sub,
+          "secondary metabolite" = Deets$DoseInt_sub,
+          "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
+                                 NA, Deets$DoseInt_inhib),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
+                                            NA, Deets$DoseInt_inhib),
+          "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
+                                 NA, Deets$DoseInt_inhib2))
+    
+    MyStartTimes <- 
+        c("substrate" = Deets$StartHr_sub,
+          "primary metabolite 1" = Deets$StartHr_sub,
+          "primarymetabolite 2" = Deets$StartHr_sub,
+          "secondary metabolite" = Deets$StartHr_sub,
+          "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                 Deets$StartHr_inhib),
+          "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
+                                 Deets$StartHr_inhib2),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                            Deets$StartHr_inhib))
+    
+    MyMaxDoseNum <- 
+        c("substrate" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                               1, Deets$NumDoses_sub),
+          "primary metabolite 1" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                          1, Deets$NumDoses_sub),
+          "primarymetabolite 2" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                         1, Deets$NumDoses_sub),
+          "secondary metabolite" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                          1, Deets$NumDoses_sub),
+          "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                 ifelse(Deets$Regimen_inhib == "Single Dose", 
+                                        1, Deets$NumDoses_inhib)),
+          "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
+                                 ifelse(Deets$Regimen_inhib2 == "Single Dose", 
+                                        1, Deets$NumDoses_inhib2)),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                            ifelse(Deets$Regimen_inhib == "Single Dose", 
+                                                   1, Deets$NumDoses_inhib)))
+    
+    # Converting data to numeric while also retaining names
+    suppressWarnings(
+        MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
+    suppressWarnings(
+        MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
+    suppressWarnings(
+        MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
+    
     Data <- Data %>%
-        mutate(Time_units = tolower({{TimeUnits}})) %>%
-        arrange(across(any_of(c("Enzyme", "Tissue", "EffectorPresent",
+        mutate(StartHr_sub = MyStartTimes["substrate"],
+               TimeSinceDose1_sub = Time - StartHr_sub,
+               DoseInt_sub = MyIntervals["substrate"],
+               MaxDoseNum_sub = MyMaxDoseNum["substrate"],
+               DoseNum_sub = Time %/% DoseInt_sub + 1,
+               # Taking care of possible artifacts
+               DoseNum_sub = ifelse(DoseNum_sub < 0, 0, DoseNum_sub),
+               DoseNum_sub = ifelse(DoseNum_sub > MaxDoseNum_sub, 
+                                    MaxDoseNum_sub, DoseNum_sub),
+               # If it was a single dose, make everything after StartHr dose
+               # 1 and everything before StartHr dose 0. if it was a single
+               # dose, then DoseInt is NA.
+               DoseNum_sub = ifelse(is.na(DoseInt_sub),
+                                    ifelse(TimeSinceDose1_sub < 0, 0, 1), DoseNum_sub),
+               StartHr_inhib1 = MyStartTimes["inhibitor 1"],
+               TimeSinceDose1_inhib1 = Time - StartHr_inhib1,
+               DoseInt_inhib1 = MyIntervals["inhibitor 1"],
+               MaxDoseNum_inhib1 = MyMaxDoseNum["inhibitor 1"],
+               DoseNum_inhib1 = Time %/% DoseInt_inhib1 + 1,
+               # Taking care of possible artifacts
+               DoseNum_inhib1 = ifelse(DoseNum_inhib1 < 0, 0, DoseNum_inhib1),
+               DoseNum_inhib1 = ifelse(DoseNum_inhib1 > MaxDoseNum_inhib1, 
+                                       MaxDoseNum_inhib1, DoseNum_inhib1),
+               # If it was a single dose, make everything after StartHr dose
+               # 1 and everything before StartHr dose 0. if it was a single
+               # dose, then DoseInt is NA.
+               DoseNum_inhib1 = ifelse(is.na(DoseInt_inhib1),
+                                       ifelse(TimeSinceDose1_inhib1 < 0, 0, 1), DoseNum_inhib1),
+               StartHr_inhib2 = MyStartTimes["inhibitor 2"],
+               TimeSinceDose1_inhib2 = Time - StartHr_inhib2,
+               DoseInt_inhib2 = MyIntervals["inhibitor 2"],
+               MaxDoseNum_inhib2 = MyMaxDoseNum["inhibitor 2"],
+               DoseNum_inhib2 = Time %/% DoseInt_inhib2 + 1,
+               # Taking care of possible artifacts
+               DoseNum_inhib2 = ifelse(DoseNum_inhib2 < 0, 0, DoseNum_inhib2),
+               DoseNum_inhib2 = ifelse(DoseNum_inhib2 > MaxDoseNum_inhib2, 
+                                       MaxDoseNum_inhib2, DoseNum_inhib2),
+               # If it was a single dose, make everything after StartHr dose
+               # 1 and everything before StartHr dose 0. if it was a single
+               # dose, then DoseInt is NA.
+               DoseNum_inhib2 = ifelse(is.na(DoseInt_inhib2),
+                                       ifelse(TimeSinceDose1_inhib2 < 0, 0, 1), DoseNum_inhib2))
+    
+    # # Checking for any custom dosing
+    # if(any(str_detect(names(Deets), "CustomDosing"))){
+    #     CDCompounds <-
+    #         data.frame(CompoundSuffix = 
+    #                        str_extract(names(Deets)[str_detect(names(Deets),
+    #                                                            "CustomDosing")],
+    #                                    "_sub|_inhib(2)?")) %>% 
+    #         mutate(CompoundID = recode(CompoundSuffix, "_sub" = "substrate", 
+    #                                    "_inhib" = "inhibitor 1", 
+    #                                    "_inhib2" = "inhibitor 2"))
+    #     
+    #     Dosing <- list()
+    #     # This is kind of a disaster... Looking for a better way to code this.
+    #     
+    #     for(j in CDCompounds$CompoundID){
+    #         Dosing[[j]] <-
+    #             Deets[[paste0("CustomDosing", 
+    #                           CDCompounds$CompoundSuffix[CDCompounds$CompoundID == j])]] %>% 
+    #             mutate(CompoundID = CDCompounds$CompoundID[CDCompounds$CompoundID == j])
+    #         
+    #         if(max(Data$Time) > max(Dosing[[j]]$Time)){
+    #             Dosing[[j]] <- Dosing[[j]] %>% 
+    #                 bind_rows(data.frame(Time = max(Data$Time) + 1, 
+    #                                      DoseNum = max(Dosing[[j]]$DoseNum)))
+    #         }
+    #         
+    #         Dosing[[j]]$Breaks <-
+    #             as.character(cut(Dosing[[j]]$Time, breaks = Dosing[[j]]$Time,
+    #                              right = FALSE))
+    #     }
+    #     
+    #     # LEFT OFF HERE - Not sure how best to deal with this since enzyme
+    #     # abundances are different from concentrations of specific compounds. Also
+    #     # not sure it's going to be that important.
+    #     
+    #     
+    #     MyData <- list()
+    #     MyData[["not CD"]] <- Data %>% filter(CD == "not CD")
+    #     
+    #     for(j in unique(Data$CD)[!unique(Data$CD) == "not CD"]){
+    #         MyData[[j]] <- Data %>% filter(CD == j) %>% select(-DoseNum)
+    #         # This should make the right breaks for each possible compound
+    #         # with custom dosing. They should match the breaks in the
+    #         # appropriate list item in Dosing.
+    #         MyData[[j]]$Breaks <-
+    #             as.character(cut(MyData[[j]]$Time, breaks = Dosing[[j]]$Time,
+    #                              right = FALSE))
+    #         
+    #         MyData[[j]] <- MyData[[j]] %>% 
+    #             left_join(Dosing[[j]] %>% select(CompoundID, Breaks, DoseNum))
+    #         
+    #     }
+    #     
+    #     Data <- bind_rows(MyData)
+    #     if(length(setdiff(unique(OrigCompounds),
+    #                       unique(Data$CompoundID))) > 0){
+    #         warning("PROBLEM WITH CUSTOM DOSING! Please tell Laura Shireman if you see this message.")
+    #     }
+    # }
+    
+    
+    # Checking for when the simulation ends right at the last dose b/c
+    # then, setting that number to 1 dose lower
+    if(length(Data %>% filter(DoseNum_sub == max(Data$DoseNum_sub)) %>%
+              pull(Time) %>% unique()) == 1){
+        MyMaxDoseNum_sub <- max(Data$DoseNum_sub)
+        Data <- Data %>%
+            mutate(DoseNum_sub = ifelse(DoseNum_sub == MyMaxDoseNum_sub,
+                                    MyMaxDoseNum_sub - 1, DoseNum_sub))
+    }
+    
+    if(length(Data %>% filter(DoseNum_inhib1 == max(Data$DoseNum_inhib1)) %>%
+              pull(Time) %>% unique()) == 1){
+        MyMaxDoseNum_inhib1 <- max(Data$DoseNum_inhib1)
+        Data <- Data %>%
+            mutate(DoseNum_inhib1 = ifelse(DoseNum_inhib1 == MyMaxDoseNum_inhib1,
+                                           MyMaxDoseNum_inhib1 - 1, DoseNum_inhib1))
+    }
+    
+    if(length(Data %>% filter(DoseNum_inhib2 == max(Data$DoseNum_inhib2)) %>%
+              pull(Time) %>% unique()) == 1){
+        MyMaxDoseNum_inhib2 <- max(Data$DoseNum_inhib2)
+        Data <- Data %>%
+            mutate(DoseNum_inhib2 = ifelse(DoseNum_inhib2 == MyMaxDoseNum_inhib2,
+                                           MyMaxDoseNum_inhib2 - 1, DoseNum_inhib2))
+    }
+    
+    # Noting exactly what the effectors were
+    AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
+                      Deets$Inhibitor1Metabolite)
+    AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
+    
+    # Finalizing, tidying, selecting only useful columns
+    Data <- Data %>%
+        mutate(Time_units = tolower({{TimeUnits}}),
+               Inhibitor = ifelse(EffectorPresent,
+                                  AllEffectors, "none"), 
+               Substrate = Deets$Substrate) %>%
+        arrange(across(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",
                                 "Individual", "Trial", "Time")))) %>%
-        select(any_of(c("Enzyme", "Tissue", "EffectorPresent",
-                        "Individual", "Trial",
-                        "Time", "Abundance",
-                        "Time_units")))
+        select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",
+                        "Individual", "Trial", "Time", "Abundance",
+                        "Time_units", 
+                        "DoseNum_sub", "TimeSinceDose1_sub",
+                        "DoseNum_inhib1", "TimeSinceDose1_inhib1",
+                        "DoseNum_inhib2", "TimeSinceDose1_inhib2")))
     
     return(Data)
     

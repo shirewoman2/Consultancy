@@ -357,7 +357,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # If user supplied sim_obs_dataframe, then set tissue to whatever tissue was
     # included and set compoundToExtract to whatever compound was included.
     tissue <- unique(Data$Tissue)
-    compoundToExtract <- unique(Data$CompoundID)
+    EnzPlot <- "Enzyme" %in% names(Data)
+    compoundToExtract <- ifelse(EnzPlot, unique(Data$Enzyme), 
+                                unique(Data$CompoundID))
+    if(EnzPlot){
+        Data <- Data %>% mutate(CompoundID = Enzyme)
+    }
     
     # Noting whether the tissue was from an ADAM model
     ADAM <- tissue %in% c("stomach", "duodenum", "jejunum I", "jejunum II", "ileum I",
@@ -395,15 +400,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     TimeUnits <- sort(unique(Data$Time_units))
     
-    # Check whether the user is plotting enzyme abundance
-    EnzPlot <- names(Data)[1] == "Enzyme"
     if(EnzPlot){
         ObsConcUnits <- "Relative abundance"
         Data <- Data %>% rename(Conc = Abundance) %>%
             mutate(Simulated = TRUE,
-                   Compound = Enzyme,
-                   Inhibitor = ifelse(EffectorPresent,
-                                      "inhibitor 1", "none"))
+                   Compound = Enzyme)
     } else {
         ObsConcUnits <- sort(unique(Data$Conc_units))
     }
@@ -447,10 +448,26 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     if(class(time_range_input) == "character" | t0 != "simulation start"){
         
-        if(complete.cases(time_range) && time_range == "dose 1"){
-            time_range = "first dose"
+        if(complete.cases(time_range) && str_detect(time_range, "dose 1")){
+            time_range <- sub("dose 1", "first dose", time_range)
         }
         
+        if(EnzPlot){
+            if(str_detect(time_range_input, "substrate")){
+                time_range <- str_trim(sub("substrate", "", time_range))
+                Data <- Data %>% rename(DoseNum = DoseNum_sub)
+            }
+            
+            if(str_detect(time_range_input, "inhibitor 1")){
+                time_range <- sub(" inhibitor 1", "", time_range)
+                Data <- Data %>% rename(DoseNum = DoseNum_inhib1)
+            }
+            
+            if(str_detect(time_range_input, "inhibitor 2")){
+                time_range <- sub(" inhibitor 2", "", time_range)
+                Data <- Data %>% rename(DoseNum = DoseNum_inhib2)
+            }
+        } 
         SingleDose <- Data %>% filter(DoseNum > 0) %>% pull(DoseNum) %>%
             unique()
         SingleDose <- length(SingleDose) == 1 && SingleDose == 1
@@ -530,7 +547,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
             } else {
                 
                 DoseNumToPull <- as.numeric(
-                    str_trim(gsub("dose(s)?", "", time_range_input)))
+                    str_trim(gsub("dose(s)?|substrate|inhibitor [12]", "", time_range_input)))
                 
             }
             
