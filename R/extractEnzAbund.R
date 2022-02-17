@@ -61,8 +61,8 @@ extractEnzAbund <- function(sim_data_file,
         stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
     }
     
-    if(tissue %in% c("colon", "small intestine", "liver", "kidney") == FALSE){
-        stop("The tissue you entered is not one of the options. Please select one of 'colon', 'small intestine', 'liver', or 'kidney' for the tissue.")
+    if(tissue %in% c("gut", "liver", "kidney") == FALSE){
+        stop("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.")
     }
     
     if(length(tissue) != 1){
