@@ -88,7 +88,7 @@
 #'
 #'   \item{Conc_units}{units used for concentrations},
 #'
-#'   \item{ConcType}{type of concentration (only applies to ADAM model
+#'   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
 #'   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
 #'   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
 #'   in faeces", "dissolved compound", or "luminal CLint of compound". }}
@@ -350,7 +350,7 @@ extractConcTime <- function(sim_data_file,
                               "Inh Mur" = "unreleased inhibitor in faeces", 
                               "Md" = "dissolved compound", 
                               "Luminal CLint" = "luminal CLint of compound"), 
-                ConcUnit = str_extract(OrigVal, "mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h")) %>% 
+                ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h")) %>% 
             filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique()
     }
     
@@ -485,9 +485,9 @@ extractConcTime <- function(sim_data_file,
         # ADAM data include multiple types of concentrations. Dealing
         # with that and extracting each one.
         if(ADAM){
-            ConcTypes <- SimConcUnits$Type
+            subsection_ADAMs <- SimConcUnits$Type
         } else {
-            ConcTypes <- "regular"
+            subsection_ADAMs <- "regular"
         }
         
         # aggregate data -------------------------------------------------------
@@ -508,7 +508,7 @@ extractConcTime <- function(sim_data_file,
                 FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
                 NamesToCheck <- tolower(sim_data_xl$...1[TimeRow:(FirstBlank-1)])
                 
-                for(n in ConcTypes){
+                for(n in subsection_ADAMs){
                     
                     # Some sheets have all compounds included, so need to narrow
                     # down which rows to check. Others don't have metabolites
@@ -593,14 +593,14 @@ extractConcTime <- function(sim_data_file,
                                                    SimConcUnits$ConcUnit[
                                                        SimConcUnits$Type == n],
                                                    SimConcUnits), 
-                               ConcType = ifelse(ADAM, n, NA))
+                               subsection_ADAM = ifelse(ADAM, n, NA))
                     
                     rm(RowsToUse, Include)
                 }
                 
                 if(EffectorPresent){
                     
-                    for(n in ConcTypes){
+                    for(n in subsection_ADAMs){
                         
                         # Some sheets have all compounds included, so need to narrow
                         # down which rows to check. Others don't have metabolites
@@ -686,7 +686,7 @@ extractConcTime <- function(sim_data_file,
                                                            SimConcUnits$ConcUnit[
                                                                SimConcUnits$Type == n],
                                                            SimConcUnits), 
-                                       ConcType = ifelse(ADAM, n, NA))
+                                       subsection_ADAM = ifelse(ADAM, n, NA))
                             
                             sim_data_mean[[m]][[n]] <- bind_rows(sim_data_mean[[m]][[n]],
                                                                  sim_data_mean_SubPlusEffector)
@@ -731,7 +731,7 @@ extractConcTime <- function(sim_data_file,
                     
                     sim_data_mean[[m]][[i]] <- list()
                     
-                    for(n in ConcTypes){
+                    for(n in subsection_ADAMs){
                         
                         # Some sheets have all compounds included, so need to narrow
                         # down which rows to check. Others don't have metabolites
@@ -792,7 +792,7 @@ extractConcTime <- function(sim_data_file,
                                                        SimConcUnits$ConcUnit[
                                                            SimConcUnits$Type == n],
                                                        SimConcUnits), 
-                                   ConcType = ifelse(ADAM, n, NA))
+                                   subsection_ADAM = ifelse(ADAM, n, NA))
                         
                         rm(RowsToUse, Include)
                     }
@@ -825,12 +825,12 @@ extractConcTime <- function(sim_data_file,
                 # ADAM data include multiple types of concentrations. Dealing
                 # with that and extracting each one.
                 if(ADAM){
-                    ConcTypes <- SimConcUnits$Type
+                    subsection_ADAMs <- SimConcUnits$Type
                 } else {
-                    ConcTypes <- "regular"
+                    subsection_ADAMs <- "regular"
                 }
                 
-                for(n in ConcTypes){
+                for(n in subsection_ADAMs){
                     
                     if(ADAM){
                         RowsToUse <- which(
@@ -887,7 +887,7 @@ extractConcTime <- function(sim_data_file,
                                                    SimConcUnits$ConcUnit[
                                                        SimConcUnits$Type == n],
                                                    SimConcUnits), 
-                               ConcType = ifelse(ADAM, n, NA)) %>%
+                               subsection_ADAM = ifelse(ADAM, n, NA)) %>%
                         separate(SubjTrial, into = c("Individual", "Trial"),
                                  sep = "_")
                     
@@ -897,7 +897,7 @@ extractConcTime <- function(sim_data_file,
                 
                 if(EffectorPresent){
                     
-                    for(n in ConcTypes){
+                    for(n in subsection_ADAMs){
                         
                         if(ADAM){
                             RowsToUse <- intersect(
@@ -955,7 +955,7 @@ extractConcTime <- function(sim_data_file,
                                                            SimConcUnits$ConcUnit[
                                                                SimConcUnits$Type == n],
                                                            SimConcUnits), 
-                                       ConcType = ifelse(ADAM, n, NA)) %>%
+                                       subsection_ADAM = ifelse(ADAM, n, NA)) %>%
                                 separate(SubjTrial, into = c("Individual", "Trial"),
                                          sep = "_")
                             
@@ -1011,7 +1011,7 @@ extractConcTime <- function(sim_data_file,
                     
                     sim_data_ind[[m]][[i]] <- list()
                     
-                    for(n in ConcTypes){
+                    for(n in subsection_ADAMs){
                         
                         # Some sheets have all compounds included, so need to
                         # narrow down which rows to check. Others don't have
@@ -1082,7 +1082,7 @@ extractConcTime <- function(sim_data_file,
                                                        SimConcUnits$ConcUnit[
                                                            SimConcUnits$Type == n],
                                                        SimConcUnits), 
-                                   ConcType = ifelse(ADAM, n, NA)) %>%
+                                   subsection_ADAM = ifelse(ADAM, n, NA)) %>%
                             separate(SubjTrial, into = c("Individual", "Trial"),
                                      sep = "_")
                         
@@ -1486,7 +1486,7 @@ extractConcTime <- function(sim_data_file,
         select(any_of(c("Compound", "CompoundID", "Inhibitor", "Tissue",
                         "Individual", "Trial",
                         "Simulated", "Time", "Conc",
-                        "Time_units", "Conc_units", "ConcType", "DoseNum", "DoseInt",
+                        "Time_units", "Conc_units", "subsection_ADAM", "DoseNum", "DoseInt",
                         "File")))
     
     # Filtering to return ONLY the compound the user requested. This is what

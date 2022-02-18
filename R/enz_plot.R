@@ -53,7 +53,7 @@ enz_plot <- function(sim_enz_dataframe = NA,
             returnAggregateOrIndiv = c("aggregate", "individual"))
     }
     
-    if(unique(Data$Tissue) %in% c("colon", "small intestine")){
+    if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
         Data <- Data %>% filter(Tissue == gut_tissue)
     }
     
