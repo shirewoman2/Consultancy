@@ -127,8 +127,6 @@ extractPK <- function(sim_data_file,
         stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
     }
     
-    data("AllPKParameters")
-    
     ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
         pull(PKparameter)
     
@@ -1095,6 +1093,7 @@ extractPK <- function(sim_data_file,
         StartRow_agg <- which(XL$...2 == "Statistics") + 2
         EndRow_agg <- which(is.na(XL$...2))
         EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+        EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(XL), EndRow_agg)
         
         # Not specifying which dose these parameters are for b/c we don't know.
         # Only pulling whatever AUC, Cmax, etc. are available.

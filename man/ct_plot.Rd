@@ -7,7 +7,7 @@
 ct_plot(
   sim_obs_dataframe = NA,
   figure_type = "trial means",
-  concType_ADAM = "free compound in lumen",
+  subsection_ADAM = "free compound in lumen",
   time_range = NA,
   x_axis_interval = NA,
   pad_x_axis = FALSE,
@@ -65,7 +65,7 @@ running the function \code{\link{extractConcTime}}}
   data, and I recommend checking it out. If the color is too much for you but
   you like the rest, try setting \code{obs_color = "none"}. -LS}}}
 
-\item{concType_ADAM}{ADAM model only: For ADAM model output, multiple types
+\item{subsection_ADAM}{ADAM model only: For ADAM model output, multiple types
 of data are available. Which of those concentration types do you want to
 show? Options are whatever were available for that tissue, which could be
 "solid compound", "free compound in lumen", "Heff", "absorption rate",
