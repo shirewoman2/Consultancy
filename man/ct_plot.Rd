@@ -42,14 +42,25 @@ running the function \code{\link{extractConcTime}}}
 
   \describe{
 
-  \item{trial means}{plots a black line for the mean data, gray lines for the
-  mean of each trial of simulated data, and open circles for the observed
-  data. If an effector was present, gray dashed lines indicate the mean of
-  each trial of simulated data in the presence of the effector.}
+  \item{trial means}{plots an opaque line for the mean data, lighter lines
+  for the mean of each trial of simulated data, and open circles for the
+  observed data. If an effector were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the effector.}
 
-  \item{percentiles}{plots a black line for the mean data, gray lines for the
-  5th and 95th percentiles of the simulated data, and open circles for the
-  observed data}
+  \item{percentiles}{plots an opaque line for the mean data, lighter lines
+  for the 5th and 95th percentiles of the simulated data, and open circles
+  for the observed data. If an effecter were present, the default is dashed
+  lines for the data in the presence of an effector.}
+
+  \item{percentile ribbon}{plots an opaque line for the mean data,
+  transparent shading for the 5th to 95th percentiles of the simulated data,
+  and open circles for the observed data. If an effecter were present, the
+  default is to show the data without the effector in blue and the data in
+  the presence of the effector in red. Note: You may sometimes see some
+  artifacts -- especially for semi-log plots -- where the ribbon gets partly
+  cut off. For arcane reasons we don't want to bore you with here, we can't
+  easily prevent this. However, a possible fix is to set your y axis limits
+  for the semi-log plot to be wider.}
 
   \item{means only}{plots a black line for the mean data and, if an effector
   was modeled, a dashed line for the concentration-time data with Inhibitor
@@ -209,15 +220,15 @@ set of graphs} }}
 graphs? This can be useful if you want to modify the graphs further or only
 use one, etc.}
 
-\item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of the
-Excel file containing the simulated concentration-time data}
+\item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
+the Excel file containing the simulated concentration-time data}
 
-\item{obs_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of the
-Excel file containing the observed concentration-time data. If the observed
-data you want to plot were already included in the Excel output from the
-simulator, leave this as NA. Otherwise, this is the file that it is ready
-to be converted to an XML file, not the file that contains only the
-digitized time and concentration data.}
+\item{obs_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
+the Excel file containing the observed concentration-time data. If the
+observed data you want to plot were already included in the Excel output
+from the simulator, leave this as NA. Otherwise, this is the file that it
+is ready to be converted to an XML file, not the file that contains only
+the digitized time and concentration data.}
 
 \item{obs_inhibitor_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY:
 name of the Excel file containing the observed concentration-time data in

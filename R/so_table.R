@@ -37,9 +37,6 @@
 #' @param sectionInfo information about the simulated and observed data. This is
 #'   output from the function \code{\link{getSectionInfo}} and can be used
 #'   instead of listing the Excel file and sheet name as input.
-#' @param sim_data_file the simulator output file. This is for when you DON'T
-#'   fill out a report input form and instead plan to add information about the
-#'   observed data later manually.
 #' @param PKparameters the PK parameters to include as a character vector. To
 #'   see the full set of possible parameters to extract, enter
 #'   \code{data(AllPKParameters)} into the console. By default, if you supply a
@@ -51,13 +48,14 @@
 #'   don't make sense for your scenario -- like asking for
 #'   \code{AUCinf_ss_withInhib} when your simulation did not include an
 #'   inhibitor or effector -- will not be included.
-#' @param mean_type Arithmetic or geometric means? Only specify this if you'd
-#'   like to override the value listed in \code{sectionInfo}. If no value is
-#'   specified here or in \code{sectionInfo}, the default is "geometric".
+#' @param mean_type return "arithmetic" or "geometric" (default) means and CVs.
+#'   Only specify this if you'd like to override the value listed in
+#'   \code{sectionInfo}. If no value is specified here or in \code{sectionInfo},
+#'   the default is "geometric".
 #' @param variability_option What type of variability would you like the table
 #'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 #'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-#'   percentiles"). The arithmetic CV will automatically be included.}
+#'   percentiles"). The CV will automatically be included.}
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
@@ -72,8 +70,13 @@
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
+#' @param sim_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the
+#'   simulator output file. This is for when you DON'T fill out a report input
+#'   form and instead plan to add information about the observed data later
+#'   manually.
 #'
-#' @return a data.frame
+#' @return a data.frame of S/O values or a list of that data.frame plus
+#'   information on where the values came from for QCing
 #' @export
 #' @examples
 #' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
@@ -83,7 +86,6 @@
 so_table <- function(report_input_file = NA,
                      sheet = NA,
                      sectionInfo = NA,
-                     sim_data_file = NA,
                      PKparameters = NA,
                      mean_type = NA,
                      variability_option = "90% CI",
@@ -91,7 +93,8 @@ so_table <- function(report_input_file = NA,
                      includeHalfLife = FALSE,
                      includeTrialMeans = FALSE,
                      includeCV = TRUE,
-                     checkDataSource = TRUE){
+                     checkDataSource = TRUE, 
+                     sim_data_file = NA){
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -531,7 +534,7 @@ so_table <- function(report_input_file = NA,
     names(MyPKResults) <- PKToPull_pretty[names(MyPKResults)]
     
     if(checkDataSource){
-        MyPKResults <- list("so_table" = MyPKResults,
+        MyPKResults <- list("Table" = MyPKResults,
                             "QC" = MyPKResults_all$QC)
     }
     

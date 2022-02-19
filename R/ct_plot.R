@@ -32,14 +32,25 @@
 #'
 #'   \describe{
 #'
-#'   \item{trial means}{plots a black line for the mean data, gray lines for the
-#'   mean of each trial of simulated data, and open circles for the observed
-#'   data. If an effector was present, gray dashed lines indicate the mean of
-#'   each trial of simulated data in the presence of the effector.}
+#'   \item{trial means}{plots an opaque line for the mean data, lighter lines
+#'   for the mean of each trial of simulated data, and open circles for the
+#'   observed data. If an effector were present, lighter dashed lines indicate
+#'   the mean of each trial of simulated data in the presence of the effector.}
 #'
-#'   \item{percentiles}{plots a black line for the mean data, gray lines for the
-#'   5th and 95th percentiles of the simulated data, and open circles for the
-#'   observed data}
+#'   \item{percentiles}{plots an opaque line for the mean data, lighter lines
+#'   for the 5th and 95th percentiles of the simulated data, and open circles
+#'   for the observed data. If an effecter were present, the default is dashed
+#'   lines for the data in the presence of an effector.}
+#'
+#'   \item{percentile ribbon}{plots an opaque line for the mean data,
+#'   transparent shading for the 5th to 95th percentiles of the simulated data,
+#'   and open circles for the observed data. If an effecter were present, the
+#'   default is to show the data without the effector in blue and the data in
+#'   the presence of the effector in red. Note: You may sometimes see some
+#'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
+#'   cut off. For arcane reasons we don't want to bore you with here, we can't
+#'   easily prevent this. However, a possible fix is to set your y axis limits
+#'   for the semi-log plot to be wider.}
 #'
 #'   \item{means only}{plots a black line for the mean data and, if an effector
 #'   was modeled, a dashed line for the concentration-time data with Inhibitor
@@ -180,14 +191,14 @@
 #' @param return_indiv_graphs TRUE or FALSE: Return each of the two individual
 #'   graphs? This can be useful if you want to modify the graphs further or only
 #'   use one, etc.
-#' @param sim_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of the
-#'   Excel file containing the simulated concentration-time data
-#' @param obs_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of the
-#'   Excel file containing the observed concentration-time data. If the observed
-#'   data you want to plot were already included in the Excel output from the
-#'   simulator, leave this as NA. Otherwise, this is the file that it is ready
-#'   to be converted to an XML file, not the file that contains only the
-#'   digitized time and concentration data.
+#' @param sim_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
+#'   the Excel file containing the simulated concentration-time data
+#' @param obs_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
+#'   the Excel file containing the observed concentration-time data. If the
+#'   observed data you want to plot were already included in the Excel output
+#'   from the simulator, leave this as NA. Otherwise, this is the file that it
+#'   is ready to be converted to an XML file, not the file that contains only
+#'   the digitized time and concentration data.
 #' @param obs_inhibitor_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY:
 #'   name of the Excel file containing the observed concentration-time data in
 #'   the presence of an effector (labeled "Inhibitor 1" in the simulator). This
@@ -285,8 +296,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Error catching
     if(length(figure_type) != 1 |
        figure_type %in% c("trial means", "percentiles", "trial percentiles",
-                          "Freddy", "means only", "overlay") == FALSE){
-        stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'means only', or 'Freddy'.")
+                          "Freddy", "means only", "overlay", 
+                          "percentile ribbon", "percentile ribbons") == FALSE){
+        stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.")
     }
     
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
@@ -457,7 +469,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     if(class(time_range_input) == "character" | t0 != "simulation start"){
         
-        if(complete.cases(time_range) && str_detect(time_range, "dose 1")){
+        if(complete.cases(time_range) && str_detect(time_range, "dose 1$")){
             time_range <- sub("dose 1", "first dose", time_range)
         }
         
@@ -523,7 +535,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
         }
         
         if(all(complete.cases(time_range_input)) && 
-           str_detect(time_range_input, "first dose|dose 1")){
+           str_detect(time_range_input, "first dose|dose 1$")){
             time_range <- c(0, DoseTimes$FirstDoseEnd)
         }
         
@@ -552,12 +564,14 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 
                 DoseNumToPull <- as.numeric(
                     str_trim(str_split(
-                        gsub("dose(s)?", "", time_range), "to")[[1]]))
+                        gsub("dose(s)?|substrate|inhibitor [12]", "", 
+                             time_range_input), "to")[[1]]))
                 
             } else {
                 
                 DoseNumToPull <- as.numeric(
-                    str_trim(gsub("dose(s)?|substrate|inhibitor [12]", "", time_range)))
+                    str_trim(gsub("dose(s)?|substrate|inhibitor [12]", "", 
+                                  time_range_input)))
                 
             }
             
@@ -800,7 +814,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Setting Y axis limits for both linear and semi-log plots
     if (figure_type == "trial means") {
         Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles")) {
+    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles",
+                                  "percentile ribbon", "percentile ribbons")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if (figure_type == "means only") {
         Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
@@ -866,7 +881,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Setting user specifications for shape, linetype, and color where
     # applicable.
     if(is.na(line_type[1])){
-        line_type <- c("solid", "dashed")
+        if(str_detect(figure_type, "ribbon") & 
+           length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+            line_type <- c("solid", "solid")
+        } else {
+            line_type <- c("solid", "dashed")
+        }
     }
     
     if(is.na(obs_shape[1])){
@@ -878,7 +899,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     if(is.na(line_color[1])){
-        line_color <- c("black", "black")
+        if(str_detect(figure_type, "ribbon") & 
+           length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+            line_color <- c("#377EB8", "#E41A1C")
+        } else {
+            line_color <- c("black", "black")
+        }
     }
     
     if(complete.cases(line_color[1]) && figure_type == "Freddy" &&
@@ -971,7 +998,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     ## figure_type: percentiles ----------------------------------------------------------
-    if(str_detect(figure_type, "percentile")){
+    if(str_detect(figure_type, "percentile") &&
+       !str_detect(figure_type, "ribbon")){
         # graphs with 95th percentiles
         
         AlphaToUse <- ifelse(complete.cases(line_transparency),
@@ -1021,6 +1049,68 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == "mean"),
                           lwd = ifelse(is.na(line_width), 1, line_width),
+                          linetype = line_type[1],
+                          color = line_color[1])
+            
+            if(nrow(obs_data) > 0){
+                if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    A <- A + geom_point(data = obs_data, size = 2,
+                                        stroke = 1, shape = obs_shape[1])
+                } else {
+                    A <- A +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = obs_color[1], alpha = 0.5,
+                                   stroke = 1, shape = obs_shape[1]) +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = NA, shape = obs_shape[1], stroke = 1)
+                }
+            }
+        }
+    }
+    
+    ## figure_type: percentile ribbon ----------------------------------------------------------
+    if(str_detect(figure_type, "percentile ribbon")){
+        # graphs with 95th percentiles as transparent ribbons 
+        
+        AlphaToUse <- ifelse(complete.cases(line_transparency),
+                             line_transparency, 0.25)
+        
+        RibbonDF <- sim_data_mean %>% select(-Group, -Individual) %>% 
+            pivot_wider(names_from = Trial, values_from = Conc)
+        
+        if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+            
+            A <- ggplot(RibbonDF, aes(x = Time, y = mean, ymin = per5, ymax = per95, 
+                                      linetype = Inhibitor, shape = Inhibitor,
+                                      color = Inhibitor, fill = Inhibitor)) +
+                geom_ribbon(alpha = AlphaToUse, color = NA) +
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
+                scale_shape_manual(values = obs_shape[1:2]) +
+                scale_linetype_manual(values = line_type[1:2]) +
+                scale_color_manual(values = line_color[1:2]) +
+                scale_fill_manual(values = line_color[1:2])
+            
+            if(nrow(obs_data) > 0){
+                if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    A <- A + geom_point(data = obs_data, size = 2,
+                                        stroke = 1)
+                } else {
+                    A <- A +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = obs_color, alpha = 0.5,
+                                   stroke = 1) +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = NA, stroke = 1)
+                }
+            }
+            
+        } else {
+            
+            ## linear plot
+            A <- ggplot(RibbonDF, aes(x = Time, y = mean, ymin = per5, ymax = per95)) +
+                geom_ribbon(alpha = AlphaToUse) +
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
             
@@ -1185,14 +1275,37 @@ ct_plot <- function(sim_obs_dataframe = NA,
     if(complete.cases(time_range_input) &&
        str_detect(tolower(time_range_input), "dose") &
        pad_x_axis == FALSE){
-        A <- A + scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                                    expand = c(0,0)) +
-            theme(plot.margin = unit(c(0.5, 0.75, 0.5, 0.5), "cm"))
+        if(str_detect(figure_type, "ribbon")){
+            # There's a known glitch w/ggplot2 with coord_cartesian and
+            # geom_ribbon. Hacking around that.
+            A <- A + 
+                scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                   expand = c(0,0), 
+                                   limits = time_range_relative) +
+                theme(plot.margin = unit(c(0.5, 0.75, 0.5, 0.5), "cm"))
+        } else {
+            A <- A + 
+                coord_cartesian(xlim = time_range_relative) +
+                scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                   expand = c(0,0)) +
+                theme(plot.margin = unit(c(0.5, 0.75, 0.5, 0.5), "cm"))
+        }
     } else {
-        A <- A +
-            scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                               expand = expansion(
-                                   mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04)))
+        if(str_detect(figure_type, "ribbon")){
+            # There's a known glitch w/ggplot2 with coord_cartesian and
+            # geom_ribbon. Hacking around that.
+            A <- A +
+                scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                   limits = time_range_relative,
+                                   expand = expansion(
+                                       mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04))) 
+        } else {
+            A <- A +
+                scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                   expand = expansion(
+                                       mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04))) +
+                coord_cartesian(xlim = time_range_relative)
+        }
     }
     
     A <- A +
@@ -1209,7 +1322,6 @@ ct_plot <- function(sim_obs_dataframe = NA,
                             legend_label, "Inhibitor"),
              color = ifelse(complete.cases(legend_label), 
                             legend_label, "Inhibitor")) +
-        coord_cartesian(xlim = time_range_relative) +
         theme(panel.background = element_rect(fill="white", color=NA),
               legend.key = element_rect(fill = "white"),
               axis.ticks = element_line(color = "black"),
