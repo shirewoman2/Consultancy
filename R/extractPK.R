@@ -14,10 +14,11 @@
 #'   first or last dose, this function will work best if this is left as NA.
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are "all" for all possible parameters, "AUC tab" for
-#'   only those parameters on the "AUC" tab (default), "Absorption tab" for only
-#'   those parameters on the "Absorption" tab, or any combination of specific,
-#'   individual parameters. Currently, the PK data are only for the substrate
-#'   unless noted. To see the full set of possible parameters to extract, enter
+#'   only those parameters on the "AUC" tab (default, "AUC_CI" tab will be used
+#'   if "AUC" is not present), "Absorption tab" for only those parameters on the
+#'   "Absorption" tab, or any combination of specific, individual parameters.
+#'   Currently, the PK data are only for the substrate unless noted. To see the
+#'   full set of possible parameters to extract, enter
 #'   \code{data(AllPKParameters)} into the console.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" or "blood".
@@ -222,21 +223,38 @@ extractPK <- function(sim_data_file,
                             Note = as.character(NA))
     
     # Pulling data from the "AUC" sheet ------------------------------------------
-    if(any(PKparameters %in% ParamAUC) & is.na(sheet) &
-       PKparameters_orig[1] != "Absorption tab" &
-       (PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE) == FALSE){
+    
+    # Need to pull these parameters if either a) they requested a set of
+    # parameters rather than asking for a set of parameters by sheet name (AUC
+    # or Absorption tabs), did not specify an input sheet, and some of those
+    # parameters are present on the AUC tab or b) the user requested the "AUC
+    # tab" for PK parameters and either "AUC" or "AUC_CI" are among the sheets
+    # in the file.
+    if(
+        # a)
+        (any(PKparameters %in% ParamAUC) & is.na(sheet) &
+       PKparameters_orig[1] != "Absorption tab") |
+       
+       # b)
+       (PKparameters_orig[1] == "AUC tab" & ("AUC" %in% AllSheets |
+                                             "AUC_CI" %in% AllSheets))){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
         # Error catching
-        if("AUC" %in% AllSheets == FALSE){
-            warning(paste0("The sheet 'AUC' must be present in the Excel simulated data file to extract the PK parameters ",
+        if("AUC" %in% AllSheets == FALSE & "AUC_CI" %in% AllSheets == FALSE){
+            warning(paste0("The sheet 'AUC' or 'AUC_CI' must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_AUC, collapse = ", "),
                            ". None of these parameters can be extracted."))
         } else {
             
             AUC_xl <- suppressMessages(
-                readxl::read_excel(path = sim_data_file, sheet = "AUC",
+                readxl::read_excel(path = sim_data_file, 
+                                   # If the user requested the "AUC" tab for PK
+                                   # parameters, it's ok to use the tab "AUC_CI"
+                                   # if "AUC" is not present.
+                                   sheet = ifelse("AUC" %in% AllSheets == FALSE, 
+                                                  "AUC_CI", "AUC"),
                                    col_names = FALSE))
             
             EndRow_ind <- which(AUC_xl$...2 == "Statistics") - 2
@@ -1258,7 +1276,8 @@ extractPK <- function(sim_data_file,
     }
     
     if(checkDataSource){
-        DataCheck <- DataCheck %>% filter(complete.cases(PKparam))
+        DataCheck <- DataCheck %>% filter(complete.cases(PKparam)) %>% 
+            mutate(File = sim_data_file)
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- DataCheck
