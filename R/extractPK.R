@@ -487,7 +487,9 @@ extractPK <- function(sim_data_file,
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i, Tab = "AUC",
+                        bind_rows(data.frame(PKparam = i, 
+                                             Tab = ifelse("AUC" %in% AllSheets == FALSE, 
+                                                          "AUC_CI", "AUC"),
                                              StartColText = SearchText4Col,
                                              SearchText = SearchText,
                                              Column = ColNum,

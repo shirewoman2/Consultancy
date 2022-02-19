@@ -130,7 +130,7 @@ so_table <- function(report_input_file = NA,
         DoseRegimen <- Deets$Regimen_sub
         SimFile <- sim_data_file
         MeanType <- ifelse(is.na(mean_type),
-                           "geometric", MeanType)
+                           "geometric", mean_type)
         GMR_mean_type <- "geometric"
         
     } else {
@@ -144,9 +144,6 @@ so_table <- function(report_input_file = NA,
         GMR_mean_type <- sectionInfo$GMR_mean_type
         
     }
-    
-    # All possible PK parameters
-    data("AllPKParameters")
     
     if(complete.cases(PKparameters[1])){
         PKToPull <- PKparameters
@@ -236,18 +233,19 @@ so_table <- function(report_input_file = NA,
     }
     
     MyPKResults <- MyPKResults %>%
-        filter(!Statistic == ifelse(MeanType == "geometric",
-                                    "Mean", "Geometric Mean")) %>%
+        filter(!Statistic %in% switch(MeanType, "geometric" = c("Mean", "cv"), 
+                                      "arithmetic" = c("Geometric Mean", "Geometric CV"))) %>%
         mutate(Stat = recode(Statistic,
                              "Mean" = "GMean",
+                             "cv" = "CV",
                              "Geometric Mean" = "GMean",
+                             "Geometric CV" = "CV",
                              "90% confidence interval around the geometric mean(lower limit)" = "CI_10",
                              "90% confidence interval around the geometric mean(upper limit)" = "CI_90",
                              "95% confidence interval around the geometric mean(lower limit)" = "CI_05",
                              "95% confidence interval around the geometric mean(upper limit)" = "CI_95",
                              "5th centile" = "Q5th",
                              "95th centile" = "Q95th",
-                             "cv" = "CV",
                              "Std Dev" = "SD")) %>%
         select(-Statistic)
     
