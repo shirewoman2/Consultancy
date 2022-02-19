@@ -74,13 +74,20 @@ A data.frame of concentration-time data with the following columns:
   \item{Compound}{the compound whose concentration is listed; this matches
   whatever you named your substrate or inhibitor in the simulator}
 
-  \item{Inhibitor (as applicable)}{the inhibitor or effector of interest;
-  this matches whatever you named "Inhibitor 1" in the simulator}
+  \item{CompoundID}{the generic name of the compound: "substrate", "inhibitor
+  1", "primary metabolite 1", etc.}
+
+  \item{Inhibitor (as applicable)}{the inhibitor(s) or effector(s) of
+  interest; this matches whatever you named "Inhibitor 1", "Inhibitor 2", or
+  "Inhibitor 1 metabolite" in the simulator and will be a concatenation of
+  all the effectors present}
+
+  \item{Tissue}{the tissue}
 
   \item{Individual}{the individual for the given profile, which will be a
-  number for a simulated individual or will be "obs" or "obs+inhibitor1" for
-  observed data, "mean" for the mean data, or "per5" or "per95" for the 5th
-  and 95th percentile data.}
+  number for a simulated individual or will be "obs" or "obs+inhibitor" for
+  observed data, "mean" for the mean data, "geomean" for the geometric mean
+  data, or "per5" or "per95" for the 5th and 95th percentile data.}
 
   \item{Trial}{the trial number for that set of simulations or "obs", "mean",
   etc. for the observed or aggregate data}
@@ -98,7 +105,15 @@ A data.frame of concentration-time data with the following columns:
   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
-  in faeces", "dissolved compound", or "luminal CLint of compound". }}
+  in faeces", "dissolved compound", or "luminal CLint of compound". }
+
+  \item{Dose_num}{the dose number}
+
+  \item{Dose_int}{the dosing interval. This will be NA for custom-dosing
+  regimens.}
+
+  \item{File}{the simulator output Excel file that was used as the source for
+  these data} }
 }
 \description{
 Extracts concentration-time data from simulator output Excel files and,

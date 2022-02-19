@@ -4,7 +4,12 @@
 #' into \code{\link{getSectionInfo}} and \code{\link{so_table}} to automate some
 #' of the calculations and graph creation for writing a report. \strong{A note:}
 #' This generates a warning that we're just not able to get rid of that says
-#' "Workbook has no sheets!" Please disregard that.
+#' "Workbook has no sheets!" Please disregard that. \strong{Important note:}
+#' This does not work on the SharePoint drive because it doesn't have permission
+#' to write there. Please set your working directory to a different location. It
+#' \emph{will} work on the Large File Store drive, but it will be quite slow to
+#' do so from your local machine. Really, everything runs markedly faster when
+#' you run it from your VM instead. 
 #'
 #' The three tabs in the Excel file this function creates are: \describe{
 #'

@@ -477,6 +477,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 Data <- Data %>% rename(DoseNum = DoseNum_inhib2)
             }
         } 
+        
         SingleDose <- Data %>% filter(DoseNum > 0) %>% pull(DoseNum) %>%
             unique()
         SingleDose <- length(SingleDose) == 1 && SingleDose == 1
@@ -486,9 +487,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 FirstDoseStart = Data %>%
                     filter(CompoundID == compoundToExtract & 
                                DoseNum == 1) %>% 
-                    summarize(Min = min(Time)) %>% pull(Min), 
+                    summarize(Min = min(Time)) %>% pull(Min) %>% floor(), 
                 
-                FirstDoseEnd = max(Data$Time[Data$CompoundID == compoundToExtract]),
+                FirstDoseEnd = ceiling(max(Data$Time[Data$CompoundID == compoundToExtract])),
                 
                 PenultDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
                                                           Data$CompoundID == compoundToExtract])),
@@ -499,7 +500,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 filter(DoseNum > 0 & CompoundID == compoundToExtract) %>%
                 group_by(DoseNum) %>%
                 summarize(t0 = round(min(Time)), # Is it safe to round this to the nearest unit? Probably ok but may need to adjust this later.
-                          tlast = round(max(Time))) %>% 
+                          tlast = ceiling(max(Time))) %>% 
                 ungroup()
             
             MaxNumDoses <- max(Data$DoseNum[Data$CompoundID == compoundToExtract])
@@ -522,12 +523,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
         }
         
         if(all(complete.cases(time_range_input)) && 
-           time_range_input == "first dose"){
+           str_detect(time_range_input, "first dose|dose 1")){
             time_range <- c(0, DoseTimes$FirstDoseEnd)
         }
         
         if(all(complete.cases(time_range_input)) &&
-           time_range_input == "penultimate dose"){
+           str_detect(time_range_input, "penultimate dose")){
             if(SingleDose){
                 time_range <-
                     c(DoseTimes$LastDoseStart, max(Data$Time))
@@ -540,7 +541,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
         }
         
         if(all(complete.cases(time_range_input)) &&
-           time_range_input == "last dose"){
+           str_detect(time_range_input, "last dose")){
             time_range <- c(DoseTimes$LastDoseStart, max(Data$Time))
         }
         
@@ -551,21 +552,29 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 
                 DoseNumToPull <- as.numeric(
                     str_trim(str_split(
-                        gsub("dose(s)?", "", time_range_input), "to")[[1]]))
+                        gsub("dose(s)?", "", time_range), "to")[[1]]))
                 
             } else {
                 
                 DoseNumToPull <- as.numeric(
-                    str_trim(gsub("dose(s)?|substrate|inhibitor [12]", "", time_range_input)))
+                    str_trim(gsub("dose(s)?|substrate|inhibitor [12]", "", time_range)))
                 
             }
             
-            time_range <- Data %>% 
-                filter(DoseNum %in% DoseNumToPull &
-                           CompoundID == compoundToExtract) %>% 
-                summarize(Min = min(Time), 
-                          Max = max(Time)) %>% 
-                t() %>% as.numeric()
+            if(any(DoseNumToPull < min(Data$DoseNum) |
+                   DoseNumToPull > max(Data$DoseNum))){
+                warning(paste0("You requested ", 
+                               time_range_input, ", but that is outside the number of doses administered. The full time range will be returned."))
+                time_range <- range(Data$Time)
+            } else {
+                
+                time_range <- Data %>% 
+                    filter(DoseNum %in% DoseNumToPull &
+                               CompoundID == compoundToExtract) %>% 
+                    summarize(Min = round(min(Time)), 
+                              Max = ceiling(max(Time))) %>% 
+                    t() %>% as.numeric()
+            }
         }
     }
     
