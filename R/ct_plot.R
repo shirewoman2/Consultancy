@@ -1069,7 +1069,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     ## figure_type: percentile ribbon ----------------------------------------------------------
-    if(str_detect(figure_type, "percentile ribbon")){
+    if(str_detect(figure_type, "percentile(s)? ribbon")){
         # graphs with 95th percentiles as transparent ribbons 
         
         AlphaToUse <- ifelse(complete.cases(line_transparency),
@@ -1116,15 +1116,20 @@ ct_plot <- function(sim_obs_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        stroke = 1, shape = obs_shape[1])
+                    A <- A + 
+                        geom_point(data = obs_data, 
+                                   aes(x = Time, y = Conc), inherit.aes = FALSE,
+                                   size = 2, stroke = 1, shape = obs_shape[1])
                 } else {
                     A <- A +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = obs_color[1], alpha = 0.5,
+                        geom_point(data = obs_data,
+                                   aes(x = Time, y = Conc), inherit.aes = FALSE,
+                                   size = 2, fill = obs_color[1], alpha = 0.5,
                                    stroke = 1, shape = obs_shape[1]) +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, shape = obs_shape[1], stroke = 1)
+                        geom_point(data = obs_data, 
+                                   aes(x = Time, y = Conc), inherit.aes = FALSE,
+                                   size = 2, fill = NA, shape = obs_shape[1], 
+                                   stroke = 1)
                 }
             }
         }
