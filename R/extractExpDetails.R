@@ -58,9 +58,16 @@ extractExpDetails <- function(sim_data_file,
     
     # Noting exp_details requested for later
     exp_details_input <- tolower(exp_details)
+    
+    # Cleaning up possible problems w/how exp_details by tab might be inputted
+    if(str_detect(tolower(exp_details), "summary")){exp_details <- "Summary tab"}
+    if(str_detect(tolower(exp_details), "input")){exp_details <- "Input sheet"}
+    if(str_detect(tolower(exp_details), "population sheet")){exp_details <- "population tab"}
+    
     # Noting which details are possible, which columns to search for their
-    # names, which columns contain their values for substrates or
-    # inhibitors, and what kind of data to format the output as at the end
+    # names, which columns contain their values for substrates or inhibitors,
+    # and what kind of data to format the output as at the end. Using data
+    # object AllExpDetails.
     
     # Still need to add info for searching for some details. Removing those
     # from consideration for now.
