@@ -22,7 +22,11 @@
 #' @param variability_option What type of variability would you like the table
 #'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 #'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-#'   percentiles"). The CV will automatically be included.}
+#'   percentiles"). Note that the confidence intervals are geometric since
+#'   that's what the simulator outputs (see an AUC tab and the summary
+#'   statistics; these values are the ones for, e.g., "90% confidence interval
+#'   around the geometric mean(lower limit)"). The CV will automatically be
+#'   included.}
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
@@ -53,7 +57,7 @@
 
 pksummary_table <- function(sim_data_file,
                             PKparameters = NA,
-                            mean_type = NA,
+                            mean_type = "geometric",
                             variability_option = "90% CI",
                             concatVariability = FALSE,
                             includeHalfLife = FALSE,
