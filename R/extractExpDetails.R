@@ -795,7 +795,7 @@ extractExpDetails <- function(sim_data_file,
     # details show up on multiple sheets, so there are redundancies in this
     # function to deal with that.)
     if(exp_details_input[1] %in% c("summary tab", "input sheet")){
-        MyInputDeets <- intersect("A", "B")
+        MyPopDeets <- intersect("A", "B")
     }
     
     if(length(MyPopDeets) > 0){
@@ -864,12 +864,28 @@ extractExpDetails <- function(sim_data_file,
                                "Haematocrit_female" = "Haematocrit Mean : Female", 
                                "Abund_CYP1A2_mean" = "Abundance : CYP1A2 EM Mean",
                                "Abund_CYP1A2_CV" = "Abundance : CYP1A2 EM CV",
-                               "Abund_CYP3A4_mean" = "Abundance : CYP3A4 EM Mean",
-                               "Abund_CYP3A4_CV" = "Abundance : CYP3A4 EM CV",
+                               "Abund_CYP2A6_mean" = "Abundance : CYP2A6 EM Mean",
+                               "Abund_CYP2A6_CV" = "Abundance : CYP2A6 EM CV",
+                               "Abund_CYP2B6_mean" = "Abundance : CYP2B6 EM Mean",
+                               "Abund_CYP2B6_CV" = "Abundance : CYP2B6 EM CV",
                                "Abund_CYP2C9_mean" = "Abundance : CYP2C9 EM Mean",
                                "Abund_CYP2C9_CV" = "Abundance : CYP2C9 EM CV",
+                               "Abund_CYP2C18_mean" = "Abundance : CYP2C18 EM Mean",
+                               "Abund_CYP2C18_CV" = "Abundance : CYP2C18 EM CV",
+                               "Abund_CYP2C19_mean" = "Abundance : CYP2C19 EM Mean",
+                               "Abund_CYP2C19_CV" = "Abundance : CYP2C19 EM CV",
                                "Abund_CYP2D6_mean" = "Abundance : CYP2D6 EM Mean",
-                               "Abund_CYP2D6_CV" = "Abundance : CYP2D6 EM CV")
+                               "Abund_CYP2D6_CV" = "Abundance : CYP2D6 EM CV",
+                               "Abund_CYP2E1_mean" = "Abundance : CYP2E1 EM Mean",
+                               "Abund_CYP2E1_CV" = "Abundance : CYP2E1 EM CV",
+                               "Abund_CYP2J2_mean" = "Abundance : CYP2J2 EM Mean",
+                               "Abund_CYP2J2_CV" = "Abundance : CYP2J2 EM CV",
+                               "Abund_CYP3A4_mean" = "Abundance : CYP3A4 EM Mean",
+                               "Abund_CYP3A4_CV" = "Abundance : CYP3A4 EM CV",
+                               "Abund_CYP3A5_mean" = "Abundance : CYP3A5 EM Mean",
+                               "Abund_CYP3A5_CV" = "Abundance : CYP3A5 EM CV",
+                               "Abund_CYP3A7_mean" = "Abundance : CYP3A7 EM Mean",
+                               "Abund_CYP3A7_CV" = "Abundance : CYP3A7 EM CV")
             
             NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
             Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
