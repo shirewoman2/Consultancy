@@ -9,7 +9,7 @@
 #' to write there. Please set your working directory to a different location. It
 #' \emph{will} work on the Large File Store drive, but it will be quite slow to
 #' do so from your local machine. Really, everything runs markedly faster when
-#' you run it from your VM instead. 
+#' you run it from your VM instead.
 #'
 #' The three tabs in the Excel file this function creates are: \describe{
 #'
@@ -29,7 +29,10 @@
 #' report.}}
 #'
 #' @param filename the Excel file name that you'd like for the form you're
-#'   creating, ending in ".xlsx".
+#'   creating, ending in ".xlsx". IMPORTANT: If you specify the full file path,
+#'   this does not work, and we haven't figured out why. Instead, please
+#'   navigate to where you want the file to be and only list the file name here
+#'   rather than the full path. 
 #'
 #' @return This does not return an R object; it saves an Excel file that serves
 #'   as a form for report information.
