@@ -11,6 +11,7 @@ ct_plot(
   time_range = NA,
   x_axis_interval = NA,
   pad_x_axis = FALSE,
+  pad_y_axis = FALSE,
   adjust_obs_time = FALSE,
   t0 = "simulation start",
   y_axis_limits_lin = NA,
@@ -114,6 +115,9 @@ of your time range. If set to TRUE, there will be a little bit of space
 between the y axis and the start of your time range. NOTE: We could allow
 users to specify exactly how much padding and on which sides of the x axis
 if there's interest from users. -LS}
+
+\item{pad_y_axis}{Similar to the \code{pad_x_axis} argument, optionally add a
+smidge of padding to the y axis. Default is no padding.}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to

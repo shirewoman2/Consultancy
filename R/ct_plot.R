@@ -106,6 +106,8 @@
 #'   between the y axis and the start of your time range. NOTE: We could allow
 #'   users to specify exactly how much padding and on which sides of the x axis
 #'   if there's interest from users. -LS
+#' @param pad_y_axis Similar to the \code{pad_x_axis} argument, optionally add a
+#'   smidge of padding to the y axis. Default is no padding. 
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
 #'
@@ -271,6 +273,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     time_range = NA,
                     x_axis_interval = NA,
                     pad_x_axis = FALSE,
+                    pad_y_axis = FALSE,
                     adjust_obs_time = FALSE,
                     t0 = "simulation start",
                     y_axis_limits_lin = NA,
@@ -862,7 +865,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     YBreaks      <- seq(ifelse(is.na(y_axis_limits_lin[1]), 
                                0, y_axis_limits_lin[1]),
                         YmaxRnd, YInterval/2)                    # create labels at major and minor points
-    YLabels      <- YBreaks
+    YLabels      <- format(YBreaks, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
     YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
     
     # If the user specified a y axis interval, make sure there's an axis label
@@ -870,9 +873,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
     if(any(complete.cases(y_axis_limits_lin))){
         YBreaks <- unique(c(YBreaks, y_axis_limits_lin[2]))
         if(length(YLabels) == length(YBreaks)){
-            YLabels[length(YLabels)] <- YBreaks[length(YBreaks)]
+            YLabels[length(YLabels)] <- 
+                format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
         } else {
-            YLabels <- c(YLabels, YBreaks[length(YBreaks)])
+            YLabels <- c(YLabels, 
+                         format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE))
         }
     }
     
@@ -1319,7 +1324,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                                       YmaxRnd), 
                            breaks = YBreaks,
                            labels = YLabels,
-                           expand = expansion(mult = c(0, 0.1))) +
+                           expand = expansion(mult = c(ifelse(pad_y_axis, 0.1, 0), 0.1))) +
         labs(x = xlab, y = ylab,
              linetype = ifelse(complete.cases(legend_label),
                                legend_label, "Inhibitor"),
@@ -1390,7 +1395,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
        all(log10(Ylim_log) == round(log10(Ylim_log)))){
         
         # add labels at order of magnitude
-        YLogLabels[seq(1,length(YLogLabels),9)] <- YLogBreaks[seq(1,length(YLogLabels),9)]
+        YLogLabels[seq(1,length(YLogLabels),9)] <- 
+            format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
         
     } else {
         
@@ -1398,18 +1404,24 @@ ct_plot <- function(sim_obs_dataframe = NA,
         # odd fractions are b/c I want to have them spaced out somewhat
         # regularly, and that requires nonlinear intervals since it's log
         # transformed.
-        YLogLabels[1] <- YLogBreaks[1]
+        YLogLabels[1] <- 
+            format(YLogBreaks[1], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
         Nbreaks <- length(YLogBreaks)
-        YLogLabels[Nbreaks] <- YLogBreaks[Nbreaks]
-        YLogLabels[round(Nbreaks/4)] <- YLogBreaks[round(Nbreaks/4)]
-        YLogLabels[round(2*Nbreaks/3)] <- YLogBreaks[round(2*Nbreaks/3)]
-        YLogLabels[round(5*Nbreaks/6)] <- YLogBreaks[round(5*Nbreaks/6)]
+        YLogLabels[Nbreaks] <- 
+            format(YLogBreaks[Nbreaks], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        YLogLabels[round(Nbreaks/4)] <- 
+            format(YLogBreaks[round(Nbreaks/4)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        YLogLabels[round(2*Nbreaks/3)] <- 
+            format(YLogBreaks[round(2*Nbreaks/3)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        YLogLabels[round(5*Nbreaks/6)] <- 
+            format(YLogBreaks[round(5*Nbreaks/6)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
         
     } 
     
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
-                          labels = YLogLabels) +
+                          labels = YLogLabels,
+                          expand = expansion(mult = c(ifelse(pad_y_axis, 0.1, 0), 0.1))) +
             # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
             coord_cartesian(xlim = time_range_relative)
     )
