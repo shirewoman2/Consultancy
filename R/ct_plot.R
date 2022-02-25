@@ -918,10 +918,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
         line_color <- rep(line_color, 2)
     }
     
-    obs_color <- ifelse((complete.cases(obs_color) & obs_color == "default") |
-                            (is.na(obs_color[1]) & figure_type == "Freddy"),
-                        "#3030FE", obs_color)
-    
+    if(length(obs_color) == 1 &&
+       (complete.cases(obs_color[1]) & obs_color == "default") |
+       (is.na(obs_color[1]) & figure_type == "Freddy")){
+        obs_color <- "#3030FE"
+    }    
     
     ## figure_type: trial means -----------------------------------------------------------
     if(figure_type == "trial means"){
@@ -938,7 +939,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
             A <- ggplot(sim_data_trial,
                         aes(x = Time, y = Conc, group = Group,
                             linetype = Inhibitor, shape = Inhibitor,
-                            color = Inhibitor)) +
+                            color = Inhibitor, fill = Inhibitor)) +
                 geom_line(alpha = AlphaToUse, 
                           lwd = ifelse(is.na(line_width), 1, line_width), 
                           show.legend = FALSE) +
@@ -952,7 +953,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
                     A <-  A + geom_point(data = obs_data, size = 2,
-                                         stroke = 1)
+                                         stroke = 1, fill = NA)
                 } else {
                     # Glitch when the user has supplied observed data
                     # with a different number of inhibitors than
@@ -964,8 +965,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   fill = obs_color, alpha = 0.5,
-                                   stroke = 1) +
+                                   alpha = 0.5, stroke = 1) +
+                        scale_fill_manual(values = obs_color) +
+                        # have to add geom_point 2x b/c alpha applies to both
+                        # color (as in, the outline of the point) AND the fill
+                        # of the point
                         geom_point(data = obs_data, size = 2,
                                    fill = NA, stroke = 1)
                 }
@@ -989,7 +993,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        shape = obs_shape[1], stroke = 1)
+                                        shape = obs_shape[1], stroke = 1, 
+                                        fill = NA)
                 } else {
                     
                     A <- A + geom_point(data = obs_data, size = 2,
@@ -1018,7 +1023,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                             mutate(Group = paste(Group, Trial)),
                         aes(x = Time, y = Conc,
                             linetype = Inhibitor, shape = Inhibitor,
-                            color = Inhibitor,
+                            color = Inhibitor, fill = Inhibitor, 
                             group = Group)) +
                 geom_line(alpha = AlphaToUse, lwd = ifelse(is.na(line_width), 0.8, line_width)) +
                 geom_line(data = sim_data_mean %>%
@@ -1031,12 +1036,15 @@ ct_plot <- function(sim_obs_dataframe = NA,
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        stroke = 1)
+                                        stroke = 1, fill = NA)
                 } else {
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   fill = obs_color, alpha = 0.5,
-                                   stroke = 1) +
+                                   alpha = 0.5, stroke = 1) +
+                        scale_fill_manual(values = obs_color) +
+                        # have to add geom_point 2x b/c alpha applies to both
+                        # color (as in, the outline of the point) AND the fill
+                        # of the point
                         geom_point(data = obs_data, size = 2,
                                    fill = NA, stroke = 1)
                 }
@@ -1099,12 +1107,15 @@ ct_plot <- function(sim_obs_dataframe = NA,
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        stroke = 1)
+                                        stroke = 1, fill = NA)
                 } else {
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   fill = obs_color, alpha = 0.5,
-                                   stroke = 1) +
+                                   alpha = 0.5, stroke = 1) +
+                        scale_fill_manual(values = obs_color) +
+                        # have to add geom_point 2x b/c alpha applies to both
+                        # color (as in, the outline of the point) AND the fill
+                        # of the point
                         geom_point(data = obs_data, size = 2,
                                    fill = NA, stroke = 1)
                 }
@@ -1156,7 +1167,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                             filter(Trial == "mean"),
                         aes(x = Time, y = Conc, group = Group,
                             linetype = Inhibitor, shape = Inhibitor,
-                            color = Inhibitor)) +
+                            color = Inhibitor, fill = Inhibitor)) +
                 geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial %in% c("per5", "per95")),
@@ -1181,8 +1192,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     # type.
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   fill = obs_color, alpha = 0.5,
-                                   stroke = 1) +
+                                   alpha = 0.5, stroke = 1) +
+                        scale_fill_manual(values = obs_color) +
+                        # have to add geom_point 2x b/c alpha applies to both
+                        # color (as in, the outline of the point) AND the fill
+                        # of the point
                         geom_point(data = obs_data, size = 2,
                                    fill = NA, stroke = 1)
                 }
