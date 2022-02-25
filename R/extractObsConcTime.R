@@ -194,13 +194,27 @@ extractObsConcTime <- function(obs_data_file){
     
     obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:ncol(obs_data_xl)]
     if(any(str_detect(t(obs_data_xl[11, ]), "Period"), na.rm = TRUE)){
-        names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                             "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                             "InfDuration", "Period", "Age", "Weight_kg",
-                             "Height_cm", "Sex", "SerumCreatinine_umolL",
-                             "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                             "SmokingStatus")
+        if(any(str_detect(t(obs_data_xl[11, ]), "Placenta"), na.rm = TRUE)){
+            # v21
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "InfDuration", "Period", "Age", "Weight_kg",
+                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus", "GestationalAge_wk", 
+                                 "PlacentaVol_L", "FetalWt_kg")
+            
+        } else {
+            # V20 -- maybe v19? 
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "InfDuration", "Period", "Age", "Weight_kg",
+                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus")
+        }
     } else {
+        # pre V20 
         names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
                              "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
                              "InfDuration", "Age", "Weight_kg",
@@ -230,7 +244,8 @@ extractObsConcTime <- function(obs_data_file){
                         "Period", "Age", "Weight_kg",
                         "Height_cm", "Sex", "SerumCreatinine_umolL",
                         "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                        "SmokingStatus")))
+                        "SmokingStatus", "GestationalAge_wk", 
+                        "PlacentaVol_L", "FetalWt_kg")))
     
     return(obs_data)
 }
