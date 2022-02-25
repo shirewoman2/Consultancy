@@ -1094,7 +1094,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
             
-            A <- ggplot(RibbonDF, aes(x = Time, y = mean, ymin = per5, ymax = per95, 
+            A <- ggplot(RibbonDF, aes(x = Time,
+                                      y = mean, ymin = per5, ymax = per95, 
                                       linetype = Inhibitor, shape = Inhibitor,
                                       color = Inhibitor, fill = Inhibitor)) +
                 geom_ribbon(alpha = AlphaToUse, color = NA) +
@@ -1106,17 +1107,26 @@ ct_plot <- function(sim_obs_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    A <- A + geom_point(data = obs_data, size = 2,
+                    A <- A + geom_point(data = obs_data, 
+                                        aes(x = Time, y = Conc, color = Inhibitor,
+                                            shape = Inhibitor, fill = Inhibitor),
+                                        inherit.aes = FALSE, size = 2,
                                         stroke = 1, fill = NA)
                 } else {
                     A <- A +
-                        geom_point(data = obs_data, size = 2,
+                        geom_point(data = obs_data, 
+                                   aes(x = Time, y = Conc, color = Inhibitor,
+                                       shape = Inhibitor, fill = Inhibitor),
+                                   inherit.aes = FALSE, size = 2,
                                    alpha = 0.5, stroke = 1) +
                         scale_fill_manual(values = obs_color) +
                         # have to add geom_point 2x b/c alpha applies to both
                         # color (as in, the outline of the point) AND the fill
                         # of the point
-                        geom_point(data = obs_data, size = 2,
+                        geom_point(data = obs_data, 
+                                   aes(x = Time, y = Conc, color = Inhibitor,
+                                       shape = Inhibitor, fill = Inhibitor),
+                                   inherit.aes = FALSE, size = 2,
                                    fill = NA, stroke = 1)
                 }
             }
@@ -1125,7 +1135,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
             
             ## linear plot
             A <- ggplot(RibbonDF, aes(x = Time, y = mean, ymin = per5, ymax = per95)) +
-                geom_ribbon(alpha = AlphaToUse) +
+                geom_ribbon(alpha = AlphaToUse, color = NA,
+                            fill = line_color[1]) +
                 geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
