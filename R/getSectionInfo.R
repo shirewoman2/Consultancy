@@ -72,11 +72,10 @@ getSectionInfo <- function(report_input_file = NA,
         pivot_wider(names_from = RName, values_from = Value) %>%
         as.list()
     
+    Deets <- extractExpDetails(sim_data_file = sectionInfo$SimFile)
+    
     # Checking whether DDI involved.
-    DDI <- readxl::read_excel(path = report_input_file,
-                              sheet = sectionInfo$ClinStudyTab,
-                              range = "A1")
-    DDI <- stringr::str_detect(names(DDI), "Observed data with DDI")
+    DDI <- any(complete.cases(c(Deets$Inhibitor1, Deets$Inhibitor2)))    
     
     ClinXL <- suppressMessages(
         readxl::read_excel(path = report_input_file,
@@ -140,8 +139,6 @@ getSectionInfo <- function(report_input_file = NA,
                 .fns = as.numeric)) %>%
             as.list())
     
-    Deets <- extractExpDetails(sim_data_file = sectionInfo$SimFile)
-    
     # Tidying up the names used for populations so that they look nice in report
     Population <- tidyPop(Deets$Population)
     NumSimSubj <- Deets[["NumSubjTrial"]] * Deets[["NumTrials"]]
@@ -150,15 +147,20 @@ getSectionInfo <- function(report_input_file = NA,
                        "24" = "QD",
                        "8" = "TID",
                        "Single Dose" = "single dose")
-    Deets[["Inhibitor"]] <- tolower(gsub(
+    Deets[["Inhibitor1"]] <- tolower(gsub(
         "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
         "",
-        Deets[["Inhibitor"]]))
+        Deets[["Inhibitor1"]]))
+    Deets[["Inhibitor2"]] <- tolower(gsub(
+        "SV-|Sim-|_EC|_SR|-MD|-SD|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
+        "",
+        Deets[["Inhibitor2"]]))
     DoseFreq_inhib <- switch(as.character(Deets[["DoseInt_inhib"]]),
                              "12" = "BID",
                              "24" = "QD",
                              "8" = "TID",
-                             "Single Dose" = "single dose")
+                             "Single Dose" = "single dose", 
+                             "custom dosing" = "custom dosing")
     
     # Day substrate was administered
     StartDoseDay_sub <-
