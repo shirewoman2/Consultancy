@@ -58,8 +58,9 @@
 #'   percentiles")}. Note that the confidence intervals are geometric since
 #'   that's what the simulator outputs (see an AUC tab and the summary
 #'   statistics; these values are the ones for, e.g., "90% confidence interval
-#'   around the geometric mean(lower limit)"). The CV will automatically be
-#'   included.
+#'   around the geometric mean(lower limit)"). Setting \code{variability_option
+#'   = NA} will omit any of the variability other than the CV. The CV will
+#'   automatically be included unless you omit it with \code{includeCV = FALSE}.
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
@@ -207,14 +208,21 @@ so_table <- function(report_input_file = NA,
                                             "TRUE" = c("aggregate", "individual"),
                                             "FALSE" = "aggregate"))
     
-    # If they only wanted one parameter and didn't want trial means, then
-    # extractPK returns only the aggregate data for that one parameter. In that
-    # situation, the names of the items in the extractPK output list are that
-    # parameter and "QC" -- not "aggregate" and "QC".
-    if(length(PKToPull) == 1 & includeTrialMeans == FALSE){
-        MyPKResults <- data.frame(MyPKResults_all[[1]])
-        MyPKResults$Statistic = names(MyPKResults_all[[1]])
+    # If they only wanted one parameter, then extractPK returns only the
+    # aggregate data for that one parameter. In that situation, the names of the
+    # items in the extractPK output list are that parameter and "QC" -- not
+    # "aggregate" and "QC".
+    if(length(PKToPull) == 1){
+        if("aggregate" %in% names(MyPKResults_all)){
+            MyPKResults <- data.frame(MyPKResults_all$aggregate)
+            MyPKResults$Statistic = names(MyPKResults_all$aggregate[[1]])
+        } else {
+            MyPKResults <- data.frame(MyPKResults_all[[1]])
+            MyPKResults$Statistic = names(MyPKResults_all[[1]])
+        }
+        
         names(MyPKResults)[1] <- PKToPull
+        
     } else {
         MyPKResults <- MyPKResults_all$aggregate
     }
