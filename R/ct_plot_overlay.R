@@ -5,7 +5,7 @@
 #' concentration-time data from multiple Simcyp Simulator output files for easy
 #' comparisons. UNDER CONSTRUCTION.
 #'
-#' @param conctime_DF the data.frame with multiple sets of concentration-time
+#' @param sim_obs_dataframe the data.frame with multiple sets of concentration-time
 #'   data, including observed data where appropriate
 #' @param aggregate_option What type of aggregate measure should be shown?
 #'   Options are any combination of "mean" (arithmetic mean), "geomean"
@@ -13,12 +13,12 @@
 #'   percentile), "per10" (10th percentile), or "per90" (90th percentile).
 #'   Default is "geomean". Example of useage: \code{aggregate_option = c("mean",
 #'   "per5", "per95")}
-#' @param colorBy What column in \code{conctime_DF} should be used for coloring
+#' @param colorBy What column in \code{sim_obs_dataframe} should be used for coloring
 #'   the lines and/or points on the graph? This should be unquoted, e.g.,
 #'   \code{colorBy = Tissue}.
 #' @param facet_column1 If you would like to break up your graph into small
 #'   multiples, you can break the graphs up by up to two columns in
-#'   \code{conctime_DF}. What should be the 1st column to break up the data by?
+#'   \code{sim_obs_dataframe}. What should be the 1st column to break up the data by?
 #'   This should be unquoted.
 #' @param facet_column2 What should be the 2nd column to break up the data into
 #'   small multiples by? This should be unquoted.
@@ -28,11 +28,11 @@
 #'
 #' @examples
 #' # No examples yet
-#' # ct_plot_overlay(conctime_DF = CT, facet_column1 = Compound,
+#' # ct_plot_overlay(sim_obs_dataframe = CT, facet_column1 = Compound,
 #' #                 facet_column2 = Tissue)
 #'
 #'
-ct_plot_overlay <- function(conctime_DF,
+ct_plot_overlay <- function(sim_obs_dataframe,
                             aggregate_option = "geomean",
                             colorBy = File,
                             linetypeBy = Inhibitor,
@@ -44,14 +44,14 @@ ct_plot_overlay <- function(conctime_DF,
     facet_column1 <- rlang::enquo(facet_column1)
     facet_column2 <- rlang::enquo(facet_column2)
     
-    conctime_DF <- conctime_DF %>%
+    sim_obs_dataframe <- sim_obs_dataframe %>%
         mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor))
     
-    obs_data <- conctime_DF %>% filter(Simulated == FALSE)
-    conctime_DF <- conctime_DF %>%
+    obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE)
+    sim_obs_dataframe <- sim_obs_dataframe %>%
         filter(Trial %in% aggregate_option & Simulated == TRUE)
     
-    ggplot(conctime_DF,
+    ggplot(sim_obs_dataframe,
            aes(x = Time, y = Conc, color = !!colorBy, linetype = !!linetypeBy,
                group = Group)) +
         geom_line() +
@@ -72,10 +72,10 @@ ct_plot_overlay <- function(conctime_DF,
     
 }
 
-# ct_plot_overlay(conctime_DF = CT, facet_column1 = Compound,
+# ct_plot_overlay(sim_obs_dataframe = CT, facet_column1 = Compound,
 #                 facet_column2 = Tissue)
 #
-# ct_plot_overlay(conctime_DF = CT, aggregate_option = c("mean", "per5", "per95"),
+# ct_plot_overlay(sim_obs_dataframe = CT, aggregate_option = c("mean", "per5", "per95"),
 #                 facet_column1 = Compound,
 #                 facet_column2 = Tissue, linetype = Trial)
 

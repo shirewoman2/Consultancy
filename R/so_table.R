@@ -207,7 +207,17 @@ so_table <- function(report_input_file = NA,
                                             "TRUE" = c("aggregate", "individual"),
                                             "FALSE" = "aggregate"))
     
-    MyPKResults <- MyPKResults_all$aggregate
+    # If they only wanted one parameter and didn't want trial means, then
+    # extractPK returns only the aggregate data for that one parameter. In that
+    # situation, the names of the items in the extractPK output list are that
+    # parameter and "QC" -- not "aggregate" and "QC".
+    if(length(PKToPull) == 1 & includeTrialMeans == FALSE){
+        MyPKResults <- data.frame(MyPKResults_all[[1]])
+        MyPKResults$Statistic = names(MyPKResults_all[[1]])
+        names(MyPKResults)[1] <- PKToPull
+    } else {
+        MyPKResults <- MyPKResults_all$aggregate
+    }
     
     VarOpt1 <- variability_option[1]
     VariabilityNames <- switch(VarOpt1,
