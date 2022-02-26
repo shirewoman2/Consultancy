@@ -74,7 +74,9 @@ extractPK <- function(sim_data_file,
     # If ssNum is now "-Inf" b/c it was all zeroes in the previous line but
     # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
     # that one.
-    Tab_last <- paste0("AUC", ssNum, "(Sub)(CPlasma)")
+    Tab_last <- paste0("AUC(t)?", ssNum, "(_CI)?\\(Sub\\)\\(C",
+                       str_to_title(tissue))
+    Tab_last <- AllSheets[str_detect(AllSheets, Tab_last)]
     if(ssNum == -Inf){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
@@ -172,11 +174,6 @@ extractPK <- function(sim_data_file,
                        " is/are not among the possible PK parameters and will not be extracted. Please see data(AllPKParameters) for all possible parameters."))
     }
     
-    PKparameters <- intersect(PKparameters, AllPKParameters$PKparameter)
-    if(length(PKparameters) == 0){
-        stop("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'.")
-    }
-    
     if(all(PKparameters %in% AllPKParameters$PKparameter) == FALSE){
         stop()
     }
@@ -207,6 +204,11 @@ extractPK <- function(sim_data_file,
                             c("AUCtau_ratio_dose1",
                               "Cmax_dose1", "Cmax_dose1_withInhib",
                               "Cmax_ratio_dose1", "tmax_dose1"))
+    }
+    
+    PKparameters <- intersect(PKparameters, AllPKParameters$PKparameter)
+    if(length(PKparameters) == 0){
+        stop("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")
     }
     
     Out_ind <- list()
