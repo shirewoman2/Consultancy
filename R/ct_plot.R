@@ -103,11 +103,14 @@
 #' @param pad_x_axis Optionally add a smidge of padding to the left side of the
 #'   x axis. If left as FALSE, the y axis will be placed right at the beginning
 #'   of your time range. If set to TRUE, there will be a little bit of space
-#'   between the y axis and the start of your time range. NOTE: We could allow
-#'   users to specify exactly how much padding and on which sides of the x axis
-#'   if there's interest from users. -LS
+#'   between the y axis and the start of your time range. If you want a
+#'   \emph{specific} amount of x axis padding, set this to a number; the default
+#'   is 0.02, which adds 2% more space to the left side of the axis.
 #' @param pad_y_axis Similar to the \code{pad_x_axis} argument, optionally add a
-#'   smidge of padding to the y axis. Default is no padding. 
+#'   smidge of padding to the bottom of the y axis. As with \code{pad_x_axis},
+#'   the default (FALSE) is no padding, but you can set this to either TRUE to
+#'   get 2% more space on the bottom of the y axis or set it to a number to get
+#'   a specific amount of padding there.
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
 #'
@@ -697,6 +700,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
     XLabels[seq(2,length(XLabels),2)] <- ""
     XLabels[which(XBreaks == 0)] <- "0"
     
+    pad_x_num <- ifelse(class(pad_x_axis) == "logical",
+                        ifelse(pad_x_axis, 0.02, 0), 
+                        pad_x_axis)
+    pad_x_axis <- pad_x_num != 0 # Making pad_x_axis logical again to work with code elsewhere
+    
+    
     # Dealing with possible inhibitor 1 data ---------------------------------
     # Adding a grouping variable to data and also making the inhibitor 1 name
     # prettier for the graphs.
@@ -880,6 +889,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
                          format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE))
         }
     }
+    
+    pad_y_num <- ifelse(class(pad_y_axis) == "logical",
+                        ifelse(pad_y_axis, 0.02, 0), 
+                        pad_y_axis)
+    pad_y_axis <- pad_y_num != 0 # Making pad_y_axis logical again to work with code elsewhere
+    
     
     # Figure types ---------------------------------------------------------
     
@@ -1333,12 +1348,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                    limits = time_range_relative,
                                    expand = expansion(
-                                       mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04))) 
+                                       mult = c(pad_x_num, 0.04))) 
         } else {
             A <- A +
                 scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                    expand = expansion(
-                                       mult = c(ifelse(pad_x_axis, 0.02, 0), 0.04))) +
+                                       mult = c(pad_x_num, 0.04))) +
                 coord_cartesian(xlim = time_range_relative)
         }
     }
@@ -1349,7 +1364,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                                       YmaxRnd), 
                            breaks = YBreaks,
                            labels = YLabels,
-                           expand = expansion(mult = c(ifelse(pad_y_axis, 0.1, 0), 0.1))) +
+                           expand = expansion(mult = c(pad_y_num, 0.1))) +
         labs(x = xlab, y = ylab,
              linetype = ifelse(complete.cases(legend_label),
                                legend_label, "Inhibitor"),
@@ -1446,7 +1461,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
                           labels = YLogLabels,
-                          expand = expansion(mult = c(ifelse(pad_y_axis, 0.1, 0), 0.1))) +
+                          expand = expansion(mult = c(pad_y_num, 0.1))) +
             # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
             coord_cartesian(xlim = time_range_relative)
     )
