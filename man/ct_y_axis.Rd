@@ -11,7 +11,10 @@ ct_y_axis(
   EnzPlot,
   figure_type,
   y_axis_limits_lin,
+  time_range,
   y_axis_limits_log,
+  Ylim_data,
+  pad_y_axis,
   time_range_relative
 )
 }
@@ -29,7 +32,15 @@ extractConcTime}
 
 \item{y_axis_limits_lin}{user input for y axis limits for a linear plot}
 
+\item{time_range}{user-specified time range}
+
 \item{y_axis_limits_log}{user input for y axis limits for a semi-log plot}
+
+\item{Ylim_data}{data used for determining y axis limits}
+
+\item{pad_y_axis}{user-specified value for pad_y_axis}
+
+\item{time_range_relative}{relative time range}
 }
 \value{
 

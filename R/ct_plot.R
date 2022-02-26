@@ -395,7 +395,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Setting up the x axis using the subfunction ct_x_axis
     ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
               x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
-              compoundToExtract = compoundToExtract)
+              compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
     
     # Dealing with possible inhibitor 1 data ---------------------------------
     # Adding a grouping variable to data and also making the inhibitor 1 name
@@ -538,46 +538,10 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     # Figure types ---------------------------------------------------------
     
-    # Setting user specifications for shape, linetype, and color where
-    # applicable.
-    if(is.na(line_type[1])){
-        if(str_detect(figure_type, "ribbon") & 
-           length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
-            line_type <- c("solid", "solid")
-        } else {
-            line_type <- c("solid", "dashed")
-        }
-    }
-    
-    if(is.na(obs_shape[1])){
-        obs_shape <- c(21, 24)
-    }
-    
-    if(complete.cases(line_color[1]) & is.na(obs_color[1])){
-        obs_color <- line_color
-    }
-    
-    if(is.na(line_color[1])){
-        if(str_detect(figure_type, "ribbon") & 
-           length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
-            line_color <- c("#377EB8", "#E41A1C")
-        } else {
-            line_color <- c("black", "black")
-        }
-    }
-    
-    if(complete.cases(line_color[1]) && figure_type == "Freddy" &&
-       length(line_color) == 1){
-        line_color <- rep(line_color, 2)
-    }
-    
-    if(length(obs_color) == 1 &&
-       (complete.cases(obs_color[1]) & obs_color == "default") |
-       (is.na(obs_color[1]) & figure_type == "Freddy")){
-        obs_color <- "#3030FE"
-    }    
+    set_aesthet(line_type = line_type, figure_type = figure_type,
+                MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
+                obs_shape = obs_shape, obs_color = obs_color, 
+                line_color = line_color)
     
     ## figure_type: trial means -----------------------------------------------------------
     if(figure_type == "trial means"){

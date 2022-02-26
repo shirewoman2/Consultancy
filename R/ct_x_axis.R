@@ -7,11 +7,15 @@
 #'   extractConcTime
 #' @param time_range the user-supplied input for time_range
 #' @param t0 the user-supplied input for t0
+#' @param x_axis_interval x axis interval to use
+#' @param compoundToExtract user-requested compound to extract/graph
+#' @param pad_x_axis user-supplied value for padding x axis
+#' @param EnzPlot T or F for whether this is an enzyme-abundance plut
 #'
 #' @return
 #' 
 ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
-                      compoundToExtract, pad_x_axis){
+                      compoundToExtract, pad_x_axis, EnzPlot){
     
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
        length(time_range) != 2){
@@ -57,7 +61,6 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     xlab <- switch(TimeUnits,
                    "hours" = "Time (h)",
                    "minutes" = "Time (min)")
-    
     
     # Setting the breaks for the x axis
     tlast <- ifelse(all(complete.cases(time_range)) &
@@ -207,12 +210,6 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         time_range <- range(Data$Time, na.rm = T)
     }
     
-    if(t0 != "simulation start"){
-        time_range_relative <- time_range - t0_num
-    } else {
-        time_range_relative <- time_range
-    }
-    
     # If tlast is just a smidge over one of the possible breaks I've set, it
     # goes to the next one and doesn't look as nice on the graph. Rounding
     # tlast down to the nearest 4 for hours and nearest 15 for minutes.
@@ -274,11 +271,6 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                                               x_axis_interval/2))
     }
     
-    # Adjusting the breaks when time_range[1] isn't 0
-    if(all(complete.cases(time_range)) & time_range[1] != 0){
-        XBreaks <- XBreaks + LastDoseTime
-    }
-    
     # If t0 isn't "simulation start", need to adjust x axis.
     if(t0 != "simulation start"){
         
@@ -291,14 +283,22 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         Data$Time_orig <- Data$Time
         Data$Time <- Data$Time - t0_num
         XBreaks <- XBreaks - t0_num
+        time_range_relative <- time_range - t0_num
     } else {
         Data$Time_orig <- Data$Time
+        time_range_relative <- time_range
+    }
+    
+    # Adjusting the breaks when time_range[1] isn't 0
+    if(all(complete.cases(time_range)) & time_range[1] != 0){
+        XBreaks <- XBreaks + LastDoseTime
     }
     
     XLabels <- XBreaks
     XLabels[seq(2,length(XLabels),2)] <- ""
     XLabels[which(XBreaks == 0)] <- "0"
     
+    # Adding padding if user requests it
     pad_x_num <- ifelse(class(pad_x_axis) == "logical",
                         ifelse(pad_x_axis, 0.02, 0), 
                         pad_x_axis)

@@ -11,6 +11,10 @@
 #' @param figure_type user input for figure type
 #' @param y_axis_limits_lin user input for y axis limits for a linear plot
 #' @param y_axis_limits_log user input for y axis limits for a semi-log plot
+#' @param time_range user-specified time range 
+#' @param Ylim_data data used for determining y axis limits
+#' @param pad_y_axis user-specified value for pad_y_axis
+#' @param time_range_relative relative time range
 #'
 #' @return
 
