@@ -105,11 +105,11 @@
 #'   of your time range. If set to TRUE, there will be a little bit of space
 #'   between the y axis and the start of your time range. If you want a
 #'   \emph{specific} amount of x axis padding, set this to a number; the default
-#'   is 0.02, which adds 2% more space to the left side of the axis.
+#'   is 0.02, which adds 2 percent more space to the left side of the axis.
 #' @param pad_y_axis Similar to the \code{pad_x_axis} argument, optionally add a
 #'   smidge of padding to the bottom of the y axis. As with \code{pad_x_axis},
 #'   the default (FALSE) is no padding, but you can set this to either TRUE to
-#'   get 2% more space on the bottom of the y axis or set it to a number to get
+#'   get 2 percent more space on the bottom of the y axis or set it to a number to get
 #'   a specific amount of padding there.
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
