@@ -15,8 +15,9 @@
 #' @return
 
 ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
-                      figure_type, y_axis_limits_lin, 
-                      y_axis_limits_log, time_range_relative){
+                      figure_type, y_axis_limits_lin, time_range,
+                      y_axis_limits_log, Ylim_data, pad_y_axis,
+                      time_range_relative){
     
     if(EnzPlot){
         ObsConcUnits <- "Relative abundance"
@@ -42,18 +43,6 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         
         ylab <- PossConcUnits[[ObsConcUnits]]
         
-    }
-    
-    # Setting Y axis limits for both linear and semi-log plots
-    if (figure_type == "trial means") {
-        Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles",
-                                  "percentile ribbon", "percentile ribbons")) {
-        Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
-    } else if (figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
-    if(nrow(Ylim_data) == 0){
-        Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
     }
     
     Ylim <- Ylim_data %>% filter(Time_orig >= time_range[1] &
@@ -192,15 +181,15 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     # Assigning the variables created or changed here to the environment one
     # level up, e.g., probably the environment within the function that's
     # calling on *this* function.
-    assign("ObsConcUnits", ObsConcUnits, pos = 1)
-    assign("ylab", ylab, pos = 1)
-    assign("YLabels", YLabels, pos = 1)
-    assign("YLogLabels", YLogLabels, pos = 1)
-    assign("YBreaks", YBreaks, pos = 1)
-    assign("YLogBreaks", YLogBreaks, pos = 1)
-    assign("Ylim_log", Ylim_log, pos = 1)
-    assign("YmaxRnd", YmaxRnd, pos = 1)
-    assign("pad_y_num", pad_y_num, pos = 1)
-    assign("pad_y_axis", pad_y_axis, pos = 1)
+    assign("ObsConcUnits", ObsConcUnits, envir = parent.frame())
+    assign("ylab", ylab, envir = parent.frame())
+    assign("YLabels", YLabels, envir = parent.frame())
+    assign("YLogLabels", YLogLabels, envir = parent.frame())
+    assign("YBreaks", YBreaks, envir = parent.frame())
+    assign("YLogBreaks", YLogBreaks, envir = parent.frame())
+    assign("Ylim_log", Ylim_log, envir = parent.frame())
+    assign("YmaxRnd", YmaxRnd, envir = parent.frame())
+    assign("pad_y_num", pad_y_num, envir = parent.frame())
+    assign("pad_y_axis", pad_y_axis, envir = parent.frame())
 }
     

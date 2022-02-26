@@ -393,7 +393,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     # Setting up the x axis using the subfunction ct_x_axis
-    ct_x_axis(Data = Data, time_range = time_range, t0 = t0)
+    ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
+              x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
+              compoundToExtract = compoundToExtract)
     
     # Dealing with possible inhibitor 1 data ---------------------------------
     # Adding a grouping variable to data and also making the inhibitor 1 name
@@ -475,7 +477,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     suppressMessages(
         sim_data_trial <- Data %>%
             filter(Simulated == TRUE &
-                       Trial %in% c("mean", "per5", "per95") == FALSE) %>%
+                       Trial %in% c("mean", "geomean", "per5", "per95", 
+                                    "per10", "per90", "median") == FALSE) %>%
             group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
                                      "Simulated", "Trial", "Group",
                                      "Time", "Time_orig",
@@ -512,9 +515,24 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     # Setting up the y axis using the subfunction ct_y_axis -------------------
+    
+    # Setting Y axis limits for both linear and semi-log plots
+    if (figure_type == "trial means") {
+        Ylim_data <- bind_rows(sim_data_trial, obs_data)
+    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles",
+                                  "percentile ribbon", "percentile ribbons")) {
+        Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
+    } else if (figure_type == "means only") {
+        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
+    if(nrow(Ylim_data) == 0){
+        Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
+    }
+    
     ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
               EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-              figure_type = figure_type, y_axis_limits_lin = y_axis_limits_lin, 
+              figure_type = figure_type, Ylim_data = Ylim_data, 
+              pad_y_axis = pad_y_axis,
+              y_axis_limits_lin = y_axis_limits_lin, time_range = time_range,
               y_axis_limits_log = y_axis_limits_log)
     
     
