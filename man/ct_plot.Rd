@@ -270,7 +270,7 @@ time, you'll get decent-looking graphs while only setting a minimal number of
 arguments. If you want to plot enzyme abundance data, please see
 \code{\link{enz_plot}}. \strong{A few notes:} \enumerate{\item{Not all
 substrate metabolites, inhibitors, or inhibitor metabolites are available in
-all tissues.} \item{When observed data are included in a simulator output
+all tissues.}\item{When observed data are included in a simulator output
 file, because the simulator output does not explicitly say whether those
 observed data were in the presence of an effector, this function cannot tell
 the difference and will thus assume all observed data included in the

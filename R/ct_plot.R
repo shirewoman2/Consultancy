@@ -8,7 +8,7 @@
 #' arguments. If you want to plot enzyme abundance data, please see
 #' \code{\link{enz_plot}}. \strong{A few notes:} \enumerate{\item{Not all
 #' substrate metabolites, inhibitors, or inhibitor metabolites are available in
-#' all tissues.} \item{When observed data are included in a simulator output
+#' all tissues.}\item{When observed data are included in a simulator output
 #' file, because the simulator output does not explicitly say whether those
 #' observed data were in the presence of an effector, this function cannot tell
 #' the difference and will thus assume all observed data included in the
@@ -351,7 +351,10 @@ ct_plot <- function(sim_obs_dataframe = NA,
     compoundToExtract <- ifelse(EnzPlot, unique(Data$Enzyme), 
                                 unique(Data$CompoundID))
     if(EnzPlot){
-        Data <- Data %>% mutate(CompoundID = Enzyme)
+        Data <- Data %>% mutate(CompoundID = Enzyme) %>%
+            rename(Conc = Abundance) %>%
+            mutate(Simulated = TRUE,
+                   Compound = Enzyme)
     }
     
     # Noting whether the tissue was from an ADAM model
@@ -389,39 +392,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
         warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.")
     }
     
-    if(EnzPlot){
-        ObsConcUnits <- "Relative abundance"
-        Data <- Data %>% rename(Conc = Abundance) %>%
-            mutate(Simulated = TRUE,
-                   Compound = Enzyme)
-    } else {
-        ObsConcUnits <- sort(unique(Data$Conc_units))
-    }
-    
-    
-    if(ADAM && subsection_ADAM == "Heff"){
-        ylab <- expression(H[eff])
-    } else {
-        
-        PossConcUnits <- list("µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
-                              "ng/mL" = "Concentration (ng/mL)",
-                              "ng/L" = "Concentration (ng/L)",
-                              "µM" = expression(Amount~"("*mu*M*")"),
-                              "nM" = "Amount (nM)",
-                              "mg" = "Amount (mg)",
-                              "mg/h" = "Absorption rate (mg/h)",
-                              "mg/L" = expression(Concentration~"("*mu*g/mL*")"),
-                              "mL" = "Volume (mL)",
-                              "PD response" = "PD response",
-                              "Relative abundance" = "Relative abundance")
-        
-        ylab <- PossConcUnits[[ObsConcUnits]]
-        
-    }
-    
     # Setting up the x axis using the subfunction ct_x_axis
     ct_x_axis(Data = Data, time_range = time_range, t0 = t0)
-    
     
     # Dealing with possible inhibitor 1 data ---------------------------------
     # Adding a grouping variable to data and also making the inhibitor 1 name
@@ -539,78 +511,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
         )
     }
     
-    # Setting y axis (concentration) ---------------------------------------
-    # Setting Y axis limits for both linear and semi-log plots
-    if (figure_type == "trial means") {
-        Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles",
-                                  "percentile ribbon", "percentile ribbons")) {
-        Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
-    } else if (figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
-    if(nrow(Ylim_data) == 0){
-        Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
-    }
-    
-    Ylim <- Ylim_data %>% filter(Time_orig >= time_range[1] &
-                                     Time_orig <= time_range[2] &
-                                     complete.cases(Conc)) %>% pull(Conc) %>%
-        range()
-    
-    if(all(Ylim == 0) && (any(is.na(y_axis_limits_lin) | any(is.na(y_axis_limits_log))))){
-        stop("For the tissue and compound selected, all concentrations = 0. Please either 1) specify what y axis limits you'd like for what will be empty graphs (set both y_axis_limits_lin and y_axis_limits_log) or 2) select a different combination of tissue and compound to graph.")
-    }
-    
-    if(any(complete.cases(y_axis_limits_lin))){
-        Ylim <- y_axis_limits_lin[1:2]
-    }
-    
-    # Some users are sometimes getting Inf for possible upper limit of data,
-    # although I haven't been able to reproduce this error. Trying to catch
-    # that nonetheless.
-    if(is.infinite(Ylim[2]) | is.na(Ylim[2])){
-        Ylim[2] <- max(Data$Conc, na.rm = T)
-    }
-    
-    PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
-                                       100, 200, 500, 1000, 2000, 5000,
-                                       10000, 20000, 50000, 100000,
-                                       200000, 500000, Inf),
-                              YBreaksToUse = c(0.02, 0.05, 0.1, 0.2, 0.5,
-                                               1, 2, 5, 10, 20, 50, 100, 200,
-                                               500, 1000, 2000, 5000, 10000,
-                                               20000, 50000, 100000, 200000))
-    
-    YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
-        slice(which.min(Ymax)) %>% pull(YBreaksToUse)
-    
-    YInterval    <- YBreaksToUse
-    YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
-                           round_up_unit(Ylim[2], YInterval),
-                           y_axis_limits_lin[2])
-    YBreaks      <- seq(ifelse(is.na(y_axis_limits_lin[1]), 
-                               0, y_axis_limits_lin[1]),
-                        YmaxRnd, YInterval/2)                    # create labels at major and minor points
-    YLabels      <- format(YBreaks, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-    YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
-    
-    # If the user specified a y axis interval, make sure there's an axis label
-    # for the top of the y axis
-    if(any(complete.cases(y_axis_limits_lin))){
-        YBreaks <- unique(c(YBreaks, y_axis_limits_lin[2]))
-        if(length(YLabels) == length(YBreaks)){
-            YLabels[length(YLabels)] <- 
-                format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        } else {
-            YLabels <- c(YLabels, 
-                         format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE))
-        }
-    }
-    
-    pad_y_num <- ifelse(class(pad_y_axis) == "logical",
-                        ifelse(pad_y_axis, 0.02, 0), 
-                        pad_y_axis)
-    pad_y_axis <- pad_y_num != 0 # Making pad_y_axis logical again to work with code elsewhere
+    # Setting up the y axis using the subfunction ct_y_axis -------------------
+    ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
+              EnzPlot = EnzPlot, time_range_relative = time_range_relative,
+              figure_type = figure_type, y_axis_limits_lin = y_axis_limits_lin, 
+              y_axis_limits_log = y_axis_limits_log)
     
     
     # Figure types ---------------------------------------------------------
@@ -1017,6 +922,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     
     # Applying aesthetics ------------------------------------------------
+    ## Making linear graph -------------------------------------------------
+    
     if(nrow(obs_data) == 0){
         A <- A + guides(shape = "none")
     }
@@ -1028,12 +935,6 @@ ct_plot <- function(sim_obs_dataframe = NA,
                           aes(x = Time, ymin = Conc - SDConc,
                               ymax = Conc + SDConc),
                           width = (time_range[2] - time_range[1])/80)
-    }
-    
-    if(t0 != "simulation start"){
-        time_range_relative <- time_range - t0_num
-    } else {
-        time_range_relative <- time_range
     }
     
     # If the user requested specific doses, don't pad the x axis b/c it's just
@@ -1104,77 +1005,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
         A <- A + theme(legend.position = "none")
     }
     
-    near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
-    
-    if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
-        
-        Ylim_log <- Ylim
-        
-        Ylim_log[1] <- Ylim_data %>%
-            filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
-            pull(Conc) %>% min()
-        
-        # If Ylim_log[1] is 0, which can happen when the concs are really low, that
-        # is undefined for log transformations. Setting it to be max value / 100
-        # when that happens.
-        Ylim_log[1] <- ifelse(Ylim_log[1] == 0, 
-                              Ylim_log[2]/100, Ylim_log[1])
-        Ylim_log[1] <- round_down(Ylim_log[1])
-        Ylim_log[2] <- round_up(Ylim[2])
-        
-    } else {
-        # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and
-        # tell them we can't use 0.
-        if(y_axis_limits_log[1] <= 0){
-            y_axis_limits_log[1] <- y_axis_limits_log[2]/100
-            warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.")
-        }
-        
-        Ylim_log <- y_axis_limits_log
-        
-        # Previously, we *had* been rounding here, but I think the user may
-        # actually want a specific set of limits, so commenting that out for
-        # now. -LS 
-        # Ylim_log[1] <- round_down(Ylim_log[1]) 
-        # Ylim_log[2] <- round_up(Ylim[2])
-        
-    }
-    
-    YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
-    YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
-    YLogLabels   <- rep("",length(YLogBreaks))
-    
-    
-    if(is.na(y_axis_limits_log[1]) |
-       # checking whether Ylim_log values are a factor of 10 b/c, if they are,
-       # then just use the Ylim_log that we would have come up with using the
-       # other method b/c that makes prettier breaks
-       all(log10(Ylim_log) == round(log10(Ylim_log)))){
-        
-        # add labels at order of magnitude
-        YLogLabels[seq(1,length(YLogLabels),9)] <- 
-            format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        
-    } else {
-        
-        # add labels for the 1st and last YLogBreaks and also 3 in between. The
-        # odd fractions are b/c I want to have them spaced out somewhat
-        # regularly, and that requires nonlinear intervals since it's log
-        # transformed.
-        YLogLabels[1] <- 
-            format(YLogBreaks[1], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        Nbreaks <- length(YLogBreaks)
-        YLogLabels[Nbreaks] <- 
-            format(YLogBreaks[Nbreaks], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        YLogLabels[round(Nbreaks/4)] <- 
-            format(YLogBreaks[round(Nbreaks/4)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        YLogLabels[round(2*Nbreaks/3)] <- 
-            format(YLogBreaks[round(2*Nbreaks/3)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        YLogLabels[round(5*Nbreaks/6)] <- 
-            format(YLogBreaks[round(5*Nbreaks/6)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        
-    } 
-    
+    ## Making semi-log graph ------------------------------------------------
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
                           labels = YLogLabels,

@@ -1,0 +1,206 @@
+#' Set up y axis in a conc-time plot
+#'
+#' This function is specifically for setting options for the y axis in a
+#' concentration-time graph and is NOT meant to be called on its own.
+#'
+#' @param Data the data.frame containing conc-time data; this is the output from
+#'   extractConcTime
+#' @param ADAM T or F for whether ADAM model used
+#' @param subsection_ADAM which ADAM-model subsection the data include
+#' @param EnzPlot T or F for whether this was a plot of enzyme abundance
+#' @param figure_type user input for figure type
+#' @param y_axis_limits_lin user input for y axis limits for a linear plot
+#' @param y_axis_limits_log user input for y axis limits for a semi-log plot
+#'
+#' @return
+
+ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
+                      figure_type, y_axis_limits_lin, 
+                      y_axis_limits_log, time_range_relative){
+    
+    if(EnzPlot){
+        ObsConcUnits <- "Relative abundance"
+    } else {
+        ObsConcUnits <- sort(unique(Data$Conc_units))
+    }
+    
+    if(ADAM && subsection_ADAM == "Heff"){
+        ylab <- expression(H[eff])
+    } else {
+        
+        PossConcUnits <- list("µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
+                              "ng/mL" = "Concentration (ng/mL)",
+                              "ng/L" = "Concentration (ng/L)",
+                              "µM" = expression(Amount~"("*mu*M*")"),
+                              "nM" = "Amount (nM)",
+                              "mg" = "Amount (mg)",
+                              "mg/h" = "Absorption rate (mg/h)",
+                              "mg/L" = expression(Concentration~"("*mu*g/mL*")"),
+                              "mL" = "Volume (mL)",
+                              "PD response" = "PD response",
+                              "Relative abundance" = "Relative abundance")
+        
+        ylab <- PossConcUnits[[ObsConcUnits]]
+        
+    }
+    
+    # Setting Y axis limits for both linear and semi-log plots
+    if (figure_type == "trial means") {
+        Ylim_data <- bind_rows(sim_data_trial, obs_data)
+    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles",
+                                  "percentile ribbon", "percentile ribbons")) {
+        Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
+    } else if (figure_type == "means only") {
+        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
+    if(nrow(Ylim_data) == 0){
+        Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
+    }
+    
+    Ylim <- Ylim_data %>% filter(Time_orig >= time_range[1] &
+                                     Time_orig <= time_range[2] &
+                                     complete.cases(Conc)) %>% pull(Conc) %>%
+        range()
+    
+    if(all(Ylim == 0) && (any(is.na(y_axis_limits_lin) | any(is.na(y_axis_limits_log))))){
+        stop("For the tissue and compound selected, all concentrations = 0. Please either 1) specify what y axis limits you'd like for what will be empty graphs (set both y_axis_limits_lin and y_axis_limits_log) or 2) select a different combination of tissue and compound to graph.")
+    }
+    
+    if(any(complete.cases(y_axis_limits_lin))){
+        Ylim <- y_axis_limits_lin[1:2]
+    }
+    
+    # Some users are sometimes getting Inf for possible upper limit of data,
+    # although I haven't been able to reproduce this error. Trying to catch
+    # that nonetheless.
+    if(is.infinite(Ylim[2]) | is.na(Ylim[2])){
+        Ylim[2] <- max(Data$Conc, na.rm = T)
+    }
+    
+    PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
+                                       100, 200, 500, 1000, 2000, 5000,
+                                       10000, 20000, 50000, 100000,
+                                       200000, 500000, Inf),
+                              YBreaksToUse = c(0.02, 0.05, 0.1, 0.2, 0.5,
+                                               1, 2, 5, 10, 20, 50, 100, 200,
+                                               500, 1000, 2000, 5000, 10000,
+                                               20000, 50000, 100000, 200000))
+    
+    YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
+        slice(which.min(Ymax)) %>% pull(YBreaksToUse)
+    
+    YInterval    <- YBreaksToUse
+    YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
+                           round_up_unit(Ylim[2], YInterval),
+                           y_axis_limits_lin[2])
+    YBreaks      <- seq(ifelse(is.na(y_axis_limits_lin[1]), 
+                               0, y_axis_limits_lin[1]),
+                        YmaxRnd, YInterval/2)                    # create labels at major and minor points
+    YLabels      <- format(YBreaks, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+    YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
+    
+    # If the user specified a y axis interval, make sure there's an axis label
+    # for the top of the y axis
+    if(any(complete.cases(y_axis_limits_lin))){
+        YBreaks <- unique(c(YBreaks, y_axis_limits_lin[2]))
+        if(length(YLabels) == length(YBreaks)){
+            YLabels[length(YLabels)] <- 
+                format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        } else {
+            YLabels <- c(YLabels, 
+                         format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE))
+        }
+    }
+    
+    pad_y_num <- ifelse(class(pad_y_axis) == "logical",
+                        ifelse(pad_y_axis, 0.02, 0), 
+                        pad_y_axis)
+    pad_y_axis <- pad_y_num != 0 # Making pad_y_axis logical again to work with code elsewhere
+    
+    # Setting up y axis for semi-log graphs ----------------------------------
+    
+    near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
+    
+    if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
+        
+        Ylim_log <- Ylim
+        
+        Ylim_log[1] <- Ylim_data %>%
+            filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
+            pull(Conc) %>% min()
+        
+        # If Ylim_log[1] is 0, which can happen when the concs are really low, that
+        # is undefined for log transformations. Setting it to be max value / 100
+        # when that happens.
+        Ylim_log[1] <- ifelse(Ylim_log[1] == 0, 
+                              Ylim_log[2]/100, Ylim_log[1])
+        Ylim_log[1] <- round_down(Ylim_log[1])
+        Ylim_log[2] <- round_up(Ylim[2])
+        
+    } else {
+        # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and
+        # tell them we can't use 0.
+        if(y_axis_limits_log[1] <= 0){
+            y_axis_limits_log[1] <- y_axis_limits_log[2]/100
+            warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.")
+        }
+        
+        Ylim_log <- y_axis_limits_log
+        
+        # Previously, we *had* been rounding here, but I think the user may
+        # actually want a specific set of limits, so commenting that out for
+        # now. -LS 
+        # Ylim_log[1] <- round_down(Ylim_log[1]) 
+        # Ylim_log[2] <- round_up(Ylim[2])
+        
+    }
+    
+    YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
+    YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
+    YLogLabels   <- rep("",length(YLogBreaks))
+    
+    
+    if(is.na(y_axis_limits_log[1]) |
+       # checking whether Ylim_log values are a factor of 10 b/c, if they are,
+       # then just use the Ylim_log that we would have come up with using the
+       # other method b/c that makes prettier breaks
+       all(log10(Ylim_log) == round(log10(Ylim_log)))){
+        
+        # add labels at order of magnitude
+        YLogLabels[seq(1,length(YLogLabels),9)] <- 
+            format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        
+    } else {
+        
+        # add labels for the 1st and last YLogBreaks and also 3 in between. The
+        # odd fractions are b/c I want to have them spaced out somewhat
+        # regularly, and that requires nonlinear intervals since it's log
+        # transformed.
+        YLogLabels[1] <- 
+            format(YLogBreaks[1], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        Nbreaks <- length(YLogBreaks)
+        YLogLabels[Nbreaks] <- 
+            format(YLogBreaks[Nbreaks], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        YLogLabels[round(Nbreaks/4)] <- 
+            format(YLogBreaks[round(Nbreaks/4)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        YLogLabels[round(2*Nbreaks/3)] <- 
+            format(YLogBreaks[round(2*Nbreaks/3)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        YLogLabels[round(5*Nbreaks/6)] <- 
+            format(YLogBreaks[round(5*Nbreaks/6)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+        
+    } 
+    
+    # Assigning the variables created or changed here to the environment one
+    # level up, e.g., probably the environment within the function that's
+    # calling on *this* function.
+    assign("ObsConcUnits", ObsConcUnits, pos = 1)
+    assign("ylab", ylab, pos = 1)
+    assign("YLabels", YLabels, pos = 1)
+    assign("YLogLabels", YLogLabels, pos = 1)
+    assign("YBreaks", YBreaks, pos = 1)
+    assign("YLogBreaks", YLogBreaks, pos = 1)
+    assign("Ylim_log", Ylim_log, pos = 1)
+    assign("YmaxRnd", YmaxRnd, pos = 1)
+    assign("pad_y_num", pad_y_num, pos = 1)
+    assign("pad_y_axis", pad_y_axis, pos = 1)
+}
+    

@@ -206,6 +206,12 @@ ct_x_axis <- function(Data, time_range, t0){
         time_range <- range(Data$Time, na.rm = T)
     }
     
+    if(t0 != "simulation start"){
+        time_range_relative <- time_range - t0_num
+    } else {
+        time_range_relative <- time_range
+    }
+    
     # If tlast is just a smidge over one of the possible breaks I've set, it
     # goes to the next one and doesn't look as nice on the graph. Rounding
     # tlast down to the nearest 4 for hours and nearest 15 for minutes.
@@ -309,5 +315,6 @@ ct_x_axis <- function(Data, time_range, t0){
     assign("time_range", time_range, pos = 1)
     assign("time_range_input", time_range_input, pos = 1)
     assign("TimeUnits", TimeUnits, pos = 1)
+    assign("time_range_relative", time_range_relative, pos = 1)
 }    
     
