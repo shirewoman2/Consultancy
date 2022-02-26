@@ -138,10 +138,10 @@ extractPK <- function(sim_data_file,
     
     ParamAUC0 <- AllPKParameters %>% filter(Sheet == "AUC0") %>% 
         pull(PKparameter)
-        
+    
     ParamAUCX <- AllPKParameters %>% filter(Sheet == "AUCX") %>% 
         pull(PKparameter)
-
+    
     ParamCLTSS <- AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
         pull(PKparameter)
     
@@ -235,11 +235,11 @@ extractPK <- function(sim_data_file,
     if(
         # a)
         (any(PKparameters %in% ParamAUC) & is.na(sheet) &
-       PKparameters_orig[1] != "Absorption tab") |
-       
-       # b)
-       (PKparameters_orig[1] == "AUC tab" & ("AUC" %in% AllSheets |
-                                             "AUC_CI" %in% AllSheets))){
+         PKparameters_orig[1] != "Absorption tab") |
+        
+        # b)
+        (PKparameters_orig[1] == "AUC tab" & ("AUC" %in% AllSheets |
+                                              "AUC_CI" %in% AllSheets))){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
@@ -310,7 +310,7 @@ extractPK <- function(sim_data_file,
                 # name. Temporarily changing the parameter name to
                 # search the appropriate columns. Note that this regex
                 # will catch, e.g., "AUCinf_ratio_dose1" but NOT
-                # "AccumulationRatio".
+                # "AccumulationRatio". That is by design.
                 PKparam <- ifelse(str_detect(PKparam, "ratio"),
                                   paste0(PKparam, "_withInhib"),
                                   PKparam)
@@ -322,9 +322,10 @@ extractPK <- function(sim_data_file,
                 PKparam <- ifelse(str_detect(PKparam, "CL.*_dose1|HalfLife_dose1"),
                                   sub("_dose1", "inf_dose1", PKparam), PKparam)
                 
-                # Dose 1 tmax and Cmax are only available for the 0 to
-                # tau columns, so changing those parameter names
-                # temporarily. RETURN TO THIS: If the user requests integration of the last dose, doesn't that show up here? CHECK.
+                # Dose 1 tmax and Cmax are only available for the 0 to tau columns, so
+                # changing those parameter names temporarily. RETURN TO THIS: If the
+                # user requests integration of the last dose, doesn't that show up here?
+                # CHECK.
                 PKparam <- ifelse(str_detect(PKparam, "[Ct]max"),
                                   sub("max", "maxtau", PKparam),
                                   PKparam)
@@ -374,16 +375,16 @@ extractPK <- function(sim_data_file,
                     }
                     
                     if(str_detect(PKparam, "tau.*_dose1") &
-                       Deets$Regimen_sub == "Single Dose"){
+                       Deets$Regimen_sub %in% c("Single Dose", "custom dosing")){
                         StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                       "^AUC integrated from"))
                         StartColText <- "^AUC integrated from"
                     }
                     
                     if(str_detect(PKparam, "tau.*_dose1") &
-                       Deets$Regimen_sub == "Multiple Dose"){
-                        StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                      "^Truncated AUCt for the first dose"))
+                       Deets$Regimen_sub %in% c("Multiple Dose")){
+                        StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
+                                                     "^Truncated AUCt for the first dose"))
                         StartColText <- "^Truncated AUCt for the first dose"
                     }
                     
@@ -446,7 +447,7 @@ extractPK <- function(sim_data_file,
                     }
                 }
                 
-                if(checkDataSource){
+                if(checkDataSource & complete.cases(OutCol)){
                     assign("SearchText4Col", value = StartColText,
                            pos = 1)
                     assign("SearchText", value = ToDetect,
@@ -1188,7 +1189,7 @@ extractPK <- function(sim_data_file,
                                          StartRow_ind = HeaderRow+1,
                                          EndRow_ind = EndRow_ind,
                                          Note = "StartColText is looking in row 2."))
-            
+                
             }
             
             rm(ColNum)
@@ -1296,6 +1297,4 @@ extractPK <- function(sim_data_file,
     
     return(Out)
 }
-
-
 
