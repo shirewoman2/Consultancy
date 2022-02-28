@@ -30,6 +30,10 @@ renameStats <- function(OrigStat){
                    "Min Val" = "min",
                    "Max Val" = "max",
                    "Fold" = "fold",
-                   "Std Dev" = "SD")
+                   "Std Dev" = "SD", 
+                   # These next ones are only for inside the so_table function
+                   # and apply to trial-mean min and trial-mean max
+                   "MinMean" = "MinMean", 
+                   "MaxMean" = "MaxMean")
     StatNames[OrigStat]
 }

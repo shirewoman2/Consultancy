@@ -283,8 +283,8 @@ so_table <- function(report_input_file = NA,
     # be the max.
     if("tmax_dose1" %in% names(MyPKResults)){
         MyPKResults$tmax_dose1[
-            MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-            MyPKResults$tmax_dose1[MyPKResults$Stat == "median"]
+            which(MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean"))] <-
+            MyPKResults$tmax_dose1[which(MyPKResults$Stat == "median")]
         MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[1]] <-
             MyPKResults$tmax_dose1[MyPKResults$Stat == "min"]
         MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[2]] <-
