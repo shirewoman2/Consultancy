@@ -55,12 +55,13 @@
 #' @param variability_option What type of variability would you like the table
 #'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 #'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-#'   percentiles")}. Note that the confidence intervals are geometric since
-#'   that's what the simulator outputs (see an AUC tab and the summary
-#'   statistics; these values are the ones for, e.g., "90% confidence interval
-#'   around the geometric mean(lower limit)"). Setting \code{variability_option
-#'   = NA} will omit any of the variability other than the CV. The CV will
-#'   automatically be included unless you omit it with \code{includeCV = FALSE}.
+#'   percentiles")} as long as they were included in your simulator output. Note
+#'   that the confidence intervals are geometric since that's what the simulator
+#'   outputs (see an AUC tab and the summary statistics; these values are the
+#'   ones for, e.g., "90% confidence interval around the geometric mean(lower
+#'   limit)"). Setting \code{variability_option = NA} will omit any of the
+#'   variability other than the CV. The CV will automatically be included unless
+#'   you omit it with \code{includeCV = FALSE}.
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
@@ -69,7 +70,7 @@
 #'   parameter in the output table
 #' @param includeTrialMeans TRUE or FALSE for whether to include the range of
 #'   trial means for a given parameter. Note: This is calculated from individual
-#'   values rather than pulled directly from the output.
+#'   values rather than being pulled directly from the output.
 #' @param includeCV TRUE or FALSE for whether to include rows for CV in the
 #'   table
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
@@ -556,9 +557,12 @@ so_table <- function(report_input_file = NA,
                                         paste("Steady-state", sub("_ss", "", x))))
     PKToPull_pretty <- sub("_withInhib", " with inhibitor", PKToPull_pretty)
     PKToPull_pretty <- sub("CL", "CL/F (L/h)", PKToPull_pretty)
+    PKToPull_pretty <- sub("\\(L/h\\)_ratio", "ratio", PKToPull_pretty) # CL ratios
     PKToPull_pretty <- sub("AUCinf", "AUC0 to inf (h*ng/mL)", PKToPull_pretty)
     PKToPull_pretty <- sub("AUCtau", "AUC0 to tau (h*ng/mL)", PKToPull_pretty)
+    PKToPull_pretty <- sub("\\(h\\*ng/mL\\)_ratio", "ratio", PKToPull_pretty) # AUCtau or AUCinf ratios
     PKToPull_pretty <- sub("Cmax", "Cmax (ng/mL)", PKToPull_pretty)
+    PKToPull_pretty <- sub("\\(ng/mL\\)_ratio", "ratio", PKToPull_pretty) # Cmax ratios
     PKToPull_pretty <- sub("HalfLife", "t1/2 (h)", PKToPull_pretty)
     PKToPull_pretty <- sub("tmax", "tmax (h)", PKToPull_pretty)
     PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
@@ -566,7 +570,6 @@ so_table <- function(report_input_file = NA,
     PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
         sub(" with inhibitor$", "", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
     PKToPull_pretty <- sub("GMR_", "geometric mean ratio ", PKToPull_pretty)
-    
     PKToPull_pretty <- c("Statistic" = "Statistic", PKToPull_pretty)
     
     names(MyPKResults) <- PKToPull_pretty[names(MyPKResults)]
