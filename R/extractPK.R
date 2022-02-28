@@ -174,11 +174,6 @@ extractPK <- function(sim_data_file,
                        " is/are not among the possible PK parameters and will not be extracted. Please see data(AllPKParameters) for all possible parameters."))
     }
     
-    if(all(PKparameters %in% AllPKParameters$PKparameter) == FALSE){
-        stop()
-    }
-    
-    
     # Checking experimental details to only pull details that apply
     Deets <- extractExpDetails(sim_data_file)
     
