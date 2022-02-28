@@ -14,27 +14,24 @@ ct_plot_overlay(
 )
 }
 \arguments{
-\item{sim_obs_dataframe}{the data.frame with multiple sets of concentration-time
-data, including observed data where appropriate}
+\item{sim_obs_dataframe}{the data.frame with multiple sets of
+concentration-time data, including observed data where appropriate}
 
-\item{aggregate_option}{What type of aggregate measure should be shown?
-Options are any combination of "mean" (arithmetic mean), "geomean"
-(geometric mean), "median", "per5" (5th percentile), "per95" (95th
-percentile), "per10" (10th percentile), or "per90" (90th percentile).
-Default is "geomean". Example of useage: \code{aggregate_option = c("mean",
-"per5", "per95")}}
-
-\item{colorBy}{What column in \code{sim_obs_dataframe} should be used for coloring
-the lines and/or points on the graph? This should be unquoted, e.g.,
-\code{colorBy = Tissue}.}
+\item{colorBy}{What column in \code{sim_obs_dataframe} should be used for
+coloring the lines and/or points on the graph? This should be unquoted,
+e.g., \code{colorBy = Tissue}.}
 
 \item{facet_column1}{If you would like to break up your graph into small
 multiples, you can break the graphs up by up to two columns in
-\code{sim_obs_dataframe}. What should be the 1st column to break up the data by?
-This should be unquoted.}
+\code{sim_obs_dataframe}. What should be the 1st column to break up the
+data by? This should be unquoted.}
 
 \item{facet_column2}{What should be the 2nd column to break up the data into
 small multiples by? This should be unquoted.}
+
+\item{mean_type}{show "geometric" (default) or "arithmetic" means for the
+main (thickest) line for each data set. If this summary stat is not
+available in the simulator output, it will not be plotted.}
 }
 \value{
 
