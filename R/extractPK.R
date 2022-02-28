@@ -178,12 +178,15 @@ extractPK <- function(sim_data_file,
     Deets <- extractExpDetails(sim_data_file)
     
     if(is.na(Deets$Inhibitor1)){
-        PKparameters <- PKparameters[!str_detect(PKparameters,
-                                                 "Inhibitor1|inhib|withInhib|ratio")]
+        PKparameters <- 
+            PKparameters[PKparameters %in% 
+                             AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenEffectorPresent == FALSE]]
     }
     
     if(Deets$Regimen_sub == "Single Dose"){
-        PKparameters <- PKparameters[!str_detect(PKparameters, "ss|AccumulationIndex|AccumulationRatio")]
+        PKparameters <- 
+            PKparameters[PKparameters %in% 
+                             AllPKParameters$PKparameter[AllPKParameters$AppliesToSingleDose == TRUE]]
     }
     
     # If it was a multiple-dose regimen, then the AUC tab will not include
@@ -193,7 +196,7 @@ extractPK <- function(sim_data_file,
     # the output). By NOT removing it, there will be a warning to the user
     # that that parameter was not found. Also, I'm removing some parameters
     # that are not completely clearly and unequivocably labeled so that they
-    # can be pulled from sheets where they are so labeled.
+    # can be pulled from sheets where they *are* so labeled.
     if(Deets$Regimen_sub == "Multiple Dose"){
         ParamAUC <- setdiff(ParamAUC,
                             c("AUCtau_ratio_dose1",
@@ -476,12 +479,49 @@ extractPK <- function(sim_data_file,
                         pull(1) %>% as.numeric
                 )
                 
-                suppressWarnings(
-                    Out_agg[[i]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum] %>%
-                        pull(1) %>% as.numeric()
-                )
-                names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
-                    pull(1)
+                if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
+                    # Simulator sometimes can't extrapolate to infinity well and you end
+                    # up with NA values. If this happens, then AUCinf is NOT reliable and
+                    # we SHOULD NOT use aggregated measures of it b/c they don't include
+                    # all the data! Instead, pull AUCtau as well and give user a warning.
+                    
+                    NewParam <- sub("inf", "tau", i)
+                    warning(paste0("The parameter ", i, " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
+                                   NewParam, " will also be returned for use in place of ",
+                                   i, " as you deem appropriate."))
+                    
+                    PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
+                    
+                    ColNum_NewParam <- findCol(NewParam)
+                    
+                    if(length(ColNum) == 0 | is.na(ColNum_NewParam)){
+                        message(paste("The column with information for", NewParam,
+                                      "cannot be found."))
+                        suppressWarnings(rm(ColNum_NewParam, SearchText4Col, SearchText))
+                        PKparameters_AUC <- setdiff(PKparameters_AUC, NewParam)
+                        next
+                    }
+                    
+                    suppressWarnings(
+                        Out_ind[[NewParam]] <- AUC_xl[4:EndRow_ind, ColNum_NewParam] %>%
+                            pull(1) %>% as.numeric
+                    )
+                    
+                    suppressWarnings(
+                        Out_agg[[NewParam]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum_NewParam] %>%
+                            pull(1) %>% as.numeric()
+                    )
+                    names(Out_agg[[NewParam]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
+                        pull(1)
+                    
+                } else {
+                    suppressWarnings(
+                        Out_agg[[i]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                            pull(1) %>% as.numeric()
+                    )
+                    names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
+                        pull(1)
+                }
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
@@ -496,8 +536,27 @@ extractPK <- function(sim_data_file,
                                              StartRow_ind = 4,
                                              EndRow_ind = EndRow_ind,
                                              Note = "StartColText is looking in row 2."))
+                    
+                    if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
+                        DataCheck <- DataCheck %>%
+                            bind_rows(data.frame(PKparam = NewParam, 
+                                                 Tab = ifelse("AUC" %in% AllSheets == FALSE, 
+                                                              "AUC_CI", "AUC"),
+                                                 StartColText = SearchText4Col,
+                                                 SearchText = SearchText,
+                                                 Column = ColNum_NewParam,
+                                                 StartRow_agg = StartRow_agg,
+                                                 EndRow_agg = EndRow_agg,
+                                                 StartRow_ind = 4,
+                                                 EndRow_ind = EndRow_ind,
+                                                 Note = "StartColText is looking in row 2."))
+                        rm(ColNum_NewParam, NewParam)
+                    }
+                    
                     suppressWarnings(rm(SearchText4Col, SearchText))
                 }
+                
+                # end of iteration i
             }
             
             if(includeTrialInfo){
@@ -508,7 +567,7 @@ extractPK <- function(sim_data_file,
                 Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
                                              as.data.frame(Out_ind[PKparameters_AUC]))
             }
-            rm(EndRow_ind, findCol, StartRow_agg, EndRow_agg)
+            rm(findCol)
         }
     }
     
