@@ -23,7 +23,7 @@
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" or "blood".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual PK
-#'   parameters? Options are "aggregate" and/or "individual". For aggregate
+#'   parameters? Options are "aggregate", "individual", or "both". For aggregate
 #'   data, values are pulled from simulator output -- not calculated -- and the
 #'   output will be a data.frame with the PK parameters in columns and the
 #'   statistics reported exactly as in the simulator output file.
@@ -61,6 +61,10 @@ extractPK <- function(sim_data_file,
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
+    if(returnAggregateOrIndiv[1] == "both"){
+        returnAggregateOrIndiv <- c("aggregate", "individual")
+    }
     
     AllSheets <- readxl::excel_sheets(path = sim_data_file)
     
