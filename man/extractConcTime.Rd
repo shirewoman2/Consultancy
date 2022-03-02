@@ -11,7 +11,9 @@ extractConcTime(
   adjust_obs_time = FALSE,
   tissue = "plasma",
   compoundToExtract = "substrate",
-  returnAggregateOrIndiv = c("aggregate", "individual")
+  returnAggregateOrIndiv = c("aggregate", "individual"),
+  expdetails = NA,
+  fromMultFunction = FALSE
 )
 }
 \arguments{
@@ -66,6 +68,15 @@ metabolites. (Someone please correct me if that's wrong! -LS)}
 concentration-time data? Options are one or both of "aggregate" and
 "individual". Aggregated data are not calculated here but are pulled from
 the simulator output rows labeled as "Population Statistics".}
+
+\item{expdetails}{If you have already run \code{extractExpDetails} to get all
+the details from the "Input Sheet", you can save some processing time by
+supplying it here. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
+
+\item{fromMultFunction}{INTERNAL USE ONLY. TRUE or FALSE on whether this is
+being called on by \code{\link{extractConcTime_mult}}.}
 }
 \value{
 A data.frame of concentration-time data with the following columns:

@@ -1,4 +1,4 @@
-#' Pull concentration-time data from multiple Simcyp Simulator output files NOT WORKING. DO NOT TRUST THIS.
+#' Pull concentration-time data from multiple Simcyp Simulator output files 
 #'
 #' \code{extractConcTime_mult} is meant to be used in conjunction with
 #' \code{\link{ct_plot_overlay}} to create single graphs with overlaid
@@ -97,9 +97,6 @@ extractConcTime_mult <- function(sim_data_files,
                                  returnAggregateOrIndiv = "aggregate",
                                  ...){
     
-    # Adding object to note that this is from mult function
-    FromMultFunction <- TRUE
-    
     # Checking on what combinations of data the user has requested and what
     # data are already present in sim_obs_dataframe.
     Requested <- expand.grid(Tissue = tissues,
@@ -136,15 +133,11 @@ extractConcTime_mult <- function(sim_data_files,
     MultData <- list()
     
     for(f in sim_data_files_topull){
-        print(paste("file f =", f))
-        print(paste("FromMultFunction =", FromMultFunction, "at line 140 of extractConcTime_mult"))
+        message(paste("Extracting from file f:", f))
         MultData[[f]] <- list()
         
         # Getting summary data for the simulation(s)
         Deets <- extractExpDetails(f, exp_details = "Input Sheet")
-        print(paste("eCTm: Deets should exist here, line 145. Deets$Substrate =",
-                    Deets$Substrate))
-        print(Deets$Inhibitor1)
         
         # Names of compounds requested for checking whether the data exist
         CompoundCheck <- c("substrate" = Deets$Substrate,
@@ -171,7 +164,7 @@ extractConcTime_mult <- function(sim_data_files,
         # sheets.
         for(j in tissues){
             
-            print(paste("tissue j =", j))
+            message(paste("Extracting from tissue j:", j))
             # Depending on both the tissue AND which compound the user
             # requests, that could be on multiple sheets or on a single
             # sheet. Figuring out which sheet to read.
@@ -192,7 +185,9 @@ extractConcTime_mult <- function(sim_data_files,
                     obs_inhibitor_data_file = NA,
                     compoundToExtract = compoundsToExtract_n,
                     tissue = j,
-                    returnAggregateOrIndiv = returnAggregateOrIndiv)
+                    returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                    fromMultFunction = TRUE, 
+                    expdetails = Deets)
                 
                 # When the particular combination of compound and tissue is not
                 # available in that file, extractConcTime will return an empty
@@ -255,12 +250,10 @@ extractConcTime_mult <- function(sim_data_files,
                 
                 for(k in unique(CompoundTypes$Type)){
                     
-                    print(paste("CompoundTypes$Type k =", k))
+                    # print(paste("CompoundTypes$Type k =", k))
                     compoundsToExtract_k <-
                         CompoundTypes %>% filter(Type == k) %>%
                         pull(PossCompounds)
-                    
-                    print(paste("FromMultFunction =", FromMultFunction, "at line 261 of extractConcTime_mult"))
                     
                     MultData[[f]][[j]][[k]] <-
                         extractConcTime(
@@ -269,7 +262,9 @@ extractConcTime_mult <- function(sim_data_files,
                             obs_inhibitor_data_file = NA,
                             compoundToExtract = compoundsToExtract_k,
                             tissue = j,
-                            returnAggregateOrIndiv = returnAggregateOrIndiv)
+                            returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                            fromMultFunction = TRUE, 
+                            expdetails = Deets)
                     
                     # When the particular combination of compound and
                     # tissue is not available in that file,
@@ -296,16 +291,15 @@ extractConcTime_mult <- function(sim_data_files,
         }
         
         MultData[[f]] <- bind_rows(MultData[[f]])
-        print(paste("nrow of MultData for file", f, "=", nrow(MultData[[f]])))
         
-        # rm(Deets) # MUST remove Deets or you can get the wrong info for each file!!!
+        # MUST remove Deets or you can get the wrong info for each file!!!
+        rm(Deets, CompoundCheck, compoundsToExtract_n) 
         
     }
     
     
     MultData <- bind_rows(MultData)
     if(nrow(MultData) > 0){
-        print("nrow(MultData) > 0")
         MultData <- MultData %>% filter(Simulated == TRUE)
     }
     

@@ -60,6 +60,13 @@
 #'   concentration-time data? Options are one or both of "aggregate" and
 #'   "individual". Aggregated data are not calculated here but are pulled from
 #'   the simulator output rows labeled as "Population Statistics".
+#' @param expdetails If you have already run \code{extractExpDetails} to get all
+#'   the details from the "Input Sheet", you can save some processing time by
+#'   supplying it here. If left as NA, this function will run
+#'   \code{extractExpDetails} behind the scenes to figure out some information
+#'   about your experimental set up.
+#' @param fromMultFunction INTERNAL USE ONLY. TRUE or FALSE on whether this is
+#'   being called on by \code{\link{extractConcTime_mult}}.
 #'
 #' @return A data.frame of concentration-time data with the following columns:
 #'   \describe{
@@ -140,7 +147,9 @@ extractConcTime <- function(sim_data_file,
                             tissue = "plasma",
                             compoundToExtract = "substrate",
                             returnAggregateOrIndiv = c("aggregate",
-                                                       "individual")){
+                                                       "individual"),
+                            expdetails = NA,
+                            fromMultFunction = FALSE){
     
     # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,
@@ -159,19 +168,11 @@ extractConcTime <- function(sim_data_file,
         tissue <- "faeces"
     }
     
-    # The "exists" call in the next line is how we're checking whether this
-    # function was called on its own (the result will be FALSE) or called from
-    # extractConcTime_mult (result will be TRUE), where you can have multiple
-    # tissues, files, and compounds. We need extractConcTime to ONLY give ONE
-    # set of concentration-time data when called on alone so that it will work
-    # as expected with, e.g., ct_plot.
-    FromMultFunction <- exists("FromMultFunction", where = parent.frame())
-    
-    if(length(tissue) != 1 & FromMultFunction == FALSE){
+    if(length(tissue) != 1 & fromMultFunction == FALSE){
         stop("You must enter one and only one option for 'tissue'. (Default is plasma.)")
     }
     
-    if(length(compoundToExtract) != 1 & FromMultFunction == FALSE){
+    if(length(compoundToExtract) != 1 & fromMultFunction == FALSE){
         stop("You must enter one and only one option for 'compoundToExtract'. (Default is the substrate.)")
     }
     
@@ -205,14 +206,16 @@ extractConcTime <- function(sim_data_file,
                           "ileum ii", "ileum iii", "ileum iv", "colon", "faeces")
     
     # Getting summary data for the simulation(s)
-    if(FromMultFunction == FALSE){
+    if(fromMultFunction){
+        Deets <- expdetails
+    } else {
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
     # Effector present?
     EffectorPresent <- complete.cases(Deets$Inhibitor1)
     if(EffectorPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor")) &
-       FromMultFunction == FALSE){
+       fromMultFunction == FALSE){
         # Note: Asking for a non-existant effector from the mult function will
         # result in an empty data.frame for that, which is fine.
         stop("There are no inhibitor data in the simulator output file supplied. Please either submit a different output file or request concentration-time data for a substrate or metabolite.")
@@ -240,7 +243,7 @@ extractConcTime <- function(sim_data_file,
     
     SheetNames <- readxl::excel_sheets(sim_data_file)
     
-    if(FromMultFunction & exists("k", where = parent.frame())){
+    if(fromMultFunction & exists("k", where = parent.frame())){
         CompoundType <- k
     } else {
         if(any(compoundToExtract %in% c("substrate", "inhibitor 1",
@@ -322,17 +325,17 @@ extractConcTime <- function(sim_data_file,
     Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
     
     if((length(Sheet) == 0 | is.na(Sheet))){
-        if(FromMultFunction == FALSE){
-            stop(paste0("You requested data for ", str_comma(compoundToExtract),
-                        " in ", tissue,
-                        " from the file '",
-                        sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped."))
-        } else {
+        if(fromMultFunction){
             warning(paste0("You requested data for ", str_comma(compoundToExtract),
                            " in ", tissue,
                            " from the file '",
                            sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped."))
             return(data.frame())
+        } else {
+            stop(paste0("You requested data for ", str_comma(compoundToExtract),
+                        " in ", tissue,
+                        " from the file '",
+                        sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped."))
         }
     }
     
@@ -384,7 +387,7 @@ extractConcTime <- function(sim_data_file,
     
     for(m in compoundToExtract){
         
-        # print(paste("ind compoundToExtract m =", m))
+        # message(paste("ind compoundToExtract m =", m))
         # "NotAvail" is a hack to skip this iteration of the loop if it's ADAM
         # concentrations that the user requested but they're not available for
         # this tissue/compound combination.
@@ -393,7 +396,7 @@ extractConcTime <- function(sim_data_file,
         if(ADAM & m != "substrate"){
             if(tissue == "faeces"){
                 if(m != "inhibitor 1"){
-                    if(FromMultFunction){
+                    if(fromMultFunction){
                         warning(paste0(str_to_title(m), 
                                        " concentrations are not available for ",
                                        tissue, " and thus will not be extracted."))
@@ -405,7 +408,7 @@ extractConcTime <- function(sim_data_file,
                     }
                 }
             } else {
-                if(FromMultFunction){
+                if(fromMultFunction){
                     warning(paste0(str_to_title(m), 
                                    " concentrations are not available for ",
                                    tissue, " and thus will not be extracted.")) 
@@ -529,7 +532,7 @@ extractConcTime <- function(sim_data_file,
                 
                 for(n in subsection_ADAMs){
                     
-                    # print(paste("subsection_ADAMs n =", n))
+                    # message(paste("subsection_ADAMs n =", n))
                     # Some sheets have all compounds included, so need to narrow
                     # down which rows to check. Others don't have metabolites
                     # listed on the same sheet, so that's why there are these
@@ -621,7 +624,7 @@ extractConcTime <- function(sim_data_file,
                 if(EffectorPresent){
                     
                     for(n in subsection_ADAMs){
-                        # print(paste("subsection_ADAMs n =", n))
+                        # message(paste("subsection_ADAMs n =", n))
                         # Some sheets have all compounds included, so need to narrow
                         # down which rows to check. Others don't have metabolites
                         # listed on the same sheet, so that's why there are these
@@ -751,12 +754,12 @@ extractConcTime <- function(sim_data_file,
                 # Need to do this for each inhibitor present
                 for(i in AllEffectors){
                     
-                    # print(paste("AllEffectors i =", i))
+                    # message(paste("AllEffectors i =", i))
                     sim_data_mean[[m]][[i]] <- list()
                     
                     for(n in subsection_ADAMs){
                         
-                        # print(paste("subsection_ADAMs n =", n))
+                        # message(paste("subsection_ADAMs n =", n))
                         # Some sheets have all compounds included, so need to narrow
                         # down which rows to check. Others don't have metabolites
                         # listed on the same sheet, so that's why there are these
@@ -854,7 +857,7 @@ extractConcTime <- function(sim_data_file,
                 }
                 
                 for(n in subsection_ADAMs){
-                    # print(paste("subsection_ADAMs n =", n))
+                    # message(paste("subsection_ADAMs n =", n))
                     if(ADAM){
                         RowsToUse <- which(
                             str_detect(tolower(sim_data_xl$...1), 
@@ -921,7 +924,7 @@ extractConcTime <- function(sim_data_file,
                 if(EffectorPresent){
                     
                     for(n in subsection_ADAMs){
-                        # print(paste("subsection_ADAMs n =", n))
+                        # message(paste("subsection_ADAMs n =", n))
                         if(ADAM){
                             RowsToUse <- intersect(
                                 which(
@@ -1031,11 +1034,11 @@ extractConcTime <- function(sim_data_file,
                 
                 # Need to do this for each inhibitor present
                 for(i in AllEffectors){
-                    # print(paste("AllEffectors i =", i))
+                    # message(paste("AllEffectors i =", i))
                     sim_data_ind[[m]][[i]] <- list()
                     
                     for(n in subsection_ADAMs){
-                        # print(paste("subsection_ADAMs n =", n))
+                        # message(paste("subsection_ADAMs n =", n))
                         # Some sheets have all compounds included, so need to
                         # narrow down which rows to check. Others don't have
                         # metabolites listed on the same sheet, so that's why
@@ -1136,7 +1139,7 @@ extractConcTime <- function(sim_data_file,
         AllEffectors_comma <- ifelse(length(AllEffectors) == 0,
                                      NA, str_comma(AllEffectors))
         
-        if(TissueType == "systemic" & FromMultFunction == FALSE){
+        if(TissueType == "systemic" & fromMultFunction == FALSE){
             
             # If the user did not specify a file to use for observed data, use
             # the observed data that they included for the simulation. Note that
@@ -1421,7 +1424,7 @@ extractConcTime <- function(sim_data_file,
             
             for(j in CDCompounds$CompoundID){
                 
-                # print(paste("CDCompounds$CompoundID j =", j))
+                # message(paste("CDCompounds$CompoundID j =", j))
                 Dosing[[j]] <-
                     Deets[[paste0("CustomDosing", 
                                   CDCompounds$CompoundSuffix[CDCompounds$CompoundID == j])]] %>% 
@@ -1460,7 +1463,7 @@ extractConcTime <- function(sim_data_file,
             
             for(j in unique(Data$CD)[!unique(Data$CD) == "not CD"]){
                 
-                # print(paste("CDCompounds$CompoundID (not CD) j =", j))
+                # message(paste("CDCompounds$CompoundID (not CD) j =", j))
                 MyData[[j]] <- Data %>% filter(CD == j) %>% select(-DoseNum)
                 # This should make the right breaks for each possible compound
                 # with custom dosing. They should match the breaks in the
@@ -1519,7 +1522,7 @@ extractConcTime <- function(sim_data_file,
     # works for input to ct_plot at the moment, too, so things get buggered up
     # if there are multiple compounds and the user called on extractConcTime
     # itself rather than extractConcTime_mult.
-    if(FromMultFunction == FALSE){
+    if(fromMultFunction == FALSE){
         Data <- Data %>%
             filter(CompoundID %in% compoundToExtract)
     }
