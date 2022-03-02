@@ -1,4 +1,4 @@
-#' Pull concentration-time data from multiple Simcyp Simulator output files 
+#' Pull concentration-time data from multiple Simcyp Simulator output files
 #'
 #' \code{extractConcTime_mult} is meant to be used in conjunction with
 #' \code{\link{ct_plot_overlay}} to create single graphs with overlaid
@@ -70,7 +70,10 @@
 #'   please check that the units are what you expected in the end.
 #' @param time_units_to_use time units to use so that all data will be
 #'   comparable. Options are "hours" or "minutes". Default is "hours".
-#' @param returnAggregateOrIndiv
+#' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
+#'   concentration-time data? Options are "aggregate", "individual", or "both".
+#'   Aggregated data are not calculated here but are pulled from the simulator
+#'   output rows labeled as "Population Statistics".
 #'
 #' @return a large data.frame with multiple sets of concentration-time data,
 #'   formatted the same way as output from the function
@@ -96,6 +99,8 @@ extractConcTime_mult <- function(sim_data_files,
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate",
                                  ...){
+    
+    compoundsToExtract <- tolower(compoundsToExtract)
     
     # Checking on what combinations of data the user has requested and what
     # data are already present in sim_obs_dataframe.
@@ -133,7 +138,7 @@ extractConcTime_mult <- function(sim_data_files,
     MultData <- list()
     
     for(f in sim_data_files_topull){
-        message(paste("Extracting from file (f) =", f))
+        message(paste("Extracting data from file (f) =", f))
         MultData[[f]] <- list()
         
         # Getting summary data for the simulation(s)
@@ -164,7 +169,7 @@ extractConcTime_mult <- function(sim_data_files,
         # sheets.
         for(j in tissues){
             
-            message(paste("Extracting for tissue (j) =", j))
+            message(paste("Extracting data for tissue (j) =", j))
             # Depending on both the tissue AND which compound the user
             # requests, that could be on multiple sheets or on a single
             # sheet. Figuring out which sheet to read.

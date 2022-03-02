@@ -57,9 +57,9 @@
 #'   up to one metabolite for the 1st inhibitor but no other inhibitor
 #'   metabolites. (Someone please correct me if that's wrong! -LS)
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
-#'   concentration-time data? Options are one or both of "aggregate" and
-#'   "individual". Aggregated data are not calculated here but are pulled from
-#'   the simulator output rows labeled as "Population Statistics".
+#'   concentration-time data? Options are "aggregate", "individual", or "both".
+#'   Aggregated data are not calculated here but are pulled from the simulator
+#'   output rows labeled as "Population Statistics".
 #' @param expdetails If you have already run \code{extractExpDetails} to get all
 #'   the details from the "Input Sheet", you can save some processing time by
 #'   supplying it here. If left as NA, this function will run
@@ -150,6 +150,10 @@ extractConcTime <- function(sim_data_file,
                                                        "individual"),
                             expdetails = NA,
                             fromMultFunction = FALSE){
+    
+    if(returnAggregateOrIndiv[1] == "both"){
+        returnAggregateOrIndiv <- c("aggregate", "individual")
+    }
     
     # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,

@@ -209,6 +209,7 @@ so_table <- function(report_input_file = NA,
                                             "TRUE" = c("aggregate", "individual"),
                                             "FALSE" = "aggregate"))
     
+    
     # If they only wanted one parameter, then extractPK returns only the
     # aggregate data for that one parameter. In that situation, the names of the
     # items in the extractPK output list are that parameter and "QC" -- not
@@ -276,7 +277,7 @@ so_table <- function(report_input_file = NA,
     MyPKResults <- MyPKResults %>%
         mutate(Stat = renameStats(Statistic)) %>%
         filter(!Stat %in% switch(MeanType, "geometric" = c("mean", "CV"), 
-                                      "arithmetic" = c("geomean", "GCV"))) %>%
+                                 "arithmetic" = c("geomean", "GCV"))) %>%
         select(-Statistic) %>% select(Stat, everything())
     
     # Adjusting tmax values since the geometric mean row will actually be the

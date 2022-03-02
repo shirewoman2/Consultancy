@@ -66,8 +66,6 @@ pksummary_table <- function(sim_data_file,
                             includeCV = TRUE,
                             checkDataSource = TRUE){
     
-    FromPKSumTable <- TRUE
-    
     Out <- so_table(sim_data_file = sim_data_file, 
                     PKparameters = PKparameters,
                     mean_type = mean_type,

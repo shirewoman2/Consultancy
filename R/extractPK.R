@@ -1340,7 +1340,9 @@ extractPK <- function(sim_data_file,
     
     if(checkDataSource){
         DataCheck <- DataCheck %>% filter(complete.cases(PKparam)) %>% 
-            mutate(File = sim_data_file)
+            mutate(File = sim_data_file) %>% 
+            select(PKparam, File, Tab, Column, StartRow_agg, EndRow_agg, 
+                   StartRow_ind, EndRow_ind)
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- DataCheck

@@ -81,7 +81,10 @@ please check that the units are what you expected in the end.}
 \item{time_units_to_use}{time units to use so that all data will be
 comparable. Options are "hours" or "minutes". Default is "hours".}
 
-\item{returnAggregateOrIndiv}{}
+\item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
+concentration-time data? Options are "aggregate", "individual", or "both".
+Aggregated data are not calculated here but are pulled from the simulator
+output rows labeled as "Population Statistics".}
 
 \item{...}{other arguments passed to the function
 \code{\link{extractConcTime}}}
