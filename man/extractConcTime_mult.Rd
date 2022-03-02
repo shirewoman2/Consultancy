@@ -7,7 +7,7 @@
 extractConcTime_mult(
   sim_data_files,
   obs_data_files = NA,
-  conctime_DF,
+  sim_obs_dataframe = "ConcTime",
   overwrite = FALSE,
   tissues = "plasma",
   compoundsToExtract = "substrate",
@@ -32,17 +32,17 @@ file, not the file that contains only the digitized time and concentration
 data. The names of the observed data files are piped into
 \code{\link{extractObsConcTime}}.}
 
-\item{conctime_DF}{the data.frame that will contain the output. Because we
-can see scenarios where you might want to extract some concentration-time
-data, play around with those data, and then later decide you want to pull
-more concentration-time data for comparisons, this data.frame can already
-exist. When that is the case, this function will \emph{add} data to that
-data.frame. It will \emph{not} overwrite existing data unless
-\code{overwrite} is set to TRUE.}
+\item{sim_obs_dataframe}{the data.frame that will contain the output. Because
+we can see scenarios where you might want to extract some
+concentration-time data, play around with those data, and then later decide
+you want to pull more concentration-time data for comparisons, this
+data.frame can already exist. When that is the case, this function will
+\emph{add} data to that data.frame. It will \emph{not} overwrite existing
+data unless \code{overwrite} is set to TRUE.}
 
 \item{overwrite}{TRUE or FALSE on whether to re-extract the
 concentration-time data from output files that are already included in
-\code{conctime_DF}. Since pulling data from Excel files is slow, by
+\code{sim_obs_dataframe}. Since pulling data from Excel files is slow, by
 default, this will \emph{not} overwrite existing data and instead will only
 add data from any Excel files that aren't already included. A situation
 where you might want to set this to TRUE would be when you have changed
@@ -109,7 +109,7 @@ files.}}
 ConcTimeData <-
       extractConcTime_mult(
             sim_data_files = c("MyFile1.xlsx", "MyFile2.xlsx"),
-            conctime_DF = "ConcTimeData",
+            sim_obs_dataframe = "ConcTimeData",
             overwrite = FALSE,
             tissue = "unbound plasma") # Note that "tissue" is passed to "extractConcTime".
 

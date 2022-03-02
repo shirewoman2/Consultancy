@@ -25,16 +25,16 @@
 #'   file, not the file that contains only the digitized time and concentration
 #'   data. The names of the observed data files are piped into
 #'   \code{\link{extractObsConcTime}}.
-#' @param conctime_DF the data.frame that will contain the output. Because we
-#'   can see scenarios where you might want to extract some concentration-time
-#'   data, play around with those data, and then later decide you want to pull
-#'   more concentration-time data for comparisons, this data.frame can already
-#'   exist. When that is the case, this function will \emph{add} data to that
-#'   data.frame. It will \emph{not} overwrite existing data unless
-#'   \code{overwrite} is set to TRUE.
+#' @param sim_obs_dataframe the data.frame that will contain the output. Because
+#'   we can see scenarios where you might want to extract some
+#'   concentration-time data, play around with those data, and then later decide
+#'   you want to pull more concentration-time data for comparisons, this
+#'   data.frame can already exist. When that is the case, this function will
+#'   \emph{add} data to that data.frame. It will \emph{not} overwrite existing
+#'   data unless \code{overwrite} is set to TRUE.
 #' @param overwrite TRUE or FALSE on whether to re-extract the
 #'   concentration-time data from output files that are already included in
-#'   \code{conctime_DF}. Since pulling data from Excel files is slow, by
+#'   \code{sim_obs_dataframe}. Since pulling data from Excel files is slow, by
 #'   default, this will \emph{not} overwrite existing data and instead will only
 #'   add data from any Excel files that aren't already included. A situation
 #'   where you might want to set this to TRUE would be when you have changed
@@ -81,14 +81,14 @@
 #' ConcTimeData <-
 #'       extractConcTime_mult(
 #'             sim_data_files = c("MyFile1.xlsx", "MyFile2.xlsx"),
-#'             conctime_DF = "ConcTimeData",
+#'             sim_obs_dataframe = "ConcTimeData",
 #'             overwrite = FALSE,
 #'             tissue = "unbound plasma") # Note that "tissue" is passed to "extractConcTime".
 #' 
 
 extractConcTime_mult <- function(sim_data_files,
                                  obs_data_files = NA,
-                                 conctime_DF,
+                                 sim_obs_dataframe = "ConcTime",
                                  overwrite = FALSE,
                                  tissues = "plasma",
                                  compoundsToExtract = "substrate",
@@ -97,21 +97,24 @@ extractConcTime_mult <- function(sim_data_files,
                                  returnAggregateOrIndiv = "aggregate",
                                  ...){
     
+    # Adding object to note that this is from mult function
+    FromMultFunction <- TRUE
+    
     # Checking on what combinations of data the user has requested and what
-    # data are already present in conctime_DF.
+    # data are already present in sim_obs_dataframe.
     Requested <- expand.grid(Tissue = tissues,
                              CompoundID = compoundsToExtract,
                              File = sim_data_files)
     
-    if(exists(substitute(conctime_DF)) && "data.frame" %in% class(conctime_DF)){
-        if("File" %in% names(conctime_DF) == FALSE){
-            conctime_DF$File <- "unknown file"
+    if(exists(substitute(sim_obs_dataframe)) && "data.frame" %in% class(sim_obs_dataframe)){
+        if("File" %in% names(sim_obs_dataframe) == FALSE){
+            sim_obs_dataframe$File <- "unknown file"
         }
         
-        conctime_DF <- conctime_DF %>%
+        sim_obs_dataframe <- sim_obs_dataframe %>%
             mutate(ID = paste(File, Tissue, CompoundID))
         
-        DataToFetch <- conctime_DF %>% select(File, Tissue, CompoundID) %>%
+        DataToFetch <- sim_obs_dataframe %>% select(File, Tissue, CompoundID) %>%
             unique() %>% mutate(ExistsAlready = TRUE) %>%
             right_join(Requested) %>%
             filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
@@ -121,23 +124,25 @@ extractConcTime_mult <- function(sim_data_files,
             sim_data_files_topull <- unique(DataToFetch$File)
         } else {
             sim_data_files_topull <- sim_data_files
-            conctime_DF <- conctime_DF %>%
+            sim_obs_dataframe <- sim_obs_dataframe %>%
                 filter(!ID %in% DataToFetch$ID)
         }
     } else {
         DataToFetch <- Requested
         sim_data_files_topull <- sim_data_files
-        conctime_DF <- data.frame()
+        sim_obs_dataframe <- data.frame()
     }
     
     MultData <- list()
     
-    for(n in sim_data_files_topull){
+    for(f in sim_data_files_topull){
+        print(paste("file f =", f))
+        print(paste("FromMultFunction =", FromMultFunction, "at line 140 of extractConcTime_mult"))
         
-        MultData[[n]] <- list()
+        MultData[[f]] <- list()
         
         # Getting summary data for the simulation(s)
-        Deets <- extractExpDetails(n, exp_details = "Input Sheet")
+        Deets <- extractExpDetails(f, exp_details = "Input Sheet")
         
         # Names of compounds requested for checking whether the data exist
         CompoundCheck <- c("substrate" = Deets$Substrate,
@@ -154,7 +159,7 @@ extractConcTime_mult <- function(sim_data_files,
                                           names(CompoundCheck)[complete.cases(CompoundCheck)])
         
         if(all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
-            warning(paste0("For the file ", n, ", only the ",
+            warning(paste0("For the file ", f, ", only the ",
                            str_comma(compoundsToExtract_n),
                            " was/were available."))
         }
@@ -164,6 +169,7 @@ extractConcTime_mult <- function(sim_data_files,
         # sheets.
         for(j in tissues){
             
+            print(paste("tissue j =", j))
             # Depending on both the tissue AND which compound the user
             # requests, that could be on multiple sheets or on a single
             # sheet. Figuring out which sheet to read.
@@ -178,8 +184,8 @@ extractConcTime_mult <- function(sim_data_files,
                 # sheet and that requires only one iteration of the
                 # loop.
                 
-                MultData[[n]][[j]] <- extractConcTime(
-                    sim_data_file = n,
+                MultData[[f]][[j]] <- extractConcTime(
+                    sim_data_file = f,
                     obs_data_file = NA,
                     obs_inhibitor_data_file = NA,
                     compoundToExtract = compoundsToExtract_n,
@@ -191,21 +197,21 @@ extractConcTime_mult <- function(sim_data_files,
                 # data.frame, which we don't want to be included in the final
                 # data. Not adding info for File in that scenario b/c it would
                 # add a row to what would have been an empty data.frame.
-                if(nrow(MultData[[n]][[j]]) > 0){
-                    MultData[[n]][[j]] <-
-                        MultData[[n]][[j]] %>%
-                        mutate(File = n)
+                if(nrow(MultData[[f]][[j]]) > 0){
+                    MultData[[f]][[j]] <-
+                        MultData[[f]][[j]] %>%
+                        mutate(File = f)
                     
                     # Need to handle ADAM data specially
                     ADAMtissue <- c("stomach", "duodenum", "jejunum i",
                                     "jejunum ii", "ileum i", "ileum ii",
                                     "ileum iii", "ileum iv", "colon", "faeces")
-                    if(any(MultData[[n]][[j]]$Tissue %in% ADAMtissue)){
-                        CT_adam <- MultData[[n]][[j]] %>% 
+                    if(any(MultData[[f]][[j]]$Tissue %in% ADAMtissue)){
+                        CT_adam <- MultData[[f]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue)
                         
                         
-                        CT_nonadam <- MultData[[n]][[j]] %>% 
+                        CT_nonadam <- MultData[[f]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue == FALSE)
                         
                         if(nrow(CT_nonadam) > 0){
@@ -215,12 +221,12 @@ extractConcTime_mult <- function(sim_data_files,
                                                              "Time_units" = time_units_to_use))
                         }
                         
-                        MultData[[n]][[j]] <- bind_rows(CT_adam, CT_nonadam)
+                        MultData[[f]][[j]] <- bind_rows(CT_adam, CT_nonadam)
                         
                     } else {
                         
-                        MultData[[n]][[j]] <-
-                            match_units(DF_to_adjust = MultData[[n]][[j]],
+                        MultData[[f]][[j]] <-
+                            match_units(DF_to_adjust = MultData[[f]][[j]],
                                         goodunits = list("Conc_units" = conc_units_to_use,
                                                          "Time_units" = time_units_to_use))
                     }
@@ -243,17 +249,20 @@ extractConcTime_mult <- function(sim_data_files,
                                          "substrate", PossCompounds)) %>%
                     filter(PossCompounds %in% compoundsToExtract_n)
                 
-                MultData[[n]][[j]] <- list()
+                MultData[[f]][[j]] <- list()
                 
                 for(k in unique(CompoundTypes$Type)){
                     
+                    print(paste("CompoundTypes$Type k =", k))
                     compoundsToExtract_k <-
                         CompoundTypes %>% filter(Type == k) %>%
                         pull(PossCompounds)
                     
-                    MultData[[n]][[j]][[k]] <-
+                    print(paste("FromMultFunction =", FromMultFunction, "at line 261 of extractConcTime_mult"))
+                    
+                    MultData[[f]][[j]][[k]] <-
                         extractConcTime(
-                            sim_data_file = n,
+                            sim_data_file = f,
                             obs_data_file = NA,
                             obs_inhibitor_data_file = NA,
                             compoundToExtract = compoundsToExtract_k,
@@ -267,48 +276,49 @@ extractConcTime_mult <- function(sim_data_files,
                     # data. Not adding info for File in that scenario
                     # b/c it would add a row to what would have been
                     # an empty data.frame.
-                    if(nrow(MultData[[n]][[j]][[k]]) > 0){
-                        MultData[[n]][[j]][[k]] <-
-                            MultData[[n]][[j]][[k]] %>%
-                            mutate(File = n)
+                    if(nrow(MultData[[f]][[j]][[k]]) > 0){
+                        MultData[[f]][[j]][[k]] <-
+                            MultData[[f]][[j]][[k]] %>%
+                            mutate(File = f)
                         
-                        MultData[[n]][[j]][[k]] <-
-                            match_units(DF_to_adjust = MultData[[n]][[j]][[k]],
+                        MultData[[f]][[j]][[k]] <-
+                            match_units(DF_to_adjust = MultData[[f]][[j]][[k]],
                                         goodunits = list("Conc_units" = conc_units_to_use,
                                                          "Time_units" = time_units_to_use))
                     }
                     rm(compoundsToExtract_k)
                 }
                 
-                MultData[[n]][[j]] <- bind_rows(MultData[[n]][[j]])
+                MultData[[f]][[j]] <- bind_rows(MultData[[f]][[j]])
             }
         }
         
-        # rm(Deets) # I had removed Deets here for safety just to make sure that
-        # it didn't get applied to the wrong file, but it was giving me an error
-        # when I had removed it here, and, now that it's commented out, it's
-        # working. Really check that this is applying the correct details to the
-        # correct files. I don't see why it's a problem to remove Deets here.
+        rm(Deets) # MUST remove Deets or you can get the wrong info for each file!!!
         
-        MultData[[n]] <- bind_rows(MultData[[n]])
+        MultData[[f]] <- bind_rows(MultData[[f]])
+        print(paste("nrow of MultData for file", f, "=", nrow(MultData[[f]])))
     }
     
-    MultData <- bind_rows(MultData) %>% filter(Simulated == TRUE)
+    MultData <- bind_rows(MultData)
+    if(nrow(MultData) > 0){
+        print("nrow(MultData) > 0")
+        MultData <- MultData %>% filter(Simulated == TRUE)
+    }
     
     # Observed data ------------------------------------------------------
     if(length(obs_data_files) > 0 && any(complete.cases(obs_data_files))){
         MultObsData <- list()
         if(overwrite){
-            conctime_DF <- conctime_DF %>% filter(!File %in% obs_data_files)
-            for(n in obs_data_files){
-                MultObsData[[n]] <- extractObsConcTime(n)
+            sim_obs_dataframe <- sim_obs_dataframe %>% filter(!File %in% obs_data_files)
+            for(f in obs_data_files){
+                MultObsData[[f]] <- extractObsConcTime(f)
             }
         } else {
-            for(n in setdiff(obs_data_files, unique(conctime_DF$File))){
-                MultObsData[[n]] <- extractObsConcTime(n)
+            for(f in setdiff(obs_data_files, unique(sim_obs_dataframe$File))){
+                MultObsData[[f]] <- extractObsConcTime(f)
             }
         }
-        conctime_DF <- bind_rows(conctime_DF, bind_rows(MultObsData))
+        sim_obs_dataframe <- bind_rows(sim_obs_dataframe, bind_rows(MultObsData))
     }
     
     # LEFT OFF HERE for obs data. I need a way to determine what the compound
@@ -316,9 +326,9 @@ extractConcTime_mult <- function(sim_data_files,
     # file. Really not sure how to do that.
     
     # all data together -------------------------------------------------
-    conctime_DF <- bind_rows(conctime_DF, MultData) %>% select(-any_of("ID"))
+    sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultData) %>% select(-any_of("ID"))
     
-    return(conctime_DF)
+    return(sim_obs_dataframe)
     
 }
 
