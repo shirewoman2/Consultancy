@@ -1,4 +1,4 @@
-#' Pull concentration-time data from multiple Simcyp Simulator output files
+#' Pull concentration-time data from multiple Simcyp Simulator output files NOT WORKING. DO NOT TRUST THIS.
 #'
 #' \code{extractConcTime_mult} is meant to be used in conjunction with
 #' \code{\link{ct_plot_overlay}} to create single graphs with overlaid
@@ -138,11 +138,13 @@ extractConcTime_mult <- function(sim_data_files,
     for(f in sim_data_files_topull){
         print(paste("file f =", f))
         print(paste("FromMultFunction =", FromMultFunction, "at line 140 of extractConcTime_mult"))
-        
         MultData[[f]] <- list()
         
         # Getting summary data for the simulation(s)
         Deets <- extractExpDetails(f, exp_details = "Input Sheet")
+        print(paste("eCTm: Deets should exist here, line 145. Deets$Substrate =",
+                    Deets$Substrate))
+        print(Deets$Inhibitor1)
         
         # Names of compounds requested for checking whether the data exist
         CompoundCheck <- c("substrate" = Deets$Substrate,
@@ -293,11 +295,13 @@ extractConcTime_mult <- function(sim_data_files,
             }
         }
         
-        rm(Deets) # MUST remove Deets or you can get the wrong info for each file!!!
-        
         MultData[[f]] <- bind_rows(MultData[[f]])
         print(paste("nrow of MultData for file", f, "=", nrow(MultData[[f]])))
+        
+        # rm(Deets) # MUST remove Deets or you can get the wrong info for each file!!!
+        
     }
+    
     
     MultData <- bind_rows(MultData)
     if(nrow(MultData) > 0){
