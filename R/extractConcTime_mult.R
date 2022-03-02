@@ -133,7 +133,7 @@ extractConcTime_mult <- function(sim_data_files,
     MultData <- list()
     
     for(f in sim_data_files_topull){
-        message(paste("Extracting from file f:", f))
+        message(paste("Extracting from file (f) =", f))
         MultData[[f]] <- list()
         
         # Getting summary data for the simulation(s)
@@ -154,9 +154,9 @@ extractConcTime_mult <- function(sim_data_files,
                                           names(CompoundCheck)[complete.cases(CompoundCheck)])
         
         if(all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
-            warning(paste0("For the file ", f, ", only the ",
-                           str_comma(compoundsToExtract_n),
-                           " was/were available."))
+            warning(paste0("For the file ", f, ", the compound ",
+                           str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
+                           " was/were not available."))
         }
         
         # Each tissue will be on its own sheet in the Excel file, so each
@@ -164,7 +164,7 @@ extractConcTime_mult <- function(sim_data_files,
         # sheets.
         for(j in tissues){
             
-            message(paste("Extracting from tissue j:", j))
+            message(paste("Extracting for tissue (j) =", j))
             # Depending on both the tissue AND which compound the user
             # requests, that could be on multiple sheets or on a single
             # sheet. Figuring out which sheet to read.

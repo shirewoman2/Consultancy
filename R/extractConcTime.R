@@ -243,8 +243,21 @@ extractConcTime <- function(sim_data_file,
     
     SheetNames <- readxl::excel_sheets(sim_data_file)
     
-    if(fromMultFunction & exists("k", where = parent.frame())){
-        CompoundType <- k
+    if(fromMultFunction){
+        CompoundType <-
+            data.frame(PossCompounds =
+                           c("substrate", "inhibitor 1",
+                             "inhibitor 2", "inhibitor 1 metabolite",
+                             "primary metabolite 1",
+                             "primary metabolite 2",
+                             "secondary metabolite")) %>%
+            mutate(Type = ifelse(PossCompounds %in%
+                                     c("substrate", "inhibitor 1",
+                                       "inhibitor 2", "inhibitor 1 metabolite"),
+                                 "substrate", PossCompounds)) %>%
+            filter(PossCompounds %in% compoundToExtract) %>% pull(Type) %>% 
+            unique()
+        
     } else {
         if(any(compoundToExtract %in% c("substrate", "inhibitor 1",
                                         "inhibitor 2", "inhibitor 1 metabolite"))){
@@ -387,7 +400,10 @@ extractConcTime <- function(sim_data_file,
     
     for(m in compoundToExtract){
         
-        # message(paste("ind compoundToExtract m =", m))
+        if(fromMultFunction){
+            message(paste("Extracting data for compound (m) =", m))
+        }
+        
         # "NotAvail" is a hack to skip this iteration of the loop if it's ADAM
         # concentrations that the user requested but they're not available for
         # this tissue/compound combination.
