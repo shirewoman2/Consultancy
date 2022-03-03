@@ -138,7 +138,7 @@ extractConcTime_mult <- function(sim_data_files,
     MultData <- list()
     
     for(f in sim_data_files_topull){
-        message(paste("Extracting data from file (f) =", f))
+        message(paste("Extracting data from file =", f))
         MultData[[f]] <- list()
         
         # Getting summary data for the simulation(s)
@@ -169,7 +169,7 @@ extractConcTime_mult <- function(sim_data_files,
         # sheets.
         for(j in tissues){
             
-            message(paste("Extracting data for tissue (j) =", j))
+            message(paste("Extracting data for tissue =", j))
             # Depending on both the tissue AND which compound the user
             # requests, that could be on multiple sheets or on a single
             # sheet. Figuring out which sheet to read.

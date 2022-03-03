@@ -42,31 +42,53 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     facet_column2 <- rlang::enquo(facet_column2)
     
     sim_obs_dataframe <- sim_obs_dataframe %>%
-        mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor))
+        mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound,
+                             Inhibitor, subsection_ADAM))
     
     obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE)
     sim_dataframe <- sim_obs_dataframe %>%
         filter(Simulated == TRUE)
     
-    print("This graph contains the following unique combinations of data (make sure they are what you were expecting):")
-    print(sim_obs_dataframe %>% filter(Trial == switch(mean_type, 
-                                                       "arithmetic" = "mean",
-                                                       "geometric" = "geomean")) %>% 
-              select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique())
+    message("This graph contains the following unique combinations of data (make sure they are what you were expecting):")
+    print(sim_obs_dataframe %>% 
+              filter(Trial == {{aggregate_option}}) %>% 
+              select(File, Tissue, CompoundID, Compound, Inhibitor, 
+                     subsection_ADAM) %>% unique())
     
-    ggplot(sim_dataframe %>% filter(Trial == switch(mean_type, 
-                                                    "arithmetic" = "mean",
-                                                    "geometric" = "geomean")),
+    UniqueGroups <- sim_obs_dataframe %>% 
+        summarize(across(.cols = c(File, Tissue, CompoundID, Compound,
+                                   Inhibitor, subsection_ADAM), 
+                         .fns = function(x) length(unique(x)))) %>% 
+        t() %>% as.data.frame() %>% 
+        mutate(MyCols = rownames(.)) %>% 
+        filter(V1 > 1) %>% pull(MyCols)
+    
+    MyAES <- c("color" = as_label(quo(colorBy)), 
+               "linetype" = as_label(quo(linetypeBy)), 
+               "facet1" = as_label(quo(facet_column1)), 
+               "facet2" = as_label(quo(facet_column2)))
+    UniqueAES <- MyAES[which(complete.cases(MyAES))]
+    
+    if(length(UniqueGroups[UniqueGroups != "CompoundID"]) > length(UniqueAES)){
+    warning(paste("You have requested", length(UniqueGroups),
+                  "unique data sets but only", 
+                  length(which(complete.cases(MyAES))), 
+                  "unique aesthetics for denoting those datasets. This is likely to result in an unclear graph."))
+    message(paste("Unique datasets:", str_comma(UniqueGroups)))
+    message(paste("Unique aesthetics:", str_comma(UniqueAES)))
+    }
+    
+    ggplot(sim_dataframe %>% filter(Trial == {{aggregate_option}}),
            # aes(x = Time, y = Conc, color = !!colorBy, linetype = !!linetypeBy, # Comment this for easier code development
            aes(x = Time, y = Conc, color = colorBy, linetype = linetypeBy, # Uncomment this for easier code development
                group = Group)) +
         geom_line() +
         geom_point(data = obs_data) +
-        # facet_grid(rows = vars(!!facet_column1), # Comment this for easier code development
-        #            cols = vars(!!facet_column2), # Comment this for easier code development
-        facet_grid(rows = vars(facet_column1), # Uncomment this for easier code development
-                   cols = vars(facet_column2), # Uncomment this for easier code development
-                   scales = "free") +
+        facet_grid(rows = vars(!!facet_column1), # Comment this for easier code development
+                   cols = vars(!!facet_column2)) + # Comment this for easier code development
+        # facet_grid(rows = vars(facet_column1), # Uncomment this for easier code development
+        #            cols = vars(facet_column2), # Uncomment this for easier code development
+        #            scales = "free") +
         scale_linetype_manual(values = rep("solid", 4)) +
         # scale_x_continuous(limits = c(336-24, 336)) +
         theme(panel.background = element_rect(fill = "white", color = NA),

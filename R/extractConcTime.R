@@ -405,7 +405,7 @@ extractConcTime <- function(sim_data_file,
     for(m in compoundToExtract){
         
         if(fromMultFunction){
-            message(paste("Extracting data for compound (m) =", m))
+            message(paste("Extracting data for compound =", m))
         }
         
         # "NotAvail" is a hack to skip this iteration of the loop if it's ADAM
