@@ -3,10 +3,12 @@
 #' \code{ct_plot_overlay} is meant to be used in conjunction with
 #' \code{\link{extractConcTime_mult}} to create single graphs with overlaid
 #' concentration-time data from multiple Simcyp Simulator output files for easy
-#' comparisons. UNDER CONSTRUCTION.
+#' comparisons. Note: This is generally workable but is admittedly not one of
+#' our most maturely developed functions. :-)
 #'
 #' @param sim_obs_dataframe the data.frame with multiple sets of
-#'   concentration-time data, including observed data where appropriate
+#'   concentration-time data. At the moment, this function does not plot
+#'   observed data, though; that's still under construction.
 #' @param mean_type show "geometric" (default) or "arithmetic" means for the
 #'   main (thickest) line for each data set. If this summary stat is not
 #'   available in the simulator output, it will not be plotted.
@@ -32,12 +34,10 @@
 ct_plot_overlay <- function(sim_obs_dataframe,
                             aggregate_option = "geomean",
                             colorBy = File,
-                            linetypeBy = Inhibitor,
                             facet_column1,
                             facet_column2){
     
     colorBy <- rlang::enquo(colorBy)
-    linetypeBy <- rlang::enquo(linetypeBy)
     facet_column1 <- rlang::enquo(facet_column1)
     facet_column2 <- rlang::enquo(facet_column2)
     
@@ -64,7 +64,6 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         filter(V1 > 1) %>% pull(MyCols)
     
     MyAES <- c("color" = as_label(quo(colorBy)), 
-               "linetype" = as_label(quo(linetypeBy)), 
                "facet1" = as_label(quo(facet_column1)), 
                "facet2" = as_label(quo(facet_column2)))
     UniqueAES <- MyAES[which(complete.cases(MyAES))]
@@ -79,18 +78,20 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     }
     
     ggplot(sim_dataframe %>% filter(Trial == {{aggregate_option}}),
-           # aes(x = Time, y = Conc, color = !!colorBy, linetype = !!linetypeBy, # Comment this for easier code development
-           aes(x = Time, y = Conc, color = colorBy, linetype = linetypeBy, # Uncomment this for easier code development
+           # aes(x = Time, y = Conc, color = !!colorBy, # Comment this for easier code development
+           aes(x = Time, y = Conc, color = colorBy, # Uncomment this for easier code development
                group = Group)) +
         geom_line() +
-        geom_point(data = obs_data) +
+        # geom_point(data = obs_data) +
         facet_grid(rows = vars(!!facet_column1), # Comment this for easier code development
                    cols = vars(!!facet_column2)) + # Comment this for easier code development
         # facet_grid(rows = vars(facet_column1), # Uncomment this for easier code development
         #            cols = vars(facet_column2), # Uncomment this for easier code development
         #            scales = "free") +
-        scale_linetype_manual(values = rep("solid", 4)) +
-        # scale_x_continuous(limits = c(336-24, 336)) +
+        labs(color = as_label(colorBy)) +
+        xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
+        ylab(paste0("Concentartion (", unique(sim_dataframe$Conc_units), ")")) +
+        scale_color_brewer(palette = "Set1") +
         theme(panel.background = element_rect(fill = "white", color = NA),
               panel.border = element_rect(color = "black", fill = NA),
               strip.background = element_rect(fill = "white"),

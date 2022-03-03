@@ -8,14 +8,14 @@ ct_plot_overlay(
   sim_obs_dataframe,
   aggregate_option = "geomean",
   colorBy = File,
-  linetypeBy = Inhibitor,
   facet_column1,
   facet_column2
 )
 }
 \arguments{
 \item{sim_obs_dataframe}{the data.frame with multiple sets of
-concentration-time data, including observed data where appropriate}
+concentration-time data. At the moment, this function does not plot
+observed data, though; that's still under construction.}
 
 \item{colorBy}{What column in \code{sim_obs_dataframe} should be used for
 coloring the lines and/or points on the graph? This should be unquoted,
@@ -40,7 +40,8 @@ available in the simulator output, it will not be plotted.}
 \code{ct_plot_overlay} is meant to be used in conjunction with
 \code{\link{extractConcTime_mult}} to create single graphs with overlaid
 concentration-time data from multiple Simcyp Simulator output files for easy
-comparisons. UNDER CONSTRUCTION.
+comparisons. Note: This is generally workable but is admittedly not one of
+our most maturely developed functions. :-)
 }
 \examples{
 # No examples yet
