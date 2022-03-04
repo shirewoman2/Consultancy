@@ -97,9 +97,10 @@ extractPK <- function(sim_data_file,
     
     # If the user supplied a sheet but it's just one of the sheets built in,
     # then use *that* sheet instead b/c that code is more versatile than the
-    # generic one.
+    # generic one. Don't replace it with Tab_last, though; there are specific
+    # reasons they might want to use their specified sheet instead of Tab_last.
     if(complete.cases(sheet) &&
-       sheet %in% c(Tab_last, "AUC", "AUC0(Sub)(CPlasma)",
+       sheet %in% c("AUC", "AUC0(Sub)(CPlasma)",
                     "AUCt0(Sub)(CPlasma)",
                     "Absorption", "Clearance Trials SS")){
         sheet <- NA
