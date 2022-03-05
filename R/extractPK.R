@@ -95,20 +95,9 @@ extractPK <- function(sim_data_file,
     # don't waste time reading more sheets than necessary
     PKparameters_orig <- PKparameters
     
-    # If the user supplied a sheet but it's just one of the sheets built in,
-    # then use *that* sheet instead b/c that code is more versatile than the
-    # generic one. Don't replace it with Tab_last, though; there are specific
-    # reasons they might want to use their specified sheet instead of Tab_last.
-    if(complete.cases(sheet) &&
-       sheet %in% c("AUC", "AUC0(Sub)(CPlasma)",
-                    "AUCt0(Sub)(CPlasma)",
-                    "Absorption", "Clearance Trials SS")){
-        sheet <- NA
-    }
-    
-    # If the user supplied a sheet, set PKparameters to "all" to get all the
-    # possible parameters from that sheet b/c they're named differently since we
-    # don't know what dose that would be.
+    # If the user supplied a sheet, temporarily set PKparameters to "all" to get
+    # all the possible parameters from that sheet b/c they're named differently
+    # since we don't know what dose that would be.
     if(complete.cases(sheet)){
         PKparameters <- "all"
     }
@@ -214,6 +203,14 @@ extractPK <- function(sim_data_file,
         stop("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")
     }
     
+    # For the special cases when the user specified a sheet and did not leave
+    # PKparameters as NA or as the default "AUC tab", then let's only return the
+    # parameters that they asked for. 
+    if(complete.cases(sheet) & complete.cases(PKparameters_orig[1]) &&
+       PKparameters_orig[1] != "AUC tab"){
+        PKparameters <- intersect(PKparameters, PKparameters_orig)
+    }
+    
     Out_ind <- list()
     Out_agg <- list()
     DataCheck <- data.frame(PKparam = as.character(NA),
@@ -235,14 +232,14 @@ extractPK <- function(sim_data_file,
     # parameters are present on the AUC tab or b) the user requested the "AUC
     # tab" for PK parameters and either "AUC" or "AUC_CI" are among the sheets
     # in the file.
-    if(
+    if(is.na(sheet) && 
         # a)
-        (any(PKparameters %in% ParamAUC) & is.na(sheet) &
+        ((any(PKparameters %in% ParamAUC) & 
          PKparameters_orig[1] != "Absorption tab") |
         
         # b)
         (PKparameters_orig[1] == "AUC tab" & ("AUC" %in% AllSheets |
-                                              "AUC_CI" %in% AllSheets))){
+                                              "AUC_CI" %in% AllSheets)))){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
@@ -1182,26 +1179,42 @@ extractPK <- function(sim_data_file,
         PKparameters <- unique(sub("_dose1|_ss", "", PKparameters))
         # Some parameters are not going to be present, so removing those. 
         PKparameters <- PKparameters[
-            !PKparameters %in% c("fa_sub", "ka_sub", "tlag_sub", "CL",
-                                 "AccumulationIndex", "AccumulationRatio", 
-                                 "AUCinf", "HalfLife", "CL_hepatic", "CLpo",
-                                 "F_sub", "fg_sub", "fh_sub")]
+            !PKparameters %in% c("fa_sub", "fa_inhib",
+                                 "ka_sub", "ka_inhib",
+                                 "tlag_sub", "tlag_inhib",
+                                 "CL_hepatic", "CLpo",
+                                 "F_sub", "F_inhib", "fg_sub", "fg_inhib",
+                                 "fh_sub", "fh_inhib")]
         
         # sub function for finding correct column
         findCol <- function(PKparam){
             
             ToDetect <- switch(PKparam,
-                               "AUCtau" = "AUC \\(",
+                               "AccumulationIndex" = "Accumulation Index$",
+                               "AccumulationRatio" = "Accumulation Ratio$",
+                               "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
+                               "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
+                               "AUCinf" = "^AUC_INF",
+                               "AUCinf_withInhib" = "^AUC_INF",
+                               "AUCinf_ratio" = "^AUC_INF ratio$",
+                               "AUCtau" = "AUCt\\(n\\) \\(|^AUC \\(",
                                "AUCtau_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
+                               "AUCtau_ratio" = "AUC Ratio",
+                               "CL" = "CL \\(Dose/AUC\\)",
+                               "CL_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
+                               "CL_ratio" = "CL Ratio",
                                "Cmax" = "CMax \\(",
                                "Cmax_withInhib" = "CMaxinh", 
+                               "Cmax_ratio" = "CMax Ratio",
                                "Cmin" = "CMin \\(",
                                "Cmin_withInhib" = "CMininh \\(",
+                               "Cmin_ratio" = "CMin Ratio",
+                               "HalfLife" = "Half-life",
                                "tmax" = "TMax ", 
                                "tmax_withInhib" = "TMaxinh")
             
             if(is.null(ToDetect)){
-                stop()
+                stop(paste("Extraction of the parameter", PKparam, "has not been set up correctly."))
             }
             
             OutCol <- which(str_detect(as.vector(t(
@@ -1346,7 +1359,7 @@ extractPK <- function(sim_data_file,
                    StartRow_ind, EndRow_ind)
         
         if(class(Out)[1] == "list"){
-            Out[["QC"]] <- DataCheck
+            Out[["QC"]] <- unique(DataCheck)
         } else {
             # If Out is not a list, it is a single data.frame of whichever
             # the user wanted -- aggregate or individual information. Name
