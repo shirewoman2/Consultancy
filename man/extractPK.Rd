@@ -28,12 +28,11 @@ full set of possible parameters to extract, enter
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
 pull the PK data; for example, specify the tab where you have a
-user-defined AUC integration. If left as NA, it will automatically be
-selected and could come from multiple tabs. If you specify a sheet, you'll
-get all the possible parameters on that sheet, so no need to specify
-anything for \code{PKparameters}. \emph{Note:} Unless you want a very
-specific Excel sheet that's not what the usual sheet name would be for a
-first or last dose, this function will work best if this is left as NA.}
+user-defined AUC integration. \emph{Note:} Unless you want a very specific
+Excel sheet that's not what the usual sheet name would be for a first or
+last dose, this function will work best if this is left as NA. Also, since
+we don't know which dose these data were for, you'll see that the output
+parameter names do not include the suffixes "_ss" or "_dose1".}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" or "blood".}
