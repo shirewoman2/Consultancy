@@ -6,12 +6,11 @@
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
 #'   pull the PK data; for example, specify the tab where you have a
-#'   user-defined AUC integration. If left as NA, it will automatically be
-#'   selected and could come from multiple tabs. If you specify a sheet, you'll
-#'   get all the possible parameters on that sheet, so no need to specify
-#'   anything for \code{PKparameters}. \emph{Note:} Unless you want a very
-#'   specific Excel sheet that's not what the usual sheet name would be for a
-#'   first or last dose, this function will work best if this is left as NA.
+#'   user-defined AUC integration. \emph{Note:} Unless you want a very specific
+#'   Excel sheet that's not what the usual sheet name would be for a first or
+#'   last dose, this function will work best if this is left as NA. Also, since
+#'   we don't know which dose these data were for, you'll see that the output
+#'   parameter names do not include the suffixes "_ss" or "_dose1".
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are "all" for all possible parameters, "AUC tab" for
 #'   only those parameters on the "AUC" tab (default, "AUC_CI" tab will be used
@@ -104,8 +103,8 @@ extractPK <- function(sim_data_file,
     
     if(PKparameters_orig[1] == "AUC tab" & 
        "AUC" %in% AllSheets == FALSE & 
-       any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets)){
-        Sheet <- intersect(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)"), AllSheets)[1]
+       any(c("AUC0(Sub)(CPlasma)") %in% AllSheets)){ # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
+        Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), AllSheets)[1]
         
         warning(paste0("You requested all the parameters from the 'AUC' sheet, but that sheet is not present in ",
                        sim_data_file, ". However, the tab ", Sheet, 
@@ -574,7 +573,7 @@ extractPK <- function(sim_data_file,
     }
     
     
-    # Pulling data from the "AUC0(Sub)(CPlasma)" or "AUCt0(Sub)(CPlasma)" tabs -----------
+    # Pulling data from the "AUC0(Sub)(CPlasma)" tab -------------------------
     PKparameters_AUC0 <- intersect(PKparameters, ParamAUC0)
     
     # Some PK parameters show up on multiple sheets. No need to pull
@@ -590,14 +589,14 @@ extractPK <- function(sim_data_file,
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
         PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE)){
         # Error catching
-        if(any(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
+        if(any(c("AUC0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
             
-            warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' or 'AUCt0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
+            warning(paste0("The sheet 'AUC' or 'AUC0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_AUC0, collapse = ", "),
                            ". None of these parameters can be extracted."))
         } else {
             
-            Sheet <- intersect(c("AUC0(Sub)(CPlasma)", "AUCt0(Sub)(CPlasma)"), AllSheets)[1]
+            Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), AllSheets)[1]
             
             AUC0_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, sheet = Sheet,
