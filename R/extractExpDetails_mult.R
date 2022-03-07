@@ -1,6 +1,6 @@
 #' Extract experimental details for multiple files at once
 #'
-#' \code{extractExpDetails_all} takes a list of simulator output files -- or all
+#' \code{extractExpDetails_mult} takes a list of simulator output files -- or all
 #' the Excel files in the current directory if no files are specified -- and
 #' collects all the experimental details for the simulations into a single
 #' table. It optionally saves that table to a csv or Excel file. 
@@ -47,7 +47,7 @@
 #'
 #' # No examples yet
 #' 
-extractExpDetails_all <- function(sim_data_files = NA, 
+extractExpDetails_mult <- function(sim_data_files = NA, 
                                   exp_details = "all", 
                                   out_file = NA){
     
