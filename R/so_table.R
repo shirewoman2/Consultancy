@@ -214,16 +214,7 @@ so_table <- function(report_input_file = NA,
                                             "TRUE" = c("aggregate", "individual"),
                                             "FALSE" = "aggregate"))
     
-    # LEFT OFF HERE
-    
-    
-    # # If they define sheet_PKparameters, extractPK will pull ALL the possible
-    # # parameters from that sheet. Remove the ones that aren't in PKToPull.
-    # if(complete.cases(sheet_PKparameters)){
-    #     MyPKResults_all$aggregate
-    # }
-    
-    
+    # LEFT OFF HERE -- Need to check that this works.
     
     # If they only wanted one parameter, then extractPK returns only the
     # aggregate data for that one parameter. In that situation, the names of the

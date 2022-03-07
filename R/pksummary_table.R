@@ -18,6 +18,9 @@
 #'   don't make sense for your scenario -- like asking for
 #'   \code{AUCinf_ss_withInhib} when your simulation did not include an
 #'   inhibitor or effector -- will not be included.
+#' @param sheet_PKparameters (optional) If you want the PK parameters to be
+#'   pulled from a specific tab in the simulator output file, list that tab
+#'   here. Most of the time, this should be left as NA.
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs
 #' @param variability_option What type of variability would you like the table
 #'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
@@ -58,6 +61,7 @@
 
 pksummary_table <- function(sim_data_file,
                             PKparameters = NA,
+                            sheet_PKparameters = NA, 
                             mean_type = "geometric",
                             variability_option = "90% CI",
                             concatVariability = FALSE,
@@ -68,6 +72,7 @@ pksummary_table <- function(sim_data_file,
     
     Out <- so_table(sim_data_file = sim_data_file, 
                     PKparameters = PKparameters,
+                    sheet_PKparameters = sheet_PKparameters,
                     mean_type = mean_type,
                     variability_option = variability_option,
                     concatVariability = concatVariability,
