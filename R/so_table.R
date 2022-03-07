@@ -76,6 +76,10 @@
 #'   values rather than being pulled directly from the output.
 #' @param includeCV TRUE or FALSE for whether to include rows for CV in the
 #'   table
+#' @param prettify_columns TRUE or FALSE for whether to make easily
+#'   human-readable column names. TRUE makes pretty column names such as "AUC0
+#'   to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
+#'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
@@ -104,6 +108,7 @@ so_table <- function(report_input_file = NA,
                      includeHalfLife = FALSE,
                      includeTrialMeans = FALSE,
                      includeCV = TRUE,
+                     prettify_columns = TRUE,
                      checkDataSource = TRUE, 
                      sim_data_file = NA){
     
@@ -563,30 +568,35 @@ so_table <- function(report_input_file = NA,
             filter(!str_detect(Statistic, "^CV"))
     }
     
-    # Adding final column names
-    PKToPull_pretty <-
-        sapply(PKToPull,
-               FUN = function(x) ifelse(str_detect(x, "_dose1"),
-                                        paste("Dose 1", sub("_dose1", "", x)),
-                                        paste("Steady-state", sub("_ss", "", x))))
-    PKToPull_pretty <- sub("_withInhib", " with inhibitor", PKToPull_pretty)
-    PKToPull_pretty <- sub("CL", "CL/F (L/h)", PKToPull_pretty)
-    PKToPull_pretty <- sub("\\(L/h\\)_ratio", "ratio", PKToPull_pretty) # CL ratios
-    PKToPull_pretty <- sub("AUCinf", "AUC0 to inf (h*ng/mL)", PKToPull_pretty)
-    PKToPull_pretty <- sub("AUCtau", "AUC0 to tau (h*ng/mL)", PKToPull_pretty)
-    PKToPull_pretty <- sub("\\(h\\*ng/mL\\)_ratio", "ratio", PKToPull_pretty) # AUCtau or AUCinf ratios
-    PKToPull_pretty <- sub("Cmax", "Cmax (ng/mL)", PKToPull_pretty)
-    PKToPull_pretty <- sub("\\(ng/mL\\)_ratio", "ratio", PKToPull_pretty) # Cmax ratios
-    PKToPull_pretty <- sub("HalfLife", "t1/2 (h)", PKToPull_pretty)
-    PKToPull_pretty <- sub("tmax", "tmax (h)", PKToPull_pretty)
-    PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
-        sub(" \\(", " with inhibitor (", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
-    PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
-        sub(" with inhibitor$", "", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
-    PKToPull_pretty <- sub("GMR_", "geometric mean ratio ", PKToPull_pretty)
-    PKToPull_pretty <- c("Statistic" = "Statistic", PKToPull_pretty)
+    # Optionally adding final column names
+    if(prettify_columns){
+        
+        PKToPull_pretty <-
+            sapply(PKToPull,
+                   FUN = function(x) ifelse(str_detect(x, "_dose1"),
+                                            paste("Dose 1", sub("_dose1", "", x)),
+                                            paste("Steady-state", sub("_ss", "", x))))
+        PKToPull_pretty <- sub("_withInhib", " with inhibitor", PKToPull_pretty)
+        PKToPull_pretty <- sub("CL", "CL/F (L/h)", PKToPull_pretty)
+        PKToPull_pretty <- sub("\\(L/h\\)_ratio", "ratio", PKToPull_pretty) # CL ratios
+        PKToPull_pretty <- sub("AUCinf", "AUC0 to inf (h*ng/mL)", PKToPull_pretty)
+        PKToPull_pretty <- sub("AUCtau", "AUC0 to tau (h*ng/mL)", PKToPull_pretty)
+        PKToPull_pretty <- sub("\\(h\\*ng/mL\\)_ratio", "ratio", PKToPull_pretty) # AUCtau or AUCinf ratios
+        PKToPull_pretty <- sub("Cmax", "Cmax (ng/mL)", PKToPull_pretty)
+        PKToPull_pretty <- sub("\\(ng/mL\\)_ratio", "ratio", PKToPull_pretty) # Cmax ratios
+        PKToPull_pretty <- sub("HalfLife", "t1/2 (h)", PKToPull_pretty)
+        PKToPull_pretty <- sub("tmax", "tmax (h)", PKToPull_pretty)
+        PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
+            sub(" \\(", " with inhibitor (", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
+        PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
+            sub(" with inhibitor$", "", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
+        PKToPull_pretty <- sub("GMR_", "geometric mean ratio ", PKToPull_pretty)
+        PKToPull_pretty <- c("Statistic" = "Statistic", PKToPull_pretty)
+        
+        names(MyPKResults) <- PKToPull_pretty[names(MyPKResults)]
+        
+    }
     
-    names(MyPKResults) <- PKToPull_pretty[names(MyPKResults)]
     
     if(checkDataSource){
         MyPKResults <- list("Table" = MyPKResults,

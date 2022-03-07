@@ -42,6 +42,10 @@
 #'   values rather than pulled directly from the output.
 #' @param includeCV TRUE or FALSE for whether to include rows for CV in the
 #'   table
+#' @param prettify_columns TRUE or FALSE for whether to make easily
+#'   human-readable column names. TRUE makes pretty column names such as "AUC0
+#'   to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
+#'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
@@ -69,6 +73,7 @@ pksummary_table <- function(sim_data_file,
                             includeHalfLife = FALSE,
                             includeTrialMeans = FALSE,
                             includeCV = TRUE,
+                            prettify_columns = TRUE,
                             checkDataSource = TRUE){
     
     Out <- so_table(sim_data_file = sim_data_file, 
@@ -80,6 +85,7 @@ pksummary_table <- function(sim_data_file,
                     includeHalfLife = includeHalfLife,
                     includeTrialMeans = includeTrialMeans,
                     includeCV = includeCV,
+                    prettify_columns = prettify_columns,
                     checkDataSource = checkDataSource)
     
     return(Out)

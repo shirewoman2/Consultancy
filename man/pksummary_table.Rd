@@ -14,6 +14,7 @@ pksummary_table(
   includeHalfLife = FALSE,
   includeTrialMeans = FALSE,
   includeCV = TRUE,
+  prettify_columns = TRUE,
   checkDataSource = TRUE
 )
 }
@@ -60,6 +61,11 @@ values rather than pulled directly from the output.}
 
 \item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
 table}
+
+\item{prettify_columns}{TRUE or FALSE for whether to make easily
+human-readable column names. TRUE makes pretty column names such as "AUC0
+to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
+from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
 \item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
 lists exactly where the data were pulled from the simulator output file.
