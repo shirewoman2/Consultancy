@@ -90,8 +90,9 @@ form and instead plan to add information about the observed data later
 manually.}
 }
 \value{
-a data.frame of S/O values or a list of that data.frame plus
-  information on where the values came from for QCing
+a data.frame of S/O values or a list of that data.frame (named
+  "Table") plus information on where the values came from for QCing (named
+  "QC")
 }
 \description{
 \code{so_table} creates simulated vs. observed tables for reports and

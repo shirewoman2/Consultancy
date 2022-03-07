@@ -84,8 +84,9 @@
 #'   form and instead plan to add information about the observed data later
 #'   manually.
 #'
-#' @return a data.frame of S/O values or a list of that data.frame plus
-#'   information on where the values came from for QCing
+#' @return a data.frame of S/O values or a list of that data.frame (named
+#'   "Table") plus information on where the values came from for QCing (named
+#'   "QC")
 #' @export
 #' @examples
 #' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
@@ -213,8 +214,6 @@ so_table <- function(report_input_file = NA,
                                      switch(as.character(includeTrialMeans),
                                             "TRUE" = c("aggregate", "individual"),
                                             "FALSE" = "aggregate"))
-    
-    # LEFT OFF HERE -- Need to check that this works.
     
     # If they only wanted one parameter, then extractPK returns only the
     # aggregate data for that one parameter. In that situation, the names of the
@@ -546,6 +545,14 @@ so_table <- function(report_input_file = NA,
                                   "Observed", Statistic)) %>%
         select(-Stat) %>%
         select(Statistic, everything())
+    
+    # If the user specified the sheet to use, we don't actually know whether
+    # those were dose 1 or ss values, so extractPK removes the suffix from the
+    # parameter. PKToPull still has the suffix, though, so removing it here or
+    # else there will be 0 columns that match.
+    if(complete.cases(sheet_PKparameters)){
+        PKToPull <- sub("_ss|_dose1", "", PKToPull)
+    }
     
     # Getting columns in a good order
     MyPKResults <- MyPKResults %>%

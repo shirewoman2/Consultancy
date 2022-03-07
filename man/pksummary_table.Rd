@@ -7,6 +7,7 @@
 pksummary_table(
   sim_data_file,
   PKparameters = NA,
+  sheet_PKparameters = NA,
   mean_type = "geometric",
   variability_option = "90\% CI",
   concatVariability = FALSE,
@@ -28,6 +29,10 @@ here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss",
 don't make sense for your scenario -- like asking for
 \code{AUCinf_ss_withInhib} when your simulation did not include an
 inhibitor or effector -- will not be included.}
+
+\item{sheet_PKparameters}{(optional) If you want the PK parameters to be
+pulled from a specific tab in the simulator output file, list that tab
+here. Most of the time, this should be left as NA.}
 
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs}
 
@@ -61,8 +66,9 @@ lists exactly where the data were pulled from the simulator output file.
 Useful for QCing.}
 }
 \value{
-a data.frame of PK summary data or a list of that data.frame plus
-  information on where the values came from for QCing
+a data.frame of PK summary data or a list of that data.frame (named
+  "Table") plus information on where the values came from for QCing (named
+  "QC")
 }
 \description{
 \code{pksummary_table} uses Simcyp Simulator output Excel files to create

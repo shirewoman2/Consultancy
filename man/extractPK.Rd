@@ -53,9 +53,9 @@ Useful for QCing.}
 }
 \value{
 Depending on the options selected, returns a list of numerical
-  vectors or a list of data.frames. If \code{checkDataSource} is TRUE, this
-  will also return a data.frame indicating where in the simulator output file
-  the data came from.
+  vectors or a list of data.frames: "individual" and "aggregate". If
+  \code{checkDataSource} is TRUE, this will also return a data.frame named
+  "QC" that indicates where in the simulator output file the data came from.
 }
 \description{
 Pull calculated PK parameters from a Simcyp simulation output Excel file.
