@@ -4,16 +4,16 @@
 \alias{getSectionInfo}
 \title{Get information from an Excel report-input file about a section for a report}
 \usage{
-getSectionInfo(report_input_file = NA, sheet = "table and graph input")
+getSectionInfo(report_input_file = NA, sheet_report = "table and graph input")
 }
 \arguments{
 \item{report_input_file}{the name of the Excel file created by running
 \code{\link{generateReportInputForm}}, including the path if it's in any
 other directory than the current one, which you have now filled out}
 
-\item{sheet}{the sheet in the Excel file that contains information about this
-section of the report. In the original template, this was the tab titled
-"table and graph input".}
+\item{sheet_report}{the sheet in the Excel report template file that contains
+information about this section of the report. In the original template,
+this was the tab titled "table and graph input".}
 }
 \value{
 a list object
@@ -49,7 +49,7 @@ data is exactly the same as the actual tab name that you filled out in step
 \item{Here, within RStudio (or within the shiny app that we plan to make!),
 run this function using the name of that Excel file as input for
 \code{report_input_file} and the name of the "table and graph input" tab as
-the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
+the input for \code{sheet_report}. Note: If the Excel file lives on SharePoint,
 you'll need to close it or this function will just keep running and not
 generate any output while it waits for access to the file.} }
 }

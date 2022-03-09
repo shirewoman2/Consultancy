@@ -6,7 +6,7 @@
 \usage{
 so_table(
   report_input_file = NA,
-  sheet = NA,
+  sheet_report = NA,
   sectionInfo = NA,
   PKparameters = NA,
   sheet_PKparameters = NA,
@@ -26,13 +26,13 @@ so_table(
 \code{\link{generateReportInputForm}}, which you have now filled out,
 including the path if it's in any other directory than the current one}
 
-\item{sheet}{the sheet in the Excel file that contains information about this
-section of the report. In the original template, this was the tab titled
-"table and graph input".}
+\item{sheet_report}{the sheet in the Excel report template file that contains
+information about this section of the report. In the original template,
+this was the tab titled "table and graph input".}
 
 \item{sectionInfo}{information about the simulated and observed data. This is
 output from the function \code{\link{getSectionInfo}} and can be used
-instead of listing the Excel file and sheet name as input.}
+instead of listing the Excel file and report template sheet name as input.}
 
 \item{PKparameters}{the PK parameters to include as a character vector. To
 see the full set of possible parameters to extract, enter
@@ -130,5 +130,5 @@ generate any output while it waits for access to the file.} }
 }
 \examples{
 # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
-#          sheet = "table and graph input", includeTrialMeans = TRUE)
+#          sheet_report = "table and graph input", includeTrialMeans = TRUE)
 }

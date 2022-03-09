@@ -29,16 +29,16 @@
 #' \item{Here, within RStudio (or within the shiny app that we plan to make!),
 #' run this function using the name of that Excel file as input for
 #' \code{report_input_file} and the name of the "table and graph input" tab as
-#' the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
+#' the input for \code{sheet_report}. Note: If the Excel file lives on SharePoint,
 #' you'll need to close it or this function will just keep running and not
 #' generate any output while it waits for access to the file.} }
 #'
 #' @param report_input_file the name of the Excel file created by running
 #'   \code{\link{generateReportInputForm}}, including the path if it's in any
 #'   other directory than the current one, which you have now filled out
-#' @param sheet the sheet in the Excel file that contains information about this
-#'   section of the report. In the original template, this was the tab titled
-#'   "table and graph input".
+#' @param sheet_report the sheet in the Excel report template file that contains
+#'   information about this section of the report. In the original template,
+#'   this was the tab titled "table and graph input".
 #'
 #' @return a list object
 #' @export
@@ -47,7 +47,7 @@
 #' # getSectionInfo(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx")
 #' 
 getSectionInfo <- function(report_input_file = NA,
-                           sheet = "table and graph input"){
+                           sheet_report = "table and graph input"){
     
     # If they didn't include ".xlsx" at the end, add that.
     report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
@@ -58,7 +58,7 @@ getSectionInfo <- function(report_input_file = NA,
     # } else {
     InputXL <- suppressMessages(
         readxl::read_excel(path = report_input_file,
-                           sheet = sheet, skip = 3))
+                           sheet = sheet_report, skip = 3))
     # }
     
     # Making each of the items in InputXL its own named item in a list so that

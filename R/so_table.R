@@ -31,12 +31,12 @@
 #' @param report_input_file the name of the Excel file created by running
 #'   \code{\link{generateReportInputForm}}, which you have now filled out,
 #'   including the path if it's in any other directory than the current one
-#' @param sheet the sheet in the Excel file that contains information about this
-#'   section of the report. In the original template, this was the tab titled
-#'   "table and graph input".
+#' @param sheet_report the sheet in the Excel report template file that contains
+#'   information about this section of the report. In the original template,
+#'   this was the tab titled "table and graph input".
 #' @param sectionInfo information about the simulated and observed data. This is
 #'   output from the function \code{\link{getSectionInfo}} and can be used
-#'   instead of listing the Excel file and sheet name as input.
+#'   instead of listing the Excel file and report template sheet name as input.
 #' @param PKparameters the PK parameters to include as a character vector. To
 #'   see the full set of possible parameters to extract, enter
 #'   \code{data(AllPKParameters)} into the console. By default, if you supply a
@@ -94,11 +94,11 @@
 #' @export
 #' @examples
 #' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
-#' #          sheet = "table and graph input", includeTrialMeans = TRUE)
+#' #          sheet_report = "table and graph input", includeTrialMeans = TRUE)
 
 
 so_table <- function(report_input_file = NA,
-                     sheet = NA,
+                     sheet_report = NA,
                      sectionInfo = NA,
                      PKparameters = NA,
                      sheet_PKparameters = NA,
@@ -127,14 +127,14 @@ so_table <- function(report_input_file = NA,
     }
     
     if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
-       complete.cases(report_input_file) & is.na(sheet)){
+       complete.cases(report_input_file) & is.na(sheet_report)){
         stop("If you specify an Excel file to get the section information from, you must also specify which sheet to read.")
     }
     
     if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
        complete.cases(report_input_file) & is.na(sim_data_file)){
         sectionInfo <- getSectionInfo(report_input_file = report_input_file,
-                                      sheet = sheet)
+                                      sheet_report = sheet_report)
         
         # Should we add an error catch here for when user fills out
         # report_input_file but doesn't include any observed data to
@@ -145,13 +145,13 @@ so_table <- function(report_input_file = NA,
     # Figuring out what kind of means user wants, experimental details, etc.
     if(class(sectionInfo) != "logical" | 
        (class(sectionInfo) == "logical" & complete.cases(report_input_file) &
-        complete.cases(sheet))){
+        complete.cases(sheet_report))){
         
         if(class(sectionInfo) == "logical"){
             # User has supplied a report_input_file but hasn't run
             # getSectionInfo yet
             sectionInfo <- getSectionInfo(report_input_file = report_input_file,
-                                          sheet = sheet)
+                                          sheet_report = sheet_report)
         }
         
         SimFile <- sectionInfo$SimFile
