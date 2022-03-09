@@ -87,6 +87,11 @@
 #'   simulator output file. This is for when you DON'T fill out a report input
 #'   form and instead plan to add information about the observed data later
 #'   manually.
+#' @param save_table optionally save the output table and, if requested, the QC
+#'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
+#'   table.csv". If you leave off ".csv", it will still be saved as a csv file.
+#'   If you requested both the table and the QC info, the QC file will have "-
+#'   QC" added to the end of the file name.
 #'
 #' @return a data.frame of S/O values or a list of that data.frame (named
 #'   "Table") plus information on where the values came from for QCing (named
@@ -110,7 +115,8 @@ so_table <- function(report_input_file = NA,
                      includeCV = TRUE,
                      prettify_columns = TRUE,
                      checkDataSource = TRUE, 
-                     sim_data_file = NA){
+                     sim_data_file = NA, 
+                     save_table = NA){
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -597,10 +603,27 @@ so_table <- function(report_input_file = NA,
         
     }
     
+    if(complete.cases(save_table)){
+        if(str_detect(save_table, "\\.")){
+            FileName <- sub("\\..*", ".csv", save_table)
+        } else {
+            FileName <- paste0(save_table, ".csv")
+        }
+        write.csv(MyPKResults, FileName, row.names = F)
+    }
     
     if(checkDataSource){
         MyPKResults <- list("Table" = MyPKResults,
                             "QC" = MyPKResults_all$QC)
+        
+        if(complete.cases(save_table)){
+            if(str_detect(save_table, "\\.")){
+                FileName <- sub("\\..*", " - QC.csv", save_table)
+            } else {
+                FileName <- paste0(save_table, " - QC.csv")
+            }
+            write.csv(MyPKResults_all$QC, FileName, row.names = F)
+        }
     }
     
     return(MyPKResults)

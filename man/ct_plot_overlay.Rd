@@ -17,7 +17,10 @@ ct_plot_overlay(
   pad_x_axis = FALSE,
   pad_y_axis = FALSE,
   y_axis_limits_lin = NA,
-  y_axis_limits_log = NA
+  y_axis_limits_log = NA,
+  save_graph = NA,
+  fig_height = 6,
+  fig_width = 5
 )
 }
 \arguments{
@@ -91,6 +94,17 @@ linear plot will be automatically selected.}
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+will be saved as a png file, but if you specify a different file extension,
+it will be saved as that file format. Acceptable extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Leaving this as NA means the file will not be automatically saved to disk.}
+
+\item{fig_height}{figure height in inches; default is 6}
+
+\item{fig_width}{figure width in inches; default is 5}
 }
 \value{
 

@@ -16,6 +16,9 @@ ct_plot(
   t0 = "simulation start",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  save_graph = NA,
+  fig_height = 6,
+  fig_width = 5,
   obs_data_option = NA,
   obs_color = NA,
   obs_shape = NA,
@@ -28,6 +31,7 @@ ct_plot(
   prettify_effector_name = TRUE,
   return_data = FALSE,
   return_indiv_graphs = FALSE,
+  linear_or_log = "both",
   sim_data_file = NA,
   obs_data_file = NA,
   obs_inhibitor_data_file = NA,
@@ -119,8 +123,8 @@ is 0.02, which adds 2 percent more space to the left side of the axis.}
 \item{pad_y_axis}{Similar to the \code{pad_x_axis} argument, optionally add a
 smidge of padding to the bottom of the y axis. As with \code{pad_x_axis},
 the default (FALSE) is no padding, but you can set this to either TRUE to
-get 2 percent more space on the bottom of the y axis or set it to a number to get
-a specific amount of padding there.}
+get 2 percent more space on the bottom of the y axis or set it to a number
+to get a specific amount of padding there.}
 
 \item{adjust_obs_time}{TRUE or FALSE: Adjust the time listed in the observed
 data file to match the last dose administered? This only applies to
@@ -144,6 +148,17 @@ linear plot will be automatically selected.}
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+will be saved as a png file, but if you specify a different file extension,
+it will be saved as that file format. Acceptable extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Leaving this as NA means the file will not be automatically saved to disk.}
+
+\item{fig_height}{figure height in inches; default is 6}
+
+\item{fig_width}{figure width in inches; default is 5}
 
 \item{obs_data_option}{Set options for how to view observed data. Options
   are:
@@ -203,6 +218,11 @@ lines will be black or gray. Hex color codes are also ok to use.}
 input is a number; the default is 1 for most lines and 0.8 for some, to
 give you an idea of where to start.}
 
+\item{include_legend}{TRUE or FALSE (default) for whether to include a
+legend. If there was only one thing plotted on your graph, even if you set
+this to TRUE, no legend will be shown because there's nothing to
+differentiate the data.}
+
 \item{legend_label}{Optionally indicate on the legend whether the effector is
 an inhibitor,inducer, activator, or suppressor. Input will be used as the
 label in the legend for the line style and the shape. If left as NA when a
@@ -223,9 +243,12 @@ TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 graphs} \item{Data}{a data.frame of the concentration-time data used in the
 set of graphs} }}
 
-\item{return_indiv_graphs}{TRUE or FALSE: Return each of the two individual
-graphs? This can be useful if you want to modify the graphs further or only
-use one, etc.}
+\item{return_indiv_graphs}{SOON TO BE DEPRECATED. See linear_or_log argument!
+TRUE or FALSE: Return each of the two individual graphs? This can be useful
+if you want to modify the graphs further or only use one, etc.}
+
+\item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
+"linear", or "both" (default).}
 
 \item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
 the Excel file containing the simulated concentration-time data}

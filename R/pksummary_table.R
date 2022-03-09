@@ -49,6 +49,11 @@
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
+#' @param save_table optionally save the output table and, if requested, the QC
+#'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
+#'   table.csv". If you leave off ".csv", it will be saved as a csv file. If you
+#'   requested both the table and the QC info, the QC file will have "- QC"
+#'   added to the end of the file name.
 #'
 #' @return a data.frame of PK summary data or a list of that data.frame (named
 #'   "Table") plus information on where the values came from for QCing (named
@@ -74,7 +79,8 @@ pksummary_table <- function(sim_data_file,
                             includeTrialMeans = FALSE,
                             includeCV = TRUE,
                             prettify_columns = TRUE,
-                            checkDataSource = TRUE){
+                            checkDataSource = TRUE, 
+                            save_table = NA){
     
     Out <- so_table(sim_data_file = sim_data_file, 
                     PKparameters = PKparameters,
@@ -86,7 +92,8 @@ pksummary_table <- function(sim_data_file,
                     includeTrialMeans = includeTrialMeans,
                     includeCV = includeCV,
                     prettify_columns = prettify_columns,
-                    checkDataSource = checkDataSource)
+                    checkDataSource = checkDataSource, 
+                    save_table = save_table)
     
     return(Out)
     

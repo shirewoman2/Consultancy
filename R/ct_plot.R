@@ -109,8 +109,8 @@
 #' @param pad_y_axis Similar to the \code{pad_x_axis} argument, optionally add a
 #'   smidge of padding to the bottom of the y axis. As with \code{pad_x_axis},
 #'   the default (FALSE) is no padding, but you can set this to either TRUE to
-#'   get 2 percent more space on the bottom of the y axis or set it to a number to get
-#'   a specific amount of padding there.
+#'   get 2 percent more space on the bottom of the y axis or set it to a number
+#'   to get a specific amount of padding there.
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
 #'
@@ -193,9 +193,11 @@
 #'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
 #'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
 #'   set of graphs} }
-#' @param return_indiv_graphs TRUE or FALSE: Return each of the two individual
-#'   graphs? This can be useful if you want to modify the graphs further or only
-#'   use one, etc.
+#' @param return_indiv_graphs SOON TO BE DEPRECATED. See linear_or_log argument!
+#'   TRUE or FALSE: Return each of the two individual graphs? This can be useful
+#'   if you want to modify the graphs further or only use one, etc.
+#' @param linear_or_log the type of graph to be returned. Options: "semi-log",
+#'   "linear", or "both" (default).
 #' @param sim_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
 #'   the Excel file containing the simulated concentration-time data
 #' @param obs_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
@@ -219,6 +221,18 @@
 #'   "substrate" (default), "primary metabolite 1", "secondary metabolite", or
 #'   "inhibitor 1" (this actually can be an inducer, activator, suppressor, or
 #'   inhibitor, but it's labeled as "Inhibitor 1" in the simulator).
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+#'   will be saved as a png file, but if you specify a different file extension,
+#'   it will be saved as that file format. Acceptable extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   Leaving this as NA means the file will not be automatically saved to disk.
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 5
+#' @param include_legend TRUE or FALSE (default) for whether to include a
+#'   legend. If there was only one thing plotted on your graph, even if you set
+#'   this to TRUE, no legend will be shown because there's nothing to
+#'   differentiate the data.
 #'
 #' @return Depending on the options selected, returns either a set of graphs or
 #'   a named list of the set of the two graphs together ("Graphs" in the
@@ -281,6 +295,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     t0 = "simulation start",
                     y_axis_limits_lin = NA,
                     y_axis_limits_log = NA,
+                    save_graph = NA,
+                    fig_height = 6,
+                    fig_width = 5,
                     obs_data_option = NA,
                     obs_color = NA,
                     obs_shape = NA,
@@ -293,6 +310,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     prettify_effector_name = TRUE,
                     return_data = FALSE,
                     return_indiv_graphs = FALSE,
+                    linear_or_log = "both", 
                     sim_data_file = NA,
                     obs_data_file = NA,
                     obs_inhibitor_data_file = NA, 
@@ -530,7 +548,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
               EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-              figure_type = figure_type, Ylim_data = Ylim_data, 
+              Ylim_data = Ylim_data, 
               pad_y_axis = pad_y_axis,
               y_axis_limits_lin = y_axis_limits_lin, time_range = time_range,
               y_axis_limits_log = y_axis_limits_log)
@@ -1018,7 +1036,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
         }
     }
     
-    Out <- list("Graphs" = AB)
+    Out <- switch(linear_or_log, 
+                  "linear" = A,
+                  "semi-log" = B,
+                  "log" = B,
+                  "both" = AB)
     
     if(return_data){
         Out[["Data"]] <- Data
@@ -1031,6 +1053,36 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     if(length(Out) == 1){
         Out <- Out[[1]]
+    }
+    
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
+        }
+        
+        if(linear_or_log == "both"){
+            print(AB)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+        }
+        
+        if(linear_or_log == "linear"){
+            print(A)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+        }
+        
+        if(str_detect(linear_or_log, "log")){
+            print(B)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+        }
     }
     
     return(Out)

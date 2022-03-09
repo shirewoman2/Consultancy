@@ -15,7 +15,8 @@ pksummary_table(
   includeTrialMeans = FALSE,
   includeCV = TRUE,
   prettify_columns = TRUE,
-  checkDataSource = TRUE
+  checkDataSource = TRUE,
+  save_table = NA
 )
 }
 \arguments{
@@ -70,6 +71,12 @@ from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 \item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
 lists exactly where the data were pulled from the simulator output file.
 Useful for QCing.}
+
+\item{save_table}{optionally save the output table and, if requested, the QC
+info, by supplying a file name in quotes here, e.g., "My nicely formatted
+table.csv". If you leave off ".csv", it will be saved as a csv file. If you
+requested both the table and the QC info, the QC file will have "- QC"
+added to the end of the file name.}
 }
 \value{
 a data.frame of PK summary data or a list of that data.frame (named

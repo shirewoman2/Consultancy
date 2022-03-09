@@ -61,6 +61,14 @@
 #'   to get a specific amount of padding there.
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+#'   will be saved as a png file, but if you specify a different file extension,
+#'   it will be saved as that file format. Acceptable extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   Leaving this as NA means the file will not be automatically saved to disk.
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 5
 #'
 #' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
@@ -93,7 +101,10 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             pad_x_axis = FALSE,
                             pad_y_axis = FALSE,
                             y_axis_limits_lin = NA,
-                            y_axis_limits_log = NA){
+                            y_axis_limits_log = NA, 
+                            save_graph = NA,
+                            fig_height = 6,
+                            fig_width = 5){
     
     colorBy <- rlang::enquo(colorBy)
     facet_column1 <- rlang::enquo(facet_column1)
@@ -280,6 +291,36 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                   "semi-log" = B,
                   "log" = B,
                   "both" = AB)
+    
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
+        }
+        
+        if(linear_or_log == "both"){
+            print(AB)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+        }
+        
+        if(linear_or_log == "linear"){
+            print(A)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+        }
+        
+        if(str_detect(linear_or_log, "log")){
+            print(B)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+        }
+    }
     
     return(Out)
     

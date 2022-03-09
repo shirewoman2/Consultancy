@@ -1,9 +1,9 @@
 #' Extract experimental details for multiple files at once
 #'
-#' \code{extractExpDetails_mult} takes a list of simulator output files -- or all
-#' the Excel files in the current directory if no files are specified -- and
+#' \code{extractExpDetails_mult} takes a list of simulator output files -- or
+#' all the Excel files in the current directory if no files are specified -- and
 #' collects all the experimental details for the simulations into a single
-#' table. It optionally saves that table to a csv or Excel file. 
+#' table. It optionally saves that table to a csv or Excel file.
 #'
 #' @param sim_data_files a character vector of simulator output files or NA to
 #'   extract experimental details for all the Excel files in the current folder.
@@ -32,10 +32,9 @@
 #'   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
 #'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
-#' @param out_file the name of the output file to save this information. If left
-#'   as NA, no file will be saved. You can enter either a csv (faster) or Excel
-#'   file name, e.g., "My experimental details.csv" or "Experimental setup for
-#'   my simulations.xlsx".
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+#'   it will still be saved as a csv file. 
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #' @import tidyverse
@@ -49,7 +48,7 @@
 #' 
 extractExpDetails_mult <- function(sim_data_files = NA, 
                                   exp_details = "all", 
-                                  out_file = NA){
+                                  save_output = NA){
     
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         sim_data_files <- list.files(pattern = "xlsx")
@@ -67,12 +66,13 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     
     MyDeets <- bind_rows(MyDeets)
     
-    if(complete.cases(out_file)){
-        if(str_detect(out_file, "csv")){
-            write.csv(MyDeets, file = out_file, row.names = F)
+    if(complete.cases(save_output)){
+        if(str_detect(save_output, "\\.")){
+            FileName <- sub("\\..*", ".csv", save_output)
         } else {
-            xlsx::write.xlsx(MyDeets, file = out_file, sheetName = "details")
+            FileName <- paste0(save_output, ".csv")
         }
+        write.csv(MyDeets, FileName, row.names = F)
     }
     
     return(MyDeets)

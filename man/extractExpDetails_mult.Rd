@@ -4,7 +4,11 @@
 \alias{extractExpDetails_mult}
 \title{Extract experimental details for multiple files at once}
 \usage{
-extractExpDetails_mult(sim_data_files = NA, exp_details = "all", out_file = NA)
+extractExpDetails_mult(
+  sim_data_files = NA,
+  exp_details = "all",
+  save_output = NA
+)
 }
 \arguments{
 \item{sim_data_files}{a character vector of simulator output files or NA to
@@ -35,17 +39,16 @@ calculations, this will result in an error and return no data.}
   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}}
 
-\item{out_file}{the name of the output file to save this information. If left
-as NA, no file will be saved. You can enter either a csv (faster) or Excel
-file name, e.g., "My experimental details.csv" or "Experimental setup for
-my simulations.xlsx".}
+\item{save_output}{optionally save the output by supplying a file name in
+quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+it will still be saved as a csv file.}
 }
 \value{
 Returns a data.frame of experimental details for simulator files
 }
 \description{
-\code{extractExpDetails_mult} takes a list of simulator output files -- or all
-the Excel files in the current directory if no files are specified -- and
+\code{extractExpDetails_mult} takes a list of simulator output files -- or
+all the Excel files in the current directory if no files are specified -- and
 collects all the experimental details for the simulations into a single
 table. It optionally saves that table to a csv or Excel file.
 }
