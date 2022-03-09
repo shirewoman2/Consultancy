@@ -8,7 +8,6 @@
 #' @param ADAM T or F for whether ADAM model used
 #' @param subsection_ADAM which ADAM-model subsection the data include
 #' @param EnzPlot T or F for whether this was a plot of enzyme abundance
-#' @param figure_type user input for figure type
 #' @param y_axis_limits_lin user input for y axis limits for a linear plot
 #' @param y_axis_limits_log user input for y axis limits for a semi-log plot
 #' @param time_range user-specified time range 
@@ -19,7 +18,7 @@
 #' @return
 
 ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
-                      figure_type, y_axis_limits_lin, time_range,
+                      y_axis_limits_lin, time_range,
                       y_axis_limits_log, Ylim_data, pad_y_axis,
                       time_range_relative){
     

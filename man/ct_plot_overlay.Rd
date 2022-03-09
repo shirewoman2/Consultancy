@@ -6,16 +6,31 @@
 \usage{
 ct_plot_overlay(
   sim_obs_dataframe,
-  aggregate_option = "geomean",
+  mean_type = "geometric",
+  linear_or_log = "semi-log",
   colorBy = File,
   facet_column1,
-  facet_column2
+  facet_column2,
+  floating_facet_scale = FALSE,
+  time_range = NA,
+  x_axis_interval = NA,
+  pad_x_axis = FALSE,
+  pad_y_axis = FALSE,
+  y_axis_limits_lin = NA,
+  y_axis_limits_log = NA
 )
 }
 \arguments{
 \item{sim_obs_dataframe}{the data.frame with multiple sets of
 concentration-time data. At the moment, this function does not plot
 observed data, though; that's still under construction.}
+
+\item{mean_type}{show "geometric" means (default) or "arithmetic" means for
+the main (thickest or only) line for each data set. If this summary stat is
+not available in the simulator output, the other one will be plotted.}
+
+\item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
+"linear", or "both".}
 
 \item{colorBy}{What column in \code{sim_obs_dataframe} should be used for
 coloring the lines and/or points on the graph? This should be unquoted,
@@ -29,9 +44,53 @@ data by? This should be unquoted.}
 \item{facet_column2}{What should be the 2nd column to break up the data into
 small multiples by? This should be unquoted.}
 
-\item{mean_type}{show "geometric" (default) or "arithmetic" means for the
-main (thickest) line for each data set. If this summary stat is not
-available in the simulator output, it will not be plotted.}
+\item{floating_facet_scale}{TRUE or FALSE for whether to allow the axes for
+each facet of a multi-facetted graph to scale freely according to what data
+are present. Default is FALSE, which means that all data will be on the
+same scale for easy comparison. However, this could mean that some graphs
+have lines that are hard to see, so you can set this to TRUE to allow the
+axes to shrink or expand according to what data are present for that facet.
+Floating axes comes with a trade-off for the looks of the graphs, though:
+Setting this to TRUE does mean that your x axis won't have pretty breaks
+that are sensible for times in hours and that your y axis won't have minor
+ticks.}
+
+\item{time_range}{time range to show relative to the start of the simulation.
+  A note on how this differs from \code{\link{ct_plot}}: Since this function
+  does allow for multiple files to be plotted, please note that you cannot
+  specify a dose number for the time range as you can with \code{ct_plot};
+  that's because we wouldn't know which simulation you wanted that dose
+  number for. Options that will work here: \describe{
+
+  \item{NA}{entire time range of data}
+
+  \item{a start time and end time in hours}{only data in that time range,
+  e.g. \code{c(24, 48)}}}}
+
+\item{x_axis_interval}{Set the x-axis major tick-mark interval. Acceptable
+input: any number or leave as NA to accept default values.}
+
+\item{pad_x_axis}{Optionally add a smidge of padding to the left side of the
+x axis. If left as FALSE, the y axis will be placed right at the beginning
+of your time range. If set to TRUE, there will be a little bit of space
+between the y axis and the start of your time range. If you want a
+\emph{specific} amount of x axis padding, set this to a number; the default
+is 0.02, which adds 2 percent more space to the left side of the axis.}
+
+\item{pad_y_axis}{Similar to the \code{pad_x_axis} argument, optionally add a
+smidge of padding to the bottom of the y axis. As with \code{pad_x_axis},
+the default (FALSE) is no padding, but you can set this to either TRUE to
+get 2 percent more space on the bottom of the y axis or set it to a number
+to get a specific amount of padding there.}
+
+\item{y_axis_limits_lin}{Optionally set the Y axis limits for the linear
+plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
+linear plot will be automatically selected.}
+
+\item{y_axis_limits_log}{Optionally set the Y axis limits for the semi-log
+plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
+respectively, to the nearest order of magnitude. If left as NA, the Y axis
+limits for the semi-log plot will be automatically selected.}
 }
 \value{
 
@@ -40,11 +99,13 @@ available in the simulator output, it will not be plotted.}
 \code{ct_plot_overlay} is meant to be used in conjunction with
 \code{\link{extractConcTime_mult}} to create single graphs with overlaid
 concentration-time data from multiple Simcyp Simulator output files for easy
-comparisons. Note: This is generally workable but is admittedly not one of
-our most maturely developed functions. :-)
+comparisons. \strong{Note:} This has not been set up yet to plot enzyme
+abundance data, ADAM-model simulations, or observed data. Really, this is
+generally workable but is admittedly not one of our most maturely developed
+functions. :-)
 }
 \examples{
-# No examples yet
+# Use syntax like this:
 # ct_plot_overlay(sim_obs_dataframe = CT, facet_column1 = Compound,
 #                 facet_column2 = Tissue)
 
