@@ -194,20 +194,20 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         }
     }
     
+    # Setting the time range if it's not already set 
+    if(is.na(time_range_input[1])){
+        time_range <- round(range(Data$Time[complete.cases(Data$Conc)], na.rm = T))
+    }
+    
     # Setting the x axis intervals using tlast doesn't work well if the time
     # range starts at something other than 0 or ends somewhere other than the
     # max time, so adjusting for that situation.
-    if(all(complete.cases(time_range)) &
-       (time_range[1] != 0 | time_range[2] != max(Data$Time))){
-        
+    if(time_range[1] != 0 | time_range[2] != max(Data$Time)){
         tlast <- time_range[2] - time_range[1]
         LastDoseTime <- time_range[1]
         
-    }
-    
-    # Setting the time range if it's not already set since we use it later.
-    if(is.na(time_range_input[1])){
-        time_range <- range(Data$Time, na.rm = T)
+    } else {
+        LastDoseTime <- round(min(Data$Time[complete.cases(Data$Conc)]))
     }
     
     # If tlast is just a smidge over one of the possible breaks I've set, it
@@ -318,4 +318,3 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     assign("TimeUnits", TimeUnits, envir = parent.frame())
     assign("time_range_relative", time_range_relative, envir = parent.frame())
 }    
-    

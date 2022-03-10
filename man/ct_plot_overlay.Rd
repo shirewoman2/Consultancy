@@ -6,7 +6,7 @@
 \usage{
 ct_plot_overlay(
   sim_obs_dataframe,
-  mean_type = "geometric",
+  summary_stat = "geomean",
   linear_or_log = "semi-log",
   colorBy = File,
   facet_column1,
@@ -28,9 +28,11 @@ ct_plot_overlay(
 concentration-time data. At the moment, this function does not plot
 observed data, though; that's still under construction.}
 
-\item{mean_type}{show "geometric" means (default) or "arithmetic" means for
-the main (thickest or only) line for each data set. If this summary stat is
-not available in the simulator output, the other one will be plotted.}
+\item{summary_stat}{plot "geomean" (default) for geometric mean
+concentrations, "mean" for arithmetic mean concentrations, or "median" for
+median concentrations as the main (thickest or only) line for each data
+set. If this summary stat is not available in the simulator output, we'll
+warn you that we're plotting a different one.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
 "linear", or "both".}
@@ -99,8 +101,8 @@ limits for the semi-log plot will be automatically selected.}
 in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 will be saved as a png file, but if you specify a different file extension,
 it will be saved as that file format. Acceptable extensions are "eps",
-"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be automatically saved to disk.}
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be automatically saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
 
@@ -113,10 +115,15 @@ Leaving this as NA means the file will not be automatically saved to disk.}
 \code{ct_plot_overlay} is meant to be used in conjunction with
 \code{\link{extractConcTime_mult}} to create single graphs with overlaid
 concentration-time data from multiple Simcyp Simulator output files for easy
-comparisons. \strong{Note:} This has not been set up yet to plot enzyme
-abundance data, ADAM-model simulations, or observed data. Really, this is
+comparisons. \strong{Notes:} \enumerate{\item{This has not been set up yet to
+plot enzyme abundance data, ADAM-model simulations, or observed data.}
+\item{Currently, this will only plot arithmetic or geometric mean data and
+nothing else for each data set. We may expand that in the future, but those
+are the only things that will be included for now.}} Really, this function is
 generally workable but is admittedly not one of our most maturely developed
-functions. :-)
+functions. Something is probably going to break on you, so, our apologies in
+advance, and please email Laura Shireman to describe what happened when it
+does inevitably break.
 }
 \examples{
 # Use syntax like this:

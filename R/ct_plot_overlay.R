@@ -3,17 +3,24 @@
 #' \code{ct_plot_overlay} is meant to be used in conjunction with
 #' \code{\link{extractConcTime_mult}} to create single graphs with overlaid
 #' concentration-time data from multiple Simcyp Simulator output files for easy
-#' comparisons. \strong{Note:} This has not been set up yet to plot enzyme
-#' abundance data, ADAM-model simulations, or observed data. Really, this is
+#' comparisons. \strong{Notes:} \enumerate{\item{This has not been set up yet to
+#' plot enzyme abundance data, ADAM-model simulations, or observed data.}
+#' \item{Currently, this will only plot arithmetic or geometric mean data and
+#' nothing else for each data set. We may expand that in the future, but those
+#' are the only things that will be included for now.}} Really, this function is
 #' generally workable but is admittedly not one of our most maturely developed
-#' functions. :-)
+#' functions. Something is probably going to break on you, so, our apologies in
+#' advance, and please email Laura Shireman to describe what happened when it
+#' does inevitably break.
 #'
 #' @param sim_obs_dataframe the data.frame with multiple sets of
 #'   concentration-time data. At the moment, this function does not plot
 #'   observed data, though; that's still under construction.
-#' @param mean_type show "geometric" means (default) or "arithmetic" means for
-#'   the main (thickest or only) line for each data set. If this summary stat is
-#'   not available in the simulator output, the other one will be plotted.
+#' @param summary_stat plot "geomean" (default) for geometric mean
+#'   concentrations, "mean" for arithmetic mean concentrations, or "median" for
+#'   median concentrations as the main (thickest or only) line for each data
+#'   set. If this summary stat is not available in the simulator output, we'll
+#'   warn you that we're plotting a different one.
 #' @param linear_or_log the type of graph to be returned. Options: "semi-log",
 #'   "linear", or "both".
 #' @param colorBy What column in \code{sim_obs_dataframe} should be used for
@@ -65,8 +72,8 @@
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
 #'   it will be saved as that file format. Acceptable extensions are "eps",
-#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-#'   Leaving this as NA means the file will not be automatically saved to disk.
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+#'   means the file will not be automatically saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -90,7 +97,7 @@
 #'
 #' 
 ct_plot_overlay <- function(sim_obs_dataframe,
-                            mean_type = "geometric",
+                            summary_stat = "geomean",
                             linear_or_log = "semi-log",
                             colorBy = File,
                             facet_column1,
@@ -127,13 +134,28 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         }
     }
     
+    MyMeanType <- sim_obs_dataframe %>%
+        filter(Trial %in% c("geomean", "mean", "median")) %>% 
+        pull(Trial) %>% unique() %>% 
+        factor(levels = c("geomean", "mean", "median")) %>% 
+        sort()
+    
+    if(summary_stat %in% sim_obs_dataframe$Trial == FALSE){
+        
+        warning(paste0("You requested the ", summary_stat, 
+                       "s, but they are not included in your data. Instead, the ",
+                       MyMeanType[1], "s will be used."))
+        
+    } 
+    
+    MyMeanType <- MyMeanType[1] %>% as.character()
+    
     sim_obs_dataframe <- sim_obs_dataframe %>% 
         # At least at this point, I can't see this function working well with
         # ADAM model data b/c the y axis units differ. Removing all ADAM model
-        # data. May need to tweak this b/c you can get data from colon w/out
-        # ADAM model; return to this later to make more adaptable.
-        filter(!Tissue %in% c("stomach", "duodenum", "jejunum I", "jejunum II", "ileum I",
-                              "ileum II", "ileum III", "ileum IV", "colon", "faeces")) %>%
+        # data.
+        filter(is.na(subsection_ADAM) &
+                   Trial %in% MyMeanType) %>%
         # If it's dose number 0, remove those rows so that we'll show only the
         # parts we want when facetting and user wants scales to float freely.
         filter(DoseNum != 0) %>% 
@@ -148,23 +170,6 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE)
     sim_dataframe <- sim_obs_dataframe %>%
         filter(Simulated == TRUE)
-    
-    if(switch(mean_type, "geometric" = "geomean", 
-              "arithmetic" = "mean") %in% sim_obs_dataframe$Trial == FALSE){
-        
-        MyMeanType <- sim_obs_dataframe %>%
-            filter(Trial %in% c("geomean", "mean")) %>% 
-            pull(Trial) %>% unique() %>% as.character()
-        
-        warning(paste0("You requested the ", mean_type, 
-                       " mean, but that is not included in your data. Instead, the ",
-                       switch(MyMeanType, "geometric" = "geomean", 
-                              "mean" = "arithmetic"), 
-                       " mean will be used."))
-    } else {
-        MyMeanType <- switch(mean_type, "geometric" = "geomean", 
-                             "arithmetic" = "mean")
-    }
     
     message("This graph contains the following unique combinations of data (make sure they are what you were expecting):")
     print(sim_obs_dataframe %>% 

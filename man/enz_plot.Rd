@@ -8,6 +8,7 @@ enz_plot(
   sim_enz_dataframe = NA,
   figure_type = "percentiles",
   gut_tissue = "colon",
+  linear_or_log = "linear",
   ...,
   sim_data_file = NA,
   enzyme = "CYP3A4",
