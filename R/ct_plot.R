@@ -1070,18 +1070,18 @@ ct_plot <- function(sim_obs_dataframe = NA,
         }
         
         if(linear_or_log == "both"){
-            print(AB)
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                   plot = AB)
         }
         
         if(linear_or_log == "linear"){
-            print(A)
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = A)
         }
         
         if(str_detect(linear_or_log, "log")){
-            print(B)
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600)
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = B)
         }
     }
     
