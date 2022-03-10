@@ -16,9 +16,10 @@
 #'   only those parameters on the "AUC" tab (default, "AUC_CI" tab will be used
 #'   if "AUC" is not present), "Absorption tab" for only those parameters on the
 #'   "Absorption" tab, or any combination of specific, individual parameters.
-#'   Currently, the PK data are only for the substrate unless noted. To see the
-#'   full set of possible parameters to extract, enter
-#'   \code{data(AllPKParameters)} into the console.
+#'   Currently, the PK data are only for the substrate unless noted, although
+#'   you can hack around this by supplying a specific sheet to extract, e.g.
+#'   sheet = "AUC(Sub Pri Met1)". To see the full set of possible parameters to
+#'   extract, enter \code{data(AllPKParameters)} into the console.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" or "blood".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual PK
@@ -206,7 +207,7 @@ extractPK <- function(sim_data_file,
     # PKparameters as NA or as the default "AUC tab", then let's only return the
     # parameters that they asked for. 
     if(complete.cases(sheet) & complete.cases(PKparameters_orig[1]) &&
-       PKparameters_orig[1] != "AUC tab"){
+       !PKparameters_orig[1] %in% c("all", "AUC tab")){
         PKparameters <- intersect(PKparameters, PKparameters_orig)
     }
     

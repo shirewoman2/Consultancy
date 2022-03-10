@@ -22,9 +22,10 @@ output file. Options are "all" for all possible parameters, "AUC tab" for
 only those parameters on the "AUC" tab (default, "AUC_CI" tab will be used
 if "AUC" is not present), "Absorption tab" for only those parameters on the
 "Absorption" tab, or any combination of specific, individual parameters.
-Currently, the PK data are only for the substrate unless noted. To see the
-full set of possible parameters to extract, enter
-\code{data(AllPKParameters)} into the console.}
+Currently, the PK data are only for the substrate unless noted, although
+you can hack around this by supplying a specific sheet to extract, e.g.
+sheet = "AUC(Sub Pri Met1)". To see the full set of possible parameters to
+extract, enter \code{data(AllPKParameters)} into the console.}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
 pull the PK data; for example, specify the tab where you have a
