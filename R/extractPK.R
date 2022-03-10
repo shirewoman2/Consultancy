@@ -1194,8 +1194,8 @@ extractPK <- function(sim_data_file,
                                "AccumulationRatio" = "Accumulation Ratio$",
                                "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
                                "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
-                               "AUCinf" = "^AUC_INF",
-                               "AUCinf_withInhib" = "^AUC_INF",
+                               "AUCinf" = "^AUC_INF \\(",
+                               "AUCinf_withInhib" = "^AUC_INF_Inh",
                                "AUCinf_ratio" = "^AUC_INF ratio$",
                                "AUCtau" = "AUCt\\(n\\) \\(|^AUC \\(",
                                "AUCtau_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
@@ -1209,7 +1209,8 @@ extractPK <- function(sim_data_file,
                                "Cmin" = "CMin \\(",
                                "Cmin_withInhib" = "CMininh \\(",
                                "Cmin_ratio" = "CMin Ratio",
-                               "HalfLife" = "Half-life",
+                               "HalfLife" = "Half-life \\(",
+                               "HalfLife_withInhib" = "Half-life_Inh \\(",
                                "tmax" = "TMax ", 
                                "tmax_withInhib" = "TMaxinh")
             
@@ -1270,7 +1271,7 @@ extractPK <- function(sim_data_file,
         if(includeTrialInfo){
             # Subject and trial info
             IndexCol <- which(str_detect(as.character(XL[HeaderRow, ]),
-                                         "Index"))
+                                         "^Index"))
             SubjTrial_XL <- XL[(HeaderRow + 1):EndRow_ind, IndexCol:(IndexCol + 1)]
             names(SubjTrial_XL) <- c("Individual", "Trial")
             
