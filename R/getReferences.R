@@ -4,20 +4,25 @@
 #' folder and subfolder. Can be useful for the bibliography section of a report.
 #'
 #' @param main_directory the main directory from which you want a list of all
-#'   the files
+#'   the files; default assumes the main directory is your current working
+#'   directory
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My references.csv". If you leave off ".csv", it will
+#'   still be saved as a csv file.
 #'
-#' @return A data.frame containing columns "Dir" for the directory and, where
-#'   applicable, the subdirectory of a file, and "File" for the file name.
+#' @return A data.frame containing columns "Directory" for the directory and,
+#'   where applicable, the subdirectory of a file, and "File" for the file name.
+#'   Optionally save output to a csv file.
 #'
 #' @import tidyverse
 #' @export
 #' @examples
+#' getReferences()
+#' getReferences(save_output = "My referencs.csv")
 #'
-#' main_directory <- "\\\\s08sharepoint.certara.com@SSL/DavWWWRoot/sites/consult/dndi-1a/DataRec"
-#' getReferences(main_directory)
-#'
-#'
-getReferences <- function(main_directory){
+#' 
+getReferences <- function(main_directory = ".", 
+                          save_output = NA){
     
     # Check for "\" b/c people will probably paste the path from Windows
     main_directory <- gsub("\\\\", "/", main_directory)
@@ -34,20 +39,35 @@ getReferences <- function(main_directory){
     
     for(i in RefDirs){
         
-        MyFiles <- list.files(i, pattern = "pdf$|doc$|docx$|xls",
+        MyFiles <- list.files(i, pattern = "pdf$|doc$|docx$|pptx|xls",
                               include.dirs = FALSE,
                               recursive = FALSE,
                               full.names = FALSE)
         
-        Refs[[i]] <- data.frame(Dir = i,
-                                File = as.character(unlist(MyFiles)) )
+        if(length(MyFiles) > 0){
+            Refs[[i]] <- data.frame(Directory = i,
+                                    File = as.character(unlist(MyFiles)) )
+        }
         
         rm(MyFiles)
     }
     
+    if(length(Refs) == 0){
+        stop("No references were found. Please check your directory.")
+    }
+    
     Refs <- bind_rows(Refs) %>%
-        mutate(Dir = sub("\\.\\./DataRec", "DataRec", Dir)) %>%
-        arrange(Dir, File)
+        mutate(Directory = sub("\\.\\./DataRec", "DataRec", Directory)) %>%
+        arrange(Directory, File)
+    
+    if(complete.cases(save_output)){
+        if(str_detect(save_output, "\\.")){
+            FileName <- sub("\\..*", ".csv", save_output)
+        } else {
+            FileName <- paste0(save_output, ".csv")
+        }
+        write.csv(Refs, FileName, row.names = F)
+    }
     
     return(Refs)
 }
