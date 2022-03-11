@@ -18,6 +18,7 @@ ct_plot_overlay(
   pad_y_axis = FALSE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  legend_position = NA,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5,
@@ -36,7 +37,8 @@ set. If this summary stat is not available in the simulator output, we'll
 warn you that we're plotting a different one.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
-"linear", or "both".}
+"linear", "both vertical" (default, graphs are stacked vertically), or
+"both horizontal" (graphs are side by side).}
 
 \item{colorBy}{What column in \code{sim_obs_dataframe} should be used for
 coloring the lines and/or points on the graph? This should be unquoted,
@@ -100,6 +102,10 @@ linear plot will be automatically selected.}
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
+
+\item{legend_position}{Specify where you want the legend to be. Options are
+"left", "right" (default in most scenarios), "bottom", "top", or "none" if
+you don't want one at all.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
