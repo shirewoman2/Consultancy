@@ -15,9 +15,9 @@ graph_boxplot(
   xlabel = NA,
   ylabel = NA,
   color_set = "default",
-  filename = NA,
-  outwidth = 6,
-  outheight = 4
+  save_graph = NA,
+  fig_width = 6,
+  fig_height = 4
 )
 }
 \arguments{
@@ -71,13 +71,16 @@ bars on the whiskers}
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}}}
 
-\item{filename}{the file name for the output graph, e.g., "My pretty
-boxplot.png". If you don't want to automatically save the graph, leave this
-as NA.}
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+will be saved as a png file, but if you specify a different file extension,
+it will be saved as that file format. Acceptable extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be automatically saved to disk.}
 
-\item{outwidth}{the width in inches of the output graph}
+\item{fig_width}{figure width in inches; default is 6}
 
-\item{outheight}{the height in inches of the output graph}
+\item{fig_height}{figure height in inches; default is 4}
 }
 \value{
 
@@ -122,7 +125,7 @@ graph_boxplot(AUCs \%>\% filter(AgeGroup \%in\% c("A", "B")),
               category_column = "AgeGroup", value_column = "AUC",
               graph_type = "jittered points, filled boxes",
               color_set = "Brewer set 2", include_errorbars = TRUE,
-              filename = "test boxplot.png")
+              save_graph = "test boxplot.png")
 
 
 }

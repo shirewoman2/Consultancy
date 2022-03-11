@@ -45,11 +45,14 @@
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}}
-#' @param filename the file name for the output graph, e.g., "My pretty
-#'   boxplot.png". If you don't want to automatically save the graph, leave this
-#'   as NA.
-#' @param outwidth the width in inches of the output graph
-#' @param outheight the height in inches of the output graph
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+#'   will be saved as a png file, but if you specify a different file extension,
+#'   it will be saved as that file format. Acceptable extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+#'   means the file will not be automatically saved to disk.
+#' @param fig_height figure height in inches; default is 4
+#' @param fig_width figure width in inches; default is 6
 #'
 #' @return
 #' @import tidyverse
@@ -90,7 +93,7 @@
 #'               category_column = "AgeGroup", value_column = "AUC",
 #'               graph_type = "jittered points, filled boxes",
 #'               color_set = "Brewer set 2", include_errorbars = TRUE,
-#'               filename = "test boxplot.png")
+#'               save_graph = "test boxplot.png")
 #'
 #'
 graph_boxplot <- function(DF,
@@ -103,8 +106,8 @@ graph_boxplot <- function(DF,
                           xlabel = NA,
                           ylabel = NA,
                           color_set = "default",
-                          filename = NA,
-                          outwidth = 6, outheight = 4){
+                          save_graph = NA,
+                          fig_width = 6, fig_height = 4){
     
     # Adding options for colors
     colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
@@ -232,9 +235,22 @@ graph_boxplot <- function(DF,
             ggthemes::scale_fill_tableau()
     }
     
-    if(complete.cases(filename)){
-        print(G)
-        ggsave(filename, height = outheight, width = outwidth, dpi = 600)
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
+        }
+        
+        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+               plot = G)
     }
     
     return(G)

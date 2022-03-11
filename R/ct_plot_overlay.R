@@ -72,6 +72,25 @@
 #'   to get a specific amount of padding there.
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
+#' @param color_set the set of colors to use. Options: \describe{
+#'
+#'   \item{"default"}{colors selected from the color brewer palette "set 1"}
+#'
+#'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+#'   (ggplot2 is an R package for graphing.)}
+#'
+#'   \item{"rainbow"}{colors selected from a rainbow palette. The default
+#'   palette is limited to something like 6 colors, so if you have more than
+#'   that, that's when this palette is most useful. It's \emph{not} very useful
+#'   when you only need a couple of colors.}
+#'
+#'   \item{"blue-green"}{a set of blues and greens}
+#'
+#'   \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
+#'   State that are friendly to those with red-green colorblindness}
+#'
+#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+#'   package}}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -106,6 +125,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             summary_stat = "geomean",
                             linear_or_log = "semi-log",
                             colorBy = File,
+                            color_set = "default",
                             facet_column1,
                             facet_column2, 
                             floating_facet_scale = FALSE,
@@ -197,10 +217,13 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         mutate(MyCols = rownames(.)) %>% 
         filter(V1 > 1) %>% pull(MyCols)
     
-    MyAES <- c("color" = as_label(quo(colorBy)), 
-               "facet1" = as_label(quo(facet_column1)), 
-               "facet2" = as_label(quo(facet_column2)))
+    MyAES <- c("color" = as_label(colorBy), 
+               "facet1" = as_label(facet_column1), 
+               "facet2" = as_label(facet_column2))
     UniqueAES <- MyAES[which(complete.cases(MyAES))]
+    
+    # print(MyAES)
+    # print(UniqueAES)
     
     if(length(UniqueGroups[UniqueGroups != "CompoundID"]) > length(UniqueAES)){
         warning(paste("You have requested", length(UniqueGroups),
@@ -251,7 +274,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
             labs(color = as_label(colorBy)) + # Comment this while developing, uncomment for running function
             xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
             ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
-            scale_color_brewer(palette = "Set1") +
+            # scale_color_brewer(palette = "Set1") +
             theme(panel.background = element_rect(fill = "white", color = NA),
                   panel.border = element_rect(color = "black", fill = NA),
                   strip.background = element_rect(fill = "white"),
@@ -288,6 +311,49 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                        cols = vars(!!facet_column2)) # Comment this while developing, uncomment for running function
             # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
             #            cols = vars(facet_column2)) # Uncomment this while developing, comment for running function
+    }
+    
+    # Colors ----------------------------------------------------------------
+    
+    # Adding options for colors
+    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
+                                     "darkorange", "green3", "seagreen3",
+                                     "cadetblue", "dodgerblue3", "royalblue4",
+                                     "darkorchid4"))
+    
+    blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
+                                    "dodgerblue3", "royalblue4"))
+    
+    NumColorsNeeded <- sim_dataframe %>% pull(MyAES["color"]) %>% 
+        unique() %>% length()
+    
+    # print(NumColorsNeeded)
+    
+    if(color_set == "default"){
+        A <- A + scale_color_brewer(palette = "Set1") +
+            scale_fill_brewer(palette="Set1")
+    }
+    
+    if(color_set == "blue-green"){
+        A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
+            scale_fill_manual(
+                values = blueGreen(length(MyAES["color"])))
+    }
+    
+    if(color_set == "rainbow"){
+        A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
+            scale_fill_manual(
+                values = colRainbow(length(MyAES["color"])))
+    }
+    
+    if(color_set == "Brewer set 2"){
+        A <- A + scale_fill_brewer(palette = "Set2") +
+            scale_color_brewer(palette = "Set2")
+    }
+    
+    if(color_set == "Tableau"){
+        A <- A + ggthemes::scale_color_tableau() +
+            ggthemes::scale_fill_tableau()
     }
     
     ## Making semi-log graph ------------------------------------------------

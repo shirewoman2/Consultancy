@@ -9,6 +9,7 @@ ct_plot_overlay(
   summary_stat = "geomean",
   linear_or_log = "semi-log",
   colorBy = File,
+  color_set = "default",
   facet_column1,
   facet_column2,
   floating_facet_scale = FALSE,
@@ -43,6 +44,26 @@ warn you that we're plotting a different one.}
 \item{colorBy}{What column in \code{sim_obs_dataframe} should be used for
 coloring the lines and/or points on the graph? This should be unquoted,
 e.g., \code{colorBy = Tissue}.}
+
+\item{color_set}{the set of colors to use. Options: \describe{
+
+  \item{"default"}{colors selected from the color brewer palette "set 1"}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 colors, so if you have more than
+  that, that's when this palette is most useful. It's \emph{not} very useful
+  when you only need a couple of colors.}
+
+  \item{"blue-green"}{a set of blues and greens}
+
+  \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
+  State that are friendly to those with red-green colorblindness}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}}}
 
 \item{facet_column1}{If you would like to break up your graph into small
 multiples, you can break the graphs up by up to two columns in
