@@ -20,7 +20,8 @@ ct_plot_overlay(
   y_axis_limits_log = NA,
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5
+  fig_width = 5,
+  include_messages = TRUE
 )
 }
 \arguments{
@@ -44,10 +45,13 @@ e.g., \code{colorBy = Tissue}.}
 \item{facet_column1}{If you would like to break up your graph into small
 multiples, you can break the graphs up by up to two columns in
 \code{sim_obs_dataframe}. What should be the 1st column to break up the
-data by? This should be unquoted.}
+data by? This should be unquoted. If \code{floating_facet_scale} is FALSE,
+then \code{facet_column1} will make the rows of the output graphs.}
 
 \item{facet_column2}{What should be the 2nd column to break up the data into
-small multiples by? This should be unquoted.}
+small multiples by? This should be unquoted. If \code{floating_facet_scale}
+is FALSE, then \code{facet_column2} will make the columns of the output
+graphs.}
 
 \item{floating_facet_scale}{TRUE or FALSE for whether to allow the axes for
 each facet of a multi-facetted graph to scale freely according to what data
@@ -117,9 +121,9 @@ means the file will not be automatically saved to disk.}
 concentration-time data from multiple Simcyp Simulator output files for easy
 comparisons. \strong{Notes:} \enumerate{\item{This has not been set up yet to
 plot enzyme abundance data, ADAM-model simulations, or observed data.}
-\item{Currently, this will only plot arithmetic or geometric mean data and
-nothing else for each data set. We may expand that in the future, but those
-are the only things that will be included for now.}} Really, this function is
+\item{Currently, this will only plot arithmetic or geometric mean or median
+data and nothing else for each data set. We may expand that in the future,
+but those are the only things included for now.}} Really, this function is
 generally workable but is admittedly not one of our most maturely developed
 functions. Something is probably going to break on you, so, our apologies in
 advance, and please email Laura Shireman to describe what happened when it

@@ -1033,7 +1033,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
         if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
-                                  legend = "none", align = "v"))
+                                  legend = "none", align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2, labels = c("A", "B"),
@@ -1042,7 +1042,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
                                   common.legend = TRUE, legend = "right",
-                                  align = "v"))
+                                  align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2, labels = c("A", "B"),
@@ -1086,7 +1086,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
             FileName <- paste0(FileName, ".png")
         }
         
-        if(linear_or_log == "both"){
+        if(linear_or_log %in% c("both", "both vertical")){
             ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
                    plot = AB)
         }

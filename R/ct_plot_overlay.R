@@ -5,9 +5,9 @@
 #' concentration-time data from multiple Simcyp Simulator output files for easy
 #' comparisons. \strong{Notes:} \enumerate{\item{This has not been set up yet to
 #' plot enzyme abundance data, ADAM-model simulations, or observed data.}
-#' \item{Currently, this will only plot arithmetic or geometric mean data and
-#' nothing else for each data set. We may expand that in the future, but those
-#' are the only things that will be included for now.}} Really, this function is
+#' \item{Currently, this will only plot arithmetic or geometric mean or median
+#' data and nothing else for each data set. We may expand that in the future,
+#' but those are the only things included for now.}} Really, this function is
 #' generally workable but is admittedly not one of our most maturely developed
 #' functions. Something is probably going to break on you, so, our apologies in
 #' advance, and please email Laura Shireman to describe what happened when it
@@ -29,9 +29,12 @@
 #' @param facet_column1 If you would like to break up your graph into small
 #'   multiples, you can break the graphs up by up to two columns in
 #'   \code{sim_obs_dataframe}. What should be the 1st column to break up the
-#'   data by? This should be unquoted.
+#'   data by? This should be unquoted. If \code{floating_facet_scale} is FALSE,
+#'   then \code{facet_column1} will make the rows of the output graphs.
 #' @param facet_column2 What should be the 2nd column to break up the data into
-#'   small multiples by? This should be unquoted.
+#'   small multiples by? This should be unquoted. If \code{floating_facet_scale}
+#'   is FALSE, then \code{facet_column2} will make the columns of the output
+#'   graphs.
 #' @param floating_facet_scale TRUE or FALSE for whether to allow the axes for
 #'   each facet of a multi-facetted graph to scale freely according to what data
 #'   are present. Default is FALSE, which means that all data will be on the
@@ -111,7 +114,8 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             y_axis_limits_log = NA, 
                             save_graph = NA,
                             fig_height = 6,
-                            fig_width = 5){
+                            fig_width = 5, 
+                            include_messages = TRUE){
     
     colorBy <- rlang::enquo(colorBy)
     facet_column1 <- rlang::enquo(facet_column1)
@@ -171,10 +175,15 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     sim_dataframe <- sim_obs_dataframe %>%
         filter(Simulated == TRUE)
     
-    message("This graph contains the following unique combinations of data (make sure they are what you were expecting):")
-    print(sim_obs_dataframe %>% 
-              filter(Trial == MyMeanType) %>% 
-              select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique())
+    MyUniqueData <- sim_obs_dataframe %>% 
+        filter(Trial == MyMeanType) %>% 
+        select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique()
+    
+    
+    if(include_messages){
+        print("This graph contains the following unique combinations of data (make sure they are what you were expecting):")
+        print(MyUniqueData)
+    }
     
     UniqueGroups <- sim_obs_dataframe %>% 
         summarize(across(.cols = c(File, Tissue, CompoundID, Compound,
@@ -230,12 +239,12 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     # Linear graph --------------------------------------------------------
     A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-                aes(x = Time, y = Conc, color = !!colorBy, # Comment this for easier code development
-                    # aes(x = Time, y = Conc, color = colorBy, # Uncomment this for easier code development
+                aes(x = Time, y = Conc, color = !!colorBy, # Comment this while developing, uncomment for running function
+                # aes(x = Time, y = Conc, color = colorBy, # Uncomment this while developing, comment for running function
                     group = Group)) +
         geom_line() +
         # geom_point(data = obs_data) + # not ready to add obs data to this function yet!
-        labs(color = as_label(colorBy)) +
+        labs(color = as_label(colorBy)) + # Comment this while developing, uncomment for running function
         xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
         ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
         scale_color_brewer(palette = "Set1") +
@@ -253,9 +262,10 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     if(floating_facet_scale){
         A <- A + 
             scale_x_continuous(expand = expansion(
-                                   mult = c(pad_x_num, 0.04))) +
+                mult = c(pad_x_num, 0.04))) +
             scale_y_continuous(expand = expansion(mult = c(pad_y_num, 0.1))) +
-            facet_wrap(vars(!!facet_column1, !!facet_column2), 
+            facet_wrap(vars(!!facet_column1, !!facet_column2), # Comment this while developing, uncomment for running function
+            # facet_wrap(vars(facet_column1, facet_column2), # Uncomment this while developing, comment for running function
                        scales = "free")
         
     } else {
@@ -270,32 +280,43 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                                breaks = YBreaks,
                                labels = YLabels,
                                expand = expansion(mult = c(pad_y_num, 0.1))) +
-            facet_grid(rows = vars(!!facet_column1), # Comment this for easier code development
-                       cols = vars(!!facet_column2)) # Comment this for easier code development
-        # facet_grid(rows = vars(facet_column1), # Uncomment this for easier code development
-        #            cols = vars(facet_column2), # Uncomment this for easier code development
+            facet_grid(rows = vars(!!facet_column1), # Comment this while developing, uncomment for running function
+                       cols = vars(!!facet_column2)) # Comment this while developing, uncomment for running function
+        # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
+        #            cols = vars(facet_column2), # Uncomment this while developing, comment for running function
     }
     
     ## Making semi-log graph ------------------------------------------------
+    
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
                           labels = YLogLabels,
-                          expand = expansion(mult = c(pad_y_num, 0.1))) +
-            # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
-            coord_cartesian(xlim = time_range_relative)
+                          expand = expansion(mult = c(pad_y_num, 0.1))) 
     )
+    
+    if(floating_facet_scale == FALSE){
+        B <- B + coord_cartesian(xlim = time_range_relative)
+    }
     
     # both plots together, aligned vertically
     AB <- suppressWarnings(
         ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
-                          align = "v")
+                          align = "hv", legend = "right")
     )
+    
+    # both plots together, aligned horizontally
+    ABhoriz <- suppressWarnings(
+        ggpubr::ggarrange(A, B, ncol = 2, labels = c("A", "B"),
+                          common.legend = TRUE, legend = "bottom",
+                          align = "hv"))
     
     Out <- switch(linear_or_log, 
                   "linear" = A,
                   "semi-log" = B,
                   "log" = B,
-                  "both" = AB)
+                  "both" = AB, 
+                  "both vertical" = AB,
+                  "both horizontal" = ABhoriz)
     
     if(complete.cases(save_graph)){
         FileName <- save_graph
@@ -311,9 +332,14 @@ ct_plot_overlay <- function(sim_obs_dataframe,
             FileName <- paste0(FileName, ".png")
         }
         
-        if(linear_or_log == "both"){
+        if(linear_or_log %in% c("both", "both vertical")){
             ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
                    plot = AB)
+        }
+        
+        if(linear_or_log %in% c("both horizontal")){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                   plot = ABhoriz)
         }
         
         if(linear_or_log == "linear"){
