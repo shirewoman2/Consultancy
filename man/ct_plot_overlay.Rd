@@ -7,6 +7,7 @@
 ct_plot_overlay(
   sim_obs_dataframe,
   summary_stat = "geomean",
+  figure_type = "means only",
   linear_or_log = "semi-log",
   colorBy = File,
   color_set = "default",
@@ -36,6 +37,15 @@ concentrations, "mean" for arithmetic mean concentrations, or "median" for
 median concentrations as the main (thickest or only) line for each data
 set. If this summary stat is not available in the simulator output, we'll
 warn you that we're plotting a different one.}
+
+\item{figure_type}{the type of figure to plot. Default is "means only" to
+show only the mean, geometric mean, or median (whatever you chose for
+"summary_stat"). Other option: "percentile ribbon" to show an opaque line
+for the mean data and transparent shading for the 5th to 95th percentiles.
+Note: You may sometimes see some artifacts -- especially for semi-log plots
+-- where the ribbon gets partly cut off. For arcane reasons we don't want
+to bore you with here, we can't easily prevent this. However, a possible
+fix is to set your y axis limits for the semi-log plot to be wider.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
 "linear", "both vertical" (default, graphs are stacked vertically), or

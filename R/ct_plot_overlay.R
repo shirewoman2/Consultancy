@@ -21,6 +21,14 @@
 #'   median concentrations as the main (thickest or only) line for each data
 #'   set. If this summary stat is not available in the simulator output, we'll
 #'   warn you that we're plotting a different one.
+#' @param figure_type the type of figure to plot. Default is "means only" to
+#'   show only the mean, geometric mean, or median (whatever you chose for
+#'   "summary_stat"). Other option: "percentile ribbon" to show an opaque line
+#'   for the mean data and transparent shading for the 5th to 95th percentiles.
+#'   Note: You may sometimes see some artifacts -- especially for semi-log plots
+#'   -- where the ribbon gets partly cut off. For arcane reasons we don't want
+#'   to bore you with here, we can't easily prevent this. However, a possible
+#'   fix is to set your y axis limits for the semi-log plot to be wider.
 #' @param linear_or_log the type of graph to be returned. Options: "semi-log",
 #'   "linear", "both vertical" (default, graphs are stacked vertically), or
 #'   "both horizontal" (graphs are side by side).
@@ -123,6 +131,7 @@
 #' 
 ct_plot_overlay <- function(sim_obs_dataframe,
                             summary_stat = "geomean",
+                            figure_type = "means only", 
                             linear_or_log = "semi-log",
                             colorBy = File,
                             color_set = "default",
@@ -173,22 +182,28 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         warning(paste0("You requested the ", summary_stat, 
                        "s, but they are not included in your data. Instead, the ",
                        MyMeanType[1], "s will be used."))
+        MyMeanType <- MyMeanType[1] %>% as.character()
         
-    } 
-    
-    MyMeanType <- MyMeanType[1] %>% as.character()
+    } else {
+        
+        MyMeanType <- summary_stat
+        
+    }
     
     sim_obs_dataframe <- sim_obs_dataframe %>% 
         # At least at this point, I can't see this function working well with
         # ADAM model data b/c the y axis units differ. Removing all ADAM model
         # data.
         filter(is.na(subsection_ADAM) &
-                   Trial %in% MyMeanType) %>%
+                   Trial %in% 
+                   switch(figure_type, 
+                          "means only" = MyMeanType, 
+                          "percentile ribbon" = c(MyMeanType, "per5", "per95"),
+                          "ribbon" = c(MyMeanType, "per5", "per95"))) %>%
         # If it's dose number 0, remove those rows so that we'll show only the
         # parts we want when facetting and user wants scales to float freely.
         filter(DoseNum != 0) %>% 
-        mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound,
-                             Inhibitor),
+        mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
                CompoundID = factor(CompoundID,
                                    levels = c("substrate", "primary metabolite 1",
                                               "primary metabolite 2", "secondary metabolite",
@@ -202,7 +217,6 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     MyUniqueData <- sim_obs_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
         select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique()
-    
     
     if(include_messages){
         print("This graph contains the following unique combinations of data (make sure they are what you were expecting):")
@@ -264,27 +278,47 @@ ct_plot_overlay <- function(sim_obs_dataframe,
               y_axis_limits_log = y_axis_limits_log)
     
     
-    # Linear graph --------------------------------------------------------
-    A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-               aes(x = Time, y = Conc, color = !!colorBy, # Comment this while developing, uncomment for running function
-               # aes(x = Time, y = Conc, color = colorBy, # Uncomment this while developing, comment for running function
-                   group = Group)) +
-            geom_line() +
-            # geom_point(data = obs_data) + # not ready to add obs data to this function yet!
-            labs(color = as_label(colorBy)) + # Comment this while developing, uncomment for running function
-            xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
-            ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
-            # scale_color_brewer(palette = "Set1") +
-            theme(panel.background = element_rect(fill = "white", color = NA),
-                  panel.border = element_rect(color = "black", fill = NA),
-                  strip.background = element_rect(fill = "white"),
-                  legend.key = element_rect(fill = "white"),
-                  axis.ticks = element_line(color = "black"),
-                  axis.text = element_text(color = "black"),
-                  axis.title = element_text(color = "black", face = "bold"),
-                  axis.line.y = element_line(color = "black"),
-                  axis.line.x.bottom = element_line(color = "black"),
-                  text = element_text(family = "Calibri"))
+    # Setting figure types ---------------------------------------------------
+    ## Figure type: means only ---------------------------------------------
+    if(figure_type == "means only"){
+        A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
+                    aes(x = Time, y = Conc, color = !!colorBy, # Comment this while developing, uncomment for running function
+                        # aes(x = Time, y = Conc, color = colorBy, # Uncomment this while developing, comment for running function
+                        group = Group)) +
+            geom_line()    
+    }
+    
+    
+    ## Figure type: ribbon --------------------------------------------------
+    if(str_detect(figure_type, "ribbon")){
+        
+        RibbonDF <-  sim_dataframe %>% select(-any_of(c("Group", "Individual"))) %>% 
+            pivot_wider(names_from = Trial, values_from = Conc) %>% 
+            rename(MyMean = MyMeanType) 
+        
+        A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
+                                  color = !!colorBy, fill = !!colorBy)) +
+            geom_ribbon(alpha = 0.25, color = NA) +
+            geom_line()
+    }
+    
+    # Making linear graph --------------------------------------------------------
+    A <-  A +
+        # geom_point(data = obs_data) + # not ready to add obs data to this function yet!
+        labs(color = as_label(colorBy)) + # Comment this while developing, uncomment for running function
+        xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
+        ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
+        # scale_color_brewer(palette = "Set1") +
+        theme(panel.background = element_rect(fill = "white", color = NA),
+              panel.border = element_rect(color = "black", fill = NA),
+              strip.background = element_rect(fill = "white"),
+              legend.key = element_rect(fill = "white"),
+              axis.ticks = element_line(color = "black"),
+              axis.text = element_text(color = "black"),
+              axis.title = element_text(color = "black", face = "bold"),
+              axis.line.y = element_line(color = "black"),
+              axis.line.x.bottom = element_line(color = "black"),
+              text = element_text(family = "Calibri"))
     
     if(floating_facet_scale){
         A <- A + 
@@ -292,7 +326,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                 mult = c(pad_x_num, 0.04))) +
             scale_y_continuous(expand = expansion(mult = c(pad_y_num, 0.1))) +
             facet_wrap(vars(!!facet_column1, !!facet_column2), # Comment this while developing, uncomment for running function
-            # facet_wrap(vars(facet_column1, facet_column2), # Uncomment this while developing, comment for running function
+                       # facet_wrap(vars(facet_column1, facet_column2), # Uncomment this while developing, comment for running function
                        scales = "free")
         
     } else {
@@ -309,8 +343,8 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                                expand = expansion(mult = c(pad_y_num, 0.1))) +
             facet_grid(rows = vars(!!facet_column1), # Comment this while developing, uncomment for running function
                        cols = vars(!!facet_column2)) # Comment this while developing, uncomment for running function
-            # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
-            #            cols = vars(facet_column2)) # Uncomment this while developing, comment for running function
+        # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
+        #            cols = vars(facet_column2)) # Uncomment this while developing, comment for running function
     }
     
     # Colors ----------------------------------------------------------------
@@ -336,14 +370,12 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     if(color_set == "blue-green"){
         A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-            scale_fill_manual(
-                values = blueGreen(length(MyAES["color"])))
+            scale_fill_manual(values = blueGreen(NumColorsNeeded))
     }
     
     if(color_set == "rainbow"){
         A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-            scale_fill_manual(
-                values = colRainbow(length(MyAES["color"])))
+            scale_fill_manual(values = colRainbow(NumColorsNeeded))
     }
     
     if(color_set == "Brewer set 2"){
@@ -434,7 +466,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     return(Out)
     
-    }
+}
 
 
 
