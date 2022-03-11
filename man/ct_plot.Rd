@@ -31,7 +31,7 @@ ct_plot(
   prettify_effector_name = TRUE,
   return_data = FALSE,
   return_indiv_graphs = FALSE,
-  linear_or_log = "both",
+  linear_or_log = "both vertical",
   sim_data_file = NA,
   obs_data_file = NA,
   obs_inhibitor_data_file = NA,
@@ -153,8 +153,8 @@ limits for the semi-log plot will be automatically selected.}
 in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 will be saved as a png file, but if you specify a different file extension,
 it will be saved as that file format. Acceptable extensions are "eps",
-"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be automatically saved to disk.}
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be automatically saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
 
@@ -248,7 +248,8 @@ TRUE or FALSE: Return each of the two individual graphs? This can be useful
 if you want to modify the graphs further or only use one, etc.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
-"linear", or "both" (default).}
+"linear", "both vertical" (default, graphs are stacked vertically), or
+"both horizontal" (graphs are side by side).}
 
 \item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
 the Excel file containing the simulated concentration-time data}
