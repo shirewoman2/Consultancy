@@ -15,7 +15,7 @@
 #'
 #' @param sim_obs_dataframe the data.frame with multiple sets of
 #'   concentration-time data. At the moment, this function does not plot
-#'   observed data, though; that's still under construction.
+#'   observed data; that's still under construction.
 #' @param summary_stat plot "geomean" (default) for geometric mean
 #'   concentrations, "mean" for arithmetic mean concentrations, or "median" for
 #'   median concentrations as the main (thickest or only) line for each data

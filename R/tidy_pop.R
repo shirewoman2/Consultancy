@@ -19,9 +19,9 @@ tidyPop <- function(input_pop){
         # Healthy Volunteers"
         "Chinese" = "Chinese subjects",
         "Chinese Healthy Volunteers" = "Chinese healthy volunteers",
-        "CirrhosisCP - A" = "cirrhosis patients with CP score of A",
-        "CirrhosisCP - B" = "cirrhosis patients with CP score of B",
-        "CirrhosisCP - C" = "cirrhosis patients with CP score of C",
+        "CirrhosisCP - A" = "cirrhosis patients with Child-Pugh score of A",
+        "CirrhosisCP - B" = "cirrhosis patients with Child-Pugh score of B",
+        "CirrhosisCP - C" = "cirrhosis patients with Child-Pugh score of C",
         "Geriatric NEC" = "normal elderly control subjects",
         "Japanese" = "Japanese healthy volunteers",
         "Japanese Paediatric" = "Japanese pediatric subjects",
@@ -48,6 +48,7 @@ tidyPop <- function(input_pop){
                                "healthy volunteers")
     PopulationSimple <- ifelse(Population == "preterm infants",
                                "preterm infants", PopulationSimple)
+    Population1stCap <- str_to_sentence(Population)
     PopulationCap <- str_to_title(Population)
     PopulationCap <- ifelse(str_detect(Population, "CP"),
                             sub("Cp", "CP", PopulationCap), PopulationCap)
@@ -60,6 +61,7 @@ tidyPop <- function(input_pop){
     
     MyPops <- list(Population = Population,
                    PopulationSimple = PopulationSimple,
+                   Population1stCap = Population1stCap,
                    PopulationCap = PopulationCap,
                    PopulationSimpleLower = PopulationSimpleLower,
                    PopulationSimpleCap = PopulationSimpleCap)
