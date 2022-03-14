@@ -1218,6 +1218,7 @@ extractConcTime <- function(sim_data_file,
                                            # info on the identity of the
                                            # compound for the observed data
                                            # included in a simjlator file.
+                                           ObsFile = NA,
                                            Individual = sub("^Subject", "", Individual),
                                            Time_units = SimTimeUnits,
                                            Conc_units = SimConcUnits) %>%
@@ -1536,7 +1537,7 @@ extractConcTime <- function(sim_data_file,
                         "Individual", "Trial",
                         "Simulated", "Time", "Conc",
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
-                        "DoseInt", "File")))
+                        "DoseInt", "File", "ObsFile")))
     
     # Filtering to return ONLY the compound the user requested. This is what
     # works for input to ct_plot at the moment, too, so things get buggered up

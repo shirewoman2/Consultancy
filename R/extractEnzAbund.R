@@ -762,6 +762,7 @@ extractEnzAbund <- function(sim_data_file,
     # Finalizing, tidying, selecting only useful columns
     Data <- Data %>%
         mutate(Time_units = tolower({{TimeUnits}}),
+               File = sim_data_file,
                Inhibitor = ifelse(EffectorPresent,
                                   AllEffectors, "none"), 
                Substrate = Deets$Substrate) %>%
@@ -772,7 +773,8 @@ extractEnzAbund <- function(sim_data_file,
                         "Time_units", 
                         "DoseNum_sub", "Dose_int_sub", "TimeSinceDose1_sub",
                         "DoseNum_inhib1", "Dose_int_inhib1", "TimeSinceDose1_inhib1",
-                        "DoseNum_inhib2", "Dose_int_inhib2", "TimeSinceDose1_inhib2")))
+                        "DoseNum_inhib2", "Dose_int_inhib2", "TimeSinceDose1_inhib2", 
+                        "File")))
     
     return(Data)
     

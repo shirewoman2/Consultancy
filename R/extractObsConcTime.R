@@ -231,7 +231,7 @@ extractObsConcTime <- function(obs_data_file){
                CompoundID = ObsCompoundIDs[CompoundID_obsfile],
                Inhibitor = ObsEffectors[CompoundID_obsfile],
                Tissue = Tissue[CompoundID_obsfile],
-               File = obs_data_file,
+               ObsFile = obs_data_file,
                SmokingStatus = Smoke[SmokingStatus],
                Time_units = TimeUnits,
                Conc_units = ObsConcUnits[as.character(DVID)]) %>%
@@ -240,7 +240,7 @@ extractObsConcTime <- function(obs_data_file){
                         "Individual",
                         "Tissue", "Inhibitor",
                         "Time", "Time_units", "Conc", "Conc_units", "DVID",
-                        "File", "Weighting",
+                        "ObsFile", "Weighting",
                         "Period", "Age", "Weight_kg",
                         "Height_cm", "Sex", "SerumCreatinine_umolL",
                         "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
