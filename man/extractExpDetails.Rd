@@ -19,6 +19,9 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   \item{"population tab"}{Extract details about the population used (data
   come from the tab with the same name as the population simulated)}
 
+  \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+  on the "Simcyp inputs (and QC)" tab of a compound data sheet}
+
   \item{"all"}{Extract all possible parameters}
 
   \item{a string of the specific parameters you want}{For a complete list,

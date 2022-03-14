@@ -15,6 +15,9 @@
 #'   \item{"population tab"}{Extract details about the population used (data
 #'   come from the tab with the same name as the population simulated)}
 #'
+#'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet}
+#'
 #'   \item{"all"}{Extract all possible parameters}
 #'
 #'   \item{a string of the specific parameters you want}{For a complete list,
@@ -99,6 +102,20 @@ extractExpDetails <- function(sim_data_file,
     if(exp_details_input[1] == "population tab"){
         exp_details <- PopDeets$Deet
     }
+    
+    if(exp_details_input[1] == "Simcyp inputs"){
+        exp_details <- c("Substrate", "Inhibitor1",
+                         paste0(rep(each = 2, 
+                                    c("MW", "logP", "CompoundType", "pKa1", "pKa2",
+                                      "BPratio", "fu", "Abs_model", 
+                                      "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
+                                      "Qgut", "fu_gut", "ka", "fa", "tlag",
+                                      "ModelType", "VssPredMeth", "Vss_input",
+                                      "kp_scalar", "kin_sac", "kout_sac",
+                                      "Vsac", "CLint", "CLrenal", "Interaction")), 
+                                c("_sub", "_inhib")))
+    }
+    
     # Need to note original exp_details requested b/c I'm adding to it if
     # people request info from population tab. Note that this is different
     # from "exp_details_input" and serves a different purpose.
@@ -189,8 +206,8 @@ extractExpDetails <- function(sim_data_file,
                                "MW_inhib" = "Mol Weight",
                                "logP_sub" = "log P",
                                "logP_inhib" = "log P",
-                               "Type_sub" = "Compound Type",
-                               "Type_inhib" = "Compound Type",
+                               "CompoundType_sub" = "Compound Type",
+                               "CompoundType_inhib" = "Compound Type",
                                "pKa1_sub" = "pKa 1",
                                "pKa1_inhib" = "pKa 1",
                                "pKa2_sub" = "pKa 2",
