@@ -7,7 +7,6 @@
 so_table(
   report_input_file = NA,
   sheet_report = NA,
-  sectionInfo = NA,
   PKparameters = NA,
   sheet_PKparameters = NA,
   mean_type = NA,
@@ -19,7 +18,8 @@ so_table(
   prettify_columns = TRUE,
   checkDataSource = TRUE,
   sim_data_file = NA,
-  save_table = NA
+  save_table = NA,
+  sectionInfo = NA
 )
 }
 \arguments{
@@ -30,10 +30,6 @@ including the path if it's in any other directory than the current one}
 \item{sheet_report}{the sheet in the Excel report template file that contains
 information about this section of the report. In the original template,
 this was the tab titled "table and graph input".}
-
-\item{sectionInfo}{information about the simulated and observed data. This is
-output from the function \code{\link{getSectionInfo}} and can be used
-instead of listing the Excel file and report template sheet name as input.}
 
 \item{PKparameters}{the PK parameters to include as a character vector. To
 see the full set of possible parameters to extract, enter
@@ -101,6 +97,10 @@ info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.csv". If you leave off ".csv", it will still be saved as a csv file.
 If you requested both the table and the QC info, the QC file will have "-
 QC" added to the end of the file name.}
+
+\item{sectionInfo}{information about the simulated and observed data. This is
+output from the function \code{\link{getSectionInfo}} and can be used
+instead of listing the Excel file and report template sheet name as input.}
 }
 \value{
 a data.frame of S/O values or a list of that data.frame (named
@@ -110,24 +110,25 @@ a data.frame of S/O values or a list of that data.frame (named
 \description{
 \code{so_table} creates simulated vs. observed tables for reports and
 presentations, including reporting means, CVs, confidence intervals or
-percentiles, and ratios of simulated vs. observed mean values. There are two
-main ways to approach using this function 1. Select which PK parameters you
-want to compare (\code{PKparameters} argument) and, later, manually fill out
-rows for observed data that you've calculated elsewhere, or 2. Fill out an
-Excel form with information about your observed data, in which case R will
-calculate the comparisons for you here. Setting up the input for this
-approach requires a few steps:\enumerate{\item{Use the function
+percentiles, and ratios of simulated vs. observed mean values. Because we
+need to have a standardized way to input observed data, setting up the input
+for this function requires filling out an Excel template form. In this Excel
+file, there will be one tab for entering your observed PK parameters and a
+second tab for entering information about your simulation file. Here are the
+steps to take: \enumerate{\item{Use the function
 \code{\link{generateReportInputForm}} to create an Excel file where you can
-enter information about your project.} \item{Go to the tab "observed data"
-and enter details about your observed data. It's ok if you don't have all the
-information; anything that's missing won't be included in the final S/O
-table. It's also ok to rename this tab and/or make copies of it within the
-same Excel file for making other S/O tables.} \item{Go to the tab "table and
-graph input" and fill out information here for the specific report section
-you're making this S/O table for. Make sure that whatever you list as the tab
-that contains information about the observed data is \emph{exactly} the same
-as the actual tab name that you filled out in step 2. Also make sure that the
-file names include the full file path.}\item{Save your Excel file.}
+enter information about your project. Example:
+\code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
+tab "observed data - DDI" or "observed data - no DDI", whichever is
+appropriate for your situation, and enter details about your observed data.
+It's ok if you don't have all the information; anything that's missing won't
+be included in the final S/O table. It's also ok to rename this tab and/or
+make copies of it within the same Excel file for making other S/O tables.}
+\item{Go to the tab "simulated data" and fill out information here for the
+specific simulation you want to compare. Make sure that whatever you list as
+the tab that contains information about the observed data is \emph{exactly}
+the same as the actual tab name that you filled out in step 2. Also make sure
+that the file names include the full file path.} \item{Save your Excel file.}
 \item{Here, within RStudio (or within the shiny app that we plan to make!),
 run this function using the name of that Excel file as input for
 \code{report_input_file} and the name of the "table and graph input" tab as

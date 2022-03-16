@@ -2,24 +2,25 @@
 #'
 #' \code{so_table} creates simulated vs. observed tables for reports and
 #' presentations, including reporting means, CVs, confidence intervals or
-#' percentiles, and ratios of simulated vs. observed mean values. There are two
-#' main ways to approach using this function 1. Select which PK parameters you
-#' want to compare (\code{PKparameters} argument) and, later, manually fill out
-#' rows for observed data that you've calculated elsewhere, or 2. Fill out an
-#' Excel form with information about your observed data, in which case R will
-#' calculate the comparisons for you here. Setting up the input for this
-#' approach requires a few steps:\enumerate{\item{Use the function
+#' percentiles, and ratios of simulated vs. observed mean values. Because we
+#' need to have a standardized way to input observed data, setting up the input
+#' for this function requires filling out an Excel template form. In this Excel
+#' file, there will be one tab for entering your observed PK parameters and a
+#' second tab for entering information about your simulation file. Here are the
+#' steps to take: \enumerate{\item{Use the function
 #' \code{\link{generateReportInputForm}} to create an Excel file where you can
-#' enter information about your project.} \item{Go to the tab "observed data"
-#' and enter details about your observed data. It's ok if you don't have all the
-#' information; anything that's missing won't be included in the final S/O
-#' table. It's also ok to rename this tab and/or make copies of it within the
-#' same Excel file for making other S/O tables.} \item{Go to the tab "table and
-#' graph input" and fill out information here for the specific report section
-#' you're making this S/O table for. Make sure that whatever you list as the tab
-#' that contains information about the observed data is \emph{exactly} the same
-#' as the actual tab name that you filled out in step 2. Also make sure that the
-#' file names include the full file path.}\item{Save your Excel file.}
+#' enter information about your project. Example:
+#' \code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
+#' tab "observed data - DDI" or "observed data - no DDI", whichever is
+#' appropriate for your situation, and enter details about your observed data.
+#' It's ok if you don't have all the information; anything that's missing won't
+#' be included in the final S/O table. It's also ok to rename this tab and/or
+#' make copies of it within the same Excel file for making other S/O tables.}
+#' \item{Go to the tab "simulated data" and fill out information here for the
+#' specific simulation you want to compare. Make sure that whatever you list as
+#' the tab that contains information about the observed data is \emph{exactly}
+#' the same as the actual tab name that you filled out in step 2. Also make sure
+#' that the file names include the full file path.} \item{Save your Excel file.}
 #' \item{Here, within RStudio (or within the shiny app that we plan to make!),
 #' run this function using the name of that Excel file as input for
 #' \code{report_input_file} and the name of the "table and graph input" tab as
@@ -104,7 +105,6 @@
 
 so_table <- function(report_input_file = NA,
                      sheet_report = NA,
-                     sectionInfo = NA,
                      PKparameters = NA,
                      sheet_PKparameters = NA,
                      mean_type = NA,
@@ -116,7 +116,8 @@ so_table <- function(report_input_file = NA,
                      prettify_columns = TRUE,
                      checkDataSource = TRUE, 
                      sim_data_file = NA, 
-                     save_table = NA){
+                     save_table = NA,
+                     sectionInfo = NA){
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -126,6 +127,8 @@ so_table <- function(report_input_file = NA,
     report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
                                 report_input_file, paste0(report_input_file, ".xlsx"))
     
+    sectionInfo_input <- sectionInfo
+    
     # Error catching
     if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
        is.na(report_input_file) & is.na(sim_data_file)){
@@ -134,7 +137,7 @@ so_table <- function(report_input_file = NA,
     
     if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
        complete.cases(report_input_file) & is.na(sheet_report)){
-        stop("If you specify an Excel file to get the section information from, you must also specify which sheet to read.")
+        stop("If you specify an Excel file to get the section information from (report_input_file), you must also specify which sheet to read (sheet_report). Note that you do NOT need to specify which sheet in a simulator output file to read.")
     }
     
     if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
@@ -149,11 +152,11 @@ so_table <- function(report_input_file = NA,
     }
     
     # Figuring out what kind of means user wants, experimental details, etc.
-    if(class(sectionInfo) != "logical" | 
-       (class(sectionInfo) == "logical" & complete.cases(report_input_file) &
+    if(class(sectionInfo_input) != "logical" | # sectionInfo_input will be "logical" class if left as default value of NA.
+       (class(sectionInfo_input) == "logical" & complete.cases(report_input_file) &
         complete.cases(sheet_report))){
         
-        if(class(sectionInfo) == "logical"){
+        if(class(sectionInfo) == "logical"){ # I think this should never happen... I think this bit of code is out of date and not necessary. -LS
             # User has supplied a report_input_file but hasn't run
             # getSectionInfo yet
             sectionInfo <- getSectionInfo(report_input_file = report_input_file,
@@ -166,6 +169,7 @@ so_table <- function(report_input_file = NA,
                            mean_type)
         MeanType <- ifelse(is.na(MeanType), "geometric", MeanType)
         GMR_mean_type <- sectionInfo$GMR_mean_type
+        if(is.null(GMR_mean_type)){GMR_mean_type <- MeanType}
         Deets <- sectionInfo
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
         DoseRegimen <- Deets$Regimen_sub
@@ -365,9 +369,8 @@ so_table <- function(report_input_file = NA,
             mutate(PKParam = row.names(.),
                    Obs = as.numeric(Obs), 
                    Stat = ifelse(str_detect(PKParam, "_CV"), 
-                                 ifelse(MeanType == "geometric", "GCV", "CV"), 
-                                 ifelse(sectionInfo$MeanType == "geometric", 
-                                        "geomean", "mean")), 
+                                 ifelse({{MeanType}} == "geometric", "GCV", "CV"), 
+                                 ifelse({{MeanType}} == "geometric", "geomean", "mean")), 
                    # Accounting for when the mean ratios for obs data are
                    # actually geometric even though the other obs data means are
                    # arithmetic. This will label observed data GMR values as
@@ -375,8 +378,8 @@ so_table <- function(report_input_file = NA,
                    # it will be easier to return only the correct mean types. I
                    # know that's confusing, but I couldn't come up with a better
                    # way to do that, so my apologies! -LS
-                   Stat = ifelse(sectionInfo$MeanType == "arithmetic" &
-                                     sectionInfo$GMR_mean_type == "geometric" &
+                   Stat = ifelse({{MeanType}} == "arithmetic" &
+                                     {{GMR_mean_type}} == "geometric" &
                                      str_detect(PKParam, "ratio") &
                                      str_detect(Stat, "mean"), # detecting mean or geomean but not CV 
                                  "mean", Stat), 

@@ -8,49 +8,46 @@ generateReportInputForm(filename)
 }
 \arguments{
 \item{filename}{the Excel file name that you'd like for the form you're
-creating, ending in ".xlsx". IMPORTANT: If you specify the full file path,
-this does not work, and we haven't figured out why. Instead, please
-navigate to where you want the file to be and only list the file name here
-rather than the full path.}
+creating, ending in ".xlsx". Only list the file name here rather than the
+full path.}
 }
 \value{
 This does not return an R object; it saves an Excel file that serves
   as a form for report information.
 }
 \description{
-Creates an Excel file with three forms to fill out. Those forms can be fed
-into \code{\link{getSectionInfo}} and \code{\link{so_table}} to automate some
-of the calculations and graph creation for writing a report. \strong{A note:}
-This generates a warning that we're just not able to get rid of that says
-"Workbook has no sheets!" Please disregard that. \strong{Important note:}
-This does not work on the SharePoint drive because it doesn't have permission
-to write there. Please set your working directory to a different location. It
-\emph{will} work on the Large File Store drive, but it will be quite slow to
-do so from your local machine. Really, everything runs markedly faster when
-you run it from your VM instead.
+
 }
 \details{
-The three tabs in the Excel file this function creates are: \describe{
+The tabs in the Excel file this function creates are: \describe{
 
-\item{Overall report form}{a form for entering overall data about the project
+\item{how to use this file}{Instructions for how to use the Excel template
+form.}
+
+\item{overall report info}{a form for entering overall data about the project
 -- information that will be consistent throughout the whole report such as
 the drug name and the complaint it is meant to treat. There should be only
-ONE copy of this tab when you're finished.}
+ONE copy of this tab when you're finished. You do \emph{not} need to fill
+this out for using the \code{\link{so_table}} function.}
 
-\item{Observed data form}{a form for entering data about a clinical study.
-Make as many copies of this tab as there are clinical studies you want to
-compare and name the tabs according to which study they describe.}
+\item{observed data - no DDI}{a form for entering observed PK data about a
+clinical study that was \emph{not} a drug-drug interaction study. Make as
+many copies of this tab as there are clinical studies you want to compare and
+name the tabs according to which study they describe.}
 
-\item{Section input form}{a form for entering information about a given
-section such as which simulation file you'd like to graph and compare to
-clinical data. As with the tab "Observed data form", make as many copies of
-this tab as you'd like -- one for each standard results subsection in the
-report.}}
+\item{observed data - DDI}{a form for entering observed PK data about a
+clinical study that \emph{was} a drug-drug interaction study. Make as many
+copies of this tab as there are clinical studies you want to compare and name
+the tabs according to which study they describe.}
+
+\item{simulated data}{a form for entering information which simulation file
+you'd like to use and which observed data you want to compare. As with the
+observed data tabs, make as many copies of this tab as you require.}}
 }
 \examples{
-generateReportInputForm("//certara.com/data/sites/SHF/Consult/abc-1a/Ultraconazole report input.xlsx")
-generateReportInputForm(paste0(SimcypDir$LgFileDir, "abc-1a/Ultraconazole report input.xlsx"))
-generateReportInputForm(paste0(SimcypDir$SharePtDir, "def-2b/Superstatin report input.xlsx"))
+setwd(paste0(SimcypDir$SharePtDir,
+             "Research/R working group/SimcypConsultancy function examples and instructions/so_table examples"))
+generateReportInputForm("Ultraconazole report input.xlsx")
 
 
 }
