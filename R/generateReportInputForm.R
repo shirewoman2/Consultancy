@@ -2,16 +2,14 @@
 #'
 #' Creates an Excel file with forms to fill out. Those forms can be fed into
 #' \code{\link{so_table}} to automate some of the calculations for writing a
-#' report. \strong{A few notes:} \enumerate{ \item{We have found it necessary to
-#' set the working directory first and then call on this function, using only
-#' the file name alone and not the file name with the path. We're not sure why
-#' this is the case.} \item{This generates a warning that we're just not able to
-#' get rid of that says "Workbook has no sheets!" Please disregard that.}
-#' \item{This does not work on the SharePoint drive because it doesn't have
-#' permission to write there. Please set your working directory to a different
-#' location. It \emph{will} work on the Large File Store drive. \item{This will
-#' be quite slow when running from your local machine. Really, everything runs
-#' noticeably faster when you run it from your VM instead.}
+#' report. \strong{A few notes:} \enumerate{ \item{This generates a
+#' warning that we're just not able to get rid of that says "Workbook has no
+#' sheets!" Please disregard that.} \item{This does not work on the SharePoint
+#' drive because R doesn't have permission to write there. Please set your
+#' working directory to a different location. It \emph{will} work on the Large
+#' File Store drive.} \item{This will be quite slow when running from your local
+#' machine. Really, everything runs noticeably faster when you run it from your
+#' VM instead.}}
 #'
 #' The tabs in the Excel file this function creates are: \describe{
 #'
@@ -24,23 +22,19 @@
 #' ONE copy of this tab when you're finished. You do \emph{not} need to fill
 #' this out for using the \code{\link{so_table}} function.}
 #'
-#' \item{observed data - no DDI}{a form for entering observed PK data about a
+#' \item{study info - no DDI}{a form for entering observed PK data about a
 #' clinical study that was \emph{not} a drug-drug interaction study. Make as
 #' many copies of this tab as there are clinical studies you want to compare and
 #' name the tabs according to which study they describe.}
 #'
-#' \item{observed data - DDI}{a form for entering observed PK data about a
+#' \item{study info - DDI}{a form for entering observed PK data about a
 #' clinical study that \emph{was} a drug-drug interaction study. Make as many
 #' copies of this tab as there are clinical studies you want to compare and name
 #' the tabs according to which study they describe.}
-#'
-#' \item{simulated data}{a form for entering information which simulation file
-#' you'd like to use and which observed data you want to compare. As with the
-#' observed data tabs, make as many copies of this tab as you require.}}
+#' }
 #'
 #' @param filename the Excel file name that you'd like for the form you're
-#'   creating, ending in ".xlsx". Only list the file name here rather than the
-#'   full path.
+#'   creating, ending in ".xlsx"
 #'
 #' @return This does not return an R object; it saves an Excel file that serves
 #'   as a form for report information.
@@ -48,9 +42,9 @@
 #' @export
 #'
 #' @examples
-#' setwd(paste0(SimcypDir$SharePtDir,
-#'              "Research/R working group/SimcypConsultancy function examples and instructions/so_table examples"))
-#' generateReportInputForm("Ultraconazole report input.xlsx")
+#' generateReportInputForm(paste0(SimcypDir$SharePtDir,
+#'              "Research/R working group/SimcypConsultancy function examples and instructions/so_table examples/",
+#'              "Ultraconazole report input.xlsx"))
 #'
 #' 
 
@@ -90,9 +84,8 @@ generateReportInputForm <- function(filename){
     # data(ReportInputForm)
     HowTo <- ReportInputForm[["how to use this file"]]
     Overall <- ReportInputForm[["overall report info"]]
-    ObsNoDDI <- ReportInputForm[["observed data - no DDI"]]
-    ObsDDI <- ReportInputForm[["observed data - DDI"]]
-    TabGraph <- ReportInputForm[["table and graph input"]]
+    StudyNoDDI <- ReportInputForm[["study info - no DDI"]]
+    StudyDDI <- ReportInputForm[["study info - DDI"]]
     
     HowTo <- HowTo[2:nrow(HowTo),]
     formatXL(as.data.frame(HowTo) %>% rename("How to use this Excel file" = HowTo),
@@ -103,7 +96,7 @@ generateReportInputForm <- function(filename){
              styles = list(
                  list(rows = 0, font = list(bold = TRUE, size = 16)),
                  list(rows = 18, font = list(bold = TRUE)),
-                 list(rows = 20, font = list(color = "red"))
+                 list(rows = 20, font = list(color = "red", bold = TRUE))
              ))
     
     Overall <- Overall[2:nrow(Overall),]
@@ -124,61 +117,45 @@ generateReportInputForm <- function(filename){
              ))
     
     
-    ObsNoDDI <- ObsNoDDI[2:nrow(ObsNoDDI), ]
-    formatXL(ObsNoDDI %>% rename("Observed data (no DDI involved)" = X1,
+    StudyNoDDI <- StudyNoDDI[2:nrow(StudyNoDDI), ]
+    formatXL(StudyNoDDI %>% rename("Observed data (no DDI)" = X1,
                                  "ignore" = X2, "_" = X3),
              file = filename,
-             sheet = "observed data - no DDI",
+             sheet = "study info - no DDI",
              colWidth = list(colNum = 1:3,
                              width = c(75, 0, 30)),
              styles = list(
                  list(columns = 1, textposition = list(wrapping = TRUE)),
-                 list(rows = 0, font = list(bold = TRUE, size = 16)),
+                 list(rows = 0, font = list(bold = TRUE, size = 16)), # observed data section
+                 list(rows = 36, font = list(bold = TRUE, size = 16)), # simulated data section
                  list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
-                 list(rows = 1, font = list(italics = TRUE),
+                 list(rows = c(1, 37), font = list(italics = TRUE),
                       textposition = list(wrapping = TRUE)),
                  list(rows = 3, font = list(bold = TRUE),
                       textposition = list(alignment = "middle")),
-                 list(rows = c(8, 21), font = list(bold = TRUE))
+                 list(rows = c(8, 21, 39), font = list(bold = TRUE))
              ))
     
-    ObsDDI <- ObsDDI[2:nrow(ObsDDI), ]
-    formatXL(ObsDDI %>% rename("Observed data with DDI" = X1,
+    StudyDDI <- StudyDDI[2:nrow(StudyDDI), ]
+    formatXL(StudyDDI %>% rename("Observed data (DDI)" = X1,
                                "ignore" = X2, "_" = X3, "__" = X4,
                                "ignore2" = X5, "___" = X6),
              file = filename,
-             sheet = "observed data - DDI",
+             sheet = "study info - DDI",
              colWidth = list(colNum = 1:6,
                              width = c(75, 0, 30,
                                        75, 0, 30)),
              styles = list(
                  list(columns = c(1, 4), textposition = list(wrapping = TRUE)),
-                 list(rows = 0, font = list(bold = TRUE, size = 16)),
+                 list(rows = 0, font = list(bold = TRUE, size = 16)), # observed data section
+                 list(rows = 32, font = list(bold = TRUE, size = 16)), # simulated data section
                  list(rows = 0, columns = 3:6, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
-                 list(rows = 1, font = list(italics = TRUE),
+                 list(rows = c(1,33), font = list(italics = TRUE),
                       textposition = list(wrapping = TRUE)),
                  list(rows = 3, font = list(bold = TRUE),
                       textposition = list(alignment = "middle")),
-                 list(rows = c(15, 28), font = list(bold = TRUE))
+                 list(rows = c(9, 22, 35), font = list(bold = TRUE))
              ))
-    
-    TabGraph <- TabGraph[2:nrow(TabGraph), ]
-    formatXL(TabGraph %>% rename("Table and graph input" = X1,
-                                 "ignore" = X2, "_" = X3),
-             file = filename,
-             sheet = "table and graph input",
-             colWidth = list(colNum = 1:3,
-                             width = c(75, 0, 30)),
-             styles = list(
-                 list(columns = 1, textposition = list(wrapping = TRUE)),
-                 list(rows = 0, font = list(bold = TRUE, size = 16)),
-                 list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
-                 list(rows = 1, font = list(italics = TRUE),
-                      textposition = list(wrapping = TRUE)),
-                 list(rows = 3, font = list(bold = TRUE),
-                      textposition = list(alignment = "middle"))
-             ))
-    
     
     setwd(CurDir)
 }

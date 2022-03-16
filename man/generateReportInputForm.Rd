@@ -8,15 +8,23 @@ generateReportInputForm(filename)
 }
 \arguments{
 \item{filename}{the Excel file name that you'd like for the form you're
-creating, ending in ".xlsx". Only list the file name here rather than the
-full path.}
+creating, ending in ".xlsx"}
 }
 \value{
 This does not return an R object; it saves an Excel file that serves
   as a form for report information.
 }
 \description{
-
+Creates an Excel file with forms to fill out. Those forms can be fed into
+\code{\link{so_table}} to automate some of the calculations for writing a
+report. \strong{A few notes:} \enumerate{ \item{This generates a
+warning that we're just not able to get rid of that says "Workbook has no
+sheets!" Please disregard that.} \item{This does not work on the SharePoint
+drive because R doesn't have permission to write there. Please set your
+working directory to a different location. It \emph{will} work on the Large
+File Store drive.} \item{This will be quite slow when running from your local
+machine. Really, everything runs noticeably faster when you run it from your
+VM instead.}}
 }
 \details{
 The tabs in the Excel file this function creates are: \describe{
@@ -30,24 +38,21 @@ the drug name and the complaint it is meant to treat. There should be only
 ONE copy of this tab when you're finished. You do \emph{not} need to fill
 this out for using the \code{\link{so_table}} function.}
 
-\item{observed data - no DDI}{a form for entering observed PK data about a
+\item{study info - no DDI}{a form for entering observed PK data about a
 clinical study that was \emph{not} a drug-drug interaction study. Make as
 many copies of this tab as there are clinical studies you want to compare and
 name the tabs according to which study they describe.}
 
-\item{observed data - DDI}{a form for entering observed PK data about a
+\item{study info - DDI}{a form for entering observed PK data about a
 clinical study that \emph{was} a drug-drug interaction study. Make as many
 copies of this tab as there are clinical studies you want to compare and name
 the tabs according to which study they describe.}
-
-\item{simulated data}{a form for entering information which simulation file
-you'd like to use and which observed data you want to compare. As with the
-observed data tabs, make as many copies of this tab as you require.}}
+}
 }
 \examples{
-setwd(paste0(SimcypDir$SharePtDir,
-             "Research/R working group/SimcypConsultancy function examples and instructions/so_table examples"))
-generateReportInputForm("Ultraconazole report input.xlsx")
+generateReportInputForm(paste0(SimcypDir$SharePtDir,
+             "Research/R working group/SimcypConsultancy function examples and instructions/so_table examples/",
+             "Ultraconazole report input.xlsx"))
 
 
 }
