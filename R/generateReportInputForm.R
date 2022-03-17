@@ -153,7 +153,8 @@ generateReportInputForm <- function(filename){
                       textposition = list(wrapping = TRUE)),
                  list(rows = 3, font = list(bold = TRUE),
                       textposition = list(alignment = "middle")),
-                 list(rows = c(9, 22, 32, 45, 58), font = list(bold = TRUE))
+                 list(rows = c(9, 22, 32, 45, 58), font = list(bold = TRUE)),
+                 list(rows = 59, textposition = list(wrapping = TRUE))
              ))
     
     setwd(CurDir)
