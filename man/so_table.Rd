@@ -28,8 +28,8 @@ so_table(
 including the path if it's in any other directory than the current one}
 
 \item{sheet_report}{the sheet in the Excel report template file that contains
-information about this section of the report. In the original template,
-this was the tab titled "table and graph input".}
+information about the study, e.g., "study info - DDI" or "study info - no
+DDI" if you haven't renamed the tab.}
 
 \item{PKparameters}{the PK parameters to include as a character vector. To
 see the full set of possible parameters to extract, enter
@@ -58,10 +58,10 @@ combination of those, e.g. \code{variability_option = c("90\% CI", "95th
 percentiles")} as long as they were included in your simulator output. Note
 that the confidence intervals are geometric since that's what the simulator
 outputs (see an AUC tab and the summary statistics; these values are the
-ones for, e.g., "90% confidence interval around the geometric mean(lower
-limit)"). Setting \code{variability_option = NA} will omit any of the
-variability other than the CV. The CV will automatically be included unless
-you omit it with \code{includeCV = FALSE}.}
+ones for, e.g., "90\% confidence interval around the geometric mean(lower
+limit)"). Setting \code{variability_option = NA} will omit reporting any of
+the variability statistics other than the CV. The CV will automatically be
+included unless you omit it with \code{includeCV = FALSE}.}
 
 \item{concatVariability}{Would you like to have the variability concatenated?
 TRUE or FALSE. If "TRUE", the output will be formatted into a single row
@@ -87,10 +87,9 @@ from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 lists exactly where the data were pulled from the simulator output file.
 Useful for QCing.}
 
-\item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the
-simulator output file. This is for when you DON'T fill out a report input
-form and instead plan to add information about the observed data later
-manually.}
+\item{sim_data_file}{the simulator output file. This is only for when you
+don't fill out a report input form because you either have no observed data
+or you want to compare those data later manually.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
@@ -98,9 +97,10 @@ table.csv". If you leave off ".csv", it will still be saved as a csv file.
 If you requested both the table and the QC info, the QC file will have "-
 QC" added to the end of the file name.}
 
-\item{sectionInfo}{information about the simulated and observed data. This is
-output from the function \code{\link{getSectionInfo}} and can be used
-instead of listing the Excel file and report template sheet name as input.}
+\item{sectionInfo}{SOON TO BE DEPRECATED. information about the simulated and
+observed data. This is output from the function
+\code{\link{getSectionInfo}} and can be used instead of listing the Excel
+file and report template sheet name as input.}
 }
 \value{
 a data.frame of S/O values or a list of that data.frame (named
@@ -112,29 +112,25 @@ a data.frame of S/O values or a list of that data.frame (named
 presentations, including reporting means, CVs, confidence intervals or
 percentiles, and ratios of simulated vs. observed mean values. Because we
 need to have a standardized way to input observed data, setting up the input
-for this function requires filling out an Excel template form. In this Excel
-file, there will be one tab for entering your observed PK parameters and a
-second tab for entering information about your simulation file. Here are the
+for this function requires filling out an Excel template form. Here are the
 steps to take: \enumerate{\item{Use the function
 \code{\link{generateReportInputForm}} to create an Excel file where you can
 enter information about your project. Example:
 \code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
-tab "observed data - DDI" or "observed data - no DDI", whichever is
-appropriate for your situation, and enter details about your observed data.
-It's ok if you don't have all the information; anything that's missing won't
-be included in the final S/O table. It's also ok to rename this tab and/or
-make copies of it within the same Excel file for making other S/O tables.}
-\item{Go to the tab "simulated data" and fill out information here for the
-specific simulation you want to compare. Make sure that whatever you list as
-the tab that contains information about the observed data is \emph{exactly}
-the same as the actual tab name that you filled out in step 2. Also make sure
-that the file names include the full file path.} \item{Save your Excel file.}
-\item{Here, within RStudio (or within the shiny app that we plan to make!),
-run this function using the name of that Excel file as input for
-\code{report_input_file} and the name of the "table and graph input" tab as
-the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
-you'll need to close it or this function will just keep running and not
-generate any output while it waits for access to the file.} }
+tab "study info - DDI" or "study info - no DDI", whichever is appropriate for
+your situation. Under the heading "Observed data", enter details about your
+observed data. It's ok if you don't have all the information; anything that's
+missing won't be included in the final S/O table. It's also ok to rename this
+tab and/or make copies of it within the same Excel file for making other S/O
+tables.} \item{Under the heading "Simulated data" on that same tab, fill out
+the name of the specific simulator output Excel file you want to compare.}
+\item{Save the report form.} \item{Back in RStudio (or within the shiny app
+that we plan to make!), run this function using the file name of that Excel
+report form as input for \code{report_input_file} and the name of the "study
+info - DDI/no DDI" tab as the input for \code{sheet_report}. Note: If the
+Excel file lives on SharePoint, you'll need to close it or this function will
+just keep running and not generate any output while it waits for access to
+the file.} }
 }
 \examples{
 # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",

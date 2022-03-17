@@ -94,9 +94,8 @@ generateReportInputForm <- function(filename){
              colWidth = list(colNum = 1,
                              width = 250),
              styles = list(
-                 list(rows = 0, font = list(bold = TRUE, size = 16)),
-                 list(rows = 18, font = list(bold = TRUE)),
-                 list(rows = 20, font = list(color = "red", bold = TRUE))
+                 list(rows = c(0, 5, 17), font = list(bold = TRUE, size = 16)),
+                 list(rows = 19, font = list(color = "red", bold = TRUE))
              ))
     
     Overall <- Overall[2:nrow(Overall),]
@@ -143,18 +142,18 @@ generateReportInputForm <- function(filename){
              file = filename,
              sheet = "study info - DDI",
              colWidth = list(colNum = 1:6,
-                             width = c(75, 0, 30,
+                             width = c(80, 0, 30,
                                        75, 0, 30)),
              styles = list(
                  list(columns = c(1, 4), textposition = list(wrapping = TRUE)),
                  list(rows = 0, font = list(bold = TRUE, size = 16)), # observed data section
-                 list(rows = 32, font = list(bold = TRUE, size = 16)), # simulated data section
+                 list(rows = 55, font = list(bold = TRUE, size = 16)), # simulated data section
                  list(rows = 0, columns = 3:6, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
-                 list(rows = c(1,33), font = list(italics = TRUE),
+                 list(rows = c(1,56), font = list(italics = TRUE),
                       textposition = list(wrapping = TRUE)),
                  list(rows = 3, font = list(bold = TRUE),
                       textposition = list(alignment = "middle")),
-                 list(rows = c(9, 22, 35), font = list(bold = TRUE))
+                 list(rows = c(9, 22, 32, 45, 58), font = list(bold = TRUE))
              ))
     
     setwd(CurDir)
