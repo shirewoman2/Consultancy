@@ -9,9 +9,9 @@
 #' get rid of that says "Workbook has no sheets!" Please disregard that.}
 #' \item{This does not work on the SharePoint drive because it doesn't have
 #' permission to write there. Please set your working directory to a different
-#' location. It \emph{will} work on the Large File Store drive. \item{This will
+#' location. It \emph{will} work on the Large File Store drive.} \item{This will
 #' be quite slow when running from your local machine. Really, everything runs
-#' noticeably faster when you run it from your VM instead.}
+#' noticeably faster when you run it from your VM instead.}}
 #'
 #' The tabs in the Excel file this function creates are: \describe{
 #'

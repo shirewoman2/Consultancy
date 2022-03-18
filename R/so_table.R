@@ -222,13 +222,15 @@ so_table <- function(report_input_file = NA,
     }
     
     # Getting PK parameters from the AUC tab
-    MyPKResults_all <- extractPK(sim_data_file = SimFile,
-                                 PKparameters = PKToPull,
-                                 sheet = sheet_PKparameters, 
-                                 returnAggregateOrIndiv =
-                                     switch(as.character(includeTrialMeans),
-                                            "TRUE" = c("aggregate", "individual"),
-                                            "FALSE" = "aggregate"))
+    suppressWarnings(
+        MyPKResults_all <- extractPK(sim_data_file = SimFile,
+                                     PKparameters = PKToPull,
+                                     sheet = sheet_PKparameters, 
+                                     returnAggregateOrIndiv =
+                                         switch(as.character(includeTrialMeans),
+                                                "TRUE" = c("aggregate", "individual"),
+                                                "FALSE" = "aggregate"))
+    )
     
     # If they only wanted one parameter, then extractPK returns only the
     # aggregate data for that one parameter. In that situation, the names of the
@@ -588,7 +590,7 @@ so_table <- function(report_input_file = NA,
     if(prettify_columns){
         
         PKToPull_pretty <-
-            sapply(PKToPull,
+            sapply(as.character(PKToPull),
                    FUN = function(x) ifelse(str_detect(x, "_dose1"),
                                             paste("Dose 1", sub("_dose1", "", x)),
                                             paste("Steady-state", sub("_ss", "", x))))
