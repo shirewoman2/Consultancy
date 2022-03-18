@@ -130,17 +130,17 @@ so_table <- function(report_input_file = NA,
     sectionInfo_input <- sectionInfo
     
     # Error catching
-    if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
+    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
        is.na(report_input_file) & is.na(sim_data_file)){
         stop("You must enter a value for either 'sectionInfo' or 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
     }
     
-    if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
+    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
        complete.cases(report_input_file) & is.na(sheet_report)){
         stop("If you specify an Excel file to get the section information from (report_input_file), you must also specify which sheet to read (sheet_report). Note that you do NOT need to specify which sheet in a simulator output file to read.")
     }
     
-    if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
+    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
        complete.cases(report_input_file) & is.na(sim_data_file)){
         sectionInfo <- getSectionInfo(report_input_file = report_input_file,
                                       sheet_report = sheet_report)
@@ -560,17 +560,24 @@ so_table <- function(report_input_file = NA,
         select(-Stat) %>%
         select(Statistic, everything())
     
+    # setting levels for PK parameters so that they're in a nice order
+    PKToPull <- factor(PKToPull, 
+                       levels = AllPKParameters %>% select(PKparameter, SortOrder) %>% 
+                           unique() %>% arrange(SortOrder) %>% pull(PKparameter)) 
+    PKToPull <- sort(PKToPull)
+    
     # If the user specified the sheet to use, we don't actually know whether
     # those were dose 1 or ss values, so extractPK removes the suffix from the
     # parameter. PKToPull still has the suffix, though, so removing it here or
     # else there will be 0 columns that match.
     if(complete.cases(sheet_PKparameters)){
-        PKToPull <- sub("_ss|_dose1", "", PKToPull)
+        PKToPull <- as.character(sub("_ss|_dose1", "", as.character(PKToPull)))
+        PKToPull <- factor(PKToPull, levels = PKToPull)
     }
     
     # Getting columns in a good order
     MyPKResults <- MyPKResults %>%
-        select(any_of(c("Statistic", PKToPull)))
+        select(any_of(c("Statistic", as.character(PKToPull))))
     
     if(includeCV == FALSE){
         MyPKResults <- MyPKResults %>%
