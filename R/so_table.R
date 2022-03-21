@@ -448,12 +448,14 @@ so_table <- function(report_input_file = NA,
                                               "MinMean", "MaxMean", "S_O"))) %>% 
         arrange(SorO, Stat) %>% 
         filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
-        mutate(across(.cols = everything(), .fns = as.character),
-               across(.cols = -c(Stat, SorO),
-                      .fns = function(x) ifelse(str_detect(Stat, "CV"),
-                                                paste0(x, "%"), x)),
-               across(.cols = everything(),
-                      .fns = function(x) ifelse(x == "NA%", NA, x))) 
+        mutate(across(.cols = everything(), .fns = as.character)
+               # ,
+               # across(.cols = -c(Stat, SorO),
+               #        .fns = function(x) ifelse(str_detect(Stat, "CV"),
+               #                                  paste0(x, "%"), x)),
+               # across(.cols = everything(),
+               #        .fns = function(x) ifelse(x == "NA%", NA, x))
+               ) 
     # If this throws an error for you, try running "tidyverse_update()", copy
     # whatever it says is out of date, restart your R session (Ctrl Shift
     # F10), and then paste the output (something like
