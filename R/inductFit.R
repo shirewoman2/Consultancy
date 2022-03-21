@@ -21,8 +21,7 @@
 #'   fold-change data, e.g., mRNA measurements or activity.
 #' @param donor_column the name of the column within DF that contains the donor
 #'   IDs
-#' @param model which model(s) you would like to use. (Pay attention to
-#'   capitalization when specifying the one you want.) The four model options
+#' @param model which model(s) you would like to use. The four model options
 #'   are: \describe{
 #'
 #'   \item{Indmax}{the Indmax model. This assumes a hyperbolic shape to the
@@ -132,7 +131,7 @@ inductFit <- function(DF,
                       y_axis_limits = NA,
                       hline_foldinduct1 = FALSE,
                       save_graph = NA,
-                      fig_height = 6,
+                      fig_height = 5,
                       fig_width = 6, 
                       save_output = NA){
     
@@ -167,9 +166,16 @@ inductFit <- function(DF,
     
     # initial error catching ------------------------------------------------
     # Options for model: IndmaxSlope, Indmax, Slope, Sig3Param, all
-    if(model[1] %in% c("Indmax", "IndmaxSlope", "Slope", "Sig3Param", "all") == FALSE){
+    if(tolower(model[1]) %in% tolower(c("Indmax", "IndmaxSlope", "Slope", "Sig3Param", "all")) == FALSE){
         stop("Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'. Please enter a valid model.")
     }
+    
+    model <- switch(tolower(model), 
+                    "indmax" = "Indmax",
+                    "indmaxslope" = "IndmaxSlope", 
+                    "slope" = "Slope", 
+                    "sig3param" = "Sig3Param", 
+                    "all" = "all")
     
     if(length(model) > 1){
         stop("Please select only one option for the model. Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'.")

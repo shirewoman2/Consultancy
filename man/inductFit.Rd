@@ -17,7 +17,7 @@ inductFit(
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
   save_graph = NA,
-  fig_height = 6,
+  fig_height = 5,
   fig_width = 6,
   save_output = NA
 )
@@ -34,8 +34,7 @@ concentration data. This should be unquoted.}
 \item{fold_change_column}{the name of the column within DF that contains
 fold-change data, e.g., mRNA measurements or activity.}
 
-\item{model}{which model(s) you would like to use. (Pay attention to
-  capitalization when specifying the one you want.) The four model options
+\item{model}{which model(s) you would like to use. The four model options
   are: \describe{
 
   \item{Indmax}{the Indmax model. This assumes a hyperbolic shape to the
