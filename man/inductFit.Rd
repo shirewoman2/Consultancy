@@ -10,8 +10,16 @@ inductFit(
   fold_change_column = FoldInduction,
   model = "IndmaxSlope",
   measurement = "mRNA",
-  donor = DONOR,
-  fitByDonor = FALSE
+  donor_column = DonorID,
+  fitByDonor = TRUE,
+  weights = "1/y^2",
+  color_set = "default",
+  y_axis_limits = NA,
+  hline_foldinduct1 = FALSE,
+  save_graph = NA,
+  fig_height = 6,
+  fig_width = 6,
+  save_output = NA
 )
 }
 \arguments{
@@ -50,10 +58,56 @@ fold-change data, e.g., mRNA measurements or activity.}
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}
 
-\item{donor}{the name of the column within DF that contains the donor IDs}
+\item{donor_column}{}
 
 \item{fitByDonor}{TRUE or FALSE: Do you want to fit the data by individual
 donor (TRUE) or in aggregate (FALSE)?}
+
+\item{weights}{Weighting scheme to use for the regression. User may supply a
+numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
+"1/y" or "1/y^2" (default). Be careful that you don't have any infinite
+values or this will fail!}
+
+\item{color_set}{the set of colors to use. Options: \describe{
+
+  \item{"default"}{colors selected from the color brewer palette "set 1"}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 colors, so if you have more than
+  that, that's when this palette is most useful. It's \emph{not} very useful
+  when you only need a couple of colors.}
+
+  \item{"blue-green"}{a set of blues and greens}
+
+  \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
+  State that are friendly to those with red-green colorblindness}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}}}
+
+\item{y_axis_limits}{Optionally set the Y axis limits, e.g., \code{c(1, 5)}.
+If left as NA, the Y axis limits will be automatically selected.}
+
+\item{hline_foldinduct1}{TRUE or FALSE on whether to include a dotted red line where
+the fold induction = 1.}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
+will be saved as a png file, but if you specify a different file extension,
+it will be saved as that file format. Acceptable extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be automatically saved to disk.}
+
+\item{fig_height}{figure height in inches; default is 6}
+
+\item{fig_width}{figure width in inches; default is 6}
+
+\item{save_output}{optionally save the output by supplying a file name in
+quotes here, e.g., "My fitted induction parameters.csv". If you leave off
+".csv", it will still be saved as a csv file.}
 }
 \value{
 Returns a list of \describe{ \item{Fit}{the fitted parameters}
@@ -88,10 +142,10 @@ inductFit(IndData, model = "IndmaxSlope", measurement = "activity")
 MyFit <- inductFit(IndData, model = "all")
 MyFit$Graph; MyFit$Fit
 
-MyFit <- inductFit(IndData, model = "Sig3Param", fitByDonor = TRUE, donor = DonorID)
+MyFit <- inductFit(IndData, model = "Sig3Param", fitByDonor = TRUE, donor_column = DonorID)
 MyFit$Fit; MyFit$Fit_means; MyFit$Graph
 
-MyFit <- inductFit(IndData, model = "all", fitByDonor = TRUE, donor = DonorID)
+MyFit <- inductFit(IndData, model = "all", fitByDonor = TRUE, donor_column = DonorID)
 MyFit$Fit; MyFit$Fit_means; MyFit$Graph
 
 
