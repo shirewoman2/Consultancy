@@ -62,35 +62,35 @@
 #' AUCs <- data.frame(AgeGroup = LETTERS[1:5],
 #'                    AUC = rnorm(n = 500, mean = 20000, sd = 2000))
 #'
-#' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC)
+#' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC")
 #'
-#' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
+#' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'                color_set = "rainbow")
 #'
-#' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
+#' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'                color_set = "blue-green", graph_type =  "jittered points")
 #'
-#' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
+#' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'               color_set = "Tableau", graph_type =  "jittered points, filled boxes")
 #'
 #' # Adding a couple of example columns to use the "facet" options.
 #' AUCs$Sex <- c("M", "F")
 #' AUCs$Metabolizer <- sample(c("poor", "extensive"), 100, replace = TRUE)
 #'
-#' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-#'                facet_column1 = Sex,
+#' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
+#'                facet_column1 = "Sex",
 #'                color_set = "blue-green", graph_type =  "jittered points")
 #'
-#' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-#'                facet_column1 = Sex, facet_column2 = Metabolizer,
+#' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
+#'                facet_column1 = "Sex", facet_column2 = "Metabolizer",
 #'                color_set = "blue-green", graph_type =  "jittered points")
 #'
-#' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
+#' graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
 #'               graph_type = "jittered points, filled boxes")
 #'
 #' # Saving the output
 #' graph_boxplot(AUCs %>% filter(AgeGroup %in% c("A", "B")),
-#'               category_column = AgeGroup, value_column = AUC,
+#'               category_column = "AgeGroup", value_column = "AUC",
 #'               graph_type = "jittered points, filled boxes",
 #'               color_set = "Brewer set 2", include_errorbars = TRUE,
 #'               save_graph = "test boxplot.png")
@@ -99,8 +99,8 @@
 graph_boxplot <- function(DF,
                           category_column,
                           value_column,
-                          facet_column1,
-                          facet_column2,
+                          facet_column1 = NA,
+                          facet_column2 = NA,
                           graph_type = "boxplot",
                           include_errorbars = FALSE,
                           xlabel = NA,
@@ -109,24 +109,36 @@ graph_boxplot <- function(DF,
                           save_graph = NA,
                           fig_width = 6, fig_height = 4){
     
+    # Adding options for colors
+    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
+                                     "darkorange", "green3", "seagreen3",
+                                     "cadetblue", "dodgerblue3", "royalblue4",
+                                     "darkorchid4"))
     
-    # Setting things up for nonstandard evaluation -------------------------
+    blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", "dodgerblue3",
+                                    "royalblue4"))
     
-    # Defining pipe operator and bang bang
-    `%>%` <- magrittr::`%>%`
-    `!!` <- rlang::`!!`
+    # Maybe change this to tidyverse column name selection with "!!"?
+    names(DF)[names(DF) == category_column] <- "CATCOL"
+    names(DF)[names(DF) == value_column] <- "VALCOL"
     
-    category_column <- rlang::enquo(category_column)
-    value_column <- rlang::enquo(value_column)
-    facet_column1 <- rlang::enquo(facet_column1)
-    facet_column2 <- rlang::enquo(facet_column2)
+    if(complete.cases(facet_column1)){
+        names(DF)[names(DF) == facet_column1] <- "FACETCOL1"
+    }
     
-    # Building graph layers -------------------------------------
+    if(complete.cases(facet_column2)){
+        names(DF)[names(DF) == facet_column2] <- "FACETCOL2"
+    }
+    
+    DF <- DF %>%
+        select(any_of(c("CATCOL", "VALCOL", "FACETCOL1", "FACETCOL2")))
+    
+    # Building graph layers
     if(color_set == "black"){
-        G <- ggplot(DF, aes(x = !!category_column, y = !!value_column))
+        G <- ggplot(DF, aes(x = CATCOL, y = VALCOL))
     } else {
-        G <- ggplot(DF, aes(x = !!category_column, y = !!value_column,
-                            fill = !!category_column, color = !!category_column))
+        G <- ggplot(DF, aes(x = CATCOL, y = VALCOL,
+                            fill = CATCOL, color = CATCOL))
     }
     
     G <- G + theme(legend.position = "none")
@@ -141,7 +153,7 @@ graph_boxplot <- function(DF,
     
     if(graph_type == "jittered points"){
         
-        JitterWidth = 0.5/length(unique(DF %>% pull(!!category_column)))
+        JitterWidth = 0.5/length(unique(DF$CATCOL))
         
         G <- G + geom_boxplot(color = "black", fill = NA,
                               outlier.shape = NA) +
@@ -150,7 +162,7 @@ graph_boxplot <- function(DF,
     }
     
     if(graph_type == "jittered points, filled boxes"){
-        JitterWidth = 0.5/length(unique(DF %>% pull(!!category_column)))
+        JitterWidth = 0.5/length(unique(DF$CATCOL))
         
         G <- G + geom_boxplot(color = "black", outlier.shape = NA) +
             geom_point(position = position_jitter(width = JitterWidth,
@@ -158,25 +170,27 @@ graph_boxplot <- function(DF,
                        shape = 1, color = "black")
     }
     
-    # Facets 
-    G <- G +
-        facet_grid(rows = vars(!!facet_column1),
-                   cols = vars(!!facet_column2), 
-                   scales = "free")
+    if(complete.cases(facet_column1)){
+        if(is.na(facet_column2)){
+            G <- G + facet_wrap(~ FACETCOL1)
+        } else {
+            G <- G + facet_grid(FACETCOL1 ~ FACETCOL2)
+        }
+    }
     
     if(complete.cases(xlabel)){
         G <- G + xlab(xlabel)
     } else {
-        G <- G + xlab(rlang::as_label(category_column))
+        G <- G + xlab(category_column)
     }
     
     if(complete.cases(ylabel)){
         G <- G + ylab(ylabel)
     } else {
-        G <- G + ylab(rlang::as_label(value_column))
+        G <- G + ylab(value_column)
     }
     
-    # Adding some aesthetic preferences ------------------------------------
+    # Adding some aesthetic preferences
     G <- G + theme(
         panel.background = element_rect(fill="white", color=NA),
         panel.grid.minor.y = element_line(color = NA),
@@ -192,34 +206,23 @@ graph_boxplot <- function(DF,
         legend.background = element_rect(color=NA, fill=NA),
         legend.key = element_rect(color=NA, fill=NA))
     
-    # Adding options for colors
-    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                     "darkorange", "green3", "seagreen3",
-                                     "cadetblue", "dodgerblue3", "royalblue4",
-                                     "darkorchid4"))
-    
-    blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
-                                    "dodgerblue3", "royalblue4"))
-    
-    
     if(color_set == "default"){
         G <- G + scale_color_brewer(palette = "Set1") +
             scale_fill_brewer(palette="Set1")
     }
     
     if(color_set == "blue-green"){
-        G <- G + 
-            scale_color_manual(
-                values = blueGreen(length(unique(DF %>% pull(!!category_column))))) +
+        G <- G + scale_color_manual(
+            values = blueGreen(length(unique(DF$CATCOL)))) +
             scale_fill_manual(
-                values = blueGreen(length(unique(DF %>% pull(!!category_column)))))
+                values = blueGreen(length(unique(DF$CATCOL))))
     }
     
     if(color_set == "rainbow"){
         G <- G + scale_color_manual(
-            values = colRainbow(length(unique(DF %>% pull(!!category_column))))) +
+            values = colRainbow(length(unique(DF$CATCOL)))) +
             scale_fill_manual(
-                values = colRainbow(length(unique(DF %>% pull(!!category_column)))))
+                values = colRainbow(length(unique(DF$CATCOL))))
     }
     
     if(color_set == "Brewer set 2"){

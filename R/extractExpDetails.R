@@ -37,9 +37,6 @@
 #'   extracting these data when a custom dosing regimen was used, so it would be
 #'   a good idea to carefully check that the data are being pulled correctly in
 #'   that scenario.}}
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
 #'
 #' @return Returns a named list of the experimental details
 #' @import tidyverse
@@ -56,8 +53,7 @@
 #'
 #' 
 extractExpDetails <- function(sim_data_file,
-                              exp_details = "Summary tab", 
-                              save_output = NA){
+                              exp_details = "Summary tab"){
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -1006,15 +1002,6 @@ extractExpDetails <- function(sim_data_file,
     }
     
     Out <- Out[sort(names(Out))]
-    
-    if(complete.cases(save_output)){
-        if(str_detect(save_output, "\\.")){
-            FileName <- sub("\\..*", ".csv", save_output)
-        } else {
-            FileName <- paste0(save_output, ".csv")
-        }
-        write.csv(as.data.frame(Out), FileName, row.names = F)
-    }
     
     return(Out)
 }

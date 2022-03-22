@@ -2,7 +2,6 @@
 #'
 #' Creates an Excel file with forms to fill out. Those forms can be fed into
 #' \code{\link{so_table}} to automate some of the calculations for writing a
-<<<<<<< HEAD
 #' report. \strong{A few notes:} \enumerate{ \item{This generates a
 #' warning that we're just not able to get rid of that says "Workbook has no
 #' sheets!" Please disregard that.} \item{This does not work on the SharePoint
@@ -11,18 +10,6 @@
 #' File Store drive.} \item{This will be quite slow when running from your local
 #' machine. Really, everything runs noticeably faster when you run it from your
 #' VM instead.}}
-=======
-#' report. \strong{A few notes:} \enumerate{ \item{We have found it necessary to
-#' set the working directory first and then call on this function, using only
-#' the file name alone and not the file name with the path. We're not sure why
-#' this is the case.} \item{This generates a warning that we're just not able to
-#' get rid of that says "Workbook has no sheets!" Please disregard that.}
-#' \item{This does not work on the SharePoint drive because it doesn't have
-#' permission to write there. Please set your working directory to a different
-#' location. It \emph{will} work on the Large File Store drive.} \item{This will
-#' be quite slow when running from your local machine. Really, everything runs
-#' noticeably faster when you run it from your VM instead.}}
->>>>>>> master
 #'
 #' The tabs in the Excel file this function creates are: \describe{
 #'

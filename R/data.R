@@ -31,22 +31,23 @@
 #' Report input forms to be used in conjunction with
 #' \code{\link{getSectionInfo}} and \code{\link{so_table}}
 #'
-#' @format A named list of the data that fill the tabs for
-#'   "generateReportInputForm"
+#' @format A named list of two forms: "Observed data form" for entering
+#'   information about a clinical study and "Section input form" for entering
+#'   data about a specific simulation file to be described in this section of a
+#'   report
 "ReportInputForm"
 
 #' All possible PK parameters that can be extracted from a simulator output file
 #' using \code{\link{extractPK}}.
 #'
-#' @format A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
+#' @format A data.frame with 3 columns: \describe{ \item{PKparameter}{the PK
 #'   parameter name to use with \code{\link{extractPK}} for the argument
 #'   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
 #'   where the PK parameter will be extracted, if possible}
 #'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
 #'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
 #'   for whether this item only applies when an effector is present in the
-#'   simulation} \item{SortOrder}{the order to arrange columns for so_table and
-#'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
+#'   simulation} \item{Notes}{an explanation of what the parameter is}}
 "AllPKParameters"
 
 #' All possible experimental details that can be extracted from a simulator
