@@ -48,6 +48,26 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         
     }
     
+    # Per Hannah: If there are observed data included in the simulation, set the
+    # y axis limits to show those data well. 
+    
+    # To do this, when observed data are present, filtering Ylim_data to only
+    # include concentrations >= 0.8*min(observed conc). t0 point isn't included
+    # in this calculation. 
+    if(nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
+        ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
+            pull(Conc) %>% min(na.rm = TRUE) 
+        
+        Ylim_data <- Ylim_data %>% filter(Conc >= ObsMin)
+    }
+    
+    # One option LS discussed w/MBK and FC: We could also limit the semi-log y
+    # axis when there are no observed data to show Cmax * 1.25 then round up to
+    # nearest factor of 10 and then give 4 orders of magnitude below that.
+    # Problem is that often people will want to see full simulation, and that
+    # would not provide that. We're holding off on implementing that until we
+    # hear from users that they want that.
+    
     Ylim <- Ylim_data %>% filter(Time_orig >= time_range[1] &
                                      Time_orig <= time_range[2] &
                                      complete.cases(Conc)) %>% pull(Conc) %>%

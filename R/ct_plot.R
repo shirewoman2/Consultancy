@@ -154,9 +154,9 @@
 #'   circle and substrate + inhibitor 1 will be an open triangle.
 #' @param showBLQ TRUE or FALSE to display observed concentrations that were
 #'   clearly below the lower limit of quantitation, that is, concentrations
-#'   equal to 0 after time 0. The default (FALSE) converts these values to NA so
-#'   that they will not show up on graphs and also so that they will not be
-#'   included in any calculations of means.
+#'   equal to 0 after time 0. The default (FALSE) removes these values so that
+#'   they will not show up on graphs and also so that they will not be included
+#'   in any calculations of means.
 #' @param line_transparency Optionally specify the transparency for the trial
 #'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
 #'   so no line at all) to 1 (completely opaque or black). If left as NA, this
@@ -554,7 +554,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
                                   "percentile ribbon", "percentile ribbons")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if (figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
+        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") 
+    }
+    
     if(nrow(Ylim_data) == 0){
         Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
     }
