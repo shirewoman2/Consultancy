@@ -22,6 +22,7 @@ ct_plot(
   obs_data_option = NA,
   obs_color = NA,
   obs_shape = NA,
+  showBLQ = FALSE,
   line_type = NA,
   line_transparency = NA,
   line_color = NA,
@@ -191,6 +192,12 @@ possible shapes and what number corresponds to which shape, see
 \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 the middle of that page). If left as NA, substrate alone will be an open
 circle and substrate + inhibitor 1 will be an open triangle.}
+
+\item{showBLQ}{TRUE or FALSE to display observed concentrations that were
+clearly below the lower limit of quantitation, that is, concentrations
+equal to 0 after time 0. The default (FALSE) converts these values to NA so
+that they will not show up on graphs and also so that they will not be
+included in any calculations of means.}
 
 \item{line_type}{Optionally specify what types of lines are used to depict 1.
 the substrate drug alone and 2. the substrate drug in the presence of an

@@ -4,7 +4,7 @@
 \alias{extractExpDetails}
 \title{Extract details about the experimental design}
 \usage{
-extractExpDetails(sim_data_file, exp_details = "Summary tab")
+extractExpDetails(sim_data_file, exp_details = "Summary tab", save_output = NA)
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output}
@@ -41,6 +41,10 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab")
   extracting these data when a custom dosing regimen was used, so it would be
   a good idea to carefully check that the data are being pulled correctly in
   that scenario.}}}
+
+\item{save_output}{optionally save the output by supplying a file name in
+quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+it will still be saved as a csv file.}
 }
 \value{
 Returns a named list of the experimental details

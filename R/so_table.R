@@ -347,6 +347,28 @@ so_table <- function(report_input_file = NA,
         
     }
     
+    # For scenario where user specifies which tab to get data from
+    if("tmax" %in% names(MyPKResults)){
+        MyPKResults$tmax[
+            MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
+            MyPKResults$tmax[MyPKResults$Stat == "median"]
+        MyPKResults$tmax[MyPKResults$Stat == VariabilityNames[1]] <-
+            MyPKResults$tmax[MyPKResults$Stat == "min"]
+        MyPKResults$tmax[MyPKResults$Stat == VariabilityNames[2]] <-
+            MyPKResults$tmax[MyPKResults$Stat == "max"]
+        
+        if(EffectorPresent){
+            MyPKResults$tmax_withInhib[
+                MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
+                MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
+            MyPKResults$tmax_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
+                MyPKResults$tmax_withInhib[MyPKResults$Stat == "min"]
+            MyPKResults$tmax_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
+                MyPKResults$tmax_withInhib[MyPKResults$Stat == "max"]
+        }
+        
+    }
+    
     MyPKResults <- MyPKResults %>%
         pivot_longer(cols = -Stat, names_to = "PKParam",
                      values_to = "Sim")

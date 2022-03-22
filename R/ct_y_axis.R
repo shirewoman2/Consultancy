@@ -117,6 +117,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         Ylim_log <- Ylim
         
         Ylim_log[1] <- Ylim_data %>%
+            filter(Conc >= 0) %>%  # Not allowing BLQ values that were set below 0.
             filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
             pull(Conc) %>% min()
         
