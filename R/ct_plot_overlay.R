@@ -150,10 +150,18 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             fig_width = 5, 
                             include_messages = TRUE){
     
+    # Setting things up for nonstandard evaluation -------------------------
+    
+    # Defining pipe operator and bang bang
+    `%>%` <- magrittr::`%>%`
+    `!!` <- rlang::`!!`
+    
     colorBy <- rlang::enquo(colorBy)
     facet_column1 <- rlang::enquo(facet_column1)
     facet_column2 <- rlang::enquo(facet_column2)
     
+    
+    # error catching -------------------------------------------------------
     if(length(time_range) == 1){
         if(complete.cases(time_range)){
             warning("You have specified only 1 value for the time range, and we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.")
