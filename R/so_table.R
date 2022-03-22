@@ -126,12 +126,12 @@ so_table <- function(report_input_file = NA,
     sectionInfo_input <- sectionInfo
     
     # Error catching
-    if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
+    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
        is.na(report_input_file) & is.na(sim_data_file)){
         stop("You must enter a value for either 'sectionInfo' or 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
     }
     
-    if(length(sectionInfo) == 1 & is.na(sectionInfo[1]) &
+    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
        complete.cases(report_input_file) & is.na(sheet_report)){
         stop("If you specify an Excel file to get the section information from (report_input_file), you must also specify which sheet to read (sheet_report). Note that you do NOT need to specify which sheet in a simulator output file to read.")
     }
@@ -219,6 +219,7 @@ so_table <- function(report_input_file = NA,
     }
     
     # Getting PK parameters from the AUC tab
+<<<<<<< HEAD
     MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                  PKparameters = PKToPull,
                                  sheet = sheet_PKparameters, 
@@ -226,6 +227,17 @@ so_table <- function(report_input_file = NA,
                                      switch(as.character(includeTrialMeans),
                                             "TRUE" = c("aggregate", "individual"),
                                             "FALSE" = "aggregate"))
+=======
+    suppressWarnings(
+        MyPKResults_all <- extractPK(sim_data_file = SimFile,
+                                     PKparameters = PKToPull,
+                                     sheet = sheet_PKparameters, 
+                                     returnAggregateOrIndiv =
+                                         switch(as.character(includeTrialMeans),
+                                                "TRUE" = c("aggregate", "individual"),
+                                                "FALSE" = "aggregate"))
+    )
+>>>>>>> master
     
     # If they only wanted one parameter, then extractPK returns only the
     # aggregate data for that one parameter. In that situation, the names of the
@@ -436,12 +448,14 @@ so_table <- function(report_input_file = NA,
                                               "MinMean", "MaxMean", "S_O"))) %>% 
         arrange(SorO, Stat) %>% 
         filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
-        mutate(across(.cols = everything(), .fns = as.character),
-               across(.cols = -c(Stat, SorO),
-                      .fns = function(x) ifelse(str_detect(Stat, "CV"),
-                                                paste0(x, "%"), x)),
-               across(.cols = everything(),
-                      .fns = function(x) ifelse(x == "NA%", NA, x))) 
+        mutate(across(.cols = everything(), .fns = as.character)
+               # ,
+               # across(.cols = -c(Stat, SorO),
+               #        .fns = function(x) ifelse(str_detect(Stat, "CV"),
+               #                                  paste0(x, "%"), x)),
+               # across(.cols = everything(),
+               #        .fns = function(x) ifelse(x == "NA%", NA, x))
+               ) 
     # If this throws an error for you, try running "tidyverse_update()", copy
     # whatever it says is out of date, restart your R session (Ctrl Shift
     # F10), and then paste the output (something like

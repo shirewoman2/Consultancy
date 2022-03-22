@@ -19,8 +19,9 @@
 #'   concentration data. This should be unquoted.
 #' @param fold_change_column the name of the column within DF that contains
 #'   fold-change data, e.g., mRNA measurements or activity.
-#' @param model which model(s) you would like to use. (Pay attention to
-#'   capitalization when specifying the one you want.) The four model options
+#' @param donor_column the name of the column within DF that contains the donor
+#'   IDs
+#' @param model which model(s) you would like to use. The four model options
 #'   are: \describe{
 #'
 #'   \item{Indmax}{the Indmax model. This assumes a hyperbolic shape to the
@@ -42,10 +43,48 @@
 #'
 #' @param measurement the type of measurement used. Options are "mRNA" or
 #'   "activity". This only affects the y axis labels on the output graph(s).
-#' @param donor the name of the column within DF that contains the donor IDs
 #' @param fitByDonor TRUE or FALSE: Do you want to fit the data by individual
 #'   donor (TRUE) or in aggregate (FALSE)?
+#' @param weights Weighting scheme to use for the regression. User may supply a
+#'   numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
+#'   "1/y" or "1/y^2" (default). Be careful that you don't have any infinite
+#'   values or this will fail!
+#' @param color_set the set of colors to use. Options: \describe{
 #'
+#'   \item{"default"}{colors selected from the color brewer palette "set 1"}
+#'
+#'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+#'   (ggplot2 is an R package for graphing.)}
+#'
+#'   \item{"rainbow"}{colors selected from a rainbow palette. The default
+#'   palette is limited to something like 6 colors, so if you have more than
+#'   that, that's when this palette is most useful. It's \emph{not} very useful
+#'   when you only need a couple of colors.}
+#'
+#'   \item{"blue-green"}{a set of blues and greens}
+#'
+#'   \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
+#'   State that are friendly to those with red-green colorblindness}
+#'
+#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+#'   package}}
+#' @param y_axis_limits Optionally set the Y axis limits, e.g., \code{c(1, 5)}.
+#'   If left as NA, the Y axis limits will be automatically selected.
+#' @param hline_foldinduct1 TRUE or FALSE on whether to include a dotted red line where
+#'   the fold induction = 1.
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
+#'   will be saved as a png file, but if you specify a different file extension,
+#'   it will be saved as that file format. Acceptable extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+#'   means the file will not be automatically saved to disk.
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 6
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My fitted induction parameters.csv". If you leave off
+#'   ".csv", it will still be saved as a csv file.
+#'
+#' @param donor_column
 #'
 #' @return Returns a list of \describe{ \item{Fit}{the fitted parameters}
 #'   \item{Fit_means}{the mean fitted parameters for all donors} \item{Graph}{a
@@ -70,10 +109,10 @@
 #' MyFit <- inductFit(IndData, model = "all")
 #' MyFit$Graph; MyFit$Fit
 #'
-#' MyFit <- inductFit(IndData, model = "Sig3Param", fitByDonor = TRUE, donor = DonorID)
+#' MyFit <- inductFit(IndData, model = "Sig3Param", fitByDonor = TRUE, donor_column = DonorID)
 #' MyFit$Fit; MyFit$Fit_means; MyFit$Graph
 #'
-#' MyFit <- inductFit(IndData, model = "all", fitByDonor = TRUE, donor = DonorID)
+#' MyFit <- inductFit(IndData, model = "all", fitByDonor = TRUE, donor_column = DonorID)
 #' MyFit$Fit; MyFit$Fit_means; MyFit$Graph
 #'
 #'
@@ -85,8 +124,18 @@ inductFit <- function(DF,
                       fold_change_column = FoldInduction,
                       model = "IndmaxSlope",
                       measurement = "mRNA",
-                      donor = DONOR,
-                      fitByDonor = FALSE){
+                      donor_column = DonorID,
+                      fitByDonor = TRUE, 
+                      weights = "1/y^2", 
+                      color_set = "default",
+                      y_axis_limits = NA,
+                      hline_foldinduct1 = FALSE,
+                      save_graph = NA,
+                      fig_height = 5,
+                      fig_width = 6, 
+                      save_output = NA){
+    
+    # Setting things up for nonstandard evaluation -------------------------
     
     # Defining pipe operator and bang bang
     `%>%` <- magrittr::`%>%`
@@ -94,12 +143,39 @@ inductFit <- function(DF,
     
     conc_column <- rlang::enquo(conc_column)
     fold_change_column <- rlang::enquo(fold_change_column)
-    donor <- rlang::enquo(donor)
+    donor_column <- rlang::enquo(donor_column)
     
+    # Need a donor column for joining purposes later. Adding a placeholder
+    # here.
+    if(rlang::as_label(donor_column) %in% names(DF) == FALSE){
+        DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(conc_column),
+                                            rlang::as_label(fold_change_column)))) %>%
+            dplyr::rename(FoldInduction = !! fold_change_column,
+                          Concentration_uM = !! conc_column)
+        DF$DonorID <- "A"
+    } else {
+        DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(conc_column),
+                                            rlang::as_label(fold_change_column),
+                                            rlang::as_label(donor_column)))) %>%
+            dplyr::rename(FoldInduction = !! fold_change_column,
+                          Concentration_uM = !! conc_column,
+                          DonorID = !! donor_column)
+    }
+    
+    LegendTitle <- rlang::as_label(donor_column)
+    
+    # initial error catching ------------------------------------------------
     # Options for model: IndmaxSlope, Indmax, Slope, Sig3Param, all
-    if(model[1] %in% c("Indmax", "IndmaxSlope", "Slope", "Sig3Param", "all") == FALSE){
+    if(tolower(model[1]) %in% tolower(c("Indmax", "IndmaxSlope", "Slope", "Sig3Param", "all")) == FALSE){
         stop("Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'. Please enter a valid model.")
     }
+    
+    model <- switch(tolower(model), 
+                    "indmax" = "Indmax",
+                    "indmaxslope" = "IndmaxSlope", 
+                    "slope" = "Slope", 
+                    "sig3param" = "Sig3Param", 
+                    "all" = "all")
     
     if(length(model) > 1){
         stop("Please select only one option for the model. Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'.")
@@ -122,28 +198,12 @@ inductFit <- function(DF,
         stop("The column you have listed for the fold-change data is not present in your data.frame. Please enter a valid column for fold-change data.")
     }
     
-    if(rlang::as_label(donor) %in% names(DF) == FALSE & fitByDonor == TRUE){
+    if(rlang::as_label(donor_column) %in% names(DF) == FALSE & fitByDonor == TRUE){
         stop("The column you have listed for the donor is not present in your data.frame. Please enter a valid column for the donor.")
     }
     
-    # Need a donor column for joining purposes later. Adding a placeholder
-    # here.
-    if(rlang::as_label(donor) %in% names(DF) == FALSE){
-        DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(conc_column),
-                                            rlang::as_label(fold_change_column)))) %>%
-            dplyr::rename(FoldInduction = !! fold_change_column,
-                          Concentration_uM = !! conc_column)
-        DF$DONOR <- "A"
-    } else {
-        DF <- DF %>% dplyr::select(any_of(c(rlang::as_label(conc_column),
-                                            rlang::as_label(fold_change_column),
-                                            rlang::as_label(donor)))) %>%
-            dplyr::rename(FoldInduction = !! fold_change_column,
-                          Concentration_uM = !! conc_column,
-                          DONOR = !! donor)
-    }
     
-    
+    # General data setup ---------------------------------------------------
     # Need to add a column for the model chosen for graphing purposes.
     DF$model <- model
     
@@ -175,14 +235,29 @@ inductFit <- function(DF,
                                          slope = 1),
                         all = list(Indmax = 4, IndC50 = 5, slope = 1))
     
-    # Weighting by 1/y2
-    DF$Weights <- 1/(DF$FoldInduction^2)
     
+    # Setting up the weights to use
+    if(class(weights) == "character"){
+        
+        weights <- tolower(weights)
+        
+        DF <- DF %>%
+            dplyr::mutate(Weights = switch(weights, 
+                                           "1/x" = 1/Concentration_uM, 
+                                           "1/x^2" = 1/Concentration_uM^2,
+                                           "1/y" = 1/FoldInduction,
+                                           "1/y^2" = 1/FoldInduction^2, 
+                                           "none" = 1)) 
+        
+        
+    }
+    
+    # defining subfunction for fitting to induction models -----------------
     inductFit_prelim <- function(DF, model){
         
         if(model != "all"){
             
-            IndFit <- broom::tidy(
+            IndFit <- 
                 switch(model,
                        Indmax = tryCatch(
                            nls(FoldInduction ~ 1+(Indmax*Concentration_uM)/(IndC50+Concentration_uM),
@@ -207,7 +282,11 @@ inductFit <- function(DF,
                            nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/slope)),
                                data = DF, start = StartVals, weights = DF$Weights) ),
                        error = function(x){data.frame(term = c("Indmax", "IndC50", "slope"),
-                                                      estimate = NA)}))
+                                                      estimate = NA)})
+            if(class(IndFit) != "data.frame"){
+                IndFit <- broom::tidy(IndFit)
+            }
+            
             IndFit$model <- model
             
             Indmax <- IndFit$estimate[IndFit$term == "Indmax"]
@@ -239,7 +318,7 @@ inductFit <- function(DF,
             suppressMessages(
                 DF <- DF %>% dplyr::select(-model) %>%
                     dplyr::full_join(
-                        expand.grid(DONOR = unique(DF$DONOR),
+                        expand.grid(DonorID = unique(DF$DonorID),
                                     model = c("Indmax", "IndmaxSlope",
                                               "Slope", "Sig3Param"))) %>%
                     dplyr::mutate(Model_ch = ModelFacet[model])
@@ -316,9 +395,211 @@ inductFit <- function(DF,
             ModelTitle <- NULL
         }
         
-        G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction)) +
-            geom_point() +
-            geom_line(data = Curve) +
+        if(hline_foldinduct1){
+            G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction)) +
+                geom_hline(yintercept = 1, color = "red", linetype = "dotted") +
+                geom_point() +
+                geom_line(data = Curve)
+        } else {
+            G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction)) +
+                geom_point() +
+                geom_line(data = Curve)
+        }
+        if(model == "all"){
+            G <- G + facet_wrap(~ Model_ch, scales = "free")
+        }
+        
+        Out <- list("Fit" = IndFit,
+                    "Graph" = G,
+                    "Curve" = Curve)
+        
+        return(Out)
+    }
+    
+    
+    # Fitting models to data -----------------------------------------------
+    if(fitByDonor){
+        
+        # fit by donor
+        CurveData <- list()
+        MyFits <- list()
+        
+        if(model != "all"){
+            
+            for(i in unique(DF$DonorID)){
+                temp <- DF %>% dplyr::filter(DonorID == i)
+                temp_fit <- inductFit_prelim(temp, model = model)
+                rm(temp)
+                
+                CurveData[[i]] <- temp_fit$Curve %>%
+                    dplyr::mutate(DonorID = i)
+                MyFits[[i]] <- temp_fit$Fit %>% dplyr::mutate(DonorID = i)
+                rm(temp_fit)
+            }
+            
+            FitFail <- names(MyFits)[
+                sapply(MyFits, function(x) "p.value" %in% names(x)) == FALSE]
+            
+            if(length(FitFail) > 0){
+                warning(paste0("For donor ", str_comma(FitFail),
+                               ", the ", model, " model failed to fit the data. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+            }
+            
+            CurveData <- do.call(dplyr::bind_rows, CurveData)
+            
+            if(hline_foldinduct1){
+                G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
+                                    color = DonorID)) +
+                    geom_hline(yintercept = 1, color = "red", linetype = "dotted") +
+                    geom_point() +
+                    geom_line(data = CurveData)
+                
+            } else {
+                
+                G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
+                                    color = DonorID)) +
+                    geom_point() +
+                    geom_line(data = CurveData)
+            }
+            
+            
+            IndFit <- do.call(dplyr::bind_rows, MyFits)
+            suppressMessages(
+                IndFit_means <- IndFit %>% dplyr::group_by(term) %>%
+                    dplyr::summarize(Geomean = gm_mean(estimate),
+                                     Mean = mean(estimate, na.rm = T),
+                                     SD = sd(estimate, na.rm = T))
+            )
+            
+            IndFit <- IndFit %>%
+                dplyr::select(term, estimate, DonorID) %>%
+                tidyr::pivot_wider(values_from = estimate,
+                                   names_from = term)
+            
+        } else {
+            
+            # Keeping track of failed fits
+            FitFail <- list()
+            
+            # fit all models by donor
+            for(i in unique(DF$DonorID)){
+                temp <- DF %>% dplyr::filter(DonorID == i)
+                temp_fit <- inductFit_prelim(temp, model = model)
+                
+                FitFail[[i]] <- names(temp_fit$Fit)[
+                    sapply(temp_fit$Fit, function(x) "p.value" %in% names(x)) == FALSE]
+                
+                rm(temp)
+                
+                CurveData[[i]] <- temp_fit$Curve %>%
+                    dplyr::mutate(DonorID = i)
+                
+                MyFits[[i]] <- 
+                    do.call(
+                        dplyr::bind_rows, 
+                        # only keeping fits that converged
+                        temp_fit$Fit[names(temp_fit$Fit) %in% FitFail[[i]] == FALSE]) %>%
+                    dplyr::mutate(DonorID = i)
+                rm(temp_fit)
+            }
+            
+            suppressMessages(
+                DF <- DF %>% dplyr::select(-model) %>%
+                    dplyr::full_join(
+                        expand.grid(DonorID = unique(DF$DonorID),
+                                    model = c("Indmax", "IndmaxSlope",
+                                              "Slope", "Sig3Param"))) %>%
+                    dplyr::mutate(Model_ch = ModelFacet[model])
+            )
+            
+            CurveData <- do.call(dplyr::bind_rows, CurveData) %>%
+                dplyr::mutate(Model_ch = ModelFacet[model])
+            
+            if(hline_foldinduct1){
+                G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
+                                    color = DonorID)) +
+                    geom_hline(yintercept = 1, color = "red", linetype = "dotted") +
+                    geom_point() +
+                    labs(color = LegendTitle) +
+                    geom_line(data = CurveData) +
+                    facet_wrap(~ Model_ch)
+                
+            } else {
+                G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
+                                    color = DonorID)) +
+                    geom_point() +
+                    labs(color = LegendTitle) +
+                    geom_line(data = CurveData) +
+                    facet_wrap(~ Model_ch)
+            }
+            
+            IndFit <- do.call(dplyr::bind_rows, MyFits)
+            
+            suppressMessages(
+                IndFit_means <- IndFit %>% dplyr::group_by(model, term) %>%
+                    dplyr::summarize(Geomean = gm_mean(estimate),
+                                     Mean = mean(estimate, na.rm = T),
+                                     SD = sd(estimate, na.rm = T))
+            )
+            
+            IndFit <- IndFit %>%
+                dplyr::select(term, estimate, model, DonorID) %>%
+                tidyr::pivot_wider(values_from = estimate,
+                                   names_from = term) %>%
+                dplyr::arrange(model)
+            
+            # Checking for failed fits and printing warning message
+            if(any(sapply(FitFail, length) > 0)){
+                FitFail <- FitFail[sapply(FitFail, FUN = function(x) length(x) > 0)]
+                for(i in 1:length(FitFail)){
+                    warning(paste0("For donor ", names(FitFail)[i],
+                                   ", the model failed to fit the data for the ",
+                                   str_comma(FitFail[[i]]),
+                                   " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+                }
+            }
+        }
+        
+        Out <- list("Fit" = IndFit,
+                    "Fit_means" = IndFit_means,
+                    "Graph" = G,
+                    "Curve" = CurveData)
+        
+    } else {
+        
+        Out <- inductFit_prelim(DF, model) 
+        Out$Fit <- Out$Fit %>%
+            dplyr::select(term, estimate, model) %>%
+            tidyr::pivot_wider(values_from = estimate,
+                               names_from = term)
+        
+        # Checking for failed fits and printing warning message
+        if(length(model) == 1){
+            FitFail <- "p.value" %in% names(Out$Fit) == FALSE
+            if(FitFail){
+                warning(paste0("The model failed to fit the data for the ", 
+                               model, " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+            }
+        } else {
+            FitFail <- names(Out$Fit)[sapply(Out$Fit, function(x) "p.value" %in% names(x)) == FALSE]
+            if(length(FitFail) > 0){
+                warning(paste0("The model failed to fit the data for the ",
+                               str_comma(FitFail), " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+            }
+        }
+    }
+    
+    # Making the final graph look nice --------------------------------------
+    
+    ModelTitle <- switch(model,
+                         Indmax = "Indmax model",
+                         IndmaxSlope = "Indmax slope model",
+                         Slope = "Slope model",
+                         Sig3Param = "Sigmoidal 3-parameter model (Xenotech)", 
+                         all = NULL)
+    
+    suppressWarnings(
+        Out$Graph <- Out$Graph +
             annotation_logticks(sides = "b",
                                 short = unit(1.5,"mm"),
                                 mid = unit(1.5,"mm"),
@@ -337,183 +618,127 @@ inductFit <- function(DF,
                   legend.background = element_rect(color=NA, fill=NA),
                   legend.key = element_rect(color=NA, fill=NA)
             )
-        
-        if(model == "all"){
-            G <- G + facet_wrap(~ Model_ch, scales = "free")
-        }
-        
-        Out <- list("Fit" = IndFit,
-                    "Graph" = G,
-                    "Curve" = Curve)
-        
-        return(Out)
+    )
+    
+    # Setting y axis limits ------------------------------------------------
+    if(any(complete.cases(y_axis_limits))){
+        Ylim <- y_axis_limits[1:2]
+    } else {
+        Ylim <- range(DF$FoldInduction, na.rm = TRUE)
     }
     
-    if(fitByDonor == FALSE){
-        
-        Out <- inductFit_prelim(DF, model)
-        
-        # Checking for failed fits and printing warning message
-        FitFail <- names(Out$Fit)[sapply(Out$Fit, function(x) "p.value" %in% names(x)) == FALSE]
-        if(length(FitFail) > 0){
-            warning(paste0("The model failed to fit the data for the ",
-                           str_comma(FitFail), " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
-        }
-        
-        
-    } else {
-        
-        # fit by donor
-        CurveData <- list()
-        MyFits <- list()
-        
-        if(model != "all"){
-            
-            for(i in unique(DF$DONOR)){
-                temp <- DF %>% dplyr::filter(DONOR == i)
-                temp_fit <- inductFit_prelim(temp, model = model)
-                rm(temp)
-                
-                CurveData[[i]] <- temp_fit$Curve %>%
-                    dplyr::mutate(DONOR = i)
-                MyFits[[i]] <- temp_fit$Fit %>% dplyr::mutate(DONOR = i)
-                rm(temp_fit)
-            }
-            
-            CurveData <- do.call(dplyr::bind_rows, CurveData)
-            
-            ModelTitle <- switch(model,
-                                 Indmax = "Indmax model",
-                                 IndmaxSlope = "Indmax slope model",
-                                 Slope = "Slope model",
-                                 Sig3Param = "Sigmoidal 3-parameter model (Xenotech)")
-            
-            G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
-                                color = DONOR)) +
-                geom_point() +
-                geom_line(data = CurveData) +
-                annotation_logticks(sides = "b",
-                                    short = unit(1.5,"mm"),
-                                    mid = unit(1.5,"mm"),
-                                    long = unit(3,"mm")) +
-                scale_x_log10() +
-                ggtitle(ModelTitle) +
-                xlab(expression(Concentration~(mu*M))) +
-                ylab(Ylab) +
-                theme(panel.background = element_rect(fill="white", color=NA),
-                      panel.grid.minor.y = element_line(color = NA),
-                      panel.grid.minor.x = element_line(color = NA),
-                      panel.grid.major = element_line(colour = NA),
-                      plot.background = element_rect(fill="white", colour=NA),
-                      panel.border = element_rect(color="black", fill=NA),
-                      strip.background = element_rect(color=NA, fill="white"),
-                      legend.background = element_rect(color=NA, fill=NA),
-                      legend.key = element_rect(color=NA, fill=NA)
-                )
-            
-            IndFit <- do.call(dplyr::bind_rows, MyFits)
-            suppressMessages(
-                IndFit_means <- IndFit %>% dplyr::group_by(term) %>%
-                    dplyr::summarize(GMean = gm_mean(estimate),
-                                     Mean = mean(estimate),
-                                     SD = sd(estimate))
-            )
-            
-            IndFit <- IndFit %>%
-                dplyr::select(term, estimate, DONOR) %>%
-                tidyr::pivot_wider(values_from = estimate,
-                                   names_from = term)
-            
+    PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
+                                       100, 200, 500, 1000, 2000, 5000,
+                                       10000, 20000, 50000, 100000,
+                                       200000, 500000, Inf),
+                              YBreaksToUse = c(0.02, 0.05, 0.1, 0.2, 0.5,
+                                               1, 2, 5, 10, 20, 50, 100, 200,
+                                               500, 1000, 2000, 5000, 10000,
+                                               20000, 50000, 100000, 200000))
+    
+    YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
+        slice(which.min(Ymax)) %>% pull(YBreaksToUse)
+    
+    YInterval    <- YBreaksToUse
+    YmaxRnd      <- ifelse(is.na(y_axis_limits[2]), 
+                           round_up_unit(Ylim[2], YInterval),
+                           y_axis_limits[2])
+    YBreaks      <- seq(ifelse(is.na(y_axis_limits[1]), 
+                               0, y_axis_limits[1]),
+                        YmaxRnd, YInterval)                    # create labels at major points (not minor like in ct_plot b/c too busy for small plots like this, imo)
+    YLabels      <- format(YBreaks, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+    
+    # If the user specified a y axis interval, make sure there's an axis label
+    # for the top of the y axis
+    if(any(complete.cases(y_axis_limits))){
+        YBreaks <- unique(c(YBreaks, y_axis_limits[2]))
+        if(length(YLabels) == length(YBreaks)){
+            YLabels[length(YLabels)] <- 
+                format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
         } else {
-            
-            # Keeping track of failed fits
-            FitFail <- list()
-            
-            # fit all models by donor
-            for(i in unique(DF$DONOR)){
-                temp <- DF %>% dplyr::filter(DONOR == i)
-                temp_fit <- inductFit_prelim(temp, model = model)
-                
-                FitFail[[i]] <- names(temp_fit$Fit)[
-                    sapply(temp_fit$Fit, function(x) "p.value" %in% names(x)) == FALSE]
-                
-                rm(temp)
-                
-                CurveData[[i]] <- temp_fit$Curve %>%
-                    dplyr::mutate(DONOR = i)
-                MyFits[[i]] <- do.call(dplyr::bind_rows, temp_fit$Fit) %>%
-                    dplyr::mutate(DONOR = i)
-                rm(temp_fit)
-            }
-            
-            suppressMessages(
-                DF <- DF %>% dplyr::select(-model) %>%
-                    dplyr::full_join(
-                        expand.grid(DONOR = unique(DF$DONOR),
-                                    model = c("Indmax", "IndmaxSlope",
-                                              "Slope", "Sig3Param"))) %>%
-                    dplyr::mutate(Model_ch = ModelFacet[model])
-            )
-            
-            CurveData <- do.call(dplyr::bind_rows, CurveData) %>%
-                dplyr::mutate(Model_ch = ModelFacet[model])
-            
-            G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
-                                color = DONOR)) +
-                geom_point() +
-                labs(color = rlang::as_label(donor)) +
-                geom_line(data = CurveData) +
-                annotation_logticks(sides = "b",
-                                    short = unit(1.5,"mm"),
-                                    mid = unit(1.5,"mm"),
-                                    long = unit(3,"mm")) +
-                scale_x_log10() +
-                xlab(expression(Concentration~(mu*M))) +
-                ylab(Ylab) +
-                facet_wrap(~ Model_ch) +
-                theme(
-                    panel.background = element_rect(fill="white", color=NA),
-                    panel.grid.minor.y = element_line(color = NA),
-                    panel.grid.minor.x = element_line(color = NA),
-                    panel.grid.major = element_line(colour = NA),
-                    plot.background = element_rect(fill="white", colour=NA),
-                    panel.border = element_rect(color="black", fill=NA),
-                    strip.background = element_rect(color=NA, fill="white"),
-                    legend.background = element_rect(color=NA, fill=NA),
-                    legend.key = element_rect(color=NA, fill=NA)
-                )
-            
-            IndFit <- do.call(dplyr::bind_rows, MyFits)
-            
-            suppressMessages(
-                IndFit_means <- IndFit %>% dplyr::group_by(model, term) %>%
-                    dplyr::summarize(GMean = gm_mean(estimate),
-                                     Mean = mean(estimate),
-                                     SD = sd(estimate))
-            )
-            
-            IndFit <- IndFit %>%
-                dplyr::select(term, estimate, model, DONOR) %>%
-                tidyr::pivot_wider(values_from = estimate,
-                                   names_from = term) %>%
-                dplyr::arrange(model)
+            YLabels <- c(YLabels, 
+                         format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE))
+        }
+    }
+    
+    suppressWarnings(
+        Out$Graph <- Out$Graph + 
+            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits[1]), 
+                                                 0, y_axis_limits[1]),
+                                          YmaxRnd), 
+                               breaks = YBreaks,
+                               labels = YLabels)
+    )
+    
+    # Adding options for colors -----------------------------------------------
+    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
+                                     "darkorange", "green3", "seagreen3",
+                                     "cadetblue", "dodgerblue3", "royalblue4",
+                                     "darkorchid4"))
+    
+    blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
+                                    "dodgerblue3", "royalblue4"))
+    
+    NumColorsNeeded <- length(unique(DF$DonorID))
+    
+    if(color_set == "default"){
+        Out$Graph <- Out$Graph + 
+            scale_color_brewer(palette = "Set1") +
+            scale_fill_brewer(palette="Set1")
+    }
+    
+    if(color_set == "blue-green"){
+        Out$Graph <- Out$Graph + 
+            scale_color_manual(values = blueGreen(NumColorsNeeded)) +
+            scale_fill_manual(values = blueGreen(NumColorsNeeded))
+    }
+    
+    if(color_set == "rainbow"){
+        Out$Graph <- Out$Graph + 
+            scale_color_manual(values = colRainbow(NumColorsNeeded)) +
+            scale_fill_manual(values = colRainbow(NumColorsNeeded))
+    }
+    
+    if(color_set == "Brewer set 2"){
+        Out$Graph <- Out$Graph + 
+            scale_fill_brewer(palette = "Set2") +
+            scale_color_brewer(palette = "Set2")
+    }
+    
+    if(color_set == "Tableau"){
+        Out$Graph <- Out$Graph + 
+            ggthemes::scale_color_tableau() +
+            ggthemes::scale_fill_tableau()
+    }
+    
+    # saving ----------------------------------------------------------------
+    
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
         }
         
-        # Checking for failed fits and printing warning message
-        if(length(FitFail) > 0){
-            for(i in 1:length(FitFail)){
-                warning(paste0("For donor ", names(FitFail)[i],
-                               ", the model failed to fit the data for the ",
-                               str_comma(FitFail[[i]]),
-                               " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
-            }
+        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+               plot = Out$Graph)
+        
+    }
+    
+    if(complete.cases(save_output)){
+        if(str_detect(save_output, "\\.")){
+            FileName <- sub("\\..*", ".csv", save_output)
+        } else {
+            FileName <- paste0(save_output, ".csv")
         }
-        
-        Out <- list("Fit" = IndFit,
-                    "Fit_means" = IndFit_means,
-                    "Graph" = G,
-                    "Curve" = CurveData)
-        
+        write.csv(Out$Fit, FileName, row.names = F)
     }
     
     return(Out)

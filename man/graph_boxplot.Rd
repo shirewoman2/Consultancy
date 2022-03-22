@@ -8,8 +8,8 @@ graph_boxplot(
   DF,
   category_column,
   value_column,
-  facet_column1 = NA,
-  facet_column2 = NA,
+  facet_column1,
+  facet_column2,
   graph_type = "boxplot",
   include_errorbars = FALSE,
   xlabel = NA,
@@ -94,35 +94,35 @@ are included for type of graph to make and some aesthetics.
 AUCs <- data.frame(AgeGroup = LETTERS[1:5],
                    AUC = rnorm(n = 500, mean = 20000, sd = 2000))
 
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC")
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC)
 
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
                color_set = "rainbow")
 
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
                color_set = "blue-green", graph_type =  "jittered points")
 
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
               color_set = "Tableau", graph_type =  "jittered points, filled boxes")
 
 # Adding a couple of example columns to use the "facet" options.
 AUCs$Sex <- c("M", "F")
 AUCs$Metabolizer <- sample(c("poor", "extensive"), 100, replace = TRUE)
 
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-               facet_column1 = "Sex",
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
+               facet_column1 = Sex,
                color_set = "blue-green", graph_type =  "jittered points")
 
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
-               facet_column1 = "Sex", facet_column2 = "Metabolizer",
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
+               facet_column1 = Sex, facet_column2 = Metabolizer,
                color_set = "blue-green", graph_type =  "jittered points")
 
-graph_boxplot(AUCs, category_column = "AgeGroup", value_column = "AUC",
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
               graph_type = "jittered points, filled boxes")
 
 # Saving the output
 graph_boxplot(AUCs \%>\% filter(AgeGroup \%in\% c("A", "B")),
-              category_column = "AgeGroup", value_column = "AUC",
+              category_column = AgeGroup, value_column = AUC,
               graph_type = "jittered points, filled boxes",
               color_set = "Brewer set 2", include_errorbars = TRUE,
               save_graph = "test boxplot.png")

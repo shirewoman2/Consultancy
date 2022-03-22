@@ -6,14 +6,15 @@
 \title{All possible PK parameters that can be extracted from a simulator output file
 using \code{\link{extractPK}}.}
 \format{
-A data.frame with 3 columns: \describe{ \item{PKparameter}{the PK
+A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
   parameter name to use with \code{\link{extractPK}} for the argument
   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
   where the PK parameter will be extracted, if possible}
   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
   for whether this item only applies when an effector is present in the
-  simulation} \item{Notes}{an explanation of what the parameter is}}
+  simulation} \item{SortOrder}{the order to arrange columns for so_table and
+  pksummary_table} \item{Notes}{an explanation of what the parameter is}}
 }
 \usage{
 AllPKParameters
