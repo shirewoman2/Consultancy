@@ -85,7 +85,18 @@
 #'
 #'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
 #'   range encompassing the requested doses, e.g., "dose 3" for the 3rd dose or
-#'   "doses 1 to 4" for doses 1 to 4}}
+#'   "doses 1 to 4" for doses 1 to 4}
+#'
+#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
+#'   range will be limited to only times when observed data are present. This
+#'   might look best if \code{pad_x_axis} = TRUE.}
+#'
+#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
+#'   be limited to the start of the last dose until the last observed data
+#'   point. This might look best if \code{pad_x_axis} = TRUE.}
+#'
+#'
+#'   }
 #'
 #' @param t0 What event should be used for time zero? Options are: "simulation
 #'   start" (default), "dose 1", "penultimate dose", or "last dose". \emph{This
@@ -152,7 +163,11 @@
 #'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 #'   the middle of that page). If left as NA, substrate alone will be an open
 #'   circle and substrate + inhibitor 1 will be an open triangle.
-#'
+#' @param showBLQ TRUE or FALSE to display observed concentrations that were
+#'   clearly below the lower limit of quantitation, that is, concentrations
+#'   equal to 0 after time 0. The default (FALSE) removes these values so that
+#'   they will not show up on graphs and also so that they will not be included
+#'   in any calculations of means.
 #' @param line_transparency Optionally specify the transparency for the trial
 #'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
 #'   so no line at all) to 1 (completely opaque or black). If left as NA, this
@@ -302,6 +317,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     obs_data_option = NA,
                     obs_color = NA,
                     obs_shape = NA,
+                    showBLQ = FALSE, 
                     line_type = NA,
                     line_transparency = NA,
                     line_color = NA,
@@ -322,7 +338,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     if(length(figure_type) != 1 |
        figure_type %in% c("trial means", "percentiles", "trial percentiles",
                           "Freddy", "means only", "overlay", 
-                          "percentile ribbon", "percentile ribbons") == FALSE){
+                          "percentile ribbon", "percentile ribbons", 
+                          "ribbon") == FALSE){
         stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.")
     }
     
@@ -515,6 +532,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
     
+    if(showBLQ == FALSE){
+        obs_data <- obs_data %>% 
+            mutate(Conc = ifelse(Conc <= 0 & Time > 0,
+                                 NA, Conc)) %>% 
+            filter(complete.cases(Conc)) # yes, I know this is 2 steps rather than 1 complicated filter step, but I'm worried I'll mess it up if I do it with just 1 step. :-) -LSh
+    }
+    
     if(complete.cases(obs_data_option) &
        str_detect(obs_data_option, "mean")){
         
@@ -538,11 +562,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Setting Y axis limits for both linear and semi-log plots
     if (figure_type == "trial means") {
         Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles",
-                                  "percentile ribbon", "percentile ribbons")) {
+    } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if (figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") }
+        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") 
+    }
+    
     if(nrow(Ylim_data) == 0){
         Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
     }
@@ -720,7 +745,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     ## figure_type: percentile ribbon ----------------------------------------------------------
-    if(str_detect(figure_type, "percentile(s)? ribbon")){
+    if(str_detect(figure_type, "ribbon")){
         # graphs with 95th percentiles as transparent ribbons 
         
         AlphaToUse <- ifelse(complete.cases(line_transparency),
@@ -990,6 +1015,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
              shape = ifelse(complete.cases(legend_label),
                             legend_label, "Inhibitor"),
              color = ifelse(complete.cases(legend_label), 
+                            legend_label, "Inhibitor"),
+             fill = ifelse(complete.cases(legend_label), 
                             legend_label, "Inhibitor")) +
         theme(panel.background = element_rect(fill="white", color=NA),
               legend.key = element_rect(fill = "white"),

@@ -22,6 +22,7 @@ ct_plot(
   obs_data_option = NA,
   obs_color = NA,
   obs_shape = NA,
+  showBLQ = FALSE,
   line_type = NA,
   line_transparency = NA,
   line_color = NA,
@@ -108,7 +109,18 @@ compound in lumen".}
 
   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
   range encompassing the requested doses, e.g., "dose 3" for the 3rd dose or
-  "doses 1 to 4" for doses 1 to 4}}}
+  "doses 1 to 4" for doses 1 to 4}
+
+  \item{"all obs" or "all observed" if you feel like spelling it out}{Time
+  range will be limited to only times when observed data are present. This
+  might look best if \code{pad_x_axis} = TRUE.}
+
+  \item{"last dose to last observed" or "last obs" for short}{Time range will
+  be limited to the start of the last dose until the last observed data
+  point. This might look best if \code{pad_x_axis} = TRUE.}
+
+
+  }}
 
 \item{x_axis_interval}{Set the x-axis major tick-mark interval. Acceptable
 input: any number or leave as NA to accept default values.}
@@ -191,6 +203,12 @@ possible shapes and what number corresponds to which shape, see
 \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 the middle of that page). If left as NA, substrate alone will be an open
 circle and substrate + inhibitor 1 will be an open triangle.}
+
+\item{showBLQ}{TRUE or FALSE to display observed concentrations that were
+clearly below the lower limit of quantitation, that is, concentrations
+equal to 0 after time 0. The default (FALSE) removes these values so that
+they will not show up on graphs and also so that they will not be included
+in any calculations of means.}
 
 \item{line_type}{Optionally specify what types of lines are used to depict 1.
 the substrate drug alone and 2. the substrate drug in the presence of an
