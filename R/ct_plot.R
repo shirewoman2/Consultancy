@@ -338,7 +338,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     if(length(figure_type) != 1 |
        figure_type %in% c("trial means", "percentiles", "trial percentiles",
                           "Freddy", "means only", "overlay", 
-                          "percentile ribbon", "percentile ribbons") == FALSE){
+                          "percentile ribbon", "percentile ribbons", 
+                          "ribbon") == FALSE){
         stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.")
     }
     
@@ -561,8 +562,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Setting Y axis limits for both linear and semi-log plots
     if (figure_type == "trial means") {
         Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (figure_type %in% c("trial percentiles", "Freddy", "percentiles",
-                                  "percentile ribbon", "percentile ribbons")) {
+    } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if (figure_type == "means only") {
         Ylim_data <- sim_data_mean %>% filter(Trial == "mean") 
@@ -745,7 +745,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     ## figure_type: percentile ribbon ----------------------------------------------------------
-    if(str_detect(figure_type, "percentile(s)? ribbon")){
+    if(str_detect(figure_type, "ribbon")){
         # graphs with 95th percentiles as transparent ribbons 
         
         AlphaToUse <- ifelse(complete.cases(line_transparency),
@@ -1015,6 +1015,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
              shape = ifelse(complete.cases(legend_label),
                             legend_label, "Inhibitor"),
              color = ifelse(complete.cases(legend_label), 
+                            legend_label, "Inhibitor"),
+             fill = ifelse(complete.cases(legend_label), 
                             legend_label, "Inhibitor")) +
         theme(panel.background = element_rect(fill="white", color=NA),
               legend.key = element_rect(fill = "white"),
