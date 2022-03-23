@@ -78,8 +78,8 @@
 #'   it will be saved as that file format. Acceptable extensions are "eps",
 #'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
 #'   means the file will not be automatically saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 6
+#' @param fig_height figure height in inches; default is 5
+#' @param fig_width figure width in inches; default is 5.5
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My fitted induction parameters.csv". If you leave off
 #'   ".csv", it will still be saved as a csv file.
@@ -132,7 +132,7 @@ inductFit <- function(DF,
                       hline_foldinduct1 = FALSE,
                       save_graph = NA,
                       fig_height = 5,
-                      fig_width = 6, 
+                      fig_width = 5.5, 
                       save_output = NA){
     
     # Setting things up for nonstandard evaluation -------------------------
@@ -211,7 +211,7 @@ inductFit <- function(DF,
     ModelFacet <- c(Indmax = "Indmax model",
                     IndmaxSlope = "Indmax slope model",
                     Slope = "Slope model",
-                    Sig3Param = "Sigmoidal 3-parameter model (Xenotech)")
+                    Sig3Param = "Sigmoidal 3-parameter model")
     
     # Setting better colors for graphs than the weird default
     scale_colour_discrete <- function(...) scale_colour_brewer(..., palette="Set1")
@@ -310,7 +310,7 @@ inductFit <- function(DF,
                                  Indmax = "Indmax model",
                                  IndmaxSlope = "Indmax slope model",
                                  Slope = "Slope model",
-                                 Sig3Param = "Sigmoidal 3-parameter model (Xenotech)")
+                                 Sig3Param = "Sigmoidal 3-parameter model")
             
         } else {
             
@@ -595,7 +595,7 @@ inductFit <- function(DF,
                          Indmax = "Indmax model",
                          IndmaxSlope = "Indmax slope model",
                          Slope = "Slope model",
-                         Sig3Param = "Sigmoidal 3-parameter model (Xenotech)", 
+                         Sig3Param = "Sigmoidal 3-parameter model", 
                          all = NULL)
     
     suppressWarnings(

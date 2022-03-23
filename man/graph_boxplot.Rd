@@ -91,8 +91,12 @@ categories those values are in and creates boxplots of those data. Options
 are included for type of graph to make and some aesthetics.
 }
 \examples{
-AUCs <- data.frame(AgeGroup = LETTERS[1:5],
-                   AUC = rnorm(n = 500, mean = 20000, sd = 2000))
+AUCs <- data.frame(AgeGroup = rep(LETTERS[1:5], each = 100),
+                   AUC = c(rnorm(n = 100, mean = 10000, sd = 5000),
+                           rnorm(n = 100, mean = 15000, sd = 5000),
+                           rnorm(n = 100, mean = 20000, sd = 5000),
+                           rnorm(n = 100, mean = 30000, sd = 5000),
+                           rnorm(n = 100, mean = 33000, sd = 5000)))
 
 graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC)
 

@@ -18,7 +18,7 @@ inductFit(
   hline_foldinduct1 = FALSE,
   save_graph = NA,
   fig_height = 5,
-  fig_width = 6,
+  fig_width = 5.5,
   save_output = NA
 )
 }
@@ -100,9 +100,9 @@ it will be saved as that file format. Acceptable extensions are "eps",
 "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
 means the file will not be automatically saved to disk.}
 
-\item{fig_height}{figure height in inches; default is 6}
+\item{fig_height}{figure height in inches; default is 5}
 
-\item{fig_width}{figure width in inches; default is 6}
+\item{fig_width}{figure width in inches; default is 5.5}
 
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My fitted induction parameters.csv". If you leave off
