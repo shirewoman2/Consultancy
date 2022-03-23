@@ -33,9 +33,12 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     }
     
     if(all(complete.cases(time_range)) && class(time_range) == "character" &
-       !any(time_range %in% c("last dose", "first dose", "penultimate dose")) &
+       !any(time_range %in% c("last dose", "first dose", "penultimate dose",
+                              "all obs", "all observed", "last obs", 
+                              "last observed", "last to last obs", 
+                              "last dose to last observed")) &
        !any(str_detect(tolower(time_range), "^dose"))){
-        stop("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), or a numeric time range, e.g., c(12, 24).")
+        stop("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', or a numeric time range, e.g., c(12, 24).")
     }
     
     t0 <- tolower(t0)
@@ -192,6 +195,36 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                     t() %>% as.numeric()
             }
         }
+        
+        if(all(complete.cases(time_range_input)) &&
+           str_detect(time_range_input, "all obs")){
+            suppressWarnings(
+                time_range <- Data %>% filter(Simulated == FALSE) %>% 
+                    pull(Time) %>% range()
+            )
+            if(any(is.infinite(time_range))){
+                warning("You requested 'all observed' for the time range, but your data do not include any observed data. The full time range will be returned.")
+                time_range <- Data %>% pull(Time) %>% range()
+            }
+        }
+        
+        if(all(complete.cases(time_range_input)) &&
+           time_range_input %in% c("last obs", "last observed",
+                                   "last to last obs", "last dose to last observed")){
+            suppressWarnings(
+                time_range <- Data %>% 
+                    filter(Simulated == FALSE & DoseNum == MaxNumDoses) %>% 
+                    pull(Time) %>% range()
+            )
+            
+            time_range[1] <- DoseTimes$LastDoseStart
+            
+            if(any(is.infinite(time_range))){
+                warning("You requested 'last observed' or 'last dose to last observed' for the time range, but your data do not include any observed data in that time frame. The full time range will be returned.")
+                time_range <- Data %>% pull(Time) %>% range()
+            }
+        }
+        
     }
     
     # Setting the time range if it's not already set 

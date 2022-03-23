@@ -85,7 +85,18 @@
 #'
 #'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
 #'   range encompassing the requested doses, e.g., "dose 3" for the 3rd dose or
-#'   "doses 1 to 4" for doses 1 to 4}}
+#'   "doses 1 to 4" for doses 1 to 4}
+#'
+#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
+#'   range will be limited to only times when observed data are present. This
+#'   might look best if \code{pad_x_axis} = TRUE.}
+#'
+#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
+#'   be limited to the start of the last dose until the last observed data
+#'   point. This might look best if \code{pad_x_axis} = TRUE.}
+#'
+#'
+#'   }
 #'
 #' @param t0 What event should be used for time zero? Options are: "simulation
 #'   start" (default), "dose 1", "penultimate dose", or "last dose". \emph{This
