@@ -233,8 +233,8 @@ extractPK <- function(sim_data_file,
     # tab" for PK parameters and either "AUC" or "AUC_CI" are among the sheets
     # in the file.
     if(is.na(sheet) && 
-        # a)
-        ((any(PKparameters %in% ParamAUC) & 
+       # a)
+       ((any(PKparameters %in% ParamAUC) & 
          PKparameters_orig[1] != "Absorption tab") |
         
         # b)
@@ -1356,10 +1356,39 @@ extractPK <- function(sim_data_file,
     }
     
     if(checkDataSource){
+        XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
         DataCheck <- DataCheck %>% filter(complete.cases(PKparam)) %>% 
-            mutate(File = sim_data_file) %>% 
+            mutate(File = sim_data_file, 
+                   Column = XLCols[Column]) %>% 
             select(PKparam, File, Tab, Column, StartRow_agg, EndRow_agg, 
-                   StartRow_ind, EndRow_ind)
+                   StartRow_ind, EndRow_ind) %>% 
+            filter(complete.cases(PKparam)) %>% unique()
+        
+        # StatNameCheck <- all(sapply(Out_agg, FUN = function(.) all(names(.) == names(Out_agg[[1]]))))
+        # 
+        # if(StatNameCheck){
+        
+        StatNames <- renameStats(Out_agg$Statistic) %>% as.character()
+        
+        # NEED TO CHECK THIS WHEN INDIVIDUAL STATS REQUESTED, other scenarios. I
+        # think there are ways the aggregate stat row number could go wrong.
+        
+        StatNum <- 1:length(StatNames)
+        names(StatNum) <- StatNames
+        
+        DataCheck_agg <- DataCheck %>% 
+            select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
+            left_join(data.frame(File = unique(DataCheck$File), 
+                                 Stat = StatNames)) %>% 
+            mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
+                   Cell = paste0(Column, Row_agg)) %>% 
+            select(File, PKparam, Tab, Column, Cell, Stat) %>% 
+            pivot_wider(names_from = Stat, values_from = Cell)
+        
+        DataCheck <- DataCheck %>% left_join(DataCheck_agg) %>% 
+            select(File, PKparam, Tab, Column, StartRow_ind, EndRow_ind,
+                   StartRow_agg, EndRow_agg, everything())
+        # }
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- unique(DataCheck)
