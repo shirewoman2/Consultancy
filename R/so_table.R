@@ -4,40 +4,37 @@
 #' presentations, including reporting means, CVs, confidence intervals or
 #' percentiles, and ratios of simulated vs. observed mean values. Because we
 #' need to have a standardized way to input observed data, setting up the input
-#' for this function requires filling out an Excel template form. In this Excel
-#' file, there will be one tab for entering your observed PK parameters and a
-#' second tab for entering information about your simulation file. Here are the
+#' for this function requires filling out an Excel template form. Here are the
 #' steps to take: \enumerate{\item{Use the function
 #' \code{\link{generateReportInputForm}} to create an Excel file where you can
 #' enter information about your project. Example:
 #' \code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
-#' tab "observed data - DDI" or "observed data - no DDI", whichever is
-#' appropriate for your situation, and enter details about your observed data.
-#' It's ok if you don't have all the information; anything that's missing won't
-#' be included in the final S/O table. It's also ok to rename this tab and/or
-#' make copies of it within the same Excel file for making other S/O tables.}
-#' \item{Go to the tab "simulated data" and fill out information here for the
-#' specific simulation you want to compare. Make sure that whatever you list as
-#' the tab that contains information about the observed data is \emph{exactly}
-#' the same as the actual tab name that you filled out in step 2. Also make sure
-#' that the file names include the full file path.} \item{Save your Excel file.}
-#' \item{Here, within RStudio (or within the shiny app that we plan to make!),
-#' run this function using the name of that Excel file as input for
-#' \code{report_input_file} and the name of the "table and graph input" tab as
-#' the input for \code{sheet}. Note: If the Excel file lives on SharePoint,
-#' you'll need to close it or this function will just keep running and not
-#' generate any output while it waits for access to the file.} }
+#' tab "study info - DDI" or "study info - no DDI", whichever is appropriate for
+#' your situation. Under the heading "Observed data", enter details about your
+#' observed data. It's ok if you don't have all the information; anything that's
+#' missing won't be included in the final S/O table. It's also ok to rename this
+#' tab and/or make copies of it within the same Excel file for making other S/O
+#' tables.} \item{Under the heading "Simulated data" on that same tab, fill out
+#' the name of the specific simulator output Excel file you want to compare.}
+#' \item{Save the report form.} \item{Back in RStudio (or within the shiny app
+#' that we plan to make!), run this function using the file name of that Excel
+#' report form as input for \code{report_input_file} and the name of the "study
+#' info - DDI/no DDI" tab as the input for \code{sheet_report}. Note: If the
+#' Excel file lives on SharePoint, you'll need to close it or this function will
+#' just keep running and not generate any output while it waits for access to
+#' the file.} }
 #'
 #'
 #' @param report_input_file the name of the Excel file created by running
 #'   \code{\link{generateReportInputForm}}, which you have now filled out,
 #'   including the path if it's in any other directory than the current one
 #' @param sheet_report the sheet in the Excel report template file that contains
-#'   information about this section of the report. In the original template,
-#'   this was the tab titled "table and graph input".
-#' @param sectionInfo information about the simulated and observed data. This is
-#'   output from the function \code{\link{getSectionInfo}} and can be used
-#'   instead of listing the Excel file and report template sheet name as input.
+#'   information about the study, e.g., "study info - DDI" or "study info - no
+#'   DDI" if you haven't renamed the tab.
+#' @param sectionInfo SOON TO BE DEPRECATED. information about the simulated and
+#'   observed data. This is output from the function
+#'   \code{\link{getSectionInfo}} and can be used instead of listing the Excel
+#'   file and report template sheet name as input.
 #' @param PKparameters the PK parameters to include as a character vector. To
 #'   see the full set of possible parameters to extract, enter
 #'   \code{data(AllPKParameters)} into the console. By default, if you supply a
@@ -62,10 +59,10 @@
 #'   percentiles")} as long as they were included in your simulator output. Note
 #'   that the confidence intervals are geometric since that's what the simulator
 #'   outputs (see an AUC tab and the summary statistics; these values are the
-#'   ones for, e.g., "90% confidence interval around the geometric mean(lower
-#'   limit)"). Setting \code{variability_option = NA} will omit any of the
-#'   variability other than the CV. The CV will automatically be included unless
-#'   you omit it with \code{includeCV = FALSE}.
+#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
+#'   limit)"). Setting \code{variability_option = NA} will omit reporting any of
+#'   the variability statistics other than the CV. The CV will automatically be
+#'   included unless you omit it with \code{includeCV = FALSE}.
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
@@ -84,10 +81,9 @@
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
-#' @param sim_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the
-#'   simulator output file. This is for when you DON'T fill out a report input
-#'   form and instead plan to add information about the observed data later
-#'   manually.
+#' @param sim_data_file the simulator output file. This is only for when you
+#'   don't fill out a report input form because you either have no observed data
+#'   or you want to compare those data later manually.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.csv". If you leave off ".csv", it will still be saved as a csv file.
@@ -152,23 +148,17 @@ so_table <- function(report_input_file = NA,
     }
     
     # Figuring out what kind of means user wants, experimental details, etc.
-    if(class(sectionInfo_input) != "logical" | # sectionInfo_input will be "logical" class if left as default value of NA.
-       (class(sectionInfo_input) == "logical" & complete.cases(report_input_file) &
-        complete.cases(sheet_report))){
+    
+    # First, the scenarios where there are observed data to compare (sectionInfo
+    # exists)
+    if(class(sectionInfo) != "logical"){
         
-        if(class(sectionInfo) == "logical"){ # I think this should never happen... I think this bit of code is out of date and not necessary. -LS
-            # User has supplied a report_input_file but hasn't run
-            # getSectionInfo yet
-            sectionInfo <- getSectionInfo(report_input_file = report_input_file,
-                                          sheet_report = sheet_report)
-        }
-        
-        SimFile <- sectionInfo$SimFile
+        sim_data_file <- sectionInfo$sim_data_file
         MeanType <- ifelse(is.na(mean_type),
-                           sectionInfo$MeanType,
+                           sectionInfo$ObsData$MeanType,
                            mean_type)
         MeanType <- ifelse(is.na(MeanType), "geometric", MeanType)
-        GMR_mean_type <- sectionInfo$GMR_mean_type
+        GMR_mean_type <- sectionInfo$ObsData$GMR_mean_type
         if(is.null(GMR_mean_type)){GMR_mean_type <- MeanType}
         Deets <- sectionInfo
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
@@ -176,26 +166,32 @@ so_table <- function(report_input_file = NA,
         
     } else {
         
-        # This is for when user has only supplied a simulator output file, so
-        # there are no observed data for comparisons.
+        # And second, the scenario where user has only supplied a simulator
+        # output file, so there are no observed data for comparisons.
         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
         GMR_mean_type <- "geometric"
         Deets <- extractExpDetails(sim_data_file = sim_data_file)
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
         DoseRegimen <- Deets$Regimen_sub
-        SimFile <- sim_data_file
+        sim_data_file <- sim_data_file
     }
-    
     
     if(complete.cases(PKparameters[1])){
         PKToPull <- PKparameters
         
     } else {
-        # The most commonly requested PK parameters
-        PKToPull <- AllPKParameters %>%
-            filter(str_detect(PKparameter, "AUCinf|AUCtau|CL|Cmax|HalfLife|tmax")) %>%
-            filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
-            pull(PKparameter) %>% unique()
+        if(class(sectionInfo) == "logical"){
+            # The most commonly requested PK parameters
+            PKToPull <- AllPKParameters %>%
+                filter(str_detect(PKparameter, "AUCinf|AUCtau|CL|Cmax|HalfLife|tmax")) %>%
+                filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
+                pull(PKparameter) %>% unique()
+        } else {
+            # The PK parameters that match the observed data
+            PKToPull <- AllPKParameters %>% 
+                filter(PKparameter %in% names(sectionInfo$ObsData)) %>% 
+                pull(PKparameter) %>% unique()
+        }
     }
     
     # If dose regimen were single-dose, then only pull dose 1 data.
@@ -206,8 +202,9 @@ so_table <- function(report_input_file = NA,
         PKToPull <- PKToPull[PKToPull %in% SDParam]
     } else {
         # If it were multiple dose *and* if they did not specify PK parameters
-        # to pull, then only pull ss parameters.
-        if(is.na(PKparameters[1])){
+        # to pull or have observed data to compare, then only pull ss
+        # parameters.
+        if(is.na(PKparameters[1]) & class(sectionInfo_input) == "logical"){
             PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
         }
     }
@@ -222,7 +219,7 @@ so_table <- function(report_input_file = NA,
     }
     
     # Getting PK parameters from the AUC tab
-    suppressWarnings(
+    MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
         MyPKResults_all <- extractPK(sim_data_file = SimFile,
                                      PKparameters = PKToPull,
                                      sheet = sheet_PKparameters, 
@@ -386,8 +383,7 @@ so_table <- function(report_input_file = NA,
     # observed data -----------------------------------------------------
     if(class(sectionInfo) != "logical"){
         
-        MyObsPK <- sectionInfo[names(sectionInfo)[
-            names(sectionInfo) %in% MyObsPKParam]] %>%
+        MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
             as.data.frame() %>% t() %>% as.data.frame() %>%
             rename("Obs" = V1) %>%
             mutate(PKParam = row.names(.),

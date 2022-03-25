@@ -41,12 +41,13 @@ here. Most of the time, this should be left as NA.}
 \item{variability_option}{What type of variability would you like the table
 to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-percentiles")}. Note that the confidence intervals are geometric since
-that's what the simulator outputs (see an AUC tab and the summary
-statistics; these values are the ones for, e.g., "90% confidence interval
-around the geometric mean(lower limit)"). Setting \code{variability_option
-= NA} will omit any of the variability other than the CV. The CV will
-automatically be included unless you omit it with \code{includeCV = FALSE}.}
+percentiles")} as long as they were included in your simulator output. Note
+that the confidence intervals are geometric since that's what the simulator
+outputs (see an AUC tab and the summary statistics; these values are the
+ones for, e.g., "90\% confidence interval around the geometric mean(lower
+limit)"). Setting \code{variability_option = NA} will omit reporting any of
+the variability statistics other than the CV. The CV will automatically be
+included unless you omit it with \code{includeCV = FALSE}.}
 
 \item{concatVariability}{Would you like to have the variability concatenated?
 TRUE or FALSE. If "TRUE", the output will be formatted into a single row
