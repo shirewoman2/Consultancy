@@ -193,8 +193,10 @@ extractObsConcTime <- function(obs_data_file){
     
     
     obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:ncol(obs_data_xl)]
-    if(any(str_detect(t(obs_data_xl[11, ]), "Period"), na.rm = TRUE)){
-        if(any(str_detect(t(obs_data_xl[11, ]), "Placenta"), na.rm = TRUE)){
+    MainColNames <- as.character(t(obs_data_xl[11, ]))
+    
+    if(any(str_detect(MainColNames, "Period"), na.rm = TRUE)){
+        if(any(str_detect(MainColNames, "Placenta"), na.rm = TRUE)){
             # v21
             names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
                                  "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
@@ -205,16 +207,29 @@ extractObsConcTime <- function(obs_data_file){
                                  "PlacentaVol_L", "FetalWt_kg")
             
         } else {
-            # V20 -- maybe v19? 
-            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                                 "InfDuration", "Period", "Age", "Weight_kg",
-                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                 "SmokingStatus")
+            # V20
+            if(any(str_detect(MainColNames, "Gestational Age"))){
+                names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                     "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                     "InfDuration", "Period", "Age", "Weight_kg",
+                                     "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                     "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                     "SmokingStatus", "GestationalAge_wk", 
+                                     "FetalWt_kg")
+                
+            } else {
+                
+                # v19
+                names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                     "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                     "InfDuration", "Period", "Age", "Weight_kg",
+                                     "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                     "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                     "SmokingStatus")
+            }
         }
     } else {
-        # pre V20 
+        # pre V19 
         names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
                              "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
                              "InfDuration", "Age", "Weight_kg",
