@@ -192,7 +192,6 @@ graph_boxplot <- function(DF,
         axis.text = element_text(color = "black", size = 12),
         axis.title = element_text(color = "black",
                                   face = "bold", size = 14),
-        text = element_text(family = "Calibri"),
         legend.background = element_rect(color=NA, fill=NA),
         legend.key = element_rect(color=NA, fill=NA))
     

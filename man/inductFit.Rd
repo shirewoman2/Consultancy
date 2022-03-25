@@ -57,7 +57,8 @@ fold-change data, e.g., mRNA measurements or activity.}
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}
 
-\item{donor_column}{}
+\item{donor_column}{the name of the column within DF that contains the donor
+IDs}
 
 \item{fitByDonor}{TRUE or FALSE: Do you want to fit the data by individual
 donor (TRUE) or in aggregate (FALSE)?}

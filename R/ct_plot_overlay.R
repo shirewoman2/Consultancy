@@ -325,8 +325,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
               axis.text = element_text(color = "black"),
               axis.title = element_text(color = "black", face = "bold"),
               axis.line.y = element_line(color = "black"),
-              axis.line.x.bottom = element_line(color = "black"),
-              text = element_text(family = "Calibri"))
+              axis.line.x.bottom = element_line(color = "black"))
     
     if(floating_facet_scale){
         A <- A + 

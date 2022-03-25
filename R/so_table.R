@@ -219,8 +219,8 @@ so_table <- function(report_input_file = NA,
     }
     
     # Getting PK parameters from the AUC tab
-    MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
-        MyPKResults_all <- extractPK(sim_data_file = SimFile,
+    suppressWarnings(
+        MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                      PKparameters = PKToPull,
                                      sheet = sheet_PKparameters, 
                                      returnAggregateOrIndiv =
@@ -473,7 +473,7 @@ so_table <- function(report_input_file = NA,
                #                                  paste0(x, "%"), x)),
                # across(.cols = everything(),
                #        .fns = function(x) ifelse(x == "NA%", NA, x))
-               ) 
+        ) 
     # If this throws an error for you, try running "tidyverse_update()", copy
     # whatever it says is out of date, restart your R session (Ctrl Shift
     # F10), and then paste the output (something like

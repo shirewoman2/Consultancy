@@ -1024,8 +1024,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
               axis.text = element_text(color = "black"),
               axis.title = element_text(color = "black", face = "bold"),
               axis.line.x.bottom = element_line(color = "black"),
-              axis.line.y.left = element_line(color = "black"),
-              text = element_text(family = "Calibri"))
+              axis.line.y.left = element_line(color = "black"))
     
     # If the user didn't want the legend or if the graph is of Inhibitor1,
     # remove legend.

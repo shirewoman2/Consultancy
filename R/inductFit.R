@@ -84,38 +84,6 @@
 #'   quotes here, e.g., "My fitted induction parameters.csv". If you leave off
 #'   ".csv", it will still be saved as a csv file.
 #'
-#' @param donor_column
-#'   (ggplot2 is an R package for graphing.)}
-#'
-#'   \item{"rainbow"}{colors selected from a rainbow palette. The default
-#'   palette is limited to something like 6 colors, so if you have more than
-#'   that, that's when this palette is most useful. It's \emph{not} very useful
-#'   when you only need a couple of colors.}
-#'
-#'   \item{"blue-green"}{a set of blues and greens}
-#'
-#'   \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
-#'   State that are friendly to those with red-green colorblindness}
-#'
-#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-#'   package}}
-#' @param y_axis_limits Optionally set the Y axis limits, e.g., \code{c(1, 5)}.
-#'   If left as NA, the Y axis limits will be automatically selected.
-#' @param hline_foldinduct1 TRUE or FALSE on whether to include a dotted red line where
-#'   the fold induction = 1.
-#' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
-#'   will be saved as a png file, but if you specify a different file extension,
-#'   it will be saved as that file format. Acceptable extensions are "eps",
-#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-#'   means the file will not be automatically saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 6
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My fitted induction parameters.csv". If you leave off
-#'   ".csv", it will still be saved as a csv file.
-#'
-#' @param donor_column
 #'
 #' @return Returns a list of \describe{ \item{Fit}{the fitted parameters}
 #'   \item{Fit_means}{the mean fitted parameters for all donors} \item{Graph}{a
