@@ -2,14 +2,11 @@
 #'
 #' Creates an Excel file with forms to fill out. Those forms can be fed into
 #' \code{\link{so_table}} to automate some of the calculations for writing a
-#' report. \strong{A few notes:} \enumerate{ \item{This generates a
-#' warning that we're just not able to get rid of that says "Workbook has no
-#' sheets!" Please disregard that.} \item{This does not work on the SharePoint
-#' drive because R doesn't have permission to write there. Please set your
-#' working directory to a different location. It \emph{will} work on the Large
-#' File Store drive.} \item{This will be quite slow when running from your local
-#' machine. Really, everything runs noticeably faster when you run it from your
-#' VM instead.}}
+#' report. \strong{A few notes:} \enumerate{ \item{This generates a warning that
+#' we're just not able to get rid of that says "Workbook has no sheets!" Please
+#' disregard that.} \item{This does not work on the SharePoint drive because R
+#' doesn't have permission to write there. Please set your working directory to
+#' a different location. It \emph{will} work on the Large File Store drive.}}
 #'
 #' The tabs in the Excel file this function creates are: \describe{
 #'
@@ -24,20 +21,20 @@
 #'
 #' \item{study info - no DDI}{a form for entering observed PK data about a
 #' clinical study that was \emph{not} a drug-drug interaction study. Make as
-#' many copies of this tab as there are clinical studies you want to compare and
-#' name the tabs according to which study they describe.}
+#' many copies of this tab as there are clinical data sets that you want to
+#' compare and name the tabs according to which data sets they describe.}
 #'
-#' \item{study info - DDI}{a form for entering observed PK data about a
-#' clinical study that \emph{was} a drug-drug interaction study. Make as many
-#' copies of this tab as there are clinical studies you want to compare and name
-#' the tabs according to which study they describe.}
-#' }
+#' \item{study info - DDI}{a form for entering observed PK data about a clinical
+#' study that \emph{was} a drug-drug interaction study. Make as many copies of
+#' this tab as there are clinical data sets you want to compare and name the
+#' tabs according to which data sets they describe.} }
 #'
 #' @param filename the Excel file name that you'd like for the form you're
 #'   creating, ending in ".xlsx"
 #'
 #' @return This does not return an R object; it saves an Excel file that serves
-#'   as a form for report information.
+#'   as a form for recording observed data and certain general information for a
+#'   report.
 #'
 #' @export
 #'
@@ -117,7 +114,7 @@ generateReportInputForm <- function(filename){
     
     
     StudyNoDDI <- StudyNoDDI[2:nrow(StudyNoDDI), ]
-    formatXL(StudyNoDDI %>% rename("Observed data (no DDI)" = X1,
+    formatXL(StudyNoDDI %>% rename("Simulated data (no DDI)" = X1,
                                  "ignore" = X2, "_" = X3),
              file = filename,
              sheet = "study info - no DDI",
@@ -125,18 +122,31 @@ generateReportInputForm <- function(filename){
                              width = c(75, 0, 30)),
              styles = list(
                  list(columns = 1, textposition = list(wrapping = TRUE)),
-                 list(rows = 0, font = list(bold = TRUE, size = 16)), # observed data section
-                 list(rows = 36, font = list(bold = TRUE, size = 16)), # simulated data section
-                 list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
-                 list(rows = c(1, 37), font = list(italics = TRUE),
-                      textposition = list(wrapping = TRUE)),
-                 list(rows = 3, font = list(bold = TRUE),
+                 
+                 # simulated data section
+                 list(rows = 0, font = list(bold = TRUE, size = 18)), 
+                 list(rows = c(1, 8), font = list(bold = TRUE, size = 12), # "item", "value"
                       textposition = list(alignment = "middle")),
-                 list(rows = c(8, 21, 39), font = list(bold = TRUE))
+                 
+                 # observed data section
+                 list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
+                 list(rows = 5, font = list(bold = TRUE, size = 18)), 
+                 list(rows = 6, font = list(italics = TRUE), # Notes for observed data section
+                      textposition = list(wrapping = TRUE)),
+                 
+                 # Dose 1 data
+                 list(rows = 13, columns = 1:3, 
+                      font = list(bold = TRUE, size = 14), fill = "#DDEBF7"),
+                 list(rows = 14:24, columns = 1:3, fill = "#DDEBF7"),
+                      
+                 # Multiple-dose data
+                 list(rows = 26, columns = 1:3, 
+                      font = list(bold = TRUE, size = 14), fill = "#E2EFDA"),
+                 list(rows = 27:37, columns = 1:3, fill = "#E2EFDA")
              ))
     
     StudyDDI <- StudyDDI[2:nrow(StudyDDI), ]
-    formatXL(StudyDDI %>% rename("Observed data (DDI)" = X1,
+    formatXL(StudyDDI %>% rename("Simulated data (DDI)" = X1,
                                "ignore" = X2, "_" = X3, "__" = X4,
                                "ignore2" = X5, "___" = X6),
              file = filename,
@@ -146,15 +156,31 @@ generateReportInputForm <- function(filename){
                                        75, 0, 30)),
              styles = list(
                  list(columns = c(1, 4), textposition = list(wrapping = TRUE)),
-                 list(rows = 0, font = list(bold = TRUE, size = 16)), # observed data section
-                 list(rows = 55, font = list(bold = TRUE, size = 16)), # simulated data section
-                 list(rows = 0, columns = 3:6, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
-                 list(rows = c(1,56), font = list(italics = TRUE),
-                      textposition = list(wrapping = TRUE)),
-                 list(rows = 3, font = list(bold = TRUE),
+                 
+                 # simulated data section
+                 list(rows = 0, font = list(bold = TRUE, size = 18)), 
+                 list(rows = c(1, 8), font = list(bold = TRUE, size = 12), # "item", "value"
                       textposition = list(alignment = "middle")),
-                 list(rows = c(9, 22, 32, 45, 58), font = list(bold = TRUE)),
-                 list(rows = 59, textposition = list(wrapping = TRUE))
+                 
+                 # observed data section
+                 list(rows = 0, columns = 2:6, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
+                 list(rows = 5, font = list(bold = TRUE, size = 18)), 
+                 list(rows = 6, font = list(italics = TRUE), # Notes for observed data section
+                      textposition = list(wrapping = TRUE)),
+                 
+                 # Dose 1 data
+                 list(rows = 14, columns = 1:6, 
+                      font = list(bold = TRUE, size = 14), fill = "#DDEBF7"),
+                 list(rows = c(15, 28), columns = 1:6, 
+                      font = list(bold = TRUE), fill = "#DDEBF7"),
+                 list(rows = c(16:27, 29:34), columns = 1:6, fill = "#DDEBF7"),
+                 
+                 # Multiple-dose data
+                 list(rows = 37, columns = 1:6, 
+                      font = list(bold = TRUE, size = 14), fill = "#E2EFDA"),
+                 list(rows = c(38, 51), columns = 1:6, 
+                      font = list(bold = TRUE), fill = "#E2EFDA"),
+                 list(rows = c(39:50, 52:57), columns = 1:6, fill = "#E2EFDA")
              ))
     
     setwd(CurDir)

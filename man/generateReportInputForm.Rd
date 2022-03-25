@@ -12,19 +12,17 @@ creating, ending in ".xlsx"}
 }
 \value{
 This does not return an R object; it saves an Excel file that serves
-  as a form for report information.
+  as a form for recording observed data and certain general information for a
+  report.
 }
 \description{
 Creates an Excel file with forms to fill out. Those forms can be fed into
 \code{\link{so_table}} to automate some of the calculations for writing a
-report. \strong{A few notes:} \enumerate{ \item{This generates a
-warning that we're just not able to get rid of that says "Workbook has no
-sheets!" Please disregard that.} \item{This does not work on the SharePoint
-drive because R doesn't have permission to write there. Please set your
-working directory to a different location. It \emph{will} work on the Large
-File Store drive.} \item{This will be quite slow when running from your local
-machine. Really, everything runs noticeably faster when you run it from your
-VM instead.}}
+report. \strong{A few notes:} \enumerate{ \item{This generates a warning that
+we're just not able to get rid of that says "Workbook has no sheets!" Please
+disregard that.} \item{This does not work on the SharePoint drive because R
+doesn't have permission to write there. Please set your working directory to
+a different location. It \emph{will} work on the Large File Store drive.}}
 }
 \details{
 The tabs in the Excel file this function creates are: \describe{
@@ -40,14 +38,13 @@ this out for using the \code{\link{so_table}} function.}
 
 \item{study info - no DDI}{a form for entering observed PK data about a
 clinical study that was \emph{not} a drug-drug interaction study. Make as
-many copies of this tab as there are clinical studies you want to compare and
-name the tabs according to which study they describe.}
+many copies of this tab as there are clinical data sets that you want to
+compare and name the tabs according to which data sets they describe.}
 
-\item{study info - DDI}{a form for entering observed PK data about a
-clinical study that \emph{was} a drug-drug interaction study. Make as many
-copies of this tab as there are clinical studies you want to compare and name
-the tabs according to which study they describe.}
-}
+\item{study info - DDI}{a form for entering observed PK data about a clinical
+study that \emph{was} a drug-drug interaction study. Make as many copies of
+this tab as there are clinical data sets you want to compare and name the
+tabs according to which data sets they describe.} }
 }
 \examples{
 generateReportInputForm(paste0(SimcypDir$SharePtDir,
