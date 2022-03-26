@@ -1364,31 +1364,26 @@ extractPK <- function(sim_data_file,
                    StartRow_ind, EndRow_ind) %>% 
             filter(complete.cases(PKparam)) %>% unique()
         
-        # StatNameCheck <- all(sapply(Out_agg, FUN = function(.) all(names(.) == names(Out_agg[[1]]))))
-        # 
-        # if(StatNameCheck){
-        
-        StatNames <- renameStats(Out_agg$Statistic) %>% as.character()
-        
-        # NEED TO CHECK THIS WHEN INDIVIDUAL STATS REQUESTED, other scenarios. I
-        # think there are ways the aggregate stat row number could go wrong.
-        
-        StatNum <- 1:length(StatNames)
-        names(StatNum) <- StatNames
-        
-        DataCheck_agg <- DataCheck %>% 
-            select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
-            left_join(data.frame(File = unique(DataCheck$File), 
-                                 Stat = StatNames)) %>% 
-            mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
-                   Cell = paste0(Column, Row_agg)) %>% 
-            select(File, PKparam, Tab, Column, Cell, Stat) %>% 
-            pivot_wider(names_from = Stat, values_from = Cell)
-        
-        DataCheck <- DataCheck %>% left_join(DataCheck_agg) %>% 
-            select(File, PKparam, Tab, Column, StartRow_ind, EndRow_ind,
-                   StartRow_agg, EndRow_agg, everything())
-        # }
+        if(returnAggregateOrIndiv %in% c("both", "aggregate")){
+            
+            StatNames <- renameStats(Out_agg$Statistic) %>% as.character()
+            
+            StatNum <- 1:length(StatNames)
+            names(StatNum) <- StatNames
+            
+            DataCheck_agg <- DataCheck %>% 
+                select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
+                left_join(data.frame(File = unique(DataCheck$File), 
+                                     Stat = StatNames)) %>% 
+                mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
+                       Cell = paste0(Column, Row_agg)) %>% 
+                select(File, PKparam, Tab, Column, Cell, Stat) %>% 
+                pivot_wider(names_from = Stat, values_from = Cell)
+            
+            DataCheck <- DataCheck %>% left_join(DataCheck_agg) %>% 
+                select(File, PKparam, Tab, Column, StartRow_ind, EndRow_ind,
+                       StartRow_agg, EndRow_agg, everything())
+        }
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- unique(DataCheck)
