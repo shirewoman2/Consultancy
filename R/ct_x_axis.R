@@ -265,9 +265,9 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                               "UserDefined", BreaksToUse)
         
         XBreaks <- switch(BreaksToUse,
-                          "2hr" = seq(0, 2, 0.5),
-                          "4hr" = seq(0, 4, 1),
-                          "8hr" = seq(0, 8, 1),
+                          "2hr" = seq(0, 2, 0.25),
+                          "4hr" = seq(0, 4, 0.5),
+                          "8hr" = seq(0, 8, 0.5),
                           "12hr" = seq(0, 12, 1),
                           "24hr" = seq(0, 24, 2),
                           "48hr" = seq(0, 48, 4),
