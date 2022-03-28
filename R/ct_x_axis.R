@@ -253,8 +253,9 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     if(TimeUnits == "hours"){
         
         PossBreaks <- data.frame(
-            Tlast = c(12, 24, 48, 96, 168, 336, 360, 504, 672, Inf),
-            BreaksToUse = c("12hr", "24hr", "48hr", "96hr", "1wk", "2wk",
+            Tlast = c(2, 4, 8, 12, 24, 48, 96, 168, 336, 360, 504, 672, Inf),
+            BreaksToUse = c("2hr", "4hr", "8hr", "12hr", "24hr", "48hr", "96hr",
+                            "1wk", "2wk",
                             "15d", "3wk", "4wk", "4wkplus"))
         
         BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
@@ -264,6 +265,9 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                               "UserDefined", BreaksToUse)
         
         XBreaks <- switch(BreaksToUse,
+                          "2hr" = seq(0, 2, 0.5),
+                          "4hr" = seq(0, 4, 1),
+                          "8hr" = seq(0, 8, 1),
                           "12hr" = seq(0, 12, 1),
                           "24hr" = seq(0, 24, 2),
                           "48hr" = seq(0, 48, 4),
