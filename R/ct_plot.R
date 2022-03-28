@@ -935,6 +935,22 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 scale_linetype_manual(values = line_type[1:2]) +
                 scale_color_manual(values = line_color[1:2])
             
+            
+            if(nrow(obs_data) > 0){
+                if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    A <- A + geom_point(data = obs_data, size = 2,
+                                        shape = obs_shape[1], stroke = 1, 
+                                        fill = NA)
+                } else {
+                    
+                    A <- A + geom_point(data = obs_data, size = 2,
+                                        fill = obs_color[1], alpha = 0.5,
+                                        shape = obs_shape[1], stroke = 1) +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = NA, shape = obs_shape[1], stroke = 1)
+                }
+            }
+            
         } else {
             
             A <- ggplot(sim_data_mean %>%
@@ -943,6 +959,31 @@ ct_plot <- function(sim_obs_dataframe = NA,
                 geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
+            
+            if(nrow(obs_data) > 0){
+                if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    A <-  A + geom_point(data = obs_data, size = 2,
+                                         stroke = 1, fill = NA)
+                } else {
+                    # Glitch when the user has supplied observed data
+                    # with a different number of inhibitors than
+                    # sim_data_trial, e.g., when the obs data came
+                    # with the simulator output file. Addressing that.
+                    if(length(unique(obs_data$Inhibitor)) == 1){
+                        obs_color <- obs_color[1]
+                    }
+                    
+                    A <- A +
+                        geom_point(data = obs_data, size = 2,
+                                   alpha = 0.5, stroke = 1) +
+                        scale_fill_manual(values = obs_color) +
+                        # have to add geom_point 2x b/c alpha applies to both
+                        # color (as in, the outline of the point) AND the fill
+                        # of the point
+                        geom_point(data = obs_data, size = 2,
+                                   fill = NA, stroke = 1)
+                }
+            }
         }
     }
     
@@ -1017,7 +1058,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
              color = ifelse(complete.cases(legend_label), 
                             legend_label, "Inhibitor"),
              fill = ifelse(complete.cases(legend_label), 
-                            legend_label, "Inhibitor")) +
+                           legend_label, "Inhibitor")) +
         theme(panel.background = element_rect(fill="white", color=NA),
               legend.key = element_rect(fill = "white"),
               axis.ticks = element_line(color = "black"),
