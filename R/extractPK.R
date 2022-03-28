@@ -592,14 +592,14 @@ extractPK <- function(sim_data_file,
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
         PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE)){
         # Error catching
-        if(any(c("AUC0(Sub)(CPlasma)") %in% AllSheets) == FALSE){
+        if(any(str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)")) == FALSE){
             
-            warning(paste0("The sheet 'AUC' or 'AUC0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
+            warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_AUC0, collapse = ", "),
                            ". None of these parameters can be extracted."))
         } else {
             
-            Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), AllSheets)[1]
+            Sheet <- AllSheets[str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)")][1]
             
             AUC0_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, sheet = Sheet,
@@ -634,7 +634,7 @@ extractPK <- function(sim_data_file,
             EndRow_agg <- which(is.na(AUC0_xl$...2))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
             EndRow_agg <- ifelse(is.na(EndRow_agg),
-                                 nrow(AUC_xl), EndRow_agg)
+                                 nrow(AUC0_xl), EndRow_agg)
             
             for(i in PKparameters_AUC0){
                 ColNum <- findCol(i)
