@@ -9,15 +9,19 @@
 #' output while it waits for access to the file.
 #'
 #' @param sim_data_file the simulator output file
-#' @param PKparameters the PK parameters to include as a character vector. To
-#'   see the full set of possible parameters to extract, enter
-#'   \code{data(AllPKParameters)} into the console. If left as NA, the PK
-#'   parameters will be automatically selected. An example of acceptable input
-#'   here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss",
-#'   "Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}. Parameters that
-#'   don't make sense for your scenario -- like asking for
+#' @param PKparameters the PK parameters to include as a character vector.
+#'   Notes: \itemize{ \item{To see the full set of possible parameters to
+#'   extract, enter \code{data(AllPKParameters)} into the console.} \item{By
+#'   default, if you supply a file for \code{report_input_file}, the PK
+#'   parameters included are only those included for the observed data in that
+#'   file. Otherwise, the PK parameters will be automatically selected.}
+#'   \item{Parameters that don't make sense for your scenario -- like asking for
 #'   \code{AUCinf_ss_withInhib} when your simulation did not include an
-#'   inhibitor or effector -- will not be included.
+#'   inhibitor or effector -- will not be included.} \item{tmax will be listed
+#'   as median, min, and max rather than mean, lower and higher 90 percent
+#'   confidence interval.}} An example of acceptable input here:
+#'   \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib",
+#'   "AUCtau_ratio_ss", "Cmax_ratio_ss")}.
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
@@ -36,8 +40,6 @@
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
 #'   or percentile. Ex: "2400 to 2700"
-#' @param includeHalfLife TRUE or FALSE for whether to include half life as a
-#'   parameter in the output table
 #' @param includeTrialMeans TRUE or FALSE for whether to include the range of
 #'   trial means for a given parameter. Note: This is calculated from individual
 #'   values rather than pulled directly from the output.
@@ -76,7 +78,6 @@ pksummary_table <- function(sim_data_file,
                             mean_type = "geometric",
                             variability_option = "90% CI",
                             concatVariability = FALSE,
-                            includeHalfLife = FALSE,
                             includeTrialMeans = FALSE,
                             includeCV = TRUE,
                             prettify_columns = TRUE,
@@ -89,7 +90,6 @@ pksummary_table <- function(sim_data_file,
                     mean_type = mean_type,
                     variability_option = variability_option,
                     concatVariability = concatVariability,
-                    includeHalfLife = includeHalfLife,
                     includeTrialMeans = includeTrialMeans,
                     includeCV = includeCV,
                     prettify_columns = prettify_columns,

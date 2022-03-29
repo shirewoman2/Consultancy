@@ -12,14 +12,12 @@ so_table(
   mean_type = NA,
   variability_option = "90\% CI",
   concatVariability = FALSE,
-  includeHalfLife = FALSE,
   includeTrialMeans = FALSE,
   includeCV = TRUE,
   prettify_columns = TRUE,
   checkDataSource = TRUE,
   sim_data_file = NA,
-  save_table = NA,
-  sectionInfo = NA
+  save_table = NA
 )
 }
 \arguments{
@@ -31,26 +29,28 @@ including the path if it's in any other directory than the current one}
 information about the study, e.g., "study info - DDI" or "study info - no
 DDI" if you haven't renamed the tab.}
 
-\item{PKparameters}{the PK parameters to include as a character vector. To
-see the full set of possible parameters to extract, enter
-\code{data(AllPKParameters)} into the console. By default, if you supply a
-file for \code{report_input_file}, the PK parameters included are only
-those included for the observed data in that file. Otherwise, the PK
-parameters will be automatically selected. An example of acceptable input
-here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss",
-"Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}. Parameters that
-don't make sense for your scenario -- like asking for
+\item{PKparameters}{the PK parameters to include as a character vector.
+Notes: \itemize{ \item{To see the full set of possible parameters to
+extract, enter \code{data(AllPKParameters)} into the console.} \item{By
+default, if you supply a file for \code{report_input_file}, the PK
+parameters included are only those included for the observed data in that
+file. Otherwise, the PK parameters will be automatically selected.}
+\item{Parameters that don't make sense for your scenario -- like asking for
 \code{AUCinf_ss_withInhib} when your simulation did not include an
-inhibitor or effector -- will not be included.}
+inhibitor or effector -- will not be included.} \item{tmax will be listed
+as median, min, and max rather than mean, lower and higher 90 percent
+confidence interval.}} An example of acceptable input here:
+\code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib",
+"AUCtau_ratio_ss", "Cmax_ratio_ss")}.}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
 here. Most of the time, this should be left as NA.}
 
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
-Only specify this if you'd like to override the value listed in
-\code{sectionInfo}. If no value is specified here or in \code{sectionInfo},
-the default is "geometric".}
+If you supplied a report input form, only specify this if you'd like to
+override the value listed there. If no value is specified here or in
+\code{sectionInfo}, the default is "geometric".}
 
 \item{variability_option}{What type of variability would you like the table
 to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
@@ -67,9 +67,6 @@ included unless you omit it with \code{includeCV = FALSE}.}
 TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 and listed as the lower confidence interval or percentile to the upper CI
 or percentile. Ex: "2400 to 2700"}
-
-\item{includeHalfLife}{TRUE or FALSE for whether to include half life as a
-parameter in the output table}
 
 \item{includeTrialMeans}{TRUE or FALSE for whether to include the range of
 trial means for a given parameter. Note: This is calculated from individual
@@ -96,11 +93,6 @@ info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.csv". If you leave off ".csv", it will still be saved as a csv file.
 If you requested both the table and the QC info, the QC file will have "-
 QC" added to the end of the file name.}
-
-\item{sectionInfo}{SOON TO BE DEPRECATED. information about the simulated and
-observed data. This is output from the function
-\code{\link{getSectionInfo}} and can be used instead of listing the Excel
-file and report template sheet name as input.}
 }
 \value{
 a data.frame of S/O values or a list of that data.frame (named
@@ -110,10 +102,14 @@ a data.frame of S/O values or a list of that data.frame (named
 \description{
 \code{so_table} creates simulated vs. observed tables for reports and
 presentations, including reporting means, CVs, confidence intervals or
-percentiles, and ratios of simulated vs. observed mean values. Because we
-need to have a standardized way to input observed data, setting up the input
-for this function requires filling out an Excel template form. Here are the
-steps to take: \enumerate{\item{Use the function
+percentiles, and ratios of simulated vs. observed mean values. Please see the
+notes at the bottom of this help file for options for how to supply observed
+data in a standardized fashion that this function can read.
+}
+\details{
+Because we need to have a standardized way to input observed data, setting up
+the input for this function requires filling out an Excel template form. Here
+are the steps to take: \enumerate{\item{Use the function
 \code{\link{generateReportInputForm}} to create an Excel file where you can
 enter information about your project. Example:
 \code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the

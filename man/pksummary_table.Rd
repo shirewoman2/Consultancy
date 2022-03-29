@@ -22,15 +22,19 @@ pksummary_table(
 \arguments{
 \item{sim_data_file}{the simulator output file}
 
-\item{PKparameters}{the PK parameters to include as a character vector. To
-see the full set of possible parameters to extract, enter
-\code{data(AllPKParameters)} into the console. If left as NA, the PK
-parameters will be automatically selected. An example of acceptable input
-here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss",
-"Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}. Parameters that
-don't make sense for your scenario -- like asking for
+\item{PKparameters}{the PK parameters to include as a character vector.
+Notes: \itemize{ \item{To see the full set of possible parameters to
+extract, enter \code{data(AllPKParameters)} into the console.} \item{By
+default, if you supply a file for \code{report_input_file}, the PK
+parameters included are only those included for the observed data in that
+file. Otherwise, the PK parameters will be automatically selected.}
+\item{Parameters that don't make sense for your scenario -- like asking for
 \code{AUCinf_ss_withInhib} when your simulation did not include an
-inhibitor or effector -- will not be included.}
+inhibitor or effector -- will not be included.} \item{tmax will be listed
+as median, min, and max rather than mean, lower and higher 90 percent
+confidence interval.}} An example of acceptable input here:
+\code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib",
+"AUCtau_ratio_ss", "Cmax_ratio_ss")}.}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab

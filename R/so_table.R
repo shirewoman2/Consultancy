@@ -2,10 +2,13 @@
 #'
 #' \code{so_table} creates simulated vs. observed tables for reports and
 #' presentations, including reporting means, CVs, confidence intervals or
-#' percentiles, and ratios of simulated vs. observed mean values. Because we
-#' need to have a standardized way to input observed data, setting up the input
-#' for this function requires filling out an Excel template form. Here are the
-#' steps to take: \enumerate{\item{Use the function
+#' percentiles, and ratios of simulated vs. observed mean values. Please see the
+#' notes at the bottom of this help file for options for how to supply observed
+#' data in a standardized fashion that this function can read.
+#'
+#' Because we need to have a standardized way to input observed data, setting up
+#' the input for this function requires filling out an Excel template form. Here
+#' are the steps to take: \enumerate{\item{Use the function
 #' \code{\link{generateReportInputForm}} to create an Excel file where you can
 #' enter information about your project. Example:
 #' \code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
@@ -31,28 +34,26 @@
 #' @param sheet_report the sheet in the Excel report template file that contains
 #'   information about the study, e.g., "study info - DDI" or "study info - no
 #'   DDI" if you haven't renamed the tab.
-#' @param sectionInfo SOON TO BE DEPRECATED. information about the simulated and
-#'   observed data. This is output from the function
-#'   \code{\link{getSectionInfo}} and can be used instead of listing the Excel
-#'   file and report template sheet name as input.
-#' @param PKparameters the PK parameters to include as a character vector. To
-#'   see the full set of possible parameters to extract, enter
-#'   \code{data(AllPKParameters)} into the console. By default, if you supply a
-#'   file for \code{report_input_file}, the PK parameters included are only
-#'   those included for the observed data in that file. Otherwise, the PK
-#'   parameters will be automatically selected. An example of acceptable input
-#'   here: \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss",
-#'   "Cmax_ss_withInhib", "AUCtau_ratio_ss", "Cmax_ratio_ss")}. Parameters that
-#'   don't make sense for your scenario -- like asking for
+#' @param PKparameters the PK parameters to include as a character vector.
+#'   Notes: \itemize{ \item{To see the full set of possible parameters to
+#'   extract, enter \code{data(AllPKParameters)} into the console.} \item{By
+#'   default, if you supply a file for \code{report_input_file}, the PK
+#'   parameters included are only those included for the observed data in that
+#'   file. Otherwise, the PK parameters will be automatically selected.}
+#'   \item{Parameters that don't make sense for your scenario -- like asking for
 #'   \code{AUCinf_ss_withInhib} when your simulation did not include an
-#'   inhibitor or effector -- will not be included.
+#'   inhibitor or effector -- will not be included.} \item{tmax will be listed
+#'   as median, min, and max rather than mean, lower and higher 90 percent
+#'   confidence interval.}} An example of acceptable input here:
+#'   \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib",
+#'   "AUCtau_ratio_ss", "Cmax_ratio_ss")}.
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs.
-#'   Only specify this if you'd like to override the value listed in
-#'   \code{sectionInfo}. If no value is specified here or in \code{sectionInfo},
-#'   the default is "geometric".
+#'   If you supplied a report input form, only specify this if you'd like to
+#'   override the value listed there. If no value is specified here or in
+#'   \code{sectionInfo}, the default is "geometric".
 #' @param variability_option What type of variability would you like the table
 #'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
 #'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
@@ -67,8 +68,6 @@
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
 #'   or percentile. Ex: "2400 to 2700"
-#' @param includeHalfLife TRUE or FALSE for whether to include half life as a
-#'   parameter in the output table
 #' @param includeTrialMeans TRUE or FALSE for whether to include the range of
 #'   trial means for a given parameter. Note: This is calculated from individual
 #'   values rather than being pulled directly from the output.
@@ -106,14 +105,12 @@ so_table <- function(report_input_file = NA,
                      mean_type = NA,
                      variability_option = "90% CI",
                      concatVariability = FALSE,
-                     includeHalfLife = FALSE,
                      includeTrialMeans = FALSE,
                      includeCV = TRUE,
                      prettify_columns = TRUE,
                      checkDataSource = TRUE, 
                      sim_data_file = NA, 
-                     save_table = NA,
-                     sectionInfo = NA){
+                     save_table = NA){
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -123,21 +120,13 @@ so_table <- function(report_input_file = NA,
     report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
                                 report_input_file, paste0(report_input_file, ".xlsx"))
     
-    sectionInfo_input <- sectionInfo
-    
     # Error catching
-    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
-       is.na(report_input_file) & is.na(sim_data_file)){
-        stop("You must enter a value for either 'sectionInfo' or 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
+    if(is.na(report_input_file) & is.na(sim_data_file)){
+        stop("You must enter a value for 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
     }
     
-    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
-       complete.cases(report_input_file) & is.na(sheet_report)){
-        stop("If you specify an Excel file to get the section information from (report_input_file), you must also specify which sheet to read (sheet_report). Note that you do NOT need to specify which sheet in a simulator output file to read.")
-    }
-    
-    if(length(sectionInfo) == 1 && is.na(sectionInfo[1]) &
-       complete.cases(report_input_file) & is.na(sim_data_file)){
+    if(complete.cases(report_input_file) & is.na(sim_data_file)){
+        
         sectionInfo <- getSectionInfo(report_input_file = report_input_file,
                                       sheet_report = sheet_report)
         
@@ -145,6 +134,8 @@ so_table <- function(report_input_file = NA,
         # report_input_file but doesn't include any observed data to
         # compare? Maybe not. If the user doesn't want to include any obs
         # data there, just fill out sim_data_file.
+    } else {
+        sectionInfo <- FALSE
     }
     
     # Figuring out what kind of means user wants, experimental details, etc.
@@ -183,7 +174,9 @@ so_table <- function(report_input_file = NA,
         if(class(sectionInfo) == "logical"){
             # The most commonly requested PK parameters
             PKToPull <- AllPKParameters %>%
-                filter(str_detect(PKparameter, "AUCinf|AUCtau|CL|Cmax|HalfLife|tmax")) %>%
+                # Per Hannah and template: Only include CL/F, t1/2, or tmax if
+                # there's a specific reason to.
+                filter(str_detect(PKparameter, "AUCinf|AUCtau|Cmax")) %>%
                 filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
                 pull(PKparameter) %>% unique()
         } else {
@@ -204,7 +197,7 @@ so_table <- function(report_input_file = NA,
         # If it were multiple dose *and* if they did not specify PK parameters
         # to pull or have observed data to compare, then only pull ss
         # parameters.
-        if(is.na(PKparameters[1]) & class(sectionInfo_input) == "logical"){
+        if(is.na(PKparameters[1]) & class(sectionInfo) == "logical"){
             PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
         }
     }
@@ -478,14 +471,6 @@ so_table <- function(report_input_file = NA,
     # whatever it says is out of date, restart your R session (Ctrl Shift
     # F10), and then paste the output (something like
     # "install.packages(c("dbplyr", "dplyr", "dtplyr", ... ") and execute.
-    
-    # Talked w/Christiane about including t1/2 since that's included in the table,
-    # and she said that Massoud prefers to NOT include it b/c there can be glitches
-    # with its calculation. It's only included if there's a specific reason the
-    # client wants it. Optionally including it.
-    if(includeHalfLife == FALSE){
-        MyPKResults <- MyPKResults %>% select(-matches("HalfLife"))
-    }
     
     # Filtering rows as requested by user
     VarOpts_tableRows <- list("90% CI" = c("CI90_low", "CI90_high"),
