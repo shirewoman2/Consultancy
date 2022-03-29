@@ -125,8 +125,8 @@ generateReportInputForm <- function(filename){
                  
                  # simulated data section
                  list(rows = 0, font = list(bold = TRUE, size = 18)), 
-                 list(rows = c(1, 8), font = list(bold = TRUE, size = 12), # "item", "value"
-                      textposition = list(alignment = "middle")),
+                 list(rows = c(1, 8), font = list(bold = TRUE, size = 12)), # "item", "value"
+                 list(rows = 2, columns = 3, textposition = list(wrapping = TRUE)),
                  
                  # observed data section
                  list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
@@ -161,6 +161,7 @@ generateReportInputForm <- function(filename){
                  list(rows = 0, font = list(bold = TRUE, size = 18)), 
                  list(rows = c(1, 8), font = list(bold = TRUE, size = 12), # "item", "value"
                       textposition = list(alignment = "middle")),
+                 list(rows = 2, columns = 3, textposition = list(wrapping = TRUE)),
                  
                  # observed data section
                  list(rows = 0, columns = 2:6, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
