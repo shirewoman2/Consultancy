@@ -6,7 +6,7 @@
 \usage{
 enz_plot(
   sim_enz_dataframe = NA,
-  figure_type = "percentiles",
+  figure_type = "means only",
   gut_tissue = "colon",
   linear_or_log = "linear",
   ...,

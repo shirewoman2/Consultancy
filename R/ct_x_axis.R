@@ -104,7 +104,7 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                 FirstDoseStart = Data %>%
                     filter(CompoundID == compoundToExtract & 
                                DoseNum == 1) %>% 
-                    summarize(Min = min(Time)) %>% pull(Min) %>% floor(), 
+                    summarize(Min = min(Time)) %>% pull(floor(Min)), 
                 
                 FirstDoseEnd = ceiling(max(Data$Time[Data$CompoundID == compoundToExtract])),
                 

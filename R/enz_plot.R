@@ -35,7 +35,7 @@
 #'          enzyme = "CYP3A4", tissue = "liver", line_type = "dotted")
 
 enz_plot <- function(sim_enz_dataframe = NA,
-                     figure_type = "percentiles",
+                     figure_type = "means only",
                      gut_tissue = "colon",
                      linear_or_log = "linear",
                      ...,

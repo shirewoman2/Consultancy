@@ -474,22 +474,21 @@ ct_plot <- function(sim_obs_dataframe = NA,
             filter(complete.cases(Conc)) 
     }
     
-    
     # Checking whether there are multiple observations at each time point. If
     # so, user should probably be using figure_type = "percentiles" and, if not,
     # user should probably be using figure_type = "trial means", and Hannah
     # would like user to get a warning about that.
-    check <- obs_data %>% group_by(CompoundID, Time) %>% 
+    check <- obs_data %>% group_by(CompoundID, Inhibitor, Time) %>% 
         summarize(N = n())
-    if(any(check$N > 1) & figure_type %in% c("trial means")){
+
+    if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
                        "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."))
     }
     
-    if(all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
-                                              "percentile ribbon", "ribbon", 
-                                              "")){
+    if(nrow(obs_data) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
+                                              "percentile ribbon", "ribbon")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
                        "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."))
@@ -536,6 +535,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+            
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
             
             ## linear plot
             A <- ggplot(sim_data_trial,
@@ -620,6 +621,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
             
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
+            
             A <- ggplot(sim_data_mean %>%
                             filter(Trial %in% c("per5", "per95")) %>%
                             mutate(Group = paste(Group, Trial)),
@@ -697,6 +700,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+            
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
             
             A <- ggplot(RibbonDF, aes(x = Time,
                                       y = mean, ymin = per5, ymax = per95, 
@@ -776,6 +781,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+            
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
             
             ## linear plot
             A <- ggplot(data = sim_data_mean %>%
@@ -870,36 +877,13 @@ ct_plot <- function(sim_obs_dataframe = NA,
             A <- ggplot(sim_data_mean %>%
                             filter(Trial == MyMeanType) %>%
                             mutate(Group = paste(Group, Trial)),
-                        aes(x = Time, y = Conc, linetype = Inhibitor,
-                            color = Inhibitor)) +
+                        aes(x = Time, y = Conc, 
+                            linetype = Inhibitor, shape = Inhibitor, 
+                            color = Inhibitor, fill = Inhibitor)) +
                 geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
                 scale_linetype_manual(values = line_type[1:2]) +
-                scale_color_manual(values = line_color[1:2])
-            
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        shape = obs_shape[1], stroke = 1, 
-                                        fill = NA)
-                } else {
-                    
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = obs_color[1], alpha = 0.5,
-                                        shape = obs_shape[1], stroke = 1) +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, shape = obs_shape[1], stroke = 1)
-                }
-            }
-            
-        } else {
-            
-            A <- ggplot(sim_data_mean %>%
-                            filter(Trial == MyMeanType),
-                        aes(x = Time, y = Conc)) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1])
+                scale_color_manual(values = line_color[1:2]) +
+                scale_shape_manual(values = obs_shape[1:2])
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
@@ -923,6 +907,30 @@ ct_plot <- function(sim_obs_dataframe = NA,
                         # of the point
                         geom_point(data = obs_data, size = 2,
                                    fill = NA, stroke = 1)
+                }
+            }
+            
+        } else {
+            
+            A <- ggplot(sim_data_mean %>%
+                            filter(Trial == MyMeanType),
+                        aes(x = Time, y = Conc)) +
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
+                          linetype = line_type[1],
+                          color = line_color[1])
+            
+            if(nrow(obs_data) > 0){
+                if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    A <- A + geom_point(data = obs_data, size = 2,
+                                        shape = obs_shape[1], stroke = 1, 
+                                        fill = NA)
+                } else {
+                    
+                    A <- A + geom_point(data = obs_data, size = 2,
+                                        fill = obs_color[1], alpha = 0.5,
+                                        shape = obs_shape[1], stroke = 1) +
+                        geom_point(data = obs_data, size = 2,
+                                   fill = NA, shape = obs_shape[1], stroke = 1)
                 }
             }
         }
