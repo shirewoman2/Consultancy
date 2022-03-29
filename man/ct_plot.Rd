@@ -6,7 +6,7 @@
 \usage{
 ct_plot(
   sim_obs_dataframe = NA,
-  figure_type = "trial means",
+  figure_type = "percentiles",
   subsection_ADAM = "free compound in lumen",
   mean_type = "arithmetic",
   time_range = NA,
@@ -53,13 +53,13 @@ running the function \code{\link{extractConcTime}}}
 
   \item{percentile ribbon}{plots an opaque line for the mean data,
   transparent shading for the 5th to 95th percentiles of the simulated data,
-  and open circles for the observed data. If an effecter were present, the
+  and open circles for the observed data. If an effector were present, the
   default is to show the data without the effector in blue and the data in
   the presence of the effector in red. Note: You may sometimes see some
   artifacts -- especially for semi-log plots -- where the ribbon gets partly
   cut off. For arcane reasons we don't want to bore you with here, we can't
   easily prevent this. However, a possible fix is to set your y axis limits
-  for the semi-log plot to be wider.}
+  for the semi-log plot to be wider using \code{y_axis_limits_log}.}
 
   \item{means only}{plots a black line for the mean data and, if an effector
   was modeled, a dashed line for the concentration-time data with Inhibitor

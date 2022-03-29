@@ -44,13 +44,13 @@
 #'
 #'   \item{percentile ribbon}{plots an opaque line for the mean data,
 #'   transparent shading for the 5th to 95th percentiles of the simulated data,
-#'   and open circles for the observed data. If an effecter were present, the
+#'   and open circles for the observed data. If an effector were present, the
 #'   default is to show the data without the effector in blue and the data in
 #'   the presence of the effector in red. Note: You may sometimes see some
 #'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
 #'   cut off. For arcane reasons we don't want to bore you with here, we can't
 #'   easily prevent this. However, a possible fix is to set your y axis limits
-#'   for the semi-log plot to be wider.}
+#'   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
 #'
 #'   \item{means only}{plots a black line for the mean data and, if an effector
 #'   was modeled, a dashed line for the concentration-time data with Inhibitor
@@ -248,7 +248,7 @@
 #'         legend_label = "Inhibitor")
 
 ct_plot <- function(sim_obs_dataframe = NA,
-                    figure_type = "trial means",
+                    figure_type = "percentiles",
                     subsection_ADAM = "free compound in lumen",
                     mean_type = "arithmetic", 
                     time_range = NA,
@@ -473,6 +473,28 @@ ct_plot <- function(sim_obs_dataframe = NA,
                                  NA, Conc)) %>% 
             filter(complete.cases(Conc)) 
     }
+    
+    
+    # Checking whether there are multiple observations at each time point. If
+    # so, user should probably be using figure_type = "percentiles" and, if not,
+    # user should probably be using figure_type = "trial means", and Hannah
+    # would like user to get a warning about that.
+    check <- obs_data %>% group_by(CompoundID, Time) %>% 
+        summarize(N = n())
+    if(any(check$N > 1) & figure_type %in% c("trial means")){
+        warning(paste0("You have requested a figure type of '", 
+                       figure_type, 
+                       "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."))
+    }
+    
+    if(all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
+                                              "percentile ribbon", "ribbon", 
+                                              "")){
+        warning(paste0("You have requested a figure type of '", 
+                       figure_type, 
+                       "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."))
+    }
+    
     
     # Setting up the y axis using the subfunction ct_y_axis -------------------
     
