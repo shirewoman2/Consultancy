@@ -66,6 +66,8 @@
 #'   data, and I recommend checking it out. If the color is too much for you but
 #'   you like the rest, try setting \code{obs_color = "none"}. -LS}}
 #'
+#' @param mean_type graph "arithmetic" (default) or "geometric" means or
+#'   "median" for median concentrations
 #' @param time_range time range to show relative to the start of the simulation.
 #'   Options: \describe{
 #'
@@ -88,12 +90,11 @@
 #'   "doses 1 to 4" for doses 1 to 4}
 #'
 #'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
-#'   range will be limited to only times when observed data are present. This
-#'   might look best if \code{pad_x_axis} = TRUE.}
+#'   range will be limited to only times when observed data are present.}
 #'
 #'   \item{"last dose to last observed" or "last obs" for short}{Time range will
 #'   be limited to the start of the last dose until the last observed data
-#'   point. This might look best if \code{pad_x_axis} = TRUE.}
+#'   point.}
 #'
 #'
 #'   }
@@ -132,23 +133,6 @@
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
-#'
-#' @param obs_data_option Set options for how to view observed data. Options
-#'   are:
-#'
-#'   \describe{
-#'
-#'   \item{means only}{show only a single point at the arithmetic mean value for
-#'   each time point}
-#'
-#'   \item{geometric means only}{show a single point at the geometric mean}
-#'
-#'   \item{all}{show all the individual data (equivalently, leave
-#'   \code{obs_data_option} as NA)}
-#'
-#'   \item{mean bars}{show a point at the arithmetic mean for each time point
-#'   and error bars for the arithmetic standard deviation}}
-#'
 #' @param obs_color If you would like the observed data points to be in color,
 #'   either list a specific color or set this to "default". Points will be
 #'   displayed in semi-transparent blue-purple for "default" and the
@@ -166,23 +150,23 @@
 #' @param showBLQ TRUE or FALSE to display observed concentrations that were
 #'   clearly below the lower limit of quantitation, that is, concentrations
 #'   equal to 0 after time 0. The default (FALSE) removes these values so that
-#'   they will not show up on graphs and also so that they will not be included
-#'   in any calculations of means.
+#'   they will not show up on graphs.
 #' @param line_transparency Optionally specify the transparency for the trial
 #'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
 #'   so no line at all) to 1 (completely opaque or black). If left as NA, this
 #'   value will be automatically determined.
-#' @param line_type Optionally specify what types of lines are used to depict 1.
-#'   the substrate drug alone and 2. the substrate drug in the presence of an
-#'   effector (when applicable). Input should look like this, for example:
-#'   \code{c("solid", "dashed")} to get a solid line for the substrate drug and
-#'   a dashed line for inhibitor 1. To see all possible \code{line_type}
-#'   options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
-#'   will be a solid line and substrate + inhibitor 1 will be a dashed line. If
-#'   \code{figure_type} is "Freddy" and there's no effector present, which is a
-#'   slightly different scenario than the other graph types, the 1st line type
-#'   specified will be for the mean simulated concentration and the trial means,
-#'   and the 2nd line type specified will be for the 5th and 95th percentiles.
+#' @param line_type Optionally specify what types of lines are used to depict
+#'   \enumerate{\item{the substrate drug alone and} \item{the substrate drug in
+#'   the presence of an effector (when applicable).}} Input should look like
+#'   this, for example: \code{c("solid", "dashed")} to get a solid line for the
+#'   substrate drug and a dashed line for inhibitor 1. \itemize{ \item{To see
+#'   all possible \code{line_type} options: \code{ggpubr::show_line_types()}}
+#'   \item{If left as NA, substrate alone will be a solid line and substrate +
+#'   inhibitor 1 will be a dashed line.} \item{If \code{figure_type} is "Freddy"
+#'   and there's no effector present, which is a slightly different scenario
+#'   than the other graph types, the 1st line type specified will be for the
+#'   mean simulated concentration and the trial means, and the 2nd line type
+#'   specified will be for the 5th and 95th percentiles.}}
 #' @param line_color Optionally specify what colors to use for the lines.
 #'   Acceptable input for, e.g., the substrate alone to be blue and the
 #'   substrate + Inhibitor 1 to be red: \code{c("blue", "red")}. If left as NA,
@@ -203,46 +187,15 @@
 #'   "rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
 #'   Set it to the name you'd prefer to see in your legend if you would like
 #'   something different.
-#'
-#' @param return_data TRUE or FALSE: Return the data used in the graphs? If
-#'   TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
-#'   graphs} \item{Data}{a data.frame of the concentration-time data used in the
-#'   set of graphs} }
-#' @param return_indiv_graphs SOON TO BE DEPRECATED. See linear_or_log argument!
-#'   TRUE or FALSE: Return each of the two individual graphs? This can be useful
-#'   if you want to modify the graphs further or only use one, etc.
 #' @param linear_or_log the type of graph to be returned. Options: "semi-log",
 #'   "linear", "both vertical" (default, graphs are stacked vertically), or
 #'   "both horizontal" (graphs are side by side).
-#' @param sim_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
-#'   the Excel file containing the simulated concentration-time data
-#' @param obs_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
-#'   the Excel file containing the observed concentration-time data. If the
-#'   observed data you want to plot were already included in the Excel output
-#'   from the simulator, leave this as NA. Otherwise, this is the file that it
-#'   is ready to be converted to an XML file, not the file that contains only
-#'   the digitized time and concentration data.
-#' @param obs_inhibitor_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY:
-#'   name of the Excel file containing the observed concentration-time data in
-#'   the presence of an effector (labeled "Inhibitor 1" in the simulator). This
-#'   is the file that is ready to be converted to an XML file. If your Inhibitor
-#'   1 data were already included in \code{obs_data_file}, leave this as NA.
-#' @param tissue HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the tissue to
-#'   plot. Default is plasma for typical plasma concentration-time data. Other
-#'   tissues are acceptable, e.g., "lung", "brain", etc., as long as the tissue
-#'   is one of the options included in "Sheet Options", "Tissues" in the
-#'   simulator.
-#' @param compoundToExtract HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: For
-#'   which compound do you want to extract concentration-time data? Options are
-#'   "substrate" (default), "primary metabolite 1", "secondary metabolite", or
-#'   "inhibitor 1" (this actually can be an inducer, activator, suppressor, or
-#'   inhibitor, but it's labeled as "Inhibitor 1" in the simulator).
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
 #'   it will be saved as that file format. Acceptable extensions are "eps",
 #'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-#'   means the file will not be automatically saved to disk.
+#'   means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param include_legend TRUE or FALSE (default) for whether to include a
@@ -250,10 +203,7 @@
 #'   this to TRUE, no legend will be shown because there's nothing to
 #'   differentiate the data.
 #'
-#' @return Depending on the options selected, returns either a set of graphs or
-#'   a named list of the set of the two graphs together ("Graphs" in the
-#'   output), the individual graphs ("Linear graph" and "Semi-log graph"),
-#'   and/or the data used for creating the graphs ("Data").
+#' @return Output is a graph. 
 #' @import tidyverse
 #' @export
 #'
@@ -268,14 +218,12 @@
 #'
 #' ct_plot(sim_obs_dataframe = LMVct)
 #' ct_plot(sim_obs_dataframe = LMVct, figure_type = "percentiles")
-#' ct_plot(sim_obs_dataframe = LMVct, return_data = TRUE)
-#' ct_plot(sim_obs_dataframe = LMVct, return_indiv_graphs = TRUE)
+#' ct_plot(sim_obs_dataframe = LMVct)
+#' ct_plot(sim_obs_dataframe = LMVct)
 #'
 #' # Perhaps you don't want to show *all* the data but instead want to
 #' # limit the time interval that is graphed. Use \code{time_range} here:
-#' ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-#'         obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-#'         adjust_obs_time = FALSE, time_range = c(0, 24))
+#' ct_plot(sim_obs_dataframe = LMVct, time_range = c(0, 24))
 #'
 #' # Or you can let it automatically calculate the time frame
 #' # for a given set of doses
@@ -292,10 +240,9 @@
 #' # Add some further options for the look of your graph -- especially useful
 #' # if the default settings are clipping your data.
 #' ct_plot(sim_obs_dataframe = LMVct,
-#'         obs_data_option = "mean bars",
 #'         obs_color = "red",
 #'         line_color = "blue",
-#'         y_axis_limits_log = c(1e-05, 0.1),
+#'         y_axis_limits_log = c(50, 2000),
 #'         pad_x_axis = TRUE,
 #'         include_legend = TRUE,
 #'         legend_label = "Inhibitor")
@@ -303,6 +250,7 @@
 ct_plot <- function(sim_obs_dataframe = NA,
                     figure_type = "trial means",
                     subsection_ADAM = "free compound in lumen",
+                    mean_type = "arithmetic", 
                     time_range = NA,
                     x_axis_interval = NA,
                     pad_x_axis = TRUE,
@@ -311,10 +259,6 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     t0 = "simulation start",
                     y_axis_limits_lin = NA,
                     y_axis_limits_log = NA,
-                    save_graph = NA,
-                    fig_height = 6,
-                    fig_width = 5,
-                    obs_data_option = NA,
                     obs_color = NA,
                     obs_shape = NA,
                     showBLQ = FALSE, 
@@ -325,14 +269,10 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     include_legend = FALSE,
                     legend_label = NA,
                     prettify_effector_name = TRUE,
-                    return_data = FALSE,
-                    return_indiv_graphs = FALSE,
-                    linear_or_log = "both vertical", 
-                    sim_data_file = NA,
-                    obs_data_file = NA,
-                    obs_inhibitor_data_file = NA, 
-                    tissue = "plasma",
-                    compoundToExtract = "substrate"){
+                    linear_or_log = "both vertical",
+                    save_graph = NA,
+                    fig_height = 6,
+                    fig_width = 5){
     
     # Error catching
     if(length(figure_type) != 1 |
@@ -343,46 +283,36 @@ ct_plot <- function(sim_obs_dataframe = NA,
         stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.")
     }
     
-    if(complete.cases(obs_data_option) &&
-       obs_data_option %in% c("means only", "geometric means only", "all",
-                              "mean bars") == FALSE){
-        stop("The value for obs_data_option must be one of 'means only', 'geometric means only', 'all', or 'mean bars'.")
-    }
+    MyMeanType <- sim_obs_dataframe %>%
+        filter(Trial %in% c("geomean", "mean", "median")) %>% 
+        pull(Trial) %>% unique() %>% 
+        factor(levels = c("mean", "geomean", "median")) %>% 
+        sort()
     
-    # Extract the data to plot
-    if(is.data.frame(sim_obs_dataframe)){
-        Data <- sim_obs_dataframe
+    if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
+              "median" = "median") %in% sim_obs_dataframe$Trial == FALSE){
         
-        # if(unique(sim_obs_dataframe$Tissue) %in% tissue == FALSE){
-        #     warning(paste0("The tissue requested (or the default if a specific one was not requested) was ",
-        #                    tissue,
-        #                    ", but this tissue was not included in the supplied data.frame. The tissue graphed will be the tissue in the supplied data.frame: ",
-        #                    unique(sim_obs_dataframe$Tissue), "."))
-        #     
-        #     tissue <- unique(sim_obs_dataframe$Tissue)
-        # }
-        # 
-        # if(unique(sim_obs_dataframe$CompoundID) %in% compoundToExtract == FALSE){
-        #     warning(paste0("The compound requested (or the default if a specific one was not requested) was the ",
-        #                    compoundToExtract,
-        #                    ", but this compound was not included in the supplied data.frame. The compound graphed will be the compound in the supplied data.frame, which was the ",
-        #                    unique(sim_obs_dataframe$CompoundID), "."))
-        #     
-        #     compoundToExtract <- unique(sim_obs_dataframe$CompoundID)
-        # }
+        warning(paste0("You requested the ", 
+                       switch(mean_type, "arithmetic" = "arithmetic means",
+                              "geometric" = "geometric means", 
+                              "median" = "medians"), 
+                       ", but those are not included in your data. Instead, the ",
+                       ifelse(MyMeanType[1] == "mean", 
+                              "arithmetic mean", MyMeanType[1]),
+                       "s will be used."))
+        MyMeanType <- MyMeanType[1] %>% as.character()
         
     } else {
-        Data <- extractConcTime(sim_data_file = sim_data_file,
-                                obs_data_file = obs_data_file,
-                                tissue = tissue,
-                                compoundToExtract = compoundToExtract,
-                                obs_inhibitor_data_file = obs_inhibitor_data_file,
-                                adjust_obs_time = adjust_obs_time)
+        MyMeanType <- switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
+                             "median" = "median")
     }
     
-    # If user supplied sim_obs_dataframe, then set tissue to whatever tissue was
-    # included and set compoundToExtract to whatever compound was included.
-    tissue <- unique(Data$Tissue)
+    Data <- sim_obs_dataframe %>% 
+        # Making sure we only have one summary aggregate measurement
+        filter(! Trial %in% setdiff(c("mean", "geomean", "median"), 
+                                    MyMeanType))
+    
+    # Set compoundToExtract to whatever compound was included.
     EnzPlot <- "Enzyme" %in% names(Data)
     compoundToExtract <- ifelse(EnzPlot, unique(Data$Enzyme), 
                                 unique(Data$CompoundID))
@@ -394,8 +324,10 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     # Noting whether the tissue was from an ADAM model
-    ADAM <- tissue %in% c("stomach", "duodenum", "jejunum I", "jejunum II", "ileum I",
-                          "ileum II", "ileum III", "ileum IV", "colon", "faeces") &&
+    ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+                                       "jejunum II", "ileum I", "ileum II",
+                                       "ileum III", "ileum IV", "colon", 
+                                       "faeces") &&
         EnzPlot == FALSE
     
     # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
@@ -519,13 +451,16 @@ ct_plot <- function(sim_obs_dataframe = NA,
                                      "Simulated", "Trial", "Group",
                                      "Time", "Time_orig",
                                      "Time_units", "Conc_units")))) %>%
-            summarize(Conc = mean(Conc, na.rm = T)) %>%
+            summarize(Conc = switch(mean_type, 
+                                    "arithmetic" = mean(Conc, na.rm = T),
+                                    "geometric" = gm_mean(Conc, na.rm = T),
+                                    "median" = median(Conc, na.rm = T))) %>%
             ungroup()
     )
     
     sim_data_mean <- Data %>%
         filter(Simulated == TRUE  &
-                   Trial %in% c("mean", "per5", "per95")) %>%
+                   Trial %in% c(MyMeanType, "per5", "per95")) %>%
         mutate(Group = paste(Compound, Inhibitor, Trial))
     
     # Setting up observed data per user input -------------------------------
@@ -536,25 +471,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
         obs_data <- obs_data %>% 
             mutate(Conc = ifelse(Conc <= 0 & Time > 0,
                                  NA, Conc)) %>% 
-            filter(complete.cases(Conc)) # yes, I know this is 2 steps rather than 1 complicated filter step, but I'm worried I'll mess it up if I do it with just 1 step. :-) -LSh
-    }
-    
-    if(complete.cases(obs_data_option) &
-       str_detect(obs_data_option, "mean")){
-        
-        suppressMessages(
-            obs_data <- obs_data %>%
-                group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
-                                         "Simulated", "Trial", "Group",
-                                         "Time", "Time_orig",
-                                         "Time_units", "Conc_units")))) %>%
-                summarize(SDConc = sd(Conc, na.rm = T),
-                          Conc = switch(obs_data_option,
-                                        "means only" = mean(Conc, na.rm = T),
-                                        "mean bars" = mean(Conc, na.rm = T),
-                                        "geometric means only" = gm_mean(Conc))) %>%
-                ungroup()
-        )
+            filter(complete.cases(Conc)) 
     }
     
     # Setting up the y axis using the subfunction ct_y_axis -------------------
@@ -565,7 +482,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if (figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(Trial == "mean") 
+        Ylim_data <- sim_data_mean %>% filter(Trial == MyMeanType) 
     }
     
     if(nrow(Ylim_data) == 0){
@@ -607,7 +524,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                           lwd = ifelse(is.na(line_width), 1, line_width), 
                           show.legend = FALSE) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"), 
+                              filter(Trial == MyMeanType), 
                           lwd = ifelse(is.na(line_width), 1, line_width)) +
                 scale_shape_manual(values = obs_shape[1:2]) +
                 scale_linetype_manual(values = line_type[1:2]) +
@@ -648,7 +565,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                           linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"),
+                              filter(Trial == MyMeanType),
                           lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
@@ -690,7 +607,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                             group = Group)) +
                 geom_line(alpha = AlphaToUse, lwd = ifelse(is.na(line_width), 0.8, line_width)) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"),
+                              filter(Trial == MyMeanType),
                           lwd = ifelse(is.na(line_width), 1, line_width))  +
                 scale_shape_manual(values = obs_shape[1:2]) +
                 scale_linetype_manual(values = line_type[1:2]) +
@@ -716,14 +633,14 @@ ct_plot <- function(sim_obs_dataframe = NA,
         } else {
             
             ## linear plot
-            A <- ggplot(sim_data_mean %>% filter(Trial != "mean"),
+            A <- ggplot(sim_data_mean %>% filter(Trial != MyMeanType),
                         aes(x = Time, y = Conc, group = Trial)) +
                 geom_line(alpha = AlphaToUse, 
                           lwd = ifelse(is.na(line_width), 0.8, line_width),
                           linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"),
+                              filter(Trial == MyMeanType),
                           lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
@@ -752,7 +669,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
                              line_transparency, 0.25)
         
         RibbonDF <- sim_data_mean %>% select(-Group, -Individual) %>% 
-            pivot_wider(names_from = Trial, values_from = Conc)
+            pivot_wider(names_from = Trial, values_from = Conc) %>% 
+            rename("mean" = {MyMeanType})
+        
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
@@ -838,7 +757,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
             
             ## linear plot
             A <- ggplot(data = sim_data_mean %>%
-                            filter(Trial == "mean"),
+                            filter(Trial == MyMeanType),
                         aes(x = Time, y = Conc, group = Group,
                             linetype = Inhibitor, shape = Inhibitor,
                             color = Inhibitor, fill = Inhibitor)) +
@@ -886,7 +805,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                           linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
-                              filter(Trial == "mean"),
+                              filter(Trial == MyMeanType),
                           lwd = ifelse(is.na(line_width), 1, line_width), linetype = line_type[1],
                           color = line_color[1]) +
                 geom_line(data = sim_data_mean %>%
@@ -927,7 +846,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
             
             A <- ggplot(sim_data_mean %>%
-                            filter(Trial == "mean") %>%
+                            filter(Trial == MyMeanType) %>%
                             mutate(Group = paste(Group, Trial)),
                         aes(x = Time, y = Conc, linetype = Inhibitor,
                             color = Inhibitor)) +
@@ -954,7 +873,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
         } else {
             
             A <- ggplot(sim_data_mean %>%
-                            filter(Trial == "mean"),
+                            filter(Trial == MyMeanType),
                         aes(x = Time, y = Conc)) +
                 geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
@@ -995,52 +914,20 @@ ct_plot <- function(sim_obs_dataframe = NA,
         A <- A + guides(shape = "none")
     }
     
-    if(complete.cases(obs_data_option) & obs_data_option == "mean bars" &
-       figure_type != "means only"){
+    if(str_detect(figure_type, "ribbon")){
+        # There's a known glitch w/ggplot2 with coord_cartesian and
+        # geom_ribbon. Hacking around that.
         A <- A +
-            geom_errorbar(data = obs_data,
-                          aes(x = Time, ymin = Conc - SDConc,
-                              ymax = Conc + SDConc),
-                          width = (time_range[2] - time_range[1])/80)
-    }
-    
-    # If the user requested specific doses, don't pad the x axis b/c it's just
-    # not what they requested. However, add a little extra space at the right
-    # edge b/c otherwise axis tick labels are getting clipped.
-    if(complete.cases(time_range_input) &&
-       str_detect(tolower(time_range_input), "dose") &
-       pad_x_axis == FALSE){
-        if(str_detect(figure_type, "ribbon")){
-            # There's a known glitch w/ggplot2 with coord_cartesian and
-            # geom_ribbon. Hacking around that.
-            A <- A + 
-                scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                                   expand = c(0,0), 
-                                   limits = time_range_relative) +
-                theme(plot.margin = unit(c(0.5, 0.75, 0.5, 0.5), "cm"))
-        } else {
-            A <- A + 
-                coord_cartesian(xlim = time_range_relative) +
-                scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                                   expand = c(0,0)) +
-                theme(plot.margin = unit(c(0.5, 0.75, 0.5, 0.5), "cm"))
-        }
+            scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                               limits = time_range_relative,
+                               expand = expansion(
+                                   mult = c(pad_x_num, 0.04))) 
     } else {
-        if(str_detect(figure_type, "ribbon")){
-            # There's a known glitch w/ggplot2 with coord_cartesian and
-            # geom_ribbon. Hacking around that.
-            A <- A +
-                scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                                   limits = time_range_relative,
-                                   expand = expansion(
-                                       mult = c(pad_x_num, 0.04))) 
-        } else {
-            A <- A +
-                scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                                   expand = expansion(
-                                       mult = c(pad_x_num, 0.04))) +
-                coord_cartesian(xlim = time_range_relative)
-        }
+        A <- A +
+            scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                               expand = expansion(
+                                   mult = c(pad_x_num, 0.04))) +
+            coord_cartesian(xlim = time_range_relative)
     }
     
     A <- A +
@@ -1125,15 +1012,6 @@ ct_plot <- function(sim_obs_dataframe = NA,
                   "both" = AB, 
                   "both vertical" = AB,
                   "both horizontal" = ABhoriz)
-    
-    if(return_data){
-        Out[["Data"]] <- Data
-    }
-    
-    if(return_indiv_graphs){
-        Out[["Linear graph"]] <- A
-        Out[["Semi-log graph"]] <- B
-    }
     
     if(length(Out) == 1){
         Out <- Out[[1]]

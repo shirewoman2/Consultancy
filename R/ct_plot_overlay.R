@@ -16,15 +16,14 @@
 #' @param sim_obs_dataframe the data.frame with multiple sets of
 #'   concentration-time data. At the moment, this function does not plot
 #'   observed data; that's still under construction.
-#' @param summary_stat plot "geomean" (default) for geometric mean
-#'   concentrations, "mean" for arithmetic mean concentrations, or "median" for
-#'   median concentrations as the main (thickest or only) line for each data
-#'   set. If this summary stat is not available in the simulator output, we'll
-#'   warn you that we're plotting a different one.
+#' @param mean_type plot "arithmetic" (default) or "geometric" mean
+#'   concentrations or "median" concentrations as the main (thickest or only)
+#'   line for each data set. If this aggregate measure is not available in the
+#'   simulator output, we'll warn you that we're plotting a different one.
 #' @param figure_type the type of figure to plot. Default is "means only" to
 #'   show only the mean, geometric mean, or median (whatever you chose for
-#'   "summary_stat"). Other option: "percentile ribbon" to show an opaque line
-#'   for the mean data and transparent shading for the 5th to 95th percentiles.
+#'   "mean_type"). Other option: "percentile ribbon" to show an opaque line for
+#'   the mean data and transparent shading for the 5th to 95th percentiles.
 #'   Note: You may sometimes see some artifacts -- especially for semi-log plots
 #'   -- where the ribbon gets partly cut off. For arcane reasons we don't want
 #'   to bore you with here, we can't easily prevent this. However, a possible
@@ -130,7 +129,7 @@
 #'
 #' 
 ct_plot_overlay <- function(sim_obs_dataframe,
-                            summary_stat = "geomean",
+                            mean_type = "arithmetic",
                             figure_type = "means only", 
                             linear_or_log = "semi-log",
                             colorBy = File,
@@ -182,19 +181,27 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     MyMeanType <- sim_obs_dataframe %>%
         filter(Trial %in% c("geomean", "mean", "median")) %>% 
         pull(Trial) %>% unique() %>% 
-        factor(levels = c("geomean", "mean", "median")) %>% 
+        factor(levels = c("mean", "geomean", "median")) %>% 
         sort()
     
-    if(summary_stat %in% sim_obs_dataframe$Trial == FALSE){
+    if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
+              "median" = "median") %in% sim_obs_dataframe$Trial == FALSE){
         
-        warning(paste0("You requested the ", summary_stat, 
-                       "s, but they are not included in your data. Instead, the ",
-                       MyMeanType[1], "s will be used."))
+        warning(paste0("You requested the ", 
+                       switch(mean_type, "arithmetic" = "arithmetic means",
+                              "geometric" = "geometric means", 
+                              "median" = "medians"), 
+                       ", but those are not included in your data. Instead, the ",
+                       ifelse(MyMeanType[1] == "mean", 
+                              "arithmetic mean", MyMeanType[1]),
+                       "s will be used."))
         MyMeanType <- MyMeanType[1] %>% as.character()
         
     } else {
         
-        MyMeanType <- summary_stat
+        MyMeanType <- switch(mean_type, "arithmetic" = "mean",
+                             "geometric" = "geomean",
+                             "median" = "median")
         
     }
     

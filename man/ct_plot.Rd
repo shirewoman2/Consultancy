@@ -8,6 +8,7 @@ ct_plot(
   sim_obs_dataframe = NA,
   figure_type = "trial means",
   subsection_ADAM = "free compound in lumen",
+  mean_type = "arithmetic",
   time_range = NA,
   x_axis_interval = NA,
   pad_x_axis = TRUE,
@@ -16,10 +17,6 @@ ct_plot(
   t0 = "simulation start",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
-  save_graph = NA,
-  fig_height = 6,
-  fig_width = 5,
-  obs_data_option = NA,
   obs_color = NA,
   obs_shape = NA,
   showBLQ = FALSE,
@@ -30,14 +27,10 @@ ct_plot(
   include_legend = FALSE,
   legend_label = NA,
   prettify_effector_name = TRUE,
-  return_data = FALSE,
-  return_indiv_graphs = FALSE,
   linear_or_log = "both vertical",
-  sim_data_file = NA,
-  obs_data_file = NA,
-  obs_inhibitor_data_file = NA,
-  tissue = "plasma",
-  compoundToExtract = "substrate"
+  save_graph = NA,
+  fig_height = 6,
+  fig_width = 5
 )
 }
 \arguments{
@@ -90,6 +83,9 @@ show? Options are whatever were available for that tissue, which could be
 "dissolved compound", or "luminal CLint of compound". Default is "free
 compound in lumen".}
 
+\item{mean_type}{graph "arithmetic" (default) or "geometric" means or
+"median" for median concentrations}
+
 \item{time_range}{time range to show relative to the start of the simulation.
   Options: \describe{
 
@@ -112,12 +108,11 @@ compound in lumen".}
   "doses 1 to 4" for doses 1 to 4}
 
   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
-  range will be limited to only times when observed data are present. This
-  might look best if \code{pad_x_axis} = TRUE.}
+  range will be limited to only times when observed data are present.}
 
   \item{"last dose to last observed" or "last obs" for short}{Time range will
   be limited to the start of the last dose until the last observed data
-  point. This might look best if \code{pad_x_axis} = TRUE.}
+  point.}
 
 
   }}
@@ -161,33 +156,6 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
 
-\item{save_graph}{optionally save the output graph by supplying a file name
-in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
-will be saved as a png file, but if you specify a different file extension,
-it will be saved as that file format. Acceptable extensions are "eps",
-"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-means the file will not be automatically saved to disk.}
-
-\item{fig_height}{figure height in inches; default is 6}
-
-\item{fig_width}{figure width in inches; default is 5}
-
-\item{obs_data_option}{Set options for how to view observed data. Options
-  are:
-
-  \describe{
-
-  \item{means only}{show only a single point at the arithmetic mean value for
-  each time point}
-
-  \item{geometric means only}{show a single point at the geometric mean}
-
-  \item{all}{show all the individual data (equivalently, leave
-  \code{obs_data_option} as NA)}
-
-  \item{mean bars}{show a point at the arithmetic mean for each time point
-  and error bars for the arithmetic standard deviation}}}
-
 \item{obs_color}{If you would like the observed data points to be in color,
 either list a specific color or set this to "default". Points will be
 displayed in semi-transparent blue-purple for "default" and the
@@ -207,20 +175,20 @@ circle and substrate + inhibitor 1 will be an open triangle.}
 \item{showBLQ}{TRUE or FALSE to display observed concentrations that were
 clearly below the lower limit of quantitation, that is, concentrations
 equal to 0 after time 0. The default (FALSE) removes these values so that
-they will not show up on graphs and also so that they will not be included
-in any calculations of means.}
+they will not show up on graphs.}
 
-\item{line_type}{Optionally specify what types of lines are used to depict 1.
-the substrate drug alone and 2. the substrate drug in the presence of an
-effector (when applicable). Input should look like this, for example:
-\code{c("solid", "dashed")} to get a solid line for the substrate drug and
-a dashed line for inhibitor 1. To see all possible \code{line_type}
-options: \code{ggpubr::show_line_types()}. If left as NA, substrate alone
-will be a solid line and substrate + inhibitor 1 will be a dashed line. If
-\code{figure_type} is "Freddy" and there's no effector present, which is a
-slightly different scenario than the other graph types, the 1st line type
-specified will be for the mean simulated concentration and the trial means,
-and the 2nd line type specified will be for the 5th and 95th percentiles.}
+\item{line_type}{Optionally specify what types of lines are used to depict
+\enumerate{\item{the substrate drug alone and} \item{the substrate drug in
+the presence of an effector (when applicable).}} Input should look like
+this, for example: \code{c("solid", "dashed")} to get a solid line for the
+substrate drug and a dashed line for inhibitor 1. \itemize{ \item{To see
+all possible \code{line_type} options: \code{ggpubr::show_line_types()}}
+\item{If left as NA, substrate alone will be a solid line and substrate +
+inhibitor 1 will be a dashed line.} \item{If \code{figure_type} is "Freddy"
+and there's no effector present, which is a slightly different scenario
+than the other graph types, the 1st line type specified will be for the
+mean simulated concentration and the trial means, and the 2nd line type
+specified will be for the 5th and 95th percentiles.}}}
 
 \item{line_transparency}{Optionally specify the transparency for the trial
 mean or percentile lines. Acceptable values are from 0 (fully transparent,
@@ -256,52 +224,23 @@ something more human readable. For example, "SV-Rifampicin-MD" will become
 Set it to the name you'd prefer to see in your legend if you would like
 something different.}
 
-\item{return_data}{TRUE or FALSE: Return the data used in the graphs? If
-TRUE, this will return a named list of: \describe{ \item{Graphs}{the set of
-graphs} \item{Data}{a data.frame of the concentration-time data used in the
-set of graphs} }}
-
-\item{return_indiv_graphs}{SOON TO BE DEPRECATED. See linear_or_log argument!
-TRUE or FALSE: Return each of the two individual graphs? This can be useful
-if you want to modify the graphs further or only use one, etc.}
-
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
 "linear", "both vertical" (default, graphs are stacked vertically), or
 "both horizontal" (graphs are side by side).}
 
-\item{sim_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
-the Excel file containing the simulated concentration-time data}
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+will be saved as a png file, but if you specify a different file extension,
+it will be saved as that file format. Acceptable extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be saved to disk.}
 
-\item{obs_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
-the Excel file containing the observed concentration-time data. If the
-observed data you want to plot were already included in the Excel output
-from the simulator, leave this as NA. Otherwise, this is the file that it
-is ready to be converted to an XML file, not the file that contains only
-the digitized time and concentration data.}
+\item{fig_height}{figure height in inches; default is 6}
 
-\item{obs_inhibitor_data_file}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY:
-name of the Excel file containing the observed concentration-time data in
-the presence of an effector (labeled "Inhibitor 1" in the simulator). This
-is the file that is ready to be converted to an XML file. If your Inhibitor
-1 data were already included in \code{obs_data_file}, leave this as NA.}
-
-\item{tissue}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the tissue to
-plot. Default is plasma for typical plasma concentration-time data. Other
-tissues are acceptable, e.g., "lung", "brain", etc., as long as the tissue
-is one of the options included in "Sheet Options", "Tissues" in the
-simulator.}
-
-\item{compoundToExtract}{HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: For
-which compound do you want to extract concentration-time data? Options are
-"substrate" (default), "primary metabolite 1", "secondary metabolite", or
-"inhibitor 1" (this actually can be an inducer, activator, suppressor, or
-inhibitor, but it's labeled as "Inhibitor 1" in the simulator).}
+\item{fig_width}{figure width in inches; default is 5}
 }
 \value{
-Depending on the options selected, returns either a set of graphs or
-  a named list of the set of the two graphs together ("Graphs" in the
-  output), the individual graphs ("Linear graph" and "Semi-log graph"),
-  and/or the data used for creating the graphs ("Data").
+Output is a graph.
 }
 \description{
 Using observed and simulated concentration-time data, make
@@ -334,14 +273,12 @@ data(LMVct)
 
 ct_plot(sim_obs_dataframe = LMVct)
 ct_plot(sim_obs_dataframe = LMVct, figure_type = "percentiles")
-ct_plot(sim_obs_dataframe = LMVct, return_data = TRUE)
-ct_plot(sim_obs_dataframe = LMVct, return_indiv_graphs = TRUE)
+ct_plot(sim_obs_dataframe = LMVct)
+ct_plot(sim_obs_dataframe = LMVct)
 
 # Perhaps you don't want to show *all* the data but instead want to
 # limit the time interval that is graphed. Use \code{time_range} here:
-ct_plot(sim_data_file = "../Example simulator output MD.xlsx",
-        obs_data_file = "../fig1-242-06-001-SD - for XML conversion.xlsx",
-        adjust_obs_time = FALSE, time_range = c(0, 24))
+ct_plot(sim_obs_dataframe = LMVct, time_range = c(0, 24))
 
 # Or you can let it automatically calculate the time frame
 # for a given set of doses
@@ -358,10 +295,9 @@ ct_plot(sim_obs_dataframe = LMVct,
 # Add some further options for the look of your graph -- especially useful
 # if the default settings are clipping your data.
 ct_plot(sim_obs_dataframe = LMVct,
-        obs_data_option = "mean bars",
         obs_color = "red",
         line_color = "blue",
-        y_axis_limits_log = c(1e-05, 0.1),
+        y_axis_limits_log = c(50, 2000),
         pad_x_axis = TRUE,
         include_legend = TRUE,
         legend_label = "Inhibitor")
