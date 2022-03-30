@@ -336,10 +336,18 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     XLabels[which(XBreaks == 0)] <- "0"
     
     # Adding padding if user requests it
-    pad_x_num <- ifelse(class(pad_x_axis) == "logical",
-                        ifelse(pad_x_axis, 0.02, 0), 
-                        pad_x_axis)
-    pad_x_axis <- pad_x_num != 0 # Making pad_x_axis logical again to work with code elsewhere
+    if(class(pad_x_axis) == "logical"){ # class is logical if pad_x_axis unspecified
+        pad_x_num <-  c(0.02, 0.04)
+    } else {
+        pad_x_num <- pad_x_axis
+        if(length(pad_x_axis) == 1){
+            pad_x_num <- c(pad_x_num, 0.04)
+        } else {
+            pad_x_axis <- pad_x_axis[1:2]
+        }
+        
+        pad_x_axis <- pad_x_num[1] != 0 # Making pad_x_axis logical again to work with code elsewhere
+    }
     
     # Assigning the variables created or changed here to the environment one
     # level up, e.g., probably the environment within the function that's

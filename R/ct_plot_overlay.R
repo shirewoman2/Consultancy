@@ -66,12 +66,15 @@
 #'   e.g. \code{c(24, 48)}}}
 #'
 #'
-#' @param pad_x_axis Optionally add a smidge of padding to the left side of the
-#'   x axis. If left as FALSE, the y axis will be placed right at the beginning
-#'   of your time range. If set to TRUE, there will be a little bit of space
-#'   between the y axis and the start of your time range. If you want a
-#'   \emph{specific} amount of x axis padding, set this to a number; the default
-#'   is 0.02, which adds 2 percent more space to the left side of the axis.
+#' @param pad_x_axis Optionally add a smidge of padding to the the x axis
+#'   (default is TRUE, which includes some generally reasonable padding). If
+#'   changed to FALSE, the y axis will be placed right at the beginning of your
+#'   time range and all data will end \emph{exactly} at the end of the time
+#'   range specified. If you want a \emph{specific} amount of x axis padding,
+#'   set this to a number; the default is \code{0.02, 0.04}, which adds 2\% more
+#'   space to the the left side and 4\% more to the right side of the x axis. If
+#'   you only specify one number, the default will still add 4\% more to the
+#'   right side.
 #' @param pad_y_axis Similar to the \code{pad_x_axis} argument, optionally add a
 #'   smidge of padding to the bottom of the y axis. As with \code{pad_x_axis},
 #'   the default (FALSE) is no padding, but you can set this to either TRUE to
@@ -337,7 +340,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     if(floating_facet_scale){
         A <- A + 
             scale_x_continuous(expand = expansion(
-                mult = c(pad_x_num, 0.04))) +
+                mult = pad_x_num)) +
             scale_y_continuous(expand = expansion(mult = c(pad_y_num, 0.1))) +
             facet_wrap(vars(!!facet_column1, !!facet_column2), # Comment this while developing, uncomment for running function
                        # facet_wrap(vars(facet_column1, facet_column2), # Uncomment this while developing, comment for running function
@@ -347,7 +350,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         A <- A +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
-                                   mult = c(pad_x_num, 0.04))) +
+                                   mult = pad_x_num)) +
             coord_cartesian(xlim = time_range_relative) +
             scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
                                                  0, y_axis_limits_lin[1]),
