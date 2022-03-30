@@ -613,10 +613,12 @@ extractConcTime <- function(sim_data_file,
                                       !str_detect(NamesToCheck, "interaction")),
                             Include) + TimeRow-1)
                     
-                    sim_data_mean[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                        t() %>%
-                        as.data.frame() %>% slice(-(1:3)) %>%
-                        mutate_all(as.numeric)
+                    suppressWarnings(
+                        sim_data_mean[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                            t() %>%
+                            as.data.frame() %>% slice(-(1:3)) %>%
+                            mutate_all(as.numeric)
+                    )
                     names(sim_data_mean[[m]][[n]]) <- c("Time", names(RowsToUse))
                     sim_data_mean[[m]][[n]] <- sim_data_mean[[m]][[n]] %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc",
@@ -706,10 +708,12 @@ extractConcTime <- function(sim_data_file,
                         
                         if(length(RowsToUse) > 0){
                             
-                            sim_data_mean_SubPlusEffector <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                                t() %>%
-                                as.data.frame() %>% slice(-(1:3)) %>%
-                                mutate_all(as.numeric)
+                            suppressWarnings(
+                                sim_data_mean_SubPlusEffector <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                                    t() %>%
+                                    as.data.frame() %>% slice(-(1:3)) %>%
+                                    mutate_all(as.numeric)
+                            )
                             names(sim_data_mean_SubPlusEffector) <- c("Time", names(RowsToUse))
                             sim_data_mean_SubPlusEffector <- sim_data_mean_SubPlusEffector %>%
                                 pivot_longer(names_to = "Trial", values_to = "Conc",
@@ -815,10 +819,12 @@ extractConcTime <- function(sim_data_file,
                                 which(str_detect(NamesToCheck, "Median")),
                                 Include) + TimeRow)
                         
-                        sim_data_mean[[m]][[i]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                            t() %>%
-                            as.data.frame() %>% slice(-(1:3)) %>%
-                            mutate_all(as.numeric)
+                        suppressWarnings(
+                            sim_data_mean[[m]][[i]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                                t() %>%
+                                as.data.frame() %>% slice(-(1:3)) %>%
+                                mutate_all(as.numeric)
+                        )
                         names(sim_data_mean[[m]][[i]][[n]]) <-
                             c("Time", names(RowsToUse))
                         sim_data_mean[[m]][[i]][[n]] <- sim_data_mean[[m]][[i]][[n]] %>%
@@ -902,11 +908,13 @@ extractConcTime <- function(sim_data_file,
                     
                     RowsToUse <- RowsToUse[RowsToUse > TimeRow]
                     
-                    sim_data_ind[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                        t() %>%
-                        as.data.frame() %>% slice(-(1:3)) %>%
-                        mutate_all(as.numeric) %>%
-                        rename(Time = "V1")
+                    suppressWarnings(
+                        sim_data_ind[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                            t() %>%
+                            as.data.frame() %>% slice(-(1:3)) %>%
+                            mutate_all(as.numeric) %>%
+                            rename(Time = "V1")
+                    )
                     
                     SubjTrial <- sim_data_xl[RowsToUse, 2:3] %>%
                         rename(Individual = ...2, Trial = ...3) %>%
@@ -973,12 +981,14 @@ extractConcTime <- function(sim_data_file,
                         
                         if(length(RowsToUse) > 0){
                             
-                            sim_data_ind_SubPlusEffector <-
-                                sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                                t() %>%
-                                as.data.frame() %>% slice(-(1:3)) %>%
-                                mutate_all(as.numeric) %>%
-                                rename(Time = "V1")
+                            suppressWarnings(
+                                sim_data_ind_SubPlusEffector <-
+                                    sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                                    t() %>%
+                                    as.data.frame() %>% slice(-(1:3)) %>%
+                                    mutate_all(as.numeric) %>%
+                                    rename(Time = "V1")
+                            )
                             names(sim_data_ind_SubPlusEffector)[
                                 2:ncol(sim_data_ind_SubPlusEffector)] <- SubjTrial$SubjTrial
                             sim_data_ind_SubPlusEffector <-
@@ -1094,12 +1104,14 @@ extractConcTime <- function(sim_data_file,
                         
                         RowsToUse <- RowsToUse[which(RowsToUse > TimeRow)]
                         
-                        sim_data_ind[[m]][[i]][[n]] <-
-                            sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                            t() %>%
-                            as.data.frame() %>% slice(-(1:3)) %>%
-                            mutate_all(as.numeric) %>%
-                            rename(Time = "V1")
+                        suppressWarnings(
+                            sim_data_ind[[m]][[i]][[n]] <-
+                                sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                                t() %>%
+                                as.data.frame() %>% slice(-(1:3)) %>%
+                                mutate_all(as.numeric) %>%
+                                rename(Time = "V1")
+                        )
                         
                         SubjTrial <- sim_data_xl[RowsToUse, 2:3] %>%
                             rename(Individual = ...2, Trial = ...3) %>%
