@@ -1,7 +1,8 @@
 #' Extract PK data for specific parameters from a simulator output Excel file
 #'
 #' Pull calculated PK parameters from a Simcyp simulation output Excel file.
-#' Note: Nearly all parameters are for the substrate.
+#' \strong{Note:} Nearly all parameters are for the substrate. We're still
+#' working on this for extracting PK for the inhibitor.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
@@ -363,8 +364,8 @@ extractPK <- function(sim_data_file,
                     if(str_detect(PKparam, "_ss_withInhib")){
                         StartCol <-
                             which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                             "for the last dose in the presence of inhibitor|^Inhibited$"))[1]
-                        StartColText <- "for the last dose in the presence of inhibitor|^Inhibited$"
+                                             "for the last dose in the presence of inhibitor|^Inhibited$|Inhibited AUC integrated from"))[1]
+                        StartColText <- "for the last dose in the presence of inhibitor|^Inhibited$|Inhibited AUC integrated from"
                     }
                     
                 } else {
@@ -1199,7 +1200,7 @@ extractPK <- function(sim_data_file,
                                "AUCinf" = "^AUC_INF \\(",
                                "AUCinf_withInhib" = "^AUC_INF_Inh",
                                "AUCinf_ratio" = "^AUC_INF ratio$",
-                               "AUCtau" = "AUCt\\(n\\) \\(|^AUC \\(",
+                               "AUCtau" = "AUCt\\(n\\) \\(|^AUC \\(|^AUC integrated from",
                                "AUCtau_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
                                "AUCtau_ratio" = "AUC Ratio",
                                "CL" = "CL \\(Dose/AUC\\)",
