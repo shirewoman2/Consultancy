@@ -1360,9 +1360,9 @@ extractPK <- function(sim_data_file,
         XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
         DataCheck <- DataCheck %>% filter(complete.cases(PKparam)) %>% 
             mutate(File = sim_data_file, 
-                   Column = XLCols[Column]) %>% 
-            select(PKparam, File, Tab, Column, StartRow_agg, EndRow_agg, 
-                   StartRow_ind, EndRow_ind) %>% 
+                   Column = XLCols[Column], 
+                   Individual = paste0(Column, StartRow_ind, ":",
+                                Column, EndRow_ind)) %>% 
             filter(complete.cases(PKparam)) %>% unique()
         
         if(returnAggregateOrIndiv %in% c("both", "aggregate")){
@@ -1381,10 +1381,13 @@ extractPK <- function(sim_data_file,
                 select(File, PKparam, Tab, Column, Cell, Stat) %>% 
                 pivot_wider(names_from = Stat, values_from = Cell)
             
-            DataCheck <- DataCheck %>% left_join(DataCheck_agg) %>% 
-                select(File, PKparam, Tab, Column, StartRow_ind, EndRow_ind,
-                       StartRow_agg, EndRow_agg, everything())
+            DataCheck <- DataCheck %>% left_join(DataCheck_agg)
         }
+        
+        DataCheck <- DataCheck %>% 
+            select(-c(Column, StartRow_ind, EndRow_ind, StartRow_agg, EndRow_agg,
+                     StartColText, SearchText, Note)) %>% 
+            select(PKparam, File, Tab, Individual, everything())
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- unique(DataCheck)
