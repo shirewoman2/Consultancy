@@ -18,14 +18,6 @@
 #'   when the tissue extracted with \code{\link{extractEnzAbund}} was gut and
 #'   ignored in all other cases.
 #' @param ... other arguments passed to the function \code{\link{ct_plot}}
-#' @param sim_data_file HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: name of
-#'   the Excel file containing the simulated enzyme-abundance data
-#' @param enzyme HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the enzyme to
-#'   plot, e.g., "CYP3A4" (default), "UGT1A1", etc. Spaces or hyphens in enzyme
-#'   names will be ignored. Not case sensitive.
-#' @param tissue HISTORICAL, BACK-COMPATIBILITY PURPOSES ONLY: the tissue to
-#'   plot. Options are "liver" (default), "small intestine", "colon", or
-#'   "kidney".
 #'
 #' @import tidyverse
 #' @import readxl

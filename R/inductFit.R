@@ -18,7 +18,8 @@
 #' @param conc_column the name of the column within DF that contains
 #'   concentration data. This should be unquoted.
 #' @param fold_change_column the name of the column within DF that contains
-#'   fold-change data, e.g., mRNA measurements or activity.
+#'   fold-change data, e.g., mRNA measurements or activity. This should be
+#'   unquoted.
 #' @param donor_column the name of the column within DF that contains the donor
 #'   IDs
 #' @param model which model(s) you would like to use. The four model options
@@ -70,8 +71,8 @@
 #'   package}}
 #' @param y_axis_limits Optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 #'   If left as NA, the Y axis limits will be automatically selected.
-#' @param hline_foldinduct1 TRUE or FALSE on whether to include a dotted red line where
-#'   the fold induction = 1.
+#' @param hline_foldinduct1 TRUE or FALSE on whether to include a dotted red
+#'   line where the fold induction = 1.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,

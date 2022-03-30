@@ -136,7 +136,7 @@
 #'   linear plot will be automatically selected.
 #' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
-#'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
+#'   respectively, to a round number. If left as NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
 #' @param obs_color If you would like the observed data points to be in color,
 #'   either list a specific color or set this to "default". Points will be

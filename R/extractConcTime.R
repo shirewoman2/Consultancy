@@ -23,10 +23,6 @@
 #'   output from the simulator, leave this as NA. Otherwise, this is the file
 #'   that it is ready to be converted to an XML file, not the file that contains
 #'   only the digitized time and concentration data.
-#' @param obs_inhibitor_data_file name of the Excel file containing observed
-#'   concentration-time data for when an effector is present, when appropriate.
-#'   Only bother with this if the observed data in the presence of an inhibitor
-#'   were not already included in the \code{obs_data_file}.
 #' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
 #'   data file to match the last dose administered? This only applies to
 #'   multiple-dosing regimens. If TRUE, the graph will show the observed data
@@ -133,7 +129,6 @@
 #'
 #' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'                 obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
-#'                 obs_inhibitor_data_file = "../Mallikaarjun_2016_RTV-fig1-100mg-BID-DLM+Kaletra - for XML conversion.xlsx",
 #'                 returnAggregateOrIndiv = c("aggregate", "individual"))
 #'
 #' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
@@ -142,12 +137,10 @@
 #' 
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
-                            obs_inhibitor_data_file = NA,
                             adjust_obs_time = FALSE,
                             tissue = "plasma",
                             compoundToExtract = "substrate",
-                            returnAggregateOrIndiv = c("aggregate",
-                                                       "individual"),
+                            returnAggregateOrIndiv = "both",
                             expdetails = NA,
                             fromMultFunction = FALSE){
     
@@ -158,8 +151,8 @@ extractConcTime <- function(sim_data_file,
     # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,
              length(returnAggregateOrIndiv) > 2,
-             any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual") == FALSE)))) {
-        stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
+             any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual", "both") == FALSE)))) {
+        stop("You must request 'aggregate', 'individual', or 'both' for the parameter 'returnAggregateOrIndiv'.")
     }
     
     # If they didn't include ".xlsx" at the end, add that.
@@ -1249,36 +1242,6 @@ extractConcTime <- function(sim_data_file,
                     sim_data_mean[[m]] <-
                         match_units(DF_to_adjust = sim_data_mean[[m]],
                                     goodunits = obs_data)
-                }
-            }
-        }
-        
-        if(complete.cases(obs_inhibitor_data_file)){
-            
-            obs_eff_data <- extractObsConcTime(
-                obs_data_file = obs_inhibitor_data_file) %>%
-                mutate(Simulated = FALSE, Trial = "obs+inhibitor",
-                       Compound = MyCompound,
-                       Inhibitor = AllEffectors_comma)
-            
-            # As necessary, convert simulated data units to match the observed
-            # data.
-            if(exists("obs_data", inherits = FALSE)){
-                obs_eff_data <- match_units(DF_to_adjust = obs_eff_data,
-                                            goodunits = obs_data)
-            } else {
-                # If there was no obs_data_file, then match units in simulated
-                # data to the units in obs_inhibitor_data_file.
-                if("individual" %in% returnAggregateOrIndiv){
-                    sim_data_ind <-
-                        match_units(DF_to_adjust = sim_data_ind,
-                                    goodunits = obs_eff_data)
-                }
-                
-                if("aggregate" %in% returnAggregateOrIndiv){
-                    sim_data_mean <-
-                        match_units(DF_to_adjust = sim_data_mean,
-                                    goodunits = obs_eff_data)
                 }
             }
         }
