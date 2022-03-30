@@ -313,9 +313,11 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     ## Figure type: ribbon --------------------------------------------------
     if(str_detect(figure_type, "ribbon")){
         
-        RibbonDF <-  sim_dataframe %>% select(-any_of(c("Group", "Individual"))) %>% 
-            pivot_wider(names_from = Trial, values_from = Conc) %>% 
-            rename(MyMean = MyMeanType) 
+        RibbonDF <-  sim_dataframe %>% 
+            filter(Trial %in% c({MyMeanType}, "per5", "per95")) %>% 
+            select(-any_of(c("Group", "Individual"))) %>% 
+            pivot_wider(names_from = Trial, values_from = Conc)
+        names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
                                   color = !!colorBy, fill = !!colorBy)) +
