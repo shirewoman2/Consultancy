@@ -187,7 +187,6 @@ extractConcTime_mult <- function(sim_data_files,
                 MultData[[f]][[j]] <- extractConcTime(
                     sim_data_file = f,
                     obs_data_file = NA,
-                    obs_inhibitor_data_file = NA,
                     compoundToExtract = compoundsToExtract_n,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
