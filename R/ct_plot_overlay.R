@@ -344,7 +344,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         A <- A + 
             scale_x_continuous(expand = expansion(
                 mult = pad_x_num)) +
-            scale_y_continuous(expand = expansion(mult = c(pad_y_num, 0.1))) +
+            scale_y_continuous(expand = expansion(mult = pad_y_num)) +
             facet_wrap(vars(!!facet_column1, !!facet_column2), # Comment this while developing, uncomment for running function
                        # facet_wrap(vars(facet_column1, facet_column2), # Uncomment this while developing, comment for running function
                        scales = "free")
@@ -360,7 +360,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                                           YmaxRnd), 
                                breaks = YBreaks,
                                labels = YLabels,
-                               expand = expansion(mult = c(pad_y_num, 0.1))) +
+                               expand = expansion(mult = pad_y_num)) +
             facet_grid(rows = vars(!!facet_column1), # Comment this while developing, uncomment for running function
                        cols = vars(!!facet_column2)) # Comment this while developing, uncomment for running function
         # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
@@ -413,7 +413,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
                           labels = YLogLabels,
-                          expand = expansion(mult = c(pad_y_num, 0.1))) 
+                          expand = expansion(mult = pad_y_num)) 
     )
     
     if(floating_facet_scale == FALSE){
