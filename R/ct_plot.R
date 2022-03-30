@@ -116,14 +116,19 @@
 #'   (default is TRUE, which includes some generally reasonable padding). If
 #'   changed to FALSE, the y axis will be placed right at the beginning of your
 #'   time range and all data will end \emph{exactly} at the end of the time
-#'   range specified. If you want a \emph{specific} amount of x axis padding,
-#'   set this to a number; the default is \code{0.02, 0.04}, which adds 2\% more
-#'   space to the the left side and 4\% more to the right side of the x axis.
-#' @param pad_y_axis Similar to the \code{pad_x_axis} argument, optionally add a
-#'   smidge of padding to the bottom of the y axis (default is TRUE, which
-#'   includes padding). As with \code{pad_x_axis}, the default (FALSE) is no
-#'   padding, but you can set this to either TRUE to get 2 percent more space on
-#'   the y axis or set it to a number to get a specific amount of padding there.
+#'   range specified. If you want a \emph{specific} amount of x-axis padding,
+#'   set this to a number; the default is \code{c(0.02, 0.04)}, which adds 2\%
+#'   more space to the left side and 4\% more to the right side of the x axis.
+#'   If you only specify one number, we'll assume that's the percent you want
+#'   added to the left side.
+#' @param pad_y_axis Optionally add a smidge of padding to the y axis (default
+#'   is TRUE, which includes some generally reasonable padding). As with
+#'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
+#'   the bottom of your data, possible cutting a point in half. If you want a
+#'   \emph{specific} amount of y-axis padding, set this to a number; the default
+#'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
+#'   to the top of the y axis. If you only specify one number, we'll assume
+#'   that's the percent you want added to the bottom.
 #' @param x_axis_interval Set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values.
 #' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
@@ -966,7 +971,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                                       YmaxRnd), 
                            breaks = YBreaks,
                            labels = YLabels,
-                           expand = expansion(mult = c(pad_y_num, 0.1))) +
+                           expand = expansion(mult = pad_y_num)) +
         labs(x = xlab, y = ylab,
              linetype = ifelse(complete.cases(legend_label),
                                legend_label, "Inhibitor"),
@@ -994,7 +999,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
                           labels = YLogLabels,
-                          expand = expansion(mult = c(pad_y_num, 0.1))) +
+                          expand = expansion(mult = pad_y_num)) +
             # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
             coord_cartesian(xlim = time_range_relative)
     )

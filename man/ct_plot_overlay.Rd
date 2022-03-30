@@ -115,17 +115,20 @@ input: any number or leave as NA to accept default values.}
 (default is TRUE, which includes some generally reasonable padding). If
 changed to FALSE, the y axis will be placed right at the beginning of your
 time range and all data will end \emph{exactly} at the end of the time
-range specified. If you want a \emph{specific} amount of x axis padding,
-set this to a number; the default is \code{0.02, 0.04}, which adds 2\% more
-space to the the left side and 4\% more to the right side of the x axis. If
-you only specify one number, the default will still add 4\% more to the
-right side.}
+range specified. If you want a \emph{specific} amount of x-axis padding,
+set this to a number; the default is \code{c(0.02, 0.04)}, which adds 2\%
+more space to the left side and 4\% more to the right side of the x axis.
+If you only specify one number, we'll assume that's the percent you want
+added to the left side.}
 
-\item{pad_y_axis}{Similar to the \code{pad_x_axis} argument, optionally add a
-smidge of padding to the bottom of the y axis. As with \code{pad_x_axis},
-the default (FALSE) is no padding, but you can set this to either TRUE to
-get 2 percent more space on the bottom of the y axis or set it to a number
-to get a specific amount of padding there.}
+\item{pad_y_axis}{Optionally add a smidge of padding to the y axis (default
+is TRUE, which includes some generally reasonable padding). As with
+\code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
+the bottom of your data, possible cutting a point in half. If you want a
+\emph{specific} amount of y-axis padding, set this to a number; the default
+is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
+to the top of the y axis. If you only specify one number, we'll assume
+that's the percent you want added to the bottom.}
 
 \item{y_axis_limits_lin}{Optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the

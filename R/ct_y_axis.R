@@ -123,10 +123,23 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         }
     }
     
-    pad_y_num <- ifelse(class(pad_y_axis) == "logical",
-                        ifelse(pad_y_axis, 0.02, 0), 
-                        pad_y_axis)
-    pad_y_axis <- pad_y_num != 0 # Making pad_y_axis logical again to work with code elsewhere
+    # Adding padding if user requests it
+    if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
+        if(pad_y_axis){
+            pad_y_num <-  c(0.02, 0)
+        } else {
+            pad_y_num <- c(0, 0)
+        }
+    } else {
+        pad_y_num <- pad_y_axis
+        if(length(pad_y_axis) == 1){
+            pad_y_num <- c(pad_y_num, 0)
+        } else {
+            pad_y_axis <- pad_y_axis[1:2]
+        }
+        
+        pad_y_axis <- pad_y_num[1] != 0 # Making pad_y_axis logical again to work with code elsewhere
+    }
     
     # Setting up y axis for semi-log graphs ----------------------------------
     

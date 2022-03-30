@@ -337,7 +337,11 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     
     # Adding padding if user requests it
     if(class(pad_x_axis) == "logical"){ # class is logical if pad_x_axis unspecified
-        pad_x_num <-  c(0.02, 0.04)
+        if(pad_x_axis){
+            pad_x_num <-  c(0.02, 0.04)
+        } else {
+            pad_x_num <- c(0, 0)
+        }
     } else {
         pad_x_num <- pad_x_axis
         if(length(pad_x_axis) == 1){
