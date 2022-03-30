@@ -7,16 +7,17 @@
 so_table(
   report_input_file = NA,
   sheet_report = NA,
+  sim_data_file = NA,
   PKparameters = NA,
   sheet_PKparameters = NA,
   mean_type = NA,
-  variability_option = "90\% CI",
-  concatVariability = FALSE,
-  includeTrialMeans = FALSE,
   includeCV = TRUE,
+  includeConfInt = TRUE,
+  includePerc = FALSE,
+  includeTrialMeans = FALSE,
+  concatVariability = FALSE,
   prettify_columns = TRUE,
   checkDataSource = TRUE,
-  sim_data_file = NA,
   save_table = NA
 )
 }
@@ -28,6 +29,10 @@ including the path if it's in any other directory than the current one}
 \item{sheet_report}{the sheet in the Excel report template file that contains
 information about the study, e.g., "study info - DDI" or "study info - no
 DDI" if you haven't renamed the tab.}
+
+\item{sim_data_file}{the simulator output file. This is only for when you
+don't fill out a report input form because you either have no observed data
+or you want to compare those data later manually.}
 
 \item{PKparameters}{the PK parameters to include as a character vector.
 Notes: \itemize{ \item{To see the full set of possible parameters to
@@ -52,28 +57,26 @@ If you supplied a report input form, only specify this if you'd like to
 override the value listed there. If no value is specified here or in
 \code{sectionInfo}, the default is "geometric".}
 
-\item{variability_option}{What type of variability would you like the table
-to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
-combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-percentiles")} as long as they were included in your simulator output. Note
-that the confidence intervals are geometric since that's what the simulator
-outputs (see an AUC tab and the summary statistics; these values are the
-ones for, e.g., "90\% confidence interval around the geometric mean(lower
-limit)"). Setting \code{variability_option = NA} will omit reporting any of
-the variability statistics other than the CV. The CV will automatically be
-included unless you omit it with \code{includeCV = FALSE}.}
+\item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
+table}
 
-\item{concatVariability}{Would you like to have the variability concatenated?
-TRUE or FALSE. If "TRUE", the output will be formatted into a single row
-and listed as the lower confidence interval or percentile to the upper CI
-or percentile. Ex: "2400 to 2700"}
+\item{includeConfInt}{TRUE or FALSE for whether to include whatever confidence
+intervals were included in the simulator output file. Note that the
+confidence intervals are geometric since that's what the simulator outputs
+(see an AUC tab and the summary statistics; these values are the ones for,
+e.g., "90\% confidence interval around the geometric mean(lower limit)").}
+
+\item{includePerc}{TRUE or FALSE for whether to include 5th to 95th
+percentiles}
 
 \item{includeTrialMeans}{TRUE or FALSE for whether to include the range of
 trial means for a given parameter. Note: This is calculated from individual
 values rather than being pulled directly from the output.}
 
-\item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
-table}
+\item{concatVariability}{Would you like to have the variability concatenated?
+TRUE or FALSE. If "TRUE", the output will be formatted into a single row
+and listed as the lower confidence interval or percentile to the upper CI
+or percentile. Ex: "2400 to 2700"}
 
 \item{prettify_columns}{TRUE or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUC0
@@ -83,10 +86,6 @@ from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 \item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
 lists exactly where the data were pulled from the simulator output file.
 Useful for QCing.}
-
-\item{sim_data_file}{the simulator output file. This is only for when you
-don't fill out a report input form because you either have no observed data
-or you want to compare those data later manually.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

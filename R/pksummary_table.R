@@ -26,16 +26,15 @@
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs
-#' @param variability_option What type of variability would you like the table
-#'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
-#'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-#'   percentiles")} as long as they were included in your simulator output. Note
-#'   that the confidence intervals are geometric since that's what the simulator
-#'   outputs (see an AUC tab and the summary statistics; these values are the
-#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
-#'   limit)"). Setting \code{variability_option = NA} will omit reporting any of
-#'   the variability statistics other than the CV. The CV will automatically be
-#'   included unless you omit it with \code{includeCV = FALSE}.
+#' @param includeCV TRUE or FALSE for whether to include rows for CV in the
+#'   table
+#' @param includeConfInt TRUE or FALSE for whether to include whatever confidence
+#'   intervals were included in the simulator output file. Note that the
+#'   confidence intervals are geometric since that's what the simulator outputs
+#'   (see an AUC tab and the summary statistics; these values are the ones for,
+#'   e.g., "90\% confidence interval around the geometric mean(lower limit)").
+#' @param includePerc TRUE or FALSE for whether to include 5th to 95th
+#'   percentiles
 #' @param concatVariability Would you like to have the variability concatenated?
 #'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
@@ -43,8 +42,6 @@
 #' @param includeTrialMeans TRUE or FALSE for whether to include the range of
 #'   trial means for a given parameter. Note: This is calculated from individual
 #'   values rather than pulled directly from the output.
-#' @param includeCV TRUE or FALSE for whether to include rows for CV in the
-#'   table
 #' @param prettify_columns TRUE or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUC0
 #'   to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
@@ -75,11 +72,12 @@
 pksummary_table <- function(sim_data_file,
                             PKparameters = NA,
                             sheet_PKparameters = NA, 
-                            mean_type = "geometric",
-                            variability_option = "90% CI",
-                            concatVariability = FALSE,
-                            includeTrialMeans = FALSE,
+                            mean_type = NA,
                             includeCV = TRUE,
+                            includeConfInt = TRUE,
+                            includePerc = FALSE,
+                            includeTrialMeans = FALSE,
+                            concatVariability = FALSE,
                             prettify_columns = TRUE,
                             checkDataSource = TRUE, 
                             save_table = NA){
@@ -88,10 +86,11 @@ pksummary_table <- function(sim_data_file,
                     PKparameters = PKparameters,
                     sheet_PKparameters = sheet_PKparameters,
                     mean_type = mean_type,
-                    variability_option = variability_option,
-                    concatVariability = concatVariability,
-                    includeTrialMeans = includeTrialMeans,
                     includeCV = includeCV,
+                    includeConfInt = includeConfInt,
+                    includePerc = includePerc,
+                    includeTrialMeans = includeTrialMeans,
+                    concatVariability = concatVariability,
                     prettify_columns = prettify_columns,
                     checkDataSource = checkDataSource, 
                     save_table = save_table)

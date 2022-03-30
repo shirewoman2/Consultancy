@@ -8,12 +8,12 @@ pksummary_table(
   sim_data_file,
   PKparameters = NA,
   sheet_PKparameters = NA,
-  mean_type = "geometric",
-  variability_option = "90\% CI",
-  concatVariability = FALSE,
-  includeHalfLife = FALSE,
-  includeTrialMeans = FALSE,
+  mean_type = NA,
   includeCV = TRUE,
+  includeConfInt = TRUE,
+  includePerc = FALSE,
+  includeTrialMeans = FALSE,
+  concatVariability = FALSE,
   prettify_columns = TRUE,
   checkDataSource = TRUE,
   save_table = NA
@@ -42,31 +42,26 @@ here. Most of the time, this should be left as NA.}
 
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs}
 
-\item{variability_option}{What type of variability would you like the table
-to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
-combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-percentiles")} as long as they were included in your simulator output. Note
-that the confidence intervals are geometric since that's what the simulator
-outputs (see an AUC tab and the summary statistics; these values are the
-ones for, e.g., "90\% confidence interval around the geometric mean(lower
-limit)"). Setting \code{variability_option = NA} will omit reporting any of
-the variability statistics other than the CV. The CV will automatically be
-included unless you omit it with \code{includeCV = FALSE}.}
+\item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
+table}
 
-\item{concatVariability}{Would you like to have the variability concatenated?
-TRUE or FALSE. If "TRUE", the output will be formatted into a single row
-and listed as the lower confidence interval or percentile to the upper CI
-or percentile. Ex: "2400 to 2700"}
+\item{includeConfInt}{TRUE or FALSE for whether to include whatever confidence
+intervals were included in the simulator output file. Note that the
+confidence intervals are geometric since that's what the simulator outputs
+(see an AUC tab and the summary statistics; these values are the ones for,
+e.g., "90\% confidence interval around the geometric mean(lower limit)").}
 
-\item{includeHalfLife}{TRUE or FALSE for whether to include half life as a
-parameter in the output table}
+\item{includePerc}{TRUE or FALSE for whether to include 5th to 95th
+percentiles}
 
 \item{includeTrialMeans}{TRUE or FALSE for whether to include the range of
 trial means for a given parameter. Note: This is calculated from individual
 values rather than pulled directly from the output.}
 
-\item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
-table}
+\item{concatVariability}{Would you like to have the variability concatenated?
+TRUE or FALSE. If "TRUE", the output will be formatted into a single row
+and listed as the lower confidence interval or percentile to the upper CI
+or percentile. Ex: "2400 to 2700"}
 
 \item{prettify_columns}{TRUE or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUC0

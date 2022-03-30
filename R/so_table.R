@@ -54,25 +54,22 @@
 #'   If you supplied a report input form, only specify this if you'd like to
 #'   override the value listed there. If no value is specified here or in
 #'   \code{sectionInfo}, the default is "geometric".
-#' @param variability_option What type of variability would you like the table
-#'   to include? Options are: "90\% CI", "95\% CI", "95th percentiles", or any
-#'   combination of those, e.g. \code{variability_option = c("90\% CI", "95th
-#'   percentiles")} as long as they were included in your simulator output. Note
-#'   that the confidence intervals are geometric since that's what the simulator
-#'   outputs (see an AUC tab and the summary statistics; these values are the
-#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
-#'   limit)"). Setting \code{variability_option = NA} will omit reporting any of
-#'   the variability statistics other than the CV. The CV will automatically be
-#'   included unless you omit it with \code{includeCV = FALSE}.
-#' @param concatVariability Would you like to have the variability concatenated?
-#'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
-#'   and listed as the lower confidence interval or percentile to the upper CI
-#'   or percentile. Ex: "2400 to 2700"
 #' @param includeTrialMeans TRUE or FALSE for whether to include the range of
 #'   trial means for a given parameter. Note: This is calculated from individual
 #'   values rather than being pulled directly from the output.
 #' @param includeCV TRUE or FALSE for whether to include rows for CV in the
 #'   table
+#' @param includeConfInt TRUE or FALSE for whether to include whatever confidence
+#'   intervals were included in the simulator output file. Note that the
+#'   confidence intervals are geometric since that's what the simulator outputs
+#'   (see an AUC tab and the summary statistics; these values are the ones for,
+#'   e.g., "90\% confidence interval around the geometric mean(lower limit)").
+#' @param includePerc TRUE or FALSE for whether to include 5th to 95th
+#'   percentiles
+#' @param concatVariability Would you like to have the variability concatenated?
+#'   TRUE or FALSE. If "TRUE", the output will be formatted into a single row
+#'   and listed as the lower confidence interval or percentile to the upper CI
+#'   or percentile. Ex: "2400 to 2700"
 #' @param prettify_columns TRUE or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUC0
 #'   to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
@@ -100,16 +97,17 @@
 
 so_table <- function(report_input_file = NA,
                      sheet_report = NA,
+                     sim_data_file = NA, 
                      PKparameters = NA,
                      sheet_PKparameters = NA,
                      mean_type = NA,
-                     variability_option = "90% CI",
-                     concatVariability = FALSE,
-                     includeTrialMeans = FALSE,
                      includeCV = TRUE,
+                     includeConfInt = TRUE,
+                     includePerc = FALSE,
+                     includeTrialMeans = FALSE,
+                     concatVariability = FALSE,
                      prettify_columns = TRUE,
                      checkDataSource = TRUE, 
-                     sim_data_file = NA, 
                      save_table = NA){
     
     # If they didn't include ".xlsx" at the end, add that.
@@ -241,12 +239,6 @@ so_table <- function(report_input_file = NA,
         MyPKResults <- MyPKResults_all$aggregate
     }
     
-    VarOpt1 <- variability_option[1]
-    VariabilityNames <- switch(VarOpt1,
-                               "90% CI" = c("CI90_low", "CI90_high"),
-                               "95% CI" = c("CI95_low", "CI95_high"),
-                               "95th percentiles" = c("per5", "per95"))
-    
     # Accounting for when mean_type is arithmetic but the user requests that the
     # ratio for + effector over - effector be a GMR. This will replace the
     # arithmetic mean ratio data with geometric mean ratio data. However,
@@ -265,7 +257,8 @@ so_table <- function(report_input_file = NA,
                         str_detect(names(MyPKResults), "ratio")]
     }
     
-    # Trial means
+    
+    # Adding trial means since they're not part of the default output
     if(includeTrialMeans){
         TrialMeans <- MyPKResults_all$individual %>%
             group_by(Trial) %>%
@@ -286,31 +279,28 @@ so_table <- function(report_input_file = NA,
         MyPKResults <- MyPKResults %>% bind_rows(TrialMeans)
     }
     
-    MyPKResults <- MyPKResults %>%
-        mutate(Stat = renameStats(Statistic)) %>%
-        filter(!Stat %in% switch(MeanType, "geometric" = c("mean", "CV"), 
-                                 "arithmetic" = c("geomean", "GCV"))) %>%
-        select(-Statistic) %>% select(Stat, everything())
+    # Renaming stats for ease of coding
+    MyPKResults <- MyPKResults %>% mutate(Stat = renameStats(Statistic))
     
     # Adjusting tmax values since the geometric mean row will actually be the
-    # median, VariabilityNames[1] will be the min, and VariabilityNames[2] will
+    # median, VarOptions[1] will be the min, and VarOptions[2] will
     # be the max.
     if("tmax_dose1" %in% names(MyPKResults)){
         MyPKResults$tmax_dose1[
             which(MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean"))] <-
             MyPKResults$tmax_dose1[which(MyPKResults$Stat == "median")]
-        MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[1]] <-
+        MyPKResults$tmax_dose1[MyPKResults$Stat == VarOptions[1]] <-
             MyPKResults$tmax_dose1[MyPKResults$Stat == "min"]
-        MyPKResults$tmax_dose1[MyPKResults$Stat == VariabilityNames[2]] <-
+        MyPKResults$tmax_dose1[MyPKResults$Stat == VarOptions[2]] <-
             MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
         
         if(EffectorPresent){
             MyPKResults$tmax_dose1_withInhib[
                 MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
                 MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
+            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VarOptions[1]] <-
                 MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
+            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VarOptions[2]] <-
                 MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "max"]
         }
         
@@ -320,18 +310,18 @@ so_table <- function(report_input_file = NA,
         MyPKResults$tmax_ss[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_ss[MyPKResults$Stat == "median"]
-        MyPKResults$tmax_ss[MyPKResults$Stat == VariabilityNames[1]] <-
+        MyPKResults$tmax_ss[MyPKResults$Stat == VarOptions[1]] <-
             MyPKResults$tmax_ss[MyPKResults$Stat == "min"]
-        MyPKResults$tmax_ss[MyPKResults$Stat == VariabilityNames[2]] <-
+        MyPKResults$tmax_ss[MyPKResults$Stat == VarOptions[2]] <-
             MyPKResults$tmax_ss[MyPKResults$Stat == "max"]
         
         if(EffectorPresent){
             MyPKResults$tmax_ss_withInhib[
                 MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
                 MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
+            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VarOptions[1]] <-
                 MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
+            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VarOptions[2]] <-
                 MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "max"]
         }
         
@@ -342,24 +332,42 @@ so_table <- function(report_input_file = NA,
         MyPKResults$tmax[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax[MyPKResults$Stat == "median"]
-        MyPKResults$tmax[MyPKResults$Stat == VariabilityNames[1]] <-
+        MyPKResults$tmax[MyPKResults$Stat == VarOptions[1]] <-
             MyPKResults$tmax[MyPKResults$Stat == "min"]
-        MyPKResults$tmax[MyPKResults$Stat == VariabilityNames[2]] <-
+        MyPKResults$tmax[MyPKResults$Stat == VarOptions[2]] <-
             MyPKResults$tmax[MyPKResults$Stat == "max"]
         
         if(EffectorPresent){
             MyPKResults$tmax_withInhib[
                 MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
                 MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_withInhib[MyPKResults$Stat == VariabilityNames[1]] <-
+            MyPKResults$tmax_withInhib[MyPKResults$Stat == VarOptions[1]] <-
                 MyPKResults$tmax_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_withInhib[MyPKResults$Stat == VariabilityNames[2]] <-
+            MyPKResults$tmax_withInhib[MyPKResults$Stat == VarOptions[2]] <-
                 MyPKResults$tmax_withInhib[MyPKResults$Stat == "max"]
         }
         
     }
     
+    VarOptions <- c("CV" = includeCV & MeanType == "arithmetic", 
+                    "GCV" = includeCV & MeanType == "geometric",
+                    "CI90_low" = includeConfInt,
+                    "CI90_high" = includeConfInt, 
+                    "CI95_low" = includeConfInt,
+                    "CI95_high" = includeConfInt, 
+                    "per5" = includePerc, 
+                    "per95" = includePerc, 
+                    "MinMean" = includeTrialMeans, 
+                    "MaxMean" = includeTrialMeans)
+    VarOptions <- names(VarOptions)[which(VarOptions)]
+    VarOptions <- intersect(VarOptions, MyPKResults$Stat)
+    
     MyPKResults <- MyPKResults %>%
+        filter(Stat %in% c(VarOptions, 
+                           switch(MeanType, "geometric" = "geomean", 
+                                  "arithmetic" = "mean"))) %>%
+        select(-Statistic) %>%
+        select(Stat, everything()) %>%
         pivot_longer(cols = -Stat, names_to = "PKParam",
                      values_to = "Sim")
     
@@ -371,7 +379,6 @@ so_table <- function(report_input_file = NA,
                           "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
                           "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
     }
-    
     
     # observed data -----------------------------------------------------
     if(class(sectionInfo) != "logical"){
@@ -472,31 +479,6 @@ so_table <- function(report_input_file = NA,
     # F10), and then paste the output (something like
     # "install.packages(c("dbplyr", "dplyr", "dtplyr", ... ") and execute.
     
-    # Filtering rows as requested by user
-    VarOpts_tableRows <- list("90% CI" = c("CI90_low", "CI90_high"),
-                              "95% CI" = c("CI95_low", "CI95_high"),
-                              "95th percentiles" = c("per5", "per95"))
-    VarOptsNotChosen <- setdiff(c("90% CI", "95% CI", "95th percentiles"),
-                                variability_option)
-    
-    if(length(VarOptsNotChosen) > 0){
-        MyPKResults <- MyPKResults %>%
-            filter(!Stat %in% unlist(VarOpts_tableRows[VarOptsNotChosen]))
-    }
-    
-    # If the user selected variability options that were not calculated in the
-    # simulator output, give them a warning about that.
-    VarOptsChosen <- unlist(VarOpts_tableRows[variability_option])
-    MissingOpts <- setdiff(VarOptsChosen, unique(MyPKResults$Stat))
-    if(length(MissingOpts) > 0){
-        MissingOpts <- unlist(VarOpts_tableRows) == MissingOpts
-        MissingOpts <- unique(sub("1$|2$", "", names(MissingOpts)[MissingOpts]))
-        MissingOpts <- str_comma(MissingOpts)
-        warning(paste0("The ",
-                       MissingOpts,
-                       " was/were requested but is/are not present in the simulator output. This will not be included in the table."))
-    }
-    
     # Putting trial means into appropriate format
     if(includeTrialMeans){
         TM <- MyPKResults %>% filter(Stat %in% c("MinMean", "MaxMean")) %>%
@@ -515,7 +497,11 @@ so_table <- function(report_input_file = NA,
         
         # Note: When multiple options are chosen for variability type,
         # concatVariability doesn't work. Will need to fix this later.
-        VarRows <- VarOpts_tableRows[variability_option]
+        VarRows <- list("ConfInt90" = c("CI90_low", "CI90_high"), 
+                        "ConfInt95" = c("CI95_low", "CI95_high"),
+                        "Perc" = c("per5", "per95"))
+        VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
+
         VarRows[["obs"]] <- c("CIL_obs", "CIU_obs")
         for(j in names(VarRows)){
             temp <- MyPKResults %>%
@@ -525,9 +511,9 @@ so_table <- function(report_input_file = NA,
                                   ifelse(all(complete.cases(c(x[1], x[2]))),
                                          paste(x[1], "to", x[2]), NA)}),
                        Stat = switch(j,
-                                     "90% CI" = "CI90concat",
-                                     "95% CI" = "CI95concat",
-                                     "95th percentiles" = "per95concat",
+                                     "ConfInt90" = "CI90concat",
+                                     "ConfInt95" = "CI95concat",
+                                     "Perc" = "per95concat",
                                      "obs" = "CIobsconcat"))
             
             MyPKResults[which(MyPKResults$Stat == VarRows[[j]][1]), ] <-
@@ -585,11 +571,6 @@ so_table <- function(report_input_file = NA,
     # Getting columns in a good order
     MyPKResults <- MyPKResults %>%
         select(any_of(c("Statistic", as.character(PKToPull))))
-    
-    if(includeCV == FALSE){
-        MyPKResults <- MyPKResults %>%
-            filter(!str_detect(Statistic, "^CV"))
-    }
     
     # Optionally adding final column names
     if(prettify_columns){
