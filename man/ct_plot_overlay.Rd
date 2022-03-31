@@ -14,6 +14,7 @@ ct_plot_overlay(
   facet_column1,
   facet_column2,
   floating_facet_scale = FALSE,
+  facet_spacing = NA,
   time_range = NA,
   x_axis_interval = NA,
   pad_x_axis = FALSE,
@@ -95,6 +96,10 @@ Floating axes comes with a trade-off for the looks of the graphs, though:
 Setting this to TRUE does mean that your x axis won't have pretty breaks
 that are sensible for times in hours and that your y axis won't have minor
 ticks.}
+
+\item{facet_spacing}{Optionally set the spacing between facets. If left as
+NA, a reasonable amount of space will be used. Units are "lines", so try,
+e.g. 2.}
 
 \item{time_range}{time range to show relative to the start of the simulation.
   A note on how this differs from \code{\link{ct_plot}}: Since this function

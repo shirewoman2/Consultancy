@@ -635,7 +635,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
                             linetype = Inhibitor, shape = Inhibitor,
                             color = Inhibitor, fill = Inhibitor, 
                             group = Group)) +
-                geom_line(alpha = AlphaToUse, lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+                geom_line(alpha = AlphaToUse, 
+                          lwd = ifelse(is.na(line_width), 0.8, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == MyMeanType),
                           lwd = ifelse(is.na(line_width), 1, line_width))  +
@@ -993,6 +994,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # remove legend.
     if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){
         A <- A + theme(legend.position = "none")
+    } else {
+        # Otherwise, make the legend a little wider to actually show the dashes
+        A <- A + theme(legend.key.width = unit(2, "lines"))
     }
     
     ## Making semi-log graph ------------------------------------------------

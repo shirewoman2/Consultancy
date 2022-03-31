@@ -123,6 +123,9 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param facet_spacing Optionally set the spacing between facets. If left as
+#'   NA, a reasonable amount of space will be used. Units are "lines", so try,
+#'   e.g. 2.
 #'
 #'
 #' @return
@@ -143,6 +146,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             facet_column1,
                             facet_column2, 
                             floating_facet_scale = FALSE,
+                            facet_spacing = NA,
                             time_range = NA, 
                             x_axis_interval = NA,
                             pad_x_axis = FALSE,
@@ -409,6 +413,12 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         A <- A + ggthemes::scale_color_tableau() +
             ggthemes::scale_fill_tableau()
     }
+    
+    ## Adding spacing between facets if requested
+    if(complete.cases(facet_spacing)){
+        A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
+    }
+    
     
     ## Making semi-log graph ------------------------------------------------
     
