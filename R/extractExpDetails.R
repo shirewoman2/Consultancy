@@ -1,7 +1,6 @@
 #' Extract details about the experimental design
 #'
-#' \code{extractExpDetails} looks up experimental design details from the
-#' "Summary", "Input Sheet", custom dosing, or population tabs of a Simcyp
+#' \code{extractExpDetails} looks up experimental design details from a Simcyp
 #' simulator output file.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output

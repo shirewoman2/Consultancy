@@ -66,8 +66,12 @@ A data.frame of enzyme abundance with time with the following
 }
 \description{
 Extracts enzyme abundance data from a simulator output Excel file. The
-appropriate tab must be present in the output file. \strong{Note:} This has
-not been set up yet to get the dose number for a custom-dosing regimen.
+appropriate tab must be present in the output file.
+}
+\details{
+\strong{Note:} Unlike the similar function for extracting drug
+concentrations, \code{\link{extractConcTime}}, This has not been set up yet
+to get the dose number for a custom-dosing regimen.
 }
 \examples{
 extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",

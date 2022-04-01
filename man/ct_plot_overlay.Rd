@@ -76,6 +76,11 @@ e.g., \code{colorBy = Tissue}.}
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}}}
 
+\item{obs_transparency}{Optionally make the observed data points
+semi-transparent, which can be helpful when there are numerous
+observations. Acceptable values are 0 (completely transparent) to 1
+(completely opaque).}
+
 \item{facet_column1}{If you would like to break up your graph into small
 multiples, you can break the graphs up by up to two columns in
 \code{sim_obs_dataframe}. What should be the 1st column to break up the

@@ -1,19 +1,24 @@
 #' Extract concentration-time data from a simulator output Excel file
 #'
 #' Extracts concentration-time data from simulator output Excel files and,
-#' optionally, a separately specified clinical data file, and puts all data into
-#' a single, tidy data.frame. \strong{A note on observed data:} When observed
-#' data are included in a simulator output file, because the simulator output
-#' does not explicitly say whether those observed data were in the presence of
-#' an inhibitor or effector, this function cannot tell the difference and will
-#' thus assume all observed data included in the simulator output were for the
-#' substrate in the \emph{absence} of any effector. It will further assume that
-#' the compound the observed data is for is the same as
-#' \code{compoundToExtract}. If \code{compoundToExtract} was an inhibitor or
+#' optionally, a separately specified observed data file, and puts all data into
+#' a single, tidy data.frame. There are some nuances to how it deals with
+#' observed data; please see the details at the bottom of this help file.
+#'
+#'
+#' \strong{A note on observed data:} When observed data are included in a
+#' simulator output file, because the simulator output does not explicitly say
+#' whether those observed data were in the presence of an inhibitor or effector,
+#' this function cannot tell the difference and will thus assume all observed
+#' data included in the simulator output were for the substrate in the
+#' \emph{absence} of any effector. It will further assume that the compound --
+#' substrate or inhibitor 1 or primary metabolite 1 or whatever -- is the same
+#' as \code{compoundToExtract}. If \code{compoundToExtract} was an inhibitor or
 #' inhibitor metabolite, the observed data from the simulator output will NOT be
-#' pulled since it is unlikely to be inhibitor concentrations. It's generally
-#' much safer to supply an observed data file here to make sure the data are
-#' what you're expecting.
+#' pulled since it is unlikely to be inhibitor concentrations.
+#'
+#' For best results, we recommend supplying an observed data file here, which
+#' contains more information, to make sure the data are what you're expecting.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   concentration-time data; must be an output file from the Simcyp simulator

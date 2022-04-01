@@ -1,9 +1,12 @@
 #' Generate a form for entering data for a report
 #'
-#' Creates an Excel file with forms to fill out. Those forms can be fed into
-#' \code{\link{so_table}} to automate some of the calculations for writing a
-#' report. \strong{A few notes:} \enumerate{ \item{This generates a warning that
-#' we're just not able to get rid of that says "Workbook has no sheets!" Please
+#' Creates an Excel file with forms to fill out about observed data. Those forms
+#' can be fed into \code{\link{so_table}} to automate some of the calculations
+#' for writing a report.
+#'
+#'
+#' \strong{A few notes:} \enumerate{ \item{This generates a warning that we're
+#' just not able to get rid of that says "Workbook has no sheets!" Please
 #' disregard that.} \item{This does not work on the SharePoint drive because R
 #' doesn't have permission to write there. Please set your working directory to
 #' a different location. It \emph{will} work on the Large File Store drive.}}

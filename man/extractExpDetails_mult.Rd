@@ -52,11 +52,18 @@ Returns a data.frame of experimental details for simulator files
 \description{
 \code{extractExpDetails_mult} takes a list of simulator output files -- or
 all the Excel files in the current directory if no files are specified -- and
-collects all the experimental details for the simulations into a single
-table. It optionally saves that table to a csv or Excel file.
+collects experimental details for the simulations into a single table. It
+optionally saves that table to a csv or Excel file.
 }
 \examples{
 
-# No examples yet
-
+extractExpDetails_mult(
+    sim_data_files = 
+        c("Example simulator output - SD MDZ + MD RTV.xlsx",
+          "Example simulator output - MDZ + metabolites.xlsx",
+          "Example simulator output - met1 met2 sec met1 inhib1.xlsx",
+          "Example simulator output - met1 met2 sec met1.xlsx"), 
+    exp_details = "all", 
+    save_output = "My experimental details.csv")
+ 
 }

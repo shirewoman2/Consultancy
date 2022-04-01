@@ -50,8 +50,7 @@ it will still be saved as a csv file.}
 Returns a named list of the experimental details
 }
 \description{
-\code{extractExpDetails} looks up experimental design details from the
-"Summary", "Input Sheet", custom dosing, or population tabs of a Simcyp
+\code{extractExpDetails} looks up experimental design details from a Simcyp
 simulator output file.
 }
 \examples{

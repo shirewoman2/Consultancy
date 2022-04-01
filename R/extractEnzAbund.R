@@ -1,8 +1,11 @@
 #' Extract enzyme abundance data from a simulator output Excel file
 #'
 #' Extracts enzyme abundance data from a simulator output Excel file. The
-#' appropriate tab must be present in the output file. \strong{Note:} This has
-#' not been set up yet to get the dose number for a custom-dosing regimen.
+#' appropriate tab must be present in the output file.
+#'
+#' \strong{Note:} Unlike the similar function for extracting drug
+#' concentrations, \code{\link{extractConcTime}}, This has not been set up yet
+#' to get the dose number for a custom-dosing regimen.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   enzyme-abundance-time data

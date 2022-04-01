@@ -61,7 +61,8 @@ Depending on the options selected, returns a list of numerical
 \description{
 Pull calculated PK parameters from a Simcyp simulation output Excel file.
 \strong{Note:} Nearly all parameters are for the substrate. We're still
-working on this for extracting PK for the inhibitor.
+working on this for extracting PK for the inhibitor. If you specify an Excel
+sheet that is for inhibitor 1 PK data, this may not work well.
 }
 \examples{
 

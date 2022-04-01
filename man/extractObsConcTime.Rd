@@ -10,7 +10,8 @@ extractObsConcTime(obs_data_file)
 \item{obs_data_file}{name of the Excel file containing the observed
 concentration-time data, in quotes. This is the file that it is ready to be
 converted to an XML file, not the file that contains only the digitized
-time and concentration data.}
+time and concentration data and not the XML file itself that you would
+include in a Simulator workspace for observed data.}
 }
 \value{
 a data.frame with the following columns:
@@ -18,7 +19,7 @@ a data.frame with the following columns:
 
   \item{CompoundID}{the compound ID listed in the observed file, e.g., "Sub
   Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma"}
-  
+
   \item{Tissue}{the tissue}
 
   \item{Time}{time since dosing}
@@ -38,12 +39,13 @@ a data.frame with the following columns:
 }
 \description{
 Extract observed data from an Excel file that follows the Simcyp Simulator
-template for converting concentration-time data into an XML file. Note: This
-does not pull dosing information at this time, but we could change that if
-there's interest.
+template for converting concentration-time data into an XML file.
+}
+\details{
+\strong{Note:} This does not pull dosing information at this time, but we
+could change that if there's interest.
 }
 \examples{
-obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx"
-extractObsConcTime(obs_data_file)
+extractObsConcTime(obs_data_file = "My observed data.xlsx")
 
 }

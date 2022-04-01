@@ -2,7 +2,8 @@
 #'
 #' Pull calculated PK parameters from a Simcyp simulation output Excel file.
 #' \strong{Note:} Nearly all parameters are for the substrate. We're still
-#' working on this for extracting PK for the inhibitor.
+#' working on this for extracting PK for the inhibitor. If you specify an Excel
+#' sheet that is for inhibitor 1 PK data, this may not work well.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to

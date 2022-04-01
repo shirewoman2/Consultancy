@@ -111,7 +111,7 @@
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}}
-#' @aram obs_transparency Optionally make the observed data points
+#' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
 #'   observations. Acceptable values are 0 (completely transparent) to 1
 #'   (completely opaque).
