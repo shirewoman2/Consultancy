@@ -23,14 +23,12 @@ e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 with the file names if they are located somewhere other than your working
 directory.}
 
-\item{obs_data_files}{UNDER CONSTRUCTION and not yet working. a character
-vector of the observed data files that you'd like to compare, e.g.,
-\code{c("MyObsFile1.xlsx", "MyObsFile2.xlsx")}. The path should be included
-with the file names if they are located somewhere other than your working
-directory. This is the file that it is ready to be converted to an XML
-file, not the file that contains only the digitized time and concentration
-data. The names of the observed data files are piped into
-\code{\link{extractObsConcTime}}.}
+\item{obs_data_files}{a character vector of the observed data files that
+you'd like to compare, e.g., \code{c("MyObsFile1.xlsx",
+"MyObsFile2.xlsx")}. The path should be included with the file names if
+they are located somewhere other than your working directory. This is the
+file that it is ready to be converted to an XML file, not the file that
+contains only the digitized time and concentration data.}
 
 \item{sim_obs_dataframe}{the data.frame that will contain the output. Because
 we can see scenarios where you might want to extract some

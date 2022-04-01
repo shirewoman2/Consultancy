@@ -2,16 +2,23 @@
 #'
 #' \code{ct_plot_overlay} is meant to be used in conjunction with
 #' \code{\link{extractConcTime_mult}} to create single graphs with overlaid
-#' concentration-time data from multiple Simcyp Simulator output files for easy
-#' comparisons. \strong{Notes:} \enumerate{\item{This has not been set up yet to
-#' plot enzyme abundance data, ADAM-model simulations, or observed data.}
-#' \item{Currently, this will only plot arithmetic or geometric mean or median
-#' data and nothing else for each data set. We may expand that in the future,
-#' but those are the only things included for now.}} Really, this function is
-#' generally workable but is admittedly not one of our most maturely developed
-#' functions. Something is probably going to break on you, so, our apologies in
-#' advance, and please email Laura Shireman to describe what happened when it
-#' does inevitably break.
+#' concentration-time data of multiple tissues, compounds, or Simcyp Simulator
+#' output files for easy comparisons. \emph{Note:} There are some nuances to
+#' overlaying observed data. Please see the "Details" section at the bottom of
+#' this help file. Also, this hasn't really been developed or tested with
+#' enzyme-abundance data or ADAM data yet.
+#'
+#' \strong{A note on including observed data:} We recently added the option of
+#' including observed data and are in the process of testing this. To include
+#' observed data, please supply observed data files to the
+#' \code{\link{extractConcTime_mult}} function argument "obs_data_files" when
+#' you extract the data you want to graph. The \code{ct_plot_overlay} function
+#' will assume that \emph{all} the observed data apply to \emph{all} the files
+#' included in \code{sim_obs_dataframe} by default; if that's not the case,
+#' after you use \code{\link{extractConcTime_mult}} to extract your data, you
+#' can indicate which simulator output file goes with which observed file by
+#' setting the simulator output file in the column "File". (Please ask a member
+#' of the R Working Group for help if you're not clear on how to do this.)
 #'
 #' @param sim_obs_dataframe the data.frame with multiple sets of
 #'   concentration-time data. At the moment, this function does not plot
@@ -104,6 +111,10 @@
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}}
+#' @aram obs_transparency Optionally make the observed data points
+#'   semi-transparent, which can be helpful when there are numerous
+#'   observations. Acceptable values are 0 (completely transparent) to 1
+#'   (completely opaque).
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -143,14 +154,15 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             linear_or_log = "semi-log",
                             colorBy = File,
                             color_set = "default",
+                            obs_transparency = NA, 
                             facet_column1,
                             facet_column2, 
                             floating_facet_scale = FALSE,
                             facet_spacing = NA,
                             time_range = NA, 
                             x_axis_interval = NA,
-                            pad_x_axis = FALSE,
-                            pad_y_axis = FALSE,
+                            pad_x_axis = TRUE,
+                            pad_y_axis = TRUE,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
                             legend_position = NA,
@@ -219,15 +231,10 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         # At least at this point, I can't see this function working well with
         # ADAM model data b/c the y axis units differ. Removing all ADAM model
         # data.
-        filter(is.na(subsection_ADAM) &
-                   Trial %in% 
-                   switch(figure_type, 
-                          "means only" = MyMeanType, 
-                          "percentile ribbon" = c(MyMeanType, "per5", "per95"),
-                          "ribbon" = c(MyMeanType, "per5", "per95"))) %>%
+        filter(is.na(subsection_ADAM)) %>%
         # If it's dose number 0, remove those rows so that we'll show only the
         # parts we want when facetting and user wants scales to float freely.
-        filter(DoseNum != 0) %>% 
+        filter(DoseNum != 0 | Simulated == FALSE) %>% 
         mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
                CompoundID = factor(CompoundID,
                                    levels = c("substrate", "primary metabolite 1",
@@ -237,7 +244,12 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE)
     sim_dataframe <- sim_obs_dataframe %>%
-        filter(Simulated == TRUE)
+        filter(Simulated == TRUE &
+                   Trial %in% 
+                   switch(figure_type, 
+                          "means only" = MyMeanType, 
+                          "percentile ribbon" = c(MyMeanType, "per5", "per95"),
+                          "ribbon" = c(MyMeanType, "per5", "per95")))
     
     MyUniqueData <- sim_obs_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
@@ -259,10 +271,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     MyAES <- c("color" = as_label(colorBy), 
                "facet1" = as_label(facet_column1), 
                "facet2" = as_label(facet_column2))
-    UniqueAES <- MyAES[which(complete.cases(MyAES))]
-    
-    # print(MyAES)
-    # print(UniqueAES)
+    UniqueAES <- MyAES[which(MyAES != "<empty>")]
     
     if(length(UniqueGroups[UniqueGroups != "CompoundID"]) > length(UniqueAES)){
         warning(paste("You have requested", length(UniqueGroups),
@@ -306,11 +315,22 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     # Setting figure types ---------------------------------------------------
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
-        A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
+        A <- ggplot(sim_dataframe,
                     aes(x = Time, y = Conc, color = !!colorBy, # Comment this while developing, uncomment for running function
                         # aes(x = Time, y = Conc, color = colorBy, # Uncomment this while developing, comment for running function
                         group = Group)) +
-            geom_line()    
+            geom_line()
+        
+        if(nrow(obs_data) > 0){
+            A <- A + 
+                geom_point(data = obs_data, inherit.aes = FALSE, labs = FALSE,
+                           aes(x = Time, y = Conc, group = Group,
+                               color = !!colorBy, fill = !!colorBy), # Comment while developing, uncomment for running
+                               # color = colorBy, fill = colorBy), # uncomment while developing, comment while running
+                           alpha = ifelse(complete.cases(obs_transparency), 
+                                          obs_transparency, 1), 
+                           show.legend = FALSE)
+        }
     }
     
     
@@ -324,18 +344,31 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                  color = !!colorBy, fill = !!colorBy)) +
+                                  color = !!colorBy, fill = !!colorBy)) + # uncomment for running, comment for developing
+            # color = colorBy, fill = colorBy)) + # comment for running, uncomment for developing
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
+        
+        if(nrow(obs_data) > 0){
+            A <- A + 
+                geom_point(data = obs_data, 
+                           aes(x = Time, y = Conc, group = Group,
+                               color = !!colorBy, fill = !!colorBy), # uncomment for running, comment for developing
+                           # color = colorBy, fill = colorBy), # comment for running, uncomment for developing
+                           inherit.aes = FALSE, 
+                           alpha = ifelse(complete.cases(obs_transparency), 
+                                          obs_transparency, 1), 
+                           show.legend = FALSE) 
+            
+        }
     }
     
     # Making linear graph --------------------------------------------------------
     A <-  A +
-        # geom_point(data = obs_data) + # not ready to add obs data to this function yet!
-        labs(color = as_label(colorBy)) + # Comment this while developing, uncomment for running function
+        labs(color = as_label(colorBy), 
+             fill = as_label(colorBy)) + # Comment this while developing, uncomment for running function
         xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
         ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
-        # scale_color_brewer(palette = "Set1") +
         theme(panel.background = element_rect(fill = "white", color = NA),
               panel.border = element_rect(color = "black", fill = NA),
               strip.background = element_rect(fill = "white"),
@@ -369,8 +402,8 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                                expand = expansion(mult = pad_y_num)) +
             facet_grid(rows = vars(!!facet_column1), # Comment this while developing, uncomment for running function
                        cols = vars(!!facet_column2)) # Comment this while developing, uncomment for running function
-        # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
-        #            cols = vars(facet_column2)) # Uncomment this while developing, comment for running function
+            # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
+            #            cols = vars(facet_column2)) # Uncomment this while developing, comment for running function
     }
     
     # Colors ----------------------------------------------------------------

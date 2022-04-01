@@ -17,14 +17,12 @@
 #'   e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 #'   with the file names if they are located somewhere other than your working
 #'   directory.
-#' @param obs_data_files UNDER CONSTRUCTION and not yet working. a character
-#'   vector of the observed data files that you'd like to compare, e.g.,
-#'   \code{c("MyObsFile1.xlsx", "MyObsFile2.xlsx")}. The path should be included
-#'   with the file names if they are located somewhere other than your working
-#'   directory. This is the file that it is ready to be converted to an XML
-#'   file, not the file that contains only the digitized time and concentration
-#'   data. The names of the observed data files are piped into
-#'   \code{\link{extractObsConcTime}}.
+#' @param obs_data_files a character vector of the observed data files that
+#'   you'd like to compare, e.g., \code{c("MyObsFile1.xlsx",
+#'   "MyObsFile2.xlsx")}. The path should be included with the file names if
+#'   they are located somewhere other than your working directory. This is the
+#'   file that it is ready to be converted to an XML file, not the file that
+#'   contains only the digitized time and concentration data.
 #' @param sim_obs_dataframe the data.frame that will contain the output. Because
 #'   we can see scenarios where you might want to extract some
 #'   concentration-time data, play around with those data, and then later decide
@@ -310,21 +308,24 @@ extractConcTime_mult <- function(sim_data_files,
     if(length(obs_data_files) > 0 && any(complete.cases(obs_data_files))){
         MultObsData <- list()
         if(overwrite){
-            sim_obs_dataframe <- sim_obs_dataframe %>% filter(!File %in% obs_data_files)
+            sim_obs_dataframe <- sim_obs_dataframe %>% filter(!ObsFile %in% obs_data_files)
             for(f in obs_data_files){
                 MultObsData[[f]] <- extractObsConcTime(f)
             }
         } else {
-            for(f in setdiff(obs_data_files, unique(sim_obs_dataframe$File))){
+            for(f in setdiff(obs_data_files, unique(sim_obs_dataframe$ObsFile))){
                 MultObsData[[f]] <- extractObsConcTime(f)
             }
         }
-        sim_obs_dataframe <- bind_rows(sim_obs_dataframe, bind_rows(MultObsData))
+        
+        # Removing any compounds not included in user request
+        MultObsData <- bind_rows(MultObsData) %>% 
+            mutate(Simulated = FALSE) %>% 
+            filter(CompoundID %in% compoundsToExtract)
+        
+        sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultObsData)
+        
     }
-    
-    # LEFT OFF HERE for obs data. I need a way to determine what the compound
-    # is for each of the observed files and which obs data go with which sim
-    # file. Really not sure how to do that.
     
     # all data together -------------------------------------------------
     sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultData) %>% select(-any_of("ID"))

@@ -11,14 +11,15 @@ ct_plot_overlay(
   linear_or_log = "semi-log",
   colorBy = File,
   color_set = "default",
+  obs_transparency = NA,
   facet_column1,
   facet_column2,
   floating_facet_scale = FALSE,
   facet_spacing = NA,
   time_range = NA,
   x_axis_interval = NA,
-  pad_x_axis = FALSE,
-  pad_y_axis = FALSE,
+  pad_x_axis = TRUE,
+  pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   legend_position = NA,
@@ -165,16 +166,24 @@ means the file will not be automatically saved to disk.}
 \description{
 \code{ct_plot_overlay} is meant to be used in conjunction with
 \code{\link{extractConcTime_mult}} to create single graphs with overlaid
-concentration-time data from multiple Simcyp Simulator output files for easy
-comparisons. \strong{Notes:} \enumerate{\item{This has not been set up yet to
-plot enzyme abundance data, ADAM-model simulations, or observed data.}
-\item{Currently, this will only plot arithmetic or geometric mean or median
-data and nothing else for each data set. We may expand that in the future,
-but those are the only things included for now.}} Really, this function is
-generally workable but is admittedly not one of our most maturely developed
-functions. Something is probably going to break on you, so, our apologies in
-advance, and please email Laura Shireman to describe what happened when it
-does inevitably break.
+concentration-time data of multiple tissues, compounds, or Simcyp Simulator
+output files for easy comparisons. \emph{Note:} There are some nuances to
+overlaying observed data. Please see the "Details" section at the bottom of
+this help file. Also, this hasn't really been developed or tested with
+enzyme-abundance data or ADAM data yet.
+}
+\details{
+\strong{A note on including observed data:} We recently added the option of
+including observed data and are in the process of testing this. To include
+observed data, please supply observed data files to the
+\code{\link{extractConcTime_mult}} function argument "obs_data_files" when
+you extract the data you want to graph. The \code{ct_plot_overlay} function
+will assume that \emph{all} the observed data apply to \emph{all} the files
+included in \code{sim_obs_dataframe} by default; if that's not the case,
+after you use \code{\link{extractConcTime_mult}} to extract your data, you
+can indicate which simulator output file goes with which observed file by
+setting the simulator output file in the column "File". (Please ask a member
+of the R Working Group for help if you're not clear on how to do this.)
 }
 \examples{
 # Use syntax like this:
