@@ -83,3 +83,21 @@
 #'   }
 "AllExpDetails"
 
+#' All possible observed dependent variable options in the Excel file template
+#' for converting observed data to an XML file the Simulator can use
+#'
+#' @format A data.frame with the following columns: \describe{
+#'
+#'   \item{ID}{the ID used by the Excel template}
+#'
+#'   \item{Tissue}{the tissue}
+#'
+#'   \item{CompoundID}{the compound ID that is used in the SimcypConsultancy R
+#'   package}
+#'
+#'   \item{Effector}{whether an effector were present; listed as "none" or
+#'   "inhibitor"} 
+#'   
+#'   }
+#'   
+"ObsDVoptions"

@@ -157,7 +157,7 @@ extractConcTime_mult <- function(sim_data_files,
                                           names(CompoundCheck)[complete.cases(CompoundCheck)])
         
         if(all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
-            warning(paste0("For the file ", f, ", the compound ",
+            warning(paste0("For the file ", f, ", the compound(s) ",
                            str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
                            " was/were not available."))
         }

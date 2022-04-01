@@ -8,17 +8,41 @@
 #' this help file. Also, this hasn't really been developed or tested with
 #' enzyme-abundance data or ADAM data yet.
 #'
-#' \strong{A note on including observed data:} We recently added the option of
+#' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include
-#' observed data, please supply observed data files to the
-#' \code{\link{extractConcTime_mult}} function argument "obs_data_files" when
-#' you extract the data you want to graph. The \code{ct_plot_overlay} function
-#' will assume that \emph{all} the observed data apply to \emph{all} the files
-#' included in \code{sim_obs_dataframe} by default; if that's not the case,
-#' after you use \code{\link{extractConcTime_mult}} to extract your data, you
-#' can indicate which simulator output file goes with which observed file by
-#' setting the simulator output file in the column "File". (Please ask a member
-#' of the R Working Group for help if you're not clear on how to do this.)
+#' observed data, you have two options: \enumerate{
+#'
+#' \item{Use the Simulator Excel PE data entry template to save information
+#' about your observed data. Then, when you run
+#' \code{\link{extractConcTime_mult}}, supply the names of those Excel files to
+#' the observed data  function argument. This is the BEST option because it
+#' contains the most information about the observed data.}
+#'
+#' \item{Include observed data in your simulation files. Those data will be
+#' automatically extracted when you run \code{\link{extractConcTime_mult}} if
+#' "obs_data_files" is left as the default NA.} }
+#'
+#' The \code{ct_plot_overlay} function will automatically figure out which
+#' observed data should be compared with which simulated compound IDs, tissues,
+#' etc. However, because the function doesn't know which simulator file goes
+#' with which observed data, it will assume that \emph{all} the observed data
+#' are appropriate to compare to \emph{all} the files included in
+#' \code{sim_obs_dataframe} by default. If that's not the case, after you use
+#' \code{\link{extractConcTime_mult}} to extract your data, you can indicate
+#' which simulator output file goes with which observed file by setting the
+#' simulator output file in the column "File". (Please ask a member of the R
+#' Working Group for help if you're not clear on how to do this.)
+#'
+#' One other note: The observed data files don't include the \emph{name} of the
+#' compound you're simulating (column: "Compound"). They do include whether it
+#' was a substrate, metabolite, or inhibitor (column: CompoundID), but not the
+#' compound's actual name. For that reason, try coloring or facetting your data
+#' by CompoundID rather than by Compound. Similarly, if you have an inhibitor
+#' and you have observed data, it will be listed as the generic "inhibitor" here
+#' rather than, e.g., "ketoconazole" because the observed data can't tell which
+#' is which.
+#'
+#'
 #'
 #' @param sim_obs_dataframe the data.frame with multiple sets of
 #'   concentration-time data. At the moment, this function does not plot
@@ -242,7 +266,27 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                                               "inhibitor 1", "inhibitor 1 metabolite", 
                                               "inhibitor 2"))) 
     
-    obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE)
+    obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE) %>% 
+        mutate(Trial = {MyMeanType})
+    
+    # Setting this up so that observed data will be shown for all Files
+    if("File" %in% c(as_label(colorBy), as_label(facet_column1), 
+                     as_label(facet_column2)) &&
+       all(is.na(obs_data$File))){
+        
+        ToAdd <- expand_grid(ObsFile = unique(obs_data$ObsFile), 
+                             File = unique(sim_dataframe$File))
+        obs_data <- obs_data %>% select(-File) %>% 
+            left_join(ToAdd)
+    }
+    
+    # Dealing with the fact that the observed data will list the inhibitor as
+    # "inhibitor" but the sim data will list its name
+    if(nrow(obs_data) > 0){
+        sim_obs_dataframe <- sim_obs_dataframe %>% 
+            mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitor"))
+    }
+    
     sim_dataframe <- sim_obs_dataframe %>%
         filter(Simulated == TRUE &
                    Trial %in% 
@@ -322,11 +366,11 @@ ct_plot_overlay <- function(sim_obs_dataframe,
             geom_line()
         
         if(nrow(obs_data) > 0){
-            A <- A + 
-                geom_point(data = obs_data, inherit.aes = FALSE, labs = FALSE,
+            A <- A +
+                geom_point(data = obs_data, inherit.aes = FALSE,
                            aes(x = Time, y = Conc, group = Group,
-                               color = !!colorBy, fill = !!colorBy), # Comment while developing, uncomment for running
-                               # color = colorBy, fill = colorBy), # uncomment while developing, comment while running
+                               color = !!colorBy), # Comment while developing, uncomment for running
+                               # color = colorBy), # uncomment while developing, comment while running
                            alpha = ifelse(complete.cases(obs_transparency), 
                                           obs_transparency, 1), 
                            show.legend = FALSE)
@@ -353,8 +397,8 @@ ct_plot_overlay <- function(sim_obs_dataframe,
             A <- A + 
                 geom_point(data = obs_data, 
                            aes(x = Time, y = Conc, group = Group,
-                               color = !!colorBy, fill = !!colorBy), # uncomment for running, comment for developing
-                           # color = colorBy, fill = colorBy), # comment for running, uncomment for developing
+                               color = !!colorBy), # uncomment for running, comment for developing
+                           # color = colorBy), # comment for running, uncomment for developing
                            inherit.aes = FALSE, 
                            alpha = ifelse(complete.cases(obs_transparency), 
                                           obs_transparency, 1), 
@@ -365,7 +409,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     # Making linear graph --------------------------------------------------------
     A <-  A +
-        labs(color = as_label(colorBy), 
+        labs(color = as_label(colorBy),
              fill = as_label(colorBy)) + # Comment this while developing, uncomment for running function
         xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
         ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +

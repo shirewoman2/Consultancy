@@ -107,7 +107,12 @@ extractObsConcTime <- function(obs_data_file){
           "Conjugated Antibody Plasma Total" = "plasma",
           "Sub Plasma Total Drug" = "plasma",
           "Tumour Volume" = "tumour volume",
-          "Tumour Volume (Inb)" = "tumour volume")
+          "Tumour Volume (Inb)" = "tumour volume", 
+          "Total Protein Conjugate Plasma Free" = "plasma",
+          "Conjugated Protein Plasma Free" = "plasma",
+          "Sub Plasma Total Drug" = "plasma",
+          "Sub Placenta Whole Tissue Conc" = "placenta",
+          "Sub PM1 Milk Conc" = "milk")
     
     ObsCompoundIDs <-
         c("Sub Plasma" = "substrate",
@@ -139,17 +144,22 @@ extractObsConcTime <- function(obs_data_file){
           # "Inh 3 Blood" = "inhibitor 3",
           "Sub (Inb) Urine" = "substrate",
           "Met(Inh 1) Urine" = "inhibitor 1 metabolite",
-          "Inh 1 PD Response" = "Inh 1 PD Response",
-          "Sub (Inb) PD Response" = "Sub (Inb) PD Response",
+          "Inh 1 PD Response" = "inhibitor 1",
+          "Sub (Inb) PD Response" = "substrate",
+          "Total Protein Conjugate Plasma Free" = "protein conjugate",
           "ADC Plasma Free" = "ADC Plasma Free",
           "Conjugated Antibody Plasma Free" = "Conjugated Antibody Plasma Free",
           "Conjugated Drug Plasma Free" = "Conjugated Drug Plasma Free",
           "PM1(Sub) PD Response" = "PM1(Sub) PD Response",
           "ADC Plasma Total" = "ADC Plasma Total",
-          "Conjugated Antibody Plasma Total" = "Conjugated Antibody Plasma Total",
-          "Sub Plasma Total Drug" = "Sub Plasma Total Drug",
+          "Conjugated Antibody Plasma Total" = "conjugated antibody",
+          "Sub Plasma Total Drug" = "substrate",
           "Tumour Volume" = "Tumour Volume",
-          "Tumour Volume (Inb)" = "Tumour Volume (Inb)")
+          "Tumour Volume (Inb)" = "Tumour Volume (Inb)",
+          "Conjugated Protein Plasma Free" = "conjugated protein",
+          "Sub Plasma Total Drug" = "total substrate",
+          "Sub Placenta Whole Tissue Conc" = "substrate",
+          "Sub PM1 Milk Conc" = "primary metabolite 1")
     
     ObsEffectors <- c("Sub Plasma" = "none",
                       "Sub Unbound Plasma" = "none",
@@ -190,8 +200,24 @@ extractObsConcTime <- function(obs_data_file){
                       "Conjugated Antibody Plasma Total" = "none",
                       "Sub Plasma Total Drug" = "none",
                       "Tumour Volume" = "none",
-                      "Tumour Volume (Inb)" = "inhibitor")
+                      "Tumour Volume (Inb)" = "inhibitor",
+                      "Total Protein Conjugate Plasma Free" = "none",
+                      "Conjugated Protein Plasma Free" = "none",
+                      "Sub Plasma Total Drug" = "none",
+                      "Sub Placenta Whole Tissue Conc" = "none", 
+                      "Sub PM1 Milk Conc" = "none")
     
+    ## Saving code for making ObsDVoptions here for convenience. Leave this
+    ## commented when running function.
+    
+    # ObsDVoptions <- data.frame(ID = names(Tissue),
+    #                            Tissue = Tissue) %>%
+    #     left_join(data.frame(ID = names(ObsCompoundIDs),
+    #                          CompoundID = ObsCompoundIDs)) %>%
+    #     left_join(data.frame(ID = names(ObsEffectors),
+    #                          Effector = ObsEffectors))
+    # 
+    # save(ObsDVoptions, file = "data/ObsDVoptions.RData")
     
     obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:ncol(obs_data_xl)]
     MainColNames <- as.character(t(obs_data_xl[11, ]))
