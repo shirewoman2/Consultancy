@@ -266,6 +266,14 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                                               "inhibitor 1", "inhibitor 1 metabolite", 
                                               "inhibitor 2"))) 
     
+    sim_dataframe <- sim_obs_dataframe %>%
+        filter(Simulated == TRUE &
+                   Trial %in% 
+                   switch(figure_type, 
+                          "means only" = MyMeanType, 
+                          "percentile ribbon" = c(MyMeanType, "per5", "per95"),
+                          "ribbon" = c(MyMeanType, "per5", "per95")))
+    
     obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE) %>% 
         mutate(Trial = {MyMeanType})
     
@@ -281,19 +289,11 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     }
     
     # Dealing with the fact that the observed data will list the inhibitor as
-    # "inhibitor" but the sim data will list its name
-    if(nrow(obs_data) > 0){
+    # "inhibitor" unless the user changes it, but the sim data will list its name
+    if(nrow(obs_data) > 0 & any(obs_data$Inhibitor == "inhibitor")){
         sim_obs_dataframe <- sim_obs_dataframe %>% 
             mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitor"))
     }
-    
-    sim_dataframe <- sim_obs_dataframe %>%
-        filter(Simulated == TRUE &
-                   Trial %in% 
-                   switch(figure_type, 
-                          "means only" = MyMeanType, 
-                          "percentile ribbon" = c(MyMeanType, "per5", "per95"),
-                          "ribbon" = c(MyMeanType, "per5", "per95")))
     
     MyUniqueData <- sim_obs_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
