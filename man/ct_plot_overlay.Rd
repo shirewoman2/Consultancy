@@ -13,9 +13,9 @@ ct_plot_overlay(
   color_labels = NA,
   color_set = "default",
   obs_transparency = NA,
-  facet_column1,
+  facet1_column,
   facet1_labels = NA,
-  facet_column2,
+  facet2_column,
   facet2_labels = NA,
   floating_facet_scale = FALSE,
   facet_spacing = NA,
@@ -59,13 +59,12 @@ fix is to set your y axis limits for the semi-log plot to be wider.}
 coloring the lines and/or points on the graph? This should be unquoted,
 e.g., \code{colorBy = Tissue}.}
 
-\item{color_labels}{Optionally specify a character vector for how
-you'd like the labels for whatever you choose for \code{colorBy} to show up
-in the legend. For example, if you want to color by the column "File" and
-you know that, e.g. "file 1.xlsx" is for when you were simulating an fa of
-0.5 and "file 2.xlsx" was for an fa of 0.2, you could specify that like
-this: c("file 1.xlsx" = "fa = 0.5", "file 2.xlsx" = "fa = 0.2") The order
-in the legend will match the order here.}
+\item{color_labels}{Optionally specify a character vector for how you'd like
+the labels for whatever you choose for \code{colorBy} to show up in the
+legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file 2.xlsx" =
+"fa 0.2")} to indicate that "file 1.xlsx" is for when you were simulating
+an fa of 0.5 and "file 2.xlsx" was for an fa of 0.2. The order in the
+legend will match the order here.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -92,15 +91,15 @@ semi-transparent, which can be helpful when there are numerous
 observations. Acceptable values are 0 (completely transparent) to 1
 (completely opaque).}
 
-\item{facet_column1}{If you would like to break up your graph into small
+\item{facet1_column}{If you would like to break up your graph into small
 multiples, you can break the graphs up by up to two columns in
 \code{sim_obs_dataframe}. What should be the 1st column to break up the
 data by? This should be unquoted. If \code{floating_facet_scale} is FALSE,
-then \code{facet_column1} will make the rows of the output graphs.}
+then \code{facet1_column} will make the rows of the output graphs.}
 
-\item{facet_column2}{What should be the 2nd column to break up the data into
+\item{facet2_column}{What should be the 2nd column to break up the data into
 small multiples by? This should be unquoted. If \code{floating_facet_scale}
-is FALSE, then \code{facet_column2} will make the columns of the output
+is FALSE, then \code{facet2_column} will make the columns of the output
 graphs.}
 
 \item{floating_facet_scale}{TRUE or FALSE for whether to allow the axes for
@@ -176,9 +175,9 @@ means the file will not be automatically saved to disk.}
 
 \item{fig_width}{figure width in inches; default is 5}
 
-\item{facet1_label}{UNDER CONSTRUCTION. Doesn't work yet.}
+\item{facet_label1}{UNDER CONSTRUCTION. Doesn't work yet.}
 
-\item{facet2_label}{UNDER CONSTRUCTION. Doesn't work yet.}
+\item{facet_label2}{UNDER CONSTRUCTION. Doesn't work yet.}
 }
 \value{
 
@@ -225,15 +224,15 @@ compound you're simulating (column: "Compound"). They do include whether it
 was a substrate, metabolite, or inhibitor (column: CompoundID), but not the
 compound's actual name. For that reason, try coloring or facetting your data
 by CompoundID rather than by Compound. Similarly, if you have an inhibitor
-and you have observed data, it will be listed as the generic "inhibitor" here
-rather than, e.g., "ketoconazole" because the observed data can't tell which
-is which.
+and you have observed data, the inhibitor will be listed as the generic
+"inhibitor" here rather than, e.g., "ketoconazole" because the observed data
+file doesn't indicate that.
 }
 \examples{
 
 ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy = File,
-                facet_column1 = Compound,
-                facet_column2 = Tissue)
+                facet1_column = Compound,
+                facet2_column = Tissue)
 
 
 }
