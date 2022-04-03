@@ -20,18 +20,20 @@
 #'
 #' \item{Include observed data in your simulation files. Those data will be
 #' automatically extracted when you run \code{\link{extractConcTime_mult}} if
-#' "obs_data_files" is left as the default NA.} }
+#' "obs_data_files" is left as the default NA. } }
 #'
 #' The \code{ct_plot_overlay} function will automatically figure out which
 #' observed data should be compared with which simulated compound IDs, tissues,
-#' etc. However, because the function doesn't know which simulator file goes
-#' with which observed data, it will assume that \emph{all} the observed data
-#' are appropriate to compare to \emph{all} the files included in
+#' etc. However, because the function doesn't know which simulator \emph{file}
+#' goes with which observed data, it will assume that \emph{all} the observed
+#' data are appropriate to compare to \emph{all} the files included in
 #' \code{sim_obs_dataframe} by default. If that's not the case, after you use
 #' \code{\link{extractConcTime_mult}} to extract your data, you can indicate
 #' which simulator output file goes with which observed file by setting the
 #' simulator output file in the column "File". (Please ask a member of the R
-#' Working Group for help if you're not clear on how to do this.)
+#' Working Group for help if you're not clear on how to do this.) Be warned,
+#' though, that if you assign "File" for some observed data but not all, only
+#' the observed data with an assignment for "File" will show up on the graph.
 #'
 #' One other note: The observed data files don't include the \emph{name} of the
 #' compound you're simulating (column: "Compound"). They do include whether it
@@ -65,6 +67,13 @@
 #' @param colorBy What column in \code{sim_obs_dataframe} should be used for
 #'   coloring the lines and/or points on the graph? This should be unquoted,
 #'   e.g., \code{colorBy = Tissue}.
+#' @param legend_labels_color Optionally specify a character vector for how
+#'   you'd like the labels for whatever you choose for \code{colorBy} to show up
+#'   in the legend. For example, if you want to color by the column "File" and
+#'   you know that, e.g. "file 1.xlsx" is for when you were simulating an fa of
+#'   0.5 and "file 2.xlsx" was for an fa of 0.2, you could specify that like
+#'   this: c("file 1.xlsx" = "fa = 0.5", "file 2.xlsx" = "fa = 0.2") The order
+#'   in the legend will match the order here. 
 #' @param facet_column1 If you would like to break up your graph into small
 #'   multiples, you can break the graphs up by up to two columns in
 #'   \code{sim_obs_dataframe}. What should be the 1st column to break up the
@@ -176,7 +185,8 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             mean_type = "arithmetic",
                             figure_type = "means only", 
                             linear_or_log = "semi-log",
-                            colorBy = File,
+                            colorBy,
+                            legend_labels_color = NA, 
                             color_set = "default",
                             obs_transparency = NA, 
                             facet_column1,
@@ -195,16 +205,38 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             fig_width = 5, 
                             include_messages = TRUE){
     
-    # Setting things up for nonstandard evaluation -------------------------
+    # Setting things up for some nonstandard evaluation -------------------------
     
-    # Defining pipe operator and bang bang
-    `%>%` <- magrittr::`%>%`
-    `!!` <- rlang::`!!`
-    
-    colorBy <- rlang::enquo(colorBy)
     facet_column1 <- rlang::enquo(facet_column1)
     facet_column2 <- rlang::enquo(facet_column2)
+    colorBy <- rlang::enquo(colorBy)
     
+    # I *would* be doing this whole function with nonstandard evaluation except
+    # that I CANNOT figure out how to use NSE to redefine a user-supplied
+    # column, so I'm going to have to rename all of them. This makes the rest of
+    # checking and developing this function easier, too, though. 
+    
+    # sim_obs_dataframe <- sim_obs_dataframe %>%
+    #     mutate(COLORBY = ifelse(as_label(colorBy) == "<empty>", NA, {{colorBy}}),
+    #            FC1 = ifelse(as_label(facet_column1) == "<empty>", NA, {{facet_column1}}),
+    #            FC2 = ifelse(as_label(facet_column2) == "<empty>", NA, {{facet_column2}}))
+    
+    ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
+    
+    if(as_label(colorBy) != "<empty>"){
+        sim_obs_dataframe <- sim_obs_dataframe %>%
+            mutate(COLORBY = {{colorBy}})
+    }
+    
+    if(as_label(facet_column1) != "<empty>"){
+        sim_obs_dataframe <- sim_obs_dataframe %>%
+            mutate(FC1 = {{facet_column1}})
+    }
+    
+    if(as_label(facet_column2) != "<empty>"){
+        sim_obs_dataframe <- sim_obs_dataframe %>%
+            mutate(FC2 = {{facet_column2}})
+    }
     
     # error catching -------------------------------------------------------
     if(length(time_range) == 1){
@@ -277,8 +309,15 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     obs_data <- sim_obs_dataframe %>% filter(Simulated == FALSE) %>% 
         mutate(Trial = {MyMeanType})
     
+    # Making obs data black if File was originally NA for all
+    if(nrow(obs_data) > 0 && "File" == as_label(colorBy) & all(is.na(obs_data$File))){
+        InternalAssignFile <- TRUE
+    } else {
+        InternalAssignFile <- FALSE
+    }
+    
     # Setting this up so that observed data will be shown for all Files
-    if("File" %in% c(as_label(colorBy), as_label(facet_column1), 
+    if(nrow(obs_data) > 0 && "File" %in% c(as_label(colorBy), as_label(facet_column1), 
                      as_label(facet_column2)) &&
        all(is.na(obs_data$File))){
         
@@ -286,13 +325,35 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                              File = unique(sim_dataframe$File))
         obs_data <- obs_data %>% select(-File) %>% 
             left_join(ToAdd)
-    }
+    } 
     
     # Dealing with the fact that the observed data will list the inhibitor as
     # "inhibitor" unless the user changes it, but the sim data will list its name
     if(nrow(obs_data) > 0 & any(obs_data$Inhibitor == "inhibitor")){
         sim_obs_dataframe <- sim_obs_dataframe %>% 
             mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitor"))
+    }
+    
+    # Now that all columns in both sim and obs data are filled in whenever they
+    # need to be, setting factors for legend_labels_color
+    if(complete.cases(legend_labels_color[1])){
+        simcheck <- sim_dataframe %>% select(COLORBY) %>% unique() %>% pull()
+        obscheck <- obs_data %>% select(COLORBY) %>% unique() %>% pull()
+        if(length(unique(c(simcheck, obscheck))) > length(legend_labels_color)){
+            warning(paste0("You have not included enough labels for the colors in the legend. The values in the column '",
+                           as_label(colorBy), 
+                           "' will be used as labels instead."))
+            legend_labels_color <- NA
+        } else {
+            
+            sim_dataframe <- sim_dataframe %>% 
+                mutate(COLORBY = legend_labels_color[COLORBY], 
+                       COLORBY = factor(COLORBY, levels = legend_labels_color))
+            
+            obs_data <- obs_data %>% 
+                mutate(COLORBY = legend_labels_color[COLORBY], 
+                       COLORBY = factor(COLORBY, levels = legend_labels_color))
+        }
     }
     
     MyUniqueData <- sim_obs_dataframe %>% 
@@ -360,20 +421,27 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
         A <- ggplot(sim_dataframe,
-                    aes(x = Time, y = Conc, color = !!colorBy, # Comment this while developing, uncomment for running function
-                        # aes(x = Time, y = Conc, color = colorBy, # Uncomment this while developing, comment for running function
+                    aes(x = Time, y = Conc, color = COLORBY, 
                         group = Group)) +
             geom_line()
         
         if(nrow(obs_data) > 0){
-            A <- A +
-                geom_point(data = obs_data, inherit.aes = FALSE,
-                           aes(x = Time, y = Conc, group = Group,
-                               color = !!colorBy), # Comment while developing, uncomment for running
-                               # color = colorBy), # uncomment while developing, comment while running
-                           alpha = ifelse(complete.cases(obs_transparency), 
-                                          obs_transparency, 1), 
-                           show.legend = FALSE)
+            if(InternalAssignFile){
+                A <- A +
+                    geom_point(data = obs_data, inherit.aes = FALSE,
+                               aes(x = Time, y = Conc, group = Group), 
+                               alpha = ifelse(complete.cases(obs_transparency), 
+                                              obs_transparency, 1), 
+                               show.legend = FALSE)
+            } else {
+                A <- A +
+                    geom_point(data = obs_data, inherit.aes = FALSE,
+                               aes(x = Time, y = Conc, group = Group,
+                                   color = COLORBY), 
+                               alpha = ifelse(complete.cases(obs_transparency), 
+                                              obs_transparency, 1), 
+                               show.legend = FALSE)
+            }
         }
     }
     
@@ -388,29 +456,35 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                  color = !!colorBy, fill = !!colorBy)) + # uncomment for running, comment for developing
-            # color = colorBy, fill = colorBy)) + # comment for running, uncomment for developing
+                                  color = COLORBY, fill = COLORBY)) + 
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
         
         if(nrow(obs_data) > 0){
-            A <- A + 
-                geom_point(data = obs_data, 
-                           aes(x = Time, y = Conc, group = Group,
-                               color = !!colorBy), # uncomment for running, comment for developing
-                           # color = colorBy), # comment for running, uncomment for developing
-                           inherit.aes = FALSE, 
-                           alpha = ifelse(complete.cases(obs_transparency), 
-                                          obs_transparency, 1), 
-                           show.legend = FALSE) 
-            
+            if(InternalAssignFile){
+                A <- A + 
+                    geom_point(data = obs_data, 
+                               aes(x = Time, y = Conc, group = Group),
+                               inherit.aes = FALSE, 
+                               alpha = ifelse(complete.cases(obs_transparency), 
+                                              obs_transparency, 1), 
+                               show.legend = FALSE) 
+                
+            } else {
+                A <- A + 
+                    geom_point(data = obs_data, 
+                               aes(x = Time, y = Conc, group = Group,
+                                   color = COLORBY), 
+                               inherit.aes = FALSE, 
+                               alpha = ifelse(complete.cases(obs_transparency), 
+                                              obs_transparency, 1), 
+                               show.legend = FALSE) 
+            }
         }
     }
     
     # Making linear graph --------------------------------------------------------
     A <-  A +
-        labs(color = as_label(colorBy),
-             fill = as_label(colorBy)) + # Comment this while developing, uncomment for running function
         xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
         ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
         theme(panel.background = element_rect(fill = "white", color = NA),
@@ -423,13 +497,18 @@ ct_plot_overlay <- function(sim_obs_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
+    if(complete.cases(legend_labels_color[1])){
+        A <- A + labs(color = NULL, fill = NULL)
+    } else {
+        A <- A + labs(color = as_label(colorBy), fill = as_label(colorBy))
+    }
+    
     if(floating_facet_scale){
         A <- A + 
             scale_x_continuous(expand = expansion(
                 mult = pad_x_num)) +
             scale_y_continuous(expand = expansion(mult = pad_y_num)) +
-            facet_wrap(vars(!!facet_column1, !!facet_column2), # Comment this while developing, uncomment for running function
-                       # facet_wrap(vars(facet_column1, facet_column2), # Uncomment this while developing, comment for running function
+            facet_wrap(vars(!!facet_column1, !!facet_column2), 
                        scales = "free")
         
     } else {
@@ -444,10 +523,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                                breaks = YBreaks,
                                labels = YLabels,
                                expand = expansion(mult = pad_y_num)) +
-            facet_grid(rows = vars(!!facet_column1), # Comment this while developing, uncomment for running function
-                       cols = vars(!!facet_column2)) # Comment this while developing, uncomment for running function
-            # facet_grid(rows = vars(facet_column1), # Uncomment this while developing, comment for running function
-            #            cols = vars(facet_column2)) # Uncomment this while developing, comment for running function
+            facet_grid(rows = vars(!!facet_column1), cols = vars(!!facet_column2)) 
     }
     
     # Colors ----------------------------------------------------------------

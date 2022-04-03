@@ -9,7 +9,8 @@ ct_plot_overlay(
   mean_type = "arithmetic",
   figure_type = "means only",
   linear_or_log = "semi-log",
-  colorBy = File,
+  colorBy,
+  legend_labels_color = NA,
   color_set = "default",
   obs_transparency = NA,
   facet_column1,
@@ -55,6 +56,14 @@ fix is to set your y axis limits for the semi-log plot to be wider.}
 \item{colorBy}{What column in \code{sim_obs_dataframe} should be used for
 coloring the lines and/or points on the graph? This should be unquoted,
 e.g., \code{colorBy = Tissue}.}
+
+\item{legend_labels_color}{Optionally specify a character vector for how
+you'd like the labels for whatever you choose for \code{colorBy} to show up
+in the legend. For example, if you want to color by the column "File" and
+you know that, e.g. "file 1.xlsx" is for when you were simulating an fa of
+0.5 and "file 2.xlsx" was for an fa of 0.2, you could specify that like
+this: c("file 1.xlsx" = "fa = 0.5", "file 2.xlsx" = "fa = 0.2") The order
+in the legend will match the order here.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -190,18 +199,20 @@ contains the most information about the observed data.}
 
 \item{Include observed data in your simulation files. Those data will be
 automatically extracted when you run \code{\link{extractConcTime_mult}} if
-"obs_data_files" is left as the default NA.} }
+"obs_data_files" is left as the default NA. } }
 
 The \code{ct_plot_overlay} function will automatically figure out which
 observed data should be compared with which simulated compound IDs, tissues,
-etc. However, because the function doesn't know which simulator file goes
-with which observed data, it will assume that \emph{all} the observed data
-are appropriate to compare to \emph{all} the files included in
+etc. However, because the function doesn't know which simulator \emph{file}
+goes with which observed data, it will assume that \emph{all} the observed
+data are appropriate to compare to \emph{all} the files included in
 \code{sim_obs_dataframe} by default. If that's not the case, after you use
 \code{\link{extractConcTime_mult}} to extract your data, you can indicate
 which simulator output file goes with which observed file by setting the
 simulator output file in the column "File". (Please ask a member of the R
-Working Group for help if you're not clear on how to do this.)
+Working Group for help if you're not clear on how to do this.) Be warned,
+though, that if you assign "File" for some observed data but not all, only
+the observed data with an assignment for "File" will show up on the graph.
 
 One other note: The observed data files don't include the \emph{name} of the
 compound you're simulating (column: "Compound"). They do include whether it
