@@ -9,7 +9,7 @@ ct_plot_overlay(
   mean_type = "arithmetic",
   figure_type = "means only",
   linear_or_log = "semi-log",
-  colorBy = File,
+  colorBy_column = File,
   color_labels = NA,
   color_set = "default",
   obs_transparency = NA,
@@ -55,16 +55,16 @@ fix is to set your y axis limits for the semi-log plot to be wider.}
 "linear", "both vertical" (default, graphs are stacked vertically), or
 "both horizontal" (graphs are side by side).}
 
-\item{colorBy}{What column in \code{sim_obs_dataframe} should be used for
-coloring the lines and/or points on the graph? This should be unquoted,
-e.g., \code{colorBy = Tissue}.}
+\item{colorBy_column}{What column in \code{sim_obs_dataframe} should be used
+for coloring the lines and/or points on the graph? This should be unquoted,
+e.g., \code{colorBy_column = Tissue}.}
 
 \item{color_labels}{Optionally specify a character vector for how you'd like
-the labels for whatever you choose for \code{colorBy} to show up in the
-legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file 2.xlsx" =
-"fa 0.2")} to indicate that "file 1.xlsx" is for when you were simulating
-an fa of 0.5 and "file 2.xlsx" was for an fa of 0.2. The order in the
-legend will match the order here.}
+the labels for whatever you choose for \code{colorBy_column} to show up in
+the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
+2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for when you were
+simulating an fa of 0.5 and "file 2.xlsx" was for an fa of 0.2. The order
+in the legend will match the order here.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -230,7 +230,7 @@ file doesn't indicate that.
 }
 \examples{
 
-ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy = File,
+ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy_column = File,
                 facet1_column = Compound,
                 facet2_column = Tissue)
 

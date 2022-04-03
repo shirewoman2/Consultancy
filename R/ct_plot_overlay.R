@@ -64,15 +64,15 @@
 #' @param linear_or_log the type of graph to be returned. Options: "semi-log",
 #'   "linear", "both vertical" (default, graphs are stacked vertically), or
 #'   "both horizontal" (graphs are side by side).
-#' @param colorBy What column in \code{sim_obs_dataframe} should be used for
-#'   coloring the lines and/or points on the graph? This should be unquoted,
-#'   e.g., \code{colorBy = Tissue}.
+#' @param colorBy_column What column in \code{sim_obs_dataframe} should be used
+#'   for coloring the lines and/or points on the graph? This should be unquoted,
+#'   e.g., \code{colorBy_column = Tissue}.
 #' @param color_labels Optionally specify a character vector for how you'd like
-#'   the labels for whatever you choose for \code{colorBy} to show up in the
-#'   legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file 2.xlsx" =
-#'   "fa 0.2")} to indicate that "file 1.xlsx" is for when you were simulating
-#'   an fa of 0.5 and "file 2.xlsx" was for an fa of 0.2. The order in the
-#'   legend will match the order here.
+#'   the labels for whatever you choose for \code{colorBy_column} to show up in
+#'   the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
+#'   2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for when you were
+#'   simulating an fa of 0.5 and "file 2.xlsx" was for an fa of 0.2. The order
+#'   in the legend will match the order here.
 #' @param facet1_column If you would like to break up your graph into small
 #'   multiples, you can break the graphs up by up to two columns in
 #'   \code{sim_obs_dataframe}. What should be the 1st column to break up the
@@ -178,7 +178,7 @@
 #'
 #' @examples
 #'
-#' ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy = File,
+#' ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy_column = File,
 #'                 facet1_column = Compound,
 #'                 facet2_column = Tissue)
 #'
@@ -187,7 +187,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                             mean_type = "arithmetic",
                             figure_type = "means only", 
                             linear_or_log = "semi-log",
-                            colorBy = File,
+                            colorBy_column = File,
                             color_labels = NA, 
                             color_set = "default",
                             obs_transparency = NA, 
@@ -213,7 +213,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     facet1_column <- rlang::enquo(facet1_column)
     facet2_column <- rlang::enquo(facet2_column)
-    colorBy <- rlang::enquo(colorBy)
+    colorBy_column <- rlang::enquo(colorBy_column)
     
     # I *would* be doing this whole function with nonstandard evaluation except
     # that I CANNOT figure out how to use NSE to redefine a user-supplied
@@ -221,15 +221,15 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     # checking and developing this function easier, too, though. 
     
     # sim_obs_dataframe <- sim_obs_dataframe %>%
-    #     mutate(COLORBY = ifelse(as_label(colorBy) == "<empty>", NA, {{colorBy}}),
+    #     mutate(colorBy_column = ifelse(as_label(colorBy_column) == "<empty>", NA, {{colorBy_column}}),
     #            FC1 = ifelse(as_label(facet1_column) == "<empty>", NA, {{facet1_column}}),
     #            FC2 = ifelse(as_label(facet2_column) == "<empty>", NA, {{facet2_column}}))
     
     ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
     
-    if(as_label(colorBy) != "<empty>"){
+    if(as_label(colorBy_column) != "<empty>"){
         sim_obs_dataframe <- sim_obs_dataframe %>%
-            mutate(COLORBY = {{colorBy}})
+            mutate(colorBy_column = {{colorBy_column}})
     }
     
     if(as_label(facet1_column) != "<empty>"){
@@ -314,14 +314,14 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         mutate(Trial = {MyMeanType})
     
     # Making obs data black if File was originally NA for all
-    if(nrow(obs_data) > 0 && "File" == as_label(colorBy) & all(is.na(obs_data$File))){
+    if(nrow(obs_data) > 0 && "File" == as_label(colorBy_column) & all(is.na(obs_data$File))){
         InternalAssignFile <- TRUE
     } else {
         InternalAssignFile <- FALSE
     }
     
     # Setting this up so that observed data will be shown for all Files
-    if(nrow(obs_data) > 0 && "File" %in% c(as_label(colorBy), as_label(facet1_column), 
+    if(nrow(obs_data) > 0 && "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
                                            as_label(facet2_column)) &&
        all(is.na(obs_data$File))){
         
@@ -343,32 +343,32 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     # facet2_column
     if(complete.cases(color_labels[1])){
         simcheck <- sim_dataframe %>% 
-            filter(COLORBY %in% names(color_labels)) %>% 
-            select(COLORBY) %>% unique() %>% pull()
+            filter(colorBy_column %in% names(color_labels)) %>% 
+            select(colorBy_column) %>% unique() %>% pull()
         obscheck <- obs_data %>% 
-            filter(COLORBY %in% names(color_labels)) %>% 
-            select(COLORBY) %>% unique() %>% pull()
+            filter(colorBy_column %in% names(color_labels)) %>% 
+            select(colorBy_column) %>% unique() %>% pull()
         
         if(length(sort(unique(c(simcheck, obscheck)))) > 
-           length(color_labels[names(color_labels) %in% sim_dataframe$COLORBY])){
+           length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column])){
             warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
-                           as_label(colorBy), 
+                           as_label(colorBy_column), 
                            "' will be used as labels instead."))
             color_labels <- NA
         } else {
-            if(length(color_labels[names(color_labels) %in% sim_dataframe$COLORBY]) == 0 |
+            if(length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column]) == 0 |
                length(sort(unique(c(simcheck, obscheck)))) == 0){
                 warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
-                               as_label(colorBy), ". The specified labels cannot be used."))  
+                               as_label(colorBy_column), ". The specified labels cannot be used."))  
             } else {
                 
                 sim_dataframe <- sim_dataframe %>% 
-                    mutate(COLORBY = color_labels[COLORBY], 
-                           COLORBY = factor(COLORBY, levels = color_labels))
+                    mutate(colorBy_column = color_labels[colorBy_column], 
+                           colorBy_column = factor(colorBy_column, levels = color_labels))
                 
                 obs_data <- obs_data %>% 
-                    mutate(COLORBY = color_labels[COLORBY], 
-                           COLORBY = factor(COLORBY, levels = color_labels))
+                    mutate(colorBy_column = color_labels[colorBy_column], 
+                           colorBy_column = factor(colorBy_column, levels = color_labels))
             }
         }
     }
@@ -441,7 +441,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         mutate(MyCols = rownames(.)) %>% 
         filter(V1 > 1) %>% pull(MyCols)
     
-    MyAES <- c("color" = as_label(colorBy), 
+    MyAES <- c("color" = as_label(colorBy_column), 
                "facet1" = as_label(facet1_column), 
                "facet2" = as_label(facet2_column))
     UniqueAES <- MyAES[which(MyAES != "<empty>")]
@@ -489,7 +489,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
         A <- ggplot(sim_dataframe,
-                    aes(x = Time, y = Conc, color = COLORBY, 
+                    aes(x = Time, y = Conc, color = colorBy_column, 
                         group = Group)) +
             geom_line()
         
@@ -505,7 +505,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                 A <- A +
                     geom_point(data = obs_data, inherit.aes = FALSE,
                                aes(x = Time, y = Conc, group = Group,
-                                   color = COLORBY), 
+                                   color = colorBy_column), 
                                alpha = ifelse(complete.cases(obs_transparency), 
                                               obs_transparency, 1), 
                                show.legend = FALSE)
@@ -524,7 +524,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                  color = COLORBY, fill = COLORBY)) + 
+                                  color = colorBy_column, fill = colorBy_column)) + 
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
         
@@ -542,7 +542,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                 A <- A + 
                     geom_point(data = obs_data, 
                                aes(x = Time, y = Conc, group = Group,
-                                   color = COLORBY), 
+                                   color = colorBy_column), 
                                inherit.aes = FALSE, 
                                alpha = ifelse(complete.cases(obs_transparency), 
                                               obs_transparency, 1), 
@@ -568,7 +568,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     if(complete.cases(color_labels[1])){
         A <- A + labs(color = NULL, fill = NULL)
     } else {
-        A <- A + labs(color = as_label(colorBy), fill = as_label(colorBy))
+        A <- A + labs(color = as_label(colorBy_column), fill = as_label(colorBy_column))
     }
     
     if(floating_facet_scale){
