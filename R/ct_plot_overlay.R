@@ -67,7 +67,7 @@
 #' @param colorBy What column in \code{sim_obs_dataframe} should be used for
 #'   coloring the lines and/or points on the graph? This should be unquoted,
 #'   e.g., \code{colorBy = Tissue}.
-#' @param legend_labels_color Optionally specify a character vector for how
+#' @param color_labels Optionally specify a character vector for how
 #'   you'd like the labels for whatever you choose for \code{colorBy} to show up
 #'   in the legend. For example, if you want to color by the column "File" and
 #'   you know that, e.g. "file 1.xlsx" is for when you were simulating an fa of
@@ -79,10 +79,12 @@
 #'   \code{sim_obs_dataframe}. What should be the 1st column to break up the
 #'   data by? This should be unquoted. If \code{floating_facet_scale} is FALSE,
 #'   then \code{facet_column1} will make the rows of the output graphs.
+#' @param facet1_label UNDER CONSTRUCTION. Doesn't work yet.
 #' @param facet_column2 What should be the 2nd column to break up the data into
 #'   small multiples by? This should be unquoted. If \code{floating_facet_scale}
 #'   is FALSE, then \code{facet_column2} will make the columns of the output
 #'   graphs.
+#' @param facet2_label UNDER CONSTRUCTION. Doesn't work yet.
 #' @param floating_facet_scale TRUE or FALSE for whether to allow the axes for
 #'   each facet of a multi-facetted graph to scale freely according to what data
 #'   are present. Default is FALSE, which means that all data will be on the
@@ -176,21 +178,24 @@
 #' @export
 #'
 #' @examples
-#' # Use syntax like this:
-#' # ct_plot_overlay(sim_obs_dataframe = CT, facet_column1 = Compound,
-#' #                 facet_column2 = Tissue)
+#' 
+#' ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy = File,
+#'                 facet_column1 = Compound,
+#'                 facet_column2 = Tissue)
 #'
 #' 
 ct_plot_overlay <- function(sim_obs_dataframe,
                             mean_type = "arithmetic",
                             figure_type = "means only", 
                             linear_or_log = "semi-log",
-                            colorBy,
-                            legend_labels_color = NA, 
+                            colorBy = File,
+                            color_labels = NA, 
                             color_set = "default",
                             obs_transparency = NA, 
                             facet_column1,
+                            facet1_labels = NA,
                             facet_column2, 
+                            facet2_labels = NA,
                             floating_facet_scale = FALSE,
                             facet_spacing = NA,
                             time_range = NA, 
@@ -318,7 +323,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     # Setting this up so that observed data will be shown for all Files
     if(nrow(obs_data) > 0 && "File" %in% c(as_label(colorBy), as_label(facet_column1), 
-                     as_label(facet_column2)) &&
+                                           as_label(facet_column2)) &&
        all(is.na(obs_data$File))){
         
         ToAdd <- expand_grid(ObsFile = unique(obs_data$ObsFile), 
@@ -335,26 +340,90 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     }
     
     # Now that all columns in both sim and obs data are filled in whenever they
-    # need to be, setting factors for legend_labels_color
-    if(complete.cases(legend_labels_color[1])){
-        simcheck <- sim_dataframe %>% select(COLORBY) %>% unique() %>% pull()
-        obscheck <- obs_data %>% select(COLORBY) %>% unique() %>% pull()
-        if(length(unique(c(simcheck, obscheck))) > length(legend_labels_color)){
-            warning(paste0("You have not included enough labels for the colors in the legend. The values in the column '",
+    # need to be, setting factors for color_labels, facet_column1, and
+    # facet_column2
+    if(complete.cases(color_labels[1])){
+        simcheck <- sim_dataframe %>% 
+            filter(COLORBY %in% names(color_labels)) %>% 
+            select(COLORBY) %>% unique() %>% pull()
+        obscheck <- obs_data %>% 
+            filter(COLORBY %in% names(color_labels)) %>% 
+            select(COLORBY) %>% unique() %>% pull()
+        
+        if(length(sort(unique(c(simcheck, obscheck)))) > 
+           length(color_labels[names(color_labels) %in% sim_dataframe$COLORBY])){
+            warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
                            as_label(colorBy), 
                            "' will be used as labels instead."))
-            legend_labels_color <- NA
+            color_labels <- NA
         } else {
-            
-            sim_dataframe <- sim_dataframe %>% 
-                mutate(COLORBY = legend_labels_color[COLORBY], 
-                       COLORBY = factor(COLORBY, levels = legend_labels_color))
-            
-            obs_data <- obs_data %>% 
-                mutate(COLORBY = legend_labels_color[COLORBY], 
-                       COLORBY = factor(COLORBY, levels = legend_labels_color))
+            if(length(color_labels[names(color_labels) %in% sim_dataframe$COLORBY]) == 0 |
+               length(sort(unique(c(simcheck, obscheck)))) == 0){
+                warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
+                               as_label(colorBy), ". The specified labels cannot be used."))  
+            } else {
+                
+                sim_dataframe <- sim_dataframe %>% 
+                    mutate(COLORBY = color_labels[COLORBY], 
+                           COLORBY = factor(COLORBY, levels = color_labels))
+                
+                obs_data <- obs_data %>% 
+                    mutate(COLORBY = color_labels[COLORBY], 
+                           COLORBY = factor(COLORBY, levels = color_labels))
+            }
         }
     }
+    
+    if(complete.cases(facet1_labels[1])){
+        simcheck <- sim_dataframe %>% 
+            filter(FC1 %in% names(facet1_labels)) %>% 
+            select(FC1) %>% unique() %>% pull()
+        obscheck <- obs_data %>% 
+            filter(FC1 %in% names(facet1_labels)) %>% 
+            select(FC1) %>% unique() %>% pull()
+        
+        if(length(sort(unique(c(simcheck, obscheck)))) > 
+           length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1])){
+            warning(paste0("You have not included enough labels for number of unique values in ", 
+                           as_label(FC1), 
+                           ". The values will be used as labels instead."))
+            facet1_labels <- NA
+        } else {
+            if(length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1]) == 0 |
+               length(sort(unique(c(simcheck, obscheck)))) == 0){
+                warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
+                               as_label(FC1), ". The specified labels cannot be used."))  
+                
+                facet1_labels <- NA
+            } 
+        } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
+    }
+    if(complete.cases(facet2_labels[1])){
+        simcheck <- sim_dataframe %>% 
+            filter(FC2 %in% names(facet2_labels)) %>% 
+            select(FC2) %>% unique() %>% pull()
+        obscheck <- obs_data %>% 
+            filter(FC2 %in% names(facet2_labels)) %>% 
+            select(FC2) %>% unique() %>% pull()
+        
+        if(length(sort(unique(c(simcheck, obscheck)))) > 
+           length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2])){
+            warning(paste0("You have not included enough labels for number of unique values in ", 
+                           as_label(FC2), 
+                           ". The values will be used as labels instead."))
+            
+            facet2_labels <- NA
+            
+        } else {
+            if(length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2]) == 0 |
+               length(sort(unique(c(simcheck, obscheck)))) == 0){
+                warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
+                               as_label(FC2), ". The specified labels cannot be used."))  
+                
+                facet2_labels <- NA
+            }
+        }
+    } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
     
     MyUniqueData <- sim_obs_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
@@ -378,11 +447,11 @@ ct_plot_overlay <- function(sim_obs_dataframe,
                "facet2" = as_label(facet_column2))
     UniqueAES <- MyAES[which(MyAES != "<empty>")]
     
-    if(length(UniqueGroups[UniqueGroups != "CompoundID"]) > length(UniqueAES)){
-        warning(paste("You have requested", length(UniqueGroups),
+    if(length(UniqueGroups[UniqueGroups != "Compound"]) > length(UniqueAES)){
+        warning(paste("You have requested", length(UniqueGroups[UniqueGroups != "Compound"]),
                       "unique data sets but only", 
                       length(which(complete.cases(MyAES))), 
-                      "unique aesthetics for denoting those datasets. This is likely to result in an unclear graph."))
+                      "unique aesthetics for denoting those datasets. This is may result in an unclear graph."))
         message(paste("Unique datasets:", str_comma(UniqueGroups)))
         message(paste("Unique aesthetics:", str_comma(UniqueAES)))
     }
@@ -497,7 +566,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
-    if(complete.cases(legend_labels_color[1])){
+    if(complete.cases(color_labels[1])){
         A <- A + labs(color = NULL, fill = NULL)
     } else {
         A <- A + labs(color = as_label(colorBy), fill = as_label(colorBy))

@@ -9,12 +9,14 @@ ct_plot_overlay(
   mean_type = "arithmetic",
   figure_type = "means only",
   linear_or_log = "semi-log",
-  colorBy,
-  legend_labels_color = NA,
+  colorBy = File,
+  color_labels = NA,
   color_set = "default",
   obs_transparency = NA,
   facet_column1,
+  facet1_labels = NA,
   facet_column2,
+  facet2_labels = NA,
   floating_facet_scale = FALSE,
   facet_spacing = NA,
   time_range = NA,
@@ -57,7 +59,7 @@ fix is to set your y axis limits for the semi-log plot to be wider.}
 coloring the lines and/or points on the graph? This should be unquoted,
 e.g., \code{colorBy = Tissue}.}
 
-\item{legend_labels_color}{Optionally specify a character vector for how
+\item{color_labels}{Optionally specify a character vector for how
 you'd like the labels for whatever you choose for \code{colorBy} to show up
 in the legend. For example, if you want to color by the column "File" and
 you know that, e.g. "file 1.xlsx" is for when you were simulating an fa of
@@ -173,6 +175,10 @@ means the file will not be automatically saved to disk.}
 \item{fig_height}{figure height in inches; default is 6}
 
 \item{fig_width}{figure width in inches; default is 5}
+
+\item{facet1_label}{UNDER CONSTRUCTION. Doesn't work yet.}
+
+\item{facet2_label}{UNDER CONSTRUCTION. Doesn't work yet.}
 }
 \value{
 
@@ -224,9 +230,10 @@ rather than, e.g., "ketoconazole" because the observed data can't tell which
 is which.
 }
 \examples{
-# Use syntax like this:
-# ct_plot_overlay(sim_obs_dataframe = CT, facet_column1 = Compound,
-#                 facet_column2 = Tissue)
+
+ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy = File,
+                facet_column1 = Compound,
+                facet_column2 = Tissue)
 
 
 }
