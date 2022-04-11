@@ -80,6 +80,14 @@ match_units <- function(DF_to_adjust, goodunits){
             which(ConvTable_conc$ToAdjustUnits == unique(DF_to_adjust$Conc_units) &
                       ConvTable_conc$GoodUnits == unique(goodunits$Conc_units))]
     
+    if(length(ConvFactor_conc) < 1){
+        stop(paste0("You supplied concentration units of ",
+                       str_comma(unique(DF_to_adjust$Conc_units)), 
+                       ", but we were not able to convert them to the desired units of ", 
+                       unique(goodunits$Conc_units), 
+                       ". No adjustment of units was possible and thus no data can be returned here."))
+    }
+    
     DF_to_adjust <- DF_to_adjust %>% mutate(Conc = Conc*ConvFactor_conc,
                                             Conc_units = unique(goodunits$Conc_units))
     
