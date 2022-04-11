@@ -43,10 +43,12 @@ file. Otherwise, the PK parameters will be automatically selected.}
 \item{Parameters that don't make sense for your scenario -- like asking for
 \code{AUCinf_ss_withInhib} when your simulation did not include an
 inhibitor or effector -- will not be included.} \item{tmax will be listed
-as median, min, and max rather than mean, lower and higher 90 percent
-confidence interval.}} An example of acceptable input here:
-\code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib",
-"AUCtau_ratio_ss", "Cmax_ratio_ss")}.}
+as median, min, and max rather than mean, lower and higher X\% confidence
+interval or X percentiles. Similarly, if you request trial means, the
+values for tmax will be the range of medians for the trials rather than the
+range of means.}} An example of acceptable input here: \code{c("AUCtau_ss",
+"AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss",
+"Cmax_ratio_ss")}.}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
@@ -60,11 +62,12 @@ override the value listed there. If no value is specified here or in
 \item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
 table}
 
-\item{includeConfInt}{TRUE or FALSE for whether to include whatever confidence
-intervals were included in the simulator output file. Note that the
-confidence intervals are geometric since that's what the simulator outputs
-(see an AUC tab and the summary statistics; these values are the ones for,
-e.g., "90\% confidence interval around the geometric mean(lower limit)").}
+\item{includeConfInt}{TRUE or FALSE for whether to include whatever
+confidence intervals were included in the simulator output file. Note that
+the confidence intervals are geometric since that's what the simulator
+outputs (see an AUC tab and the summary statistics; these values are the
+ones for, e.g., "90\% confidence interval around the geometric mean(lower
+limit)").}
 
 \item{includePerc}{TRUE or FALSE for whether to include 5th to 95th
 percentiles}

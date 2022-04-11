@@ -43,10 +43,12 @@
 #'   \item{Parameters that don't make sense for your scenario -- like asking for
 #'   \code{AUCinf_ss_withInhib} when your simulation did not include an
 #'   inhibitor or effector -- will not be included.} \item{tmax will be listed
-#'   as median, min, and max rather than mean, lower and higher 90 percent
-#'   confidence interval.}} An example of acceptable input here:
-#'   \code{c("AUCtau_ss", "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib",
-#'   "AUCtau_ratio_ss", "Cmax_ratio_ss")}.
+#'   as median, min, and max rather than mean, lower and higher X\% confidence
+#'   interval or X percentiles. Similarly, if you request trial means, the
+#'   values for tmax will be the range of medians for the trials rather than the
+#'   range of means.}} An example of acceptable input here: \code{c("AUCtau_ss",
+#'   "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss",
+#'   "Cmax_ratio_ss")}.
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
@@ -59,11 +61,12 @@
 #'   values rather than being pulled directly from the output.
 #' @param includeCV TRUE or FALSE for whether to include rows for CV in the
 #'   table
-#' @param includeConfInt TRUE or FALSE for whether to include whatever confidence
-#'   intervals were included in the simulator output file. Note that the
-#'   confidence intervals are geometric since that's what the simulator outputs
-#'   (see an AUC tab and the summary statistics; these values are the ones for,
-#'   e.g., "90\% confidence interval around the geometric mean(lower limit)").
+#' @param includeConfInt TRUE or FALSE for whether to include whatever
+#'   confidence intervals were included in the simulator output file. Note that
+#'   the confidence intervals are geometric since that's what the simulator
+#'   outputs (see an AUC tab and the summary statistics; these values are the
+#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
+#'   limit)").
 #' @param includePerc TRUE or FALSE for whether to include 5th to 95th
 #'   percentiles
 #' @param concatVariability Would you like to have the variability concatenated?
@@ -260,15 +263,32 @@ so_table <- function(report_input_file = NA,
     
     # Adding trial means since they're not part of the default output
     if(includeTrialMeans){
+        # TrialMeans <- MyPKResults_all$individual %>%
+        #     group_by(Trial) %>%
+        #     summarize(across(.cols = -Individual,
+        #                      .fns = list(switch(MeanType,
+        #                                    "geometric" = gm_mean,
+        #                                    "arithmetic" = mean), 
+        #                               median), 
+        #                      .names = "{.col}_{.fn}")) %>%
+        #     ungroup()
+        
         TrialMeans <- MyPKResults_all$individual %>%
             group_by(Trial) %>%
             summarize(across(.cols = -Individual,
-                             .fns = switch(MeanType,
-                                           "geometric" = gm_mean,
-                                           "arithmetic" = mean))) %>%
+                             .fns = list("geomean" = gm_mean, 
+                                         "mean" = mean, 
+                                         "median" = median), 
+                             .names = "{.col}-{.fn}")) %>%
             ungroup() %>%
             pivot_longer(cols = -Trial, names_to = "Parameter",
                          values_to = "Value") %>%
+            separate(col = Parameter, into = c("Parameter", "Stat"), 
+                     sep = "-") %>% 
+            filter((str_detect(Parameter, "tmax") & Stat == "median") |
+                       (!str_detect(Parameter, "tmax") & 
+                            Stat == switch(MeanType, "geometric" = "geomean", 
+                                           "arithmetic" = "mean"))) %>% 
             group_by(Parameter) %>%
             summarize(MinMean = min(Value),
                       MaxMean = max(Value)) %>%
@@ -282,46 +302,49 @@ so_table <- function(report_input_file = NA,
     # Renaming stats for ease of coding
     MyPKResults <- MyPKResults %>% mutate(Stat = renameStats(Statistic))
     
-    # Adjusting tmax values since the geometric mean row will actually be the
-    # median, VarOptions[1] will be the min, and VarOptions[2] will
-    # be the max.
+    # Adjusting tmax values since the mean row will actually be the median, the
+    # lower range of conf interval and percentiles will be the min, and the
+    # upper range will be the max.
     if("tmax_dose1" %in% names(MyPKResults)){
         MyPKResults$tmax_dose1[
             which(MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean"))] <-
             MyPKResults$tmax_dose1[which(MyPKResults$Stat == "median")]
-        MyPKResults$tmax_dose1[MyPKResults$Stat == VarOptions[1]] <-
+        
+        MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
             MyPKResults$tmax_dose1[MyPKResults$Stat == "min"]
-        MyPKResults$tmax_dose1[MyPKResults$Stat == VarOptions[2]] <-
+        
+        MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
             MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
         
         if(EffectorPresent){
             MyPKResults$tmax_dose1_withInhib[
                 MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
                 MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VarOptions[1]] <-
+            
+            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
                 MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == VarOptions[2]] <-
+            
+            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
                 MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "max"]
         }
-        
     }
     
     if("tmax_ss" %in% names(MyPKResults)){
         MyPKResults$tmax_ss[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_ss[MyPKResults$Stat == "median"]
-        MyPKResults$tmax_ss[MyPKResults$Stat == VarOptions[1]] <-
+        MyPKResults$tmax_ss[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
             MyPKResults$tmax_ss[MyPKResults$Stat == "min"]
-        MyPKResults$tmax_ss[MyPKResults$Stat == VarOptions[2]] <-
+        MyPKResults$tmax_ss[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
             MyPKResults$tmax_ss[MyPKResults$Stat == "max"]
         
         if(EffectorPresent){
             MyPKResults$tmax_ss_withInhib[
                 MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
                 MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VarOptions[1]] <-
+            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
                 MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == VarOptions[2]] <-
+            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
                 MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "max"]
         }
         
@@ -332,22 +355,28 @@ so_table <- function(report_input_file = NA,
         MyPKResults$tmax[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax[MyPKResults$Stat == "median"]
-        MyPKResults$tmax[MyPKResults$Stat == VarOptions[1]] <-
+        MyPKResults$tmax[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
             MyPKResults$tmax[MyPKResults$Stat == "min"]
-        MyPKResults$tmax[MyPKResults$Stat == VarOptions[2]] <-
+        MyPKResults$tmax[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
             MyPKResults$tmax[MyPKResults$Stat == "max"]
         
         if(EffectorPresent){
             MyPKResults$tmax_withInhib[
                 MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
                 MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_withInhib[MyPKResults$Stat == VarOptions[1]] <-
+            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
                 MyPKResults$tmax_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_withInhib[MyPKResults$Stat == VarOptions[2]] <-
+            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
                 MyPKResults$tmax_withInhib[MyPKResults$Stat == "max"]
         }
         
     }
+    
+    # CV and SD should be NA for all tmax values b/c we're reporting medians and
+    # range and NOT reporting a mean or geometric mean. Setting that.
+    MyPKResults <- MyPKResults %>% 
+        mutate(across(.cols = matches("tmax"), 
+                      ~replace(., Stat %in% c("CV", "GCV", "SD"), NA)))
     
     VarOptions <- c("CV" = includeCV & MeanType == "arithmetic", 
                     "GCV" = includeCV & MeanType == "geometric",
@@ -501,7 +530,7 @@ so_table <- function(report_input_file = NA,
                         "ConfInt95" = c("CI95_low", "CI95_high"),
                         "Perc" = c("per5", "per95"))
         VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
-
+        
         VarRows[["obs"]] <- c("CIL_obs", "CIU_obs")
         for(j in names(VarRows)){
             temp <- MyPKResults %>%
