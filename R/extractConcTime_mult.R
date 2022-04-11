@@ -89,7 +89,7 @@
 
 extractConcTime_mult <- function(sim_data_files,
                                  obs_data_files = NA,
-                                 sim_obs_dataframe = "ConcTime",
+                                 sim_obs_dataframe = ConcTime,
                                  overwrite = FALSE,
                                  tissues = "plasma",
                                  compoundsToExtract = "substrate",
@@ -106,7 +106,8 @@ extractConcTime_mult <- function(sim_data_files,
                              CompoundID = compoundsToExtract,
                              File = sim_data_files)
     
-    if(exists(substitute(sim_obs_dataframe)) && "data.frame" %in% class(sim_obs_dataframe)){
+    if(exists(substitute(sim_obs_dataframe)) && 
+       "data.frame" %in% class(sim_obs_dataframe)){
         if("File" %in% names(sim_obs_dataframe) == FALSE){
             sim_obs_dataframe$File <- "unknown file"
         }
