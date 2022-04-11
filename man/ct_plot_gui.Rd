@@ -10,7 +10,8 @@ ct_plot_gui()
 
 }
 \description{
-Opens the shiny app version of the function \code{\link{ct_plot}}.
+Opens the shiny app version of the function \code{\link{ct_plot}}. CURRENTLY
+UNDER CONSTRUCTION AND NOT WORKING.
 }
 \examples{
 # You don't need to specify any arguments to this function
