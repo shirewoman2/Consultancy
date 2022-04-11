@@ -134,6 +134,11 @@ extractConcTime_mult <- function(sim_data_files,
         sim_obs_dataframe <- data.frame()
     }
     
+    if(length(sim_data_files_topull) == 0){
+        message("There are no data to pull that are not already present in your current data.frame. Returning current data.frame.")
+        return(sim_obs_dataframe)
+    }
+    
     MultData <- list()
     
     for(f in sim_data_files_topull){
