@@ -7,7 +7,7 @@
 extractConcTime_mult(
   sim_data_files,
   obs_data_files = NA,
-  sim_obs_dataframe = "ConcTime",
+  sim_obs_dataframe = ConcTime,
   overwrite = FALSE,
   tissues = "plasma",
   compoundsToExtract = "substrate",
