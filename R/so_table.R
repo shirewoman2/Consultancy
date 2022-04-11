@@ -213,7 +213,7 @@ so_table <- function(report_input_file = NA,
     }
     
     # Getting PK parameters from the AUC tab
-    suppressWarnings(
+    suppressMessages(
         MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                      PKparameters = PKToPull,
                                      sheet = sheet_PKparameters, 
@@ -435,21 +435,25 @@ so_table <- function(report_input_file = NA,
                    PKParam = sub("_CV", "", PKParam))
         
         # Calculating S/O
-        SOratios <- MyPKResults %>% 
-            filter(Stat == ifelse(MeanType == "geometric", "geomean", "mean")) %>%
-            left_join(MyObsPK %>% 
-                          filter(Stat == 
-                                     ifelse(MeanType == "geometric", "geomean", "mean"))) %>%
-            mutate(Value = Sim / Obs,
-                   Stat = "S_O", 
-                   SorO = "S_O") %>%
-            select(PKParam, Stat, Value, SorO)
+        suppressMessages(
+            SOratios <- MyPKResults %>% 
+                filter(Stat == ifelse(MeanType == "geometric", "geomean", "mean")) %>%
+                left_join(MyObsPK %>% 
+                              filter(Stat == 
+                                         ifelse(MeanType == "geometric", "geomean", "mean"))) %>%
+                mutate(Value = Sim / Obs,
+                       Stat = "S_O", 
+                       SorO = "S_O") %>%
+                select(PKParam, Stat, Value, SorO)
+        )
         
-        MyPKResults <- MyPKResults %>% 
-            full_join(MyObsPK) %>% 
-            pivot_longer(names_to = "SorO", values_to = "Value", 
-                         cols = c(Sim, Obs)) %>% 
-            full_join(SOratios)
+        suppressMessage(
+            MyPKResults <- MyPKResults %>% 
+                full_join(MyObsPK) %>% 
+                pivot_longer(names_to = "SorO", values_to = "Value", 
+                             cols = c(Sim, Obs)) %>% 
+                full_join(SOratios)
+        )
         
         # If user supplied obs data and no PK parameters that they specifically
         # wanted, only keep PK parameters where there are values for the observed
