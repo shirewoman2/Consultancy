@@ -353,17 +353,17 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         pad_x_axis <- pad_x_num[1] != 0 # Making pad_x_axis logical again to work with code elsewhere
     }
     
-    # Assigning the variables created or changed here to the environment one
-    # level up, e.g., probably the environment within the function that's
-    # calling on *this* function.
-    assign("pad_x_axis", pad_x_axis, envir = parent.frame())
-    assign("pad_x_num", pad_x_num, envir = parent.frame())
-    assign("XLabels", XLabels, envir = parent.frame())
-    assign("XBreaks", XBreaks, envir = parent.frame())
-    assign("xlab", xlab, envir = parent.frame())
-    assign("Data", Data, envir = parent.frame())
-    assign("time_range", time_range, envir = parent.frame())
-    assign("time_range_input", time_range_input, envir = parent.frame())
-    assign("TimeUnits", TimeUnits, envir = parent.frame())
-    assign("time_range_relative", time_range_relative, envir = parent.frame())
+    Out <- list("pad_x_axis" = pad_x_axis,
+                "pad_x_num" = pad_x_num,
+                "XLabels" = XLabels,
+                "XBreaks" = XBreaks,
+                "xlab" = xlab,
+                "Data" = Data,
+                "time_range" = time_range,
+                "time_range_input" = time_range_input,
+                "TimeUnits" = TimeUnits,
+                "time_range_relative" = time_range_relative)
+    
+    return(Out)
+    
 }    

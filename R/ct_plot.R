@@ -136,8 +136,8 @@
 #'   linear plot will be automatically selected.
 #' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
-#'   respectively, to a round number. If left as NA, the Y axis
-#'   limits for the semi-log plot will be automatically selected.
+#'   respectively, to a round number. If left as NA, the Y axis limits for the
+#'   semi-log plot will be automatically selected.
 #' @param obs_color If you would like the observed data points to be in color,
 #'   either list a specific color or set this to "default". Points will be
 #'   displayed in semi-transparent blue-purple for "default" and the
@@ -207,6 +207,10 @@
 #'   legend. If there was only one thing plotted on your graph, even if you set
 #'   this to TRUE, no legend will be shown because there's nothing to
 #'   differentiate the data.
+#' @param plot_1st_last_full TRUE or FALSE (default) for whether to show full
+#'   time range on the top, the 1st dose on the bottom left, and the last dose
+#'   on the bottom right. This only works for multiple-dose simulations, and it
+#'   overrides any specifications for \code{time_range}.
 #'
 #' @return Output is a graph.
 #' @import tidyverse
@@ -275,6 +279,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     legend_label = NA,
                     prettify_effector_name = TRUE,
                     linear_or_log = "both vertical",
+                    plot_1st_last_full = FALSE,
                     save_graph = NA,
                     fig_height = 6,
                     fig_width = 5){
@@ -365,10 +370,48 @@ ct_plot <- function(sim_obs_dataframe = NA,
         warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.")
     }
     
+    if(length(unique(Data$DoseNum)) == 1 & plot_1st_last_full){
+        warning("You requested plots of the full time range plus the 1st and last doses, but you have only one dose in your simulation. We can only give you one graph.")
+        plot_1st_last_full <- FALSE
+    } 
+    
+    if(plot_1st_last_full){
+        time_range <- NA
+    }
+    
     # Setting up the x axis using the subfunction ct_x_axis
-    ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
-              x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
-              compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
+    XSettings <- ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
+                           x_axis_interval = x_axis_interval, 
+                           pad_x_axis = pad_x_axis,
+                           compoundToExtract = compoundToExtract, 
+                           EnzPlot = EnzPlot)
+    
+    pad_x_axis <- XSettings$pad_x_axis
+    pad_x_num <- XSettings$pad_x_num
+    XLabels <- XSettings$XLabels
+    xlab <- XSettings$xlab
+    Data <- XSettings$Data
+    time_range <- XSettings$time_range
+    time_range_input <- XSettings$time_range_input
+    TimeUnits <- XSettings$TimeUnits
+    time_range_relative <- XSettings$time_range_relative
+    
+    if(plot_1st_last_full){
+        XSettings_1st <- ct_x_axis(Data = Data, time_range = "first dose",
+                                   t0 = t0,
+                                   x_axis_interval = x_axis_interval, 
+                                   pad_x_axis = pad_x_axis,
+                                   compoundToExtract = compoundToExtract, 
+                                   EnzPlot = EnzPlot)
+        
+        XSettings_last <- ct_x_axis(Data = Data, time_range = "last dose",
+                                   t0 = t0,
+                                   x_axis_interval = x_axis_interval, 
+                                   pad_x_axis = pad_x_axis,
+                                   compoundToExtract = compoundToExtract, 
+                                   EnzPlot = EnzPlot)
+    }
+    
     
     # Dealing with possible inhibitor 1 data ---------------------------------
     # Adding a grouping variable to data and also making the inhibitor 1 name
@@ -485,7 +528,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # would like user to get a warning about that.
     check <- obs_data %>% group_by(CompoundID, Inhibitor, Time) %>% 
         summarize(N = n())
-
+    
     if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
@@ -493,7 +536,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     }
     
     if(nrow(obs_data) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
-                                              "percentile ribbon", "ribbon")){
+                                                                    "percentile ribbon", "ribbon")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
                        "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."))
@@ -515,12 +558,26 @@ ct_plot <- function(sim_obs_dataframe = NA,
         Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
     }
     
-    ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
-              EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-              Ylim_data = Ylim_data, 
-              pad_y_axis = pad_y_axis,
-              y_axis_limits_lin = y_axis_limits_lin, time_range = time_range,
-              y_axis_limits_log = y_axis_limits_log)
+    YSettings <- ct_y_axis(Data = Data, ADAM = ADAM, 
+                           subsection_ADAM = subsection_ADAM,
+                           EnzPlot = EnzPlot, 
+                           time_range_relative = time_range_relative,
+                           Ylim_data = Ylim_data, 
+                           pad_y_axis = pad_y_axis,
+                           y_axis_limits_lin = y_axis_limits_lin, 
+                           time_range = time_range,
+                           y_axis_limits_log = y_axis_limits_log)
+    
+    ObsConcUnits = YSettings$ObsConcUnits
+    ylab = YSettings$ylab
+    YLabels = YSettings$YLabels
+    YLogLabels = YSettings$YLogLabels
+    YBreaks = YSettings$YBreaks
+    YLogBreaks = YSettings$YLogBreaks
+    Ylim_log = YSettings$Ylim_log
+    YmaxRnd = YSettings$YmaxRnd
+    pad_y_num = YSettings$pad_y_num
+    pad_y_axis = YSettings$pad_y_axis
     
     
     # Figure types ---------------------------------------------------------
@@ -999,6 +1056,42 @@ ct_plot <- function(sim_obs_dataframe = NA,
         A <- A + theme(legend.key.width = unit(2, "lines"))
     }
     
+    if(plot_1st_last_full){
+        if(str_detect(figure_type, "ribbon")){
+            # There's a known glitch w/ggplot2 with coord_cartesian and
+            # geom_ribbon. Hacking around that.
+            A_1st <- A +
+                scale_x_continuous(breaks = XSettings_1st$XBreaks, 
+                                   labels = XSettings_1st$XLabels,
+                                   limits = XSettings_1st$time_range_relative,
+                                   expand = expansion(
+                                       mult = XSettings_1st$pad_x_num)) 
+            
+            A_last <- A +
+                scale_x_continuous(breaks = XSettings_last$XBreaks, 
+                                   labels = XSettings_last$XLabels,
+                                   limits = XSettings_last$time_range_relative,
+                                   expand = expansion(
+                                       mult = XSettings_last$pad_x_num)) 
+            
+        } else {
+            A_1st <- A +
+                scale_x_continuous(breaks = XSettings_1st$XBreaks, 
+                                   labels = XSettings_1st$XLabels,
+                                   expand = expansion(
+                                       mult = XSettings_1st$pad_x_num)) +
+                coord_cartesian(xlim = XSettings_1st$time_range_relative)
+            
+            A_last <- A +
+                scale_x_continuous(breaks = XSettings_last$XBreaks, 
+                                   labels = XSettings_last$XLabels,
+                                   expand = expansion(
+                                       mult = XSettings_last$pad_x_num)) +
+                coord_cartesian(xlim = XSettings_last$time_range_relative)
+        }
+        
+    }
+    
     ## Making semi-log graph ------------------------------------------------
     B <- suppressMessages(
         A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
@@ -1007,6 +1100,25 @@ ct_plot <- function(sim_obs_dataframe = NA,
             # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
             coord_cartesian(xlim = time_range_relative)
     )
+    
+    if(plot_1st_last_full){
+        B_1st <- suppressMessages(
+            A_1st + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
+                              labels = YLogLabels,
+                              expand = expansion(mult = pad_y_num)) +
+                # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
+                coord_cartesian(xlim = XSettings_1st$time_range_relative)
+        )
+        
+        B_last <- suppressMessages(
+            A_last + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
+                                   labels = YLogLabels,
+                                   expand = expansion(mult = pad_y_num)) +
+                # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
+                coord_cartesian(xlim = XSettings_last$time_range_relative)
+        )
+           
+    }
     
     # both plots together, aligned vertically
     if(compoundToExtract == "inhibitor 1"){
@@ -1020,7 +1132,33 @@ ct_plot <- function(sim_obs_dataframe = NA,
                               align = "hv")
         )
         
+        if(plot_1st_last_full){
+            AB_1st <- suppressWarnings(
+                ggpubr::ggarrange(A_1st, B_1st, ncol = 1, labels = c("A", "B"),
+                                  align = "v")
+            )
+            
+            ABhoriz_1st <- suppressWarnings(
+                ggpubr::ggarrange(A_1st, B_1st, ncol = 2, labels = c("A", "B"),
+                                  align = "hv")
+            )
+            
+            AB_last <- suppressWarnings(
+                ggpubr::ggarrange(A_last, B_last, ncol = 1, labels = c("A", "B"),
+                                  align = "v")
+            )
+            
+            ABhoriz_last <- suppressWarnings(
+                ggpubr::ggarrange(A_last, B_last, ncol = 2, labels = c("A", "B"),
+                                  align = "hv")
+            )
+        }
+        
     } else {
+        
+        # LEFT OFF HERE. Need to add _1st and _last options for these and then set up final output for that.
+        
+        
         # If the user didn't want the legend or if the graph is of Inhibitor1,
         # remove legend.
         if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){

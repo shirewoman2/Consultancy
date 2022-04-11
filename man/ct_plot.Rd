@@ -28,6 +28,7 @@ ct_plot(
   legend_label = NA,
   prettify_effector_name = TRUE,
   linear_or_log = "both vertical",
+  plot_1st_last_full = FALSE,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -159,8 +160,8 @@ linear plot will be automatically selected.}
 
 \item{y_axis_limits_log}{Optionally set the Y axis limits for the semi-log
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
-respectively, to a round number. If left as NA, the Y axis
-limits for the semi-log plot will be automatically selected.}
+respectively, to a round number. If left as NA, the Y axis limits for the
+semi-log plot will be automatically selected.}
 
 \item{obs_color}{If you would like the observed data points to be in color,
 either list a specific color or set this to "default". Points will be
@@ -233,6 +234,11 @@ something different.}
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
 "linear", "both vertical" (default, graphs are stacked vertically), or
 "both horizontal" (graphs are side by side).}
+
+\item{plot_1st_last_full}{TRUE or FALSE (default) for whether to show full
+time range on the top, the 1st dose on the bottom left, and the last dose
+on the bottom right. This only works for multiple-dose simulations, and it
+overrides any specifications for \code{time_range}.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
