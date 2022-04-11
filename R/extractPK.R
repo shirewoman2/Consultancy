@@ -1366,14 +1366,15 @@ extractPK <- function(sim_data_file,
                                 Column, EndRow_ind)) %>% 
             filter(complete.cases(PKparam)) %>% unique()
         
-        if(returnAggregateOrIndiv %in% c("both", "aggregate")){
+        if(any(returnAggregateOrIndiv %in% c("both", "aggregate"))){
             
             StatNames <- renameStats(Out_agg$Statistic) %>% as.character()
             
             StatNum <- 1:length(StatNames)
             names(StatNum) <- StatNames
             
-            DataCheck_agg <- DataCheck %>% 
+            suppressMessages(
+                DataCheck_agg <- DataCheck %>% 
                 select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
                 left_join(data.frame(File = unique(DataCheck$File), 
                                      Stat = StatNames)) %>% 
@@ -1381,8 +1382,11 @@ extractPK <- function(sim_data_file,
                        Cell = paste0(Column, Row_agg)) %>% 
                 select(File, PKparam, Tab, Column, Cell, Stat) %>% 
                 pivot_wider(names_from = Stat, values_from = Cell)
+            )
             
-            DataCheck <- DataCheck %>% left_join(DataCheck_agg)
+            suppressMessages(
+                DataCheck <- DataCheck %>% left_join(DataCheck_agg)
+            )
         }
         
         DataCheck <- DataCheck %>% 
