@@ -581,14 +581,14 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         
     } else {
         A <- A +
+            coord_cartesian(xlim = time_range_relative, 
+                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                            0, y_axis_limits_lin[1]),
+                                     YmaxRnd)) +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
                                    mult = pad_x_num)) +
-            coord_cartesian(xlim = time_range_relative) +
-            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                 0, y_axis_limits_lin[1]),
-                                          YmaxRnd), 
-                               breaks = YBreaks,
+            scale_y_continuous(breaks = YBreaks,
                                labels = YLabels,
                                expand = expansion(mult = pad_y_num)) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
