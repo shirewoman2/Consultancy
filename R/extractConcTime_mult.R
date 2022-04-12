@@ -23,13 +23,13 @@
 #'   they are located somewhere other than your working directory. This is the
 #'   file that it is ready to be converted to an XML file, not the file that
 #'   contains only the digitized time and concentration data.
-#' @param sim_obs_dataframe the data.frame that will contain the output. Because
-#'   we can see scenarios where you might want to extract some
-#'   concentration-time data, play around with those data, and then later decide
-#'   you want to pull more concentration-time data for comparisons, this
-#'   data.frame can already exist. When that is the case, this function will
-#'   \emph{add} data to that data.frame. It will \emph{not} overwrite existing
-#'   data unless \code{overwrite} is set to TRUE.
+#' @param sim_obs_dataframe the data.frame that will contain the output. This
+#'   should NOT be in quotes. Because we can see scenarios where you might want
+#'   to extract some concentration-time data, play around with those data, and
+#'   then later decide you want to pull more concentration-time data for
+#'   comparisons, this data.frame can already exist. When that is the case, this
+#'   function will \emph{add} data to that data.frame. It will \emph{not}
+#'   overwrite existing data unless \code{overwrite} is set to TRUE.
 #' @param overwrite TRUE or FALSE on whether to re-extract the
 #'   concentration-time data from output files that are already included in
 #'   \code{sim_obs_dataframe}. Since pulling data from Excel files is slow, by
