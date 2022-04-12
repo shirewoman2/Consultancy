@@ -957,22 +957,29 @@ ct_plot <- function(sim_obs_dataframe = NA,
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                limits = time_range_relative,
                                expand = expansion(
-                                   mult = pad_x_num)) 
+                                   mult = pad_x_num)) +
+            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                 0, y_axis_limits_lin[1]),
+                                          YmaxRnd), 
+                               breaks = YBreaks,
+                               labels = YLabels,
+                               expand = expansion(mult = pad_y_num)) 
+            
     } else {
         A <- A +
+            coord_cartesian(xlim = time_range_relative, 
+                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                            0, y_axis_limits_lin[1]),
+                                     YmaxRnd)) +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
                                    mult = pad_x_num)) +
-            coord_cartesian(xlim = time_range_relative)
+            scale_y_continuous(breaks = YBreaks,
+                               labels = YLabels,
+                               expand = expansion(mult = pad_y_num)) 
     }
     
     A <- A +
-        scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                             0, y_axis_limits_lin[1]),
-                                      YmaxRnd), 
-                           breaks = YBreaks,
-                           labels = YLabels,
-                           expand = expansion(mult = pad_y_num)) +
         labs(x = xlab, y = ylab,
              linetype = ifelse(complete.cases(legend_label),
                                legend_label, "Inhibitor"),
@@ -1001,11 +1008,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
     
     ## Making semi-log graph ------------------------------------------------
     B <- suppressMessages(
-        A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
+        A + scale_y_log10(breaks = YLogBreaks,
                           labels = YLogLabels,
                           expand = expansion(mult = pad_y_num)) +
             # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
-            coord_cartesian(xlim = time_range_relative)
+            coord_cartesian(xlim = time_range_relative, 
+                            ylim = Ylim_log)
     )
     
     # both plots together, aligned vertically
