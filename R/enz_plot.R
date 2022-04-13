@@ -26,25 +26,15 @@
 #' enz_plot(sim_data_file = "../Example simulator output MD.xlsx",
 #'          enzyme = "CYP3A4", tissue = "liver", line_type = "dotted")
 
-enz_plot <- function(sim_enz_dataframe = NA,
+enz_plot <- function(sim_enz_dataframe,
                      figure_type = "means only",
                      gut_tissue = "colon",
                      linear_or_log = "linear",
                      ...,
-                     sim_data_file = NA,
                      enzyme = "CYP3A4",
                      tissue = "liver"){
     
-    if("data.frame" %in% class(sim_enz_dataframe)){
-        Data <- sim_enz_dataframe
-    } else {
-        Data <- extractEnzAbund(
-            sim_data_file = sim_data_file,
-            enzyme = enzyme,
-            tissue = ifelse(tissue %in% c("colon", "small intestine"),
-                            "gut", tissue),
-            returnAggregateOrIndiv = c("aggregate", "individual"))
-    }
+    Data <- sim_enz_dataframe
     
     if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
         Data <- Data %>% filter(Tissue == gut_tissue)
