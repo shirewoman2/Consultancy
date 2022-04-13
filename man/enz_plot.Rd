@@ -5,12 +5,11 @@
 \title{Plots of enzyme abundance changes over time to match Consultancy template}
 \usage{
 enz_plot(
-  sim_enz_dataframe = NA,
+  sim_enz_dataframe,
   figure_type = "means only",
   gut_tissue = "colon",
   linear_or_log = "linear",
   ...,
-  sim_data_file = NA,
   enzyme = "CYP3A4",
   tissue = "liver"
 )
