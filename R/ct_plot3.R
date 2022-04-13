@@ -31,7 +31,7 @@
 #' ct_plot3(sim_obs_dataframe = CT, colorBy_column = File,
 #'          facet1_column = Tissue)
 #' 
- 
+
 ct_plot3 <- function(sim_obs_dataframe, 
                      overlay = FALSE, 
                      ...){
@@ -44,34 +44,43 @@ ct_plot3 <- function(sim_obs_dataframe,
             ggtitle("Full time range")
         
         B <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
+                             time_range = "first dose",
                              ...,
                              include_messages = F) +
             ggtitle("First dose")
         
         C <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
+                             time_range = "last dose", 
                              ...,
                              include_messages = F) +
             ggtitle("Last dose")
         
         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                         nrow = 2, common.legend = TRUE, legend = "bottom")
+                                 nrow = 2, common.legend = TRUE, legend = "bottom")
         
     } else {
+        
+        if(hasArg("colorBy_column") | hasArg("facet1_column") |
+           hasArg("facet2_column")){
+            stop("It looks like you wanted to use 'ct_plot_overlay' with this function to create graphs of overlaid concentration-time data, but you have specified 'overlay = FALSE' (or left it as the default). Please change 'overlay' to TRUE and try again.")
+        }
         
         A <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
                      ...) +
             ggtitle("Full time range")
         
         B <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
+                     time_range = "first dose", 
                      ...) +
             ggtitle("First dose")
         
         C <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
-                             ...) +
+                     time_range = "last dose",        
+                     ...) +
             ggtitle("Last dose")
         
         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                         nrow = 2, common.legend = TRUE, legend = "bottom")
+                                 nrow = 2, common.legend = TRUE, legend = "bottom")
     }
     
     return(Out)
