@@ -230,6 +230,12 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     if(as_label(colorBy_column) != "<empty>"){
         sim_obs_dataframe <- sim_obs_dataframe %>%
             mutate(colorBy_column = {{colorBy_column}})
+        
+        if(class(sim_obs_dataframe$colorBy_column) == "numeric"){
+            Levels <- sort(unique(sim_obs_dataframe$colorBy_column))
+            sim_obs_dataframe <- sim_obs_dataframe %>% 
+                mutate(colorBy_column = factor(colorBy_column, levels = Levels))
+        }
     }
     
     if(as_label(facet1_column) != "<empty>"){
