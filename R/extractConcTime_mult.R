@@ -4,14 +4,14 @@
 #' \code{\link{ct_plot_overlay}} to create single graphs with overlaid
 #' concentration-time data from multiple Simcyp Simulator output files for easy
 #' comparisons. \strong{A couple of notes:}\enumerate{\item{If ANY of the Excel
-#' files you wish to extract data from are open, this WILL CRASH and WILL NOT
-#' save whatever progress it has made so far. BE SURE TO CLOSE ALL OF THE
-#' SOURCE-DATA EXCEL FILES.} \item{If you list multiple files, multiple tissues,
-#' and/or multiple compounds to extract (see options below), this will extract
-#' \emph{all} possible variations of them. For example, if you ask for "File A"
-#' and "File B" and then also ask for "substrate" and "primary metabolite 1",
-#' you will get the substrate and primary metabolite 1 data from \emph{both}
-#' files.}}
+#' files you wish to extract data from are saved on SharePoint and are open,
+#' this WILL CRASH and WILL NOT save whatever progress it has made so far. Be
+#' sure to close all of the source Excel files.} \item{If you list multiple
+#' files, multiple tissues, and/or multiple compounds to extract (see options
+#' below), this will extract \emph{all} possible variations of them. For
+#' example, if you ask for "File A" and "File B" and then also ask for
+#' "substrate" and "primary metabolite 1", you will get the substrate and
+#' primary metabolite 1 data from \emph{both} files.}}
 #'
 #' @param sim_data_files a character vector of the files you'd like to compare,
 #'   e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
@@ -314,7 +314,8 @@ extractConcTime_mult <- function(sim_data_files,
     }
     
     # Observed data ------------------------------------------------------
-    if(length(obs_data_files) > 0 && any(complete.cases(obs_data_files))){
+    if(length(setdiff(obs_data_files, unique(sim_obs_dataframe$ObsFile))) &&
+       any(complete.cases(obs_data_files))){
         MultObsData <- list()
         if(overwrite){
             sim_obs_dataframe <- sim_obs_dataframe %>% filter(!ObsFile %in% obs_data_files)
