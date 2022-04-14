@@ -37,7 +37,7 @@ extractPK(
   you can sometimes hack around this by supplying a specific sheet to extract
   for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
   This has NOT been as well tested, though, so be sure to check that you're
-  getting what you expect.}
+  getting what you expected!}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
 pull the PK data; for example, specify the tab where you have a
