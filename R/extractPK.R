@@ -292,6 +292,9 @@ extractPK <- function(sim_data_file,
                                    "AUCtau_ratio_ss" = "AUC Ratio",
                                    "CL_dose1" = "CL .Dose/AUC_INF",
                                    "CL_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
+                                   "CLtau_dose1" = "CL .Dose/AUC", # <----------------- !!!! NEEDS TO BE THE 2ND INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE
+                                   "CLtau_dose1_withInhib" = "CLinh \\(Dose/AUC\\)", # <----------------- !!!! NEEDS TO BE THE 3RD INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE W/OUT INHIB AND 2ND IS 1ST DOSE W/OUT INHIB. 3RD INSTANCE IS CLtau FOR 1ST DOSE.
+                                   "CLtau_ratio_dose1" = "CL Ratio",
                                    "CL_ss" = "CL \\(Dose/AUC\\)",
                                    "CL_ss_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
                                    "Cmax_dose1" = "CMax \\(",
@@ -319,26 +322,28 @@ extractPK <- function(sim_data_file,
                                   paste0(PKparam, "_withInhib"),
                                   PKparam)
                 
-                # Dose 1 CL should be the clearance calculated using
-                # AUCinf, not AUCtau for dose 1, so temporarily adding
-                # "inf" to that parameter to check the correct columns.
-                # Same thing with half life.
-                PKparam <- ifelse(str_detect(PKparam, "CL.*_dose1|HalfLife_dose1"),
-                                  sub("_dose1", "inf_dose1", PKparam), PKparam)
+                # Dose 1 CL should be the clearance calculated using AUCinf, not
+                # AUCtau for dose 1 unless the user requested CLtau, so
+                # temporarily adding "inf" to that parameter to check the
+                # correct columns. Same thing with half life.
+                PKparam <- ifelse(
+                    str_detect(PKparam, "CL_dose1|HalfLife_dose1|CL_ratio_dose1"),
+                    sub("_dose1", "inf_dose1", PKparam), PKparam)
                 
-                # Dose 1 tmax and Cmax are only available for the 0 to tau columns, so
-                # changing those parameter names temporarily. RETURN TO THIS: If the
-                # user requests integration of the last dose, doesn't that show up here?
-                # CHECK.
+                # Dose 1 tmax and Cmax are only available for the 0 to tau
+                # columns, so changing those parameter names temporarily. RETURN
+                # TO THIS: If the user requests integration of the last dose,
+                # doesn't that show up here? CHECK.
                 PKparam <- ifelse(str_detect(PKparam, "[Ct]max"),
                                   sub("max", "maxtau", PKparam),
                                   PKparam)
                 
                 if(str_detect(PKparam, "_withInhib")){
                     
-                    # If there is an inhibitor involved, need to start
-                    # looking for the correct column after "for the
-                    # Xth dose in the presence of inhibitor".
+                    # If there is an inhibitor involved, need to start looking
+                    # for the correct column after "for the Xth dose in the
+                    # presence of inhibitor" unless the parameter requested was
+                    # for the dosing interval rather than extrapolated.
                     
                     # dose1 data
                     if(str_detect(PKparam, "dose1_withInhib")){
@@ -618,6 +623,9 @@ extractPK <- function(sim_data_file,
                                    "Cmax_dose1" = "CMax \\(",
                                    "Cmax_dose1_withInhib" = "CMaxinh",
                                    "Cmax_ratio_dose1" = "^CMax Ratio$",
+                                   "CLtau_dose1" = "CL .Dose/AUC",
+                                   "CLtau_dose1_withInhib" = "CL \\(Dose/AUCinh\\)",
+                                   "CLtau_ratio_dose1" = "CL Ratio",
                                    "tmax_dose1" = "TMax",
                                    "tmax_dose1_withInhib" = "TMaxinh")
                 
@@ -1368,7 +1376,11 @@ extractPK <- function(sim_data_file,
         
         if(any(returnAggregateOrIndiv %in% c("both", "aggregate"))){
             
-            StatNames <- renameStats(Out_agg$Statistic) %>% as.character()
+            if(length(Out_agg) > 1){
+                StatNames <- renameStats(Out_agg$Statistic) %>% as.character()
+            } else {
+                StatNames <- renameStats(names(Out_agg[[1]]))
+            }
             
             StatNum <- 1:length(StatNames)
             names(StatNum) <- StatNames
