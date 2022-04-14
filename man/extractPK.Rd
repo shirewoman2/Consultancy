@@ -18,14 +18,26 @@ extractPK(
 \item{sim_data_file}{name of the Excel file containing the simulator output}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
-output file. Options are "all" for all possible parameters, "AUC tab" for
-only those parameters on the "AUC" tab (default, "AUC_CI" tab will be used
-if "AUC" is not present), "Absorption tab" for only those parameters on the
-"Absorption" tab, or any combination of specific, individual parameters.
-Currently, the PK data are only for the substrate unless noted, although
-you can hack around this by supplying a specific sheet to extract, e.g.
-sheet = "AUC(Sub Pri Met1)". To see the full set of possible parameters to
-extract, enter \code{data(AllPKParameters)} into the console.}
+  output file. Options are: \itemize{
+
+  \item{"all" for all possible parameters}
+
+  \item{"AUC tab" for only those parameters on the "AUC" tab (this is the
+  default setting, "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is
+  not present)}
+
+  \item{"Absorption tab" for only those parameters on the "Absorption" tab}
+
+  \item{any combination of specific, individual parameters, e.g.,
+  \code{c("Cmax_dose1", "AUCtau_ss").} To see the full set of possible
+  parameters to extract, enter \code{data(AllPKParameters)} into the
+  console.}}
+
+  Currently, the PK data are only for the substrate unless noted, although
+  you can sometimes hack around this by supplying a specific sheet to extract
+  for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
+  This has NOT been as well tested, though, so be sure to check that you're
+  getting what you expected!}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
 pull the PK data; for example, specify the tab where you have a

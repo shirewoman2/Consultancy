@@ -14,14 +14,26 @@
 #'   we don't know which dose these data were for, you'll see that the output
 #'   parameter names do not include the suffixes "_ss" or "_dose1".
 #' @param PKparameters PK parameters you want to extract from the simulator
-#'   output file. Options are "all" for all possible parameters, "AUC tab" for
-#'   only those parameters on the "AUC" tab (default, "AUC_CI" tab will be used
-#'   if "AUC" is not present), "Absorption tab" for only those parameters on the
-#'   "Absorption" tab, or any combination of specific, individual parameters.
+#'   output file. Options are: \itemize{
+#'
+#'   \item{"all" for all possible parameters}
+#'
+#'   \item{"AUC tab" for only those parameters on the "AUC" tab (this is the
+#'   default setting, "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is
+#'   not present)}
+#'
+#'   \item{"Absorption tab" for only those parameters on the "Absorption" tab}
+#'
+#'   \item{any combination of specific, individual parameters, e.g.,
+#'   \code{c("Cmax_dose1", "AUCtau_ss").} To see the full set of possible
+#'   parameters to extract, enter \code{data(AllPKParameters)} into the
+#'   console.}}
+#'
 #'   Currently, the PK data are only for the substrate unless noted, although
-#'   you can hack around this by supplying a specific sheet to extract, e.g.
-#'   sheet = "AUC(Sub Pri Met1)". To see the full set of possible parameters to
-#'   extract, enter \code{data(AllPKParameters)} into the console.
+#'   you can sometimes hack around this by supplying a specific sheet to extract
+#'   for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
+#'   This has NOT been as well tested, though, so be sure to check that you're
+#'   getting what you expected!
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" or "blood".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual PK
