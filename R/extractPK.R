@@ -195,7 +195,7 @@ extractPK <- function(sim_data_file,
     # can be pulled from sheets where they *are* so labeled.
     if(Deets$Regimen_sub == "Multiple Dose"){
         ParamAUC <- setdiff(ParamAUC,
-                            c("AUCtau_ratio_dose1",
+                            c("AUCt_ratio_dose1",
                               "Cmax_dose1", "Cmax_dose1_withInhib",
                               "Cmax_ratio_dose1", "tmax_dose1"))
     }
@@ -278,31 +278,31 @@ extractPK <- function(sim_data_file,
                 
                 ToDetect <- switch(PKparam,
                                    "AccumulationIndex" = "Accumulation Index$",
-                                   "AccumulationRatio" = "Accumulation Ratio$",
                                    "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
+                                   "AccumulationRatio" = "Accumulation Ratio$",
                                    "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
-                                   "AUCtau_dose1" = "^AUC \\(|AUCt.0. \\(",
-                                   "AUCtau_dose1_withInhib" = "^AUCt.0._Inh \\(|^AUCinh \\(",
-                                   "AUCtau_ratio_dose1" = "^AUC Ratio$",
                                    "AUCinf_dose1" = "^AUC_INF",
                                    "AUCinf_dose1_withInhib" = "^AUC_INF",
                                    "AUCinf_ratio_dose1" = "^AUC_INF ratio$",
+                                   "AUCt_dose1" = "^AUC \\(|AUCt.0. \\(",
+                                   "AUCt_dose1_withInhib" = "^AUCt.0._Inh \\(|^AUCinh \\(",
+                                   "AUCt_ratio_dose1" = "^AUC Ratio$",
+                                   "AUCtau_ratio_ss" = "AUC Ratio",
                                    "AUCtau_ss" = "AUCt\\(n\\) \\(|^AUC \\(",
                                    "AUCtau_ss_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
-                                   "AUCtau_ratio_ss" = "AUC Ratio",
-                                   "CL_dose1" = "CL .Dose/AUC_INF",
-                                   "CL_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
-                                   "CLtau_dose1" = "CL .Dose/AUC", # <----------------- !!!! NEEDS TO BE THE 2ND INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE
-                                   "CLtau_dose1_withInhib" = "CLinh \\(Dose/AUC\\)", # <----------------- !!!! NEEDS TO BE THE 3RD INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE W/OUT INHIB AND 2ND IS 1ST DOSE W/OUT INHIB. 3RD INSTANCE IS CLtau FOR 1ST DOSE.
-                                   "CLtau_ratio_dose1" = "CL Ratio",
-                                   "CL_ss" = "CL \\(Dose/AUC\\)",
-                                   "CL_ss_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
+                                   "CLinf_dose1" = "CL .Dose/AUC_INF",
+                                   "CLinf_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
+                                   "CLt_dose1" = "CL .Dose/AUC", # <----------------- !!!! NEEDS TO BE THE 2ND INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE
+                                   "CLt_dose1_withInhib" = "CLinh \\(Dose/AUC\\)", # <----------------- !!!! NEEDS TO BE THE 3RD INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE W/OUT INHIB AND 2ND IS 1ST DOSE W/OUT INHIB. 3RD INSTANCE IS CLtau FOR 1ST DOSE.
+                                   "CLt_ratio_dose1" = "CL Ratio",
+                                   "CLtau_ss" = "CL \\(Dose/AUC\\)",
+                                   "CLtau_ss_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
                                    "Cmax_dose1" = "CMax \\(",
                                    "Cmax_dose1_withInhib" = "CMaxinh \\(",
                                    "Cmax_ratio_dose1" = "^CMax Ratio$",
+                                   "Cmax_ratio_ss" = "^CMax Ratio$",
                                    "Cmax_ss" = "^CMax",
                                    "Cmax_ss_withInhib" = "^CMax",
-                                   "Cmax_ratio_ss" = "^CMax Ratio$",
                                    "HalfLife_dose1" = "Half-life \\(",
                                    "HalfLife_dose1_withInhib" = "Half-life_Inh \\(",
                                    "tmax_dose1" = "^TMax \\(",
@@ -327,7 +327,7 @@ extractPK <- function(sim_data_file,
                 # temporarily adding "inf" to that parameter to check the
                 # correct columns. Same thing with half life.
                 PKparam <- ifelse(
-                    str_detect(PKparam, "CL_dose1|HalfLife_dose1|CL_ratio_dose1"),
+                    str_detect(PKparam, "CLinf_dose1|HalfLife_dose1|CL_ratio_dose1"),
                     sub("_dose1", "inf_dose1", PKparam), PKparam)
                 
                 # Dose 1 tmax and Cmax are only available for the 0 to tau
@@ -383,14 +383,14 @@ extractPK <- function(sim_data_file,
                         StartColText <- "^Extrapolated AUC_INF for the first dose$"
                     }
                     
-                    if(str_detect(PKparam, "tau.*_dose1") &
+                    if(str_detect(PKparam, "t(au)?.*_dose1") &
                        Deets$Regimen_sub %in% c("Single Dose", "custom dosing")){
                         StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                       "^AUC integrated from"))
                         StartColText <- "^AUC integrated from"
                     }
                     
-                    if(str_detect(PKparam, "tau.*_dose1") &
+                    if(str_detect(PKparam, "t(au)?.*_dose1") &
                        Deets$Regimen_sub %in% c("Multiple Dose")){
                         StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                      "^Truncated AUCt for the first dose"))
@@ -402,7 +402,7 @@ extractPK <- function(sim_data_file,
                         
                         StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                      "^Truncated AUCt for the last dose$"))
-                        StartColText <- "^Truncated AUCt for the first dose"
+                        StartColText <- "^Truncated AUCt for the last dose"
                         if(length(StartCol) == 0){
                             StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                          "^AUC integrated from"))
@@ -617,15 +617,15 @@ extractPK <- function(sim_data_file,
             findCol <- function(PKparam){
                 
                 ToDetect <- switch(PKparam,
-                                   "AUCtau_dose1" = "^AUC \\(",
-                                   "AUCtau_dose1_withInhib" = "^AUCinh \\(",
-                                   "AUCtau_ratio_dose1" = "AUC Ratio",
+                                   "AUCt_dose1" = "^AUC \\(",
+                                   "AUCt_dose1_withInhib" = "^AUCinh \\(",
+                                   "AUCt_ratio_dose1" = "AUC Ratio",
+                                   "CLt_dose1" = "CL .Dose/AUC",
+                                   "CLt_dose1_withInhib" = "CL \\(Dose/AUCinh\\)",
+                                   "CLt_ratio_dose1" = "CL Ratio",
                                    "Cmax_dose1" = "CMax \\(",
                                    "Cmax_dose1_withInhib" = "CMaxinh",
                                    "Cmax_ratio_dose1" = "^CMax Ratio$",
-                                   "CLtau_dose1" = "CL .Dose/AUC",
-                                   "CLtau_dose1_withInhib" = "CL \\(Dose/AUCinh\\)",
-                                   "CLtau_ratio_dose1" = "CL Ratio",
                                    "tmax_dose1" = "TMax",
                                    "tmax_dose1_withInhib" = "TMaxinh")
                 
@@ -730,8 +730,8 @@ extractPK <- function(sim_data_file,
                                    "AUCtau_ss" = "AUC \\(",
                                    "AUCtau_ss_withInhib" = "AUCinh \\(",
                                    "AUCtau_ratio_ss" = "AUC Ratio",
-                                   "CL_ss" = "CL \\(Dose/AUC",
-                                   "CL_ss_withInhib" = "CLinh \\(Dose/AUCinh",
+                                   "CLtau_ss" = "CL \\(Dose/AUC",
+                                   "CLtau_ss_withInhib" = "CLinh \\(Dose/AUCinh",
                                    "CL_ratio_ss" = "CL Ratio",
                                    "Cmax_ss" = "CMax \\(",
                                    "Cmax_ss_withInhib" = "CMaxinh \\(",
@@ -1194,6 +1194,7 @@ extractPK <- function(sim_data_file,
             !PKparameters %in% c("fa_sub", "fa_inhib",
                                  "ka_sub", "ka_inhib",
                                  "tlag_sub", "tlag_inhib",
+                                 "CLinf", "CLinf_withInhib",
                                  "CL_hepatic", "CLpo",
                                  "F_sub", "F_inhib", "fg_sub", "fg_inhib",
                                  "fh_sub", "fh_inhib")]
@@ -1210,11 +1211,17 @@ extractPK <- function(sim_data_file,
                                "AUCinf_withInhib" = "^AUC_INF_Inh",
                                "AUCinf_ratio" = "^AUC_INF ratio$",
                                "AUCtau" = "AUCt\\(n\\) \\(|^AUC \\(|^AUC integrated from",
+                               "AUCt" = "AUCt\\(n\\) \\(|^AUC \\(|^AUC integrated from",
                                "AUCtau_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
+                               "AUCt_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
                                "AUCtau_ratio" = "AUC Ratio",
-                               "CL" = "CL \\(Dose/AUC\\)",
-                               "CL_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
-                               "CL_ratio" = "CL Ratio",
+                               "AUCt_ratio" = "AUC Ratio",
+                               "CLt" = "CL \\(Dose/AUC\\)",
+                               "CLt_withInhib" = "CLinh \\(Dose/AUC\\)|CL \\(Dose/AUCinh\\)|CLinh \\(Dose/AUCinh\\)",
+                               "CLt_ratio" = "CL Ratio",
+                               "CLtau" = "CL \\(Dose/AUC\\)",
+                               "CLtau_withInhib" = "CLinh \\(Dose/AUC\\)|CL \\(Dose/AUCinh\\)|CLinh \\(Dose/AUCinh\\)",
+                               "CLtau_ratio" = "CL Ratio",
                                "Cmax" = "CMax \\(",
                                "Cmax_withInhib" = "CMaxinh", 
                                "Cmax_ratio" = "CMax Ratio",
