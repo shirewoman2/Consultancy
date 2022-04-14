@@ -258,9 +258,12 @@ extractPK <- function(sim_data_file,
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
         # Error catching
-        if("AUC" %in% AllSheets == FALSE & "AUC_CI" %in% AllSheets == FALSE){
-            warning(paste0("The sheet 'AUC' or 'AUC_CI' must be present in the Excel simulated data file to extract the PK parameters ",
-                           str_c(PKparameters_AUC, collapse = ", "),
+        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE && 
+           length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary))) > 
+           0){
+            warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                           sub("and", "or", 
+                               str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary)))),
                            ". None of these parameters can be extracted."))
         } else {
             
@@ -1390,7 +1393,7 @@ extractPK <- function(sim_data_file,
             mutate(File = sim_data_file, 
                    Column = XLCols[Column], 
                    Individual = paste0(Column, StartRow_ind, ":",
-                                Column, EndRow_ind)) %>% 
+                                       Column, EndRow_ind)) %>% 
             filter(complete.cases(PKparam)) %>% unique()
         
         if(any(returnAggregateOrIndiv %in% c("both", "aggregate"))){
@@ -1406,13 +1409,13 @@ extractPK <- function(sim_data_file,
             
             suppressMessages(
                 DataCheck_agg <- DataCheck %>% 
-                select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
-                left_join(data.frame(File = unique(DataCheck$File), 
-                                     Stat = StatNames)) %>% 
-                mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
-                       Cell = paste0(Column, Row_agg)) %>% 
-                select(File, PKparam, Tab, Column, Cell, Stat) %>% 
-                pivot_wider(names_from = Stat, values_from = Cell)
+                    select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
+                    left_join(data.frame(File = unique(DataCheck$File), 
+                                         Stat = StatNames)) %>% 
+                    mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
+                           Cell = paste0(Column, Row_agg)) %>% 
+                    select(File, PKparam, Tab, Column, Cell, Stat) %>% 
+                    pivot_wider(names_from = Stat, values_from = Cell)
             )
             
             suppressMessages(
@@ -1422,7 +1425,7 @@ extractPK <- function(sim_data_file,
         
         DataCheck <- DataCheck %>% 
             select(-c(Column, StartRow_ind, EndRow_ind, StartRow_agg, EndRow_agg,
-                     StartColText, SearchText, Note)) %>% 
+                      StartColText, SearchText, Note)) %>% 
             select(PKparam, File, Tab, Individual, everything())
         
         if(class(Out)[1] == "list"){
