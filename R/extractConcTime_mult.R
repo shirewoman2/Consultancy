@@ -13,6 +13,19 @@
 #' "substrate" and "primary metabolite 1", you will get the substrate and
 #' primary metabolite 1 data from \emph{both} files.}}
 #'
+#' \strong{Regarding dose intervals for observed data:} The observed data files
+#' don't include information on dosing intervals or dose numbers, which makes it
+#' a little tricky to figure out which dose number a given time in an observed
+#' data file goes with. Here's how we try to make a reasonable guess at that: If
+#' the compound IDs in the simulated data match those in the observed data
+#' \emph{and} if there was only one dosing interval for each compound ID in the
+#' simulated data, we will assume that the dosing intervals are the same for all
+#' the observed data. Otherwise, the dose number and dosing interval columns
+#' will be NA for all observed data. Unfortunately, this means that we're not
+#' currently able to accomodate custom dosing regimens for observed data. If
+#' you'd like to set that manually after running this function but aren't sure
+#' how, please talk to someone in the R Working Group for help.
+#'
 #' @param sim_data_files a character vector of the files you'd like to compare,
 #'   e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
 #'   with the file names if they are located somewhere other than your working
@@ -22,7 +35,9 @@
 #'   "MyObsFile2.xlsx")}. The path should be included with the file names if
 #'   they are located somewhere other than your working directory. This is the
 #'   file that it is ready to be converted to an XML file, not the file that
-#'   contains only the digitized time and concentration data.
+#'   contains only the digitized time and concentration data. If it's reasonable
+#'   to do so, we'll assume that the dosing intervals for the observed data
+#'   match those in the simulated data. See "Details" for more info.
 #' @param sim_obs_dataframe the data.frame that will contain the output. This
 #'   should NOT be in quotes. Because we can see scenarios where you might want
 #'   to extract some concentration-time data, play around with those data, and
@@ -314,7 +329,7 @@ extractConcTime_mult <- function(sim_data_files,
     }
     
     # Observed data ------------------------------------------------------
-    if(length(setdiff(obs_data_files, unique(sim_obs_dataframe$ObsFile))) &&
+    if(length(setdiff(obs_data_files, unique(sim_obs_dataframe$ObsFile))) > 0 &&
        any(complete.cases(obs_data_files))){
         MultObsData <- list()
         if(overwrite){
@@ -332,6 +347,47 @@ extractConcTime_mult <- function(sim_data_files,
         MultObsData <- bind_rows(MultObsData) %>% 
             mutate(Simulated = FALSE) %>% 
             filter(CompoundID %in% compoundsToExtract)
+        
+        # We can we add a dose number and/or dose interval to these data if the
+        # compound IDs match the simulated data. We're going to assume that the
+        # dose timings are the same as in the simulated data.
+        ObsCompoundID <- MultObsData %>% pull(CompoundID) %>% unique()
+        SimDoseInfo <- bind_rows(sim_obs_dataframe, MultData) %>%
+            select(CompoundID, DoseInt, DoseNum) %>% unique() %>% 
+            filter(CompoundID %in% ObsCompoundID)
+        
+        MultObsData <- split(MultObsData, f = MultObsData$CompoundID)
+        SimDoseInfo <- split(SimDoseInfo, f = SimDoseInfo$CompoundID)
+        
+        for(i in names(MultObsData)){
+            
+            DoseInt <- unique(SimDoseInfo[[i]]$DoseInt)
+            
+            if(nrow(SimDoseInfo[[i]]) == 1){
+                # only 1 dose in simulated data, so DoseNum and DoseInt are the
+                # same for all times for the observed data.
+                MultObsData[[i]] <- MultObsData[[i]] %>% 
+                    left_join(SimDoseInfo[[i]])
+            } else {
+                # This is for when there's more than one DoseNum for a given
+                # compound ID.
+                if(length(DoseInt) == 1){
+                    # If there's only one dosing interval for this compound ID,
+                    # we're assuming that that's the dosing interval for the
+                    # observed data, too. Calculating the dose numbers based on
+                    # that.
+                    MaxDose <- max(SimDoseInfo[[i]]$DoseNum)
+                    MaxTime <- max(MultData$Time)
+                    DoseTimes <- Mult
+                    
+                }
+            }
+            
+            rm(DoseInt, MaxDose, DoseTimes)
+        }
+        
+        MultObsData <- unsplit(MultObsData, f = names(MultObsData))
+        
         
         sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultObsData)
         
