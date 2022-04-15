@@ -28,7 +28,9 @@ you'd like to compare, e.g., \code{c("MyObsFile1.xlsx",
 "MyObsFile2.xlsx")}. The path should be included with the file names if
 they are located somewhere other than your working directory. This is the
 file that it is ready to be converted to an XML file, not the file that
-contains only the digitized time and concentration data.}
+contains only the digitized time and concentration data. This function
+assumes that the dosing intervals for the observed data match those in the
+simulated data. See "Details" for more info.}
 
 \item{sim_obs_dataframe}{the data.frame that will contain the output. This
 should NOT be in quotes. Because we can see scenarios where you might want
@@ -105,6 +107,16 @@ below), this will extract \emph{all} possible variations of them. For
 example, if you ask for "File A" and "File B" and then also ask for
 "substrate" and "primary metabolite 1", you will get the substrate and
 primary metabolite 1 data from \emph{both} files.}}
+}
+\details{
+\strong{Regarding dose intervals for observed data:} The observed data files
+don't include information on dosing intervals or dose numbers, which makes it
+a little tricky to figure out which dose number a given time in an observed
+data file goes with. If the compound IDs in the simulated data match those in
+the observed data, we will assume that the dosing intervals are the same.
+This was coded with the assumption that the dosing interval would be a round
+number (subjects aren't getting dosed on the half hour, for example), so if
+that's not the case, these dose number assignments will be off.
 }
 \examples{
 ConcTimeData <-
