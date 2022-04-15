@@ -39,10 +39,10 @@
 #' compound you're simulating (column: "Compound"). They do include whether it
 #' was a substrate, metabolite, or inhibitor (column: CompoundID), but not the
 #' compound's actual name. For that reason, try coloring or facetting your data
-#' by CompoundID rather than by Compound. Similarly, if you have an inhibitor
-#' and you have observed data, the inhibitor will be listed as the generic
-#' "inhibitor" here rather than, e.g., "ketoconazole" because the observed data
-#' file doesn't indicate that.
+#' by CompoundID rather than by Compound if you have observed data. Similarly,
+#' if you have an inhibitor and you have observed data, the inhibitor will be
+#' listed as the generic "inhibitor" here rather than, e.g., "ketoconazole"
+#' because the observed data file doesn't indicate that.
 #'
 #'
 #'
@@ -94,17 +94,32 @@
 #'   Setting this to TRUE does mean that your x axis won't have pretty breaks
 #'   that are sensible for times in hours and that your y axis won't have minor
 #'   ticks.
-#' @param time_range time range to show relative to the start of the simulation.
-#'   A note on how this differs from \code{\link{ct_plot}}: Since this function
-#'   does allow for multiple files to be plotted, please note that you cannot
-#'   specify a dose number for the time range as you can with \code{ct_plot};
-#'   that's because we wouldn't know which simulation you wanted that dose
-#'   number for. Options that will work here: \describe{
+#' @param time_range time range to display. Options: \describe{
 #'
 #'   \item{NA}{entire time range of data}
 #'
 #'   \item{a start time and end time in hours}{only data in that time range,
-#'   e.g. \code{c(24, 48)}}}
+#'   e.g. \code{c(24, 48)}}
+#'
+#'   \item{"first dose"}{only the time range of the first dose}
+#'
+#'   \item{"last dose"}{only the time range of the last dose}
+#'
+#'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
+#'   which can be useful for BID data where the end of the simulation extended
+#'   past the dosing interval or data when the substrate was dosed BID and the
+#'   effector was dosed QD}
+#'
+#'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
+#'   range encompassing the requested doses, e.g., "dose 3" for the 3rd dose or
+#'   "doses 1 to 4" for doses 1 to 4}
+#'
+#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
+#'   range will be limited to only times when observed data are present.}
+#'
+#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
+#'   be limited to the start of the last dose until the last observed data
+#'   point.} }
 #'
 #'
 #' @param pad_x_axis Optionally add a smidge of padding to the the x axis
@@ -249,9 +264,10 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     }
     
     # error catching -------------------------------------------------------
-    if(length(time_range) == 1){
+    if(length(time_range) == 1 && complete.cases(time_range[1]) &&
+       !str_detect(time_range, "dose|last obs|all obs")){
         if(complete.cases(time_range)){
-            warning("You have specified only 1 value for the time range, and we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.")
+            warning("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.")
             time_range <- NA
         }
     } else {
@@ -260,8 +276,9 @@ ct_plot_overlay <- function(sim_obs_dataframe,
             time_range <- time_range[1:2]
         } 
         
-        if(class(time_range) != "numeric"){
-            warning("You have not specified numeric data for the start and end of your time range, which is the input required for this function. The full time range will be used.")
+        if(class(time_range) != "numeric" && complete.cases(time_range[1]) &&
+           !str_detect(time_range, "dose|last obs|all obs")){
+            warning("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used.")
             time_range <- NA
         }
     }
@@ -403,6 +420,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
             } 
         } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
     }
+    
     if(complete.cases(facet2_labels[1])){
         simcheck <- sim_dataframe %>% 
             filter(FC2 %in% names(facet2_labels)) %>% 
