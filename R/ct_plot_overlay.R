@@ -595,7 +595,8 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     if(complete.cases(color_labels[1])){
         A <- A + labs(color = NULL, fill = NULL)
     } else {
-        A <- A + labs(color = as_label(colorBy_column), fill = as_label(colorBy_column))
+        A <- A + labs(color = as_label(colorBy_column), 
+                      fill = as_label(colorBy_column))
     }
     
     if(floating_facet_scale){
@@ -637,29 +638,34 @@ ct_plot_overlay <- function(sim_obs_dataframe,
     
     # print(NumColorsNeeded)
     
-    if(color_set == "default"){
-        A <- A + scale_color_brewer(palette = "Set1") +
-            scale_fill_brewer(palette="Set1")
-    }
-    
-    if(color_set == "blue-green"){
-        A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-            scale_fill_manual(values = blueGreen(NumColorsNeeded))
-    }
-    
-    if(color_set == "rainbow"){
-        A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-            scale_fill_manual(values = colRainbow(NumColorsNeeded))
-    }
-    
-    if(color_set == "Brewer set 2"){
-        A <- A + scale_fill_brewer(palette = "Set2") +
-            scale_color_brewer(palette = "Set2")
-    }
-    
-    if(color_set == "Tableau"){
-        A <- A + ggthemes::scale_color_tableau() +
-            ggthemes::scale_fill_tableau()
+    if(length(sort(unique(sim_obs_dataframe$colorBy_column))) == 1){
+        A <- A + scale_color_manual(values = "black")
+    } else {
+        
+        if(color_set == "default"){
+            A <- A + scale_color_brewer(palette = "Set1") +
+                scale_fill_brewer(palette="Set1")
+        }
+        
+        if(color_set == "blue-green"){
+            A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
+                scale_fill_manual(values = blueGreen(NumColorsNeeded))
+        }
+        
+        if(color_set == "rainbow"){
+            A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
+                scale_fill_manual(values = colRainbow(NumColorsNeeded))
+        }
+        
+        if(color_set == "Brewer set 2"){
+            A <- A + scale_fill_brewer(palette = "Set2") +
+                scale_color_brewer(palette = "Set2")
+        }
+        
+        if(color_set == "Tableau"){
+            A <- A + ggthemes::scale_color_tableau() +
+                ggthemes::scale_fill_tableau()
+        }
     }
     
     ## Adding spacing between facets if requested
