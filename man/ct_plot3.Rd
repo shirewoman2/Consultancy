@@ -22,23 +22,24 @@ whether to use \code{\link{ct_plot_overlay}} (TRUE) or use
 
 }
 \description{
-Conveniently group 3 concentration-time plots together: 1) the full time
-range across the top, 2) the first dose in the lower left quadrant, and 3)
-the last dose in the lower right quadrant. Calls on either
-\code{\link{ct_plot}} or \code{\link{ct_plot_overlay}} to make the graphs.
-Requires the package ggpubr.
+Conveniently group three concentration-time plots of multiple-dose data
+together: \enumerate{\item{the full time range across the top,} \item{the
+first dose in the lower left quadrant, and}  \item{the last dose in the lower
+right quadrant.}} Calls on either \code{\link{ct_plot}} or
+\code{\link{ct_plot_overlay}} to make the graphs. Requires the package
+ggpubr. Does not work for single-dose scenarios.
 }
 \examples{
 
 CT <- extractConcTime(sim_data_file = "Example simulator output.xlsx")
-ct_plot3(sim_obs_dataframe = CT, figure_type = "trial means", 
+ct_plot3(sim_obs_dataframe = CT, figure_type = "trial means",
          linear_or_log = "log")
 
 CT <- extractConcTime_mult(sim_data_files = c("Simulator output 1.xlsx",
                                               "Simulator output 2.xlsx",
                                               "Simulator output 3.xlsx"),
                            tissues = c("plasma", "blood"))
-ct_plot3(sim_obs_dataframe = CT, colorBy_column = File,
+ct_plot3(sim_obs_dataframe = CT, overlay = TRUE, colorBy_column = File,
          facet1_column = Tissue)
 
 }
