@@ -396,57 +396,60 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         }
     }
     
-    if(complete.cases(facet1_labels[1])){
-        simcheck <- sim_dataframe %>% 
-            filter(FC1 %in% names(facet1_labels)) %>% 
-            select(FC1) %>% unique() %>% pull()
-        obscheck <- obs_data %>% 
-            filter(FC1 %in% names(facet1_labels)) %>% 
-            select(FC1) %>% unique() %>% pull()
-        
-        if(length(sort(unique(c(simcheck, obscheck)))) > 
-           length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1])){
-            warning(paste0("You have not included enough labels for number of unique values in ", 
-                           as_label(FC1), 
-                           ". The values will be used as labels instead."))
-            facet1_labels <- NA
-        } else {
-            if(length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1]) == 0 |
-               length(sort(unique(c(simcheck, obscheck)))) == 0){
-                warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-                               as_label(FC1), ". The specified labels cannot be used."))  
-                
-                facet1_labels <- NA
-            } 
-        } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
-    }
+    # Not sure how I'm going to relabel the facets, actually. Commenting this
+    # out for now.
     
-    if(complete.cases(facet2_labels[1])){
-        simcheck <- sim_dataframe %>% 
-            filter(FC2 %in% names(facet2_labels)) %>% 
-            select(FC2) %>% unique() %>% pull()
-        obscheck <- obs_data %>% 
-            filter(FC2 %in% names(facet2_labels)) %>% 
-            select(FC2) %>% unique() %>% pull()
-        
-        if(length(sort(unique(c(simcheck, obscheck)))) > 
-           length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2])){
-            warning(paste0("You have not included enough labels for number of unique values in ", 
-                           as_label(FC2), 
-                           ". The values will be used as labels instead."))
-            
-            facet2_labels <- NA
-            
-        } else {
-            if(length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2]) == 0 |
-               length(sort(unique(c(simcheck, obscheck)))) == 0){
-                warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-                               as_label(FC2), ". The specified labels cannot be used."))  
-                
-                facet2_labels <- NA
-            }
-        }
-    } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
+    # if(complete.cases(facet1_labels[1])){
+    #     simcheck <- sim_dataframe %>% 
+    #         filter(FC1 %in% names(facet1_labels)) %>% 
+    #         select(FC1) %>% unique() %>% pull()
+    #     obscheck <- obs_data %>% 
+    #         filter(FC1 %in% names(facet1_labels)) %>% 
+    #         select(FC1) %>% unique() %>% pull()
+    #     
+    #     if(length(sort(unique(c(simcheck, obscheck)))) > 
+    #        length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1])){
+    #         warning(paste0("You have not included enough labels for number of unique values in ", 
+    #                        as_label(FC1), 
+    #                        ". The values will be used as labels instead."))
+    #         facet1_labels <- NA
+    #     } else {
+    #         if(length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1]) == 0 |
+    #            length(sort(unique(c(simcheck, obscheck)))) == 0){
+    #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
+    #                            as_label(FC1), ". The specified labels cannot be used."))  
+    #             
+    #             facet1_labels <- NA
+    #         } 
+    #     } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
+    # }
+    # 
+    # if(complete.cases(facet2_labels[1])){
+    #     simcheck <- sim_dataframe %>% 
+    #         filter(FC2 %in% names(facet2_labels)) %>% 
+    #         select(FC2) %>% unique() %>% pull()
+    #     obscheck <- obs_data %>% 
+    #         filter(FC2 %in% names(facet2_labels)) %>% 
+    #         select(FC2) %>% unique() %>% pull()
+    #     
+    #     if(length(sort(unique(c(simcheck, obscheck)))) > 
+    #        length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2])){
+    #         warning(paste0("You have not included enough labels for number of unique values in ", 
+    #                        as_label(FC2), 
+    #                        ". The values will be used as labels instead."))
+    #         
+    #         facet2_labels <- NA
+    #         
+    #     } else {
+    #         if(length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2]) == 0 |
+    #            length(sort(unique(c(simcheck, obscheck)))) == 0){
+    #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
+    #                            as_label(FC2), ". The specified labels cannot be used."))  
+    #             
+    #             facet2_labels <- NA
+    #         }
+    #     }
+    # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
     
     MyUniqueData <- sim_obs_dataframe %>% 
         filter(Trial == MyMeanType) %>% 

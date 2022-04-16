@@ -36,24 +36,36 @@ ct_plot3 <- function(sim_obs_dataframe,
                      overlay = FALSE, 
                      ...){
     
+    if(length(sort(unique(sim_obs_dataframe$DoseNum))) == 1){
+        stop("To use ct_plot3, you must supply data with more than one dose.")
+    }
+    
+    if(hasArg("time_range")){
+        stop("You cannot supply anything for 'time_range' here because ct_plot3 needs to set the time range automatically. Please remove 'time_range' from your arguments.")
+    }
+    
     if(overlay){
         
-        A <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe, 
+        A <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
+                             time_range = NA,
                              ...,
                              include_messages = F) +
             ggtitle("Full time range")
         
-        B <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
-                             time_range = "first dose",
-                             ...,
-                             include_messages = F) +
-            ggtitle("First dose")
+        # Suppressing messages and warnings after the 1st set.
+        suppressWarnings(suppressMessages(
+            B <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
+                                 time_range = "first dose",
+                                 ...,
+                                 include_messages = F) +
+                ggtitle("First dose")))
         
-        C <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
-                             time_range = "last dose", 
-                             ...,
-                             include_messages = F) +
-            ggtitle("Last dose")
+        suppressWarnings(suppressMessages(
+            C <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
+                                 time_range = "last dose", 
+                                 ...,
+                                 include_messages = F) +
+                ggtitle("Last dose")))
         
         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
                                  nrow = 2, common.legend = TRUE, legend = "bottom")
@@ -66,18 +78,21 @@ ct_plot3 <- function(sim_obs_dataframe,
         }
         
         A <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
+                     time_range = NA,
                      ...) +
             ggtitle("Full time range")
         
-        B <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
-                     time_range = "first dose", 
-                     ...) +
-            ggtitle("First dose")
+        suppressWarnings(suppressMessages(
+            B <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
+                         time_range = "first dose", 
+                         ...) +
+                ggtitle("First dose")))
         
-        C <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
-                     time_range = "last dose",        
-                     ...) +
-            ggtitle("Last dose")
+        suppressWarnings(suppressMessages(
+            C <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
+                         time_range = "last dose",        
+                         ...) +
+                ggtitle("Last dose")))
         
         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
                                  nrow = 2, common.legend = TRUE, legend = "bottom")
