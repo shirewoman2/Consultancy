@@ -60,16 +60,17 @@
 #'   "skin", or "spleen". Not case sensitive. List all tissues desired as a
 #'   character vector, e.g., \code{c("plasma", "blood", "liver")}.
 #' @param compoundsToExtract For which compound(s) do you want to extract
-#'   concentration-time data? Options are "substrate" (default), "primary
-#'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
-#'   1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
-#'   labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
-#'   inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-#'   primary metabolite of inhibitor 1. List all desired compounds as a
-#'   character vector, e.g., \code{c("substrate", "primary metabolite 1")}.
-#'   \emph{Note:} The simulator will report up to one metabolite for the 1st
-#'   inhibitor but no other inhibitor metabolites. (Someone please correct me if
-#'   that's wrong! -LS)
+#'   concentration-time data? Options are: \itemize{\item{"substrate"
+#'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+#'   \item{"secondary metabolite",} \item{"inhibitor 1" (this can be an inducer,
+#'   inhibitor, activator, or suppresesor, but it's labeled as "Inhibitor 1" in
+#'   the simulator),} \item{"inhibitor 2" for the 2nd inhibitor listed in the
+#'   simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
+#'   inhibitor 1, or} \item{"all" for all possible compounds in the
+#'   simulation.}} List all desired compounds as a character vector, e.g.,
+#'   \code{c("substrate", "primary metabolite 1")}. \emph{Note:} The simulator
+#'   will report up to one metabolite for the 1st inhibitor but no other
+#'   inhibitor metabolites. (Someone please correct me if that's wrong! -LS)
 #' @param ... other arguments passed to the function
 #'   \code{\link{extractConcTime}}
 #' @param conc_units_to_use concentration units to use so that all data will be
@@ -168,12 +169,17 @@ extractConcTime_mult <- function(sim_data_files,
                            "primary metabolite 2" = Deets$PrimaryMetabolite2,
                            "secondary metabolite" = Deets$SecondaryMetabolite)
         
-        # If the requested compound is not present in the Excel file, remove
-        # it from consideration.
-        compoundsToExtract_n <- intersect(compoundsToExtract,
-                                          names(CompoundCheck)[complete.cases(CompoundCheck)])
+        if(compoundsToExtract[1] == "all"){
+            compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
+        } else {
+            # If the requested compound is not present in the Excel file, remove
+            # it from consideration.
+            compoundsToExtract_n <- intersect(compoundsToExtract,
+                                              names(CompoundCheck)[complete.cases(CompoundCheck)])
+        }
         
-        if(all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
+        if(compoundsToExtract[1] != "all" &&
+           all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
             warning(paste0("For the file ", f, ", the compound(s) ",
                            str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
                            " was/were not available."))
