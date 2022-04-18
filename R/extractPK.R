@@ -92,14 +92,19 @@ extractPK <- function(sim_data_file,
     # If ssNum is now "-Inf" b/c it was all zeroes in the previous line but
     # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
     # that one.
-    Tab_last <- paste0("AUC(t)?", ssNum, "(_CI)?\\(Sub\\)\\(C",
+    Tab_last <- paste0("AUC(t)?", as.numeric(str_extract(Tab_last, "[0-9]{1,}")),
+                       "(_CI)?\\(Sub\\)\\(C",
                        str_to_title(tissue))
     Tab_last <- AllSheets[str_detect(AllSheets, Tab_last)]
-    if(ssNum == -Inf){
+    if(ssNum == -Inf && length(Tab_last) == 0){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
             Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[0-9]{1,}") &
                                       !str_detect(AllSheets, "Inh")]
+        } else if(any(str_detect(AllSheets, "AUC last"))){
+            # Tab name could include "last" instead of a number, e.g., "Int AUC
+            # last_CI(Sub)(CPlasma)"
+            Tab_last <- AllSheets[str_detect(AllSheets, "AUC last")][1]
         } else {
             Tab_last <- NA
         }
@@ -183,7 +188,7 @@ extractPK <- function(sim_data_file,
     }
     
     # Checking experimental details to only pull details that apply
-    Deets <- extractExpDetails(sim_data_file)
+    Deets <- extractExpDetails(sim_data_file, exp_details = "Summary tab")
     
     if(is.na(Deets$Inhibitor1)){
         PKparameters <- 
@@ -726,7 +731,7 @@ extractPK <- function(sim_data_file,
        PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
         
         # Error catching
-        if(ssNum %in% c(0, -Inf) | length(ssNum) == 0){
+        if(length(Tab_last) == 0 | is.na(Tab_last)){
             warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_AUCX, collapse = ", "),
                            ". None of these parameters can be extracted."))
@@ -909,12 +914,17 @@ extractPK <- function(sim_data_file,
             
             if(includeTrialInfo){
                 # Subject and trial info
-                SubjTrial_Abs <- Abs_xl[(which(Abs_xl$...1 == "Index") + 1):
-                                            nrow(Abs_xl), 1:2] %>%
+                StartRow_ind <- which(Abs_xl$...1 == "Index") + 1
+                EndRow_ind <- which(is.na(Abs_xl$...1)) - 1
+                EndRow_ind <- EndRow_ind[which(EndRow_ind > StartRow_ind)][1]
+                
+                SubjTrial_Abs <- Abs_xl[StartRow_ind:EndRow_ind, 1:2] %>%
                     rename("Individual" = ...1, "Trial" = ...2)
                 
                 Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
                                              as.data.frame(Out_ind[PKparameters_Abs]))
+                
+                rm(StartRow_ind, EndRow_ind)
             }
             
             rm(findCol)
@@ -949,6 +959,7 @@ extractPK <- function(sim_data_file,
             StartRow_agg <- which(Abs_xl[, StartCol_agg - 1] == "Statistics") + 1
             EndRow_agg <- which(is.na(Abs_xl[, StartCol_agg - 1]))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(Abs_xl), EndRow_agg)
             
             # sub function for finding the correct column
             findCol <- function(PKparam){
@@ -1385,7 +1396,8 @@ extractPK <- function(sim_data_file,
             mutate(File = sim_data_file, 
                    Column = XLCols[Column], 
                    Individual = paste0(Column, StartRow_ind, ":",
-                                Column, EndRow_ind)) %>% 
+                                       Column, EndRow_ind), 
+                   Individual = ifelse(is.na(StartRow_ind), NA, Individual)) %>% 
             filter(complete.cases(PKparam)) %>% unique()
         
         if(any(returnAggregateOrIndiv %in% c("both", "aggregate"))){
@@ -1401,13 +1413,14 @@ extractPK <- function(sim_data_file,
             
             suppressMessages(
                 DataCheck_agg <- DataCheck %>% 
-                select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
-                left_join(data.frame(File = unique(DataCheck$File), 
-                                     Stat = StatNames)) %>% 
-                mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
-                       Cell = paste0(Column, Row_agg)) %>% 
-                select(File, PKparam, Tab, Column, Cell, Stat) %>% 
-                pivot_wider(names_from = Stat, values_from = Cell)
+                    select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
+                    left_join(data.frame(File = unique(DataCheck$File), 
+                                         Stat = StatNames)) %>% 
+                    mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
+                           Cell = paste0(Column, Row_agg), 
+                           Cell = ifelse(is.na(Row_agg), NA, Cell)) %>% 
+                    select(File, PKparam, Tab, Column, Cell, Stat) %>% 
+                    pivot_wider(names_from = Stat, values_from = Cell)
             )
             
             suppressMessages(
@@ -1417,8 +1430,10 @@ extractPK <- function(sim_data_file,
         
         DataCheck <- DataCheck %>% 
             select(-c(Column, StartRow_ind, EndRow_ind, StartRow_agg, EndRow_agg,
-                     StartColText, SearchText, Note)) %>% 
-            select(PKparam, File, Tab, Individual, everything())
+                      StartColText, SearchText, Note)) %>% 
+            group_by(PKparam, File, Tab) %>%
+            fill(everything(), .direction = "downup") %>%
+            select(PKparam, File, Tab, Individual, everything()) %>% unique()
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- unique(DataCheck)
