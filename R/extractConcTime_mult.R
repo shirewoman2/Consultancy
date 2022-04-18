@@ -358,35 +358,53 @@ extractConcTime_mult <- function(sim_data_files,
             group_by(CompoundID, Inhibitor, DoseInt, DoseNum) %>% 
             summarize(TimeRounded = round(min(Time)))
         
-        MultObsData <- split(MultObsData, f = list(MultObsData$CompoundID, 
-                                                   MultObsData$Inhibitor))
-        SimDoseInfo <- split(SimDoseInfo, f = list(SimDoseInfo$CompoundID, 
-                                                   SimDoseInfo$Inhibitor))
-        
-        for(i in names(MultObsData)){
+        # If there are both SD and MD data, which is the case when DoseInt is
+        # sometimes NA and sometimes has a value, then give user a warning about
+        # that but don't try to assign dose numbers to obs data since we have no
+        # way of knowing which is which.
+        if(any(is.na(SimDoseInfo$DoseInt)) & 
+           any(complete.cases(SimDoseInfo$DoseInt))){
+            warning("It looks like you have both single-dose and multiple-dose simulated data present. We thus cannot safely assign the observed data to any particular dose number since we don't know which simulated files the observed data match. Output will include both simulated and observed data, but the observed data will have NA values for DoseInt and DoseNum.")
+        } else {
             
-            SimDoseInfo[[i]] <- SimDoseInfo[[i]] %>% 
-                ungroup() %>% 
-                mutate(Breaks = as.character(
-                    cut(TimeRounded, breaks = TimeRounded, right = FALSE)))
+            MultObsData <- split(MultObsData, f = list(MultObsData$CompoundID, 
+                                                       MultObsData$Inhibitor))
+            SimDoseInfo <- split(SimDoseInfo, f = list(SimDoseInfo$CompoundID, 
+                                                       SimDoseInfo$Inhibitor))
             
-            MultObsData[[i]] <- MultObsData[[i]] %>% 
-                mutate(TimeRounded = round(Time),
-                       Breaks = as.character(
-                           cut(Time, breaks = SimDoseInfo[[i]]$TimeRounded, 
-                               right = FALSE))) %>% 
-                left_join(SimDoseInfo[[i]] %>% select(Breaks, DoseInt, DoseNum), 
-                          by = c("Breaks"))
+            for(i in names(MultObsData)){
+                
+                SimDoseInfo[[i]] <- SimDoseInfo[[i]] %>% 
+                    ungroup() %>% 
+                    mutate(Breaks = as.character(
+                        cut(TimeRounded, breaks = TimeRounded, right = FALSE)))
+                
+                MultObsData[[i]] <- MultObsData[[i]] %>% 
+                    mutate(TimeRounded = round(Time),
+                           Breaks = as.character(
+                               cut(Time, breaks = SimDoseInfo[[i]]$TimeRounded, 
+                                   right = FALSE))) %>% 
+                    left_join(SimDoseInfo[[i]] %>% select(Breaks, DoseInt, DoseNum), 
+                              by = c("Breaks"))
+            }
+            
+            MultObsData <- bind_rows(MultObsData)
         }
         
-        MultObsData <- bind_rows(MultObsData)
         sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultObsData)
         
     }
     
     # all data together -------------------------------------------------
     sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultData) %>% 
-        select(-any_of(c("ID", "Breaks")))
+        select(-any_of(c("ID", "Breaks"))) %>% 
+        arrange(across(any_of(c("File", "Compound", "Inhibitor", "Simulated",
+                                "Individual", "Trial", "Time")))) %>%
+        select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
+                        "Tissue", "Individual", "Trial",
+                        "Simulated", "Time", "Conc",
+                        "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
+                        "DoseInt", "File", "ObsFile")))
     
     return(sim_obs_dataframe)
     

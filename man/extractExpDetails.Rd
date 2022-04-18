@@ -12,9 +12,9 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab", save_output = NA)
 \item{exp_details}{Experiment details you want to extract from the simulator
   output file. Options are \describe{
 
-  \item{"Summary tab"}{Extract details only from the "Summary tab" (default)}
+  \item{"Summary tab"}{Extract details available from the "Summary tab" (default)}
 
-  \item{"Input Sheet"}{Extract details only from the "Input Sheet" tab}
+  \item{"Input Sheet"}{Extract details available from the "Input Sheet" tab}
 
   \item{"population tab"}{Extract details about the population used (data
   come from the tab with the same name as the population simulated)}

@@ -7,9 +7,9 @@
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output file. Options are \describe{
 #'
-#'   \item{"Summary tab"}{Extract details only from the "Summary tab" (default)}
+#'   \item{"Summary tab"}{Extract details available from the "Summary tab" (default)}
 #'
-#'   \item{"Input Sheet"}{Extract details only from the "Input Sheet" tab}
+#'   \item{"Input Sheet"}{Extract details available from the "Input Sheet" tab}
 #'
 #'   \item{"population tab"}{Extract details about the population used (data
 #'   come from the tab with the same name as the population simulated)}
@@ -147,7 +147,7 @@ extractExpDetails <- function(sim_data_file,
                                      AllExpDetails$Detail))
         stop(paste0("These study details are not among the possible options: ",
                     Problem,
-                    ". The study details to extract must be among the options listed. (Please see help file for all options.)"))
+                    ". The study details to extract must be among the options listed. Please enter 'data(AllExpDetails)' into the console for all options."))
     }
     
     if(length(exp_details) == 0){
