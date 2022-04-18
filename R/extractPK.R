@@ -92,14 +92,19 @@ extractPK <- function(sim_data_file,
     # If ssNum is now "-Inf" b/c it was all zeroes in the previous line but
     # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
     # that one.
-    Tab_last <- paste0("AUC(t)?", ssNum, "(_CI)?\\(Sub\\)\\(C",
+    Tab_last <- paste0("AUC(t)?", as.numeric(str_extract(Tab_last, "[0-9]{1,}")),
+                       "(_CI)?\\(Sub\\)\\(C",
                        str_to_title(tissue))
     Tab_last <- AllSheets[str_detect(AllSheets, Tab_last)]
-    if(ssNum == -Inf){
+    if(ssNum == -Inf && length(Tab_last) == 0){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
             Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[0-9]{1,}") &
                                       !str_detect(AllSheets, "Inh")]
+        } else if(any(str_detect(AllSheets, "AUC last"))){
+            # Tab name could include "last" instead of a number, e.g., "Int AUC
+            # last_CI(Sub)(CPlasma)"
+            Tab_last <- AllSheets[str_detect(AllSheets, "AUC last")][1]
         } else {
             Tab_last <- NA
         }
@@ -183,7 +188,7 @@ extractPK <- function(sim_data_file,
     }
     
     # Checking experimental details to only pull details that apply
-    Deets <- extractExpDetails(sim_data_file)
+    Deets <- extractExpDetails(sim_data_file, exp_details = "Summary tab")
     
     if(is.na(Deets$Inhibitor1)){
         PKparameters <- 
@@ -244,16 +249,16 @@ extractPK <- function(sim_data_file,
     # parameters rather than asking for a set of parameters by sheet name (AUC
     # or Absorption tabs), did not specify an input sheet, and some of those
     # parameters are present on the AUC tab or b) the user requested the "AUC
-    # tab" for PK parameters and either "AUC" or "AUC_CI" are among the sheets
-    # in the file.
+    # tab" for PK parameters and either "AUC", "AUC_CI", or "AUC_SD" are among
+    # the sheets in the file.
     if(is.na(sheet) && 
        # a)
        ((any(PKparameters %in% ParamAUC) & 
          PKparameters_orig[1] != "Absorption tab") |
         
         # b)
-        (PKparameters_orig[1] == "AUC tab" & ("AUC" %in% AllSheets |
-                                              "AUC_CI" %in% AllSheets)))){
+        (PKparameters_orig[1] == "AUC tab" & 
+         any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets)))){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
@@ -293,31 +298,31 @@ extractPK <- function(sim_data_file,
                 
                 ToDetect <- switch(PKparam,
                                    "AccumulationIndex" = "Accumulation Index$",
-                                   "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
                                    "AccumulationRatio" = "Accumulation Ratio$",
+                                   "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
                                    "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
+                                   "AUCt_dose1" = "^AUC \\(|AUCt.0. \\(",
+                                   "AUCt_dose1_withInhib" = "^AUCt.0._Inh \\(|^AUCinh \\(",
+                                   "AUCtau_ratio_dose1" = "^AUC Ratio$",
                                    "AUCinf_dose1" = "^AUC_INF",
                                    "AUCinf_dose1_withInhib" = "^AUC_INF",
                                    "AUCinf_ratio_dose1" = "^AUC_INF ratio$",
-                                   "AUCt_dose1" = "^AUC \\(|AUCt.0. \\(",
-                                   "AUCt_dose1_withInhib" = "^AUCt.0._Inh \\(|^AUCinh \\(",
-                                   "AUCt_ratio_dose1" = "^AUC Ratio$",
-                                   "AUCtau_ratio_ss" = "AUC Ratio",
                                    "AUCtau_ss" = "AUCt\\(n\\) \\(|^AUC \\(",
                                    "AUCtau_ss_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
-                                   "CLinf_dose1" = "CL .Dose/AUC_INF",
-                                   "CLinf_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
+                                   "AUCtau_ratio_ss" = "AUC Ratio",
+                                   "CL_dose1" = "CL .Dose/AUC_INF",
+                                   "CL_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
                                    "CLt_dose1" = "CL .Dose/AUC", # <----------------- !!!! NEEDS TO BE THE 2ND INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE
                                    "CLt_dose1_withInhib" = "CLinh \\(Dose/AUC\\)", # <----------------- !!!! NEEDS TO BE THE 3RD INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE W/OUT INHIB AND 2ND IS 1ST DOSE W/OUT INHIB. 3RD INSTANCE IS CLtau FOR 1ST DOSE.
-                                   "CLt_ratio_dose1" = "CL Ratio",
-                                   "CLtau_ss" = "CL \\(Dose/AUC\\)",
-                                   "CLtau_ss_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
+                                   "CLtau_ratio_dose1" = "CL Ratio",
+                                   "CL_ss" = "CL \\(Dose/AUC\\)",
+                                   "CL_ss_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
                                    "Cmax_dose1" = "CMax \\(",
                                    "Cmax_dose1_withInhib" = "CMaxinh \\(",
                                    "Cmax_ratio_dose1" = "^CMax Ratio$",
-                                   "Cmax_ratio_ss" = "^CMax Ratio$",
                                    "Cmax_ss" = "^CMax",
                                    "Cmax_ss_withInhib" = "^CMax",
+                                   "Cmax_ratio_ss" = "^CMax Ratio$",
                                    "HalfLife_dose1" = "Half-life \\(",
                                    "HalfLife_dose1_withInhib" = "Half-life_Inh \\(",
                                    "tmax_dose1" = "^TMax \\(",
@@ -727,7 +732,7 @@ extractPK <- function(sim_data_file,
        PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
         
         # Error catching
-        if(ssNum %in% c(0, -Inf) | length(ssNum) == 0){
+        if(length(Tab_last) == 0 | is.na(Tab_last)){
             warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_AUCX, collapse = ", "),
                            ". None of these parameters can be extracted."))
@@ -910,12 +915,17 @@ extractPK <- function(sim_data_file,
             
             if(includeTrialInfo){
                 # Subject and trial info
-                SubjTrial_Abs <- Abs_xl[(which(Abs_xl$...1 == "Index") + 1):
-                                            nrow(Abs_xl), 1:2] %>%
+                StartRow_ind <- which(Abs_xl$...1 == "Index") + 1
+                EndRow_ind <- which(is.na(Abs_xl$...1)) - 1
+                EndRow_ind <- EndRow_ind[which(EndRow_ind > StartRow_ind)][1]
+                
+                SubjTrial_Abs <- Abs_xl[StartRow_ind:EndRow_ind, 1:2] %>%
                     rename("Individual" = ...1, "Trial" = ...2)
                 
                 Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
                                              as.data.frame(Out_ind[PKparameters_Abs]))
+                
+                rm(StartRow_ind, EndRow_ind)
             }
             
             rm(findCol)
@@ -950,6 +960,7 @@ extractPK <- function(sim_data_file,
             StartRow_agg <- which(Abs_xl[, StartCol_agg - 1] == "Statistics") + 1
             EndRow_agg <- which(is.na(Abs_xl[, StartCol_agg - 1]))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(Abs_xl), EndRow_agg)
             
             # sub function for finding the correct column
             findCol <- function(PKparam){
@@ -1393,7 +1404,8 @@ extractPK <- function(sim_data_file,
             mutate(File = sim_data_file, 
                    Column = XLCols[Column], 
                    Individual = paste0(Column, StartRow_ind, ":",
-                                       Column, EndRow_ind)) %>% 
+                                       Column, EndRow_ind), 
+                   Individual = ifelse(is.na(StartRow_ind), NA, Individual)) %>% 
             filter(complete.cases(PKparam)) %>% unique()
         
         if(any(returnAggregateOrIndiv %in% c("both", "aggregate"))){
@@ -1413,7 +1425,8 @@ extractPK <- function(sim_data_file,
                     left_join(data.frame(File = unique(DataCheck$File), 
                                          Stat = StatNames)) %>% 
                     mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
-                           Cell = paste0(Column, Row_agg)) %>% 
+                           Cell = paste0(Column, Row_agg), 
+                           Cell = ifelse(is.na(Row_agg), NA, Cell)) %>% 
                     select(File, PKparam, Tab, Column, Cell, Stat) %>% 
                     pivot_wider(names_from = Stat, values_from = Cell)
             )
@@ -1426,7 +1439,9 @@ extractPK <- function(sim_data_file,
         DataCheck <- DataCheck %>% 
             select(-c(Column, StartRow_ind, EndRow_ind, StartRow_agg, EndRow_agg,
                       StartColText, SearchText, Note)) %>% 
-            select(PKparam, File, Tab, Individual, everything())
+            group_by(PKparam, File, Tab) %>%
+            fill(everything(), .direction = "downup") %>%
+            select(PKparam, File, Tab, Individual, everything()) %>% unique()
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- unique(DataCheck)
