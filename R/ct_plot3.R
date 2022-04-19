@@ -49,7 +49,7 @@ ct_plot3 <- function(sim_obs_dataframe,
         
         A <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
                              time_range = NA,
-                             ...,
+                             ..., # comment this for development
                              include_messages = F) +
             ggtitle("Full time range")
         
@@ -57,14 +57,14 @@ ct_plot3 <- function(sim_obs_dataframe,
         suppressWarnings(suppressMessages(
             B <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
                                  time_range = "first dose",
-                                 ...,
+                                 ..., # comment this for development
                                  include_messages = F) +
                 ggtitle("First dose")))
         
         suppressWarnings(suppressMessages(
             C <- ct_plot_overlay(sim_obs_dataframe = sim_obs_dataframe,
                                  time_range = "last dose", 
-                                 ...,
+                                 ..., # comment this for development
                                  include_messages = F) +
                 ggtitle("Last dose")))
         
@@ -79,20 +79,20 @@ ct_plot3 <- function(sim_obs_dataframe,
         }
         
         A <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
-                     time_range = NA,
-                     ...) +
+                     ..., # comment this for development
+                     time_range = NA) +
             ggtitle("Full time range")
         
         suppressWarnings(suppressMessages(
             B <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
-                         time_range = "first dose", 
-                         ...) +
+                         ..., # comment this for development
+                         time_range = "first dose") +
                 ggtitle("First dose")))
         
         suppressWarnings(suppressMessages(
             C <- ct_plot(sim_obs_dataframe = sim_obs_dataframe,
-                         time_range = "last dose",        
-                         ...) +
+                         ..., # comment this for development
+                         time_range = "last dose") +
                 ggtitle("Last dose")))
         
         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 

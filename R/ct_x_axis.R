@@ -102,7 +102,7 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         # Checking for multiple dosing intervals
         MultDoseInt <- 
             Data %>% group_by(File, Compound, CompoundID, Inhibitor, DoseNum) %>% 
-            summarize(DoseTime = min(Time)) %>% 
+            summarize(DoseTime = round(min(Time))) %>%
             ungroup() %>% group_by(DoseNum) %>% 
             summarize(UniqDT = length(unique(DoseTime))) %>% 
             pull(UniqDT) 
