@@ -386,6 +386,17 @@ extractConcTime_mult <- function(sim_data_files,
                                    right = FALSE))) %>% 
                     left_join(SimDoseInfo[[i]] %>% select(Breaks, DoseInt, DoseNum), 
                               by = c("Breaks"))
+                
+                # Checking for when the simulation ends right at the last dose
+                # b/c then, setting that number to 1 dose lower
+                if(length(MultObsData[[i]] %>%
+                          filter(DoseNum == max(MultObsData[[i]]$DoseNum)) %>%
+                          pull(Time) %>% unique()) == 1){
+                    MyMaxDoseNum <- max(MultObsData[[i]]$DoseNum)
+                    MultObsData[[i]] <- MultObsData[[i]] %>%
+                        mutate(DoseNum = ifelse(DoseNum == MyMaxDoseNum,
+                                                MyMaxDoseNum - 1, DoseNum))
+                }
             }
             
             MultObsData <- bind_rows(MultObsData)
