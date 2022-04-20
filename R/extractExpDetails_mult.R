@@ -1,15 +1,16 @@
 #' Extract experimental details for multiple files at once
 #'
-#' \code{extractExpDetails_mult} takes a list of simulator output files -- or
-#' all the Excel files in the current directory if no files are specified -- and
-#' collects experimental details for the simulations into a single table. It
-#' optionally saves that table to a csv or Excel file.
+#' \code{extractExpDetails_mult} takes a character vector of simulator output
+#' files -- or all the Excel files in the current directory if no files are
+#' specified -- and collects experimental details for the simulations into a
+#' single table. It optionally saves that table to a csv or Excel file.
 #'
 #' @param sim_data_files a character vector of simulator output files or NA to
 #'   extract experimental details for all the Excel files in the current folder.
-#'   Note that, if some of your Excel files are not regular simulator output,
-#'   e.g. they are sensitivity analyses or a file where you were doing some
-#'   calculations, this will result in an error and return no data.
+#'   Example of acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. Note that,
+#'   if some of your Excel files are not regular simulator output, e.g. they are
+#'   sensitivity analyses or a file where you were doing some calculations, this
+#'   will result in an error and return no data.
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output files using the function \code{\link{extractExpDetails}}. Options
 #'   are \describe{
@@ -24,7 +25,9 @@
 #'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
 #'   on the "Simcyp inputs (and QC)" tab of a compound data sheet}
 #'
-#'   \item{"all"}{Extract all possible parameters (default)}
+#'   \item{"all"}{Extract all possible parameters (default). This is the slowest
+#'   option in terms of processing time because it must read multiple Excel
+#'   tabs.}
 #'
 #'   \item{a string of the specific parameters you want}{For a complete list,
 #'   type \code{data(AllExpDetails)} into the console. Parameters are reported
@@ -48,17 +51,17 @@
 #' @examples
 #'
 #' extractExpDetails_mult(
-#'     sim_data_files = 
+#'     sim_data_files =
 #'         c("Example simulator output - SD MDZ + MD RTV.xlsx",
 #'           "Example simulator output - MDZ + metabolites.xlsx",
 #'           "Example simulator output - met1 met2 sec met1 inhib1.xlsx",
-#'           "Example simulator output - met1 met2 sec met1.xlsx"), 
-#'     exp_details = "all", 
+#'           "Example simulator output - met1 met2 sec met1.xlsx"),
+#'     exp_details = "all",
 #'     save_output = "My experimental details.csv")
 #'  
 extractExpDetails_mult <- function(sim_data_files = NA, 
-                                  exp_details = "all", 
-                                  save_output = NA){
+                                   exp_details = "all", 
+                                   save_output = NA){
     
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         sim_data_files <- list.files(pattern = "xlsx")
