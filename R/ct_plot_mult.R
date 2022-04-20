@@ -1,0 +1,147 @@
+#' Make a single graphic with multiple, nicely arranged concentration-time
+#' graphs
+#'
+#' This function was designed for making nicely arranged concentration-time
+#' graphs from several Simcyp Simulator output files all together.
+#'
+#' \strong{A note on the order of the graphs:} This function arranges graphs
+#' first by file, then by compound ID, and then by tissue, and all sorting is
+#' alphabetical. However, since sorting alphabetically might not be the optimal
+#' graph arrangement for your scenario, you \emph{can} specify the order of the
+#' graphs using either the \code{file_order} argument or, if you're comfortable
+#' with setting factors in R, by making any of File, CompoundID, Tissue, and
+#' subsection_ADAM factor rather than character data and setting the levels how
+#' you wish. If you're unfamiliar with setting factor levels in R and setting
+#' \code{file_order} isn't achieving what you want, please ask a member of the R
+#' Working Group for assistance.
+#'
+#' @param sim_obs_dataframe the data.frame with multiple sets of
+#'   concentration-time data
+#' @param file_order optionally specify the order in which the files are graphed
+#'   with a character vector of the files in the order you would like. If you
+#'   would like to include graph titles to make it clear which graph is which,
+#'   you can also specify what the title should be for that file. Example of
+#'   acceptable input: \code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" =
+#'   "50 mg SD", "simfile1.xlsx" = "100 mg SD")}. If you get an order that you
+#'   didn't think you specified, please double check that you have specified the
+#'   file names \emph{exactly} as they appear in \code{sim_obs_dataframe}.
+#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
+#'   etc.) for each of the small graphs.
+#' @param nrow number of rows of small graphs in the arrangement. If left as NA,
+#'   a reasonable guess will be made.
+#' @param ncol number of columns of small graphs in the arrangement. If left as
+#'   NA, a reasonable guess will be made.
+#' @param linear_or_log the type of graph to be returned. Options: "semi-log",
+#'   "linear", "both vertical" (default, graphs are stacked vertically), or
+#'   "both horizontal" (graphs are side by side).
+#' @param ... arguments that pass through to \code{\link{ct_plot}}
+#' @param include_title TRUE or FALSE on whether to include a title for each
+#'   small graph. NOTE: This is not currently working well when you choose to
+#'   get both linear and semi-log plots; the title overlaps the graph. UNDER
+#'   CONSTRUCTION.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' # No examples yet
+#' 
+ct_plot_mult <- function(sim_obs_dataframe, 
+                         linear_or_log = "semi-log",
+                         file_order = NA,
+                         include_title = TRUE,
+                         graph_labels = TRUE,
+                         nrow = NULL, 
+                         ncol = NULL,
+                         ...){
+    
+    if(length(file_order) > 1 && complete.cases(file_order[1])){
+        
+        # If file_order isn't named, make the names match the files themselves.
+        if(is.null(names(file_order))){
+            names(file_order) <- file_order
+        }
+        
+        # If they named some but not all the files, name the missing ones, too. 
+        if(any(is.na(names(file_order)))){
+            names(file_order)[is.na(names(file_order))] <- 
+                file_order[is.na(names(file_order))]
+        }
+        
+        # If the user omitted any files that are included in sim_obs_dataframe,
+        # grab those now and tack them onto the end of file_order. This will
+        # allow them to set the order of the files they DID specify but not omit
+        # files that they forgot. The forgotten files just won't have pretty
+        # titles.
+        file_order_all <- unique(c(names(file_order), 
+                                   sort(unique(as.character(sim_obs_dataframe$File)))))
+        
+        # Name items in file_order_all according to file_order.
+        names(file_order_all) <- file_order_all
+        file_order_all[names(file_order)] <- as.character(file_order)
+        
+        # Set the sort order in the data
+        sim_obs_dataframe <- sim_obs_dataframe %>% 
+            mutate(File = factor(File, levels = names(file_order_all)))
+    }
+    
+    AllGraphs <- list()
+    AllData <- sim_obs_dataframe %>% 
+        mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
+                                        "none", subsection_ADAM))
+    
+    # Titles <- c("File" = length(sort(unique(AllData$File))), 
+    #             "CompoundID" = length(sort(unique(AllData$CompoundID))),
+    #             "Tissue" = length(sort(unique(AllData$Tissue))),
+    #             "subsection_ADAM" = length(sort(unique(AllData$subsection_ADAM))))
+    # Titles <- Titles[which(Titles != 1)]
+    
+    AllData <- split(AllData, 
+                     f = list(AllData$File,
+                              AllData$CompoundID, 
+                              AllData$Tissue, 
+                              AllData$subsection_ADAM))
+    # TitlesDF <- data.frame(AllData = names(AllData), 
+    #                        TitleType = names(Titles)) %>% 
+    #     mutate(Title = ifelse(TitleType == "File"))
+    
+    for(i in names(AllData)){
+        Title_i <- file_order_all[as.character(unique(AllData[[i]]$File))]
+        
+        AllGraphs[[i]] <- 
+            ct_plot(sim_obs_dataframe = AllData[[i]] %>% 
+                        # need to convert subsection_ADAM back to NA if it was
+                        # changed above in order for this to work with ct_plot
+                        mutate(subsection_ADAM = ifelse(subsection_ADAM == "none",
+                                                        NA, subsection_ADAM)), 
+                                  ...,
+                                  linear_or_log = linear_or_log)
+        
+        if(linear_or_log %in% c("linear", "log", "semi-log")){
+            AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i)
+        } else {
+            AllGraphs[[i]] <- ggpubr::ggarrange(AllGraphs[[i]],
+                                                labels = Title_i)
+            # Need a way to increase the viewport b/c vjust = 0 or label.y = 1.5
+            # both put the title off the top of the graph. Not sure how to do
+            # this.
+        }
+        
+        rm(Title_i)
+    }
+    
+    if(graph_labels){
+        labels <- "AUTO"
+    } else {
+        labels <- NULL
+    }
+    
+    ggpubr::ggarrange(plotlist = AllGraphs, 
+              nrow = nrow, 
+              ncol = ncol, 
+              labels = labels)
+    
+}
+
+# Need to figurre out what to do about ADAM model. 
+
