@@ -505,11 +505,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Setting up the y axis using the subfunction ct_y_axis -------------------
     
     # Setting Y axis limits for both linear and semi-log plots
-    if (figure_type == "trial means") {
+    if (figure_type == "trial means"){
         Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")) {
+    } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")){
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
-    } else if (figure_type == "means only") {
+    } else if (figure_type == "means only"){
         Ylim_data <- sim_data_mean %>% filter(Trial == MyMeanType) 
     }
     

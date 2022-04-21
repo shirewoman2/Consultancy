@@ -39,6 +39,17 @@
 #'   small graph. NOTE: This is not currently working well when you choose to
 #'   get both linear and semi-log plots; the title overlaps the graph. UNDER
 #'   CONSTRUCTION.
+#' @param legend_position Specify where you want the legend to be. Options are
+#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
+#'   at all.
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+#'   will be saved as a png file, but if you specify a different file extension,
+#'   it will be saved as that file format. Acceptable extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+#'   means the file will not be automatically saved to disk.
+#' @param fig_height figure height in inches; default is 8
+#' @param fig_width figure width in inches; default is 8
 #'
 #' @return
 #' @export
@@ -51,8 +62,12 @@ ct_plot_mult <- function(sim_obs_dataframe,
                          file_order = NA,
                          include_title = TRUE,
                          graph_labels = TRUE,
+                         legend_position = "none",
                          nrow = NULL, 
                          ncol = NULL,
+                         save_graph = NA,
+                         fig_height = 8,
+                         fig_width = 8,
                          ...){
     
     if(length(file_order) > 1 && complete.cases(file_order[1])){
@@ -80,15 +95,41 @@ ct_plot_mult <- function(sim_obs_dataframe,
         names(file_order_all) <- file_order_all
         file_order_all[names(file_order)] <- as.character(file_order)
         
-        # Set the sort order in the data
-        sim_obs_dataframe <- sim_obs_dataframe %>% 
-            mutate(File = factor(File, levels = names(file_order_all)))
+    } else {
+        
+        # Even if user didn't specify file order, we need the levels of that
+        # factor later. Setting them here. 
+        file_order_all <- sort(unique(sim_obs_dataframe$File))
+        names(file_order_all) <- file_order_all
+        
     }
+    
+    # Set the sort order in the data
+    sim_obs_dataframe <- sim_obs_dataframe %>% 
+        mutate(File = factor(File, levels = names(file_order_all)))
     
     AllGraphs <- list()
     AllData <- sim_obs_dataframe %>% 
         mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
                                         "none", subsection_ADAM))
+    
+    # Splitting the data, which we're about to do, messes up the order b/c you
+    # have to split on character data rather than factor. Getting the order of
+    # the factors here.
+    getOrder <- function(x){
+        Out <- levels(x)
+        if(is.null(Out)){
+            Out <- sort(unique(x))
+        }
+        return(Out)
+    }
+    Order <- expand.grid(list("File" = getOrder(AllData$File), 
+                              "CompoundID" = getOrder(AllData$CompoundID), 
+                              "Tissue" = getOrder(AllData$Tissue), 
+                              "subsection_ADAM" = getOrder(AllData$subsection_ADAM))) %>% 
+        mutate(Order = paste(File, CompoundID, Tissue, subsection_ADAM, sep = ".")) %>% 
+        pull(Order)
+    
     
     # Titles <- c("File" = length(sort(unique(AllData$File))), 
     #             "CompoundID" = length(sort(unique(AllData$CompoundID))),
@@ -97,28 +138,36 @@ ct_plot_mult <- function(sim_obs_dataframe,
     # Titles <- Titles[which(Titles != 1)]
     
     AllData <- split(AllData, 
-                     f = list(AllData$File,
-                              AllData$CompoundID, 
-                              AllData$Tissue, 
-                              AllData$subsection_ADAM))
+                     f = list(as.character(AllData$File),
+                              as.character(AllData$CompoundID), 
+                              as.character(AllData$Tissue), 
+                              as.character(AllData$subsection_ADAM)))
+    
     # TitlesDF <- data.frame(AllData = names(AllData), 
     #                        TitleType = names(Titles)) %>% 
     #     mutate(Title = ifelse(TitleType == "File"))
     
-    for(i in names(AllData)){
+    for(i in Order){
         Title_i <- file_order_all[as.character(unique(AllData[[i]]$File))]
         
+        AllData[[i]] <- AllData[[i]] %>% 
+            # need to convert subsection_ADAM back to NA if it was
+            # changed above in order for this to work with ct_plot
+            mutate(subsection_ADAM = ifelse(subsection_ADAM == "none",
+                                            NA, subsection_ADAM))
+        # print(i)
+        # print(head(AllData[[i]]))
+        
         AllGraphs[[i]] <- 
-            ct_plot(sim_obs_dataframe = AllData[[i]] %>% 
-                        # need to convert subsection_ADAM back to NA if it was
-                        # changed above in order for this to work with ct_plot
-                        mutate(subsection_ADAM = ifelse(subsection_ADAM == "none",
-                                                        NA, subsection_ADAM)), 
-                                  ...,
-                                  linear_or_log = linear_or_log)
+            ct_plot(sim_obs_dataframe = AllData[[i]], 
+                    ...,
+                    include_legend = ifelse(legend_position == "none",
+                                            FALSE, TRUE),
+                    linear_or_log = linear_or_log)
         
         if(linear_or_log %in% c("linear", "log", "semi-log")){
-            AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i)
+            AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i) +
+                theme(title = element_text(size = 10))
         } else {
             AllGraphs[[i]] <- ggpubr::ggarrange(AllGraphs[[i]],
                                                 labels = Title_i)
@@ -136,12 +185,42 @@ ct_plot_mult <- function(sim_obs_dataframe,
         labels <- NULL
     }
     
-    ggpubr::ggarrange(plotlist = AllGraphs, 
-              nrow = nrow, 
-              ncol = ncol, 
-              labels = labels)
+    if(legend_position == "none"){
+        Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
+                                 nrow = nrow, 
+                                 ncol = ncol, 
+                                 labels = labels)
+        
+    } else {
+        Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
+                                 nrow = nrow, 
+                                 ncol = ncol, 
+                                 common.legend = TRUE,
+                                 legend = legend_position,
+                                 labels = labels)
+        
+    }
+    
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
+        }
+        
+        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+               plot = Out)
+        
+    }
+    
+    return(Out)
     
 }
-
-# Need to figurre out what to do about ADAM model. 
 

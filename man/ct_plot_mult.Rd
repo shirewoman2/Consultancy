@@ -11,8 +11,12 @@ ct_plot_mult(
   file_order = NA,
   include_title = TRUE,
   graph_labels = TRUE,
+  legend_position = "none",
   nrow = NULL,
   ncol = NULL,
+  save_graph = NA,
+  fig_height = 8,
+  fig_width = 8,
   ...
 )
 }
@@ -41,11 +45,26 @@ CONSTRUCTION.}
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs.}
 
+\item{legend_position}{Specify where you want the legend to be. Options are
+"left", "right", "bottom", "top", or "none" (default) if you don't want one
+at all.}
+
 \item{nrow}{number of rows of small graphs in the arrangement. If left as NA,
 a reasonable guess will be made.}
 
 \item{ncol}{number of columns of small graphs in the arrangement. If left as
 NA, a reasonable guess will be made.}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+will be saved as a png file, but if you specify a different file extension,
+it will be saved as that file format. Acceptable extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be automatically saved to disk.}
+
+\item{fig_height}{figure height in inches; default is 8}
+
+\item{fig_width}{figure width in inches; default is 8}
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
 }
