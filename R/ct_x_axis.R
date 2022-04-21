@@ -99,103 +99,137 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
             unique()
         SingleDose <- length(SingleDose) == 1 && SingleDose == 1
         
-        if(SingleDose){
-            DoseTimes <- data.frame(
-                FirstDoseStart = Data %>%
-                    filter(CompoundID == compoundToExtract & 
-                               DoseNum == 1) %>% 
-                    summarize(Min = min(Time)) %>% pull(floor(Min)), 
-                
-                FirstDoseEnd = ceiling(max(Data$Time[Data$CompoundID == compoundToExtract])),
-                
-                PenultDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
-                                                          Data$CompoundID == compoundToExtract])),
-                LastDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
-                                                        Data$CompoundID == compoundToExtract])))
-        } else {
-            DoseTimes1 <- Data %>% 
-                filter(DoseNum > 0 & CompoundID == compoundToExtract) %>%
-                group_by(DoseNum) %>%
-                summarize(t0 = round(min(Time)), # Is it safe to round this to the nearest unit? Probably ok but may need to adjust this later.
-                          tlast = ceiling(max(Time))) %>% 
-                ungroup()
-            
-            MaxNumDoses <- max(Data$DoseNum[Data$CompoundID == compoundToExtract])
-            
-            DoseTimes <- 
-                data.frame(
-                    FirstDoseStart = DoseTimes1 %>% 
-                        filter(DoseNum == 1) %>% pull(t0),
-                    FirstDoseEnd = DoseTimes1 %>% 
-                        filter(DoseNum == 1) %>% pull(tlast),
-                    PenultDoseStart = DoseTimes1 %>% 
-                        filter(DoseNum == MaxNumDoses - 1) %>% pull(t0),
-                    LastDoseStart = DoseTimes1 %>% 
-                        filter(DoseNum == MaxNumDoses) %>% pull(t0))
-        }
+        # Checking for multiple dosing intervals for the same time range (not
+        # checking for whether this is multiple dose)
+        MultDoseInt <- 
+            Data %>% group_by(File, Compound, CompoundID, Inhibitor, DoseNum) %>% 
+            summarize(DoseTime = round(min(Time))) %>%
+            ungroup() %>% group_by(DoseNum) %>% 
+            summarize(UniqDT = length(unique(DoseTime))) %>% 
+            pull(UniqDT) 
+        MultDoseInt <- any(MultDoseInt != 1)
         
-        if(SingleDose & time_range_input %in% c("last dose", "penultimate dose")){
-            warning(paste0("You requested the ", time_range_input,
-                           ", but the substrate was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."))
-        }
-        
-        if(all(complete.cases(time_range_input)) && 
-           str_detect(time_range_input, "first dose|dose 1$")){
-            time_range <- c(0, DoseTimes$FirstDoseEnd)
-        }
-        
-        if(all(complete.cases(time_range_input)) &&
-           str_detect(time_range_input, "penultimate dose")){
+        if(MultDoseInt == FALSE){
             if(SingleDose){
-                time_range <-
-                    c(DoseTimes$LastDoseStart, max(Data$Time))
+                DoseTimes <- data.frame(
+                    FirstDoseStart = Data %>%
+                        filter(CompoundID == compoundToExtract & 
+                                   DoseNum == 1) %>% 
+                        summarize(Min = min(Time)) %>% pull(floor(Min)), 
+                    
+                    FirstDoseEnd = ceiling(max(Data$Time[Data$CompoundID == compoundToExtract])),
+                    
+                    PenultDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
+                                                              Data$CompoundID == compoundToExtract])),
+                    LastDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
+                                                            Data$CompoundID == compoundToExtract])))
             } else {
-                time_range <-
-                    DoseTimes %>% ungroup() %>%
-                    select(PenultDoseStart, LastDoseStart) %>%
-                    t() %>% as.numeric()
-            }
-        }
-        
-        if(all(complete.cases(time_range_input)) &&
-           str_detect(time_range_input, "last dose")){
-            time_range <- c(DoseTimes$LastDoseStart, max(Data$Time))
-        }
-        
-        if(all(complete.cases(time_range_input)) && 
-           str_detect(tolower(time_range_input), "^dose")){
-            
-            if(str_detect(time_range_input, "to")){
+                DoseTimes1 <- Data %>% 
+                    filter(DoseNum > 0 & CompoundID == compoundToExtract) %>%
+                    group_by(DoseNum) %>%
+                    summarize(t0 = round(min(Time)), # Is it safe to round this to the nearest unit? Probably ok but may need to adjust this later.
+                              tlast = ceiling(max(Time))) %>% 
+                    ungroup()
                 
-                DoseNumToPull <- as.numeric(
-                    str_trim(str_split(
-                        gsub("dose(s)?|substrate|inhibitor [12]", "", 
-                             time_range_input), "to")[[1]]))
-                
-            } else {
-                
-                DoseNumToPull <- as.numeric(
-                    str_trim(gsub("dose(s)?|substrate|inhibitor [12]", "", 
-                                  time_range_input)))
-                
+                MaxNumDoses <- max(Data$DoseNum[Data$CompoundID == compoundToExtract])
+                DoseTimes <- data.frame(FirstDoseStart = DoseTimes1 %>% 
+                                            filter(DoseNum == 1) %>% pull(t0),
+                                        FirstDoseEnd = DoseTimes1 %>% 
+                                            filter(DoseNum == 1) %>% pull(tlast),
+                                        PenultDoseStart = DoseTimes1 %>% 
+                                            filter(DoseNum == MaxNumDoses - 1) %>% pull(t0),
+                                        LastDoseStart = DoseTimes1 %>% 
+                                            filter(DoseNum == MaxNumDoses) %>% pull(t0))
             }
             
-            if(any(DoseNumToPull < min(Data$DoseNum) |
-                   DoseNumToPull > max(Data$DoseNum))){
-                warning(paste0("You requested ", 
-                               time_range_input, ", but that is outside the number of doses administered. The full time range will be returned."))
-                time_range <- range(Data$Time)
-            } else {
+            if(all(complete.cases(time_range_input)) && 
+               str_detect(time_range_input, "first dose|dose 1$")){
+                time_range <- c(0, DoseTimes$FirstDoseEnd)
+            }
+            
+            if(all(complete.cases(time_range_input)) &&
+               str_detect(time_range_input, "penultimate dose")){
+                if(SingleDose){
+                    time_range <-
+                        c(DoseTimes$LastDoseStart, max(Data$Time))
+                } else {
+                    time_range <-
+                        DoseTimes %>% ungroup() %>%
+                        select(PenultDoseStart, LastDoseStart) %>%
+                        t() %>% as.numeric()
+                }
+            }
+            
+            if(SingleDose & time_range_input %in% c("last dose", "penultimate dose")){
+                warning(paste0("You requested the ", time_range_input,
+                               ", but the compound was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."))
+            }
+            
+            if(all(complete.cases(time_range_input)) &&
+               str_detect(time_range_input, "last dose")){
+                time_range <- c(DoseTimes$LastDoseStart, max(Data$Time))
+            }
+            
+            if(all(complete.cases(time_range_input)) && 
+               str_detect(tolower(time_range_input), "^dose")){
                 
-                time_range <- Data %>% 
-                    filter(DoseNum %in% DoseNumToPull &
-                               CompoundID == compoundToExtract) %>% 
-                    summarize(Min = round(min(Time)), 
-                              Max = ceiling(max(Time))) %>% 
-                    t() %>% as.numeric()
+                if(str_detect(time_range_input, "to")){
+                    
+                    DoseNumToPull <- as.numeric(
+                        str_trim(str_split(
+                            gsub("dose(s)?|substrate|inhibitor [12]", "", 
+                                 time_range_input), "to")[[1]]))
+                    
+                } else {
+                    
+                    DoseNumToPull <- as.numeric(
+                        str_trim(gsub("dose(s)?|substrate|inhibitor [12]", "", 
+                                      time_range_input)))
+                    
+                }
+                
+                if(any(DoseNumToPull < min(Data$DoseNum) |
+                       DoseNumToPull > max(Data$DoseNum))){
+                    warning(paste0("You requested ", 
+                                   time_range_input, ", but that is outside the number of doses administered. The full time range will be returned."))
+                    time_range <- range(Data$Time)
+                } else {
+                    
+                    time_range <- Data %>% 
+                        filter(DoseNum %in% DoseNumToPull &
+                                   CompoundID == compoundToExtract) %>% 
+                        summarize(Min = round(min(Time)), 
+                                  Max = ceiling(max(Time))) %>% 
+                        t() %>% as.numeric()
+                }
+            }
+            
+            if(all(complete.cases(time_range_input)) &&
+               time_range_input %in% c("last obs", "last observed",
+                                       "last to last obs", "last dose to last observed")){
+                suppressWarnings(
+                    time_range <- Data %>% 
+                        filter(Simulated == FALSE & DoseNum == MaxNumDoses) %>% 
+                        pull(Time) %>% range()
+                )
+                
+                time_range[1] <- DoseTimes$LastDoseStart
+                
+                if(any(is.infinite(time_range))){
+                    warning("You requested 'last observed' or 'last dose to last observed' for the time range, but your data do not include any observed data in that time frame. The full time range will be returned.")
+                    time_range <- Data %>% pull(Time) %>% range()
+                }
+            }
+            
+        } else {
+            
+            # Multiple compound scenario here
+            if(str_detect(time_range_input, "dose|last obs")){
+                warning(paste0("You requested the ", time_range_input,
+                               ", but this is a graph of multiple compounds, which may have different dose intervals. The graph x axis will cover the full time range of the simulation."))
             }
         }
-        
+
         if(all(complete.cases(time_range_input)) &&
            str_detect(time_range_input, "all obs")){
             suppressWarnings(
@@ -207,24 +241,6 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                 time_range <- Data %>% pull(Time) %>% range()
             }
         }
-        
-        if(all(complete.cases(time_range_input)) &&
-           time_range_input %in% c("last obs", "last observed",
-                                   "last to last obs", "last dose to last observed")){
-            suppressWarnings(
-                time_range <- Data %>% 
-                    filter(Simulated == FALSE & DoseNum == MaxNumDoses) %>% 
-                    pull(Time) %>% range()
-            )
-            
-            time_range[1] <- DoseTimes$LastDoseStart
-            
-            if(any(is.infinite(time_range))){
-                warning("You requested 'last observed' or 'last dose to last observed' for the time range, but your data do not include any observed data in that time frame. The full time range will be returned.")
-                time_range <- Data %>% pull(Time) %>% range()
-            }
-        }
-        
     }
     
     # Setting the time range if it's not already set 

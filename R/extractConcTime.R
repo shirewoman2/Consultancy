@@ -1511,10 +1511,10 @@ extractConcTime <- function(sim_data_file,
                             "ileum iii" = "ileum III", 
                             "ileum iv" = "ileum IV"),
             File = sim_data_file) %>%
-        arrange(across(any_of(c("Compound", "Inhibitor",
+        arrange(across(any_of(c("Compound", "Inhibitor", "Simulated",
                                 "Individual", "Trial", "Time")))) %>%
-        select(any_of(c("Compound", "CompoundID", "Inhibitor", "Tissue",
-                        "Individual", "Trial",
+        select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
+                        "Tissue", "Individual", "Trial",
                         "Simulated", "Time", "Conc",
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
                         "DoseInt", "File", "ObsFile")))

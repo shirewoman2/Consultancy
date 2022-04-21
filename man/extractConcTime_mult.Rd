@@ -5,7 +5,7 @@
 \title{Pull concentration-time data from multiple Simcyp Simulator output files}
 \usage{
 extractConcTime_mult(
-  sim_data_files,
+  sim_data_files = NA,
   obs_data_files = NA,
   sim_obs_dataframe = ConcTime,
   overwrite = FALSE,
@@ -18,17 +18,23 @@ extractConcTime_mult(
 )
 }
 \arguments{
-\item{sim_data_files}{a character vector of the files you'd like to compare,
-e.g., \code{c("MyFile1.xlsx", "MyFile2.xlsx")}. The path should be included
-with the file names if they are located somewhere other than your working
-directory.}
+\item{sim_data_files}{a character vector of simulator output files or, if
+left as NA, all the Excel files in the current directory. Example of
+acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be
+included with the file names if they are located somewhere other than your
+working directory. Note that, if you leave this as NA and some of the Excel
+files are not regular simulator output, e.g. they are sensitivity analyses
+or a file where you were doing some calculations, this will result in an
+error and return no data.}
 
 \item{obs_data_files}{a character vector of the observed data files that
-you'd like to compare, e.g., \code{c("MyObsFile1.xlsx",
-"MyObsFile2.xlsx")}. The path should be included with the file names if
-they are located somewhere other than your working directory. This is the
-file that it is ready to be converted to an XML file, not the file that
-contains only the digitized time and concentration data.}
+you'd like to compare, e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}.
+The path should be included with the file names if they are located
+somewhere other than your working directory. This is the file that it is
+ready to be converted to an XML file, not the file that contains only the
+digitized time and concentration data. This function assumes that the
+dosing intervals for the observed data match those in the simulated data.
+See "Details" for more info.}
 
 \item{sim_obs_dataframe}{the data.frame that will contain the output. This
 should NOT be in quotes. Because we can see scenarios where you might want
@@ -55,24 +61,23 @@ data. Other options are "blood" or any tissues included in "Sheet Options",
 "muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
 unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
 vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
-"skin", or "spleen". Not case sensitive. List all tissues desired as a
-character vector, e.g., \code{c("plasma", "blood", "liver")}.}
+"skin", or "spleen". Not case sensitive. Acceptable input is all tissues
+desired as a character vector, e.g., \code{c("plasma", "blood", "liver")}.}
 
 \item{compoundsToExtract}{For which compound(s) do you want to extract
-concentration-time data? Options are "substrate" (default), "primary
-metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
-1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
-labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
-inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-primary metabolite of inhibitor 1. List all desired compounds as a
-character vector, e.g., \code{c("substrate", "primary metabolite 1")}.
-\emph{Note:} The simulator will report up to one metabolite for the 1st
-inhibitor but no other inhibitor metabolites. (Someone please correct me if
-that's wrong! -LS)}
+concentration-time data? Options are: \itemize{\item{"substrate"
+(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+\item{"secondary metabolite",} \item{"inhibitor 1" (this can be an inducer,
+inhibitor, activator, or suppresesor, but it's labeled as "Inhibitor 1" in
+the simulator),} \item{"inhibitor 2" for the 2nd inhibitor listed in the
+simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
+inhibitor 1, or} \item{"all" for all possible compounds in the
+simulation.}} Input to this argument should be all desired compounds as a
+character vector, e.g., \code{c("substrate", "primary metabolite 1")}.}
 
 \item{conc_units_to_use}{concentration units to use so that all data will be
 comparable. Options are the same as the ones in the Excel form for PE data
-entry. Default is "ng/mL". NOTE: ADAM model data concentration units are
+entry. Default is "ng/mL". Note: ADAM model data concentration units are
 not converted because there are simply too many units to manage easily, so
 please check that the units are what you expected in the end.}
 
@@ -102,9 +107,19 @@ this WILL CRASH and WILL NOT save whatever progress it has made so far. Be
 sure to close all of the source Excel files.} \item{If you list multiple
 files, multiple tissues, and/or multiple compounds to extract (see options
 below), this will extract \emph{all} possible variations of them. For
-example, if you ask for "File A" and "File B" and then also ask for
+example, if you ask for "sim1.xlsx" and "sim2.xlsx" and then also ask for
 "substrate" and "primary metabolite 1", you will get the substrate and
 primary metabolite 1 data from \emph{both} files.}}
+}
+\details{
+\strong{Regarding dose intervals for observed data:} The observed data files
+don't include information on dosing intervals or dose numbers, which makes it
+a little tricky to figure out which dose number a given time in an observed
+data file should have. If the compound IDs in the simulated data match those
+in the observed data, we will assume that the dosing intervals are the same.
+This was coded with the assumption that the dosing interval would be a round
+number (subjects aren't getting dosed on the half hour, for example), so if
+that's not the case, these dose number assignments will be off.
 }
 \examples{
 ConcTimeData <-
