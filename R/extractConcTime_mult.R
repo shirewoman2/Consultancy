@@ -372,6 +372,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
         if(any(is.na(SimDoseInfo$DoseInt)) & 
            any(complete.cases(SimDoseInfo$DoseInt))){
             warning("It looks like you have both single-dose and multiple-dose simulated data present. We thus cannot safely assign the observed data to any particular dose number since we don't know which simulated files the observed data match. Output will include both simulated and observed data, but the observed data will have NA values for DoseInt and DoseNum.")
+        } else if(all(is.na(SimDoseInfo$DoseInt))){
+            if(nrow(SimDoseInfo) == 1){
+                MultObsData <- MultObsData %>% 
+                    mutate(DoseNum = ifelse(Time >= SimDoseInfo$TimeRounded, 
+                                            1, 0))
+            } 
+            # if there's more than 1 row for SimDoseInfo, then everything was
+            # single dose, but dosing started at different times. Not setting
+            # this here b/c that's pretty tricky to address and not sure it's
+            # worth the time trying to figure it out.
         } else {
             
             MultObsData <- split(MultObsData, f = list(MultObsData$CompoundID, 
