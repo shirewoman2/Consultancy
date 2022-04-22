@@ -663,8 +663,7 @@ extractPK <- function(sim_data_file,
             StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUC0_xl$...2))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-            EndRow_agg <- ifelse(is.na(EndRow_agg),
-                                 nrow(AUC0_xl), EndRow_agg)
+            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC0_xl), EndRow_agg)
             
             for(i in PKparameters_AUC0){
                 ColNum <- findCol(i)
@@ -776,6 +775,7 @@ extractPK <- function(sim_data_file,
             StartRow_agg <- which(AUCX_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUCX_xl$...2))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUCX_xl), EndRow_agg)
             
             for(i in PKparameters_AUCX){
                 ColNum <- findCol(i)
@@ -1125,6 +1125,7 @@ extractPK <- function(sim_data_file,
             StartRow_agg <- which(CLTSS_xl[, StartCol_agg] == "Statistics") + 1
             EndRow_agg <- which(is.na(CLTSS_xl[, StartCol_agg]))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(CLTSS_xl), EndRow_agg)
             
             # sub function for finding correct column
             findCol <- function(PKparam){
