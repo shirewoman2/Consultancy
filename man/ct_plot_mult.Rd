@@ -88,6 +88,6 @@ you wish. If you're unfamiliar with setting factor levels in R and setting
 Working Group for assistance.
 }
 \examples{
-# No examples yet
+ct_plot_mult(sim_obs_dataframe = LMVct, )
 
 }
