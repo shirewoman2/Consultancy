@@ -13,6 +13,16 @@
 #' @format A data.frame with 14 columns "LMVct"
 "LMVct"
 
+
+#' Plasma concentration-time data after a single dose of 5 mg MDZ but with
+#' varying fa values, one for each of 4 simulator output files. Format of the
+#' data are the same as the output from \code{\link{extractConcTime_mult}}.
+#'
+#' @format A data.frame with 15 columns "MDZct"
+"MDZct"
+
+
+
 #' Simcyp colors used in the PowerPoint template
 #'
 #' @format A named character vector of colors
