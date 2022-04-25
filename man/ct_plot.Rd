@@ -24,6 +24,7 @@ ct_plot(
   line_transparency = NA,
   line_color = NA,
   line_width = NA,
+  legend_position = "none",
   include_legend = FALSE,
   legend_label = NA,
   prettify_effector_name = TRUE,
@@ -212,10 +213,15 @@ lines will be black or gray. Hex color codes are also ok to use.}
 input is a number; the default is 1 for most lines and 0.8 for some, to
 give you an idea of where to start.}
 
-\item{include_legend}{TRUE or FALSE (default) for whether to include a
-legend. If there was only one thing plotted on your graph, even if you set
-this to TRUE, no legend will be shown because there's nothing to
-differentiate the data.}
+\item{legend_position}{Specify where you want the legend to be. Options are
+"left", "right", "bottom", "top", or "none" (default) if you don't want one
+at all.}
+
+\item{include_legend}{SOON TO BE DEPRECATED. TRUE or FALSE (default) for
+whether to include a legend. If there was only one thing plotted on your
+graph, even if you set this to TRUE, no legend will be shown because
+there's nothing to differentiate the data. If \code{legend_position} is set
+to something other than "none", that will override this argument.}
 
 \item{legend_label}{Optionally indicate on the legend whether the effector is
 an inhibitor,inducer, activator, or suppressor. Input will be used as the

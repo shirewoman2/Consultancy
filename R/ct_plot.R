@@ -205,10 +205,14 @@
 #'   means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
-#' @param include_legend TRUE or FALSE (default) for whether to include a
-#'   legend. If there was only one thing plotted on your graph, even if you set
-#'   this to TRUE, no legend will be shown because there's nothing to
-#'   differentiate the data.
+#' @param legend_position Specify where you want the legend to be. Options are
+#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
+#'   at all.
+#' @param include_legend SOON TO BE DEPRECATED. TRUE or FALSE (default) for
+#'   whether to include a legend. If there was only one thing plotted on your
+#'   graph, even if you set this to TRUE, no legend will be shown because
+#'   there's nothing to differentiate the data. If \code{legend_position} is set
+#'   to something other than "none", that will override this argument.
 #'
 #' @return Output is a graph.
 #' @import tidyverse
@@ -273,6 +277,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     line_transparency = NA,
                     line_color = NA,
                     line_width = NA,
+                    legend_position = "none", 
                     include_legend = FALSE,
                     legend_label = NA,
                     prettify_effector_name = TRUE,
@@ -505,11 +510,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # Setting up the y axis using the subfunction ct_y_axis -------------------
     
     # Setting Y axis limits for both linear and semi-log plots
-    if (figure_type == "trial means"){
+    if (figure_type == "trial means") {
         Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")){
+    } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
-    } else if (figure_type == "means only"){
+    } else if (figure_type == "means only") {
         Ylim_data <- sim_data_mean %>% filter(Trial == MyMeanType) 
     }
     
@@ -999,13 +1004,27 @@ ct_plot <- function(sim_obs_dataframe = NA,
               axis.line.x.bottom = element_line(color = "black"),
               axis.line.y.left = element_line(color = "black"))
     
-    # If the user didn't want the legend or if the graph is of Inhibitor1,
+    
+    # If include_legend == FALSE but then legend_position is something other
+    # than "none", just use the value of legend_position. If include_legend ==
+    # TRUE but legend_position is "none", that's probably when user hasn't
+    # noticed that the legend_position argument now exists and they probably
+    # just want the legend to be on the right. Setting legend_position
+    # accordingly and giving user a warning about the impending deprecation.
+    if(include_legend == TRUE & legend_position == "none"){
+        legend_position <- "right"
+        warning("You have set 'include_legend' to TRUE but left 'legend_position' as 'none', which is the default. The graph will include a legend on the right of the graph. Our apologies for changing things here; we coded the option 'include_legend' first and then later realized things would work better and be more flexible using 'legend_position'. We plan to deprecate 'include_legend' in future versions of the SimcypConsultancy package.")
+    }
+    
+    # If the user didn't want the legend or if the graph is of an effector,
     # remove legend.
-    if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){
+    if(legend_position == "none" | compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                                            "inhibitor 1 metabolite")){
         A <- A + theme(legend.position = "none")
     } else {
         # Otherwise, make the legend a little wider to actually show the dashes
-        A <- A + theme(legend.key.width = unit(2, "lines"))
+        A <- A + theme(legend.position = legend_position, 
+                       legend.key.width = unit(2, "lines"))
     }
     
     ## Making semi-log graph ------------------------------------------------
@@ -1019,7 +1038,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
     )
     
     # both plots together, aligned vertically
-    if(compoundToExtract == "inhibitor 1"){
+    if(compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                "inhibitor 1 metabolite")){
         AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
                               align = "v")
@@ -1033,7 +1053,9 @@ ct_plot <- function(sim_obs_dataframe = NA,
     } else {
         # If the user didn't want the legend or if the graph is of Inhibitor1,
         # remove legend.
-        if(include_legend == FALSE | compoundToExtract == "inhibitor 1"){
+        if(legend_position == "none" | 
+           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                    "inhibitor 1 metabolite")){
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
                                   legend = "none", align = "hv"))
@@ -1044,12 +1066,12 @@ ct_plot <- function(sim_obs_dataframe = NA,
         } else {
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
-                                  common.legend = TRUE, legend = "right",
+                                  common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2, labels = c("A", "B"),
-                                  common.legend = TRUE, legend = "bottom",
+                                  common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
         }
     }

@@ -546,6 +546,7 @@ ct_plot_overlay <- function(sim_obs_dataframe,
         
         RibbonDF <-  sim_dataframe %>% 
             filter(Trial %in% c({MyMeanType}, "per5", "per95")) %>% 
+            unique() %>% 
             select(-any_of(c("Group", "Individual"))) %>% 
             pivot_wider(names_from = Trial, values_from = Conc)
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
