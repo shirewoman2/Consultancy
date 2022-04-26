@@ -147,6 +147,8 @@ so_table <- function(report_input_file = NA,
             stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.")
         }
         
+        observed_PK <- observed_PK[1, ]
+        
         sim_data_file <- observed_PK %>% pull(File)
     }
     
