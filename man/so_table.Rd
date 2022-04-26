@@ -10,6 +10,7 @@ so_table(
   sim_data_file = NA,
   PKparameters = NA,
   sheet_PKparameters = NA,
+  observed_PK = NA,
   mean_type = NA,
   includeCV = TRUE,
   includeConfInt = TRUE,
@@ -53,6 +54,18 @@ range of means.}} An example of acceptable input here: \code{c("AUCtau_ss",
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
 here. Most of the time, this should be left as NA.}
+
+\item{observed_PK}{(optional) If you have a data.frame or an Excel or csv
+file with observed PK parameters, supply the data.frame or the full file
+name in quotes here, and the simulated-to-observed mean ratios will be
+calculated. The supplied data.frame or file \emph{must} include columns for
+the simulator output Excel file (title this "File") and each of the PK
+parameters you would like to compare, and those column names \emph{must}
+match the PK parameter options listed in \code{data(AllPKParameters)}. If
+you would like the output table to include the observed data CV for any of
+the parameters, add "_CV" to the end of the parameter name, e.g.,
+"AUCinf_dose1_CV". Note: Whatever you list for "File" will override
+anything specified for the argument \code{sim_data_file}.}
 
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
 If you supplied a report input form, only specify this if you'd like to
@@ -133,4 +146,13 @@ the file.} }
 \examples{
 # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
 #          sheet_report = "table and graph input", includeTrialMeans = TRUE)
+
+# An example of how to format observed data:
+observed_PK <- data.frame(File = "mdz-5mg-sd.xlsx",
+                    AUCinf_dose1 = 60,
+                    AUCinf_dose1_CV = 0.38,
+                    Cmax_dose1 = 22,
+                    Cmax_dose1_CV = 0.24)
+
+
 }

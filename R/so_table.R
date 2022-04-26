@@ -52,6 +52,17 @@
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
+#' @param observed_PK (optional) If you have a data.frame or an Excel or csv
+#'   file with observed PK parameters, supply the data.frame or the full file
+#'   name in quotes here, and the simulated-to-observed mean ratios will be
+#'   calculated. The supplied data.frame or file \emph{must} include columns for
+#'   the simulator output Excel file (title this "File") and each of the PK
+#'   parameters you would like to compare, and those column names \emph{must}
+#'   match the PK parameter options listed in \code{data(AllPKParameters)}. If
+#'   you would like the output table to include the observed data CV for any of
+#'   the parameters, add "_CV" to the end of the parameter name, e.g.,
+#'   "AUCinf_dose1_CV". Note: Whatever you list for "File" will override
+#'   anything specified for the argument \code{sim_data_file}. 
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs.
 #'   If you supplied a report input form, only specify this if you'd like to
 #'   override the value listed there. If no value is specified here or in
@@ -96,13 +107,22 @@
 #' @examples
 #' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
 #' #          sheet_report = "table and graph input", includeTrialMeans = TRUE)
-
+#'
+#' # An example of how to format observed data:
+#' observed_PK <- data.frame(File = "mdz-5mg-sd.xlsx",
+#'                     AUCinf_dose1 = 60,
+#'                     AUCinf_dose1_CV = 0.38,
+#'                     Cmax_dose1 = 22,
+#'                     Cmax_dose1_CV = 0.24)
+#'
+#' 
 
 so_table <- function(report_input_file = NA,
                      sheet_report = NA,
                      sim_data_file = NA, 
                      PKparameters = NA,
                      sheet_PKparameters = NA,
+                     observed_PK = NA, 
                      mean_type = NA,
                      includeCV = TRUE,
                      includeConfInt = TRUE,
@@ -113,6 +133,23 @@ so_table <- function(report_input_file = NA,
                      checkDataSource = TRUE, 
                      save_table = NA){
     
+    # If they supplied observed_PK, get the sim_data_file from that. 
+    if(complete.cases(observed_PK) && 
+       (class(observed_PK) == "character" | "data.frame" %in% class(observed_PK))){
+        if(class(observed_PK) == "character"){
+            observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
+                                  "csv" = read.csv(observed_PK), 
+                                  "xlsx" = xlsx::read.xlsx(observed_PK, 
+                                                           sheetIndex = 1))
+        }
+        
+        if("File" %in% names(observed_PK) == FALSE){
+            stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.")
+        }
+        
+        sim_data_file <- observed_PK %>% pull(File)
+    }
+    
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
@@ -122,15 +159,15 @@ so_table <- function(report_input_file = NA,
                                 report_input_file, paste0(report_input_file, ".xlsx"))
     
     # Error catching
-    if(is.na(report_input_file) & is.na(sim_data_file)){
-        stop("You must enter a value for 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
+    if(is.na(report_input_file) & is.na(sim_data_file) & 
+       "data.frame" %in% class(observed_PK) == FALSE){
+        stop("You must enter a value for 'report_input_file', include a specific simulator output file for 'sim_data_file', or supplied observed PK data along with a simulator output file with 'observed_PK'.")
     }
     
     if(complete.cases(report_input_file) & is.na(sim_data_file)){
         
         sectionInfo <- getSectionInfo(report_input_file = report_input_file,
                                       sheet_report = sheet_report)
-        
         # Should we add an error catch here for when user fills out
         # report_input_file but doesn't include any observed data to
         # compare? Maybe not. If the user doesn't want to include any obs
@@ -170,21 +207,39 @@ so_table <- function(report_input_file = NA,
     
     if(complete.cases(PKparameters[1])){
         PKToPull <- PKparameters
-        
     } else {
-        if(class(sectionInfo) == "logical"){
-            # The most commonly requested PK parameters
-            PKToPull <- AllPKParameters %>%
-                # Per Hannah and template: Only include CL/F, t1/2, or tmax if
-                # there's a specific reason to.
-                filter(str_detect(PKparameter, "AUCinf|AUCtau|Cmax")) %>%
-                filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
-                pull(PKparameter) %>% unique()
+        if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
+            if(complete.cases(observed_PK)){
+                # If user supplies an observed file, then pull the parameters
+                # they want to match.
+                if(class(observed_PK) == "character"){
+                    observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
+                                          "csv" = read.csv(observed_PK), 
+                                          "xlsx" = xlsx::read.xlsx(observed_PK, 
+                                                                   sheetIndex = 1))
+                } 
+                PKToPull <- names(observed_PK)[names(observed_PK) %in% AllPKParameters$PKparameter]
+                
+            } else {
+                # If the user didn't specify an observed file, didn't list
+                # specific parameters they want, and didn't fill out a report
+                # input form, then pull the most commonly requested PK
+                # parameters.
+                PKToPull <- AllPKParameters %>%
+                    # Per Hannah and template: Only include CL/F, t1/2, or tmax if
+                    # there's a specific reason to.
+                    filter(str_detect(PKparameter, "AUCinf|AUCtau|Cmax")) %>%
+                    filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
+                    pull(PKparameter) %>% unique()
+            }
         } else {
-            # The PK parameters that match the observed data
+            # This is when the user has supplied a report input form. In this
+            # case, pull the PK parameters that match the observed data.
             PKToPull <- AllPKParameters %>% 
                 filter(PKparameter %in% names(sectionInfo$ObsData)) %>% 
                 pull(PKparameter) %>% unique()
+            
+            observed_PK <- sectionInfo$ObsData
         }
     }
     
@@ -263,15 +318,6 @@ so_table <- function(report_input_file = NA,
     
     # Adding trial means since they're not part of the default output
     if(includeTrialMeans){
-        # TrialMeans <- MyPKResults_all$individual %>%
-        #     group_by(Trial) %>%
-        #     summarize(across(.cols = -Individual,
-        #                      .fns = list(switch(MeanType,
-        #                                    "geometric" = gm_mean,
-        #                                    "arithmetic" = mean), 
-        #                               median), 
-        #                      .names = "{.col}_{.fn}")) %>%
-        #     ungroup()
         
         TrialMeans <- MyPKResults_all$individual %>%
             group_by(Trial) %>%
@@ -400,24 +446,36 @@ so_table <- function(report_input_file = NA,
         pivot_longer(cols = -Stat, names_to = "PKParam",
                      values_to = "Sim")
     
-    MyObsPKParam <- c(PKToPull, paste0(PKToPull, "_CV"))
+    Myobserved_PKParam <- c(PKToPull, paste0(PKToPull, "_CV"))
     if(EffectorPresent){
-        MyObsPKParam <- c(MyObsPKParam,
-                          "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
-                          "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
-                          "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
-                          "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
+        Myobserved_PKParam <- c(Myobserved_PKParam,
+                                "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
+                                "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
+                                "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
+                                "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
     }
     
     # observed data -----------------------------------------------------
-    if(class(sectionInfo) != "logical"){
+    # Checking whether there are any observed data. Next line will be TRUE if so.
+    if(class(sectionInfo) != "logical" | "data.frame" %in% class(observed_PK)){
+        if(class(sectionInfo) != "logical"){
+            observed_PK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% Myobserved_PKParam] %>%
+                as.data.frame() %>% t() %>% as.data.frame() %>%
+                rename("Obs" = V1) %>%
+                mutate(PKParam = row.names(.),
+                       Obs = as.numeric(Obs))
+        }  else {
+            # Making observed_PK that was supplied as a data.frame or file long
+            # w/column for PKparameter.
+            observed_PK <- observed_PK %>% 
+                pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
+                                             paste0(AllPKParameters$PKparameter, "_CV"))), 
+                             names_to = "PKParam", 
+                             values_to = "Obs")
+        }
         
-        MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
-            as.data.frame() %>% t() %>% as.data.frame() %>%
-            rename("Obs" = V1) %>%
-            mutate(PKParam = row.names(.),
-                   Obs = as.numeric(Obs), 
-                   Stat = ifelse(str_detect(PKParam, "_CV"), 
+        observed_PK <- observed_PK %>% 
+            mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
                                  ifelse({{MeanType}} == "geometric", "GCV", "CV"), 
                                  ifelse({{MeanType}} == "geometric", "geomean", "mean")), 
                    # Accounting for when the mean ratios for obs data are
@@ -438,7 +496,7 @@ so_table <- function(report_input_file = NA,
         suppressMessages(
             SOratios <- MyPKResults %>% 
                 filter(Stat == ifelse(MeanType == "geometric", "geomean", "mean")) %>%
-                left_join(MyObsPK %>% 
+                left_join(observed_PK %>% 
                               filter(Stat == 
                                          ifelse(MeanType == "geometric", "geomean", "mean"))) %>%
                 mutate(Value = Sim / Obs,
@@ -447,19 +505,33 @@ so_table <- function(report_input_file = NA,
                 select(PKParam, Stat, Value, SorO)
         )
         
-        suppressMessage(
+        suppressMessages(
             MyPKResults <- MyPKResults %>% 
-                full_join(MyObsPK) %>% 
+                full_join(observed_PK) %>% 
                 pivot_longer(names_to = "SorO", values_to = "Value", 
                              cols = c(Sim, Obs)) %>% 
                 full_join(SOratios)
         )
         
+        if("File" %in% names(MyPKResults)){
+            MyPKResults <- MyPKResults %>% 
+                fill(File, .direction = "downup")
+        }
+        
         # If user supplied obs data and no PK parameters that they specifically
         # wanted, only keep PK parameters where there are values for the observed
         # mean data. 
-        PKToPull <- MyObsPK %>% filter(complete.cases(Obs)) %>% 
+        PKinObs <- observed_PK %>% filter(complete.cases(Obs)) %>% 
             pull(PKParam) %>% unique()
+        
+        if(complete.cases(PKparameters[1]) && 
+           all(PKparameters %in% PKinObs) == FALSE){
+            warning(paste0("The parameters ", 
+                           str_comma(setdiff(PKparameters, PKinObs)), 
+                           " are not included in the observed data provided. They will be included as columns in the table but will have 'NA' for the value."))
+        } else {
+            PKToPull <- intersect(PKToPull, PKinObs)
+        }
         
     } else {
         MyPKResults <- MyPKResults %>% 
@@ -490,7 +562,8 @@ so_table <- function(report_input_file = NA,
                            "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                            "per5", "per95", 
                            ifelse(MeanType == "geometric", "GCV", "CV"), 
-                           "MinMean", "MaxMean", "S_O")) %>%
+                           "MinMean", "MaxMean", "S_O") & 
+                   complete.cases(Value)) %>%
         pivot_wider(names_from = PKParam, values_from = Value) %>% 
         mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O")), 
                Stat = factor(Stat, levels = c("mean", "geomean", "CV", "GCV",
@@ -499,18 +572,11 @@ so_table <- function(report_input_file = NA,
                                               "MinMean", "MaxMean", "S_O"))) %>% 
         arrange(SorO, Stat) %>% 
         filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
-        mutate(across(.cols = everything(), .fns = as.character)
-               # ,
-               # across(.cols = -c(Stat, SorO),
-               #        .fns = function(x) ifelse(str_detect(Stat, "CV"),
-               #                                  paste0(x, "%"), x)),
-               # across(.cols = everything(),
-               #        .fns = function(x) ifelse(x == "NA%", NA, x))
-        ) 
+        mutate(across(.cols = everything(), .fns = as.character)) 
     # If this throws an error for you, try running "tidyverse_update()", copy
-    # whatever it says is out of date, restart your R session (Ctrl Shift
-    # F10), and then paste the output (something like
-    # "install.packages(c("dbplyr", "dplyr", "dtplyr", ... ") and execute.
+    # whatever it says is out of date, restart your R session (Ctrl Shift F10),
+    # and then paste the output (something like "install.packages(c("dbplyr",
+    # "dplyr", "dtplyr", ... ") and execute.
     
     # Putting trial means into appropriate format
     if(includeTrialMeans){
