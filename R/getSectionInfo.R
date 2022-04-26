@@ -28,10 +28,8 @@ getSectionInfo <- function(report_input_file = NA,
     
     InputXL <- suppressMessages(
         readxl::read_excel(path = report_input_file,
-                           sheet = sheet_report, skip = 3)) %>% 
+                           sheet = sheet_report, skip = 1)) %>% 
         filter(complete.cases(RName))
-    names(InputXL)[1] <- "Item"
-    names(InputXL)[3] <- "Value"
     
     sim_data_file <- InputXL$Value[InputXL$RName == "SimFile"]
     if(dirname(sim_data_file) == "."){
@@ -49,18 +47,20 @@ getSectionInfo <- function(report_input_file = NA,
             stop("You have filled out the report input form tab for a study with no DDI, but Inhibitor 1 and/or Inhibitor 2 are present in your simulation. Please fill out the tab for studies with DDIs.")
         }
         
-        ObsData <- InputXL[1:(which(str_detect(InputXL$Item, "^Simulated data")) -1),
+        suppressWarnings(
+            ObsData <- InputXL[which(str_detect(InputXL$Item, "^Observed data")):nrow(InputXL),
                                c("RName", "Value")] %>% 
-            bind_rows(InputXL[, 5:6] %>% 
-                          rename(RName = matches("RName"),
-                                 Value = matches("Value")) %>% 
-                          filter(complete.cases(RName)) %>% 
-                          mutate(Value = as.character(Value))) %>% 
-            filter(RName != "blank") %>% 
-            pivot_wider(names_from = RName, values_from = Value) %>% 
-            mutate(across(.cols = -c(ClinStudy, Tissue, MeanType, GMR_mean_type),
-                          .fns = as.numeric)) %>% 
-            as.list()
+                bind_rows(InputXL[which(str_detect(InputXL$...5, "RNamePerp")):nrow(InputXL), 5:6] %>% 
+                              rename(RName = ...5,
+                                     Value = ...6) %>% 
+                              filter(complete.cases(RName)) %>% 
+                              mutate(Value = as.character(Value))) %>% 
+                filter(RName != "blank") %>% 
+                pivot_wider(names_from = RName, values_from = Value) %>% 
+                mutate(across(.cols = -c(ClinStudy, Tissue, MeanType, GMR_mean_type),
+                              .fns = as.numeric)) %>% 
+                as.list()
+        )
         
     } else {
         
@@ -68,12 +68,14 @@ getSectionInfo <- function(report_input_file = NA,
             stop("You have filled out the report input form tab for a DDI study, but no effector compounds are present in your simulation. Please fill out the tab for studies with no DDIs.")
         }
         
-        ObsData <- InputXL[1:(which(str_detect(InputXL$Item, "^Simulated data")) -1), ] %>%
-            select(-Item) %>%
-            filter(RName != "blank") %>%
-            pivot_wider(names_from = RName, values_from = Value) %>% 
-            mutate(across(.cols = -c(ClinStudy, Tissue, MeanType), .fns = as.numeric)) %>% 
-            as.list()
+        suppressWarnings(
+            ObsData <- InputXL[which(str_detect(InputXL$Item, "^Observed data")):nrow(InputXL), ] %>%
+                select(-Item) %>%
+                filter(RName != "blank") %>%
+                pivot_wider(names_from = RName, values_from = Value) %>% 
+                mutate(across(.cols = -c(ClinStudy, Tissue, MeanType), .fns = as.numeric)) %>% 
+                as.list()
+        )
         
     }
     

@@ -192,10 +192,17 @@
 #' @export
 #'
 #' @examples
-#'
-#' ct_plot_overlay(sim_obs_dataframe = ConcTime, colorBy_column = File,
-#'                 facet1_column = Compound,
-#'                 facet2_column = Tissue)
+#' data(MDZct)
+#' ct_plot_overlay(sim_obs_dataframe = MDZct, colorBy_column = File)
+#' 
+#' # Setting the legend labels for color to be more interpretable. Note 
+#' # that the order matches the order listed here, not the alphabetical
+#' # order of the files. 
+#' ct_plot_overlay(sim_obs_dataframe = MDZct, colorBy_column = File,
+#'                 color_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa 1",
+#'                                  "mdz-5mg-sd-fa0_8.xlsx" = "fa 0.8",
+#'                                  "mdz-5mg-sd-fa0_6.xlsx" = "fa 0.6",
+#'                                  "mdz-5mg-sd-fa0_4.xlsx" = "fa 0.4"))
 #'
 #' 
 ct_plot_overlay <- function(sim_obs_dataframe,
