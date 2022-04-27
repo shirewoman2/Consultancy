@@ -212,6 +212,11 @@ so_table <- function(report_input_file = NA,
         PKToPull <- PKToPull[!PKToPull %in% EffParam]
     }
     
+    # Give a useful message if there are no parameters to pull
+    if(length(PKToPull) == 0){
+        stop("None of the parameters you requested are available from the supplied simulator output file. Please check that the parameters requested make sense for the simulation. For example, did you request multiple-dose parameters for a single-dose regimen?")
+    }
+    
     # Getting PK parameters from the AUC tab
     suppressMessages(
         MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
