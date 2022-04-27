@@ -342,14 +342,6 @@ extractPK <- function(sim_data_file,
                                   paste0(PKparam, "_withInhib"),
                                   PKparam)
                 
-                # Dose 1 CL should be the clearance calculated using AUCinf, not
-                # AUCtau for dose 1 unless the user requested CLtau, so
-                # temporarily adding "inf" to that parameter to check the
-                # correct columns. Same thing with half life.
-                PKparam <- ifelse(
-                    str_detect(PKparam, "CLinf_dose1|HalfLife_dose1|CL_ratio_dose1"),
-                    sub("_dose1", "inf_dose1", PKparam), PKparam)
-                
                 # Dose 1 tmax and Cmax are only available for the 0 to tau
                 # columns, so changing those parameter names temporarily. RETURN
                 # TO THIS: If the user requests integration of the last dose,
@@ -377,10 +369,10 @@ extractPK <- function(sim_data_file,
                             StartCol <-
                                 which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                  ifelse(Deets$Regimen_sub == "Single Dose",
-                                                        "^Inhibited$",
+                                                        "^Inhibited$|^Inhibited AUC integrated from",
                                                         "Truncated AUCt_inh for the first dose")))
                             StartColText <- ifelse(Deets$Regimen_sub == "Single Dose",
-                                                   "^Inhibited$",
+                                                   "^Inhibited$|^Inhibited AUC integrated from",
                                                    "Truncated AUCt_inh for the first dose")
                             
                         }
