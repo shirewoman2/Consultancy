@@ -76,7 +76,7 @@
 #'  
 extractExpDetails_mult <- function(sim_data_files = NA, 
                                    exp_details = "all", 
-                                   existing_exp_details = MyDeets, 
+                                   existing_exp_details = Deets, 
                                    overwrite = FALSE,
                                    save_output = NA){
     
@@ -121,8 +121,11 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             select(File, everything())
     }
     
-    MyDeets <- bind_rows(MyDeets) %>% 
-        bind_rows(existing_exp_details)
+    MyDeets <- bind_rows(MyDeets)
+    
+    if(exists(substitute(existing_exp_details))){
+        MyDeets <- bind_rows(MyDeets, existing_exp_details)
+    }
     
     if(complete.cases(save_output)){
         if(str_detect(save_output, "\\.")){

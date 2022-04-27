@@ -7,7 +7,7 @@
 extractExpDetails_mult(
   sim_data_files = NA,
   exp_details = "all",
-  existing_exp_details = MyDeets,
+  existing_exp_details = Deets,
   overwrite = FALSE,
   save_output = NA
 )
