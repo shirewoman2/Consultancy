@@ -402,7 +402,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
                     "", tolower(MyEffector)))
             # Adjusting for compounds (metabolites) w/"OH" in name or other
             # idiosyncracies
-            MyEffector <- sub("oh bupropion", "OH-bupropion")
+            MyEffector <- sub("oh bupropion", "OH-bupropion", MyEffector)
             MyEffector <- sub("oh-", "OH-", MyEffector)
             MyEffector <- sub("o-", "O-", MyEffector)
             MyEffector <- sub("o-", "O-", MyEffector)
@@ -412,7 +412,8 @@ ct_plot <- function(sim_obs_dataframe = NA,
             MyEffector <- prettify_effector_name
         }
         
-        Data <- Data %>%
+        Data <- 
+            Data %>%
             mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
                    Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
                    Group = paste(Compound, Inhibitor, Trial)) %>%
@@ -525,7 +526,7 @@ ct_plot <- function(sim_obs_dataframe = NA,
     } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if (figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(Trial == MyMeanType) 
+        Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
     }
     
     if(nrow(Ylim_data) == 0){
