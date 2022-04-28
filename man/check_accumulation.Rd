@@ -32,9 +32,9 @@ and any named linetype.}
 
 }
 \description{
-UNDER CONSTRUCTION -- DoseNum must be complete. mark_dosing doesn't work for
-custom dosing intervals at present. Haven't done much to make this "nice"
-yet. Just using it for a project I'm working on and thought I'd add it. -LSh
+UNDER CONSTRUCTION -- DoseNum must be complete. Haven't done much to make
+this "nice" yet. Just using it for a project I'm working on and thought I'd
+add it. -LSh
 }
 \examples{
 
