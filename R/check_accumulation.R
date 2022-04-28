@@ -1,8 +1,8 @@
 #' Graph for checking accumulation over multiple doses -- UNDER CONSTRUCTION
 #'
-#' UNDER CONSTRUCTION -- DoseNum must be complete. mark_dosing doesn't work for
-#' custom dosing intervals at present. Haven't done much to make this "nice"
-#' yet. Just using it for a project I'm working on and thought I'd add it. -LSh
+#' UNDER CONSTRUCTION -- DoseNum must be complete. Haven't done much to make
+#' this "nice" yet. Just using it for a project I'm working on and thought I'd
+#' add it. -LSh 
 #'
 #' @param CT data.frame w/conc time data from extractConcTime
 #' @param t0 start time for compound being plotted
@@ -70,6 +70,7 @@ check_accumulation <- function(CT, t0 = 0,
         xlab("Time (h)") +
         ylab(paste(timepoint, "(ng/mL)"))  +
         scale_color_brewer(palette = "Set1") +
+        scale_y_continuous(limits = c(0, max(SScheck$Conc))) +
         theme(panel.background = element_rect(fill="white", color=NA),
               legend.key = element_rect(fill = "white"),
               axis.ticks = element_line(color = "black"),
