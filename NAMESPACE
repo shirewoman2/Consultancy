@@ -2,6 +2,7 @@
 
 export(PKsummary_mult)
 export(calcKi)
+export(check_accumulation)
 export(confInt)
 export(countWords)
 export(ct_plot)
