@@ -263,13 +263,15 @@ extractPK <- function(sim_data_file,
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
         # Error catching
-        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE && 
-           length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary))) > 
-           0){
-            warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
-                           sub("and", "or", 
-                               str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary)))),
-                           ". None of these parameters can be extracted."))
+        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE){
+            if(length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0,
+                                              ParamAUCX, ParamCLTSS, 
+                                              ParamSummary))) > 0){
+                warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                               sub("and", "or", 
+                                   str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary)))),
+                               ". None of these parameters can be extracted."))
+            }
         } else {
             
             AUC_xl <- suppressMessages(

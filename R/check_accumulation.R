@@ -160,7 +160,8 @@ check_accumulation <- function(sim_obs_dataframe,
         
         G <- G +
             # add somethign here for alpha for legend.
-            scale_y_continuous(limits = c(0, max(OverlayCT$Conc))) 
+            scale_y_continuous(limits = c(0, max(c(OverlayCT$Conc, 
+                                                   SScheck$Conc)))) 
         
     } else {
         G <- G + 
