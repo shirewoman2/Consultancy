@@ -1118,6 +1118,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
                    plot = AB)
         }
         
+        if(linear_or_log == "both horizontal"){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = ABhoriz)
+        }
+        
         if(linear_or_log == "linear"){
             ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
                    plot = A)
