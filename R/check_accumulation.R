@@ -78,7 +78,8 @@ check_accumulation <- function(sim_obs_dataframe,
                              "median" = "median")
     }
     
-    SScheck <- sim_obs_dataframe %>% 
+    suppressMessages(
+        SScheck <- sim_obs_dataframe %>% 
         filter(Trial == MyMeanType & CompoundID == accum_compoundID) %>%  
         group_by(DoseNum, Inhibitor) %>% 
         # switch doesn't seem to work with summarize. Calculating each value.
@@ -104,6 +105,7 @@ check_accumulation <- function(sim_obs_dataframe,
         mutate(PercDiff = c(NA, diff(Conc, lag = 1))/Conc, 
                DiffCriterion = abs(PercDiff) < diff_cutoff,
                DiffCriterion = ifelse(is.na(DiffCriterion), FALSE, DiffCriterion))
+    )
     
     LineAES <- str_split(mark_dosing, pattern = " ")[[1]]
     
@@ -171,6 +173,9 @@ check_accumulation <- function(sim_obs_dataframe,
     
     # Add legend item saying that points are for accum_compoundID and lines are
     # for overlay_compoundID.
+    
+    # Make it so that, if the difference in Cmax between accum_compoundID and
+    # overlay_compoundID is >= 10x, make the plots be facetted. 
     
     return(G)
     
