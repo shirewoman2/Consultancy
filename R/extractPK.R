@@ -263,13 +263,15 @@ extractPK <- function(sim_data_file,
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
         # Error catching
-        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE && 
-           length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary))) > 
-           0){
-            warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
-                           sub("and", "or", 
-                               str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary)))),
-                           ". None of these parameters can be extracted."))
+        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE){
+            if(length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0,
+                                              ParamAUCX, ParamCLTSS, 
+                                              ParamSummary))) > 0){
+                warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                               sub("and", "or", 
+                                   str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary)))),
+                               ". None of these parameters can be extracted."))
+            }
         } else {
             
             AUC_xl <- suppressMessages(
@@ -405,8 +407,8 @@ extractPK <- function(sim_data_file,
                     if(str_detect(PKparam, "t(au)?.*_dose1") &
                        Deets$Regimen_sub %in% c("Multiple Dose")){
                         StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                     "^Truncated AUCt for the first dose"))
-                        StartColText <- "^Truncated AUCt for the first dose"
+                                                     "^Truncated AUCt for the first dose|^AUC integrated from"))[1]
+                        StartColText <- "^Truncated AUCt for the first dose|^AUC integrated from"
                     }
                     
                     # last dose
@@ -611,14 +613,14 @@ extractPK <- function(sim_data_file,
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
         PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE)){
         # Error catching
-        if(any(str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)")) == FALSE){
+        if(any(str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
             
-            warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
-                           str_c(PKparameters_AUC0, collapse = ", "),
+            warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
+                           sub("and", "or", str_comma(PKparameters_AUC0, collapse = ", ")),
                            ". None of these parameters can be extracted."))
         } else {
             
-            Sheet <- AllSheets[str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)")][1]
+            Sheet <- AllSheets[str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
             
             AUC0_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, sheet = Sheet,

@@ -501,9 +501,11 @@ ct_plot <- function(sim_obs_dataframe = NA,
     # so, user should probably be using figure_type = "percentiles" and, if not,
     # user should probably be using figure_type = "trial means", and Hannah
     # would like user to get a warning about that.
-    check <- obs_data %>% group_by(CompoundID, Inhibitor, Time) %>% 
-        summarize(N = n())
-
+    suppressMessages(
+        check <- obs_data %>% group_by(CompoundID, Inhibitor, Time) %>% 
+            summarize(N = n())
+    )
+    
     if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
