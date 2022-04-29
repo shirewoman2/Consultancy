@@ -407,8 +407,8 @@ extractPK <- function(sim_data_file,
                     if(str_detect(PKparam, "t(au)?.*_dose1") &
                        Deets$Regimen_sub %in% c("Multiple Dose")){
                         StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                     "^Truncated AUCt for the first dose"))
-                        StartColText <- "^Truncated AUCt for the first dose"
+                                                     "^Truncated AUCt for the first dose|^AUC integrated from"))[1]
+                        StartColText <- "^Truncated AUCt for the first dose|^AUC integrated from"
                     }
                     
                     # last dose
