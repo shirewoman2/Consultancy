@@ -212,7 +212,8 @@ extractPK <- function(sim_data_file,
     # can be pulled from sheets where they *are* so labeled.
     if(Deets$Regimen_sub == "Multiple Dose"){
         ParamAUC <- setdiff(ParamAUC,
-                            c("AUCt_ratio_dose1",
+                            c("AUCt_ratio_dose1", "AUCt_dose1", 
+                              "AUCt_dose1_withInhib",
                               "Cmax_dose1", "Cmax_dose1_withInhib",
                               "Cmax_ratio_dose1", "tmax_dose1"))
     }
@@ -340,17 +341,21 @@ extractPK <- function(sim_data_file,
                 # search the appropriate columns. Note that this regex
                 # will catch, e.g., "AUCinf_ratio_dose1" but NOT
                 # "AccumulationRatio". That is by design.
-                PKparam <- ifelse(str_detect(PKparam, "ratio"),
-                                  paste0(PKparam, "_withInhib"),
-                                  PKparam)
+                suppressWarnings(
+                    PKparam <- ifelse(str_detect(PKparam, "ratio"),
+                                      paste0(PKparam, "_withInhib"),
+                                      PKparam)
+                )
                 
                 # Dose 1 tmax and Cmax are only available for the 0 to tau
                 # columns, so changing those parameter names temporarily. RETURN
                 # TO THIS: If the user requests integration of the last dose,
                 # doesn't that show up here? CHECK.
-                PKparam <- ifelse(str_detect(PKparam, "[Ct]max"),
-                                  sub("max", "maxtau", PKparam),
-                                  PKparam)
+                suppressWarnings(
+                    PKparam <- ifelse(str_detect(PKparam, "[Ct]max"),
+                                      sub("max", "maxtau", PKparam),
+                                      PKparam)
+                )
                 
                 if(str_detect(PKparam, "_withInhib")){
                     
@@ -398,17 +403,20 @@ extractPK <- function(sim_data_file,
                     }
                     
                     if(str_detect(PKparam, "t(au)?.*_dose1") &
-                       Deets$Regimen_sub %in% c("Single Dose", "custom dosing")){
+                       Deets$Regimen_sub %in% c("Single Dose")){
+                        
                         StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                       "^AUC integrated from"))
                         StartColText <- "^AUC integrated from"
                     }
                     
                     if(str_detect(PKparam, "t(au)?.*_dose1") &
-                       Deets$Regimen_sub %in% c("Multiple Dose")){
+                       Deets$Regimen_sub %in% c("Multiple Dose", "custom dosing")){
+                        # For MD scenarios, the subheading "Truncated..." must
+                        # be present or that might be the AUC for the last dose.
                         StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                     "^Truncated AUCt for the first dose|^AUC integrated from"))[1]
-                        StartColText <- "^Truncated AUCt for the first dose|^AUC integrated from"
+                                                     "^Truncated AUCt for the first dose"))[1]
+                        StartColText <- "^Truncated AUCt for the first dose"
                     }
                     
                     # last dose
@@ -455,19 +463,18 @@ extractPK <- function(sim_data_file,
                         EndCol <- ncol(AUC_xl)
                     }
                     
-                    if(any(is.na(c(StartCol, EndCol)))){
-                        
-                        OutCol <- EndCol
-                        
-                    } else {
-                        
-                        PossCol <- StartCol:EndCol
-                        
-                        OutCol <- PossCol[
-                            which(str_detect(as.vector(t(
-                                AUC_xl[3, PossCol])), ToDetect) &
-                                    !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
+                    if(is.na(StartCol)){
+                        PKparameters_AUC <- PKparameters_AUC[!PKparameters_AUC == PKparam]
+                        next
                     }
+                    
+                    PossCol <- StartCol:EndCol
+                    
+                    OutCol <- PossCol[
+                        which(str_detect(as.vector(t(
+                            AUC_xl[3, PossCol])), ToDetect) &
+                                !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
+                    
                 }
                 
                 if(checkDataSource & complete.cases(OutCol)){
