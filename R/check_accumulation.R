@@ -80,31 +80,31 @@ check_accumulation <- function(sim_obs_dataframe,
     
     suppressMessages(
         SScheck <- sim_obs_dataframe %>% 
-        filter(Trial == MyMeanType & CompoundID == accum_compoundID) %>%  
-        group_by(DoseNum, Inhibitor) %>% 
-        # switch doesn't seem to work with summarize. Calculating each value.
-        summarize(t0 = min(Time),
-                  tlast = max(Time),
-                  tmin = Time[which.min(Conc)],
-                  tmax = Time[which.max(Conc)], 
-                  Cmin = min(Conc), 
-                  Cmax = max(Conc), 
-                  C0 = Conc[which.min(Time)], 
-                  Clast = Conc[which.max(Time)]) %>% 
-        ungroup() %>% 
-        mutate(Conc = switch(timepoint, 
-                             "tmin" = Cmin, 
-                             "tmax" = Cmax, 
-                             "t0" = C0, 
-                             "tlast" = Clast), 
-               Time = switch(timepoint, 
-                             "tmin" = tmin, 
-                             "tmax" = tmax,
-                             "t0" = t0, 
-                             "tlast" = tlast)) %>% 
-        mutate(PercDiff = c(NA, diff(Conc, lag = 1))/Conc, 
-               DiffCriterion = abs(PercDiff) < diff_cutoff,
-               DiffCriterion = ifelse(is.na(DiffCriterion), FALSE, DiffCriterion))
+            filter(Trial == MyMeanType & CompoundID == accum_compoundID) %>%  
+            group_by(DoseNum, Inhibitor) %>% 
+            # switch doesn't seem to work with summarize. Calculating each value.
+            summarize(t0 = min(Time),
+                      tlast = max(Time),
+                      tmin = Time[which.min(Conc)],
+                      tmax = Time[which.max(Conc)], 
+                      Cmin = min(Conc), 
+                      Cmax = max(Conc), 
+                      C0 = Conc[which.min(Time)], 
+                      Clast = Conc[which.max(Time)]) %>% 
+            ungroup() %>% 
+            mutate(Conc = switch(timepoint, 
+                                 "tmin" = Cmin, 
+                                 "tmax" = Cmax, 
+                                 "t0" = C0, 
+                                 "tlast" = Clast), 
+                   Time = switch(timepoint, 
+                                 "tmin" = tmin, 
+                                 "tmax" = tmax,
+                                 "t0" = t0, 
+                                 "tlast" = tlast)) %>% 
+            mutate(PercDiff = c(NA, diff(Conc, lag = 1))/Conc, 
+                   DiffCriterion = abs(PercDiff) < diff_cutoff,
+                   DiffCriterion = ifelse(is.na(DiffCriterion), FALSE, DiffCriterion))
     )
     
     LineAES <- str_split(mark_dosing, pattern = " ")[[1]]
@@ -121,7 +121,11 @@ check_accumulation <- function(sim_obs_dataframe,
         geom_point(size = 1) + 
         labs(color = paste0("Difference from previous point < ", 100*diff_cutoff, "%")) +
         xlab("Time (h)") +
-        ylab(paste(timepoint, "(ng/mL)"))  +
+        ylab(paste(switch(timepoint, 
+                          "tmin" = "Cmin", 
+                          "tmax" = "Cmax", 
+                          "t0" = "C0", 
+                          "tlast" = "Clast"), "(ng/mL)"))  +
         scale_color_brewer(palette = "Set1") +
         theme(panel.background = element_rect(fill="white", color=NA),
               legend.key = element_rect(fill = "white"),
