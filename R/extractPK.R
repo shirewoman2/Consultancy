@@ -623,7 +623,7 @@ extractPK <- function(sim_data_file,
         if(any(str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
             
             warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
-                           sub("and", "or", str_comma(PKparameters_AUC0, collapse = ", ")),
+                           sub("and", "or", str_comma(PKparameters_AUC0)),
                            ". None of these parameters can be extracted."))
         } else {
             
