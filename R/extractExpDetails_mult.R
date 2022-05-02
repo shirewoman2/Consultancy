@@ -40,9 +40,22 @@
 #'
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file. Please be aware that, if this file is
-#'   open in another program, R won't be able to overwrite it and you'll get an
-#'   error!
+#'   it will still be saved as a csv file.
+#' @param existing_exp_details (optional) a data.frame that contains previously
+#'   extracted experimental details. This should NOT be in quotes. Because we
+#'   can see scenarios where you might want to extract some experimental details
+#'   and then run more simulations for comparisons, this function will
+#'   \emph{add} data to that data.frame. It will \emph{not} overwrite existing
+#'   data unless \code{overwrite} is set to TRUE.
+#' @param overwrite TRUE or FALSE on whether to re-extract the experimental
+#'   details from output files that are already included in
+#'   \code{existing_exp_details}. Since pulling data from Excel files is slow,
+#'   by default, this will \emph{not} overwrite existing data and instead will
+#'   only add data from any Excel files that aren't already included. A
+#'   situation where you might want to set this to TRUE would be when you have
+#'   changed input parameters for simulations and re-run them OR when you have
+#'   extracted only some of the possible experimental details and you now would
+#'   like more experimental details from each simulator output file.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #' @import tidyverse
@@ -63,15 +76,44 @@
 #'  
 extractExpDetails_mult <- function(sim_data_files = NA, 
                                    exp_details = "all", 
+                                   existing_exp_details = Deets, 
+                                   overwrite = FALSE,
                                    save_output = NA){
     
+    # If user did not supply files, then extract all the files in the current
+    # folder that end in "xlsx".
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
-        sim_data_files <- list.files(pattern = "xlsx")
+        sim_data_files <- list.files(pattern = "xlsx$")
+    }
+    
+    if(exists(substitute(existing_exp_details))){
+        if(class(existing_exp_details)[1] == "list"){
+            existing_exp_details <- bind_rows(existing_exp_details)
+        }
+        
+        if("data.frame" %in% class(existing_exp_details)){
+            if("File" %in% names(existing_exp_details) == FALSE){
+                existing_exp_details$File <- "unknown file"
+            }
+            
+            if(overwrite == FALSE){
+                sim_data_files_topull <- setdiff(sim_data_files, 
+                                                 existing_exp_details$File)
+            } else {
+                sim_data_files_topull <- sim_data_files
+                existing_exp_details <- existing_exp_details %>%
+                    filter(!File %in% existing_exp_details$File)
+            }
+        }
+        
+    } else {
+        sim_data_files_topull <- sim_data_files
     }
     
     MyDeets <- list()
     
-    for(i in sim_data_files){
+    for(i in sim_data_files_topull){
+        message(paste("Extracting data from file =", i))
         MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
                                           exp_details = exp_details) %>% 
             as.data.frame() %>% 
@@ -80,6 +122,10 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     }
     
     MyDeets <- bind_rows(MyDeets)
+    
+    if(exists(substitute(existing_exp_details))){
+        MyDeets <- bind_rows(MyDeets, existing_exp_details)
+    }
     
     if(complete.cases(save_output)){
         if(str_detect(save_output, "\\.")){

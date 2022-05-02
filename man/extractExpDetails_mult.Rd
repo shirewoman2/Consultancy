@@ -7,6 +7,8 @@
 extractExpDetails_mult(
   sim_data_files = NA,
   exp_details = "all",
+  existing_exp_details = Deets,
+  overwrite = FALSE,
   save_output = NA
 )
 }
@@ -45,11 +47,26 @@ will result in an error and return no data.}
   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}}
 
+\item{existing_exp_details}{(optional) a data.frame that contains previously
+extracted experimental details. This should NOT be in quotes. Because we
+can see scenarios where you might want to extract some experimental details
+and then run more simulations for comparisons, this function will
+\emph{add} data to that data.frame. It will \emph{not} overwrite existing
+data unless \code{overwrite} is set to TRUE.}
+
+\item{overwrite}{TRUE or FALSE on whether to re-extract the experimental
+details from output files that are already included in
+\code{existing_exp_details}. Since pulling data from Excel files is slow,
+by default, this will \emph{not} overwrite existing data and instead will
+only add data from any Excel files that aren't already included. A
+situation where you might want to set this to TRUE would be when you have
+changed input parameters for simulations and re-run them OR when you have
+extracted only some of the possible experimental details and you now would
+like more experimental details from each simulator output file.}
+
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-it will still be saved as a csv file. Please be aware that, if this file is
-open in another program, R won't be able to overwrite it and you'll get an
-error!}
+it will still be saved as a csv file.}
 }
 \value{
 Returns a data.frame of experimental details for simulator files
