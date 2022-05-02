@@ -40,7 +40,9 @@
 #'
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
+#'   it will still be saved as a csv file. Please be aware that, if this file is
+#'   open in another program, R won't be able to overwrite it and you'll get an
+#'   error!
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #' @import tidyverse
