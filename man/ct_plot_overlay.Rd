@@ -14,9 +14,7 @@ ct_plot_overlay(
   color_set = "default",
   obs_transparency = NA,
   facet1_column,
-  facet1_labels = NA,
   facet2_column,
-  facet2_labels = NA,
   floating_facet_scale = FALSE,
   facet_spacing = NA,
   time_range = NA,
@@ -40,7 +38,8 @@ running the function \code{\link{extractConcTime_mult}} or
 \item{mean_type}{plot "arithmetic" (default) or "geometric" mean
 concentrations or "median" concentrations as the main (thickest or only)
 line for each data set. If this aggregate measure is not available in the
-simulator output, we'll warn you that we're plotting a different one.}
+simulator output, you'll receive a warning message and we'll plot one that
+\emph{is} available.}
 
 \item{figure_type}{the type of figure to plot. Default is "means only" to
 show only the mean, geometric mean, or median (whatever you chose for
@@ -48,27 +47,28 @@ show only the mean, geometric mean, or median (whatever you chose for
 the mean data and transparent shading for the 5th to 95th percentiles.
 Note: You may sometimes see some artifacts -- especially for semi-log plots
 -- where the ribbon gets partly cut off. For arcane reasons we don't want
-to bore you with here, we can't easily prevent this. However, a possible
-fix is to set your y axis limits for the semi-log plot to be wider.}
+to bore you with here, we can't easily prevent this. To fix this, increase
+your y axis limits for the semi-log plot.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
 "linear", "both vertical" (default, graphs are stacked vertically), or
 "both horizontal" (graphs are side by side).}
 
-\item{colorBy_column}{What column in \code{sim_obs_dataframe} should be used
-for coloring the lines and/or points on the graph? This should be unquoted,
-e.g., \code{colorBy_column = Tissue}.}
+\item{colorBy_column}{the column in \code{sim_obs_dataframe} that should be
+used for determining which color lines and/or points will be. This should
+be unquoted, e.g., \code{colorBy_column = Tissue}.}
 
 \item{color_labels}{Optionally specify a character vector for how you'd like
 the labels for whatever you choose for \code{colorBy_column} to show up in
 the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
-2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for when you were
-simulating an fa of 0.5 and "file 2.xlsx" was for an fa of 0.2. The order
-in the legend will match the order here.}
+2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for an fa of 0.5 and
+"file 2.xlsx" is for an fa of 0.2. The order in the legend will match the
+order designated here.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
-  \item{"default"}{colors selected from the color brewer palette "set 1"}
+  \item{"default"}{colors selected from the Brewer palette "set 1". The first
+  three colors are red, blue, and green.}
 
   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
   (ggplot2 is an R package for graphing.)}
@@ -81,7 +81,8 @@ in the legend will match the order here.}
   \item{"blue-green"}{a set of blues and greens}
 
   \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
-  State that are friendly to those with red-green colorblindness}
+  State that are friendly to those with red-green colorblindness. The first
+  three colors are green, orange, and purple.}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}}}
@@ -94,28 +95,28 @@ observations. Acceptable values are 0 (completely transparent) to 1
 \item{facet1_column}{If you would like to break up your graph into small
 multiples, you can break the graphs up by up to two columns in
 \code{sim_obs_dataframe}. What should be the 1st column to break up the
-data by? This should be unquoted. If \code{floating_facet_scale} is FALSE,
-then \code{facet1_column} will make the rows of the output graphs.}
+data by? The designated column name should be unquoted. If
+\code{floating_facet_scale} is FALSE, then \code{facet1_column} will
+designate the rows of the output graphs.}
 
 \item{facet2_column}{What should be the 2nd column to break up the data into
-small multiples by? This should be unquoted. If \code{floating_facet_scale}
-is FALSE, then \code{facet2_column} will make the columns of the output
-graphs.}
+small multiples by? The designated column should be unquoted. If
+\code{floating_facet_scale} is FALSE, then \code{facet2_column} will
+designate the columns of the output graphs.}
 
 \item{floating_facet_scale}{TRUE or FALSE for whether to allow the axes for
-each facet of a multi-facetted graph to scale freely according to what data
-are present. Default is FALSE, which means that all data will be on the
-same scale for easy comparison. However, this could mean that some graphs
-have lines that are hard to see, so you can set this to TRUE to allow the
-axes to shrink or expand according to what data are present for that facet.
-Floating axes comes with a trade-off for the looks of the graphs, though:
-Setting this to TRUE does mean that your x axis won't have pretty breaks
-that are sensible for times in hours and that your y axis won't have minor
-ticks.}
+each facet of a multi-facetted graph to scale freely to best fit whatever
+data are present. Default is FALSE, which means that all data will be on
+the same scale for easy comparison. However, this could mean that some
+graphs have lines that are hard to see, so you can set this to TRUE to
+allow the axes to shrink or expand according to what data are present for
+that facet. Floating axes comes with a trade-off for the looks of the
+graphs, though: Setting this to TRUE does mean that your x axis won't
+automatically have pretty breaks that are sensible for times in hours.}
 
 \item{facet_spacing}{Optionally set the spacing between facets. If left as
-NA, a reasonable amount of space will be used. Units are "lines", so try,
-e.g. 2.}
+NA, a best-guess as to a reasonable amount of space will be used. Units are
+"lines", so try, e.g. 2.}
 
 \item{time_range}{time range to display. Options: \describe{
 
@@ -147,15 +148,14 @@ e.g. 2.}
 \item{x_axis_interval}{Set the x-axis major tick-mark interval. Acceptable
 input: any number or leave as NA to accept default values.}
 
-\item{pad_x_axis}{Optionally add a smidge of padding to the the x axis
-(default is TRUE, which includes some generally reasonable padding). If
-changed to FALSE, the y axis will be placed right at the beginning of your
-time range and all data will end \emph{exactly} at the end of the time
-range specified. If you want a \emph{specific} amount of x-axis padding,
-set this to a number; the default is \code{c(0.02, 0.04)}, which adds 2\%
-more space to the left side and 4\% more to the right side of the x axis.
-If you only specify one number, we'll assume that's the percent you want
-added to the left side.}
+\item{pad_x_axis}{Optionally add a smidge of padding to the x axis (default
+is TRUE, which includes some generally reasonable padding). If changed to
+FALSE, the y axis will be placed right at the beginning of your time range
+and all data will end \emph{exactly} at the end of the time range
+specified. If you want a \emph{specific} amount of x-axis padding, set this
+to a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space
+to the left side and 4\% more space to the right side of the x axis. If you
+only specify one number, padding is added to the left side.}
 
 \item{pad_y_axis}{Optionally add a smidge of padding to the y axis (default
 is TRUE, which includes some generally reasonable padding). As with
@@ -163,36 +163,34 @@ is TRUE, which includes some generally reasonable padding). As with
 the bottom of your data, possible cutting a point in half. If you want a
 \emph{specific} amount of y-axis padding, set this to a number; the default
 is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
-to the top of the y axis. If you only specify one number, we'll assume
-that's the percent you want added to the bottom.}
+to the top of the y axis. If you only specify one number, padding is added
+to the bottom.}
 
 \item{y_axis_limits_lin}{Optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
-linear plot will be automatically selected.}
+linear plot will be automatically selected. This only applies when you have
+requested a linear plot with \code{linear_or_log}.}
 
 \item{y_axis_limits_log}{Optionally set the Y axis limits for the semi-log
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
-limits for the semi-log plot will be automatically selected.}
+limits for the semi-log plot will be automatically selected. This only
+applies when you have requested a semi-log plot with \code{linear_or_log}.}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
-in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
-will be saved as a png file, but if you specify a different file extension,
-it will be saved as that file format. Acceptable extensions are "eps",
-"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-means the file will not be automatically saved to disk.}
+in quotes here, e.g., "My conc time graph.png". If you do not designate a
+file extension, it will be saved as a png file, but if you specify a
+different file extension, it will be saved as that file format. Acceptable
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Leaving this as NA means the file will not be automatically saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
 
 \item{fig_width}{figure width in inches; default is 5}
-
-\item{facet_label1}{UNDER CONSTRUCTION. Doesn't work yet.}
-
-\item{facet_label2}{UNDER CONSTRUCTION. Doesn't work yet.}
 }
 \value{
 
@@ -247,9 +245,9 @@ because the observed data file doesn't indicate that.
 data(MDZct)
 ct_plot_overlay(sim_obs_dataframe = MDZct, colorBy_column = File)
 
-# Setting the legend labels for color to be more interpretable. Note 
+# Setting the legend labels for color to be more interpretable. Note
 # that the order matches the order listed here, not the alphabetical
-# order of the files. 
+# order of the files.
 ct_plot_overlay(sim_obs_dataframe = MDZct, colorBy_column = File,
                 color_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa 1",
                                  "mdz-5mg-sd-fa0_8.xlsx" = "fa 0.8",

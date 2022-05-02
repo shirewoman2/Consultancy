@@ -186,10 +186,10 @@
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
 #'   give you an idea of where to start.
 #' @param legend_label Optionally indicate on the legend whether the effector is
-#'   an inhibitor,inducer, activator, or suppressor. Input will be used as the
+#'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as NA when a
 #'   legend is included and an effector is present, the label in the legend will
-#'   be "Inhibitor 1".
+#'   be "Inhibitor".
 #' @param prettify_effector_name Optionally make the Inhibitor 1 name prettier
 #'   in the legend. This was designed for simulations where Inhibitor 1 is one
 #'   of the standard options for the simulator, and leaving
