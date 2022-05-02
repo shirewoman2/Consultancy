@@ -44,6 +44,13 @@
 #' @param includeTrialInfo TRUE or FALSE: Include which individual and trial the
 #'   data describe? This only applies when \code{returnAggregateOrIndiv}
 #'   includes "individual".
+#' @param returnExpDetails TRUE or FALSE: Since, behind the scenes, this
+#'   function extracts experimental details from the "Summary" tab of the
+#'   simulator output file, would you like those details to be returned here? If
+#'   set to TRUE, output will be a list of 1. the requested PK data, 2. the
+#'   experimental details provided on the Summary tab, and, if you have set
+#'   checkDataSource to TRUE, 3. info for checking the data. (See
+#'   "checkDataSource".)
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
@@ -70,6 +77,7 @@ extractPK <- function(sim_data_file,
                       tissue = "plasma",
                       returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
+                      returnExpDetails = FALSE, 
                       checkDataSource = TRUE){
     
     # If they didn't include ".xlsx" at the end, add that.
@@ -623,7 +631,7 @@ extractPK <- function(sim_data_file,
         if(any(str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
             
             warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
-                           sub("and", "or", str_comma(PKparameters_AUC0, collapse = ", ")),
+                           sub("and", "or", str_comma(PKparameters_AUC0)),
                            ". None of these parameters can be extracted."))
         } else {
             
@@ -1330,10 +1338,11 @@ extractPK <- function(sim_data_file,
     }
     
     
-    # Putting all data together ------------------------------------------
-    # If user only wanted one parameter and includeTrialInfo was FALSE, make
-    # the output a vector instead of a list
-    if(length(Out_ind) == 1 & includeTrialInfo == FALSE){
+    # Putting all data together ------------------------------------------ If
+    # user only wanted one parameter and includeTrialInfo was FALSE and so was
+    # returnExpDetails, make the output a vector instead of a list
+    if(length(Out_ind) == 1 & includeTrialInfo == FALSE & 
+       returnExpDetails == FALSE){
         
         Out_ind <- Out_ind[[1]]
         
@@ -1453,6 +1462,16 @@ extractPK <- function(sim_data_file,
             # the items in Out accordingly.
             Out <- list(Out, DataCheck)
             names(Out) <- c(returnAggregateOrIndiv, "QC")
+        }
+    }
+    
+    if(returnExpDetails){
+        if(class(Out)[1] == "list"){
+            Out[["ExpDetails"]] <- Deets
+        } else {
+            Out <- list(Out)
+            Out[[2]] <- Deets
+            names(Out) <- c(returnAggregateOrIndiv, "ExpDetails")
         }
     }
     

@@ -11,6 +11,7 @@ extractPK(
   tissue = "plasma",
   returnAggregateOrIndiv = "aggregate",
   includeTrialInfo = TRUE,
+  returnExpDetails = FALSE,
   checkDataSource = TRUE
 )
 }
@@ -59,6 +60,14 @@ statistics reported exactly as in the simulator output file.}
 \item{includeTrialInfo}{TRUE or FALSE: Include which individual and trial the
 data describe? This only applies when \code{returnAggregateOrIndiv}
 includes "individual".}
+
+\item{returnExpDetails}{TRUE or FALSE: Since, behind the scenes, this
+function extracts experimental details from the "Summary" tab of the
+simulator output file, would you like those details to be returned here? If
+set to TRUE, output will be a list of 1. the requested PK data, 2. the
+experimental details provided on the Summary tab, and, if you have set
+checkDataSource to TRUE, 3. info for checking the data. (See
+"checkDataSource".)}
 
 \item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
 lists exactly where the data were pulled from the simulator output file.
