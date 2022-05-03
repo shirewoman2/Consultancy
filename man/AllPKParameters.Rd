@@ -4,7 +4,9 @@
 \name{AllPKParameters}
 \alias{AllPKParameters}
 \title{All possible PK parameters that can be extracted from a simulator output file
-using \code{\link{extractPK}}.}
+using \code{\link{extractPK}}. For the more user-friendly version of this
+data.frame, which omits columns used only for coding purposes, please see
+\code{\link{PKParameterDefinitions}}.}
 \format{
 A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
   parameter name to use with \code{\link{extractPK}} for the argument
@@ -21,6 +23,8 @@ AllPKParameters
 }
 \description{
 All possible PK parameters that can be extracted from a simulator output file
-using \code{\link{extractPK}}.
+using \code{\link{extractPK}}. For the more user-friendly version of this
+data.frame, which omits columns used only for coding purposes, please see
+\code{\link{PKParameterDefinitions}}.
 }
 \keyword{datasets}

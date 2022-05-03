@@ -5,7 +5,7 @@
 \alias{ExpDetailDefinitions}
 \title{All possible experimental details that can be extracted from a simulator
 output file using \code{\link{extractExpDetails}}. For the version that
-includes columns only used for coding purposes, see
+includes additional columns only used for coding purposes, see
 \code{\link{AllExpDetails}}.}
 \format{
 A data.frame with the following columns: \describe{
@@ -30,7 +30,7 @@ ExpDetailDefinitions
 \description{
 All possible experimental details that can be extracted from a simulator
 output file using \code{\link{extractExpDetails}}. For the version that
-includes columns only used for coding purposes, see
+includes additional columns only used for coding purposes, see
 \code{\link{AllExpDetails}}.
 }
 \keyword{datasets}

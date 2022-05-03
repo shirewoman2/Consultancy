@@ -20,16 +20,13 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab", save_output = NA)
   \item{"population tab"}{Extract details about the population used (data
   come from the tab with the same name as the population simulated)}
 
-  \item{"Simcyp inputs"}{Extract details that you normally fill out on the
-  "Simcyp inputs (and QC)" tab of a compound data sheet}
+  \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+  on the "Simcyp inputs (and QC)" tab of a compound data sheet}
 
   \item{"all"}{Extract all possible parameters}
 
-  \item{a string of the specific parameters you want}{For a complete list of
-  all the parameters that are possible to extract, type
-  \code{data(ExpDetailDefinitions)} into the console. This will generate a
-  data.frame (a table), where the column "Detail" lists the parameter names
-  and the column "Notes" explains what each parameter is. Parameters are
+  \item{a string of the specific parameters you want}{For a complete list,
+  type \code{data(ExpDetailDefinitions)} into the console. Parameters are
   reported with a suffix depending on which compound they pertain to: "_sub"
   for the substrate, "_met1" for the primary metabolite, "_met2" for the
   second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
