@@ -4,7 +4,9 @@
 \name{AllExpDetails}
 \alias{AllExpDetails}
 \title{All possible experimental details that can be extracted from a simulator
-output file using \code{\link{extractExpDetails}}.}
+output file using \code{\link{extractExpDetails}}. This version includes
+columns used only internally with coding. For the more user-friendly version,
+see \code{\link{ExpDetailDefinitions}}.}
 \format{
 A data.frame with 10 columns: \describe{
 
@@ -15,7 +17,8 @@ A data.frame with 10 columns: \describe{
 
   \item{Notes}{an explanation of what the experimental detail is}
 
-  \item{NameColDetect}{FOR INTERNAL USE}
+  \item{NameColDetect}{FOR INTERNAL USE. When searching the Input Sheet for
+  the set of columns to use, what regular expression should be used.}
 
   \item{Class}{Data class}
 
@@ -30,9 +33,9 @@ A data.frame with 10 columns: \describe{
   \item{CDSInputMatch}{FOR INTERNAL USE: Which compound data sheet item on
   the "Simcyp Inputs and QC" tab match this experimental detail}
 
-  \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which section does
-  this detail belong? Options: Absorption, Distribution, Elimination,
-  Interaction, Phys Chem and Blood Binding.}
+  \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which
+  section does this detail belong? Options: Absorption, Distribution,
+  Elimination, Interaction, Phys Chem and Blood Binding.}
 
   }
 }
@@ -41,6 +44,8 @@ AllExpDetails
 }
 \description{
 All possible experimental details that can be extracted from a simulator
-output file using \code{\link{extractExpDetails}}.
+output file using \code{\link{extractExpDetails}}. This version includes
+columns used only internally with coding. For the more user-friendly version,
+see \code{\link{ExpDetailDefinitions}}.
 }
 \keyword{datasets}
