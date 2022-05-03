@@ -30,7 +30,7 @@ extractPK(
 
   \item{any combination of specific, individual parameters, e.g.,
   \code{c("Cmax_dose1", "AUCtau_ss").} To see the full set of possible
-  parameters to extract, enter \code{data(AllPKParameters)} into the
+  parameters to extract, enter \code{data(PKParameterDefinitions)} into the
   console.}}
 
   Currently, the PK data are only for the substrate unless noted, although

@@ -39,11 +39,11 @@ will result in an error and return no data.}
   tabs.}
 
   \item{a string of the specific parameters you want}{For a complete list,
-  type \code{data(AllExpDetails)} into the console. Parameters are reported
-  with a suffix depending on which compound they pertain to: "_sub" for the
-  substrate, "_met1" for the primary metabolite, "_met2" for the second
-  primary metabolite, "_secmet" for the secondary metabolite, "_inhib" for
-  the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
+  type \code{data(ExpDetailDefinitions)} into the console. Parameters are
+  reported with a suffix depending on which compound they pertain to: "_sub"
+  for the substrate, "_met1" for the primary metabolite, "_met2" for the
+  second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
+  for the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}}
 
