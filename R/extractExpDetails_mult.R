@@ -1,4 +1,4 @@
-#' Extract experimental details for multiple files at once
+#' Extract experimental details for multiple files
 #'
 #' \code{extractExpDetails_mult} takes a character vector of simulator output
 #' files -- or all the Excel files in the current directory if no files are
@@ -10,24 +10,26 @@
 #'   Example of acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. Note that,
 #'   if some of your Excel files are not regular simulator output, e.g. they are
 #'   sensitivity analyses or a file where you were doing some calculations, this
-#'   will result in an error and return no data.
-#' @param exp_details Experiment details you want to extract from the simulator
-#'   output files using the function \code{\link{extractExpDetails}}. Options
-#'   are \describe{
+#'   will result in an error and return no data. You'll also get an error and no
+#'   data if any of these output files are open in another program.
+#' @param exp_details Experimental details you want to extract from the
+#'   simulator output files using the function \code{\link{extractExpDetails}}.
+#'   Options are \describe{
 #'
-#'   \item{"Summary tab"}{Extract details only from the "Summary tab" (default)}
+#'   \item{"Summary tab"}{Extracts details only from the "Summary tab"
+#'   (default)}
 #'
-#'   \item{"Input Sheet"}{Extract details only from the "Input Sheet" tab}
+#'   \item{"Input Sheet"}{Extracts details only from the "Input Sheet" tab}
 #'
-#'   \item{"population tab"}{Extract details about the population used (data
-#'   come from the tab with the same name as the population simulated)}
+#'   \item{"population tab"}{Extracts details about the population used (data
+#'   are pulled from the tab with the same name as the population simulated)}
 #'
-#'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+#'   \item{"Simcyp inputs"}{Extracts all the details that you normally fill out
 #'   on the "Simcyp inputs (and QC)" tab of a compound data sheet}
 #'
-#'   \item{"all"}{Extract all possible parameters (default). This is the slowest
-#'   option in terms of processing time because it must read multiple Excel
-#'   tabs.}
+#'   \item{"all"}{Extracts all possible parameters (default). This is the
+#'   slowest option in terms of processing time because it must read multiple
+#'   Excel tabs.}
 #'
 #'   \item{a string of the specific parameters you want}{For a complete list,
 #'   type \code{data(AllExpDetails)} into the console. Parameters are reported

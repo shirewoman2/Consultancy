@@ -33,3 +33,8 @@ it will still be saved as a csv file.}
 \description{
 Extract pertinent data from Simulator output files for creating forest plots
 }
+\examples{
+
+# None yet
+
+}

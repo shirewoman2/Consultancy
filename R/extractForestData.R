@@ -15,6 +15,9 @@
 #' @export
 #'
 #' @examples
+#' 
+#' # None yet
+#' 
 extractForestData <- function(sim_data_files, 
                               PKparameters = c("AUCinf_ratio_dose1", 
                                                "AUCt_ratio_dose1", 
