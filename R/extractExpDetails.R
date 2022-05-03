@@ -15,16 +15,13 @@
 #'   \item{"population tab"}{Extract details about the population used (data
 #'   come from the tab with the same name as the population simulated)}
 #'
-#'   \item{"Simcyp inputs"}{Extract details that you normally fill out on the
-#'   "Simcyp inputs (and QC)" tab of a compound data sheet}
+#'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet}
 #'
 #'   \item{"all"}{Extract all possible parameters}
 #'
-#'   \item{a string of the specific parameters you want}{For a complete list of
-#'   all the parameters that are possible to extract, type
-#'   \code{data(ExpDetailDefinitions)} into the console. This will generate a
-#'   data.frame (a table), where the column "Detail" lists the parameter names
-#'   and the column "Notes" explains what each parameter is. Parameters are
+#'   \item{a string of the specific parameters you want}{For a complete list,
+#'   type \code{data(ExpDetailDefinitions)} into the console. Parameters are
 #'   reported with a suffix depending on which compound they pertain to: "_sub"
 #'   for the substrate, "_met1" for the primary metabolite, "_met2" for the
 #'   second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
@@ -66,6 +63,14 @@ extractExpDetails <- function(sim_data_file,
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
     
+    # Noting exp_details requested for later
+    exp_details_input <- tolower(exp_details)
+    
+    # Cleaning up possible problems w/how exp_details by tab might be inputted
+    if(str_detect(tolower(exp_details[1]), "summary")){exp_details <- "Summary tab"}
+    if(str_detect(tolower(exp_details[1]), "input")){exp_details <- "Input sheet"}
+    if(str_detect(tolower(exp_details[1]), "population sheet")){exp_details <- "population tab"}
+    
     # Noting which details are possible, which columns to search for their
     # names, which columns contain their values for substrates or inhibitors,
     # and what kind of data to format the output as at the end. Using data
@@ -82,21 +87,27 @@ extractExpDetails <- function(sim_data_file,
     InputDeets <- AllExpDetails %>% filter(Sheet == "Input Sheet") %>% 
         rename(Deet = Detail)
     
-    # Noting exp_details requested for later
-    exp_details_input <- tolower(exp_details)
+    if(exp_details_input[1] == "all"){
+        exp_details <- unique(AllExpDetails$Detail)
+    }
     
-    # Setting what details to extract, including accounting for shortcuts for
-    # setting sets of parameters (e.g., Input sheet)
-    if(str_detect(exp_details_input[1], "summary")){
-        
-        exp_details <- c(SumDeets$Deet, "StartHr_sub", "StartHr_inhib", 
-                         "SimDuration")
+    if(exp_details_input[1] == "summary tab"){
+        exp_details <- c(SumDeets$Deet, "StartHr_sub", "StartHr_inhib")
         # Note that StartHr_inhib2, even if there were an inhibitor 2, is
         # not available from the Summary Sheet. It IS available from the
         # Input Sheet, though.
-        
-    } else if(str_detect(exp_details_input[1], "simcyp input")){
-        
+    }
+    
+    if(exp_details_input[1] == "input sheet"){
+        exp_details <- c(InputDeets$Deet, "StartHr_sub", "StartHr_inhib",
+                         "StartHr_inhib2")
+    }
+    
+    if(exp_details_input[1] == "population tab"){
+        exp_details <- PopDeets$Deet
+    }
+    
+    if(exp_details_input[1] == "Simcyp inputs"){
         exp_details <- c("Substrate", "Inhibitor1",
                          paste0(rep(each = 2, 
                                     c("MW", "logP", "CompoundType", "pKa1", "pKa2",
@@ -107,26 +118,12 @@ extractExpDetails <- function(sim_data_file,
                                       "kp_scalar", "kin_sac", "kout_sac",
                                       "Vsac", "CLint", "CLrenal", "Interaction")), 
                                 c("_sub", "_inhib")))
-        
-    } else if(str_detect(exp_details_input[1], "input") & 
-              !str_detect(exp_details_input[1], "simcyp")){
-        
-        exp_details <- c(InputDeets$Deet, "StartHr_sub", "StartHr_inhib",
-                         "StartHr_inhib2", "SimDuration")
-        
-    } else if(str_detect(exp_details_input[1], "population sheet")){
-        
-        exp_details <- PopDeets$Deet
-        
-    } else if(exp_details_input[1] == "all"){
-        
-        exp_details <- unique(AllExpDetails$Detail)
     }
     
     # Need to note original exp_details requested b/c I'm adding to it if
     # people request info from population tab. Note that this is different
     # from "exp_details_input" and serves a different purpose.
-    exp_details_req <- exp_details
+    exp_details_orig <- exp_details
     
     # Since StartHr_sub and StartHr_inhib are calculated from StartDayTime_sub
     # and StartDayTime_inhib, those must be included in exp_details to
@@ -151,7 +148,7 @@ extractExpDetails <- function(sim_data_file,
                                      AllExpDetails$Detail))
         stop(paste0("These study details are not among the possible options: ",
                     Problem,
-                    ". The study details to extract must be among the options listed. Please enter 'data(AllExpDetails)' into the console for all options."))
+                    ". The study details to extract must be among the options listed. Please enter 'data(ExpDetailDefinitions)' into the console for all options."))
     }
     
     if(length(exp_details) == 0){
@@ -843,7 +840,7 @@ extractExpDetails <- function(sim_data_file,
             names(PopTab) <- paste0("...", 1:ncol(PopTab))
         }
         
-        if("HSA" %in% exp_details_req){
+        if("HSA" %in% exp_details_orig){
             exp_details <- unique(c(exp_details, "HSA_C0_female",
                                     "HSA_C0_male", "HSA_C1_female",
                                     "HSA_C1_male", "HSA_C2_female",
@@ -851,17 +848,17 @@ extractExpDetails <- function(sim_data_file,
             exp_details <- exp_details[!exp_details == "HSA"]
         }
         
-        if("HSA_male" %in% exp_details_req){
+        if("HSA_male" %in% exp_details_orig){
             exp_details <- unique(c(exp_details, "HSA_male", "HSA_C0_male",
                                     "HSA_C1_male", "HSA_C2_male"))
         }
         
-        if("HSA_female" %in% exp_details_req){
+        if("HSA_female" %in% exp_details_orig){
             exp_details <- unique(c(exp_details, "HSA_female", "HSA_C0_female",
                                     "HSA_C1_female", "HSA_C2_female"))
         }
         
-        if("AGP" %in% exp_details_req){
+        if("AGP" %in% exp_details_orig){
             exp_details <- unique(c(exp_details, "AGP_male", "AGP_female"))
             exp_details <- exp_details[!exp_details == "AGP"]
         }
@@ -972,24 +969,18 @@ extractExpDetails <- function(sim_data_file,
                                                 time2 = Out$StartDayTime_inhib2)
     }
     
-    if("SimDuration" %in% exp_details & 
-       all(c("SimStartDayTime", "SimEndDayTime") %in% names(Out))){
-        Out[["SimDuration"]] <- difftime_sim(time1 = Out$SimStartDayTime, 
-                                             time2 = Out$SimEndDayTime)
-    }
-    
     # Removing StartDayTime_sub and SimStartDayTime if the user
     # did not request them.
-    if("StartDayTime_sub" %in% exp_details_req == FALSE){
+    if("StartDayTime_sub" %in% exp_details_orig == FALSE){
         Out[["StartDayTime_sub"]] <- NULL
     }
-    if("StartDayTime_inhib" %in% exp_details_req == FALSE){
+    if("StartDayTime_inhib" %in% exp_details_orig == FALSE){
         Out[["StartDayTime_inhib"]] <- NULL
     }
-    if("StartDayTime_inhib2" %in% exp_details_req == FALSE){
+    if("StartDayTime_inhib2" %in% exp_details_orig == FALSE){
         Out[["StartDayTime_inhib2"]] <- NULL
     }
-    if("SimStartDayTime" %in% exp_details_req == FALSE){
+    if("SimStartDayTime" %in% exp_details_orig == FALSE){
         Out[["SimStartDayTime"]] <- NULL
     }
     

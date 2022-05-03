@@ -26,7 +26,7 @@
 #'
 #'   \item{any combination of specific, individual parameters, e.g.,
 #'   \code{c("Cmax_dose1", "AUCtau_ss").} To see the full set of possible
-#'   parameters to extract, enter \code{data(AllPKParameters)} into the
+#'   parameters to extract, enter \code{data(PKParameterDefinitions)} into the
 #'   console.}}
 #'
 #'   Currently, the PK data are only for the substrate unless noted, although
@@ -44,13 +44,6 @@
 #' @param includeTrialInfo TRUE or FALSE: Include which individual and trial the
 #'   data describe? This only applies when \code{returnAggregateOrIndiv}
 #'   includes "individual".
-#' @param returnExpDetails TRUE or FALSE: Since, behind the scenes, this
-#'   function extracts experimental details from the "Summary" tab of the
-#'   simulator output file, would you like those details to be returned here? If
-#'   set to TRUE, output will be a list of 1. the requested PK data, 2. the
-#'   experimental details provided on the Summary tab, and, if you have set
-#'   checkDataSource to TRUE, 3. info for checking the data. (See
-#'   "checkDataSource".)
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
@@ -77,7 +70,6 @@ extractPK <- function(sim_data_file,
                       tissue = "plasma",
                       returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
-                      returnExpDetails = FALSE, 
                       checkDataSource = TRUE){
     
     # If they didn't include ".xlsx" at the end, add that.
@@ -192,7 +184,7 @@ extractPK <- function(sim_data_file,
     MissingPKParam <- setdiff(PKparameters, AllPKParameters$PKparameter)
     if(length(MissingPKParam) > 0){
         warning(paste0("The parameter(s) ", str_comma(MissingPKParam),
-                       " is/are not among the possible PK parameters and will not be extracted. Please see data(AllPKParameters) for all possible parameters."))
+                       " is/are not among the possible PK parameters and will not be extracted. Please see data(PKParameterDefinitions) for all possible parameters."))
     }
     
     # Checking experimental details to only pull details that apply
@@ -1338,11 +1330,10 @@ extractPK <- function(sim_data_file,
     }
     
     
-    # Putting all data together ------------------------------------------ If
-    # user only wanted one parameter and includeTrialInfo was FALSE and so was
-    # returnExpDetails, make the output a vector instead of a list
-    if(length(Out_ind) == 1 & includeTrialInfo == FALSE & 
-       returnExpDetails == FALSE){
+    # Putting all data together ------------------------------------------
+    # If user only wanted one parameter and includeTrialInfo was FALSE, make
+    # the output a vector instead of a list
+    if(length(Out_ind) == 1 & includeTrialInfo == FALSE){
         
         Out_ind <- Out_ind[[1]]
         
@@ -1462,16 +1453,6 @@ extractPK <- function(sim_data_file,
             # the items in Out accordingly.
             Out <- list(Out, DataCheck)
             names(Out) <- c(returnAggregateOrIndiv, "QC")
-        }
-    }
-    
-    if(returnExpDetails){
-        if(class(Out)[1] == "list"){
-            Out[["ExpDetails"]] <- Deets
-        } else {
-            Out <- list(Out)
-            Out[[2]] <- Deets
-            names(Out) <- c(returnAggregateOrIndiv, "ExpDetails")
         }
     }
     
