@@ -7,7 +7,8 @@
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output file. Options are \describe{
 #'
-#'   \item{"Summary tab"}{Extract details available from the "Summary tab" (default)}
+#'   \item{"Summary tab"}{Extract details available from the "Summary tab"
+#'   (default)}
 #'
 #'   \item{"Input Sheet"}{Extract details available from the "Input Sheet" tab}
 #'
@@ -20,11 +21,11 @@
 #'   \item{"all"}{Extract all possible parameters}
 #'
 #'   \item{a string of the specific parameters you want}{For a complete list,
-#'   type \code{data(AllExpDetails)} into the console. Parameters are reported
-#'   with a suffix depending on which compound they pertain to: "_sub" for the
-#'   substrate, "_met1" for the primary metabolite, "_met2" for the second
-#'   primary metabolite, "_secmet" for the secondary metabolite, "_inhib" for
-#'   the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
+#'   type \code{data(ExpDetailDefinitions)} into the console. Parameters are
+#'   reported with a suffix depending on which compound they pertain to: "_sub"
+#'   for the substrate, "_met1" for the primary metabolite, "_met2" for the
+#'   second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
+#'   for the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
 #'   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
 #'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
@@ -147,7 +148,7 @@ extractExpDetails <- function(sim_data_file,
                                      AllExpDetails$Detail))
         stop(paste0("These study details are not among the possible options: ",
                     Problem,
-                    ". The study details to extract must be among the options listed. Please enter 'data(AllExpDetails)' into the console for all options."))
+                    ". The study details to extract must be among the options listed. Please enter 'data(ExpDetailDefinitions)' into the console for all options."))
     }
     
     if(length(exp_details) == 0){

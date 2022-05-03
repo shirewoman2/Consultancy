@@ -26,7 +26,7 @@
 #'
 #'   \item{any combination of specific, individual parameters, e.g.,
 #'   \code{c("Cmax_dose1", "AUCtau_ss").} To see the full set of possible
-#'   parameters to extract, enter \code{data(AllPKParameters)} into the
+#'   parameters to extract, enter \code{data(PKParameterDefinitions)} into the
 #'   console.}}
 #'
 #'   Currently, the PK data are only for the substrate unless noted, although
@@ -184,7 +184,7 @@ extractPK <- function(sim_data_file,
     MissingPKParam <- setdiff(PKparameters, AllPKParameters$PKparameter)
     if(length(MissingPKParam) > 0){
         warning(paste0("The parameter(s) ", str_comma(MissingPKParam),
-                       " is/are not among the possible PK parameters and will not be extracted. Please see data(AllPKParameters) for all possible parameters."))
+                       " is/are not among the possible PK parameters and will not be extracted. Please see data(PKParameterDefinitions) for all possible parameters."))
     }
     
     # Checking experimental details to only pull details that apply
