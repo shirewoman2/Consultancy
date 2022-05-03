@@ -24,6 +24,7 @@ ct_plot_overlay(
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   legend_position = NA,
+  legend_label = NA,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5,
@@ -181,6 +182,12 @@ applies when you have requested a semi-log plot with \code{linear_or_log}.}
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
 
+\item{legend_label}{Optionally indicate on the legend whether the effector is
+an inhibitor, inducer, activator, or suppressor. Input will be used as the
+label in the legend for the line style and the shape. If left as NA when a
+legend is included and an effector is present, the label in the legend will
+be "Inhibitor".}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you do not designate a
 file extension, it will be saved as a png file, but if you specify a
@@ -209,15 +216,17 @@ enzyme-abundance data or ADAM data yet.
 including observed data and are in the process of testing this. To include
 observed data, you have two options: \enumerate{
 
-\item{Use the Simulator Excel PE data entry template to save information
-about your observed data. Then, when you run
-\code{\link{extractConcTime_mult}}, supply the names of those Excel files to
-the observed data  function argument. This is the BEST option because it
-contains the most information about the observed data.}
+\item{Use the Simulator Excel PE data entry template to save your observed
+data. Then, when you run \code{\link{extractConcTime_mult}}, supply the names
+of those Excel files to the observed data  function argument. This is the
+BEST option because it contains the most information about the observed
+data.}
 
 \item{Include observed data in your simulation files. Those data will be
 automatically extracted when you run \code{\link{extractConcTime_mult}} if
-"obs_data_files" is left as the default NA. } }
+"obs_data_files" is left as the default NA. The drawback to this approach is
+that it's not clear whether there was an inhibitor present, for example, or
+which compound the data describe.} }
 
 The \code{ct_plot_overlay} function will automatically figure out which
 observed data should be compared with which simulated compound IDs, tissues,
@@ -227,19 +236,21 @@ data are appropriate to compare to \emph{all} the files included in
 \code{sim_obs_dataframe} by default. If that's not the case, after you use
 \code{\link{extractConcTime_mult}} to extract your data, you can indicate
 which simulator output file goes with which observed file by setting the
-simulator output file in the column "File". (Please ask a member of the R
-Working Group for help if you're not clear on how to do this.) Be warned,
-though, that if you assign "File" for some observed data but not all, only
-the observed data with an assignment for "File" will show up on the graph.
+simulator output file in the column "File". This admittedly requires a bit of
+R knowledge, so please ask a member of the R Working Group for help if you're
+not clear on how to do this. Be warned, though, that if you assign "File" for
+some observed data but not all, only the observed data with an assignment for
+"File" will show up on the graph.
 
-One other note: The observed data files don't include the \emph{name} of the
-compound you're simulating (column: "Compound"). They do include whether it
-was a substrate, metabolite, or inhibitor (column: CompoundID), but not the
-compound's actual name. For that reason, try coloring or facetting your data
-by CompoundID rather than by Compound if you have observed data. Similarly,
-if you have an inhibitor and you have observed data, the inhibitor will be
-listed as the generic "inhibitor" here rather than, e.g., "ketoconazole"
-because the observed data file doesn't indicate that.
+One other note: The observed data files from the PE data-entry template don't
+include the \emph{name} of the compound you're simulating (column:
+"Compound"). They do include whether it was a substrate, metabolite, or
+inhibitor (column: CompoundID), but not the compound's actual name. For that
+reason, try coloring or facetting your data by CompoundID rather than by
+Compound if you have observed data. Similarly, if you have an inhibitor and
+you have observed data, the inhibitor will be listed as the generic
+"inhibitor" here rather than, e.g., "ketoconazole" because the observed data
+file doesn't indicate that.
 }
 \examples{
 data(MDZct)
@@ -253,6 +264,13 @@ ct_plot_overlay(sim_obs_dataframe = MDZct, colorBy_column = File,
                                  "mdz-5mg-sd-fa0_8.xlsx" = "fa 0.8",
                                  "mdz-5mg-sd-fa0_6.xlsx" = "fa 0.6",
                                  "mdz-5mg-sd-fa0_4.xlsx" = "fa 0.4"))
+                                 
+# An example of how you might set the column "File" for a specific
+# observed data file:
+MyData <- MyData \%>\%
+   mutate(File = case_when(ObsFile == "ObservedData1.xlsx" ~ "SimFileA.xlsx",
+                           ObsFile == "ObservedData2.xlsx" ~ "SimFileB.xlsx"))
+
 
 
 }

@@ -224,10 +224,10 @@ there's nothing to differentiate the data. If \code{legend_position} is set
 to something other than "none", that will override this argument.}
 
 \item{legend_label}{Optionally indicate on the legend whether the effector is
-an inhibitor,inducer, activator, or suppressor. Input will be used as the
+an inhibitor, inducer, activator, or suppressor. Input will be used as the
 label in the legend for the line style and the shape. If left as NA when a
 legend is included and an effector is present, the label in the legend will
-be "Inhibitor 1".}
+be "Inhibitor".}
 
 \item{prettify_effector_name}{Optionally make the Inhibitor 1 name prettier
 in the legend. This was designed for simulations where Inhibitor 1 is one
