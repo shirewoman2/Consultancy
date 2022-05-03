@@ -60,7 +60,9 @@
 "AllPKParameters"
 
 #' All possible experimental details that can be extracted from a simulator
-#' output file using \code{\link{extractExpDetails}}.
+#' output file using \code{\link{extractExpDetails}}. This version includes
+#' columns used only internally with coding. For the more user-friendly version,
+#' see \code{\link{ExpDetailDefinitions}}.
 #'
 #' @format A data.frame with 10 columns: \describe{
 #'
@@ -71,7 +73,8 @@
 #'
 #'   \item{Notes}{an explanation of what the experimental detail is}
 #'
-#'   \item{NameColDetect}{FOR INTERNAL USE}
+#'   \item{NameColDetect}{FOR INTERNAL USE. When searching the Input Sheet for
+#'   the set of columns to use, what regular expression should be used.}
 #'
 #'   \item{Class}{Data class}
 #'
@@ -86,12 +89,37 @@
 #'   \item{CDSInputMatch}{FOR INTERNAL USE: Which compound data sheet item on
 #'   the "Simcyp Inputs and QC" tab match this experimental detail}
 #'
-#'   \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which section does
-#'   this detail belong? Options: Absorption, Distribution, Elimination,
-#'   Interaction, Phys Chem and Blood Binding.}
+#'   \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which
+#'   section does this detail belong? Options: Absorption, Distribution,
+#'   Elimination, Interaction, Phys Chem and Blood Binding.}
 #'
 #'   }
 "AllExpDetails"
+
+#' All possible experimental details that can be extracted from a simulator
+#' output file using \code{\link{extractExpDetails}}. For the version that
+#' includes columns only used for coding purposes, see
+#' \code{\link{AllExpDetails}}.
+#'
+#' @format A data.frame with the following columns: \describe{
+#'
+#'   \item{Detail}{the experimental detail name to use with
+#'   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
+#'
+#'   \item{Compound}{the specific compound this experimental detail applies to}
+#'
+#'   \item{SimulatorSection}{the part of the simulator that this detail applies
+#'   to}
+#'   
+#'   \item{Notes}{an explanation of what the experimental detail is}
+#'
+#'   \item{Sheet}{Which simulator output sheet this detail is extracted from}
+#'
+#'   }
+"ExpDetailDefinitions"
+
+
+
 
 #' All possible observed dependent variable options in the Excel file template
 #' for converting observed data to an XML file the Simulator can use
