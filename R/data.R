@@ -46,7 +46,9 @@
 "ReportInputForm"
 
 #' All possible PK parameters that can be extracted from a simulator output file
-#' using \code{\link{extractPK}}.
+#' using \code{\link{extractPK}}. For the more user-friendly version of this
+#' data.frame, which omits columns used only for coding purposes, please see
+#' \code{\link{PKParameterDefinitions}}. 
 #'
 #' @format A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
 #'   parameter name to use with \code{\link{extractPK}} for the argument
@@ -58,6 +60,24 @@
 #'   simulation} \item{SortOrder}{the order to arrange columns for so_table and
 #'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
 "AllPKParameters"
+
+
+
+#' All possible PK parameters that can be extracted from a simulator
+#' output file using \code{\link{extractPK}}. For the version that
+#' includes additional columns only used for coding purposes, see
+#' \code{\link{AllPKParameters}}.
+#' @format A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
+#'   parameter name to use with \code{\link{extractPK}} for the argument
+#'   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
+#'   where the PK parameter will be extracted, if possible}
+#'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
+#'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
+#'   for whether this item only applies when an effector is present in the
+#'   simulation} \item{SortOrder}{the order to arrange columns for so_table and
+#'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
+"PKParameterDefinitions"
+
 
 #' All possible experimental details that can be extracted from a simulator
 #' output file using \code{\link{extractExpDetails}}. This version includes
@@ -98,7 +118,7 @@
 
 #' All possible experimental details that can be extracted from a simulator
 #' output file using \code{\link{extractExpDetails}}. For the version that
-#' includes columns only used for coding purposes, see
+#' includes additional columns only used for coding purposes, see
 #' \code{\link{AllExpDetails}}.
 #'
 #' @format A data.frame with the following columns: \describe{
