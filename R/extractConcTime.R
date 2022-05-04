@@ -1198,6 +1198,8 @@ extractConcTime <- function(sim_data_file,
                             rm(obs_data)
                         } else {
                             
+                            warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.")
+                            
                             NewNamesObs <- obs_data[1, ]
                             NewNamesObs[str_detect(NewNamesObs, "Time")] <- "Time"
                             # NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
