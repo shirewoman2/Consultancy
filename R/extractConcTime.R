@@ -478,17 +478,22 @@ extractConcTime <- function(sim_data_file,
             # exactly how they decide what that number will be, so we need to
             # figure out what that number is, assign it to the correct
             # inhibitor, and extract appropriately.
+            
+            # First, looking for where the data for the inhibitor start.
             TimeRow <- which(str_detect(sim_data_xl$...1,
                                         "^Time.*Inhibitor "))[1]
-            if(is.na(TimeRow)){ # This occurs when the tissue is not systemic
+            # TimeRow is NA when the tissue is not systemic or in a few other
+            # situations I'm not clear on... It happened for the file
+            # "mdz-5mg-sd-keto-200mg-bid.xlsx", which was run in V20.
+            if(is.na(TimeRow)){ 
                 TimeRow <- which(str_detect(sim_data_xl$...1,
                                             "Time "))
                 TimeRow <- TimeRow[which(str_detect(sim_data_xl$...1[TimeRow + 1],
                                                     "^I|^CTissue"))][1]
             }
             
-            # If TimeRow is still NA, it doesn't apply so ok to skip the rest of
-            # this section.
+            # If TimeRow is still NA, we don't need it, so ok to skip the rest
+            # of this section.
             if(complete.cases(TimeRow)){
                 
                 # Figuring out which rows contain which data
@@ -550,7 +555,8 @@ extractConcTime <- function(sim_data_file,
                 
                 for(n in subsection_ADAMs){
                     
-                    # message(paste("subsection_ADAMs n =", n))
+                    # message(paste("subsection_ADAMs n =", n)) # uncomment for error checking this section
+                    
                     # Some sheets have all compounds included, so need to narrow
                     # down which rows to check. Others don't have metabolites
                     # listed on the same sheet, so that's why there are these
@@ -1223,14 +1229,10 @@ extractConcTime <- function(sim_data_file,
                                                 values_from = Value) %>%
                                     filter(complete.cases(Time)) %>%
                                     mutate(Trial = "obs",
-                                           Inhibitor = "none",
-                                           CompoundID = m,
-                                           Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
-                                           # The simulator doesn't provide much
-                                           # info on the identity of the
-                                           # compound for the observed data
-                                           # included in a simjlator file.
+                                           Inhibitor = NA,
+                                           CompoundID = NA,
                                            ObsFile = NA,
+                                           Compound = str_extract(Individual, "DV [0-9]{1,}"),
                                            Individual = sub("^Subject", "", Individual),
                                            Time_units = SimTimeUnits,
                                            Conc_units = SimConcUnits) %>%
@@ -1269,15 +1271,11 @@ extractConcTime <- function(sim_data_file,
             obs_data <- obs_data %>%
                 mutate(Simulated = FALSE,
                        Trial = as.character(
-                           ifelse(Inhibitor == "none",
+                           ifelse(Inhibitor == "none" | is.na(Inhibitor),
                                   "obs", "obs+inhibitor")))
             
             if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
                 warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?")
-            }
-            
-            if(exists("obs_eff_data", inherits = FALSE)){
-                obs_data <- bind_rows(obs_data, obs_eff_data)
             }
         }
         
@@ -1527,7 +1525,8 @@ extractConcTime <- function(sim_data_file,
     # itself rather than extractConcTime_mult.
     if(fromMultFunction == FALSE){
         Data <- Data %>%
-            filter(CompoundID %in% compoundToExtract)
+            filter(CompoundID %in% compoundToExtract |
+                       (is.na(CompoundID) & Simulated == FALSE))
     }
     
     return(Data)

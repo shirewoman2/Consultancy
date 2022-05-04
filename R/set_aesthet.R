@@ -55,7 +55,7 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     if(length(obs_color) == 1 &&
        (complete.cases(obs_color[1]) & obs_color == "default") |
        (is.na(obs_color[1]) & figure_type == "Freddy")){
-        obs_color <- "#3030FE"
+        obs_color <- rep("#3030FE", 2)
     }    
     
     # Assigning the variables created or changed here to the environment one
