@@ -148,6 +148,18 @@ inductFit <- function(DF,
     fold_change_column <- rlang::enquo(fold_change_column)
     donor_column <- rlang::enquo(donor_column)
     
+    if(rlang::as_label(conc_column) %in% names(DF) == FALSE){
+        stop("The column you have listed for the concentration data is not present in your data.frame. Please enter a valid column for concentration data.")
+    }
+    
+    if(rlang::as_label(fold_change_column) %in% names(DF) == FALSE){
+        stop("The column you have listed for the fold-change data is not present in your data.frame. Please enter a valid column for fold-change data.")
+    }
+    
+    if(rlang::as_label(donor_column) %in% names(DF) == FALSE & fitByDonor == TRUE){
+        stop("The column you have listed for the donor is not present in your data.frame. Please enter a valid column for the donor.")
+    }
+    
     # Need a donor column for joining purposes later. Adding a placeholder
     # here.
     if(rlang::as_label(donor_column) %in% names(DF) == FALSE){
@@ -192,19 +204,6 @@ inductFit <- function(DF,
     if(length(measurement) > 1){
         stop("Please select only one option for the measurement. Options are 'mRNA' or 'activity'.")
     }
-    
-    if(rlang::as_label(conc_column) %in% names(DF) == FALSE){
-        stop("The column you have listed for the concentration data is not present in your data.frame. Please enter a valid column for concentration data.")
-    }
-    
-    if(rlang::as_label(fold_change_column) %in% names(DF) == FALSE){
-        stop("The column you have listed for the fold-change data is not present in your data.frame. Please enter a valid column for fold-change data.")
-    }
-    
-    if(rlang::as_label(donor_column) %in% names(DF) == FALSE & fitByDonor == TRUE){
-        stop("The column you have listed for the donor is not present in your data.frame. Please enter a valid column for the donor.")
-    }
-    
     
     # General data setup ---------------------------------------------------
     # Need to add a column for the model chosen for graphing purposes.
@@ -335,7 +334,8 @@ inductFit <- function(DF,
                             weights = DF$Weights)) %>%
                         dplyr::mutate(model = "Indmax"),
                     error = function(x){data.frame(term = c("Indmax", "IndC50"),
-                                                   estimate = NA)}),
+                                                   estimate = NA, 
+                                                   model = "IndMax")}),
                 
                 IndmaxSlope = tryCatch(
                     broom::tidy(
@@ -344,7 +344,8 @@ inductFit <- function(DF,
                             data = DF, start = StartVals, weights = DF$Weights)) %>%
                         dplyr::mutate(model = "IndmaxSlope"),
                     error = function(x){data.frame(term = c("Indmax", "IndC50", "slope"),
-                                                   estimate = NA)}),
+                                                   estimate = NA, 
+                                                   model = "IndMaxSlope")}),
                 
                 Slope =  tryCatch(
                     broom::tidy(
@@ -352,7 +353,8 @@ inductFit <- function(DF,
                             data = DF, start = StartVals["slope"], weights = DF$Weights)) %>%
                         dplyr::mutate(model = "Slope"),
                     error = function(x){data.frame(term = c("slope"),
-                                                   estimate = NA)}),
+                                                   estimate = NA, 
+                                                   model = "Slope")}),
                 
                 Sig3Param = tryCatch(
                     broom::tidy(
@@ -360,7 +362,8 @@ inductFit <- function(DF,
                             data = DF, start = StartVals, weights = DF$Weights)) %>%
                         dplyr::mutate(model = "Sig3Param"),
                     error = function(x){data.frame(term = c("Indmax", "IndC50", "slope"),
-                                                   estimate = NA)})  )
+                                                   estimate = NA, 
+                                                   model = "Sig3Param")})  )
             
             # Making data.frame to hold the predicted values for the graph
             Curve <- data.frame(Concentration_uM = rep(seq(min(DF$Concentration_uM, na.rm = T),
@@ -570,14 +573,10 @@ inductFit <- function(DF,
         
     } else {
         
-        Out <- inductFit_prelim(DF, model) 
-        Out$Fit <- Out$Fit %>%
-            dplyr::select(term, estimate, model) %>%
-            tidyr::pivot_wider(values_from = estimate,
-                               names_from = term)
+        Out <- inductFit_prelim(DF, model)
         
         # Checking for failed fits and printing warning message
-        if(length(model) == 1){
+        if(length(model) == 1 & model != "all"){
             FitFail <- "p.value" %in% names(Out$Fit) == FALSE
             if(FitFail){
                 warning(paste0("The model failed to fit the data for the ", 
@@ -590,6 +589,12 @@ inductFit <- function(DF,
                                str_comma(FitFail), " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
             }
         }
+        
+        Out$Fit <- bind_rows(Out$Fit) %>%
+            dplyr::select(term, estimate, model) %>%
+            tidyr::pivot_wider(values_from = estimate,
+                               names_from = term)
+        
     }
     
     # Making the final graph look nice --------------------------------------
