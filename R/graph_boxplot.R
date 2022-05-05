@@ -8,10 +8,10 @@
 #' @param DF the data.frame you want to graph
 #' @param category_column the name of the column with categorical data in quotes
 #' @param value_column the name of the column with value data in quotes
-#' @param facet_column1 (optional) the name of a column by which you might break
+#' @param facet1_column (optional) the name of a column by which you might break
 #'   up your graph into small multiples. Please see the example if you're
 #'   uncertain what this does.
-#' @param facet_column2 (optional) the name of a second column by which you
+#' @param facet2_column (optional) the name of a second column by which you
 #'   might break up the graph into small multiples.
 #' @param graph_type the type of graph to plot. Options: \describe{
 #'   \item{"boxplot"}{standard boxplots or box-and-whisker plots}
@@ -82,11 +82,11 @@
 #' AUCs$Metabolizer <- sample(c("poor", "extensive"), 100, replace = TRUE)
 #'
 #' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-#'                facet_column1 = Sex,
+#'                facet1_column = Sex,
 #'                color_set = "blue-green", graph_type =  "jittered points")
 #'
 #' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-#'                facet_column1 = Sex, facet_column2 = Metabolizer,
+#'                facet1_column = Sex, facet2_column = Metabolizer,
 #'                color_set = "blue-green", graph_type =  "jittered points")
 #'
 #' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
@@ -103,8 +103,8 @@
 graph_boxplot <- function(DF,
                           category_column,
                           value_column,
-                          facet_column1,
-                          facet_column2,
+                          facet1_column,
+                          facet2_column,
                           graph_type = "boxplot",
                           include_errorbars = FALSE,
                           xlabel = NA,
@@ -122,8 +122,8 @@ graph_boxplot <- function(DF,
     
     category_column <- rlang::enquo(category_column)
     value_column <- rlang::enquo(value_column)
-    facet_column1 <- rlang::enquo(facet_column1)
-    facet_column2 <- rlang::enquo(facet_column2)
+    facet1_column <- rlang::enquo(facet1_column)
+    facet2_column <- rlang::enquo(facet2_column)
     
     # Building graph layers -------------------------------------
     if(color_set == "black"){
@@ -164,8 +164,8 @@ graph_boxplot <- function(DF,
     
     # Facets 
     G <- G +
-        facet_grid(rows = vars(!!facet_column1),
-                   cols = vars(!!facet_column2), 
+        facet_grid(rows = vars(!!facet1_column),
+                   cols = vars(!!facet2_column), 
                    scales = "free")
     
     if(complete.cases(xlabel)){

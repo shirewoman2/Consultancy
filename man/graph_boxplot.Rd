@@ -8,8 +8,8 @@ graph_boxplot(
   DF,
   category_column,
   value_column,
-  facet_column1,
-  facet_column2,
+  facet1_column,
+  facet2_column,
   graph_type = "boxplot",
   include_errorbars = FALSE,
   xlabel = NA,
@@ -27,11 +27,11 @@ graph_boxplot(
 
 \item{value_column}{the name of the column with value data in quotes}
 
-\item{facet_column1}{(optional) the name of a column by which you might break
+\item{facet1_column}{(optional) the name of a column by which you might break
 up your graph into small multiples. Please see the example if you're
 uncertain what this does.}
 
-\item{facet_column2}{(optional) the name of a second column by which you
+\item{facet2_column}{(optional) the name of a second column by which you
 might break up the graph into small multiples.}
 
 \item{graph_type}{the type of graph to plot. Options: \describe{
@@ -114,11 +114,11 @@ AUCs$Sex <- c("M", "F")
 AUCs$Metabolizer <- sample(c("poor", "extensive"), 100, replace = TRUE)
 
 graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-               facet_column1 = Sex,
+               facet1_column = Sex,
                color_set = "blue-green", graph_type =  "jittered points")
 
 graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-               facet_column1 = Sex, facet_column2 = Metabolizer,
+               facet1_column = Sex, facet2_column = Metabolizer,
                color_set = "blue-green", graph_type =  "jittered points")
 
 graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
