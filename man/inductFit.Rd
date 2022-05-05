@@ -16,6 +16,7 @@ inductFit(
   color_set = "default",
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
+  num_sigfig = NA,
   save_graph = NA,
   fig_height = 5,
   fig_width = 5.5,
@@ -38,22 +39,22 @@ unquoted.}
 \item{model}{which model(s) you would like to use. The four model options
   are: \describe{
 
-  \item{Indmax}{the Indmax model. This assumes a hyperbolic shape to the
+  \item{"Indmax"}{the Indmax model. This assumes a hyperbolic shape to the
   interaction when inducer concentration is plotted on the x axis and fold
   induction is plotted on the y. \deqn{Ind = (Indmax * I)/(IndC50 + I)} where
   Ind = the y axis observed fold induction, I is the inducer concentration,
   and Indmax (the maximum induction), and IndC50 (the inducer concentration
   at 1/2 Indmax) are the fitted parameters.}
 
-  \item{IndmaxSlope}{the Indmax model with the addition of a slope n
+  \item{"IndmaxSlope"}{the Indmax model with the addition of a slope n
   \deqn{fold induction = 1 + Indmax * I^n / (IndC50^n + I^n)}}
 
-  \item{Slope}{slope only: \deqn{fold induction = I * n}}
+  \item{"Slope"}{slope only: \deqn{fold induction = I * n}}
 
-  \item{Sig3Param}{Sigmoidal 3-parameter model (often used by Xenotech):
+  \item{"Sig3Param"}{Sigmoidal 3-parameter model (often used by Xenotech):
   \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))}}
 
-  \item{all}{All 4 models will be fitted to the data.} }}
+  \item{"all"}{All 4 models will be fitted to the data.} }}
 
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}
@@ -64,7 +65,7 @@ IDs}
 \item{fitByDonor}{TRUE or FALSE: Do you want to fit the data by individual
 donor (TRUE) or in aggregate (FALSE)?}
 
-\item{weights}{Weighting scheme to use for the regression. User may supply a
+\item{weights}{weighting scheme to use for the regression. User may supply a
 numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
 "1/y" or "1/y^2" (default). Be careful that you don't have any infinite
 values or this will fail!}
@@ -89,11 +90,15 @@ values or this will fail!}
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}}}
 
-\item{y_axis_limits}{Optionally set the Y axis limits, e.g., \code{c(1, 5)}.
+\item{y_axis_limits}{optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 If left as NA, the Y axis limits will be automatically selected.}
 
 \item{hline_foldinduct1}{TRUE or FALSE on whether to include a dotted red
 line where the fold induction = 1.}
+
+\item{num_sigfig}{optionally specify the number of significant figures you
+would like any output rounded to. If left as NA, no rounding will be
+performed.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
