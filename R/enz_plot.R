@@ -40,7 +40,7 @@ enz_plot <- function(sim_enz_dataframe,
         Data <- Data %>% filter(Tissue == gut_tissue)
     }
     
-    ct_plot(sim_obs_dataframe = Data, figure_type = figure_type,
+    ct_plot(ct_dataframe = Data, figure_type = figure_type,
             linear_or_log = linear_or_log, ...)
 }
 

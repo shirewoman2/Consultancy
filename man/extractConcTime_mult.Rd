@@ -7,7 +7,7 @@
 extractConcTime_mult(
   sim_data_files = NA,
   obs_data_files = NA,
-  sim_obs_dataframe = ConcTime,
+  ct_dataframe = ConcTime,
   overwrite = FALSE,
   tissues = "plasma",
   compoundsToExtract = "substrate",
@@ -36,7 +36,7 @@ digitized time and concentration data. This function assumes that the
 dosing intervals for the observed data match those in the simulated data.
 See "Details" for more info.}
 
-\item{sim_obs_dataframe}{(optional) a data.frame that contains previously
+\item{ct_dataframe}{(optional) a data.frame that contains previously
 extracted concentration-time data. This should NOT be in quotes. Because we
 can see scenarios where you might want to extract some concentration-time
 data, play around with those data, and then later decide you want to pull
@@ -47,7 +47,7 @@ data.frame. It will \emph{not} overwrite existing data unless
 
 \item{overwrite}{TRUE or FALSE on whether to re-extract the
 concentration-time data from output files that are already included in
-\code{sim_obs_dataframe}. Since pulling data from Excel files is slow, by
+\code{ct_dataframe}. Since pulling data from Excel files is slow, by
 default, this will \emph{not} overwrite existing data and instead will only
 add data from any Excel files that aren't already included. A situation
 where you might want to set this to TRUE would be when you have changed
@@ -126,7 +126,7 @@ that's not the case, these dose number assignments will be off.
 ConcTimeData <-
       extractConcTime_mult(
             sim_data_files = c("MyFile1.xlsx", "MyFile2.xlsx"),
-            sim_obs_dataframe = "ConcTimeData",
+            ct_dataframe = "ConcTimeData",
             overwrite = FALSE,
             tissue = "unbound plasma") # Note that "tissue" is passed to "extractConcTime".
 
