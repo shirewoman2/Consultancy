@@ -29,7 +29,7 @@ extractPK(
   \item{"Absorption tab" for only those parameters on the "Absorption" tab}
 
   \item{any combination of specific, individual parameters, e.g.,
-  \code{c("Cmax_dose1", "AUCtau_ss").} To see the full set of possible
+  \code{c("Cmax_dose1", "AUCtau_last").} To see the full set of possible
   parameters to extract, enter \code{data(PKParameterDefinitions)} into the
   console.}}
 
@@ -45,7 +45,7 @@ user-defined AUC integration. \emph{Note:} Unless you want a very specific
 Excel sheet that's not what the usual sheet name would be for a first or
 last dose, this function will work best if this is left as NA. Also, since
 we don't know which dose these data were for, you'll see that the output
-parameter names do not include the suffixes "_ss" or "_dose1".}
+parameter names do not include the suffixes "_last" or "_dose1".}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" or "blood".}
@@ -73,8 +73,10 @@ Depending on the options selected, returns a list of numerical
 \description{
 Pull calculated PK parameters from a Simcyp simulation output Excel file.
 \strong{Note:} Nearly all parameters are for the substrate. We're still
-working on this for extracting PK for the inhibitor. If you specify an Excel
-sheet that is for inhibitor 1 PK data, this may not work well.
+validating this for extracting PK for an effector. \strong{A request for
+assistance:} If you extract PK data for an effector by specifying an Excel
+sheet for that compound, please check the values and tell Laura Shireman how
+well it works!
 }
 \examples{
 

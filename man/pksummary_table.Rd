@@ -29,14 +29,14 @@ default, if you supply a file for \code{report_input_file}, the PK
 parameters included are only those included for the observed data in that
 file. Otherwise, the PK parameters will be automatically selected.}
 \item{Parameters that don't make sense for your scenario -- like asking for
-\code{AUCinf_ss_withInhib} when your simulation did not include an
+\code{AUCinf_last_withInhib} when your simulation did not include an
 inhibitor or effector -- will not be included.} \item{tmax will be listed
 as median, min, and max rather than mean, lower and higher X\% confidence
 interval or X percentiles. Similarly, if you request trial means, the
 values for tmax will be the range of medians for the trials rather than the
-range of means.}} An example of acceptable input here: \code{c("AUCtau_ss",
-"AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss",
-"Cmax_ratio_ss")}.}
+range of means.}} An example of acceptable input here:
+\code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
+"Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
@@ -47,11 +47,12 @@ here. Most of the time, this should be left as NA.}
 \item{includeCV}{TRUE or FALSE for whether to include rows for CV in the
 table}
 
-\item{includeConfInt}{TRUE or FALSE for whether to include whatever confidence
-intervals were included in the simulator output file. Note that the
-confidence intervals are geometric since that's what the simulator outputs
-(see an AUC tab and the summary statistics; these values are the ones for,
-e.g., "90\% confidence interval around the geometric mean(lower limit)").}
+\item{includeConfInt}{TRUE or FALSE for whether to include whatever
+confidence intervals were included in the simulator output file. Note that
+the confidence intervals are geometric since that's what the simulator
+outputs (see an AUC tab and the summary statistics; these values are the
+ones for, e.g., "90\% confidence interval around the geometric mean(lower
+limit)").}
 
 \item{includePerc}{TRUE or FALSE for whether to include 5th to 95th
 percentiles}
@@ -90,9 +91,19 @@ a data.frame of PK summary data or a list of that data.frame (named
 tables of PK parameters for reports and presentations, including reporting
 means, CVs, and confidence intervals or percentiles. This function
 automatically finds the correct tab and the correct cells to pull those data.
-\strong{Note:} If the simulator output Excel file lives on SharePoint, you'll
+\strong{Notes:} \itemize{\item{Nearly all parameters are for the
+\emph{substrate}. We're still validating this for extracting PK for an
+effector. \strong{A request for assistance:} If you extract PK data for an
+effector by specifying an Excel sheet for that compound, please check the
+values and tell Laura Shireman how well it works!} \item{Currently, the
+output column titles list units of ng, mL, and h for AUC and Cmax, and the
+function doesn't actually check what units are present in the data. If your
+units are something else, our apologies, but please change the units in the
+column titles when you use the output table. (The values in the table are
+fine.) We're working on making this detect what the units were and print
+those.} \item{ If the simulator output Excel file lives on SharePoint, you'll
 need to close it or this function will just keep running and not generate any
-output while it waits for access to the file.
+output while it waits for access to the file.}}
 }
 \examples{
 pksummary_table(sim_data_file = "Example simulator output - SD MDZ.xlsx")

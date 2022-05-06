@@ -2,8 +2,10 @@
 #'
 #' Pull calculated PK parameters from a Simcyp simulation output Excel file.
 #' \strong{Note:} Nearly all parameters are for the substrate. We're still
-#' working on this for extracting PK for the inhibitor. If you specify an Excel
-#' sheet that is for inhibitor 1 PK data, this may not work well.
+#' validating this for extracting PK for an effector. \strong{A request for
+#' assistance:} If you extract PK data for an effector by specifying an Excel
+#' sheet for that compound, please check the values and tell Laura Shireman how
+#' well it works!
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
@@ -12,7 +14,7 @@
 #'   Excel sheet that's not what the usual sheet name would be for a first or
 #'   last dose, this function will work best if this is left as NA. Also, since
 #'   we don't know which dose these data were for, you'll see that the output
-#'   parameter names do not include the suffixes "_ss" or "_dose1".
+#'   parameter names do not include the suffixes "_last" or "_dose1".
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \itemize{
 #'
@@ -25,7 +27,7 @@
 #'   \item{"Absorption tab" for only those parameters on the "Absorption" tab}
 #'
 #'   \item{any combination of specific, individual parameters, e.g.,
-#'   \code{c("Cmax_dose1", "AUCtau_ss").} To see the full set of possible
+#'   \code{c("Cmax_dose1", "AUCtau_last").} To see the full set of possible
 #'   parameters to extract, enter \code{data(PKParameterDefinitions)} into the
 #'   console.}}
 #'
@@ -71,6 +73,12 @@ extractPK <- function(sim_data_file,
                       returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
                       checkDataSource = TRUE){
+    
+    # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
+    PKparameters <- gsub("tau_dose1", "t_dose1", PKparameters)
+    
+    # If the user supplied "XXX_ss", change that to "XXX_last".
+    PKparameters <- gsub("_last", "_last", PKparameters)
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -310,28 +318,28 @@ extractPK <- function(sim_data_file,
                                    "AUCinf_dose1" = "^AUC_INF",
                                    "AUCinf_dose1_withInhib" = "^AUC_INF",
                                    "AUCinf_ratio_dose1" = "^AUC_INF ratio$",
-                                   "AUCtau_ss" = "AUCt\\(n\\) \\(|^AUC \\(",
-                                   "AUCtau_ss_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
-                                   "AUCtau_ratio_ss" = "AUC Ratio",
+                                   "AUCtau_last" = "AUCt\\(n\\) \\(|^AUC \\(",
+                                   "AUCtau_last_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
+                                   "AUCtau_ratio_last" = "AUC Ratio",
                                    "CLinf_dose1" = "CL .Dose/AUC_INF",
                                    "CLinf_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
                                    "CLt_dose1" = "CL .Dose/AUC", # <----------------- !!!! NEEDS TO BE THE 2ND INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE
                                    "CLt_dose1_withInhib" = "CLinh \\(Dose/AUC\\)", # <----------------- !!!! NEEDS TO BE THE 3RD INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE W/OUT INHIB AND 2ND IS 1ST DOSE W/OUT INHIB. 3RD INSTANCE IS CLtau FOR 1ST DOSE.
                                    "CLt_ratio_dose1" = "CL Ratio",
-                                   "CLtau_ss" = "CL \\(Dose/AUC\\)",
-                                   "CLtau_ss_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
+                                   "CLtau_last" = "CL \\(Dose/AUC\\)",
+                                   "CLtau_last_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
                                    "Cmax_dose1" = "CMax \\(",
                                    "Cmax_dose1_withInhib" = "CMaxinh \\(",
                                    "Cmax_ratio_dose1" = "^CMax Ratio$",
-                                   "Cmax_ss" = "^CMax",
-                                   "Cmax_ss_withInhib" = "^CMax",
-                                   "Cmax_ratio_ss" = "^CMax Ratio$",
+                                   "Cmax_last" = "^CMax",
+                                   "Cmax_last_withInhib" = "^CMax",
+                                   "Cmax_ratio_last" = "^CMax Ratio$",
                                    "HalfLife_dose1" = "Half-life \\(",
                                    "HalfLife_dose1_withInhib" = "Half-life_Inh \\(",
                                    "tmax_dose1" = "^TMax \\(",
                                    "tmax_dose1_withInhib" = "^TMaxinh \\(",
-                                   "tmax_ss" = "^TMax \\(", # RETURN TO THIS. Need to make sure it's going to pull the correct tmax.
-                                   "tmax_ss_withInhib" = "TMaxinh \\("
+                                   "tmax_last" = "^TMax \\(", # RETURN TO THIS. Need to make sure it's going to pull the correct tmax.
+                                   "tmax_last_withInhib" = "TMaxinh \\("
                 )
                 
                 # The AUC and Cmax ratios are listed with the parameters
@@ -342,10 +350,18 @@ extractPK <- function(sim_data_file,
                 # will catch, e.g., "AUCinf_ratio_dose1" but NOT
                 # "AccumulationRatio". That is by design.
                 suppressWarnings(
-                    PKparam <- ifelse(str_detect(PKparam, "ratio"),
+                    PKparam <- ifelse(str_detect(PKparam, "ratio"), 
                                       paste0(PKparam, "_withInhib"),
                                       PKparam)
                 )
+                
+                # Similarly, AccumulationIndex, AccumulationRatio, and
+                # HalfLife_dose1 are actually found in the same section of the
+                # AUC sheet as AUCinf_dose1, so appending suffix of "inf_dose1"
+                # to those.
+                PKparam <- sub("AccumulationIndex", "AccumulationIndexinf_dose1", PKparam)
+                PKparam <- sub("AccumulationRatio", "AccumulationRatioinf_dose1", PKparam)
+                PKparam <- sub("HalfLife_dose1", "HalfLifeinf_dose1", PKparam)
                 
                 # Dose 1 tmax and Cmax are only available for the 0 to tau
                 # columns, so changing those parameter names temporarily. RETURN
@@ -385,8 +401,8 @@ extractPK <- function(sim_data_file,
                         }
                     }
                     
-                    # ss data
-                    if(str_detect(PKparam, "_ss_withInhib")){
+                    # last dose data
+                    if(str_detect(PKparam, "_last_withInhib")){
                         StartCol <-
                             which(str_detect(as.vector(t(AUC_xl[2, ])),
                                              "for the last dose in the presence of inhibitor|^Inhibited$|Inhibited AUC integrated from"))[1]
@@ -411,6 +427,7 @@ extractPK <- function(sim_data_file,
                     }
                     
                     if(str_detect(PKparam, "t(au)?.*_dose1") &
+                       !str_detect(PKparam, "Accumulation") &
                        Deets$Regimen_sub %in% c("Multiple Dose", "custom dosing")){
                         # For MD scenarios, the subheading "Truncated..." must
                         # be present or that might be the AUC for the last dose.
@@ -420,7 +437,7 @@ extractPK <- function(sim_data_file,
                     }
                     
                     # last dose
-                    if(str_detect(PKparam, "_ss")){
+                    if(str_detect(PKparam, "_last")){
                         
                         StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
                                                      "^Truncated AUCt for the last dose$"))
@@ -432,12 +449,12 @@ extractPK <- function(sim_data_file,
                         }
                     }
                     
-                    # accumulation index or other
-                    if(str_detect(PKparam, "_dose1") == FALSE &
-                       str_detect(PKparam, "_ss") == FALSE){
-                        StartCol <- 1
-                        StartColText <- NA
-                    }
+                    # # accumulation index or other # <------------------------ No longer needed I think
+                    # if(str_detect(PKparam, "_dose1") == FALSE &
+                    #    str_detect(PKparam, "_last") == FALSE){
+                    #     StartCol <- 1
+                    #     StartColText <- NA
+                    # }
                 }
                 
                 if(exists("StartCol", inherits = FALSE)){
@@ -457,31 +474,32 @@ extractPK <- function(sim_data_file,
                     EndCol <- EndCol[EndCol > StartCol][1] - 1
                     EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
                     
-                    # accumulation index etc.
-                    if(str_detect(PKparam, "_dose1") == FALSE &
-                       str_detect(PKparam, "_ss") == FALSE){
-                        EndCol <- ncol(AUC_xl)
-                    }
+                    # # accumulation index etc. # <------------------- I think I no longer need these since I'm trying to catch AccumulationIndex and AccumulationRatio differently now. 
+                    # if(str_detect(PKparam, "_dose1") == FALSE &
+                    #    str_detect(PKparam, "_last") == FALSE){
+                    #     EndCol <- ncol(AUC_xl)
+                    # }
                     
                     if(is.na(StartCol)){
                         PKparameters_AUC <- PKparameters_AUC[!PKparameters_AUC == PKparam]
-                        next
+                        OutCol <- NA
+                    } else {
+                        
+                        PossCol <- StartCol:EndCol
+                        
+                        OutCol <- PossCol[
+                            which(str_detect(as.vector(t(
+                                AUC_xl[3, PossCol])), ToDetect) &
+                                    !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
+                        
                     }
                     
-                    PossCol <- StartCol:EndCol
-                    
-                    OutCol <- PossCol[
-                        which(str_detect(as.vector(t(
-                            AUC_xl[3, PossCol])), ToDetect) &
-                                !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
-                    
-                }
-                
-                if(checkDataSource & complete.cases(OutCol)){
-                    assign("SearchText4Col", value = StartColText,
-                           pos = 1)
-                    assign("SearchText", value = ToDetect,
-                           pos = 1)
+                    if(checkDataSource & complete.cases(OutCol)){
+                        assign("SearchText4Col", value = StartColText,
+                               pos = 1)
+                        assign("SearchText", value = ToDetect,
+                               pos = 1)
+                    }
                 }
                 
                 return(OutCol)
@@ -747,20 +765,20 @@ extractPK <- function(sim_data_file,
             findCol <- function(PKparam){
                 
                 ToDetect <- switch(PKparam,
-                                   "AUCtau_ss" = "AUC \\(",
-                                   "AUCtau_ss_withInhib" = "AUCinh \\(",
-                                   "AUCtau_ratio_ss" = "AUC Ratio",
-                                   "CLtau_ss" = "CL \\(Dose/AUC",
-                                   "CLtau_ss_withInhib" = "CLinh \\(Dose/AUCinh",
-                                   "CLtau_ratio_ss" = "CL Ratio",
-                                   "Cmax_ss" = "CMax \\(",
-                                   "Cmax_ss_withInhib" = "CMaxinh \\(",
-                                   "Cmax_ratio_ss" = "CMax Ratio",
-                                   "Cmin_ss" = "CMin \\(",
-                                   "Cmin_ss_withInhib" = "CMininh \\(",
-                                   "Cmin_ratio_ss" = "CMin Ratio",
-                                   "tmax_ss" = "^TMax \\(",
-                                   "tmax_ss_withInhib" = "TMaxinh \\(")
+                                   "AUCtau_last" = "AUC \\(",
+                                   "AUCtau_last_withInhib" = "AUCinh \\(",
+                                   "AUCtau_ratio_last" = "AUC Ratio",
+                                   "CLtau_last" = "CL \\(Dose/AUC",
+                                   "CLtau_last_withInhib" = "CLinh \\(Dose/AUCinh",
+                                   "CLtau_ratio_last" = "CL Ratio",
+                                   "Cmax_last" = "CMax \\(",
+                                   "Cmax_last_withInhib" = "CMaxinh \\(",
+                                   "Cmax_ratio_last" = "CMax Ratio",
+                                   "Cmin_last" = "CMin \\(",
+                                   "Cmin_last_withInhib" = "CMininh \\(",
+                                   "Cmin_ratio_last" = "CMin Ratio",
+                                   "tmax_last" = "^TMax \\(",
+                                   "tmax_last_withInhib" = "TMaxinh \\(")
                 
                 if(checkDataSource){
                     assign("SearchText", value = ToDetect,
@@ -1216,7 +1234,7 @@ extractPK <- function(sim_data_file,
         
         # Not specifying which dose these parameters are for b/c we don't know.
         # Only pulling whatever AUC, Cmax, etc. are available.
-        PKparameters <- unique(sub("_dose1|_ss", "", PKparameters))
+        PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
         # Some parameters are not going to be present, so removing those. 
         PKparameters <- PKparameters[
             !PKparameters %in% c("fa_sub", "fa_inhib",

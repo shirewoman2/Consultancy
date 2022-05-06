@@ -2,9 +2,29 @@
 #'
 #' \code{so_table} creates simulated vs. observed tables for reports and
 #' presentations, including reporting means, CVs, confidence intervals or
-#' percentiles, and ratios of simulated vs. observed mean values. Please see the
-#' notes at the bottom of this help file for options for how to supply observed
-#' data in a standardized fashion that this function can read.
+#' percentiles, and ratios of simulated vs. observed mean values. This function
+#' automatically finds the correct tab and the correct cells to pull those data.
+#' \strong{Notes:} \itemize{\item{Please see the notes at the bottom of this
+#' help file for options for supplying observed data in a standardized fashion
+#' that this function can read.} \item{Nearly all parameters are for the
+#' \emph{substrate}. We're still validating this for extracting PK for an
+#' effector. \strong{A request for assistance:} If you extract PK data for an
+#' effector by specifying an Excel sheet for that compound, please check the
+#' values and tell Laura Shireman how well it works!} \item{Currently, the
+#' output column titles list units of ng, mL, and h for AUC and Cmax, and the
+#' function doesn't actually check what units are present in the data. If your
+#' units are something else, our apologies, but please change the units in the
+#' column titles when you use the output table. (The values in the table are
+#' fine.) We're working on making this detect what the units were and print
+#' those.} \item{ If the simulator output Excel file lives on SharePoint, you'll
+#' need to close it or this function will just keep running and not generate any
+#' output while it waits for access to the file.}}
+#'
+#' Please see the notes at the bottom of this help file for options for how to
+#' supply observed data in a standardized fashion that this function can read.
+#' \strong{Note:} If the simulator output Excel file lives on SharePoint, you'll
+#' need to close it or this function will just keep running and not generate any
+#' output while it waits for access to the file.
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires filling out an Excel template form. Here
@@ -41,14 +61,14 @@
 #'   parameters included are only those included for the observed data in that
 #'   file. Otherwise, the PK parameters will be automatically selected.}
 #'   \item{Parameters that don't make sense for your scenario -- like asking for
-#'   \code{AUCinf_ss_withInhib} when your simulation did not include an
+#'   \code{AUCinf_last_withInhib} when your simulation did not include an
 #'   inhibitor or effector -- will not be included.} \item{tmax will be listed
 #'   as median, min, and max rather than mean, lower and higher X\% confidence
 #'   interval or X percentiles. Similarly, if you request trial means, the
 #'   values for tmax will be the range of medians for the trials rather than the
-#'   range of means.}} An example of acceptable input here: \code{c("AUCtau_ss",
-#'   "AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss",
-#'   "Cmax_ratio_ss")}.
+#'   range of means.}} An example of acceptable input here:
+#'   \code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
+#'   "Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
@@ -74,9 +94,18 @@
 #'   and listed as the lower confidence interval or percentile to the upper CI
 #'   or percentile. Ex: "2400 to 2700"
 #' @param prettify_columns TRUE or FALSE for whether to make easily
-#'   human-readable column names. TRUE makes pretty column names such as "AUC0
-#'   to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
-#'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#'   human-readable column names. TRUE makes pretty column names such as "AUCinf
+#'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#' @param prettify_effector_name Optionally make effector name prettier in the
+#'   prettified column titles. This was designed for simulations where Inhibitor
+#'   1 is one of the standard options for the simulator, and leaving
+#'   \code{prettify_effector_name = TRUE} will make the name of Inhibitor 1 be
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
+#'   Set it to the name you'd prefer to see in your column titles if you would
+#'   like something different. For example, \code{prettify_effector_name = "Drug
+#'   ABC"}
 #' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
@@ -110,6 +139,7 @@ so_table <- function(report_input_file = NA,
                      includeTrialMeans = FALSE,
                      concatVariability = FALSE,
                      prettify_columns = TRUE,
+                     prettify_effector_name = TRUE, 
                      checkDataSource = TRUE, 
                      save_table = NA){
     
@@ -196,7 +226,7 @@ so_table <- function(report_input_file = NA,
         PKToPull <- PKToPull[PKToPull %in% SDParam]
     } else {
         # If it were multiple dose *and* if they did not specify PK parameters
-        # to pull or have observed data to compare, then only pull ss
+        # to pull or have observed data to compare, then only pull last dose
         # parameters.
         if(is.na(PKparameters[1]) & class(sectionInfo) == "logical"){
             PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
@@ -334,23 +364,23 @@ so_table <- function(report_input_file = NA,
         }
     }
     
-    if("tmax_ss" %in% names(MyPKResults)){
-        MyPKResults$tmax_ss[
+    if("tmax_last" %in% names(MyPKResults)){
+        MyPKResults$tmax_last[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-            MyPKResults$tmax_ss[MyPKResults$Stat == "median"]
-        MyPKResults$tmax_ss[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-            MyPKResults$tmax_ss[MyPKResults$Stat == "min"]
-        MyPKResults$tmax_ss[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-            MyPKResults$tmax_ss[MyPKResults$Stat == "max"]
+            MyPKResults$tmax_last[MyPKResults$Stat == "median"]
+        MyPKResults$tmax_last[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+            MyPKResults$tmax_last[MyPKResults$Stat == "min"]
+        MyPKResults$tmax_last[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+            MyPKResults$tmax_last[MyPKResults$Stat == "max"]
         
         if(EffectorPresent){
-            MyPKResults$tmax_ss_withInhib[
+            MyPKResults$tmax_last_withInhib[
                 MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-                MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-                MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_ss_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-                MyPKResults$tmax_ss_withInhib[MyPKResults$Stat == "max"]
+                MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "median"]
+            MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+                MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "min"]
+            MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+                MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "max"]
         }
         
     }
@@ -410,8 +440,8 @@ so_table <- function(report_input_file = NA,
         MyObsPKParam <- c(MyObsPKParam,
                           "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
                           "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
-                          "Cmax_ratio_ss_90CIL", "Cmax_ratio_ss_90CIU",
-                          "AUCtau_ratio_ss_90CIL", "AUCtau_ratio_ss_90CIU")
+                          "Cmax_ratio_last_90CIL", "Cmax_ratio_last_90CIU",
+                          "AUCtau_ratio_last_90CIL", "AUCtau_ratio_last_90CIU")
     }
     
     # observed data -----------------------------------------------------
@@ -602,7 +632,7 @@ so_table <- function(report_input_file = NA,
     # parameter. PKToPull still has the suffix, though, so removing it here or
     # else there will be 0 columns that match.
     if(complete.cases(sheet_PKparameters)){
-        PKToPull <- as.character(sub("_ss|_dose1", "", as.character(PKToPull)))
+        PKToPull <- as.character(sub("_last|_dose1", "", as.character(PKToPull)))
         PKToPull <- factor(PKToPull, levels = PKToPull)
     }
     
@@ -610,32 +640,43 @@ so_table <- function(report_input_file = NA,
     MyPKResults <- MyPKResults %>%
         select(any_of(c("Statistic", as.character(PKToPull))))
     
+    PKToPull <- as.character(intersect(PKToPull, names(MyPKResults)))
+    
     # Optionally adding final column names
     if(prettify_columns){
         
-        PKToPull_pretty <-
-            sapply(as.character(PKToPull),
-                   FUN = function(x) ifelse(str_detect(x, "_dose1"),
-                                            paste("Dose 1", sub("_dose1", "", x)),
-                                            paste("Steady-state", sub("_ss", "", x))))
-        PKToPull_pretty <- sub("_withInhib", " with inhibitor", PKToPull_pretty)
-        PKToPull_pretty <- sub("CL", "CL/F (L/h)", PKToPull_pretty)
-        PKToPull_pretty <- sub("\\(L/h\\)_ratio", "ratio", PKToPull_pretty) # CL ratios
-        PKToPull_pretty <- sub("AUCinf", "AUC0 to inf (h*ng/mL)", PKToPull_pretty)
-        PKToPull_pretty <- sub("AUCtau", "AUC0 to tau (h*ng/mL)", PKToPull_pretty)
-        PKToPull_pretty <- sub("\\(h\\*ng/mL\\)_ratio", "ratio", PKToPull_pretty) # AUCtau or AUCinf ratios
-        PKToPull_pretty <- sub("Cmax", "Cmax (ng/mL)", PKToPull_pretty)
-        PKToPull_pretty <- sub("\\(ng/mL\\)_ratio", "ratio", PKToPull_pretty) # Cmax ratios
-        PKToPull_pretty <- sub("HalfLife", "t1/2 (h)", PKToPull_pretty)
-        PKToPull_pretty <- sub("tmax", "tmax (h)", PKToPull_pretty)
-        PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
-            sub(" \\(", " with inhibitor (", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
-        PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")] <-
-            sub(" with inhibitor$", "", PKToPull_pretty[str_detect(PKToPull_pretty, "with inhibitor")])
-        PKToPull_pretty <- sub("GMR_", "geometric mean ratio ", PKToPull_pretty)
-        PKToPull_pretty <- c("Statistic" = "Statistic", PKToPull_pretty)
+        PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
+            left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
+            unique() %>% 
+            pull(PrettifiedNames)
         
-        names(MyPKResults) <- PKToPull_pretty[names(MyPKResults)]
+        MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
+                        Deets$Inhibitor2)
+        if(any(complete.cases(MyEffector))){
+            MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
+            
+            if(class(prettify_effector_name) == "logical" &&
+               prettify_effector_name){
+                MyEffector <-
+                    tolower(gsub(
+                        "sv-|sim-|wsp-|_ec|_sr|-md|-sd|_fo|-[1-9]00 mg [qmstbi]{1,2}d|_fasted soln|_fed capsule",
+                        "", tolower(MyEffector)))
+                # Adjusting for compounds (metabolites) w/"OH" in name or other
+                # idiosyncracies
+                MyEffector <- sub("oh bupropion", "OH-bupropion", MyEffector)
+                MyEffector <- sub("oh-", "OH-", MyEffector)
+                MyEffector <- sub("o-", "O-", MyEffector)
+                MyEffector <- sub("o-", "O-", MyEffector)
+            }
+            
+            if(class(prettify_effector_name) == "character"){
+                MyEffector <- prettify_effector_name
+            }
+            
+            PrettyCol <- sub("effector", MyEffector, PrettyCol)
+        }
+        
+        names(MyPKResults) <- c("Statistic", PrettyCol)
         
     }
     

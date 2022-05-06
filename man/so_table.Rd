@@ -17,6 +17,7 @@ so_table(
   includeTrialMeans = FALSE,
   concatVariability = FALSE,
   prettify_columns = TRUE,
+  prettify_effector_name = TRUE,
   checkDataSource = TRUE,
   save_table = NA
 )
@@ -41,14 +42,14 @@ default, if you supply a file for \code{report_input_file}, the PK
 parameters included are only those included for the observed data in that
 file. Otherwise, the PK parameters will be automatically selected.}
 \item{Parameters that don't make sense for your scenario -- like asking for
-\code{AUCinf_ss_withInhib} when your simulation did not include an
+\code{AUCinf_last_withInhib} when your simulation did not include an
 inhibitor or effector -- will not be included.} \item{tmax will be listed
 as median, min, and max rather than mean, lower and higher X\% confidence
 interval or X percentiles. Similarly, if you request trial means, the
 values for tmax will be the range of medians for the trials rather than the
-range of means.}} An example of acceptable input here: \code{c("AUCtau_ss",
-"AUCtau_ss_withInhib", "Cmax_ss", "Cmax_ss_withInhib", "AUCtau_ratio_ss",
-"Cmax_ratio_ss")}.}
+range of means.}} An example of acceptable input here:
+\code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
+"Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
@@ -82,9 +83,19 @@ and listed as the lower confidence interval or percentile to the upper CI
 or percentile. Ex: "2400 to 2700"}
 
 \item{prettify_columns}{TRUE or FALSE for whether to make easily
-human-readable column names. TRUE makes pretty column names such as "AUC0
-to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
-from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+human-readable column names. TRUE makes pretty column names such as "AUCinf
+(h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+\code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+
+\item{prettify_effector_name}{Optionally make effector name prettier in the
+prettified column titles. This was designed for simulations where Inhibitor
+1 is one of the standard options for the simulator, and leaving
+\code{prettify_effector_name = TRUE} will make the name of Inhibitor 1 be
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
+Set it to the name you'd prefer to see in your column titles if you would
+like something different. For example, \code{prettify_effector_name = "Drug
+ABC"}}
 
 \item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
 lists exactly where the data were pulled from the simulator output file.
@@ -104,11 +115,31 @@ a data.frame of S/O values or a list of that data.frame (named
 \description{
 \code{so_table} creates simulated vs. observed tables for reports and
 presentations, including reporting means, CVs, confidence intervals or
-percentiles, and ratios of simulated vs. observed mean values. Please see the
-notes at the bottom of this help file for options for how to supply observed
-data in a standardized fashion that this function can read.
+percentiles, and ratios of simulated vs. observed mean values. This function
+automatically finds the correct tab and the correct cells to pull those data.
+\strong{Notes:} \itemize{\item{Please see the notes at the bottom of this
+help file for options for supplying observed data in a standardized fashion
+that this function can read.} \item{Nearly all parameters are for the
+\emph{substrate}. We're still validating this for extracting PK for an
+effector. \strong{A request for assistance:} If you extract PK data for an
+effector by specifying an Excel sheet for that compound, please check the
+values and tell Laura Shireman how well it works!} \item{Currently, the
+output column titles list units of ng, mL, and h for AUC and Cmax, and the
+function doesn't actually check what units are present in the data. If your
+units are something else, our apologies, but please change the units in the
+column titles when you use the output table. (The values in the table are
+fine.) We're working on making this detect what the units were and print
+those.} \item{ If the simulator output Excel file lives on SharePoint, you'll
+need to close it or this function will just keep running and not generate any
+output while it waits for access to the file.}}
 }
 \details{
+Please see the notes at the bottom of this help file for options for how to
+supply observed data in a standardized fashion that this function can read.
+\strong{Note:} If the simulator output Excel file lives on SharePoint, you'll
+need to close it or this function will just keep running and not generate any
+output while it waits for access to the file.
+
 Because we need to have a standardized way to input observed data, setting up
 the input for this function requires filling out an Excel template form. Here
 are the steps to take: \enumerate{\item{Use the function
