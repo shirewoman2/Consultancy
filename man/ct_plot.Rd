@@ -236,7 +236,8 @@ of the standard options for the simulator, and leaving
 something more human readable. For example, "SV-Rifampicin-MD" will become
 "rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
 Set it to the name you'd prefer to see in your legend if you would like
-something different.}
+something different. For example, \code{prettify_effector_name = "Drug
+ABC"}}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
 "linear", "both vertical" (default, graphs are stacked vertically), or
