@@ -224,7 +224,7 @@ round_down_unit <- function(x, b) { # round x down to nearest b
 #' If the number is > 100, round to the ones place. If the number is less, round
 #' to 3 significant figures. Output is character data.
 #'
-#' @param value
+#' @param x
 #'
 #' @return Returns character data with the appropriate number of digits
 #' @export
@@ -234,12 +234,12 @@ round_down_unit <- function(x, b) { # round x down to nearest b
 #' round_consult(0.23513)
 #' round_consult(c(1239.236, 0.23513))
 #' 
-round_consult <- function(value){
-    if_else(value > 100, 
-            as.character(round(value, 0)), 
+round_consult <- function(x){
+    if_else(x > 100, 
+            as.character(round(x, 0)), 
             # This next convoluted bit will retain trailing zeroes since
             # "signif" alone will not
-            formatC(signif(value, digits=3), digits=3, format="fg", flag="#"))
+            formatC(signif(x, digits=3), digits=3, format="fg", flag="#"))
 }
 
 

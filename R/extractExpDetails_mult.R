@@ -89,6 +89,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         sim_data_files <- list.files(pattern = "xlsx$")
     }
     
+    # print(quo_name(enquo(existing_exp_details))) # for bug fixing
+    
     if(exists(substitute(existing_exp_details))){
         if(class(existing_exp_details)[1] == "list"){
             existing_exp_details <- bind_rows(existing_exp_details)

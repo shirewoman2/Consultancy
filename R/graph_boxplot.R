@@ -212,7 +212,7 @@ graph_boxplot <- function(DF,
     
     if(color_set == "default"){
         # Using "Dark2" b/c "Set2" is just really, really light. 
-        A <- A + scale_color_brewer(palette = "Dark2") +
+        G <- G + scale_color_brewer(palette = "Dark2") +
             scale_fill_brewer(palette="Dark2")
     }
     
@@ -233,12 +233,12 @@ graph_boxplot <- function(DF,
     
     if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
         # Using "Dark2" b/c "Set2" is just really, really light. 
-        A <- A + scale_fill_brewer(palette = "Dark2") +
+        G <- G + scale_fill_brewer(palette = "Dark2") +
             scale_color_brewer(palette = "Dark2")
     }
     
     if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
-        A <- A + scale_fill_brewer(palette = "Set1") +
+        G <- G + scale_fill_brewer(palette = "Set1") +
             scale_color_brewer(palette = "Set1")
     }
     

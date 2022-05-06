@@ -4,10 +4,10 @@
 \alias{round_consult}
 \title{Rounding to match the SimcypConsultancy report template requirements}
 \usage{
-round_consult(value)
+round_consult(x)
 }
 \arguments{
-\item{value}{}
+\item{x}{}
 }
 \value{
 Returns character data with the appropriate number of digits

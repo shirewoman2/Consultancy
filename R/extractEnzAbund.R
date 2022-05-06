@@ -77,8 +77,8 @@ extractEnzAbund <- function(sim_data_file,
     # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,
              length(returnAggregateOrIndiv) > 2,
-             any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual") == FALSE)))) {
-        stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
+             any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual", "both") == FALSE)))) {
+        stop("returnAggregateOrIndiv must be 'aggregate', 'individual', or 'both'.")
     }
     
     if(tissue %in% c("gut", "liver", "kidney") == FALSE){
@@ -109,7 +109,7 @@ extractEnzAbund <- function(sim_data_file,
                            col_names = FALSE))
     
     # Extracting aggregate data ---------------------------------------------
-    if("aggregate" %in% returnAggregateOrIndiv){
+    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
         
         # If the tissue was gut, there are separate data sets for small
         # intestine and colon. Checking for that.
@@ -341,7 +341,7 @@ extractEnzAbund <- function(sim_data_file,
     }
     
     # Extracting individual data --------------------------------------------
-    if("individual" %in% returnAggregateOrIndiv){
+    if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
         
         # If the tissue was gut, there are separate data sets for small
         # intestine and colon. Checking for that.
@@ -553,12 +553,12 @@ extractEnzAbund <- function(sim_data_file,
     
     Data <- list()
     
-    if("aggregate" %in% returnAggregateOrIndiv){
+    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
         Data[["agg"]] <- sim_data_mean %>%
             arrange(Trial, Time)
     }
     
-    if("individual" %in% returnAggregateOrIndiv){
+    if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
         Data[["indiv"]] <- sim_data_ind %>%
             mutate(Individual = as.character(Individual),
                    Trial = as.character(Trial)) %>%
