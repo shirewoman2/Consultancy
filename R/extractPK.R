@@ -1,11 +1,13 @@
 #' Extract PK data for specific parameters from a simulator output Excel file
 #'
 #' Pull calculated PK parameters from a Simcyp simulation output Excel file.
-#' \strong{Note:} Nearly all parameters are for the substrate. We're still
+#' \strong{Note:} Nearly all parameters are for the SUBSTRATE We're still
 #' validating this for extracting PK for an effector. \strong{A request for
 #' assistance:} If you extract PK data for an effector by specifying an Excel
 #' sheet for that compound, please check the values and tell Laura Shireman how
-#' well it works!
+#' well it works! Also, absorption parameters are for first-order absorption
+#' models only; we haven't developed this yet to pull ADAM-model absorption
+#' parameters, but it's on our to-do list.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output
 #' @param sheet optionally specify the name of the sheet where you'd like to
@@ -24,12 +26,15 @@
 #'   default setting, "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is
 #'   not present)}
 #'
-#'   \item{"Absorption tab" for only those parameters on the "Absorption" tab}
+#'   \item{"Absorption tab" for only those parameters on the "Absorption" tab.
+#'   Please note that we haven't developed this function for output in the
+#'   "Overall Fa Fg" tab for ADAM-model simulations yet.}
 #'
-#'   \item{any combination of specific, individual parameters, e.g.,
-#'   \code{c("Cmax_dose1", "AUCtau_last").} To see the full set of possible
-#'   parameters to extract, enter \code{data(PKParameterDefinitions)} into the
-#'   console.}}
+#'   \item{a vector of any combination of specific, individual parameters, e.g.,
+#'   \code{c("Cmax_dose1", "AUCtau_last").} Be sure to encapsulate the
+#'   parameters you want with \code{c(...)}! To see the full set of possible
+#'   parameters to extract, enter \code{data(PKParameterDefinitions);
+#'   view(PKParameterDefinitions)} into the console.}}
 #'
 #'   Currently, the PK data are only for the substrate unless noted, although
 #'   you can sometimes hack around this by supplying a specific sheet to extract
@@ -166,12 +171,9 @@ extractPK <- function(sim_data_file,
     ParamCLTSS <- AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
         pull(PKparameter)
     
-    ParamSummary <- AllPKParameters %>% filter(Sheet == "Summary") %>% 
-        pull(PKparameter)
-    
     if(PKparameters[1] == "all"){
         PKparameters <- unique(c(ParamAbsorption, ParamAUC, ParamAUC0,
-                                 ParamAUCX, ParamCLTSS, ParamSummary))
+                                 ParamAUCX, ParamCLTSS))
     }
     
     if(PKparameters[1] == "AUC tab"){
@@ -274,22 +276,24 @@ extractPK <- function(sim_data_file,
         # Error catching
         if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE){
             if(length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0,
-                                              ParamAUCX, ParamCLTSS, 
-                                              ParamSummary))) > 0){
+                                              ParamAUCX, ParamCLTSS))) > 0){
                 warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
                                sub("and", "or", 
-                                   str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS, ParamSummary)))),
+                                   str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
                                ". None of these parameters can be extracted."))
             }
         } else {
+            
+            SheetAUC <- ifelse("AUC" %in% AllSheets == FALSE, 
+                               ifelse("AUC_CI" %in% AllSheets == FALSE, 
+                                      "AUC_SD", "AUC_CI"), "AUC")
             
             AUC_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, 
                                    # If the user requested the "AUC" tab for PK
                                    # parameters, it's ok to use the tab "AUC_CI"
                                    # if "AUC" is not present.
-                                   sheet = ifelse("AUC" %in% AllSheets == FALSE, 
-                                                  "AUC_CI", "AUC"),
+                                   sheet = SheetAUC,
                                    col_names = FALSE))
             
             EndRow_ind <- which(AUC_xl$...2 == "Statistics") - 2

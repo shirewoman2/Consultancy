@@ -36,20 +36,35 @@ don't fill out a report input form because you either have no observed data
 or you want to compare those data later manually.}
 
 \item{PKparameters}{the PK parameters to include as a character vector.
-Notes: \itemize{ \item{To see the full set of possible parameters to
-extract, enter \code{data(AllPKParameters)} into the console.} \item{By
-default, if you supply a file for \code{report_input_file}, the PK
-parameters included are only those included for the observed data in that
-file. Otherwise, the PK parameters will be automatically selected.}
-\item{Parameters that don't make sense for your scenario -- like asking for
-\code{AUCinf_last_withInhib} when your simulation did not include an
-inhibitor or effector -- will not be included.} \item{tmax will be listed
-as median, min, and max rather than mean, lower and higher X\% confidence
-interval or X percentiles. Similarly, if you request trial means, the
-values for tmax will be the range of medians for the trials rather than the
-range of means.}} An example of acceptable input here:
-\code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
-"Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.}
+  Notes: \itemize{
+
+  \item{By default, if you have a single-dose simulation, the parameters will
+  include AUC and Cmax for dose 1, and, if you have a multiple-dose
+  simulation, AUC and Cmax for the last dose. Also by default, if you have an
+  effector present, the parameters will include the AUC and Cmax values with
+  and without the effector as well as those ratios.}
+
+  \item{Alternatively, you can specify a vector of any combination of
+  specific, individual parameters, e.g., \code{c("Cmax_dose1",
+  "AUCtau_last").} Be sure to encapsulate the parameters you want with
+  \code{c(...)}! To see the full set of possible parameters to extract, enter
+  \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
+  console.}
+
+  \item{By default, if you supply a file for \code{report_input_file}, the PK
+  parameters included are only those included for the observed data in that
+  file. Otherwise, the PK parameters will be automatically selected.}
+
+  \item{Parameters that don't make sense for your scenario -- like asking for
+  \code{AUCinf_last_withInhib} when your simulation did not include an
+  inhibitor or effector -- will not be included.}
+
+  \item{tmax will be listed as median, min, and max rather than mean, lower
+  and higher X\% confidence interval or X percentiles. Similarly, if you
+  request trial means, the values for tmax will be the range of medians for
+  the trials rather than the range of means.}} An example of acceptable input
+  here: \code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
+  "Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
@@ -77,29 +92,32 @@ percentiles}
 trial means for a given parameter. Note: This is calculated from individual
 values rather than being pulled directly from the output.}
 
-\item{concatVariability}{Would you like to have the variability concatenated?
-TRUE or FALSE. If "TRUE", the output will be formatted into a single row
+\item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
+the variability. If "TRUE", the output will be formatted into a single row
 and listed as the lower confidence interval or percentile to the upper CI
-or percentile. Ex: "2400 to 2700"}
+or percentile, e.g., "2400 to 2700". Please note that the current
+SimcypConsultancy template lists one row for each of the upper and
+lower values, so this should be set to FALSE for official reports.}
 
 \item{prettify_columns}{TRUE or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
-\item{prettify_effector_name}{Optionally make effector name prettier in the
-prettified column titles. This was designed for simulations where Inhibitor
-1 is one of the standard options for the simulator, and leaving
-\code{prettify_effector_name = TRUE} will make the name of Inhibitor 1 be
-something more human readable. For example, "SV-Rifampicin-MD" will become
-"rifampicin", and "Sim-Ketoconazole-200 mg BID" will become "ketoconazole".
-Set it to the name you'd prefer to see in your column titles if you would
-like something different. For example, \code{prettify_effector_name = "Drug
-ABC"}}
+\item{prettify_effector_name}{TRUE (default) or FALSE on whether to make
+effector name prettier in the prettified column titles. This was designed
+for simulations where the effector is one of the standard options for the
+simulator, and leaving \code{prettify_effector_name = TRUE} will make the
+name of that effector (or effectors if there are any effector metabolites
+or other effectors present) be something more human readable. For example,
+"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
+BID" will become "ketoconazole". Set it to the name you'd prefer to see in
+your column titles if you would like something different. For example,
+\code{prettify_effector_name = "Drug ABC"}}
 
 \item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
 lists exactly where the data were pulled from the simulator output file.
-Useful for QCing.}
+Default is TRUE to include it. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

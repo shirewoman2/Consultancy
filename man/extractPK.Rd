@@ -26,12 +26,15 @@ extractPK(
   default setting, "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is
   not present)}
 
-  \item{"Absorption tab" for only those parameters on the "Absorption" tab}
+  \item{"Absorption tab" for only those parameters on the "Absorption" tab.
+  Please note that we haven't developed this function for output in the
+  "Overall Fa Fg" tab for ADAM-model simulations yet.}
 
-  \item{any combination of specific, individual parameters, e.g.,
-  \code{c("Cmax_dose1", "AUCtau_last").} To see the full set of possible
-  parameters to extract, enter \code{data(PKParameterDefinitions)} into the
-  console.}}
+  \item{a vector of any combination of specific, individual parameters, e.g.,
+  \code{c("Cmax_dose1", "AUCtau_last").} Be sure to encapsulate the
+  parameters you want with \code{c(...)}! To see the full set of possible
+  parameters to extract, enter \code{data(PKParameterDefinitions);
+  view(PKParameterDefinitions)} into the console.}}
 
   Currently, the PK data are only for the substrate unless noted, although
   you can sometimes hack around this by supplying a specific sheet to extract
@@ -72,11 +75,13 @@ Depending on the options selected, returns a list of numerical
 }
 \description{
 Pull calculated PK parameters from a Simcyp simulation output Excel file.
-\strong{Note:} Nearly all parameters are for the substrate. We're still
+\strong{Note:} Nearly all parameters are for the SUBSTRATE We're still
 validating this for extracting PK for an effector. \strong{A request for
 assistance:} If you extract PK data for an effector by specifying an Excel
 sheet for that compound, please check the values and tell Laura Shireman how
-well it works!
+well it works! Also, absorption parameters are for first-order absorption
+models only; we haven't developed this yet to pull ADAM-model absorption
+parameters, but it's on our to-do list.
 }
 \examples{
 
