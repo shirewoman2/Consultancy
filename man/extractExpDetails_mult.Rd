@@ -13,18 +13,19 @@ extractExpDetails_mult(
 )
 }
 \arguments{
-\item{sim_data_files}{a character vector of simulator output files or NA to
-extract experimental details for all the Excel files in the current folder.
-Example of acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. Note that,
-if some of your Excel files are not regular simulator output, e.g. they are
+\item{sim_data_files}{a character vector of simulator output files, each in
+quotes and encapsulated with \code{c(...)}, or NA to extract experimental
+details for \emph{all} the Excel files in the current folder. Example of
+acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. Note that, if some of
+your Excel files are not regular simulator output, e.g. they are
 sensitivity analyses or a file where you were doing some calculations, this
 will result in an error and return no data.}
 
-\item{exp_details}{Experiment details you want to extract from the simulator
-  output files using the function \code{\link{extractExpDetails}}. Options
-  are \describe{
+\item{exp_details}{experimental details you want to extract from the
+  simulator output files using the function \code{\link{extractExpDetails}}.
+  Options are \describe{
 
-  \item{"Summary tab"}{Extract details only from the "Summary tab" (default)}
+  \item{"Summary tab"}{Extract details only from the "Summary tab"}
 
   \item{"Input Sheet"}{Extract details only from the "Input Sheet" tab}
 
@@ -38,14 +39,16 @@ will result in an error and return no data.}
   option in terms of processing time because it must read multiple Excel
   tabs.}
 
-  \item{a string of the specific parameters you want}{For a complete list,
-  type \code{data(ExpDetailDefinitions)} into the console. Parameters are
-  reported with a suffix depending on which compound they pertain to: "_sub"
-  for the substrate, "_met1" for the primary metabolite, "_met2" for the
-  second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
-  for the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
-  inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
-  acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}}
+  \item{a string of the specific parameters you want, each in quotes and
+  encapsulated with \code{c(...)},}{For a complete list, type
+  \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
+  console. Parameters are reported with a suffix depending on which compound
+  they pertain to: "_sub" for the substrate, "_met1" for the primary
+  metabolite, "_met2" for the second primary metabolite, "_secmet" for the
+  secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
+  "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
+  inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
+  "fa_inhib2", "Regimen_sub")}}}}
 
 \item{existing_exp_details}{(optional) a data.frame that contains previously
 extracted experimental details. This should NOT be in quotes. Because we
@@ -54,8 +57,8 @@ and then run more simulations for comparisons, this function will
 \emph{add} data to that data.frame. It will \emph{not} overwrite existing
 data unless \code{overwrite} is set to TRUE.}
 
-\item{overwrite}{TRUE or FALSE on whether to re-extract the experimental
-details from output files that are already included in
+\item{overwrite}{TRUE or FALSE (default) on whether to re-extract the
+experimental details from output files that are already included in
 \code{existing_exp_details}. Since pulling data from Excel files is slow,
 by default, this will \emph{not} overwrite existing data and instead will
 only add data from any Excel files that aren't already included. A

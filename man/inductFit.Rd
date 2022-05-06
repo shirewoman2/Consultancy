@@ -27,7 +27,7 @@ inductFit(
 \item{DF}{the data.frame containing induction data with a column for the drug
 concentration, a column for the fold induction observed, and, if you want
 to fit the data by individual, a column for the donor ID. For an example,
-please see \code{data(IndData)}.}
+please see \code{data(IndData)}. This should not be in quotes.}
 
 \item{conc_column}{the name of the column within DF that contains
 concentration data. This should be unquoted.}
@@ -60,10 +60,10 @@ unquoted.}
 "activity". This only affects the y axis labels on the output graph(s).}
 
 \item{donor_column}{the name of the column within DF that contains the donor
-IDs}
+IDs, unquoted}
 
-\item{fitByDonor}{TRUE or FALSE: Do you want to fit the data by individual
-donor (TRUE) or in aggregate (FALSE)?}
+\item{fitByDonor}{TRUE (default) or FALSE for whether to fit the data by
+individual donor}
 
 \item{weights}{weighting scheme to use for the regression. User may supply a
 numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
@@ -72,7 +72,13 @@ values or this will fail!}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
-  \item{"default"}{colors selected from the color brewer palette "set 1"}
+  \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+  that are friendly to those with red-green colorblindness. The first three
+  colors are green, orange, and purple. This can also be referred to as
+  "Brewer set 2".}
+
+  \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+  first three colors are red, blue, and green.}
 
   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
   (ggplot2 is an R package for graphing.)}
@@ -84,17 +90,15 @@ values or this will fail!}
 
   \item{"blue-green"}{a set of blues and greens}
 
-  \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
-  State that are friendly to those with red-green colorblindness}
-
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}}}
 
 \item{y_axis_limits}{optionally set the Y axis limits, e.g., \code{c(1, 5)}.
-If left as NA, the Y axis limits will be automatically selected.}
+If left as NA, the Y axis limits will be automatically selected. (Reminder:
+Numeric data should not be in quotes.)}
 
-\item{hline_foldinduct1}{TRUE or FALSE on whether to include a dotted red
-line where the fold induction = 1.}
+\item{hline_foldinduct1}{TRUE or FALSE (default) on whether to include a
+dotted red line where the fold induction = 1.}
 
 \item{num_sigfig}{optionally specify the number of significant figures you
 would like any output rounded to. If left as NA, no rounding will be
@@ -126,17 +130,16 @@ Returns a list of \describe{ \item{Fit}{the fitted parameters}
 \description{
 \code{inductFit} fits induction data -- either activity or mRNA expression --
 to one or all of four models for calculating Ind_max, Ind50, and, when
-appropriate, a slope.
-}
-\details{
-\code{inductFit} is an adaptation of Howie's script
-"Induction_fit_script_ver2.r". Like the original script, default weighting is
-by 1/y^2, although you can change that with the "weights" argument. One way
-in which this differs from the original script is that no upper or lower
-bounds for parameter estimates are in use. This means that, if sufficient
-data to describe the curve do not exist, the function will fail to deliver
-any fitted parameters, which is meant to be a benefit but could be an
-annoyance depending on your perspective.
+appropriate, a slope. Like Howie's R script for fitting induction data
+("Induction_fit_script_ver2.r"), default weighting is by 1/y^2, although you
+can change that with the "weights" argument. IMPORTANT: One way in which this
+function differs from Howie's script is that no upper or lower bounds for
+parameter estimates are in use. This means that, if sufficient data to
+describe the curve do not exist, the function will fail to deliver any fitted
+parameters, which is meant to be a benefit but could be an annoyance
+depending on your perspective. Because this does not include those
+boundaries, you may get different results between this function and Howie's
+script.
 }
 \examples{
 data(IndData)

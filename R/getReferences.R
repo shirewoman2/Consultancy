@@ -4,7 +4,7 @@
 #' folder and subfolder. Can be useful for the bibliography section of a report.
 #'
 #' @param main_directory the main directory from which you want a list of all
-#'   the files; default assumes the main directory is your current working
+#'   the files, in quotes; default assumes the main directory is your current working
 #'   directory
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My references.csv". If you leave off ".csv", it will

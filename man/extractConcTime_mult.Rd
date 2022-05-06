@@ -18,23 +18,25 @@ extractConcTime_mult(
 )
 }
 \arguments{
-\item{sim_data_files}{a character vector of simulator output files or, if
-left as NA, all the Excel files in the current directory. Example of
-acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be
-included with the file names if they are located somewhere other than your
-working directory. Note that, if you leave this as NA and some of the Excel
-files are not regular simulator output, e.g. they are sensitivity analyses
-or a file where you were doing some calculations, this will result in an
-error and return no data.}
+\item{sim_data_files}{a character vector of simulator output files, each in
+quotes and encapsulated with \code{c(...)}, or, if left as NA, \emph{all}
+the Excel files in the current directory. Example of acceptable input:
+\code{c("sim1.xlsx", "sim2.xlsx")}. The path should be included with the
+file names if they are located somewhere other than your working directory.
+Note that, if you leave this as NA and some of the Excel files are not
+regular simulator output, e.g. they are sensitivity analyses or a file
+where you were doing some calculations, this will result in an error and
+return no data.}
 
-\item{obs_data_files}{a character vector of the observed data files that
-you'd like to compare, e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}.
-The path should be included with the file names if they are located
-somewhere other than your working directory. This is the file that it is
-ready to be converted to an XML file, not the file that contains only the
-digitized time and concentration data. This function assumes that the
-dosing intervals for the observed data match those in the simulated data.
-See "Details" for more info.}
+\item{obs_data_files}{a character vector of the observed data filess, each in
+quotes and encapsulated with \code{c(...)}, that you'd like to compare,
+e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. The path should be
+included with the file names if they are located somewhere other than your
+working directory. This is the file that it is ready to be converted to an
+XML file, not the file that contains only the digitized time and
+concentration data. This function assumes that the dosing intervals for the
+observed data match those in the simulated data. See "Details" for more
+info.}
 
 \item{ct_dataframe}{(optional) a data.frame that contains previously
 extracted concentration-time data. This should NOT be in quotes. Because we
@@ -45,7 +47,7 @@ exist. When that is the case, this function will \emph{add} data to that
 data.frame. It will \emph{not} overwrite existing data unless
 \code{overwrite} is set to TRUE.}
 
-\item{overwrite}{TRUE or FALSE on whether to re-extract the
+\item{overwrite}{TRUE or FALSE (default) on whether to re-extract the
 concentration-time data from output files that are already included in
 \code{ct_dataframe}. Since pulling data from Excel files is slow, by
 default, this will \emph{not} overwrite existing data and instead will only
@@ -83,19 +85,19 @@ not converted because there are simply too many units to manage easily, so
 please check that the units are what you expected in the end.}
 
 \item{time_units_to_use}{time units to use so that all data will be
-comparable. Options are "hours" or "minutes". Default is "hours".}
+comparable. Options are "hours" (default) or "minutes".}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
-concentration-time data? Options are "aggregate", "individual", or "both".
-Aggregated data are not calculated here but are pulled from the simulator
-output rows labeled as "Population Statistics".}
+concentration-time data? Options are "aggregate" (default), "individual",
+or "both". Aggregated data are not calculated here but are pulled from the
+simulator output rows labeled as "Population Statistics".}
 
 \item{...}{other arguments passed to the function
 \code{\link{extractConcTime}}}
 }
 \value{
-a large data.frame with multiple sets of concentration-time data,
-  formatted the same way as output from the function
+Returns a large data.frame with multiple sets of concentration-time
+  data, formatted the same way as output from the function
   \code{\link{extractConcTime}}
 }
 \description{

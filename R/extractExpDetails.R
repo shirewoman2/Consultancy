@@ -3,7 +3,8 @@
 #' \code{extractExpDetails} looks up experimental design details from a Simcyp
 #' simulator output file.
 #'
-#' @param sim_data_file name of the Excel file containing the simulator output
+#' @param sim_data_file name of the Excel file containing the simulator output,
+#'   in quotes
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output file. Options are \describe{
 #'
@@ -20,8 +21,9 @@
 #'
 #'   \item{"all"}{Extract all possible parameters}
 #'
-#'   \item{a string of the specific parameters you want}{For a complete list,
-#'   type \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
+#'   \item{a string of the specific parameters you want, each in quotes and
+#'   encapsulated with \code{c(...)},}{For a complete list, type
+#'   \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
 #'   console. Parameters are reported with a suffix depending on which compound
 #'   they pertain to: "_sub" for the substrate, "_met1" for the primary
 #'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the

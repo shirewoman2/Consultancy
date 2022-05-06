@@ -15,24 +15,24 @@ extractPK(
 )
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulator output}
+\item{sim_data_file}{name of the Excel file containing the simulator output,
+in quotes}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
-  output file. Options are: \itemize{
+  output file. Options are: \describe{
 
-  \item{"all" for all possible parameters}
+  \item{"all"}{all possible parameters}
 
-  \item{"AUC tab" for only those parameters on the "AUC" tab (this is the
-  default setting, "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is
-  not present)}
+  \item{"AUC tab"}{only those parameters on the "AUC" tab (default). The
+  "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is not present.}
 
-  \item{"Absorption tab" for only those parameters on the "Absorption" tab.
+  \item{"Absorption tab"}{only those parameters on the "Absorption" tab.
   Please note that we haven't developed this function for output in the
   "Overall Fa Fg" tab for ADAM-model simulations yet.}
 
-  \item{a vector of any combination of specific, individual parameters, e.g.,
-  \code{c("Cmax_dose1", "AUCtau_last").} Be sure to encapsulate the
-  parameters you want with \code{c(...)}! To see the full set of possible
+  \item{a vector of any combination of specific, individual parameters, each
+  surrounded by quotes and encapsulated with \code{c(...)}}{an example:
+  \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
   parameters to extract, enter \code{data(PKParameterDefinitions);
   view(PKParameterDefinitions)} into the console.}}
 
@@ -43,7 +43,7 @@ extractPK(
   getting what you expected!}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
-pull the PK data; for example, specify the tab where you have a
+pull the PK data, in quotes; for example, specify the tab where you have a
 user-defined AUC integration. \emph{Note:} Unless you want a very specific
 Excel sheet that's not what the usual sheet name would be for a first or
 last dose, this function will work best if this is left as NA. Also, since
@@ -51,21 +51,22 @@ we don't know which dose these data were for, you'll see that the output
 parameter names do not include the suffixes "_last" or "_dose1".}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" or "blood".}
+Options are "plasma" (default) or "blood" (possible but not as thoroughly
+tested).}
 
-\item{returnAggregateOrIndiv}{Return aggregate and/or individual PK
+\item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
 parameters? Options are "aggregate", "individual", or "both". For aggregate
 data, values are pulled from simulator output -- not calculated -- and the
 output will be a data.frame with the PK parameters in columns and the
 statistics reported exactly as in the simulator output file.}
 
-\item{includeTrialInfo}{TRUE or FALSE: Include which individual and trial the
-data describe? This only applies when \code{returnAggregateOrIndiv}
-includes "individual".}
+\item{includeTrialInfo}{TRUE or FALSE (default) for whether to include which
+individual and trial the data describe. This only applies when
+\code{returnAggregateOrIndiv} is "individual" or "both".}
 
-\item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
-lists exactly where the data were pulled from the simulator output file.
-Useful for QCing.}
+\item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
+output a data.frame that lists exactly where the data were pulled from the
+simulator output file. Useful for QCing.}
 }
 \value{
 Depending on the options selected, returns a list of numerical
