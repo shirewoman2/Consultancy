@@ -26,13 +26,14 @@ extractExpDetails(sim_data_file, exp_details = "Summary tab", save_output = NA)
   \item{"all"}{Extract all possible parameters}
 
   \item{a string of the specific parameters you want}{For a complete list,
-  type \code{data(ExpDetailDefinitions)} into the console. Parameters are
-  reported with a suffix depending on which compound they pertain to: "_sub"
-  for the substrate, "_met1" for the primary metabolite, "_met2" for the
-  second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
-  for the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
-  inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
-  acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
+  type \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
+  console. Parameters are reported with a suffix depending on which compound
+  they pertain to: "_sub" for the substrate, "_met1" for the primary
+  metabolite, "_met2" for the second primary metabolite, "_secmet" for the
+  secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
+  "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
+  inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
+  "fa_inhib2", "Regimen_sub")}}}
 
   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
   listed on the "Summary" tab. If you want experimental details on a second
