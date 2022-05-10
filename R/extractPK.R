@@ -108,8 +108,9 @@ extractPK <- function(sim_data_file,
     # that one.
     Tab_last <- paste0("AUC(t)?", as.numeric(str_extract(Tab_last, "[0-9]{1,}")),
                        "(_CI)?\\(Sub\\)\\(C",
-                       str_to_title(tissue))
-    Tab_last <- AllSheets[str_detect(AllSheets, Tab_last)]
+                       str_to_title(tissue), 
+                       "|AUC", ssNum, "\\(Sub\\)\\(C", str_to_title(tissue))
+    Tab_last <- AllSheets[which(str_detect(AllSheets, Tab_last))]
     if(ssNum == -Inf && length(Tab_last) == 0){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
