@@ -106,11 +106,11 @@ extractPK <- function(sim_data_file,
     # If ssNum is now "-Inf" b/c it was all zeroes in the previous line but
     # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
     # that one.
-    Tab_last <- paste0("AUC(t)?", as.numeric(str_extract(Tab_last, "[0-9]{1,}")),
+    Tab_last <- paste0("AUC(t)?", as.numeric(str_extract(Tab_last, "[0-9]{1,}")[1]),
                        "(_CI)?\\(Sub\\)\\(C",
                        str_to_title(tissue), 
                        "|AUC", ssNum, "\\(Sub\\)\\(C", str_to_title(tissue))
-    Tab_last <- AllSheets[which(str_detect(AllSheets, Tab_last))]
+    Tab_last <- AllSheets[which(str_detect(AllSheets, Tab_last))][1]
     if(ssNum == -Inf && length(Tab_last) == 0){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
