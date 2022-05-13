@@ -541,7 +541,8 @@ extractPK <- function(sim_data_file,
                     # we SHOULD NOT use aggregated measures of it b/c they don't include
                     # all the data! Instead, pull AUCtau as well and give user a warning.
                     
-                    NewParam <- sub("inf", "tau", i)
+                    NewParam <- ifelse(str_detect(i, "dose1"), 
+                                       sub("inf", "t", i), sub("inf", "tau", i))
                     warning(paste0("The parameter ", i, " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
                                    NewParam, " will also be returned for use in place of ",
                                    i, " as you deem appropriate."))
