@@ -98,7 +98,7 @@ extractPK <- function(sim_data_file,
     
     # Determining the name of the tab that contains PK data for the last dose
     # of the substrate (not the inhibitor... at least, not at this point).
-    Tab_last <- AllSheets[str_detect(AllSheets, "AUC(t)?[0-9]{1,}") &
+    Tab_last <- AllSheets[str_detect(AllSheets, "AUC(t)?[1-9]{1,1}[0-9]{0,}") &
                               !str_detect(AllSheets, "Inh")]
     ssNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
     # It's the highest dose number and it can't be 0 b/c that's dose 1.
@@ -114,7 +114,7 @@ extractPK <- function(sim_data_file,
     if(ssNum == -Inf && length(Tab_last) == 0){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
-            Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[0-9]{1,}") &
+            Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[1-9]{1,1}[0-9]{0,}") &
                                       !str_detect(AllSheets, "Inh")]
         } else if(any(str_detect(AllSheets, "AUC last"))){
             # Tab name could include "last" instead of a number, e.g., "Int AUC
