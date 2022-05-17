@@ -209,12 +209,16 @@ the file.} }
 
 # An example of how to format observed data:
 MyObsPK <- data.frame(File = "mdz-5mg-sd.xlsx",
-                     AUCinf_dose1 = 60,
-                     AUCinf_dose1_CV = 0.38,
-                     Cmax_dose1 = 22,
-                     Cmax_dose1_CV = 0.24)
-so_table(sim_data_file = "mdz-5mg-sd.xlsx", 
-         observed_PK = MyObsPK)
-                     
-                     
+                      AUCinf_dose1 = 60,
+                      AUCinf_dose1_CV = 0.38,
+                      Cmax_dose1 = 22,
+                      Cmax_dose1_CV = 0.24)
+so_table(sim_data_file = NA, observed_PK = MyObsPK)
+
+# Or, if you don't include "File" in your observed data.frame:
+MyObsPK <- data.frame(AUCinf_dose1 = 60,
+                      AUCinf_dose1_CV = 0.38,
+                      Cmax_dose1 = 22,
+                      Cmax_dose1_CV = 0.24)
+so_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 }

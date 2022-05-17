@@ -158,7 +158,7 @@
 #'
 #' @return Returns a data.frame of S/O values or, if \code{checkDataSource =
 #'   TRUE}, a list of that data.frame (named "Table") and information on where
-#'   the values came from for QCing (named "QC"). 
+#'   the values came from for QCing (named "QC").
 #' @export
 #' @examples
 #' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
@@ -166,14 +166,24 @@
 #'
 #' # An example of how to format observed data:
 #' MyObsPK <- data.frame(File = "mdz-5mg-sd.xlsx",
-#'                      AUCinf_dose1 = 60,
-#'                      AUCinf_dose1_CV = 0.38,
-#'                      Cmax_dose1 = 22,
-#'                      Cmax_dose1_CV = 0.24)
-#' so_table(sim_data_file = "mdz-5mg-sd.xlsx", 
-#'          observed_PK = MyObsPK)
-#'                      
-#'                      
+#'                       AUCinf_dose1 = 60,
+#'                       AUCinf_dose1_CV = 0.38,
+#'                       Cmax_dose1 = 22,
+#'                       Cmax_dose1_CV = 0.24)
+#'
+#' # Since the observed data included the simulator output file name, you 
+#' # don't need to include it again when you call on so_table:
+#' so_table(sim_data_file = NA, observed_PK = MyObsPK)
+#'
+#' # If you don't include "File" in your observed data.frame, then you DO 
+#' # need to supply the simulator output file. This can give you a bit
+#' # more flexibility if you want to compare multiple simulator output files
+#' # to the same observed data. 
+#' MyObsPK <- data.frame(AUCinf_dose1 = 60,
+#'                       AUCinf_dose1_CV = 0.38,
+#'                       Cmax_dose1 = 22,
+#'                       Cmax_dose1_CV = 0.24)
+#' so_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 
 so_table <- function(report_input_file = NA,
                      sheet_report = NA,
