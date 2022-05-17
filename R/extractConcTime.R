@@ -1250,6 +1250,22 @@ extractConcTime <- function(sim_data_file,
                                                   complete.cases(AllEffectors_comma),
                                               AllEffectors_comma, Inhibitor))
                 
+                # If obs_data_file included compounds that were not present in
+                # the simulation, don't include those and give the user a
+                # warning.
+                Missing <- setdiff(unique(obs_data$CompoundID), 
+                                   names(ObsCompounds[complete.cases(ObsCompounds)])) 
+                
+                if(length(Missing) > 0){
+                    warning(paste0("The observed data file includes ",
+                                   str_comma(Missing), 
+                                   ", which is/are not present in the simulated data. Observed data for ", 
+                                   str_comma(Missing), 
+                                   " will not be included in the output."))
+                    obs_data <- obs_data %>% 
+                        filter(!CompoundID %in% Missing)
+                }
+                
                 # As necessary, convert simulated data units to match the
                 # observed data
                 if("individual" %in% returnAggregateOrIndiv){
