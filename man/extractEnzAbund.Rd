@@ -8,15 +8,15 @@ extractEnzAbund(
   sim_data_file,
   enzyme = "CYP3A4",
   tissue = "liver",
-  returnAggregateOrIndiv = c("aggregate", "individual")
+  returnAggregateOrIndiv = "both"
 )
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulated
-enzyme-abundance-time data}
+enzyme-abundance-time data, in quotes}
 
-\item{enzyme}{the enzyme, e.g., "CYP3A4", "UGT1A1", etc. Spaces or hyphens in
-enzyme names will be ignored. Not case sensitive.}
+\item{enzyme}{the enzyme, e.g., "CYP3A4" (default), "UGT1A1", etc. Spaces or
+hyphens in enzyme names will be ignored. Not case sensitive.}
 
 \item{tissue}{From which tissue should the desired enzyme abundance be
 extracted? Options are "liver" (default), "gut", or "kidney". Note: If
@@ -24,9 +24,9 @@ extracted? Options are "liver" (default), "gut", or "kidney". Note: If
 concentrations.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
-enzyme abundance data? Options are one or both of "aggregate" and
-"individual". Aggregated data are not calculated here but are pulled from
-the simulator output rows labeled as "mean".}
+enzyme abundance data? Options are "individual", "aggregate", or "both"
+(default). Aggregated data are not calculated here but are pulled from the
+simulator output rows labeled as "mean".}
 }
 \value{
 A data.frame of enzyme abundance with time with the following

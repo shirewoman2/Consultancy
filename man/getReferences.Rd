@@ -8,7 +8,7 @@ getReferences(main_directory = ".", save_output = NA)
 }
 \arguments{
 \item{main_directory}{the main directory from which you want a list of all
-the files; default assumes the main directory is your current working
+the files, in quotes; default assumes the main directory is your current working
 directory}
 
 \item{save_output}{optionally save the output by supplying a file name in

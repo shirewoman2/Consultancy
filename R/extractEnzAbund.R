@@ -8,17 +8,17 @@
 #' to get the dose number for a custom-dosing regimen.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
-#'   enzyme-abundance-time data
-#' @param enzyme the enzyme, e.g., "CYP3A4", "UGT1A1", etc. Spaces or hyphens in
-#'   enzyme names will be ignored. Not case sensitive.
+#'   enzyme-abundance-time data, in quotes
+#' @param enzyme the enzyme, e.g., "CYP3A4" (default), "UGT1A1", etc. Spaces or
+#'   hyphens in enzyme names will be ignored. Not case sensitive.
 #' @param tissue From which tissue should the desired enzyme abundance be
 #'   extracted? Options are "liver" (default), "gut", or "kidney". Note: If
 #'   "gut" is selected, the output will return both colon and small intestine
 #'   concentrations.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
-#'   enzyme abundance data? Options are one or both of "aggregate" and
-#'   "individual". Aggregated data are not calculated here but are pulled from
-#'   the simulator output rows labeled as "mean".
+#'   enzyme abundance data? Options are "individual", "aggregate", or "both"
+#'   (default). Aggregated data are not calculated here but are pulled from the
+#'   simulator output rows labeled as "mean".
 #'
 #' @return A data.frame of enzyme abundance with time with the following
 #'   columns: \describe{
@@ -68,8 +68,7 @@
 extractEnzAbund <- function(sim_data_file,
                             enzyme = "CYP3A4",
                             tissue = "liver",
-                            returnAggregateOrIndiv = c("aggregate",
-                                                       "individual")){
+                            returnAggregateOrIndiv = "both"){
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -78,8 +77,8 @@ extractEnzAbund <- function(sim_data_file,
     # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,
              length(returnAggregateOrIndiv) > 2,
-             any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual") == FALSE)))) {
-        stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
+             any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual", "both") == FALSE)))) {
+        stop("returnAggregateOrIndiv must be 'aggregate', 'individual', or 'both'.")
     }
     
     if(tissue %in% c("gut", "liver", "kidney") == FALSE){
@@ -110,7 +109,7 @@ extractEnzAbund <- function(sim_data_file,
                            col_names = FALSE))
     
     # Extracting aggregate data ---------------------------------------------
-    if("aggregate" %in% returnAggregateOrIndiv){
+    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
         
         # If the tissue was gut, there are separate data sets for small
         # intestine and colon. Checking for that.
@@ -342,7 +341,7 @@ extractEnzAbund <- function(sim_data_file,
     }
     
     # Extracting individual data --------------------------------------------
-    if("individual" %in% returnAggregateOrIndiv){
+    if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
         
         # If the tissue was gut, there are separate data sets for small
         # intestine and colon. Checking for that.
@@ -554,12 +553,12 @@ extractEnzAbund <- function(sim_data_file,
     
     Data <- list()
     
-    if("aggregate" %in% returnAggregateOrIndiv){
+    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
         Data[["agg"]] <- sim_data_mean %>%
             arrange(Trial, Time)
     }
     
-    if("individual" %in% returnAggregateOrIndiv){
+    if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
         Data[["indiv"]] <- sim_data_ind %>%
             mutate(Individual = as.character(Individual),
                    Trial = as.character(Trial)) %>%

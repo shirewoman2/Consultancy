@@ -16,7 +16,7 @@ enz_plot(
 }
 \arguments{
 \item{sim_enz_dataframe}{the data.frame of enzyme abundance data obtained
-from running the function \code{\link{extractEnzAbund}}}
+from running the function \code{\link{extractEnzAbund}}. Not quoted.}
 
 \item{figure_type}{The type of figure to graph. Default is "percentiles". See
 \code{figure_type} options and their explanations for the function

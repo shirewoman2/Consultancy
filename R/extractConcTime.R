@@ -21,20 +21,21 @@
 #' contains more information, to make sure the data are what you're expecting.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
-#'   concentration-time data; must be an output file from the Simcyp simulator
+#'   concentration-time data, in quotes; must be an output file from the Simcyp
+#'   simulator
 #' @param obs_data_file name of the Excel file containing the observed
-#'   concentration-time data for the substrate or metabolite you're extracting.
-#'   If the observed data you want to plot were already included in the Excel
-#'   output from the simulator, leave this as NA. Otherwise, this is the file
-#'   that it is ready to be converted to an XML file, not the file that contains
-#'   only the digitized time and concentration data.
-#' @param adjust_obs_time TRUE or FALSE: Adjust the time listed in the observed
-#'   data file to match the last dose administered? This only applies to
-#'   multiple-dosing regimens. If TRUE, the graph will show the observed data
-#'   overlaid with the simulated data such that the dose in the observed data
-#'   was administered at the same time as the last dose in the simulated data.
-#'   If FALSE, the observed data will start at whatever times are listed in the
-#'   Excel file.
+#'   concentration-time data for the substrate or metabolite you're extracting,
+#'   in quotes. If the observed data you want to plot were already included in
+#'   the Excel output from the simulator, leave this as NA. Otherwise, this is
+#'   the file that it is ready to be converted to an XML file, not the file that
+#'   contains only the digitized time and concentration data.
+#' @param adjust_obs_time TRUE or FALSE (default) for whether to adjust the time
+#'   listed in the observed data file to match the last dose administered. This
+#'   only applies to multiple-dosing regimens. If TRUE, the graph will show the
+#'   observed data overlaid with the simulated data such that the dose in the
+#'   observed data was administered at the same time as the last dose in the
+#'   simulated data. If FALSE, the observed data will start at whatever times
+#'   are listed in the Excel file.
 #' @param tissue From which tissue should the desired concentrations be
 #'   extracted? Default is plasma for typical plasma concentration-time data.
 #'   Other options are "blood" or any tissues included in "Sheet Options",
@@ -58,12 +59,12 @@
 #'   up to one metabolite for the 1st inhibitor but no other inhibitor
 #'   metabolites. (Someone please correct me if that's wrong! -LS)
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
-#'   concentration-time data? Options are "aggregate", "individual", or "both".
-#'   Aggregated data are not calculated here but are pulled from the simulator
-#'   output rows labeled as "Population Statistics".
+#'   concentration-time data? Options are "aggregate", "individual", or "both"
+#'   (default). Aggregated data are not calculated here but are pulled from the
+#'   simulator output rows labeled as "Population Statistics".
 #' @param expdetails If you have already run \code{extractExpDetails} to get all
 #'   the details from the "Input Sheet", you can save some processing time by
-#'   supplying it here. If left as NA, this function will run
+#'   supplying it here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
 #' @param fromMultFunction INTERNAL USE ONLY. TRUE or FALSE on whether this is
@@ -1198,6 +1199,8 @@ extractConcTime <- function(sim_data_file,
                             rm(obs_data)
                         } else {
                             
+                            warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.")
+                            
                             NewNamesObs <- obs_data[1, ]
                             NewNamesObs[str_detect(NewNamesObs, "Time")] <- "Time"
                             # NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
@@ -1246,6 +1249,22 @@ extractConcTime <- function(sim_data_file,
                            Inhibitor = ifelse(Inhibitor == "inhibitor" &
                                                   complete.cases(AllEffectors_comma),
                                               AllEffectors_comma, Inhibitor))
+                
+                # If obs_data_file included compounds that were not present in
+                # the simulation, don't include those and give the user a
+                # warning.
+                Missing <- setdiff(unique(obs_data$CompoundID), 
+                                   names(ObsCompounds[complete.cases(ObsCompounds)])) 
+                
+                if(length(Missing) > 0){
+                    warning(paste0("The observed data file includes ",
+                                   str_comma(Missing), 
+                                   ", which is/are not present in the simulated data. Observed data for ", 
+                                   str_comma(Missing), 
+                                   " will not be included in the output."))
+                    obs_data <- obs_data %>% 
+                        filter(!CompoundID %in% Missing)
+                }
                 
                 # As necessary, convert simulated data units to match the
                 # observed data

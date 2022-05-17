@@ -22,23 +22,25 @@
 #' number (subjects aren't getting dosed on the half hour, for example), so if
 #' that's not the case, these dose number assignments will be off.
 #'
-#' @param sim_data_files a character vector of simulator output files or, if
-#'   left as NA, all the Excel files in the current directory. Example of
-#'   acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be
+#' @param sim_data_files a character vector of simulator output files, each in
+#'   quotes and encapsulated with \code{c(...)}, or, if left as NA, \emph{all}
+#'   the Excel files in the current directory. Example of acceptable input:
+#'   \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be included with the
+#'   file names if they are located somewhere other than your working directory.
+#'   Note that, if you leave this as NA and some of the Excel files are not
+#'   regular simulator output, e.g. they are sensitivity analyses or a file
+#'   where you were doing some calculations, this will result in an error and
+#'   return no data.
+#' @param obs_data_files a character vector of the observed data filess, each in
+#'   quotes and encapsulated with \code{c(...)}, that you'd like to compare,
+#'   e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. The path should be
 #'   included with the file names if they are located somewhere other than your
-#'   working directory. Note that, if you leave this as NA and some of the Excel
-#'   files are not regular simulator output, e.g. they are sensitivity analyses
-#'   or a file where you were doing some calculations, this will result in an
-#'   error and return no data.
-#' @param obs_data_files a character vector of the observed data files that
-#'   you'd like to compare, e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}.
-#'   The path should be included with the file names if they are located
-#'   somewhere other than your working directory. This is the file that it is
-#'   ready to be converted to an XML file, not the file that contains only the
-#'   digitized time and concentration data. This function assumes that the
-#'   dosing intervals for the observed data match those in the simulated data.
-#'   See "Details" for more info.
-#' @param sim_obs_dataframe (optional) a data.frame that contains previously
+#'   working directory. This is the file that it is ready to be converted to an
+#'   XML file, not the file that contains only the digitized time and
+#'   concentration data. This function assumes that the dosing intervals for the
+#'   observed data match those in the simulated data. See "Details" for more
+#'   info.
+#' @param ct_dataframe (optional) a data.frame that contains previously
 #'   extracted concentration-time data. This should NOT be in quotes. Because we
 #'   can see scenarios where you might want to extract some concentration-time
 #'   data, play around with those data, and then later decide you want to pull
@@ -46,9 +48,9 @@
 #'   exist. When that is the case, this function will \emph{add} data to that
 #'   data.frame. It will \emph{not} overwrite existing data unless
 #'   \code{overwrite} is set to TRUE.
-#' @param overwrite TRUE or FALSE on whether to re-extract the
+#' @param overwrite TRUE or FALSE (default) on whether to re-extract the
 #'   concentration-time data from output files that are already included in
-#'   \code{sim_obs_dataframe}. Since pulling data from Excel files is slow, by
+#'   \code{ct_dataframe}. Since pulling data from Excel files is slow, by
 #'   default, this will \emph{not} overwrite existing data and instead will only
 #'   add data from any Excel files that aren't already included. A situation
 #'   where you might want to set this to TRUE would be when you have changed
@@ -82,14 +84,14 @@
 #'   not converted because there are simply too many units to manage easily, so
 #'   please check that the units are what you expected in the end.
 #' @param time_units_to_use time units to use so that all data will be
-#'   comparable. Options are "hours" or "minutes". Default is "hours".
+#'   comparable. Options are "hours" (default) or "minutes".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
-#'   concentration-time data? Options are "aggregate", "individual", or "both".
-#'   Aggregated data are not calculated here but are pulled from the simulator
-#'   output rows labeled as "Population Statistics".
+#'   concentration-time data? Options are "aggregate" (default), "individual",
+#'   or "both". Aggregated data are not calculated here but are pulled from the
+#'   simulator output rows labeled as "Population Statistics".
 #'
-#' @return a large data.frame with multiple sets of concentration-time data,
-#'   formatted the same way as output from the function
+#' @return Returns a large data.frame with multiple sets of concentration-time
+#'   data, formatted the same way as output from the function
 #'   \code{\link{extractConcTime}}
 #' @export
 #'
@@ -97,14 +99,14 @@
 #' ConcTimeData <-
 #'       extractConcTime_mult(
 #'             sim_data_files = c("MyFile1.xlsx", "MyFile2.xlsx"),
-#'             sim_obs_dataframe = "ConcTimeData",
+#'             ct_dataframe = "ConcTimeData",
 #'             overwrite = FALSE,
 #'             tissue = "unbound plasma") # Note that "tissue" is passed to "extractConcTime".
 #' 
 
 extractConcTime_mult <- function(sim_data_files = NA,
                                  obs_data_files = NA,
-                                 sim_obs_dataframe = ConcTime,
+                                 ct_dataframe = ConcTime,
                                  overwrite = FALSE,
                                  tissues = "plasma",
                                  compoundsToExtract = "substrate",
@@ -121,21 +123,21 @@ extractConcTime_mult <- function(sim_data_files = NA,
     }
     
     # Checking on what combinations of data the user has requested and what
-    # data are already present in sim_obs_dataframe.
+    # data are already present in ct_dataframe.
     Requested <- expand.grid(Tissue = tissues,
                              CompoundID = compoundsToExtract,
                              File = sim_data_files)
     
-    if(exists(substitute(sim_obs_dataframe)) && 
-       "data.frame" %in% class(sim_obs_dataframe)){
-        if("File" %in% names(sim_obs_dataframe) == FALSE){
-            sim_obs_dataframe$File <- "unknown file"
+    if(exists(substitute(ct_dataframe)) && 
+       "data.frame" %in% class(ct_dataframe)){
+        if("File" %in% names(ct_dataframe) == FALSE){
+            ct_dataframe$File <- "unknown file"
         }
         
-        sim_obs_dataframe <- sim_obs_dataframe %>%
+        ct_dataframe <- ct_dataframe %>%
             mutate(ID = paste(File, Tissue, CompoundID))
         
-        DataToFetch <- sim_obs_dataframe %>% select(File, Tissue, CompoundID) %>%
+        DataToFetch <- ct_dataframe %>% select(File, Tissue, CompoundID) %>%
             unique() %>% mutate(ExistsAlready = TRUE) %>%
             right_join(Requested) %>%
             filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
@@ -145,18 +147,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
             sim_data_files_topull <- unique(DataToFetch$File)
         } else {
             sim_data_files_topull <- sim_data_files
-            sim_obs_dataframe <- sim_obs_dataframe %>%
+            ct_dataframe <- ct_dataframe %>%
                 filter(!ID %in% DataToFetch$ID)
         }
     } else {
         DataToFetch <- Requested
         sim_data_files_topull <- sim_data_files
-        sim_obs_dataframe <- data.frame()
+        ct_dataframe <- data.frame()
     }
     
     if(length(sim_data_files_topull) == 0){
         message("There are no data to pull that are not already present in your current data.frame. Returning current data.frame.")
-        return(sim_obs_dataframe)
+        return(ct_dataframe)
     }
     
     MultData <- list()
@@ -338,16 +340,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
     }
     
     # Observed data ------------------------------------------------------
-    if(length(setdiff(obs_data_files, unique(sim_obs_dataframe$ObsFile))) > 0 &&
+    if(length(setdiff(obs_data_files, unique(ct_dataframe$ObsFile))) > 0 &&
        any(complete.cases(obs_data_files))){
         MultObsData <- list()
         if(overwrite){
-            sim_obs_dataframe <- sim_obs_dataframe %>% filter(!ObsFile %in% obs_data_files)
+            ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% obs_data_files)
             for(f in obs_data_files){
                 MultObsData[[f]] <- extractObsConcTime(f)
             }
         } else {
-            for(f in setdiff(obs_data_files, unique(sim_obs_dataframe$ObsFile))){
+            for(f in setdiff(obs_data_files, unique(ct_dataframe$ObsFile))){
                 MultObsData[[f]] <- extractObsConcTime(f)
             }
         }
@@ -361,7 +363,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
         # compound IDs match the simulated data. We're going to assume that the
         # dose timings are the same as in the simulated data.
         ObsCompoundID <- MultObsData %>% pull(CompoundID) %>% unique()
-        SimDoseInfo <- bind_rows(sim_obs_dataframe, MultData) %>%
+        SimDoseInfo <- bind_rows(ct_dataframe, MultData) %>%
             filter(CompoundID %in% ObsCompoundID) %>% 
             group_by(CompoundID, Inhibitor, DoseInt, DoseNum) %>% 
             summarize(TimeRounded = round(min(Time)))
@@ -420,12 +422,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
             MultObsData <- bind_rows(MultObsData)
         }
         
-        sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultObsData)
+        ct_dataframe <- bind_rows(ct_dataframe, MultObsData)
         
     }
     
     # all data together -------------------------------------------------
-    sim_obs_dataframe <- bind_rows(sim_obs_dataframe, MultData) %>% 
+    ct_dataframe <- bind_rows(ct_dataframe, MultData) %>% 
         select(-any_of(c("ID", "Breaks"))) %>% 
         arrange(across(any_of(c("File", "Compound", "Inhibitor", "Simulated",
                                 "Individual", "Trial", "Time")))) %>%
@@ -435,7 +437,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
                         "DoseInt", "File", "ObsFile")))
     
-    return(sim_obs_dataframe)
+    return(ct_dataframe)
     
 }
 

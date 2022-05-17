@@ -5,29 +5,37 @@
 #' categories those values are in and creates boxplots of those data. Options
 #' are included for type of graph to make and some aesthetics.
 #'
-#' @param DF the data.frame you want to graph
-#' @param category_column the name of the column with categorical data in quotes
-#' @param value_column the name of the column with value data in quotes
-#' @param facet_column1 (optional) the name of a column by which you might break
-#'   up your graph into small multiples. Please see the example if you're
-#'   uncertain what this does.
-#' @param facet_column2 (optional) the name of a second column by which you
-#'   might break up the graph into small multiples.
+#' @param DF the data.frame you want to graph, unquoted
+#' @param category_column the name of the column with categorical data, unquoted
+#' @param value_column the name of the column with value data, unquoted
+#' @param facet1_column (optional) the name of a column by which you might break
+#'   up your graph into small multiples, unquoted. Please see the example if
+#'   you're uncertain what this does.
+#' @param facet2_column (optional) the name of a second column by which you
+#'   might break up the graph into small multiples, unquoted.
 #' @param graph_type the type of graph to plot. Options: \describe{
-#'   \item{"boxplot"}{standard boxplots or box-and-whisker plots}
+#'   \item{"boxplot"}{(default) standard boxplots, aka box-and-whisker plots}
 #'
 #'   \item{"jittered points"}{boxplots overlaid with points depicting each
 #'   individual observation.}
 #'
 #'   \item{"jittered points, filled boxes"}{boxplots with fill color according
 #'   to \code{category_column} and open circles for the jittered points}}
-#' @param include_errorbars TRUE or FALSE on whether to include horizontal error
-#'   bars on the whiskers
-#' @param xlabel the label to  use for the x axis
-#' @param ylabel the label to use for the y axis
+#' @param include_errorbars TRUE or FALSE (default) on whether to include
+#'   horizontal error bars on the whiskers
+#' @param xlabel the label to  use for the x axis, in quotes; default will use
+#'   the name of category_column.
+#' @param ylabel the label to use for the y axis, in quotes; default will use
+#'   the name of value_column.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
-#'   \item{"default"}{colors selected from the color brewer palette "set 1"}
+#'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+#'   that are friendly to those with red-green colorblindness. The first three
+#'   colors are green, orange, and purple. This can also be referred to as
+#'   "Brewer set 2".}
+#'
+#'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+#'   first three colors are red, blue, and green.}
 #'
 #'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
 #'   (ggplot2 is an R package for graphing.)}
@@ -39,9 +47,6 @@
 #'   that, that's when this palette is most useful.}
 #'
 #'   \item{"blue-green"}{a set of blues and greens}
-#'
-#'   \item{"Brewer set 2"}{a set of colors from Cynthia Brewer et al. from Penn
-#'   State that are friendly to those with red-green colorblindness}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}}
@@ -82,11 +87,11 @@
 #' AUCs$Metabolizer <- sample(c("poor", "extensive"), 100, replace = TRUE)
 #'
 #' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-#'                facet_column1 = Sex,
+#'                facet1_column = Sex,
 #'                color_set = "blue-green", graph_type =  "jittered points")
 #'
 #' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
-#'                facet_column1 = Sex, facet_column2 = Metabolizer,
+#'                facet1_column = Sex, facet2_column = Metabolizer,
 #'                color_set = "blue-green", graph_type =  "jittered points")
 #'
 #' graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC,
@@ -99,12 +104,12 @@
 #'               color_set = "Brewer set 2", include_errorbars = TRUE,
 #'               save_graph = "test boxplot.png")
 #'
-#'
+#' 
 graph_boxplot <- function(DF,
                           category_column,
                           value_column,
-                          facet_column1,
-                          facet_column2,
+                          facet1_column,
+                          facet2_column,
                           graph_type = "boxplot",
                           include_errorbars = FALSE,
                           xlabel = NA,
@@ -122,8 +127,8 @@ graph_boxplot <- function(DF,
     
     category_column <- rlang::enquo(category_column)
     value_column <- rlang::enquo(value_column)
-    facet_column1 <- rlang::enquo(facet_column1)
-    facet_column2 <- rlang::enquo(facet_column2)
+    facet1_column <- rlang::enquo(facet1_column)
+    facet2_column <- rlang::enquo(facet2_column)
     
     # Building graph layers -------------------------------------
     if(color_set == "black"){
@@ -164,8 +169,8 @@ graph_boxplot <- function(DF,
     
     # Facets 
     G <- G +
-        facet_grid(rows = vars(!!facet_column1),
-                   cols = vars(!!facet_column2), 
+        facet_grid(rows = vars(!!facet1_column),
+                   cols = vars(!!facet2_column), 
                    scales = "free")
     
     if(complete.cases(xlabel)){
@@ -206,8 +211,9 @@ graph_boxplot <- function(DF,
     
     
     if(color_set == "default"){
-        G <- G + scale_color_brewer(palette = "Set1") +
-            scale_fill_brewer(palette="Set1")
+        # Using "Dark2" b/c "Set2" is just really, really light. 
+        G <- G + scale_color_brewer(palette = "Dark2") +
+            scale_fill_brewer(palette="Dark2")
     }
     
     if(color_set == "blue-green"){
@@ -225,9 +231,15 @@ graph_boxplot <- function(DF,
                 values = colRainbow(length(unique(DF %>% pull(!!category_column)))))
     }
     
-    if(color_set == "Brewer set 2"){
-        G <- G + scale_fill_brewer(palette = "Set2") +
-            scale_color_brewer(palette = "Set2")
+    if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
+        # Using "Dark2" b/c "Set2" is just really, really light. 
+        G <- G + scale_fill_brewer(palette = "Dark2") +
+            scale_color_brewer(palette = "Dark2")
+    }
+    
+    if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
+        G <- G + scale_fill_brewer(palette = "Set1") +
+            scale_color_brewer(palette = "Set1")
     }
     
     if(color_set == "Tableau"){
