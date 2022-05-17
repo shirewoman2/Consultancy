@@ -701,11 +701,13 @@ so_table <- function(report_input_file = NA,
                     left_join(AllPKParameters_mod) %>% 
                     pull(PrettifiedNames)
             )
+            
         } else {
             suppressMessages(
                 PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
                     left_join(AllPKParameters %>% 
                                   select(PKparameter, PrettifiedNames)) %>% 
+                    unique() %>% 
                     pull(PrettifiedNames)
             )
         }
