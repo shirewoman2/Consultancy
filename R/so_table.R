@@ -20,17 +20,23 @@
 #' need to close it or this function will just keep running and not generate any
 #' output while it waits for access to the file.}}
 #'
-#' Please see the notes at the bottom of this help file for options for how to
-#' supply observed data in a standardized fashion that this function can read.
-#' \strong{Note:} If the simulator output Excel file lives on SharePoint, you'll
-#' need to close it or this function will just keep running and not generate any
-#' output while it waits for access to the file.
-#'
 #' Because we need to have a standardized way to input observed data, setting up
-#' the input for this function requires filling out an Excel template form. Here
-#' are the steps to take: \enumerate{\item{Use the function
-#' \code{\link{generateReportInputForm}} to create an Excel file where you can
-#' enter information about your project. Example:
+#' the input for this function requires creating a data.frame of the observed PK
+#' data, supplying a csv or Excel file with observed PK data, or filling out an
+#' Excel form.
+#'
+#' To create a data.frame or an Excel or csv file of observed PK data, you'll
+#' need columns for the simulator output file to compare (optional; title this
+#' column "File") and each of the PK parameters for which you have observed
+#' data. If you have CV values for any observed data that you'd like to include
+#' in the table, title that column with the PK parameter name and a suffix of
+#' "_CV". An example of how to format observed data: \code{data.frame(File =
+#' "mdz-5mg-sd.xlsx", AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 =
+#' 22, Cmax_dose1_CV = 0.24)}
+#'
+#' To use an Excel form, here are the steps to take: \enumerate{\item{Use the
+#' function \code{\link{generateReportInputForm}} to create an Excel file where
+#' you can enter information about your project. Example:
 #' \code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
 #' tab "study info - DDI" or "study info - no DDI", whichever is appropriate for
 #' your situation. Under the heading "Observed data", enter details about your
@@ -90,6 +96,17 @@
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'   tested).
+#' @param observed_PK (optional) If you have a data.frame or an Excel or csv
+#'   file with observed PK parameters, supply the data.frame or the full file
+#'   name in quotes here, and the simulated-to-observed mean ratios will be
+#'   calculated. The supplied data.frame or file \emph{must} include columns for
+#'   the simulator output Excel file (title this "File") and each of the PK
+#'   parameters you would like to compare, and those column names \emph{must}
+#'   match the PK parameter options listed in \code{data(AllPKParameters)}. If
+#'   you would like the output table to include the observed data CV for any of
+#'   the parameters, add "_CV" to the end of the parameter name, e.g.,
+#'   "AUCinf_dose1_CV". Note: Whatever you list for "File" will override
+#'   anything specified for the argument \code{sim_data_file}.
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs.
 #'   If you supplied a report input form, only specify this if you'd like to
 #'   override the value listed there. If no value is specified here or in
@@ -111,8 +128,8 @@
 #'   the variability. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
-#'   SimcypConsultancy template lists one row for each of the upper and
-#'   lower values, so this should be set to FALSE for official reports.
+#'   SimcypConsultancy template lists one row for each of the upper and lower
+#'   values, so this should be set to FALSE for official reports.
 #' @param prettify_columns TRUE or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -139,14 +156,24 @@
 #'   If you requested both the table and the QC info, the QC file will have "-
 #'   QC" added to the end of the file name.
 #'
-#' @return a data.frame of S/O values or a list of that data.frame (named
-#'   "Table") plus information on where the values came from for QCing (named
-#'   "QC")
+#' @return Returns a data.frame of S/O values or, if \code{checkDataSource =
+#'   TRUE}, a list of that data.frame (named "Table") and information on where
+#'   the values came from for QCing (named "QC"). 
 #' @export
 #' @examples
 #' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
 #' #          sheet_report = "table and graph input", includeTrialMeans = TRUE)
-
+#'
+#' # An example of how to format observed data:
+#' MyObsPK <- data.frame(File = "mdz-5mg-sd.xlsx",
+#'                      AUCinf_dose1 = 60,
+#'                      AUCinf_dose1_CV = 0.38,
+#'                      Cmax_dose1 = 22,
+#'                      Cmax_dose1_CV = 0.24)
+#' so_table(sim_data_file = "mdz-5mg-sd.xlsx", 
+#'          observed_PK = MyObsPK)
+#'                      
+#'                      
 
 so_table <- function(report_input_file = NA,
                      sheet_report = NA,
@@ -154,6 +181,7 @@ so_table <- function(report_input_file = NA,
                      PKparameters = NA,
                      sheet_PKparameters = NA,
                      tissue = "plasma",
+                     observed_PK = NA, 
                      mean_type = NA,
                      includeCV = TRUE,
                      includeConfInt = TRUE,
@@ -164,6 +192,32 @@ so_table <- function(report_input_file = NA,
                      prettify_effector_name = TRUE, 
                      checkDataSource = TRUE, 
                      save_table = NA){
+    
+    # If they supplied observed_PK, get the sim_data_file from that. 
+    if(complete.cases(observed_PK) && 
+       (class(observed_PK) == "character" | "data.frame" %in% class(observed_PK))){
+        if(class(observed_PK) == "character"){
+            observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
+                                  "csv" = read.csv(observed_PK), 
+                                  "xlsx" = xlsx::read.xlsx(observed_PK, 
+                                                           sheetIndex = 1))
+        }
+        
+        # At this point, observed_PK should be a data.frame b/c it either was a
+        # data.frame at the outset or it has been created by reading an Excel or
+        # csv file.
+        
+        # There should be only 1 row in observed_PK, so removing any extras that
+        # might have gotten included accidentally.
+        observed_PK <- observed_PK[1, ]
+        
+        if("File" %in% names(observed_PK) &&
+           complete.cases(observed_PK$File)){
+            sim_data_file <- observed_PK %>% pull(File)
+            print(paste0("PK summary table will be for the simulator output file '",
+                        sim_data_file, "'."))
+        }
+    }
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -224,16 +278,35 @@ so_table <- function(report_input_file = NA,
         PKToPull <- PKparameters
         
     } else {
-        if(class(sectionInfo) == "logical"){
-            # The most commonly requested PK parameters
-            PKToPull <- AllPKParameters %>%
-                # Per Hannah and template: Only include CL/F, t1/2, or tmax if
-                # there's a specific reason to.
-                filter(str_detect(PKparameter, "AUCinf|AUCtau|Cmax")) %>%
-                filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
-                pull(PKparameter) %>% unique()
+        
+        if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
+            if(complete.cases(observed_PK)){
+                # If user supplies an observed file, then pull the parameters
+                # they want to match.
+                if(class(observed_PK) == "character"){
+                    observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
+                                          "csv" = read.csv(observed_PK), 
+                                          "xlsx" = xlsx::read.xlsx(observed_PK, 
+                                                                   sheetIndex = 1))
+                } 
+                PKToPull <- names(observed_PK)[names(observed_PK) %in% AllPKParameters$PKparameter]
+                
+            } else {
+                # If the user didn't specify an observed file, didn't list
+                # specific parameters they want, and didn't fill out a report
+                # input form, then pull the most commonly requested PK
+                # parameters.
+                PKToPull <- AllPKParameters %>%
+                    # Per Hannah and template: Only include CL/F, t1/2, or tmax
+                    # if there's a specific reason to.
+                    filter(str_detect(PKparameter, "AUCinf|AUCtau|Cmax")) %>%
+                    filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
+                    pull(PKparameter) %>% unique()
+            }
+            
         } else {
-            # The PK parameters that match the observed data
+            # Pull the PK parameters that match the observed data in the report
+            # input form if one was provided.
             PKToPull <- AllPKParameters %>% 
                 filter(PKparameter %in% names(sectionInfo$ObsData)) %>% 
                 pull(PKparameter) %>% unique()
@@ -482,14 +555,26 @@ so_table <- function(report_input_file = NA,
     }
     
     # observed data -----------------------------------------------------
-    if(class(sectionInfo) != "logical"){
+    if(class(sectionInfo) != "logical" | "data.frame" %in% class(observed_PK)){
+        if(class(sectionInfo) != "logical"){
+            MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% Myobserved_PKParam] %>%
+                as.data.frame() %>% t() %>% as.data.frame() %>%
+                rename("Obs" = V1) %>%
+                mutate(PKParam = row.names(.),
+                       Obs = as.numeric(Obs))
+        }  else {
+            # Making observed_PK that was supplied as a data.frame or file long
+            # w/column for PKparameter.
+            MyObsPK <- observed_PK %>% 
+                pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
+                                             paste0(AllPKParameters$PKparameter, "_CV"))), 
+                             names_to = "PKParam", 
+                             values_to = "Obs")
+        }
         
-        MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
-            as.data.frame() %>% t() %>% as.data.frame() %>%
-            rename("Obs" = V1) %>%
-            mutate(PKParam = row.names(.),
-                   Obs = as.numeric(Obs), 
-                   Stat = ifelse(str_detect(PKParam, "_CV"), 
+        
+        MyObsPK <- MyObsPK %>% 
+            mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
                                  ifelse({{MeanType}} == "geometric", "GCV", "CV"), 
                                  ifelse({{MeanType}} == "geometric", "geomean", "mean")), 
                    # Accounting for when the mean ratios for obs data are
@@ -519,7 +604,7 @@ so_table <- function(report_input_file = NA,
                 select(PKParam, Stat, Value, SorO)
         )
         
-        suppressMessage(
+        suppressMessages(
             MyPKResults <- MyPKResults %>% 
                 full_join(MyObsPK) %>% 
                 pivot_longer(names_to = "SorO", values_to = "Value", 
@@ -706,6 +791,7 @@ so_table <- function(report_input_file = NA,
                 PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
                     left_join(AllPKParameters %>% 
                                   select(PKparameter, PrettifiedNames)) %>% 
+                    unique() %>% 
                     pull(PrettifiedNames)
             )
         }

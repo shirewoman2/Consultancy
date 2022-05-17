@@ -11,6 +11,7 @@ so_table(
   PKparameters = NA,
   sheet_PKparameters = NA,
   tissue = "plasma",
+  observed_PK = NA,
   mean_type = NA,
   includeCV = TRUE,
   includeConfInt = TRUE,
@@ -75,6 +76,18 @@ here. Most of the time, this should be left as NA.}
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
 tested).}
 
+\item{observed_PK}{(optional) If you have a data.frame or an Excel or csv
+file with observed PK parameters, supply the data.frame or the full file
+name in quotes here, and the simulated-to-observed mean ratios will be
+calculated. The supplied data.frame or file \emph{must} include columns for
+the simulator output Excel file (title this "File") and each of the PK
+parameters you would like to compare, and those column names \emph{must}
+match the PK parameter options listed in \code{data(AllPKParameters)}. If
+you would like the output table to include the observed data CV for any of
+the parameters, add "_CV" to the end of the parameter name, e.g.,
+"AUCinf_dose1_CV". Note: Whatever you list for "File" will override
+anything specified for the argument \code{sim_data_file}.}
+
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
 If you supplied a report input form, only specify this if you'd like to
 override the value listed there. If no value is specified here or in
@@ -101,8 +114,8 @@ values rather than being pulled directly from the output.}
 the variability. If "TRUE", the output will be formatted into a single row
 and listed as the lower confidence interval or percentile to the upper CI
 or percentile, e.g., "2400 to 2700". Please note that the current
-SimcypConsultancy template lists one row for each of the upper and
-lower values, so this should be set to FALSE for official reports.}
+SimcypConsultancy template lists one row for each of the upper and lower
+values, so this should be set to FALSE for official reports.}
 
 \item{prettify_columns}{TRUE or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
@@ -131,9 +144,9 @@ If you requested both the table and the QC info, the QC file will have "-
 QC" added to the end of the file name.}
 }
 \value{
-a data.frame of S/O values or a list of that data.frame (named
-  "Table") plus information on where the values came from for QCing (named
-  "QC")
+Returns a data.frame of S/O values or, if \code{checkDataSource =
+  TRUE}, a list of that data.frame (named "Table") and information on where
+  the values came from for QCing (named "QC").
 }
 \description{
 \code{so_table} creates simulated vs. observed tables for reports and
@@ -157,17 +170,23 @@ need to close it or this function will just keep running and not generate any
 output while it waits for access to the file.}}
 }
 \details{
-Please see the notes at the bottom of this help file for options for how to
-supply observed data in a standardized fashion that this function can read.
-\strong{Note:} If the simulator output Excel file lives on SharePoint, you'll
-need to close it or this function will just keep running and not generate any
-output while it waits for access to the file.
-
 Because we need to have a standardized way to input observed data, setting up
-the input for this function requires filling out an Excel template form. Here
-are the steps to take: \enumerate{\item{Use the function
-\code{\link{generateReportInputForm}} to create an Excel file where you can
-enter information about your project. Example:
+the input for this function requires creating a data.frame of the observed PK
+data, supplying a csv or Excel file with observed PK data, or filling out an
+Excel form.
+
+To create a data.frame or an Excel or csv file of observed PK data, you'll
+need columns for the simulator output file to compare (optional; title this
+column "File") and each of the PK parameters for which you have observed
+data. If you have CV values for any observed data that you'd like to include
+in the table, title that column with the PK parameter name and a suffix of
+"_CV". An example of how to format observed data: \code{data.frame(File =
+"mdz-5mg-sd.xlsx", AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 =
+22, Cmax_dose1_CV = 0.24)}
+
+To use an Excel form, here are the steps to take: \enumerate{\item{Use the
+function \code{\link{generateReportInputForm}} to create an Excel file where
+you can enter information about your project. Example:
 \code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
 tab "study info - DDI" or "study info - no DDI", whichever is appropriate for
 your situation. Under the heading "Observed data", enter details about your
@@ -187,4 +206,15 @@ the file.} }
 \examples{
 # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
 #          sheet_report = "table and graph input", includeTrialMeans = TRUE)
+
+# An example of how to format observed data:
+MyObsPK <- data.frame(File = "mdz-5mg-sd.xlsx",
+                     AUCinf_dose1 = 60,
+                     AUCinf_dose1_CV = 0.38,
+                     Cmax_dose1 = 22,
+                     Cmax_dose1_CV = 0.24)
+so_table(sim_data_file = "mdz-5mg-sd.xlsx", 
+         observed_PK = MyObsPK)
+                     
+                     
 }
