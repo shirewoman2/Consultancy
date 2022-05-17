@@ -276,6 +276,12 @@ so_table <- function(report_input_file = NA,
                                                 "FALSE" = "aggregate"))
     )
     
+    # PKToPull must be changed if user specified a tab b/c then the parameters
+    # won't have _last or _dose1 suffixes.
+    if(complete.cases(sheet_PKparameters)){
+        PKToPull <- sub("_last|_dose1", "", PKToPull)
+    }
+    
     # If they requested multiple parameters but only some were present, need to
     # change PKToPull. This is especially a problem if there's only 1 parameter
     # remaining for which there are data.
@@ -288,7 +294,7 @@ so_table <- function(report_input_file = NA,
         Missing <- setdiff(PKparameters, PKToPull)
     }
     
-    if(length(Missing) > 0){
+    if(length(Missing) > 0 & complete.cases(PKparameters[1])){
         warning(paste("The following parameters were requested but not found in your simulator output file:",
                       str_comma(Missing)))
     }
@@ -333,15 +339,6 @@ so_table <- function(report_input_file = NA,
     
     # Adding trial means since they're not part of the default output
     if(includeTrialMeans){
-        # TrialMeans <- MyPKResults_all$individual %>%
-        #     group_by(Trial) %>%
-        #     summarize(across(.cols = -Individual,
-        #                      .fns = list(switch(MeanType,
-        #                                    "geometric" = gm_mean,
-        #                                    "arithmetic" = mean), 
-        #                               median), 
-        #                      .names = "{.col}_{.fn}")) %>%
-        #     ungroup()
         
         TrialMeans <- MyPKResults_all$individual %>%
             group_by(Trial) %>%
@@ -657,9 +654,23 @@ so_table <- function(report_input_file = NA,
         select(Statistic, everything())
     
     # setting levels for PK parameters so that they're in a nice order
-    PKToPull <- factor(PKToPull, 
-                       levels = AllPKParameters %>% select(PKparameter, SortOrder) %>% 
-                           unique() %>% arrange(SortOrder) %>% pull(PKparameter)) 
+    PKlevels <- AllPKParameters %>% select(PKparameter, SortOrder) %>% 
+        unique() %>% arrange(SortOrder) %>% pull(PKparameter)
+    
+    # PKlevels must be changed if user specified a tab b/c then the parameters
+    # won't have _last or _dose1 suffixes.
+    if(complete.cases(sheet_PKparameters)){
+        PKlevels <- unique(sub("_last|_dose1", "", PKlevels))
+        # When the suffix is included, then we get an order with 1st dose and
+        # then last dose, which is appropriate, but when the user specifies a
+        # tab, we need to change the order to get any AUC parameters before any
+        # Cmax parameters. 
+        PKlevels <- fct_relevel(PKlevels, c(PKlevels[str_detect(PKlevels, "AUC")], 
+                                            PKlevels[str_detect(PKlevels, "Cmax")]))
+        
+        PKlevels <- sort(PKlevels)
+    } 
+    PKToPull <- factor(PKToPull, levels = PKlevels)
     PKToPull <- sort(PKToPull)
     
     # Getting columns in a good order
@@ -671,10 +682,19 @@ so_table <- function(report_input_file = NA,
     # Optionally adding final column names
     if(prettify_columns){
         
+        # If user specified tab, then need to adjust PK parameters here, too.
+        if(complete.cases(sheet_PKparameters)){
+            AllPKParameters_mod <- 
+                AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
+                mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                       PrettifiedNames = str_trim(sub("Last dose|Dose 1", "", 
+                                                      PrettifiedNames))) %>% 
+                unique()
+        }
+        
         suppressMessages(
             PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
-                left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
-                unique() %>% 
+                left_join(AllPKParameters_mod) %>% 
                 pull(PrettifiedNames)
         )
         
@@ -708,13 +728,15 @@ so_table <- function(report_input_file = NA,
         
     }
     
-    # If the user specified the sheet to use, we don't actually know whether
-    # those were dose 1 or last-dose values. Removing indications of dose number
-    # from column titles.
-    if(complete.cases(sheet_PKparameters)){
-        names(MyPKResults) <- str_trim(sub("Last dose|Dose 1|_last|_first", "", 
-                                           names(MyPKResults)))
-    }
+    # I think the bit below should have already been done by now
+    
+    # # If the user specified the sheet to use, we don't actually know whether
+    # # those were dose 1 or last-dose values. Removing indications of dose number
+    # # from column titles.
+    # if(complete.cases(sheet_PKparameters)){
+    #     names(MyPKResults) <- str_trim(sub("Last dose|Dose 1|_last|_first", "", 
+    #                                        names(MyPKResults)))
+    # }
     
     if(complete.cases(save_table)){
         if(str_detect(save_table, "\\.")){
