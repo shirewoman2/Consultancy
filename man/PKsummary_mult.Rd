@@ -19,7 +19,7 @@ the parameters, add "_CV" to the end of the parameter name, e.g.,
 "AUCinf_dose1_CV". Note: Whatever you list for "File" will override
 anything specified for the argument \code{sim_data_file}.}
 
-\item{...}{other arguments passed to the function \code{\link{so_table}}}
+\item{...}{other arguments passed to the function \code{\link{pksummary_table}}}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple

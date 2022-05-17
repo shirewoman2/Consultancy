@@ -11,7 +11,7 @@
 #'   the parameters, add "_CV" to the end of the parameter name, e.g.,
 #'   "AUCinf_dose1_CV". Note: Whatever you list for "File" will override
 #'   anything specified for the argument \code{sim_data_file}.
-#' @param ... other arguments passed to the function \code{\link{so_table}}
+#' @param ... other arguments passed to the function \code{\link{pksummary_table}}
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
 #'   simulator output files
@@ -37,7 +37,7 @@ PKsummary_mult <- function(observed_PK, ...){
     
     OutPK <- list()
     for(i in 1:nrow(observed_PKDF)){
-        OutPK[[i]] <- so_table(observed_PK = observed_PKDF[i, ]) %>% 
+        OutPK[[i]] <- pksummary_table(observed_PK = observed_PKDF[i, ]) %>% 
             mutate(File = observed_PK$File[i])
     }
     

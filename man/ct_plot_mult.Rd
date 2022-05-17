@@ -6,7 +6,7 @@
 graphs}
 \usage{
 ct_plot_mult(
-  sim_obs_dataframe,
+  ct_dataframe,
   linear_or_log = "semi-log",
   file_order = NA,
   include_title = TRUE,
@@ -21,7 +21,7 @@ ct_plot_mult(
 )
 }
 \arguments{
-\item{sim_obs_dataframe}{the data.frame with multiple sets of
+\item{ct_dataframe}{the data.frame with multiple sets of
 concentration-time data}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
@@ -35,7 +35,7 @@ you can also specify what the title should be for that file. Example of
 acceptable input: \code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" =
 "50 mg SD", "simfile1.xlsx" = "100 mg SD")}. If you get an order that you
 didn't think you specified, please double check that you have specified the
-file names \emph{exactly} as they appear in \code{sim_obs_dataframe}.}
+file names \emph{exactly} as they appear in \code{ct_dataframe}.}
 
 \item{include_title}{TRUE or FALSE on whether to include a title for each
 small graph. NOTE: This is not currently working well when you choose to

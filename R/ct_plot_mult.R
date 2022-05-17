@@ -15,7 +15,7 @@
 #' \code{file_order} isn't achieving what you want, please ask a member of the R
 #' Working Group for assistance.
 #'
-#' @param sim_obs_dataframe the data.frame with multiple sets of
+#' @param ct_dataframe the data.frame with multiple sets of
 #'   concentration-time data
 #' @param file_order optionally specify the order in which the files are graphed
 #'   with a character vector of the files in the order you would like. If you
@@ -24,7 +24,7 @@
 #'   acceptable input: \code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" =
 #'   "50 mg SD", "simfile1.xlsx" = "100 mg SD")}. If you get an order that you
 #'   didn't think you specified, please double check that you have specified the
-#'   file names \emph{exactly} as they appear in \code{sim_obs_dataframe}.
+#'   file names \emph{exactly} as they appear in \code{ct_dataframe}.
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs.
 #' @param nrow number of rows of small graphs in the arrangement. If left as NA,
@@ -57,7 +57,7 @@
 #' @examples
 #' # No examples yet
 #' 
-ct_plot_mult <- function(sim_obs_dataframe, 
+ct_plot_mult <- function(ct_dataframe, 
                          linear_or_log = "semi-log",
                          file_order = NA,
                          include_title = TRUE,
@@ -83,13 +83,13 @@ ct_plot_mult <- function(sim_obs_dataframe,
                 file_order[is.na(names(file_order))]
         }
         
-        # If the user omitted any files that are included in sim_obs_dataframe,
+        # If the user omitted any files that are included in ct_dataframe,
         # grab those now and tack them onto the end of file_order. This will
         # allow them to set the order of the files they DID specify but not omit
         # files that they forgot. The forgotten files just won't have pretty
         # titles.
         file_order_all <- unique(c(names(file_order), 
-                                   sort(unique(as.character(sim_obs_dataframe$File)))))
+                                   sort(unique(as.character(ct_dataframe$File)))))
         
         # Name items in file_order_all according to file_order.
         names(file_order_all) <- file_order_all
@@ -99,17 +99,17 @@ ct_plot_mult <- function(sim_obs_dataframe,
         
         # Even if user didn't specify file order, we need the levels of that
         # factor later. Setting them here. 
-        file_order_all <- sort(unique(sim_obs_dataframe$File))
+        file_order_all <- sort(unique(ct_dataframe$File))
         names(file_order_all) <- file_order_all
         
     }
     
     # Set the sort order in the data
-    sim_obs_dataframe <- sim_obs_dataframe %>% 
+    ct_dataframe <- ct_dataframe %>% 
         mutate(File = factor(File, levels = names(file_order_all)))
     
     AllGraphs <- list()
-    AllData <- sim_obs_dataframe %>% 
+    AllData <- ct_dataframe %>% 
         mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
                                         "none", subsection_ADAM))
     
@@ -159,7 +159,7 @@ ct_plot_mult <- function(sim_obs_dataframe,
         # print(head(AllData[[i]]))
         
         AllGraphs[[i]] <- 
-            ct_plot(sim_obs_dataframe = AllData[[i]], 
+            ct_plot(ct_dataframe = AllData[[i]], 
                     ...,
                     include_legend = ifelse(legend_position == "none",
                                             FALSE, TRUE),
