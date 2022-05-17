@@ -19,8 +19,8 @@
 #' output while it waits for access to the file.}}
 #'
 #' @param sim_data_file the simulator output file
-#' @param PKparameters the PK parameters to include as a character vector.
-#'   Notes: \itemize{
+#' @param PKparameters (optional) the PK parameters to include as a character
+#'   vector. Notes: \itemize{
 #'
 #'   \item{By default, if you have a single-dose simulation, the parameters will
 #'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
@@ -35,12 +35,8 @@
 #'   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
 #'   console.}
 #'
-#'   \item{By default, if you supply a file for \code{report_input_file}, the PK
-#'   parameters included are only those included for the observed data in that
-#'   file. Otherwise, the PK parameters will be automatically selected.}
-#'
-#'   \item{Parameters that don't make sense for your scenario -- like asking for
-#'   \code{AUCinf_last_withInhib} when your simulation did not include an
+#'   \item{Parameters that don't make sense for your scenario -- such as asking
+#'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
 #'   inhibitor or effector -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
@@ -52,10 +48,10 @@
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
-#' @param mean_type return "arithmetic" or "geometric" (default) means and CVs
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'   tested).
+#' @param mean_type return "arithmetic" or "geometric" (default) means and CVs
 #' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
 #'   in the table
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
@@ -76,9 +72,9 @@
 #'   range of trial means for a given parameter. Note: This is calculated from
 #'   individual values rather than pulled directly from the output.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
-#'   human-readable column names. TRUE makes pretty column names such as "AUC0
-#'   to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
-#'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#'   human-readable column names. TRUE makes pretty column names such as "AUCinf
+#'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
 #' @param prettify_effector_name TRUE (default) or FALSE on whether to make
 #'   effector name prettier in the prettified column titles. This was designed
 #'   for simulations where the effector is one of the standard options for the
@@ -89,18 +85,18 @@
 #'   BID" will become "ketoconazole". Set it to the name you'd prefer to see in
 #'   your column titles if you would like something different. For example,
 #'   \code{prettify_effector_name = "Drug ABC"}
-#' @param checkDataSource TRUE (default) or FALSE: Include in the output a
-#'   data.frame that lists exactly where the data were pulled from the simulator
-#'   output file. Default is TRUE to include it. Useful for QCing.
+#' @param checkDataSource TRUE (default) or FALSE for whether to include in the
+#'   output a data.frame that lists exactly where the data were pulled from the
+#'   simulator output file. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
-#'   table.csv". If you leave off ".csv", it will be saved as a csv file. If you
-#'   requested both the table and the QC info, the QC file will have "- QC"
-#'   added to the end of the file name.
+#'   table.csv". If you leave off ".csv", it will still be saved as a csv file.
+#'   If you requested both the table and the QC info, the QC file will have "-
+#'   QC" added to the end of the file name.
 #'
-#' @return a data.frame of PK summary data or a list of that data.frame (named
-#'   "Table") plus information on where the values came from for QCing (named
-#'   "QC")
+#' @return Returns a data.frame of PK summary data or a list of that data.frame
+#'   (named "Table") plus information on where the values came from for QCing
+#'   (named "QC")
 #' @export
 #' @examples
 #' pksummary_table(sim_data_file = "Example simulator output - SD MDZ.xlsx")

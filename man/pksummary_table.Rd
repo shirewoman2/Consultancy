@@ -24,8 +24,8 @@ pksummary_table(
 \arguments{
 \item{sim_data_file}{the simulator output file}
 
-\item{PKparameters}{the PK parameters to include as a character vector.
-  Notes: \itemize{
+\item{PKparameters}{(optional) the PK parameters to include as a character
+  vector. Notes: \itemize{
 
   \item{By default, if you have a single-dose simulation, the parameters will
   include AUC and Cmax for dose 1, and, if you have a multiple-dose
@@ -40,12 +40,8 @@ pksummary_table(
   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
   console.}
 
-  \item{By default, if you supply a file for \code{report_input_file}, the PK
-  parameters included are only those included for the observed data in that
-  file. Otherwise, the PK parameters will be automatically selected.}
-
-  \item{Parameters that don't make sense for your scenario -- like asking for
-  \code{AUCinf_last_withInhib} when your simulation did not include an
+  \item{Parameters that don't make sense for your scenario -- such as asking
+  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
   inhibitor or effector -- will not be included.}
 
   \item{tmax will be listed as median, min, and max rather than mean, lower
@@ -90,9 +86,9 @@ SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
-human-readable column names. TRUE makes pretty column names such as "AUC0
-to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
-from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+human-readable column names. TRUE makes pretty column names such as "AUCinf
+(h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+\code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
 \item{prettify_effector_name}{TRUE (default) or FALSE on whether to make
 effector name prettier in the prettified column titles. This was designed
@@ -105,20 +101,20 @@ BID" will become "ketoconazole". Set it to the name you'd prefer to see in
 your column titles if you would like something different. For example,
 \code{prettify_effector_name = "Drug ABC"}}
 
-\item{checkDataSource}{TRUE (default) or FALSE: Include in the output a
-data.frame that lists exactly where the data were pulled from the simulator
-output file. Default is TRUE to include it. Useful for QCing.}
+\item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
+output a data.frame that lists exactly where the data were pulled from the
+simulator output file. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.csv". If you leave off ".csv", it will be saved as a csv file. If you
-requested both the table and the QC info, the QC file will have "- QC"
-added to the end of the file name.}
+table.csv". If you leave off ".csv", it will still be saved as a csv file.
+If you requested both the table and the QC info, the QC file will have "-
+QC" added to the end of the file name.}
 }
 \value{
-a data.frame of PK summary data or a list of that data.frame (named
-  "Table") plus information on where the values came from for QCing (named
-  "QC")
+Returns a data.frame of PK summary data or a list of that data.frame
+  (named "Table") plus information on where the values came from for QCing
+  (named "QC")
 }
 \description{
 \code{pksummary_table} uses Simcyp Simulator output Excel files to create

@@ -5,20 +5,20 @@
 #' percentiles, and ratios of simulated vs. observed mean values. This function
 #' automatically finds the correct tab and the correct cells to pull those data.
 #' \strong{Notes:} \itemize{\item{Please see the notes at the bottom of this
-#' help file for options for supplying observed data in a standardized fashion
-#' that this function can read.} \item{Nearly all parameters are for the
-#' \emph{substrate}. We're still validating this for extracting PK for an
-#' effector. \strong{A request for assistance:} If you extract PK data for an
-#' effector by specifying an Excel sheet for that compound, please check the
-#' values and tell Laura Shireman how well it works!} \item{Currently, the
-#' output column titles list units of ng, mL, and h for AUC and Cmax, and the
-#' function doesn't actually check what units are present in the data. If your
-#' units are something else, our apologies, but please change the units in the
-#' column titles when you use the output table. (The values in the table are
-#' fine.) We're working on making this detect what the units were and print
-#' those.} \item{ If the simulator output Excel file lives on SharePoint, you'll
-#' need to close it or this function will just keep running and not generate any
-#' output while it waits for access to the file.}}
+#' help file for how to supply observed data in a standardized fashion that this
+#' function can read.} \item{Nearly all parameters are for the \emph{substrate}.
+#' We're still validating this for extracting PK for an effector. \strong{A
+#' request for assistance:} If you extract PK data for an effector by specifying
+#' an Excel sheet for that compound, please check the values and tell Laura
+#' Shireman how well it works!} \item{Currently, if you request prettified
+#' output columns, the column titles list units of ng, mL, and h for AUC and
+#' Cmax, and the function doesn't check what units are actually present in the
+#' data. If your units are something else, our apologies, but please change the
+#' units in the column titles when you use the output table. (The values in the
+#' table are fine.) We're working on making this detect what the units were and
+#' print those.} \item{ If the simulator output Excel file lives on SharePoint,
+#' you'll need to close it or this function will just keep running and not
+#' generate any output while it waits for access to the file.}}
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame of the observed PK
@@ -26,13 +26,11 @@
 #' Excel form.
 #'
 #' To create a data.frame or an Excel or csv file of observed PK data, you'll
-#' need columns for the simulator output file to compare (optional; title this
-#' column "File") and each of the PK parameters for which you have observed
-#' data. If you have CV values for any observed data that you'd like to include
-#' in the table, title that column with the PK parameter name and a suffix of
-#' "_CV". An example of how to format observed data: \code{data.frame(File =
-#' "mdz-5mg-sd.xlsx", AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 =
-#' 22, Cmax_dose1_CV = 0.24)}
+#' need columns for each of the PK parameters for which you have observed data.
+#' If you have CV values for any observed data that you'd like to include in the
+#' table, title that column with the PK parameter name and a suffix of "_CV". An
+#' example of how to format observed data: \code{data.frame(AUCinf_dose1 = 60,
+#' AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22, Cmax_dose1_CV = 0.24)}
 #'
 #' To use an Excel form, here are the steps to take: \enumerate{\item{Use the
 #' function \code{\link{generateReportInputForm}} to create an Excel file where
@@ -54,14 +52,19 @@
 #' the file.} }
 #'
 #'
+#' @param sim_data_file a simulator output file. If you supply a filled-out
+#'   report input form to the argument \code{report_input_file}, you can leave
+#'   this blank.
 #' @param report_input_file the name of the Excel file created by running
 #'   \code{\link{generateReportInputForm}}, which you have now filled out,
 #'   including the path if it's in any other directory than the current one
-#' @param sheet_report the sheet in the Excel report template file that contains
+#' @param sheet_report the sheet in the Excel report file that contains
 #'   information about the study, e.g., "study info - DDI" or "study info - no
-#'   DDI" if you haven't renamed the tab.
-#' @param PKparameters the PK parameters to include as a character vector.
-#'   Notes: \itemize{
+#'   DDI" if you haven't renamed the tab. This only applies if you have supplied
+#'   an Excel file name for \code{report_input_file}. If you're supplying a
+#'   simulator output Excel file for \code{sim_data_file}, ignore this.
+#' @param PKparameters (optional) the PK parameters to include as a character
+#'   vector. Notes: \itemize{
 #'
 #'   \item{By default, if you have a single-dose simulation, the parameters will
 #'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
@@ -76,12 +79,12 @@
 #'   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
 #'   console.}
 #'
-#'   \item{By default, if you supply a file for \code{report_input_file}, the PK
-#'   parameters included are only those included for the observed data in that
-#'   file. Otherwise, the PK parameters will be automatically selected.}
+#'   \item{If you supply observed data using either the argument
+#'   \code{report_input_file} or the argument \code{observed_PK}, the PK
+#'   parameters included are only those available for the observed data.}
 #'
-#'   \item{Parameters that don't make sense for your scenario -- like asking for
-#'   \code{AUCinf_last_withInhib} when your simulation did not include an
+#'   \item{Parameters that don't make sense for your scenario -- such as asking
+#'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
 #'   inhibitor or effector -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
@@ -97,32 +100,32 @@
 #'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'   tested).
 #' @param observed_PK (optional) If you have a data.frame or an Excel or csv
-#'   file with observed PK parameters, supply the data.frame or the full file
-#'   name in quotes here, and the simulated-to-observed mean ratios will be
-#'   calculated. The supplied data.frame or file \emph{must} include columns for
-#'   the simulator output Excel file (title this "File") and each of the PK
-#'   parameters you would like to compare, and those column names \emph{must}
-#'   match the PK parameter options listed in \code{data(AllPKParameters)}. If
-#'   you would like the output table to include the observed data CV for any of
-#'   the parameters, add "_CV" to the end of the parameter name, e.g.,
-#'   "AUCinf_dose1_CV". Note: Whatever you list for "File" will override
-#'   anything specified for the argument \code{sim_data_file}.
+#'   file with observed PK parameters, supply the full file name in quotes or
+#'   the data.frame here, and the simulated-to-observed mean ratios will be
+#'   calculated. (If you supply an Excel file, it should have only one tab. We
+#'   prefer supplying csv files here since they're faster to read in anyway.)
+#'   The supplied data.frame or file must include columns for each of the PK
+#'   parameters you would like to compare, and those column names \emph{must} be
+#'   among the PK parameter options listed in
+#'   \code{data(PKParameterDefinitions)}. If you would like the output table to
+#'   include the observed data CV for any of the parameters, add "_CV" to the
+#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
+#'   "Example" section of this help file for examples of how to set this up.
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs.
 #'   If you supplied a report input form, only specify this if you'd like to
-#'   override the value listed there. If no value is specified here or in
-#'   \code{sectionInfo}, the default is "geometric".
-#' @param includeTrialMeans TRUE or FALSE for whether to include the range of
-#'   trial means for a given parameter. Note: This is calculated from individual
-#'   values rather than being pulled directly from the output.
-#' @param includeCV TRUE or FALSE for whether to include rows for CV in the
-#'   table
-#' @param includeConfInt TRUE or FALSE for whether to include whatever
+#'   override the value listed there.
+#' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
+#'   range of trial means for a given parameter. Note: This is calculated from
+#'   individual values rather than being pulled directly from the output.
+#' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
+#'   in the table
+#' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
 #'   confidence intervals were included in the simulator output file. Note that
 #'   the confidence intervals are geometric since that's what the simulator
 #'   outputs (see an AUC tab and the summary statistics; these values are the
 #'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
 #'   limit)").
-#' @param includePerc TRUE or FALSE for whether to include 5th to 95th
+#' @param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
 #'   percentiles
 #' @param concatVariability TRUE or FALSE (default) for whether to concatenate
 #'   the variability. If "TRUE", the output will be formatted into a single row
@@ -130,7 +133,7 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
-#' @param prettify_columns TRUE or FALSE for whether to make easily
+#' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 #'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
@@ -144,50 +147,35 @@
 #'   BID" will become "ketoconazole". Set it to the name you'd prefer to see in
 #'   your column titles if you would like something different. For example,
 #'   \code{prettify_effector_name = "Drug ABC"}
-#' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
-#'   lists exactly where the data were pulled from the simulator output file.
-#'   Default is TRUE to include it. Useful for QCing.
-#' @param sim_data_file the simulator output file. This is only for when you
-#'   don't fill out a report input form because you either have no observed data
-#'   or you want to compare those data later manually.
+#' @param checkDataSource TRUE (default) or FALSE for whether to include in the
+#'   output a data.frame that lists exactly where the data were pulled from the
+#'   simulator output file. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.csv". If you leave off ".csv", it will still be saved as a csv file.
 #'   If you requested both the table and the QC info, the QC file will have "-
 #'   QC" added to the end of the file name.
 #'
-#' @return Returns a data.frame of S/O values or, if \code{checkDataSource =
-#'   TRUE}, a list of that data.frame (named "Table") and information on where
-#'   the values came from for QCing (named "QC").
+#' @return Returns a data.frame of PK summary data and, if observed data were
+#'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
+#'   output will instead be a list of that data.frame (named "Table") and
+#'   information on where the values came from for QCing (named "QC").
 #' @export
 #' @examples
-#' # so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
-#' #          sheet_report = "table and graph input", includeTrialMeans = TRUE)
+#' so_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
+#'          sheet_report = "study info - DDI", 
+#'          includeTrialMeans = TRUE)
 #'
 #' # An example of how to format observed data:
-#' MyObsPK <- data.frame(File = "mdz-5mg-sd.xlsx",
-#'                       AUCinf_dose1 = 60,
-#'                       AUCinf_dose1_CV = 0.38,
-#'                       Cmax_dose1 = 22,
-#'                       Cmax_dose1_CV = 0.24)
-#'
-#' # Since the observed data included the simulator output file name, you 
-#' # don't need to include it again when you call on so_table:
-#' so_table(sim_data_file = NA, observed_PK = MyObsPK)
-#'
-#' # If you don't include "File" in your observed data.frame, then you DO 
-#' # need to supply the simulator output file. This can give you a bit
-#' # more flexibility if you want to compare multiple simulator output files
-#' # to the same observed data. 
 #' MyObsPK <- data.frame(AUCinf_dose1 = 60,
 #'                       AUCinf_dose1_CV = 0.38,
 #'                       Cmax_dose1 = 22,
 #'                       Cmax_dose1_CV = 0.24)
 #' so_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 
-so_table <- function(report_input_file = NA,
+so_table <- function(sim_data_file = NA, 
+                     report_input_file = NA,
                      sheet_report = NA,
-                     sim_data_file = NA, 
                      PKparameters = NA,
                      sheet_PKparameters = NA,
                      tissue = "plasma",
@@ -221,12 +209,6 @@ so_table <- function(report_input_file = NA,
         # might have gotten included accidentally.
         observed_PK <- observed_PK[1, ]
         
-        if("File" %in% names(observed_PK) &&
-           complete.cases(observed_PK$File)){
-            sim_data_file <- observed_PK %>% pull(File)
-            print(paste0("PK summary table will be for the simulator output file '",
-                        sim_data_file, "'."))
-        }
     }
     
     # If they didn't include ".xlsx" at the end, add that.
@@ -238,9 +220,8 @@ so_table <- function(report_input_file = NA,
                                 report_input_file, paste0(report_input_file, ".xlsx"))
     
     # Error catching
-    if(is.na(report_input_file) & is.na(sim_data_file) & 
-       "data.frame" %in% class(observed_PK) == FALSE){
-        stop("You must enter a value for 'report_input_file', include a specific simulator output file for 'sim_data_file', or supplied observed PK data along with a simulator output file with 'observed_PK'.")
+    if(is.na(report_input_file) & is.na(sim_data_file)){
+        stop("You must enter a value for 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
     }
     
     if(complete.cases(report_input_file) & is.na(sim_data_file)){
