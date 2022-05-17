@@ -318,7 +318,7 @@ extractPK <- function(sim_data_file,
                                    "AccumulationRatio" = "Accumulation Ratio$",
                                    "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
                                    "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
-                                   "AUCt_dose1" = "^AUC \\(|AUCt.0. \\(",
+                                   "AUCt_dose1" = "^AUC \\(|AUCt.0. \\(|AUC\\(blood", # AUCt for blood column heading includes "blood" w/out space after AUC. This should work fine for when the tissue is plasma, though, b/c this will only search plasma columns in that scenario.
                                    "AUCt_dose1_withInhib" = "^AUCt.0._Inh \\(|^AUCinh \\(",
                                    "AUCt_ratio_dose1" = "^AUC Ratio$",
                                    "AUCinf_dose1" = "^AUC_INF",
@@ -536,15 +536,16 @@ extractPK <- function(sim_data_file,
                 )
                 
                 if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
-                    # Simulator sometimes can't extrapolate to infinity well and you end
-                    # up with NA values. If this happens, then AUCinf is NOT reliable and
-                    # we SHOULD NOT use aggregated measures of it b/c they don't include
-                    # all the data! Instead, pull AUCtau as well and give user a warning.
+                    # Simulator sometimes can't extrapolate to infinity well and
+                    # you end up with NA values. If this happens, then AUCinf is
+                    # NOT reliable and we SHOULD NOT use aggregated measures of
+                    # it b/c they don't include all the data! Instead, pull
+                    # AUCtau as well and give user a warning.
                     
                     NewParam <- ifelse(str_detect(i, "dose1"), 
                                        sub("inf", "t", i), sub("inf", "tau", i))
                     warning(paste0("The parameter ", i, " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
-                                   NewParam, " will also be returned for use in place of ",
+                                   NewParam, " will be returned to use in place of ",
                                    i, " as you deem appropriate."))
                     
                     PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
@@ -556,6 +557,7 @@ extractPK <- function(sim_data_file,
                                       "cannot be found."))
                         suppressWarnings(rm(ColNum_NewParam, SearchText4Col, SearchText))
                         PKparameters_AUC <- setdiff(PKparameters_AUC, NewParam)
+                        rm(NewParam)
                         next
                     }
                     
@@ -587,7 +589,9 @@ extractPK <- function(sim_data_file,
                                                           "AUC_CI", "AUC"),
                                              StartColText = SearchText4Col,
                                              SearchText = SearchText,
-                                             Column = ColNum,
+                                             Column = ifelse(tissue == "plasma", 
+                                                             ColNum, 
+                                                             ColNum + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
                                              StartRow_agg = StartRow_agg,
                                              EndRow_agg = EndRow_agg,
                                              StartRow_ind = 4,
@@ -601,7 +605,9 @@ extractPK <- function(sim_data_file,
                                                               "AUC_CI", "AUC"),
                                                  StartColText = SearchText4Col,
                                                  SearchText = SearchText,
-                                                 Column = ColNum_NewParam,
+                                                 Column = ifelse(tissue == "plasma", 
+                                                                 ColNum_NewParam, 
+                                                                 ColNum_NewParam + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
                                                  StartRow_agg = StartRow_agg,
                                                  EndRow_agg = EndRow_agg,
                                                  StartRow_ind = 4,
