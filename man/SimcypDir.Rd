@@ -3,17 +3,18 @@
 \docType{data}
 \name{SimcypDir}
 \alias{SimcypDir}
-\title{Paths for Simcyp's large file directory and the SharePoint directory}
+\title{Paths for Simcyp's large-file store, SharePoint directory, and the specific
+folder on the large-file store for sharing R-related files}
 \format{
-A two-item list:
-\describe{
-\item{LgFileDir}{the large-file directory}
-\item{SharePtDir}{the SharePoint directory}}
+A two-item list: \describe{ \item{LgFileDir}{the large-file store}
+  \item{SharePtDir}{the SharePoint directory} \item{RDir}{the folder on the
+  large-file store for sharing SimcypConsultancy R files}}
 }
 \usage{
 SimcypDir
 }
 \description{
-Paths for Simcyp's large file directory and the SharePoint directory
+Paths for Simcyp's large-file store, SharePoint directory, and the specific
+folder on the large-file store for sharing R-related files
 }
 \keyword{datasets}
