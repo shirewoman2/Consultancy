@@ -87,6 +87,9 @@
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
+#' @param tissue For which tissue would you like the PK parameters to be pulled?
+#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
+#'   tested).
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs.
 #'   If you supplied a report input form, only specify this if you'd like to
 #'   override the value listed there. If no value is specified here or in
@@ -150,6 +153,7 @@ so_table <- function(report_input_file = NA,
                      sim_data_file = NA, 
                      PKparameters = NA,
                      sheet_PKparameters = NA,
+                     tissue = "plasma",
                      mean_type = NA,
                      includeCV = TRUE,
                      includeConfInt = TRUE,
@@ -269,6 +273,7 @@ so_table <- function(report_input_file = NA,
     suppressWarnings(
         MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                      PKparameters = PKToPull,
+                                     tissue = tissue,
                                      sheet = sheet_PKparameters, 
                                      returnAggregateOrIndiv =
                                          switch(as.character(includeTrialMeans),
@@ -690,13 +695,20 @@ so_table <- function(report_input_file = NA,
                        PrettifiedNames = str_trim(sub("Last dose|Dose 1", "", 
                                                       PrettifiedNames))) %>% 
                 unique()
+            
+            suppressMessages(
+                PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
+                    left_join(AllPKParameters_mod) %>% 
+                    pull(PrettifiedNames)
+            )
+        } else {
+            suppressMessages(
+                PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
+                    left_join(AllPKParameters %>% 
+                                  select(PKparameter, PrettifiedNames)) %>% 
+                    pull(PrettifiedNames)
+            )
         }
-        
-        suppressMessages(
-            PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
-                left_join(AllPKParameters_mod) %>% 
-                pull(PrettifiedNames)
-        )
         
         MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
                         Deets$Inhibitor2)

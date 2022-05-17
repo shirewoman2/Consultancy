@@ -8,6 +8,7 @@ pksummary_table(
   sim_data_file,
   PKparameters = NA,
   sheet_PKparameters = NA,
+  tissue = "plasma",
   mean_type = NA,
   includeCV = TRUE,
   includeConfInt = TRUE,
@@ -57,6 +58,10 @@ pksummary_table(
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
 here. Most of the time, this should be left as NA.}
+
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" (default) or "blood" (possible but not as thoroughly
+tested).}
 
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs}
 

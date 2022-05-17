@@ -53,6 +53,9 @@
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs
+#' @param tissue For which tissue would you like the PK parameters to be pulled?
+#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
+#'   tested).
 #' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
 #'   in the table
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
@@ -112,6 +115,7 @@
 pksummary_table <- function(sim_data_file,
                             PKparameters = NA,
                             sheet_PKparameters = NA, 
+                            tissue = "plasma",
                             mean_type = NA,
                             includeCV = TRUE,
                             includeConfInt = TRUE,
@@ -126,6 +130,7 @@ pksummary_table <- function(sim_data_file,
     Out <- so_table(sim_data_file = sim_data_file, 
                     PKparameters = PKparameters,
                     sheet_PKparameters = sheet_PKparameters,
+                    tissue = tissue,
                     mean_type = mean_type,
                     includeCV = includeCV,
                     includeConfInt = includeConfInt,
