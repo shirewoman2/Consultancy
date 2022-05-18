@@ -27,8 +27,7 @@ ct_plot_overlay(
   legend_label = NA,
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5,
-  include_messages = TRUE
+  fig_width = 5
 )
 }
 \arguments{

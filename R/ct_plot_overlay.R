@@ -261,8 +261,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             legend_label = NA,
                             save_graph = NA,
                             fig_height = 6,
-                            fig_width = 5, 
-                            include_messages = TRUE){
+                            fig_width = 5){
     
     # Setting things up for some nonstandard evaluation -------------------------
     
@@ -494,11 +493,6 @@ ct_plot_overlay <- function(ct_dataframe,
     MyUniqueData <- ct_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
         select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique()
-    
-    if(include_messages){
-        print("This graph contains the following unique combinations of data (make sure they are what you were expecting):")
-        print(MyUniqueData)
-    }
     
     UniqueGroups <- ct_dataframe %>% 
         summarize(across(.cols = c(File, Tissue, CompoundID, Compound,
