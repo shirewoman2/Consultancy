@@ -39,7 +39,7 @@
 "SimcypDir"
 
 #' Report input forms to be used in conjunction with
-#' \code{\link{getSectionInfo}} and \code{\link{so_table}}
+#' \code{\link{getSectionInfo}} and \code{\link{pksummary_table}}
 #'
 #' @format A named list of the data that fill the tabs for
 #'   "generateReportInputForm"
@@ -57,7 +57,7 @@
 #'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
 #'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
 #'   for whether this item only applies when an effector is present in the
-#'   simulation} \item{SortOrder}{the order to arrange columns for so_table and
+#'   simulation} \item{SortOrder}{the order to arrange columns for pksummary_table and
 #'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
 "AllPKParameters"
 
@@ -74,7 +74,7 @@
 #'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
 #'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
 #'   for whether this item only applies when an effector is present in the
-#'   simulation} \item{SortOrder}{the order to arrange columns for so_table and
+#'   simulation} \item{SortOrder}{the order to arrange columns for pksummary_table and
 #'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
 "PKParameterDefinitions"
 

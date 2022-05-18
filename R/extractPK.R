@@ -52,6 +52,13 @@
 #' @param includeTrialInfo TRUE or FALSE (default) for whether to include which
 #'   individual and trial the data describe. This only applies when
 #'   \code{returnAggregateOrIndiv} is "individual" or "both".
+#' @param returnExpDetails TRUE or FALSE: Since, behind the scenes, this
+#'   function extracts experimental details from the "Summary" tab of the
+#'   simulator output file, would you like those details to be returned here? If
+#'   set to TRUE, output will be a list of 1. the requested PK data, 2. the
+#'   experimental details provided on the Summary tab, and, if you have set
+#'   checkDataSource to TRUE, 3. info for checking the data. (See
+#'   "checkDataSource".)
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -78,6 +85,7 @@ extractPK <- function(sim_data_file,
                       tissue = "plasma",
                       returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
+                      returnExpDetails = FALSE, 
                       checkDataSource = TRUE){
     
     # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
@@ -1361,10 +1369,11 @@ extractPK <- function(sim_data_file,
     }
     
     
-    # Putting all data together ------------------------------------------
-    # If user only wanted one parameter and includeTrialInfo was FALSE, make
-    # the output a vector instead of a list
-    if(length(Out_ind) == 1 & includeTrialInfo == FALSE){
+    # Putting all data together ---------------------------------------------- 
+    # If user only wanted one parameter and includeTrialInfo was FALSE and so
+    # was returnExpDetails, make the output a vector instead of a list
+    if(length(Out_ind) == 1 & includeTrialInfo == FALSE & 
+       returnExpDetails == FALSE){
         
         Out_ind <- Out_ind[[1]]
         
@@ -1475,6 +1484,16 @@ extractPK <- function(sim_data_file,
             group_by(PKparam, File, Tab) %>%
             fill(everything(), .direction = "downup") %>%
             select(PKparam, File, Tab, Individual, everything()) %>% unique()
+        
+        if(returnExpDetails){
+            if(class(Out)[1] == "list"){
+                Out[["ExpDetails"]] <- Deets
+            } else {
+                Out <- list(Out)
+                Out[[2]] <- Deets
+                names(Out) <- c(returnAggregateOrIndiv, "ExpDetails")
+            }
+        }
         
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- unique(DataCheck)

@@ -15,7 +15,7 @@ A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
   for whether this item only applies when an effector is present in the
-  simulation} \item{SortOrder}{the order to arrange columns for so_table and
+  simulation} \item{SortOrder}{the order to arrange columns for pksummary_table and
   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
 }
 \usage{

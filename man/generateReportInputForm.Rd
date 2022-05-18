@@ -17,7 +17,7 @@ This does not return an R object; it saves an Excel file that serves
 }
 \description{
 Creates an Excel file with forms to fill out about observed data. Those forms
-can be fed into \code{\link{so_table}} to automate some of the calculations
+can be fed into \code{\link{pksummary_table}} to automate some of the calculations
 for writing a report.
 }
 \details{
@@ -36,7 +36,7 @@ form.}
 -- information that will be consistent throughout the whole report such as
 the drug name and the complaint it is meant to treat. There should be only
 ONE copy of this tab when you're finished. You do \emph{not} need to fill
-this out for using the \code{\link{so_table}} function.}
+this out for using the \code{\link{pksummary_table}} function.}
 
 \item{study info - no DDI}{a form for entering observed PK data about a
 clinical study that was \emph{not} a drug-drug interaction study. Make as
@@ -50,7 +50,7 @@ tabs according to which data sets they describe.} }
 }
 \examples{
 generateReportInputForm(paste0(SimcypDir$SharePtDir,
-             "Research/R working group/SimcypConsultancy function examples and instructions/so_table examples/",
+             "Research/R working group/SimcypConsultancy function examples and instructions/pksummary_table examples/",
              "Ultraconazole report input.xlsx"))
 
 

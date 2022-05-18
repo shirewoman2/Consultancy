@@ -5,10 +5,13 @@
 \title{Make summary PK tables for reports}
 \usage{
 pksummary_table(
-  sim_data_file,
+  sim_data_file = NA,
+  report_input_file = NA,
+  sheet_report = NA,
   PKparameters = NA,
   sheet_PKparameters = NA,
   tissue = "plasma",
+  observed_PK = NA,
   mean_type = NA,
   includeCV = TRUE,
   includeConfInt = TRUE,
@@ -22,10 +25,23 @@ pksummary_table(
 )
 }
 \arguments{
-\item{sim_data_file}{the simulator output file}
+\item{sim_data_file}{a simulator output file. If you supply a filled-out
+report input form to the argument \code{report_input_file}, you can leave
+this blank.}
 
-\item{PKparameters}{the PK parameters to include as a character vector.
-  Notes: \itemize{
+\item{report_input_file}{(an optional alternative to \code{sim_data_file})
+the name of the Excel file created by running
+\code{\link{generateReportInputForm}}, which you have now filled out,
+including the path if it's in any other directory than the current one}
+
+\item{sheet_report}{the sheet in the Excel report file that contains
+information about the study, e.g., "study info - DDI" or "study info - no
+DDI" if you haven't renamed the tab. This only applies if you have supplied
+an Excel file name for \code{report_input_file}. If you're supplying a
+simulator output Excel file for \code{sim_data_file}, ignore this.}
+
+\item{PKparameters}{(optional) the PK parameters to include as a character
+  vector. Notes: \itemize{
 
   \item{By default, if you have a single-dose simulation, the parameters will
   include AUC and Cmax for dose 1, and, if you have a multiple-dose
@@ -40,12 +56,12 @@ pksummary_table(
   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
   console.}
 
-  \item{By default, if you supply a file for \code{report_input_file}, the PK
-  parameters included are only those included for the observed data in that
-  file. Otherwise, the PK parameters will be automatically selected.}
+  \item{If you supply observed data using either the argument
+  \code{report_input_file} or the argument \code{observed_PK}, the PK
+  parameters included are only those available for the observed data.}
 
-  \item{Parameters that don't make sense for your scenario -- like asking for
-  \code{AUCinf_last_withInhib} when your simulation did not include an
+  \item{Parameters that don't make sense for your scenario -- such as asking
+  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
   inhibitor or effector -- will not be included.}
 
   \item{tmax will be listed as median, min, and max rather than mean, lower
@@ -63,7 +79,22 @@ here. Most of the time, this should be left as NA.}
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
 tested).}
 
-\item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs}
+\item{observed_PK}{(optional) If you have a data.frame or an Excel or csv
+file with observed PK parameters, supply the full file name in quotes or
+the data.frame here, and the simulated-to-observed mean ratios will be
+calculated. (If you supply an Excel file, it should have only one tab. We
+prefer supplying csv files here since they're faster to read in anyway.)
+The supplied data.frame or file must include columns for each of the PK
+parameters you would like to compare, and those column names \emph{must} be
+among the PK parameter options listed in
+\code{data(PKParameterDefinitions)}. If you would like the output table to
+include the observed data CV for any of the parameters, add "_CV" to the
+end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
+"Example" section of this help file for examples of how to set this up.}
+
+\item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
+If you supplied a report input form, only specify this if you'd like to
+override the value listed there.}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}
@@ -80,7 +111,7 @@ percentiles}
 
 \item{includeTrialMeans}{TRUE or FALSE (default) for whether to include the
 range of trial means for a given parameter. Note: This is calculated from
-individual values rather than pulled directly from the output.}
+individual values rather than being pulled directly from the output.}
 
 \item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
@@ -90,9 +121,9 @@ SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
-human-readable column names. TRUE makes pretty column names such as "AUC0
-to inf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
-from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+human-readable column names. TRUE makes pretty column names such as "AUCinf
+(h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+\code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
 \item{prettify_effector_name}{TRUE (default) or FALSE on whether to make
 effector name prettier in the prettified column titles. This was designed
@@ -105,46 +136,85 @@ BID" will become "ketoconazole". Set it to the name you'd prefer to see in
 your column titles if you would like something different. For example,
 \code{prettify_effector_name = "Drug ABC"}}
 
-\item{checkDataSource}{TRUE (default) or FALSE: Include in the output a
-data.frame that lists exactly where the data were pulled from the simulator
-output file. Default is TRUE to include it. Useful for QCing.}
+\item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
+output a data.frame that lists exactly where the data were pulled from the
+simulator output file. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.csv". If you leave off ".csv", it will be saved as a csv file. If you
-requested both the table and the QC info, the QC file will have "- QC"
-added to the end of the file name.}
+table.csv". If you leave off ".csv", it will still be saved as a csv file.
+If you requested both the table and the QC info, the QC file will have "-
+QC" added to the end of the file name.}
 }
 \value{
-a data.frame of PK summary data or a list of that data.frame (named
-  "Table") plus information on where the values came from for QCing (named
-  "QC")
+Returns a data.frame of PK summary data and, if observed data were
+  provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
+  output will instead be a list of that data.frame (named "Table") and
+  information on where the values came from for QCing (named "QC").
 }
 \description{
-\code{pksummary_table} uses Simcyp Simulator output Excel files to create
-tables of PK parameters for reports and presentations, including reporting
-means, CVs, and confidence intervals or percentiles. This function
-automatically finds the correct tab and the correct cells to pull those data.
-\strong{Notes:} \itemize{\item{Nearly all parameters are for the
-\emph{substrate}. We're still validating this for extracting PK for an
-effector. \strong{A request for assistance:} If you extract PK data for an
-effector by specifying an Excel sheet for that compound, please check the
-values and tell Laura Shireman how well it works!} \item{Currently, the
-output column titles list units of ng, mL, and h for AUC and Cmax, and the
-function doesn't actually check what units are present in the data. If your
-units are something else, our apologies, but please change the units in the
-column titles when you use the output table. (The values in the table are
-fine.) We're working on making this detect what the units were and print
-those.} \item{ If the simulator output Excel file lives on SharePoint, you'll
-need to close it or this function will just keep running and not generate any
-output while it waits for access to the file.}}
+\code{pksummary_table} creates tables of PK parameters for reports and
+presentations, including reporting means, CVs, and confidence intervals or
+percentiles and, optionally, comparisons to observed data. This function
+automatically finds the correct tab and the correct cells in a Simulator
+output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+see the notes at the bottom of this help file for how to supply observed data
+in a standardized fashion that this function can read.} \item{Nearly all
+parameters are for the \emph{substrate}. We're still validating this for
+extracting PK for an effector. \strong{A request for assistance:} If you
+extract PK data for an effector by specifying an Excel sheet for that
+compound, please check the values and tell Laura Shireman how well it works!}
+\item{Currently, if you request prettified output columns, the column titles
+list units of ng, mL, and h for AUC and Cmax, and the function doesn't check
+what units are actually present in the data. If your units are something
+else, our apologies, but please change the units in the column titles when
+you use the output table. (The values in the table are fine.) We're working
+on making this detect what the units were and print those.} \item{ If the
+simulator output Excel file lives on SharePoint, you'll need to close it or
+this function will just keep running and not generate any output while it
+waits for access to the file.}}
+}
+\details{
+Because we need to have a standardized way to input observed data, setting up
+the input for this function requires creating a data.frame of the observed PK
+data, supplying a csv or Excel file with observed PK data, or filling out an
+Excel form.
+
+To create a data.frame or an Excel or csv file of observed PK data, you'll
+need columns for each of the PK parameters for which you have observed data.
+If you have CV values for any observed data that you'd like to include in the
+table, title that column with the PK parameter name and a suffix of "_CV". An
+example of how to format observed data: \code{data.frame(AUCinf_dose1 = 60,
+AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22, Cmax_dose1_CV = 0.24)}
+
+To use an Excel form, here are the steps to take: \enumerate{\item{Use the
+function \code{\link{generateReportInputForm}} to create an Excel file where
+you can enter information about your project. Example:
+\code{generateReportInputForm("My report input form.xlsx")}} \item{Go to the
+tab "study info - DDI" or "study info - no DDI", whichever is appropriate for
+your situation. Under the heading "Observed data", enter details about your
+observed data. It's ok if you don't have all the information; anything that's
+missing won't be included in the final S/O table. It's also ok to rename this
+tab and/or make copies of it within the same Excel file for making other S/O
+tables.} \item{Under the heading "Simulated data" on that same tab, fill out
+the name of the specific simulator output Excel file you want to compare.}
+\item{Save the report form.} \item{Back in RStudio (or within the shiny app
+that we plan to make!), run this function using the file name of that Excel
+report form as input for \code{report_input_file} and the name of the "study
+info - DDI/no DDI" tab as the input for \code{sheet_report}. Note: If the
+Excel file lives on SharePoint, you'll need to close it or this function will
+just keep running and not generate any output while it waits for access to
+the file.} }
 }
 \examples{
-pksummary_table(sim_data_file = "Example simulator output - SD MDZ.xlsx")
-pksummary_table(sim_data_file = "Example simulator output - SD MDZ.xlsx",
-                mean_type = "arithmetic", concatVariability = TRUE,
-                checkDataSource = FALSE)
-pksummary_table(sim_data_file = "Example simulator output - SD MDZ.xlsx",
-                mean_type = "arithmetic", includeTrialMeans = TRUE,
-                includeCV = FALSE) # Howie's preferred approach. :-) 
+pksummary_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
+         sheet_report = "study info - DDI",
+         includeTrialMeans = TRUE)
+
+# An example of how to format observed data:
+MyObsPK <- data.frame(AUCinf_dose1 = 60,
+                      AUCinf_dose1_CV = 0.38,
+                      Cmax_dose1 = 22,
+                      Cmax_dose1_CV = 0.24)
+pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 }
