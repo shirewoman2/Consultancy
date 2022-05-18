@@ -48,7 +48,15 @@ will result in an error and return no data.}
   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
   inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
-  "fa_inhib2", "Regimen_sub")}}}}
+  "fa_inhib2", "Regimen_sub")}}}
+
+  \strong{Note:} While information about custom dosing regimens \emph{can} be
+  extracted by the function \code{\link{extractExpDetails}}, that information
+  cannot easily be made to fit with the rest of the output for
+  \code{extractExpDetails_mult}. That's because each simulator file and
+  compound with a custom-dosing regimen will have its own data.frame with the
+  time, time units, dose number, dose amount, dose units, and dose route.
+  For that reason, custom-dosing information will largely be ignored here.}
 
 \item{existing_exp_details}{(optional) a data.frame that contains previously
 extracted experimental details. This should NOT be in quotes. Because we

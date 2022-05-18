@@ -21,7 +21,11 @@
 #' 
 #' # No examples yet
 #' 
-PKsummary_mult <- function(observed_PK, ...){
+pksummary_mult <- function(sim_data_files, 
+                           observed_PK, ...){
+    
+    # LEFT OFF HERE
+    
     
     # Read in the observed_PK data if it's not already a data.frame.
     if(class(observed_PK) == "character"){
@@ -32,7 +36,8 @@ PKsummary_mult <- function(observed_PK, ...){
     }
     
     if("File" %in% names(observed_PKDF) == FALSE){
-        stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.")
+        stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.", 
+             call. = FALSE)
     }
     
     OutPK <- list()
