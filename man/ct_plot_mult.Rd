@@ -2,13 +2,13 @@
 % Please edit documentation in R/ct_plot_mult.R
 \name{ct_plot_mult}
 \alias{ct_plot_mult}
-\title{Make a single graphic with multiple, nicely arranged concentration-time
-graphs}
+\title{Make graphs for multiple Simulator output files at once}
 \usage{
 ct_plot_mult(
   ct_dataframe,
-  linear_or_log = "semi-log",
+  single_out_file = TRUE,
   file_order = NA,
+  linear_or_log = "semi-log",
   include_title = TRUE,
   graph_labels = TRUE,
   legend_position = "none",
@@ -21,21 +21,28 @@ ct_plot_mult(
 )
 }
 \arguments{
-\item{ct_dataframe}{the data.frame with multiple sets of
-concentration-time data}
+\item{ct_dataframe}{the data.frame with multiple sets of concentration-time
+data}
+
+\item{single_out_file}{TRUE (default) or FALSE for whether to make multiple
+output files. TRUE means that there will be a single file with all of the
+graphs nicely arranged together. FALSE means that each Simulator output
+file will have its own output file, and that graph's output file will be
+named to match the Simulator output file name.}
+
+\item{file_order}{optionally specify the order in which the files are graphed
+with a character vector of the files in the order you would like. (Not
+applicable if \code{single_out_file = FALSE}.) If you would like to include
+graph titles to make it clear which graph is which, you can also specify
+what the title should be for that file. Example of acceptable input:
+\code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" = "50 mg SD",
+"simfile1.xlsx" = "100 mg SD")}. If you get an order that you didn't think
+you specified, please double check that you have specified the file names
+\emph{exactly} as they appear in \code{ct_dataframe}.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
 "linear", "both vertical" (default, graphs are stacked vertically), or
 "both horizontal" (graphs are side by side).}
-
-\item{file_order}{optionally specify the order in which the files are graphed
-with a character vector of the files in the order you would like. If you
-would like to include graph titles to make it clear which graph is which,
-you can also specify what the title should be for that file. Example of
-acceptable input: \code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" =
-"50 mg SD", "simfile1.xlsx" = "100 mg SD")}. If you get an order that you
-didn't think you specified, please double check that you have specified the
-file names \emph{exactly} as they appear in \code{ct_dataframe}.}
 
 \item{include_title}{TRUE or FALSE on whether to include a title for each
 small graph. NOTE: This is not currently working well when you choose to
@@ -43,24 +50,29 @@ get both linear and semi-log plots; the title overlaps the graph. UNDER
 CONSTRUCTION.}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
-etc.) for each of the small graphs.}
+etc.) for each of the small graphs. (Not applicable if
+\code{single_out_file = FALSE}.)}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all.}
 
 \item{nrow}{number of rows of small graphs in the arrangement. If left as NA,
-a reasonable guess will be made.}
+a reasonable guess will be made. (Not applicable if \code{single_out_file =
+FALSE}.)}
 
 \item{ncol}{number of columns of small graphs in the arrangement. If left as
-NA, a reasonable guess will be made.}
+NA, a reasonable guess will be made. (Not applicable if
+\code{single_out_file = FALSE}.)}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 will be saved as a png file, but if you specify a different file extension,
 it will be saved as that file format. Acceptable extensions are "eps",
 "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-means the file will not be automatically saved to disk.}
+means the file will not be automatically saved to disk. (Not applicable if
+\code{single_out_file = FALSE} because each graph will be named according
+to its Simulator output file.)}
 
 \item{fig_height}{figure height in inches; default is 8}
 
@@ -73,7 +85,8 @@ means the file will not be automatically saved to disk.}
 }
 \description{
 This function was designed for making nicely arranged concentration-time
-graphs from several Simcyp Simulator output files all together.
+graphs from several Simcyp Simulator output files all together or for making
+multiple files -- one for each Simulator file -- all at once.
 }
 \details{
 \strong{A note on the order of the graphs:} This function arranges graphs

@@ -217,6 +217,8 @@ inductFit <- function(DF,
     if(length(measurement) > 1){
         stop("Please select only one option for the measurement. Options are 'mRNA' or 'activity'.",
              call. = FALSE)
+    }
+    
     # General data setup ---------------------------------------------------
     # Need to add a column for the model chosen for graphing purposes.
     DF$model <- model

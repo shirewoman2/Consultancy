@@ -1,8 +1,8 @@
-#' Make a single graphic with multiple, nicely arranged concentration-time
-#' graphs
+#' Make graphs for multiple Simulator output files at once
 #'
 #' This function was designed for making nicely arranged concentration-time
-#' graphs from several Simcyp Simulator output files all together.
+#' graphs from several Simcyp Simulator output files all together or for making
+#' multiple files -- one for each Simulator file -- all at once.
 #'
 #' \strong{A note on the order of the graphs:} This function arranges graphs
 #' first by file, then by compound ID, and then by tissue, and all sorting is
@@ -15,22 +15,31 @@
 #' \code{file_order} isn't achieving what you want, please ask a member of the R
 #' Working Group for assistance.
 #'
-#' @param ct_dataframe the data.frame with multiple sets of
-#'   concentration-time data
+#' @param ct_dataframe the data.frame with multiple sets of concentration-time
+#'   data
+#' @param single_out_file TRUE (default) or FALSE for whether to make multiple
+#'   output files. TRUE means that there will be a single file with all of the
+#'   graphs nicely arranged together. FALSE means that each Simulator output
+#'   file will have its own output file, and that graph's output file will be
+#'   named to match the Simulator output file name.
 #' @param file_order optionally specify the order in which the files are graphed
-#'   with a character vector of the files in the order you would like. If you
-#'   would like to include graph titles to make it clear which graph is which,
-#'   you can also specify what the title should be for that file. Example of
-#'   acceptable input: \code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" =
-#'   "50 mg SD", "simfile1.xlsx" = "100 mg SD")}. If you get an order that you
-#'   didn't think you specified, please double check that you have specified the
-#'   file names \emph{exactly} as they appear in \code{ct_dataframe}.
+#'   with a character vector of the files in the order you would like. (Not
+#'   applicable if \code{single_out_file = FALSE}.) If you would like to include
+#'   graph titles to make it clear which graph is which, you can also specify
+#'   what the title should be for that file. Example of acceptable input:
+#'   \code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" = "50 mg SD",
+#'   "simfile1.xlsx" = "100 mg SD")}. If you get an order that you didn't think
+#'   you specified, please double check that you have specified the file names
+#'   \emph{exactly} as they appear in \code{ct_dataframe}.
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
-#'   etc.) for each of the small graphs.
+#'   etc.) for each of the small graphs. (Not applicable if
+#'   \code{single_out_file = FALSE}.)
 #' @param nrow number of rows of small graphs in the arrangement. If left as NA,
-#'   a reasonable guess will be made.
+#'   a reasonable guess will be made. (Not applicable if \code{single_out_file =
+#'   FALSE}.)
 #' @param ncol number of columns of small graphs in the arrangement. If left as
-#'   NA, a reasonable guess will be made.
+#'   NA, a reasonable guess will be made. (Not applicable if
+#'   \code{single_out_file = FALSE}.)
 #' @param linear_or_log the type of graph to be returned. Options: "semi-log",
 #'   "linear", "both vertical" (default, graphs are stacked vertically), or
 #'   "both horizontal" (graphs are side by side).
@@ -47,7 +56,9 @@
 #'   will be saved as a png file, but if you specify a different file extension,
 #'   it will be saved as that file format. Acceptable extensions are "eps",
 #'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-#'   means the file will not be automatically saved to disk.
+#'   means the file will not be automatically saved to disk. (Not applicable if
+#'   \code{single_out_file = FALSE} because each graph will be named according
+#'   to its Simulator output file.)
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 8
 #'
@@ -58,8 +69,9 @@
 #' # No examples yet
 #' 
 ct_plot_mult <- function(ct_dataframe, 
-                         linear_or_log = "semi-log",
+                         single_out_file = TRUE, 
                          file_order = NA,
+                         linear_or_log = "semi-log",
                          include_title = TRUE,
                          graph_labels = TRUE,
                          legend_position = "none",
@@ -70,7 +82,14 @@ ct_plot_mult <- function(ct_dataframe,
                          fig_width = 8,
                          ...){
     
+    # Much easier to deal with things if we've got base file names in
+    # ct_dataframe. Taking care of that here.
+    ct_dataframe <- ct_dataframe %>% 
+        mutate(File_bn = basename(File))
+    
     if(length(file_order) > 1 && complete.cases(file_order[1])){
+        
+        file_order <- basename(file_order)
         
         # If file_order isn't named, make the names match the files themselves.
         if(is.null(names(file_order))){
@@ -89,7 +108,7 @@ ct_plot_mult <- function(ct_dataframe,
         # files that they forgot. The forgotten files just won't have pretty
         # titles.
         file_order_all <- unique(c(names(file_order), 
-                                   sort(unique(as.character(ct_dataframe$File)))))
+                                   sort(unique(as.character(ct_dataframe$File_bn)))))
         
         # Name items in file_order_all according to file_order.
         names(file_order_all) <- file_order_all
@@ -99,14 +118,14 @@ ct_plot_mult <- function(ct_dataframe,
         
         # Even if user didn't specify file order, we need the levels of that
         # factor later. Setting them here. 
-        file_order_all <- sort(unique(ct_dataframe$File))
+        file_order_all <- sort(unique(ct_dataframe$File_bn))
         names(file_order_all) <- file_order_all
         
     }
     
     # Set the sort order in the data
     ct_dataframe <- ct_dataframe %>% 
-        mutate(File = factor(File, levels = names(file_order_all)))
+        mutate(File_bn = factor(File_bn, levels = names(file_order_all)))
     
     AllGraphs <- list()
     AllData <- ct_dataframe %>% 
@@ -123,7 +142,8 @@ ct_plot_mult <- function(ct_dataframe,
         }
         return(Out)
     }
-    Order <- expand.grid(list("File" = getOrder(AllData$File), 
+    
+    Order <- expand.grid(list("File" = getOrder(AllData$File_bn), 
                               "CompoundID" = getOrder(AllData$CompoundID), 
                               "Tissue" = getOrder(AllData$Tissue), 
                               "subsection_ADAM" = getOrder(AllData$subsection_ADAM))) %>% 
@@ -138,7 +158,7 @@ ct_plot_mult <- function(ct_dataframe,
     # Titles <- Titles[which(Titles != 1)]
     
     AllData <- split(AllData, 
-                     f = list(as.character(AllData$File),
+                     f = list(as.character(AllData$File_bn),
                               as.character(AllData$CompoundID), 
                               as.character(AllData$Tissue), 
                               as.character(AllData$subsection_ADAM)))
@@ -148,7 +168,7 @@ ct_plot_mult <- function(ct_dataframe,
     #     mutate(Title = ifelse(TitleType == "File"))
     
     for(i in Order){
-        Title_i <- file_order_all[as.character(unique(AllData[[i]]$File))]
+        Title_i <- file_order_all[as.character(unique(AllData[[i]]$File_bn))]
         
         AllData[[i]] <- AllData[[i]] %>% 
             # need to convert subsection_ADAM back to NA if it was
@@ -165,15 +185,18 @@ ct_plot_mult <- function(ct_dataframe,
                                             FALSE, TRUE),
                     linear_or_log = linear_or_log)
         
-        if(linear_or_log %in% c("linear", "log", "semi-log")){
+        if(linear_or_log %in% c("linear", "log", "semi-log") &
+           include_title){
             AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i) +
                 theme(title = element_text(size = 10))
         } else {
-            AllGraphs[[i]] <- ggpubr::ggarrange(AllGraphs[[i]],
-                                                labels = Title_i)
-            # Need a way to increase the viewport b/c vjust = 0 or label.y = 1.5
-            # both put the title off the top of the graph. Not sure how to do
-            # this.
+            if(include_title){
+                AllGraphs[[i]] <- ggpubr::ggarrange(AllGraphs[[i]],
+                                                    labels = Title_i)
+                # Need a way to increase the viewport b/c vjust = 0 or label.y = 1.5
+                # both put the title off the top of the graph. Not sure how to do
+                # this.
+            }
         }
         
         rm(Title_i)
@@ -185,39 +208,49 @@ ct_plot_mult <- function(ct_dataframe,
         labels <- NULL
     }
     
-    if(legend_position == "none"){
-        Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
-                                 nrow = nrow, 
-                                 ncol = ncol, 
-                                 labels = labels)
+    if(single_out_file){
         
-    } else {
-        Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
-                                 nrow = nrow, 
-                                 ncol = ncol, 
-                                 common.legend = TRUE,
-                                 legend = legend_position,
-                                 labels = labels)
-        
-    }
-    
-    if(complete.cases(save_graph)){
-        FileName <- save_graph
-        if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-            FileName <- sub(paste0(".", Ext), "", FileName)
-            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg"), 
-                          Ext, "png")
-            FileName <- paste0(FileName, ".", Ext)
+        if(legend_position == "none"){
+            Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
+                                     nrow = nrow, 
+                                     ncol = ncol, 
+                                     labels = labels)
+            
         } else {
-            FileName <- paste0(FileName, ".png")
+            Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
+                                     nrow = nrow, 
+                                     ncol = ncol, 
+                                     common.legend = TRUE,
+                                     legend = legend_position,
+                                     labels = labels)
         }
         
-        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-               plot = Out)
+        if(complete.cases(save_graph)){
+            FileName <- save_graph
+            if(str_detect(FileName, "\\.")){
+                # Making sure they've got a good extension
+                Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+                FileName <- sub(paste0(".", Ext), "", FileName)
+                Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                         "png", "bmp", "svg", "jpg"), 
+                              Ext, "png")
+                FileName <- paste0(FileName, ".", Ext)
+            } else {
+                FileName <- paste0(FileName, ".png")
+            }
+            
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = Out)
+            
+        }
         
+    } else {
+        
+        for(i in names(AllGraphs)){
+            ggsave(paste0(basename(gsub("\\.xlsx.*", "", i)), ".png"), 
+                   height = fig_height, width = fig_width, dpi = 600, 
+                   plot = AllGraphs[[i]])
+        }
     }
     
     return(Out)
