@@ -29,7 +29,8 @@ pksummary_table(
 report input form to the argument \code{report_input_file}, you can leave
 this blank.}
 
-\item{report_input_file}{the name of the Excel file created by running
+\item{report_input_file}{(an optional alternative to \code{sim_data_file})
+the name of the Excel file created by running
 \code{\link{generateReportInputForm}}, which you have now filled out,
 including the path if it's in any other directory than the current one}
 
@@ -154,23 +155,24 @@ Returns a data.frame of PK summary data and, if observed data were
 \description{
 \code{pksummary_table} creates tables of PK parameters for reports and
 presentations, including reporting means, CVs, and confidence intervals or
-percentiles and, optionall, comparisons to observed data. This function
-automatically finds the correct tab and the correct cells to pull those data.
-\strong{Notes:} \itemize{\item{Please see the notes at the bottom of this
-help file for how to supply observed data in a standardized fashion that this
-function can read.} \item{Nearly all parameters are for the \emph{substrate}.
-We're still validating this for extracting PK for an effector. \strong{A
-request for assistance:} If you extract PK data for an effector by specifying
-an Excel sheet for that compound, please check the values and tell Laura
-Shireman how well it works!} \item{Currently, if you request prettified
-output columns, the column titles list units of ng, mL, and h for AUC and
-Cmax, and the function doesn't check what units are actually present in the
-data. If your units are something else, our apologies, but please change the
-units in the column titles when you use the output table. (The values in the
-table are fine.) We're working on making this detect what the units were and
-print those.} \item{ If the simulator output Excel file lives on SharePoint,
-you'll need to close it or this function will just keep running and not
-generate any output while it waits for access to the file.}}
+percentiles and, optionally, comparisons to observed data. This function
+automatically finds the correct tab and the correct cells in a Simulator
+output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+see the notes at the bottom of this help file for how to supply observed data
+in a standardized fashion that this function can read.} \item{Nearly all
+parameters are for the \emph{substrate}. We're still validating this for
+extracting PK for an effector. \strong{A request for assistance:} If you
+extract PK data for an effector by specifying an Excel sheet for that
+compound, please check the values and tell Laura Shireman how well it works!}
+\item{Currently, if you request prettified output columns, the column titles
+list units of ng, mL, and h for AUC and Cmax, and the function doesn't check
+what units are actually present in the data. If your units are something
+else, our apologies, but please change the units in the column titles when
+you use the output table. (The values in the table are fine.) We're working
+on making this detect what the units were and print those.} \item{ If the
+simulator output Excel file lives on SharePoint, you'll need to close it or
+this function will just keep running and not generate any output while it
+waits for access to the file.}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up

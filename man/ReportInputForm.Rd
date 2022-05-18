@@ -4,7 +4,7 @@
 \name{ReportInputForm}
 \alias{ReportInputForm}
 \title{Report input forms to be used in conjunction with
-\code{\link{getSectionInfo}} and \code{\link{so_table}}}
+\code{\link{getSectionInfo}} and \code{\link{pksummary_table}}}
 \format{
 A named list of the data that fill the tabs for
   "generateReportInputForm"
@@ -14,6 +14,6 @@ ReportInputForm
 }
 \description{
 Report input forms to be used in conjunction with
-\code{\link{getSectionInfo}} and \code{\link{so_table}}
+\code{\link{getSectionInfo}} and \code{\link{pksummary_table}}
 }
 \keyword{datasets}
