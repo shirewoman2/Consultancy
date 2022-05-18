@@ -41,6 +41,14 @@
 #'   inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
 #'   "fa_inhib2", "Regimen_sub")}}}
 #'
+#'   \strong{Note:} While information about custom dosing regimens \emph{can} be
+#'   extracted by the function \code{\link{extractExpDetails}}, that information
+#'   cannot easily be made to fit with the rest of the output for
+#'   \code{extractExpDetails_mult}. That's because each simulator file and
+#'   compound with a custom-dosing regimen will have its own data.frame with the
+#'   time, time units, dose number, dose amount, dose units, and dose route.
+#'   For that reason, custom-dosing information will largely be ignored here.
+#'
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
@@ -116,14 +124,42 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     }
     
     MyDeets <- list()
+    CustomDosing <- c()
     
     for(i in sim_data_files_topull){
         message(paste("Extracting data from file =", i))
         MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
-                                          exp_details = exp_details) %>% 
+                                          exp_details = exp_details) 
+        
+        # Checking for custom dosing regimens and removing those data b/c they
+        # have a different data structure and cannot easily be coerced into a
+        # single row for each simulator file.
+        if(any(str_detect(tolower(names(MyDeets[[i]])), "custom"))){
+            CustomDosing[i] <- TRUE
+            MyDeets[[i]] <- 
+                MyDeets[[i]][!str_detect(tolower(names(MyDeets[[i]])), "custom")]
+        } else {
+            CustomDosing[i] <- FALSE
+        }
+        
+        MyDeets[[i]] <- MyDeets[[i]] %>% 
             as.data.frame() %>% 
             mutate(File = i) %>% 
             select(File, everything())
+    }
+    
+    if(any(CustomDosing) | 
+       (exists(substitute(existing_exp_details)) && 
+        any(sapply(existing_exp_details %>% 
+                   select(any_of(c("Dose_sub", "Dose_inhib", 
+                                   "DoseInt_sub", "DoseInt_inhib"))), 
+                   class) == "character"))){
+        for(j in names(MyDeets)){
+            MyDeets[[j]] <- MyDeets[[j]] %>% 
+                mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
+                                               "DoseInt_sub", "DoseInt_inhib")), 
+                              .fns = as.character))
+        }
     }
     
     MyDeets <- bind_rows(MyDeets)

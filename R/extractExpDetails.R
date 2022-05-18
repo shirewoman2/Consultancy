@@ -729,9 +729,9 @@ extractExpDetails <- function(sim_data_file,
                 
                 NameCol <- InputDeets$NameCol[which(InputDeets$Deet == j)]
                 Row_day <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Day"))
-                # If this is not present, which happens with a custom dosing
-                # schedule, then will need to pull info from custom dosing sheet
-                # lower in script.
+                # If this is not present, which sometimes happens with a custom
+                # dosing schedule, then will need to pull info from custom
+                # dosing sheet lower in script.
                 if(length(Row_day) == 0){
                     CustomDosing <- c(CustomDosing, TRUE)
                 } else {
