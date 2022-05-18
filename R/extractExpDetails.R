@@ -151,11 +151,13 @@ extractExpDetails <- function(sim_data_file,
                                      AllExpDetails$Detail))
         stop(paste0("These study details are not among the possible options: ",
                     Problem,
-                    ". The study details to extract must be among the options listed. Please enter 'data(ExpDetailDefinitions)' into the console for all options."))
+                    ". The study details to extract must be among the options listed. Please enter 'data(ExpDetailDefinitions)' into the console for all options."),
+             call. = FALSE)
     }
     
     if(length(exp_details) == 0){
-        stop("You must enter at least one study detail to extract.")
+        stop("You must enter at least one study detail to extract.",
+             call. = FALSE)
     }
     
     Out <- list()

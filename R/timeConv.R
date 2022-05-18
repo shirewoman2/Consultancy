@@ -23,7 +23,8 @@
 timeConv <- function(x, tz = "UTC", dataSource = "Excel") {
     
     if(dataSource %in% c("Excel", "Unix", "R") == FALSE){
-        stop("Invalid selection for dataSource. Valid selections are 'Excel', 'Unix', or 'R'.")
+        stop("Invalid selection for dataSource. Valid selections are 'Excel', 'Unix', or 'R'.",
+             call. = FALSE)
     }
     
     output <-

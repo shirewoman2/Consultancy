@@ -307,7 +307,8 @@ ct_plot <- function(ct_dataframe = NA,
                           "Freddy", "means only", "overlay", 
                           "percentile ribbon", "percentile ribbons", 
                           "ribbon") == FALSE){
-        stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.")
+        stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.",
+             call. = FALSE)
     }
     
     MyMeanType <- ct_dataframe %>%
@@ -326,7 +327,8 @@ ct_plot <- function(ct_dataframe = NA,
                        ", but those are not included in your data. Instead, the ",
                        ifelse(MyMeanType[1] == "mean", 
                               "arithmetic mean", MyMeanType[1]),
-                       "s will be used."))
+                       "s will be used."),
+                call. = FALSE)
         MyMeanType <- MyMeanType[1] %>% as.character()
         
     } else {
@@ -361,7 +363,8 @@ ct_plot <- function(ct_dataframe = NA,
     if(ADAM){
         
         if(length(subsection_ADAM) > 1){
-            stop("You can only enter one option for the concentration type for ADAM-model tissues. Please set subsection_ADAM to one of 'solid compound', 'free compound in lumen', 'Heff', 'absorption rate', 'unreleased substrate in faeces', 'unreleased inhibitor in faeces', 'dissolved compound', or 'luminal CLint of compound'")
+            stop("You can only enter one option for the concentration type for ADAM-model tissues. Please set subsection_ADAM to one of 'solid compound', 'free compound in lumen', 'Heff', 'absorption rate', 'unreleased substrate in faeces', 'unreleased inhibitor in faeces', 'dissolved compound', or 'luminal CLint of compound'",
+                 call. = FALSE)
         }
         
         if(subsection_ADAM %in% c("solid compound", "free compound in lumen",
@@ -371,7 +374,8 @@ ct_plot <- function(ct_dataframe = NA,
                                   "dissolved compound",
                                   "luminal CLint of compound") == FALSE){
             stop(paste0("The concentration type you requested, ", subsection_ADAM,
-                        ", is not one of the options. Please set this value to one of 'solid compound', 'free compound in lumen', 'Heff', 'absorption rate', 'unreleased substrate in faeces', 'unreleased inhibitor in faeces', 'dissolved compound', or 'luminal CLint of compound'"))
+                        ", is not one of the options. Please set this value to one of 'solid compound', 'free compound in lumen', 'Heff', 'absorption rate', 'unreleased substrate in faeces', 'unreleased inhibitor in faeces', 'dissolved compound', or 'luminal CLint of compound'"),
+                 call. = FALSE)
         }
         
         Data <- Data %>% filter(subsection_ADAM == {{subsection_ADAM}})
@@ -384,7 +388,8 @@ ct_plot <- function(ct_dataframe = NA,
     if(figure_type %in% c("trial means", "Freddy") &
        suppressWarnings(length(sort(as.numeric(
            as.character(unique(Data$Trial)))))) == 0){
-        warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.")
+        warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.",
+                call. = FALSE)
     }
     
     # Setting up the x axis using the subfunction ct_x_axis
@@ -437,7 +442,8 @@ ct_plot <- function(ct_dataframe = NA,
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(obs_shape)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the symbol shapes should be, but you have not listed enough values (you need 2). The default shapes will be used.")
+        warning("There is an inhibitor or effector present and you have specified what the symbol shapes should be, but you have not listed enough values (you need 2). The default shapes will be used.",
+                call. = FALSE)
         obs_shape <- NA
     }
     
@@ -445,7 +451,8 @@ ct_plot <- function(ct_dataframe = NA,
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(obs_color)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the symbol colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
+        warning("There is an inhibitor or effector present and you have specified what the symbol colors should be, but you have not listed enough values (you need 2). The default colors will be used.",
+                call. = FALSE)
         obs_color <- NA
     }
     
@@ -453,7 +460,8 @@ ct_plot <- function(ct_dataframe = NA,
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(line_color)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the line colors should be, but you have not listed enough values (you need 2). The default colors will be used.")
+        warning("There is an inhibitor or effector present and you have specified what the line colors should be, but you have not listed enough values (you need 2). The default colors will be used.",
+                call. = FALSE)
         line_color <- NA
     }
     
@@ -461,7 +469,8 @@ ct_plot <- function(ct_dataframe = NA,
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(line_type)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the line types should be, but you have not listed enough values (you need 2). The default line types will be used.")
+        warning("There is an inhibitor or effector present and you have specified what the line types should be, but you have not listed enough values (you need 2). The default line types will be used.",
+                call. = FALSE)
         line_type <- NA
     }
     
@@ -520,14 +529,16 @@ ct_plot <- function(ct_dataframe = NA,
     if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
-                       "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."))
+                       "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
+                call. = FALSE)
     }
     
     if(nrow(obs_data) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
                                               "percentile ribbon", "ribbon")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
-                       "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."))
+                       "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
+                call. = FALSE)
     }
     
     
@@ -572,7 +583,8 @@ ct_plot <- function(ct_dataframe = NA,
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                    call. = FALSE)
             
             ## linear plot
             A <- ggplot(sim_data_trial,
@@ -657,7 +669,8 @@ ct_plot <- function(ct_dataframe = NA,
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                    call. = FALSE)
             
             A <- ggplot(sim_data_mean %>%
                             filter(Trial %in% c("per5", "per95")) %>%
@@ -738,7 +751,8 @@ ct_plot <- function(ct_dataframe = NA,
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                    call. = FALSE)
             
             A <- ggplot(RibbonDF, aes(x = Time,
                                       y = mean, ymin = per5, ymax = per95, 
@@ -819,7 +833,8 @@ ct_plot <- function(ct_dataframe = NA,
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.")
+            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                    call. = FALSE)
             
             ## linear plot
             A <- ggplot(data = sim_data_mean %>%
@@ -1037,7 +1052,8 @@ ct_plot <- function(ct_dataframe = NA,
     # accordingly and giving user a warning about the impending deprecation.
     if(include_legend == TRUE & legend_position == "none"){
         legend_position <- "right"
-        warning("You have set 'include_legend' to TRUE but left 'legend_position' as 'none', which is the default. The graph will include a legend on the right of the graph. Our apologies for changing things here; we coded the option 'include_legend' first and then later realized things would work better and be more flexible using 'legend_position'. We plan to deprecate 'include_legend' in future versions of the SimcypConsultancy package.")
+        warning("You have set 'include_legend' to TRUE but left 'legend_position' as 'none', which is the default. The graph will include a legend on the right of the graph. Our apologies for changing things here; we coded the option 'include_legend' first and then later realized things would work better and be more flexible using 'legend_position'. We plan to deprecate 'include_legend' in future versions of the SimcypConsultancy package.",
+                call. = FALSE)
     }
     
     # If the user didn't want the legend or if the graph is of an effector,

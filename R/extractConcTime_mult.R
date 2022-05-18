@@ -192,7 +192,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
            all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
             warning(paste0("For the file ", f, ", the compound(s) ",
                            str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
-                           " was/were not available."))
+                           " was/were not available."),
+                    call. = FALSE)
         }
         
         # Each tissue will be on its own sheet in the Excel file, so each
@@ -374,7 +375,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
         # way of knowing which is which.
         if(any(is.na(SimDoseInfo$DoseInt)) & 
            any(complete.cases(SimDoseInfo$DoseInt))){
-            warning("It looks like you have both single-dose and multiple-dose simulated data present. We thus cannot safely assign the observed data to any particular dose number since we don't know which simulated files the observed data match. Output will include both simulated and observed data, but the observed data will have NA values for DoseInt and DoseNum.")
+            warning("It looks like you have both single-dose and multiple-dose simulated data present. We thus cannot safely assign the observed data to any particular dose number since we don't know which simulated files the observed data match. Output will include both simulated and observed data, but the observed data will have NA values for DoseInt and DoseNum.",
+                    call. = FALSE)
         } else if(all(is.na(SimDoseInfo$DoseInt))){
             if(nrow(SimDoseInfo) == 1){
                 MultObsData <- MultObsData %>% 

@@ -353,6 +353,17 @@ pksummary_table <- function(sim_data_file = NA,
         PKToPull <- sub("_last|_dose1", "", PKToPull)
     }
     
+    # If they requested AUCinf but there was trouble with that extrapolation,
+    # AUCinf won't be present in the data but AUCt will be. Check for that and
+    # change PKToPull to reflect that change.
+    if(any(str_detect(PKToPull, "AUCinf")) & 
+       any(str_detect(names(MyPKResults_all[[1]]), "AUCinf")) == FALSE){
+        warning("AUCinf included NA values, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate.",
+                call. = TRUE)
+        PKToPull <- sub("AUCinf", "AUCt", PKToPull)
+        
+    }
+    
     # If they requested multiple parameters but only some were present, need to
     # change PKToPull. This is especially a problem if there's only 1 parameter
     # remaining for which there are data.
@@ -367,7 +378,8 @@ pksummary_table <- function(sim_data_file = NA,
     
     if(length(Missing) > 0 & complete.cases(PKparameters[1])){
         warning(paste("The following parameters were requested but not found in your simulator output file:",
-                      str_comma(Missing)))
+                      str_comma(Missing)),
+                call. = FALSE)
     }
     
     # If they only wanted one parameter, then extractPK returns only the

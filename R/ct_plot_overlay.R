@@ -306,18 +306,21 @@ ct_plot_overlay <- function(ct_dataframe,
     if(length(time_range) == 1 && complete.cases(time_range[1]) &&
        !str_detect(time_range, "dose|last obs|all obs")){
         if(complete.cases(time_range)){
-            warning("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.")
+            warning("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.",
+                    call. = FALSE)
             time_range <- NA
         }
     } else {
         if(length(time_range) > 2){
-            warning("You have specified more than 2 values for the time range, which only calls for a start time and an end time. Only the 1st two values you listed will be used for the time range.")
+            warning("You have specified more than 2 values for the time range, which only calls for a start time and an end time. Only the 1st two values you listed will be used for the time range.",
+                    call. = FALSE)
             time_range <- time_range[1:2]
         } 
         
         if(class(time_range) != "numeric" && complete.cases(time_range[1]) &&
            !str_detect(time_range, "dose|last obs|all obs")){
-            warning("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used.")
+            warning("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used.",
+                    call. = FALSE)
             time_range <- NA
         }
     }
@@ -338,7 +341,8 @@ ct_plot_overlay <- function(ct_dataframe,
                        ", but those are not included in your data. Instead, the ",
                        ifelse(MyMeanType[1] == "mean", 
                               "arithmetic mean", MyMeanType[1]),
-                       "s will be used."))
+                       "s will be used."),
+                call. = FALSE)
         MyMeanType <- MyMeanType[1] %>% as.character()
         
     } else {
@@ -415,13 +419,15 @@ ct_plot_overlay <- function(ct_dataframe,
            length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column])){
             warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
                            as_label(colorBy_column), 
-                           "' will be used as labels instead."))
+                           "' will be used as labels instead."),
+                    call. = FALSE)
             color_labels <- NA
         } else {
             if(length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column]) == 0 |
                length(sort(unique(c(simcheck, obscheck)))) == 0){
                 warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
-                               as_label(colorBy_column), ". The specified labels cannot be used."))  
+                               as_label(colorBy_column), ". The specified labels cannot be used."),
+                        call. = FALSE)  
             } else {
                 
                 sim_dataframe <- sim_dataframe %>% 
@@ -511,7 +517,8 @@ ct_plot_overlay <- function(ct_dataframe,
         warning(paste("You have requested", length(UniqueGroups[UniqueGroups != "Compound"]),
                       "unique data sets but only", 
                       length(which(complete.cases(MyAES))), 
-                      "unique aesthetics for denoting those datasets. This is may result in an unclear graph."))
+                      "unique aesthetics for denoting those datasets. This is may result in an unclear graph."),
+                call. = FALSE)
         message(paste("Unique datasets:", str_comma(UniqueGroups)))
         message(paste("Unique aesthetics:", str_comma(UniqueAES)))
     }

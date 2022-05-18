@@ -28,7 +28,8 @@ formatXL_head <- function(DF, file, sheet = NA){
     
     # All the columns must be named for this to work well. Checking that.
     if(any(is.na(names(DF)))){
-        stop("All the columns in your data.frame must be named.")
+        stop("All the columns in your data.frame must be named.",
+             call. = FALSE)
     }
     
     # Guessing at appropriate column width based on max number of characters

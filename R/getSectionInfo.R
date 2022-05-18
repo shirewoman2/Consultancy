@@ -44,7 +44,8 @@ getSectionInfo <- function(report_input_file = NA,
     if(DDI){
         
         if(any(str_detect(InputXL$Item, "Mean ratios"), na.rm = TRUE) == FALSE){
-            stop("You have filled out the report input form tab for a study with no DDI, but Inhibitor 1 and/or Inhibitor 2 are present in your simulation. Please fill out the tab for studies with DDIs.")
+            stop("You have filled out the report input form tab for a study with no DDI, but Inhibitor 1 and/or Inhibitor 2 are present in your simulation. Please fill out the tab for studies with DDIs.",
+                 call. = FALSE)
         }
         
         suppressWarnings(
@@ -65,7 +66,8 @@ getSectionInfo <- function(report_input_file = NA,
     } else {
         
         if(any(str_detect(InputXL$Item, "Mean ratios"), na.rm = TRUE)){
-            stop("You have filled out the report input form tab for a DDI study, but no effector compounds are present in your simulation. Please fill out the tab for studies with no DDIs.")
+            stop("You have filled out the report input form tab for a DDI study, but no effector compounds are present in your simulation. Please fill out the tab for studies with no DDIs.",
+                 call. = FALSE)
         }
         
         suppressWarnings(

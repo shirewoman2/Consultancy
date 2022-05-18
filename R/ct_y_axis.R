@@ -74,7 +74,8 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         range()
     
     if(all(Ylim == 0) && (any(is.na(y_axis_limits_lin) | any(is.na(y_axis_limits_log))))){
-        stop("For the tissue and compound selected, all concentrations = 0. Please either 1) specify what y axis limits you'd like for what will be empty graphs (set both y_axis_limits_lin and y_axis_limits_log) or 2) select a different combination of tissue and compound to graph.")
+        stop("For the tissue and compound selected, all concentrations = 0. Please either 1) specify what y axis limits you'd like for what will be empty graphs (set both y_axis_limits_lin and y_axis_limits_log) or 2) select a different combination of tissue and compound to graph.",
+             call. = FALSE)
     }
     
     if(any(complete.cases(y_axis_limits_lin))){
@@ -167,7 +168,8 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         # tell them we can't use 0.
         if(y_axis_limits_log[1] <= 0){
             y_axis_limits_log[1] <- y_axis_limits_log[2]/100
-            warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.")
+            warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.",
+                    call. = FALSE)
         }
         
         Ylim_log <- y_axis_limits_log

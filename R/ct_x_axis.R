@@ -19,12 +19,14 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
        length(time_range) != 2){
-        stop("You must enter a start and stop time for 'time_range', e.g., 'c(0, 24)' or enter 'last dose' to plot only the time range for the last dose.")
+        stop("You must enter a start and stop time for 'time_range', e.g., 'c(0, 24)' or enter 'last dose' to plot only the time range for the last dose.",
+             call. = FALSE)
     }
     
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
        time_range[1] >= time_range[2]){
-        stop("The 1st value for 'time_range' must be less than the 2nd value.")
+        stop("The 1st value for 'time_range' must be less than the 2nd value.", 
+             call. = FALSE)
     }
     
     if(all(complete.cases(time_range)) && class(time_range) == "character" &
@@ -38,14 +40,16 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                               "last observed", "last to last obs", 
                               "last dose to last observed")) &
        !any(str_detect(tolower(time_range), "^dose"))){
-        stop("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', or a numeric time range, e.g., c(12, 24).")
+        stop("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', or a numeric time range, e.g., c(12, 24).",
+             call. = FALSE)
     }
     
     t0 <- tolower(t0)
     t0_opts <- c("simulation start", "dose 1", "last dose", "penultimate dose")
     if(t0 %in% t0_opts == FALSE){
         stop(paste0("t0 must be set to ",
-                    sub("and", "or", str_comma(t0_opts)), "."))
+                    sub("and", "or", str_comma(t0_opts)), "."),
+             call. = FALSE)
     }
     
     TimeUnits <- sort(unique(Data$Time_units))
@@ -57,7 +61,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         stop(paste0(
             "Both the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
             min(Data$Time[Data$Simulated == TRUE]), " to ",
-            max(Data$Time[Data$Simulated == TRUE]), " ", TimeUnits, "."))
+            max(Data$Time[Data$Simulated == TRUE]), " ", TimeUnits, "."),
+            call. = FALSE)
     }
     
     # Adjusting graph labels as appropriate for the observed data
@@ -162,7 +167,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
             
             if(SingleDose & time_range_input %in% c("last dose", "penultimate dose")){
                 warning(paste0("You requested the ", time_range_input,
-                               ", but the compound was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."))
+                               ", but the compound was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."),
+                        call. = FALSE)
             }
             
             if(all(complete.cases(time_range_input)) &&
@@ -191,7 +197,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                 if(any(DoseNumToPull < min(Data$DoseNum) |
                        DoseNumToPull > max(Data$DoseNum))){
                     warning(paste0("You requested ", 
-                                   time_range_input, ", but that is outside the number of doses administered. The full time range will be returned."))
+                                   time_range_input, ", but that is outside the number of doses administered. The full time range will be returned."),
+                            call. = FALSE)
                     time_range <- range(Data$Time)
                 } else {
                     
@@ -216,7 +223,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                 time_range[1] <- DoseTimes$LastDoseStart
                 
                 if(any(is.infinite(time_range))){
-                    warning("You requested 'last observed' or 'last dose to last observed' for the time range, but your data do not include any observed data in that time frame. The full time range will be returned.")
+                    warning("You requested 'last observed' or 'last dose to last observed' for the time range, but your data do not include any observed data in that time frame. The full time range will be returned.",
+                            call. = FALSE)
                     time_range <- Data %>% pull(Time) %>% range()
                 }
             }
@@ -226,7 +234,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
             # Multiple compound scenario here
             if(str_detect(time_range_input, "dose|last obs")){
                 warning(paste0("You requested the ", time_range_input,
-                               ", but this is a graph of multiple compounds, which may have different dose intervals. The graph x axis will cover the full time range of the simulation."))
+                               ", but this is a graph of multiple compounds, which may have different dose intervals. The graph x axis will cover the full time range of the simulation."),
+                        call. = FALSE)
             }
         }
 
@@ -237,7 +246,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                     pull(Time) %>% range()
             )
             if(any(is.infinite(time_range))){
-                warning("You requested 'all observed' for the time range, but your data do not include any observed data. The full time range will be returned.")
+                warning("You requested 'all observed' for the time range, but your data do not include any observed data. The full time range will be returned.",
+                        call. = FALSE)
                 time_range <- Data %>% pull(Time) %>% range()
             }
         }

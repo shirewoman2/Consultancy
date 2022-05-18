@@ -102,7 +102,8 @@ match_units <- function(DF_to_adjust, goodunits){
     
     if(unique(goodunits$Conc_units) %in% ConvTable_conc$ToAdjustUnits == FALSE |
        unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$GoodUnits == FALSE){
-        stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
+        stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
+             call. = FALSE)
     }
     
     ConvFactor_conc <-
@@ -115,7 +116,8 @@ match_units <- function(DF_to_adjust, goodunits){
                        str_comma(unique(DF_to_adjust$Conc_units)), 
                        ", but we were not able to convert them to the desired units of ", 
                        unique(goodunits$Conc_units), 
-                       ". No adjustment of units was possible and thus no data can be returned here."))
+                       ". No adjustment of units was possible and thus no data can be returned here."),
+             call. = FALSE)
     }
     
     DF_to_adjust <- DF_to_adjust %>% mutate(Conc = Conc*ConvFactor_conc,
@@ -130,7 +132,8 @@ match_units <- function(DF_to_adjust, goodunits){
     
     if(unique(goodunits$Time_units) %in% ConvTable_time$ToAdjustUnits == FALSE |
        unique(DF_to_adjust$Time_units) %in% ConvTable_time$GoodUnits == FALSE){
-        stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.")
+        stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
+             call. = FALSE)
     }
     
     ConvFactor_time <-
