@@ -39,13 +39,14 @@ findXLChanges <- function(file1, file2, sheets_to_check = NA, outputAllSheets = 
         Msg <- paste0(Msg, "The sheet(s) ", stringr::str_comma(MissingFrom1),
                       " is/are present in file 2 but not in file 1; it/they will be ignored.")
         
-        warning(Msg)
+        warning(Msg, call. = FALSE)
     }
     
     if(complete.cases(sheets_to_check)[1] &
        any(c(all(sheets_to_check %in% Sheets1) == FALSE,
              all(sheets_to_check %in% Sheets2) == FALSE))){
-        warning("Some of the requested sheets are not present in both files. They will be ignored.")
+        warning("Some of the requested sheets are not present in both files. They will be ignored.",
+                call. = FALSE)
     }
     
     AllSheets <- intersect(Sheets1, Sheets2)

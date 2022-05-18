@@ -151,19 +151,22 @@ extractPK <- function(sim_data_file,
         
         warning(paste0("You requested all the parameters from the 'AUC' sheet, but that sheet is not present in ",
                        sim_data_file, ". However, the tab ", Sheet, 
-                       " *is* present; all PK parameters will be extracted from that sheet."))
+                       " *is* present; all PK parameters will be extracted from that sheet."),
+                call. = FALSE)
         
         PKparameters <- "AUC0"
     }
     
     # Error catching
     if(complete.cases(sheet) & sheet %in% AllSheets == FALSE){
-        stop("The sheet requested could not be found in the Excel file.")
+        stop("The sheet requested could not be found in the Excel file.",
+             call. = FALSE)
     }
     
     if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
-       all(returnAggregateOrIndiv %in% c("aggregate", "individual")) == FALSE){
-        stop("You must return one or both of 'aggregate' or 'individual' data for the parameter 'returnAggregateOrIndiv'.")
+       all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
+        stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
+             call. = FALSE)
     }
     
     ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
@@ -204,7 +207,8 @@ extractPK <- function(sim_data_file,
     MissingPKParam <- setdiff(PKparameters, AllPKParameters$PKparameter)
     if(length(MissingPKParam) > 0){
         warning(paste0("The parameter(s) ", str_comma(MissingPKParam),
-                       " is/are not among the possible PK parameters and will not be extracted. Please see data(PKParameterDefinitions) for all possible parameters."))
+                       " is/are not among the possible PK parameters and will not be extracted. Please see data(PKParameterDefinitions) for all possible parameters."),
+                call. = FALSE)
     }
     
     # Checking experimental details to only pull details that apply
@@ -240,7 +244,8 @@ extractPK <- function(sim_data_file,
     
     PKparameters <- intersect(PKparameters, AllPKParameters$PKparameter)
     if(length(PKparameters) == 0){
-        stop("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")
+        stop("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.",
+             call. = FALSE)
     }
     
     # For the special cases when the user specified a sheet and did not leave
@@ -290,7 +295,8 @@ extractPK <- function(sim_data_file,
                 warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
                                sub("and", "or", 
                                    str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
-                               ". None of these parameters can be extracted."))
+                               ". None of these parameters can be extracted."),
+                        call. = FALSE)
             }
         } else {
             
@@ -554,7 +560,8 @@ extractPK <- function(sim_data_file,
                                        sub("inf", "t", i), sub("inf", "tau", i))
                     warning(paste0("The parameter ", i, " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
                                    NewParam, " will be returned to use in place of ",
-                                   i, " as you deem appropriate."))
+                                   i, " as you deem appropriate."),
+                            call. = TRUE)
                     
                     PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
                     
@@ -663,7 +670,8 @@ extractPK <- function(sim_data_file,
             
             warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
                            sub("and", "or", str_comma(PKparameters_AUC0)),
-                           ". None of these parameters can be extracted."))
+                           ". None of these parameters can be extracted."),
+                    call. = FALSE)
         } else {
             
             Sheet <- AllSheets[str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
@@ -774,7 +782,8 @@ extractPK <- function(sim_data_file,
         if(length(Tab_last) == 0 | is.na(Tab_last)){
             warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_AUCX, collapse = ", "),
-                           ". None of these parameters can be extracted."))
+                           ". None of these parameters can be extracted."),
+                    call. = FALSE)
         } else {
             
             AUCX_xl <- suppressMessages(
@@ -886,7 +895,8 @@ extractPK <- function(sim_data_file,
         if("Absorption" %in% AllSheets == FALSE){
             warning(paste0("The sheet 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_Abs, collapse = ", "),
-                           ". None of these parameters can be extracted."))
+                           ". None of these parameters can be extracted."),
+                    call. = FALSE)
         } else {
             
             Abs_xl <- suppressMessages(
@@ -1082,7 +1092,8 @@ extractPK <- function(sim_data_file,
         if("Clearance Trials SS" %in% AllSheets == FALSE){
             warning(paste0("The sheet 'Clearance Trials SS' must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_CLTSS, collapse = ", "),
-                           ". None of these parameters can be extracted."))
+                           ". None of these parameters can be extracted."),
+                    call. = FALSE)
         } else {
             
             CLTSS_xl <- suppressMessages(
@@ -1237,7 +1248,8 @@ extractPK <- function(sim_data_file,
         if("aggregate" %in% returnAggregateOrIndiv &
            str_detect(sheet, "AUC") == FALSE){
             warning(paste0("This function has not (yet) been set up to extract aggregate PK data from the sheet ",
-                           sheet, ". It can extract individual data only."))
+                           sheet, ". It can extract individual data only."),
+                    call. = FALSE)
         }
         
         XL <- suppressMessages(
@@ -1301,7 +1313,8 @@ extractPK <- function(sim_data_file,
                                "tmax_withInhib" = "TMaxinh")
             
             if(is.null(ToDetect)){
-                stop(paste("Extraction of the parameter", PKparam, "has not been set up correctly."))
+                stop(paste("Extraction of the parameter", PKparam, "has not been set up correctly."),
+                     call. = FALSE)
             }
             
             OutCol <- which(str_detect(as.vector(t(

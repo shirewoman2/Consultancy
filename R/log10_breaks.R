@@ -27,7 +27,8 @@
 #'
 log10_breaks <- function(min, max, prettify = FALSE) {
     if(any(c(min, max) <= 0)){
-        stop("Neither 'min' nor 'max' may be less than or equal to zero since log(0) and log(negative numbers) are undefined.")
+        stop("Neither 'min' nor 'max' may be less than or equal to zero since log(0) and log(negative numbers) are undefined.",
+             call. = FALSE)
     }
     
     if(length(log10(min):log10(max)) > 1){

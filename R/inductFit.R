@@ -156,15 +156,18 @@ inductFit <- function(DF,
     donor_column <- rlang::enquo(donor_column)
     
     if(rlang::as_label(conc_column) %in% names(DF) == FALSE){
-        stop("The column you have listed for the concentration data is not present in your data.frame. Please enter a valid column for concentration data.")
+        stop("The column you have listed for the concentration data is not present in your data.frame. Please enter a valid column for concentration data.",
+             call. = FALSE)
     }
     
     if(rlang::as_label(fold_change_column) %in% names(DF) == FALSE){
-        stop("The column you have listed for the fold-change data is not present in your data.frame. Please enter a valid column for fold-change data.")
+        stop("The column you have listed for the fold-change data is not present in your data.frame. Please enter a valid column for fold-change data.",
+             call. = FALSE)
     }
     
     if(rlang::as_label(donor_column) %in% names(DF) == FALSE & fitByDonor == TRUE){
-        stop("The column you have listed for the donor is not present in your data.frame. Please enter a valid column for the donor.")
+        stop("The column you have listed for the donor is not present in your data.frame. Please enter a valid column for the donor.",
+             call. = FALSE)
     }
     
     # Need a donor column for joining purposes later. Adding a placeholder
@@ -189,7 +192,8 @@ inductFit <- function(DF,
     # initial error catching ------------------------------------------------
     # Options for model: IndmaxSlope, Indmax, Slope, Sig3Param, all
     if(tolower(model[1]) %in% tolower(c("Indmax", "IndmaxSlope", "Slope", "Sig3Param", "all")) == FALSE){
-        stop("Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'. Please enter a valid model.")
+        stop("Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'. Please enter a valid model.",
+             call. = FALSE)
     }
     
     model <- switch(tolower(model), 
@@ -200,18 +204,19 @@ inductFit <- function(DF,
                     "all" = "all")
     
     if(length(model) > 1){
-        stop("Please select only one option for the model. Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'.")
+        stop("Please select only one option for the model. Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'.",
+             call. = FALSE)
     }
     
     # Options for measurement
     if(measurement[1] %in% c("mRNA", "activity") == FALSE){
-        stop("Measurement options are 'mRNA' or 'activity'.")
+        stop("Measurement options are 'mRNA' or 'activity'.",
+             call. = FALSE)
     }
     
     if(length(measurement) > 1){
-        stop("Please select only one option for the measurement. Options are 'mRNA' or 'activity'.")
-    }
-    
+        stop("Please select only one option for the measurement. Options are 'mRNA' or 'activity'.",
+             call. = FALSE)
     # General data setup ---------------------------------------------------
     # Need to add a column for the model chosen for graphing purposes.
     DF$model <- model
@@ -457,7 +462,8 @@ inductFit <- function(DF,
             
             if(length(FitFail) > 0){
                 warning(paste0("For donor ", str_comma(FitFail),
-                               ", the ", model, " model failed to fit the data. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+                               ", the ", model, " model failed to fit the data. No fitted line will be shown on the graph, and no fitted parameters will be returned."),
+                        call. = FALSE)
             }
             
             CurveData <- do.call(dplyr::bind_rows, CurveData)
@@ -574,7 +580,8 @@ inductFit <- function(DF,
                     warning(paste0("For donor ", names(FitFail)[i],
                                    ", the model failed to fit the data for the ",
                                    str_comma(FitFail[[i]]),
-                                   " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+                                   " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."),
+                            call. = FALSE)
                 }
             }
         }
@@ -593,13 +600,15 @@ inductFit <- function(DF,
             FitFail <- "p.value" %in% names(Out$Fit) == FALSE
             if(FitFail){
                 warning(paste0("The model failed to fit the data for the ", 
-                               model, " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+                               model, " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."),
+                        call. = FALSE)
             }
         } else {
             FitFail <- names(Out$Fit)[sapply(Out$Fit, function(x) "p.value" %in% names(x)) == FALSE]
             if(length(FitFail) > 0){
                 warning(paste0("The model failed to fit the data for the ",
-                               str_comma(FitFail), " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."))
+                               str_comma(FitFail), " model. No fitted line will be shown on the graph, and no fitted parameters will be returned."),
+                        call. = FALSE)
             }
         }
         

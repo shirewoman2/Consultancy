@@ -53,7 +53,8 @@ getReferences <- function(main_directory = ".",
     }
     
     if(length(Refs) == 0){
-        stop("No references were found. Please check your directory.")
+        stop("No references were found. Please check your directory.",
+             call. = FALSE)
     }
     
     Refs <- bind_rows(Refs) %>%

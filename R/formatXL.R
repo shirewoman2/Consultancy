@@ -155,14 +155,16 @@ formatXL <- function(DF, file, sheet = NA,
       ### Error catching input argument syntax problems --------------------------------------------
       # All the columns must be named for this to work well. Checking that.
       if(any(is.na(names(DF)))){
-            stop("All the columns in your data.frame must be named.")
+            stop("All the columns in your data.frame must be named.",
+                 call. = FALSE)
       }
 
       # Number format must by "general", "date", or "currency" only.
       if(!is.null(styles$numberFormat)){
             if(any(styles$numberFormat %in%
                    c("general", "date", "currency") == FALSE)){
-                  stop("Options for number format are only 'general', 'date', and 'currency'. Please select one of those and make sure that you have spelled everything correctly.")
+                  stop("Options for number format are only 'general', 'date', and 'currency'. Please select one of those and make sure that you have spelled everything correctly.",
+                       call. = FALSE)
             }
       }
 
@@ -171,7 +173,8 @@ formatXL <- function(DF, file, sheet = NA,
       if(!is.null(styles$font)){
             if(any(names(styles$font) %in% c("color", "size", "bold", "italics",
                                              "underline") == FALSE)){
-                  stop("Options for the font are only 'color', 'size', 'bold', 'italics', and/or 'underline'. Please make sure that you're using those options and that you have spelled everything correctly.")
+                  stop("Options for the font are only 'color', 'size', 'bold', 'italics', and/or 'underline'. Please make sure that you're using those options and that you have spelled everything correctly.",
+                       call. = FALSE)
             }
       }
 
@@ -414,7 +417,7 @@ formatXL <- function(DF, file, sheet = NA,
       if(length(colWidth$width) != 1 &
          length(colWidth$width) != length(colWidth$colNum)){
             stop("There must be either only 1 value for the column width or there must be the same number of values for column width as there are numbers of values for column number or name.",
-                 call. = TRUE)
+                 call. = FALSE)
       }
 
       # For any columns whose width is *not* set explicitly, guess at a

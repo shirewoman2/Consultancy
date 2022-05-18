@@ -78,15 +78,18 @@ extractEnzAbund <- function(sim_data_file,
     if(any(c(length(returnAggregateOrIndiv) < 1,
              length(returnAggregateOrIndiv) > 2,
              any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual", "both") == FALSE)))) {
-        stop("returnAggregateOrIndiv must be 'aggregate', 'individual', or 'both'.")
+        stop("returnAggregateOrIndiv must be 'aggregate', 'individual', or 'both'.",
+             call. = FALSE)
     }
     
     if(tissue %in% c("gut", "liver", "kidney") == FALSE){
-        stop("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.")
+        stop("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.",
+             call. = FALSE)
     }
     
     if(length(tissue) != 1){
-        stop("You must enter one and only one tissue option. (Default is liver.)")
+        stop("You must enter one and only one tissue option. (Default is liver.)",
+             call. = FALSE)
     }
     
     tissue <- tolower(tissue)

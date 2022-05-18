@@ -66,7 +66,8 @@ generateReportInputForm <- function(filename){
     # accidentally overwrites something they've spent time filling out
     # already.
     if(file.exists(filename)){
-        stop(paste0("The file '", filename, "' already exists. Please use a different file name or delete the existing version and try again."))
+        stop(paste0("The file '", filename, "' already exists. Please use a different file name or delete the existing version and try again."),
+             call. = FALSE)
     }
     
     # Loading the forms
