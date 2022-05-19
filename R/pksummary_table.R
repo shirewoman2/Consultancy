@@ -177,13 +177,13 @@
 #' pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 
 pksummary_table <- function(sim_data_file = NA, 
-                            report_input_file = NA,
-                            sheet_report = NA,
                             PKparameters = NA,
                             sheet_PKparameters = NA,
+                            mean_type = NA,
                             tissue = "plasma",
                             observed_PK = NA, 
-                            mean_type = NA,
+                            report_input_file = NA,
+                            sheet_report = NA,
                             includeCV = TRUE,
                             includeConfInt = TRUE,
                             includePerc = FALSE,
