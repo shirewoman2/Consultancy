@@ -6,13 +6,13 @@
 \usage{
 pksummary_table(
   sim_data_file = NA,
-  report_input_file = NA,
-  sheet_report = NA,
   PKparameters = NA,
   sheet_PKparameters = NA,
+  mean_type = NA,
   tissue = "plasma",
   observed_PK = NA,
-  mean_type = NA,
+  report_input_file = NA,
+  sheet_report = NA,
   includeCV = TRUE,
   includeConfInt = TRUE,
   includePerc = FALSE,
@@ -29,17 +29,6 @@ pksummary_table(
 report input form to the argument \code{report_input_file}, you can leave
 this blank.}
 
-\item{report_input_file}{(an optional alternative to \code{sim_data_file})
-the name of the Excel file created by running
-\code{\link{generateReportInputForm}}, which you have now filled out,
-including the path if it's in any other directory than the current one}
-
-\item{sheet_report}{the sheet in the Excel report file that contains
-information about the study, e.g., "study info - DDI" or "study info - no
-DDI" if you haven't renamed the tab. This only applies if you have supplied
-an Excel file name for \code{report_input_file}. If you're supplying a
-simulator output Excel file for \code{sim_data_file}, ignore this.}
-
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. Notes: \itemize{
 
@@ -54,7 +43,8 @@ simulator output Excel file for \code{sim_data_file}, ignore this.}
   "AUCtau_last").} Be sure to encapsulate the parameters you want with
   \code{c(...)}! To see the full set of possible parameters to extract, enter
   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
-  console.}
+  console. Not case sensitive. If you
+  use "_first" instead of "_dose1", that will also work.}
 
   \item{If you supply observed data using either the argument
   \code{report_input_file} or the argument \code{observed_PK}, the PK
@@ -75,6 +65,10 @@ simulator output Excel file for \code{sim_data_file}, ignore this.}
 pulled from a specific tab in the simulator output file, list that tab
 here. Most of the time, this should be left as NA.}
 
+\item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
+If you supplied a report input form, only specify this if you'd like to
+override the value listed there.}
+
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
 tested).}
@@ -92,9 +86,16 @@ include the observed data CV for any of the parameters, add "_CV" to the
 end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
 "Example" section of this help file for examples of how to set this up.}
 
-\item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
-If you supplied a report input form, only specify this if you'd like to
-override the value listed there.}
+\item{report_input_file}{(an optional alternative to \code{sim_data_file})
+the name of the Excel file created by running
+\code{\link{generateReportInputForm}}, which you have now filled out,
+including the path if it's in any other directory than the current one}
+
+\item{sheet_report}{the sheet in the Excel report file that contains
+information about the study, e.g., "study info - DDI" or "study info - no
+DDI" if you haven't renamed the tab. This only applies if you have supplied
+an Excel file name for \code{report_input_file}. If you're supplying a
+simulator output Excel file for \code{sim_data_file}, ignore this.}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}
