@@ -54,7 +54,8 @@ simulator output Excel file for \code{sim_data_file}, ignore this.}
   "AUCtau_last").} Be sure to encapsulate the parameters you want with
   \code{c(...)}! To see the full set of possible parameters to extract, enter
   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
-  console.}
+  console. Not case sensitive. If you
+  use "_first" instead of "_dose1", that will also work.}
 
   \item{If you supply observed data using either the argument
   \code{report_input_file} or the argument \code{observed_PK}, the PK

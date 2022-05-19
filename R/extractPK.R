@@ -31,10 +31,11 @@
 #'   "Overall Fa Fg" tab for ADAM-model simulations yet.}
 #'
 #'   \item{a vector of any combination of specific, individual parameters, each
-#'   surrounded by quotes and encapsulated with \code{c(...)}}{an example:
+#'   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
 #'   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
 #'   parameters to extract, enter \code{data(PKParameterDefinitions);
-#'   view(PKParameterDefinitions)} into the console.}}
+#'   view(PKParameterDefinitions)} into the console. Not case sensitive. If you
+#'   use "_first" instead of "_dose1", that will also work.}}
 #'
 #'   Currently, the PK data are only for the substrate unless noted, although
 #'   you can sometimes hack around this by supplying a specific sheet to extract
@@ -89,10 +90,13 @@ extractPK <- function(sim_data_file,
                       checkDataSource = TRUE){
     
     # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
-    PKparameters <- gsub("tau_dose1", "t_dose1", PKparameters)
+    PKparameters <- sub("tau_dose1", "t_dose1", PKparameters)
     
     # If the user supplied "XXX_ss", change that to "XXX_last".
-    PKparameters <- gsub("_last", "_last", PKparameters)
+    PKparameters <- sub("_last", "_last", PKparameters)
+    
+    # If the user used "_first" instead of "_dose1", change that.
+    PKparameters <- sub("_first", "_dose1", PKparameters)
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -144,7 +148,7 @@ extractPK <- function(sim_data_file,
         PKparameters <- "all"
     }
     
-    if(PKparameters_orig[1] == "AUC tab" & 
+    if(tolower(PKparameters_orig[1]) == "auc tab" & 
        "AUC" %in% AllSheets == FALSE & 
        any(c("AUC0(Sub)(CPlasma)") %in% AllSheets)){ # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
         Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), AllSheets)[1]
@@ -184,25 +188,33 @@ extractPK <- function(sim_data_file,
     ParamCLTSS <- AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
         pull(PKparameter)
     
-    if(PKparameters[1] == "all"){
+    if(tolower(PKparameters[1]) == "all"){
         PKparameters <- unique(c(ParamAbsorption, ParamAUC, ParamAUC0,
                                  ParamAUCX, ParamCLTSS))
     }
     
-    if(PKparameters[1] == "AUC tab"){
+    if(tolower(PKparameters[1]) == "auc tab"){
         PKparameters <- ParamAUC
     }
     
-    if(PKparameters[1] == "Absorption tab"){
+    if(tolower(PKparameters[1]) == "absorption tab"){
         PKparameters <- ParamAbsorption
     }
     
-    if(PKparameters[1] == "AUC0"){
+    if(tolower(PKparameters[1]) == "auc0"){
         # This will happen if user requests PKparameters = "AUC" but "AUC" tab
         # is not present but a tab for AUC0 *is*.
         PKparameters <- ParamAUC0
         
     }
+    
+    # Allowing for flexibility in case. Get the lower-case version of whatever
+    # PKparameters user specified and match them to the correct PKparameters in
+    # AllPKParameters.
+    PKparameters <- AllPKParameters %>%
+        mutate(PKparameter_lower = tolower(PKparameter)) %>% 
+        filter(PKparameter_lower %in% tolower(PKparameters)) %>% 
+        pull(PKparameter)
     
     MissingPKParam <- setdiff(PKparameters, AllPKParameters$PKparameter)
     if(length(MissingPKParam) > 0){

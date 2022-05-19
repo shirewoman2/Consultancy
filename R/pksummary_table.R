@@ -79,7 +79,8 @@
 #'   "AUCtau_last").} Be sure to encapsulate the parameters you want with
 #'   \code{c(...)}! To see the full set of possible parameters to extract, enter
 #'   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
-#'   console.}
+#'   console. Not case sensitive. If you
+#'   use "_first" instead of "_dose1", that will also work.}
 #'
 #'   \item{If you supply observed data using either the argument
 #'   \code{report_input_file} or the argument \code{observed_PK}, the PK
@@ -176,22 +177,22 @@
 #' pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 
 pksummary_table <- function(sim_data_file = NA, 
-                     report_input_file = NA,
-                     sheet_report = NA,
-                     PKparameters = NA,
-                     sheet_PKparameters = NA,
-                     tissue = "plasma",
-                     observed_PK = NA, 
-                     mean_type = NA,
-                     includeCV = TRUE,
-                     includeConfInt = TRUE,
-                     includePerc = FALSE,
-                     includeTrialMeans = FALSE,
-                     concatVariability = FALSE,
-                     prettify_columns = TRUE,
-                     prettify_effector_name = TRUE, 
-                     checkDataSource = TRUE, 
-                     save_table = NA){
+                            report_input_file = NA,
+                            sheet_report = NA,
+                            PKparameters = NA,
+                            sheet_PKparameters = NA,
+                            tissue = "plasma",
+                            observed_PK = NA, 
+                            mean_type = NA,
+                            includeCV = TRUE,
+                            includeConfInt = TRUE,
+                            includePerc = FALSE,
+                            includeTrialMeans = FALSE,
+                            concatVariability = FALSE,
+                            prettify_columns = TRUE,
+                            prettify_effector_name = TRUE, 
+                            checkDataSource = TRUE, 
+                            save_table = NA){
     
     # If they supplied observed_PK, get the sim_data_file from that. 
     if(complete.cases(observed_PK) && 
@@ -268,7 +269,8 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     if(complete.cases(PKparameters[1])){
-        PKToPull <- PKparameters
+        # If user specified "_first" instead of "_dose1", make that work, too. 
+        PKToPull <- sub("_first", "_dose1", PKparameters)
         
     } else {
         
@@ -281,8 +283,11 @@ pksummary_table <- function(sim_data_file = NA,
                                           "csv" = read.csv(observed_PK), 
                                           "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                                    sheetIndex = 1))
-                } 
-                PKToPull <- names(observed_PK)[names(observed_PK) %in% AllPKParameters$PKparameter]
+                }
+                
+                # If user specified "_first" instead of "_dose1", make that
+                # work, too. 
+                PKToPull <- sub("_first", "_dose1", tolower(names(observed_PK)))
                 
             } else {
                 # If the user didn't specify an observed file, didn't list
@@ -305,6 +310,14 @@ pksummary_table <- function(sim_data_file = NA,
                 pull(PKparameter) %>% unique()
         }
     }
+    
+    # Allowing for flexibility in case. Get the lower-case version of whatever
+    # PKparameters user specified and match them to the correct PKparameters in
+    # AllPKParameters.
+    PKToPull <- AllPKParameters %>%
+        mutate(PKparameter_lower = tolower(PKparameter)) %>% 
+        filter(PKparameter_lower %in% tolower(PKToPull)) %>% 
+        pull(PKparameter)
     
     # If dose regimen were single-dose, then only pull dose 1 data.
     if(Deets$Regimen_sub == "Single Dose"){
@@ -335,7 +348,7 @@ pksummary_table <- function(sim_data_file = NA,
         stop("None of the parameters you requested are available from the supplied simulator output file. Please check that the parameters requested make sense for the simulation. For example, did you request multiple-dose parameters for a single-dose regimen?")
     }
     
-    # Getting PK parameters from the AUC tab
+    # Getting PK parameters. 
     suppressWarnings(
         MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                      PKparameters = PKToPull,
@@ -357,11 +370,13 @@ pksummary_table <- function(sim_data_file = NA,
     # AUCinf won't be present in the data but AUCt will be. Check for that and
     # change PKToPull to reflect that change.
     if(any(str_detect(PKToPull, "AUCinf")) & 
-       any(str_detect(names(MyPKResults_all[[1]]), "AUCinf")) == FALSE){
+       (("data.frame" %in% class(MyPKResults_all[[1]]) & 
+        any(str_detect(names(MyPKResults_all[[1]]), "AUCinf")) == FALSE) |
+        ("data.frame" %in% class(MyPKResults_all[[1]]) == FALSE &
+        !str_detect(names(MyPKResults_all)[1], "AUCinf")))){
         warning("AUCinf included NA values, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate.",
-                call. = TRUE)
+                call. = FALSE)
         PKToPull <- sub("AUCinf", "AUCt", PKToPull)
-        
     }
     
     # If they requested multiple parameters but only some were present, need to
@@ -373,7 +388,10 @@ pksummary_table <- function(sim_data_file = NA,
     } else {
         # This is when there was only 1 parameter found.
         PKToPull <- names(MyPKResults_all)[1]
-        Missing <- setdiff(PKparameters, PKToPull)
+        Missing <- setdiff(AllPKParameters %>%
+                               mutate(PKparameter_lower = tolower(PKparameter)) %>% 
+                               filter(PKparameter_lower %in% tolower(PKparameters)) %>% 
+                               pull(PKparameter), PKToPull)
     }
     
     if(length(Missing) > 0 & complete.cases(PKparameters[1])){
