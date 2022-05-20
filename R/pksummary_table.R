@@ -79,8 +79,8 @@
 #'   "AUCtau_last").} Be sure to encapsulate the parameters you want with
 #'   \code{c(...)}! To see the full set of possible parameters to extract, enter
 #'   \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
-#'   console. Not case sensitive. If you
-#'   use "_first" instead of "_dose1", that will also work.}
+#'   console. Not case sensitive. If you use "_first" instead of "_dose1", that
+#'   will also work.}
 #'
 #'   \item{If you supply observed data using either the argument
 #'   \code{report_input_file} or the argument \code{observed_PK}, the PK
@@ -102,18 +102,19 @@
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'   tested).
-#' @param observed_PK (optional) If you have a data.frame or an Excel or csv
-#'   file with observed PK parameters, supply the full file name in quotes or
-#'   the data.frame here, and the simulated-to-observed mean ratios will be
-#'   calculated. (If you supply an Excel file, it should have only one tab. We
-#'   prefer supplying csv files here since they're faster to read in anyway.)
-#'   The supplied data.frame or file must include columns for each of the PK
-#'   parameters you would like to compare, and those column names \emph{must} be
-#'   among the PK parameter options listed in
-#'   \code{data(PKParameterDefinitions)}. If you would like the output table to
-#'   include the observed data CV for any of the parameters, add "_CV" to the
-#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
-#'   "Example" section of this help file for examples of how to set this up.
+#' @param observed_PK (optional) If you have a data.frame, a named numeric
+#'   vector, or an Excel or csv file with observed PK parameters, supply the
+#'   full file name in quotes or the data.frame or vector here, and the
+#'   simulated-to-observed mean ratios will be calculated. (If you supply an
+#'   Excel file, it should have only one tab. We prefer supplying csv files here
+#'   since they're faster to read in anyway.) The supplied data.frame or file
+#'   must include columns for each of the PK parameters you would like to
+#'   compare, and those column names \emph{must} be among the PK parameter
+#'   options listed in \code{data(PKParameterDefinitions)}. If you would like
+#'   the output table to include the observed data CV for any of the parameters,
+#'   add "_CV" to the end of the parameter name, e.g., "AUCinf_dose1_CV". Please
+#'   see the "Example" section of this help file for examples of how to set this
+#'   up.
 #' @param mean_type return "arithmetic" or "geometric" (default) means and CVs.
 #'   If you supplied a report input form, only specify this if you'd like to
 #'   override the value listed there.
@@ -169,11 +170,18 @@
 #'          sheet_report = "study info - DDI",
 #'          includeTrialMeans = TRUE)
 #'
-#' # An example of how to format observed data:
+#' # An example of how to format observed data as a data.frame:
 #' MyObsPK <- data.frame(AUCinf_dose1 = 60,
 #'                       AUCinf_dose1_CV = 0.38,
 #'                       Cmax_dose1 = 22,
 #'                       Cmax_dose1_CV = 0.24)
+#' 
+#' # Or you can supply a named numeric vector:                        
+#' MyObsPK <- c("AUCinf_dose1" = 60,
+#'              "AUCinf_dose1_CV" = 0.38,
+#'              "Cmax_dose1" = 22,
+#'              "Cmax_dose1_CV" = 0.24)
+#'                       
 #' pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 
 pksummary_table <- function(sim_data_file = NA, 
@@ -578,7 +586,8 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     # observed data -----------------------------------------------------
-    if(class(sectionInfo) != "logical" | "data.frame" %in% class(observed_PK)){
+    if(class(sectionInfo) != "logical" | "data.frame" %in% class(observed_PK) |
+       class(observed_PK)[1] == "numeric"){
         if(class(sectionInfo) != "logical"){
             MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
                 as.data.frame() %>% t() %>% as.data.frame() %>%
@@ -586,15 +595,35 @@ pksummary_table <- function(sim_data_file = NA,
                 mutate(PKParam = row.names(.),
                        Obs = as.numeric(Obs))
         }  else {
+            # Converting named vector to data.frame b/c everything else is set
+            # up as a data.frame.
+            if(class(observed_PK)[1] == "numeric"){
+                observed_PK <- as.data.frame(t(observed_PK))
+            }
+                 
+            # Making obs PK names match correct PK parameters regardless of case
+            ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
+                mutate(PKparameter_lower = sub("_first", "_dose1",
+                                        tolower(OrigName)), 
+                       PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
+                left_join(AllPKParameters %>% select(PKparameter) %>% 
+                              unique() %>% 
+                              mutate(PKparameter_lower = tolower(PKparameter))) %>% 
+                mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
+                                            paste0(PKparameter, "_CV"), 
+                                            PKparameter))
+            
+            MyObsPK <- observed_PK
+            names(MyObsPK) <- ObsNames$PKparameter
+            
             # Making observed_PK that was supplied as a data.frame or file long
             # w/column for PKparameter.
-            MyObsPK <- observed_PK %>% 
+            MyObsPK <- MyObsPK %>% 
                 pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
                                              paste0(AllPKParameters$PKparameter, "_CV"))), 
                              names_to = "PKParam", 
                              values_to = "Obs")
         }
-        
         
         MyObsPK <- MyObsPK %>% 
             mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
