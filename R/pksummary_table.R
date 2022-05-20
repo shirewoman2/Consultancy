@@ -586,15 +586,29 @@ pksummary_table <- function(sim_data_file = NA,
                 mutate(PKParam = row.names(.),
                        Obs = as.numeric(Obs))
         }  else {
+            # Making obs PK names match correct PK parameters regardless of case
+            ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
+                mutate(PKparameter_lower = sub("_first", "_dose1",
+                                        tolower(OrigName)), 
+                       PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
+                left_join(AllPKParameters %>% select(PKparameter) %>% 
+                              unique() %>% 
+                              mutate(PKparameter_lower = tolower(PKparameter))) %>% 
+                mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
+                                            paste0(PKparameter, "_CV"), 
+                                            PKparameter))
+            
+            MyObsPK <- observed_PK
+            names(MyObsPK) <- ObsNames$PKparameter
+            
             # Making observed_PK that was supplied as a data.frame or file long
             # w/column for PKparameter.
-            MyObsPK <- observed_PK %>% 
+            MyObsPK <- MyObsPK %>% 
                 pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
                                              paste0(AllPKParameters$PKparameter, "_CV"))), 
                              names_to = "PKParam", 
                              values_to = "Obs")
         }
-        
         
         MyObsPK <- MyObsPK %>% 
             mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
