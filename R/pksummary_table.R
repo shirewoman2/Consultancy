@@ -203,7 +203,7 @@ pksummary_table <- function(sim_data_file = NA,
                             save_table = NA){
     
     # If they supplied observed_PK, get the sim_data_file from that. 
-    if(complete.cases(observed_PK) && 
+    if(complete.cases(observed_PK[1]) && 
        (class(observed_PK) == "character" | "data.frame" %in% class(observed_PK))){
         if(class(observed_PK) == "character"){
             observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
@@ -283,7 +283,7 @@ pksummary_table <- function(sim_data_file = NA,
     } else {
         
         if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
-            if(complete.cases(observed_PK)){
+            if(complete.cases(observed_PK[1])){
                 # If user supplies an observed file, then pull the parameters
                 # they want to match.
                 if(class(observed_PK) == "character"){
@@ -325,7 +325,7 @@ pksummary_table <- function(sim_data_file = NA,
     PKToPull <- AllPKParameters %>%
         mutate(PKparameter_lower = tolower(PKparameter)) %>% 
         filter(PKparameter_lower %in% tolower(PKToPull)) %>% 
-        pull(PKparameter)
+        pull(PKparameter) %>% unique()
     
     # If dose regimen were single-dose, then only pull dose 1 data.
     if(Deets$Regimen_sub == "Single Dose"){
@@ -337,7 +337,8 @@ pksummary_table <- function(sim_data_file = NA,
         # If it were multiple dose *and* if they did not specify PK parameters
         # to pull or have observed data to compare, then only pull last dose
         # parameters.
-        if(is.na(PKparameters[1]) & class(sectionInfo) == "logical"){
+        if(is.na(PKparameters[1]) & class(sectionInfo) == "logical" & 
+           is.na(observed_PK[[1]])){
             PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
         }
     }
@@ -379,9 +380,9 @@ pksummary_table <- function(sim_data_file = NA,
     # change PKToPull to reflect that change.
     if(any(str_detect(PKToPull, "AUCinf")) & 
        (("data.frame" %in% class(MyPKResults_all[[1]]) & 
-        any(str_detect(names(MyPKResults_all[[1]]), "AUCinf")) == FALSE) |
+         any(str_detect(names(MyPKResults_all[[1]]), "AUCinf")) == FALSE) |
         ("data.frame" %in% class(MyPKResults_all[[1]]) == FALSE &
-        !str_detect(names(MyPKResults_all)[1], "AUCinf")))){
+         !str_detect(names(MyPKResults_all)[1], "AUCinf")))){
         warning("AUCinf included NA values, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate.",
                 call. = FALSE)
         PKToPull <- sub("AUCinf", "AUCt", PKToPull)
@@ -444,7 +445,6 @@ pksummary_table <- function(sim_data_file = NA,
             MyPKResults[MyPKResults$Statistic == "Geometric Mean",
                         str_detect(names(MyPKResults), "ratio")]
     }
-    
     
     # Adding trial means since they're not part of the default output
     if(includeTrialMeans){
@@ -588,23 +588,23 @@ pksummary_table <- function(sim_data_file = NA,
     # observed data -----------------------------------------------------
     if(class(sectionInfo) != "logical" | "data.frame" %in% class(observed_PK) |
        class(observed_PK)[1] == "numeric"){
-        if(class(sectionInfo) != "logical"){
+        if(class(sectionInfo) != "logical"){ # this is when the user has supplied a report form.
             MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
                 as.data.frame() %>% t() %>% as.data.frame() %>%
                 rename("Obs" = V1) %>%
                 mutate(PKParam = row.names(.),
                        Obs = as.numeric(Obs))
-        }  else {
+        }  else { # this is when the user has NOT supplied a report form
             # Converting named vector to data.frame b/c everything else is set
             # up as a data.frame.
             if(class(observed_PK)[1] == "numeric"){
                 observed_PK <- as.data.frame(t(observed_PK))
             }
-                 
+            
             # Making obs PK names match correct PK parameters regardless of case
             ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
                 mutate(PKparameter_lower = sub("_first", "_dose1",
-                                        tolower(OrigName)), 
+                                               tolower(OrigName)), 
                        PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
                 left_join(AllPKParameters %>% select(PKparameter) %>% 
                               unique() %>% 
