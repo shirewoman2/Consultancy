@@ -1,15 +1,28 @@
-#' Graph for checking accumulation over multiple doses -- UNDER CONSTRUCTION
+#' Create a graph of simulated concentrations to check for accumulation
 #'
-#' UNDER CONSTRUCTION -- DoseNum must be complete. Doesn't currently detect conc
-#' units.
+#' Create a graph with time on the x axis and then the concentration of a
+#' compound at some useful time point point -- t0, tmax, tmin (see notes on
+#' useage), or tlast for each dose -- on the y axis. Optionally overlay this
+#' graph with the concentration-time data for that same compound or a different
+#' one. For example, you could create a graph with points for Cmax for an
+#' inhibitor and then lines showing the substrate concentration-time data
+#' overlaid on top of that. This way, you can check whether the substrate is
+#' dosed after the inhibitor reaches steady state, and you could also check
+#' whether the inhibitor was present the entire time the substrate was getting
+#' eliminated.
 #'
 #' @param t0 start time for compound being plotted
-#' @param timepoint Time point to plot. Options are:
-#'   \describe{\item{"tmin"}{whenever the minimum concentration occurred for
-#'   that dosing interval, which may not be the last time point}
+#' @param timepoint Time point to plot. Options are: \describe{
+#'
+#'   \item{"t0"}{the first time point available for that dose}
+#'
+#'   \item{"tlast"}{(default) the last time point available for that dose}
+#'
+#'   \item{"tmin"}{whenever the minimum concentration occurred for that dosing
+#'   interval, which may not be the last time point}
+#'
 #'   \item{"tmax"}{whenever the maximum observed concentration for that dose
-#'   number occurred} \item{"t0"}{the first time point available for that dose}
-#'   \item{"tlast"}{the last time point available for that dose}}
+#'   number occurred}}
 #' @param mark_dosing set how to mark dosing intervals on the graph as "none"
 #'   (default) to have no marks for the dosing intervals or a combination of a
 #'   named color in R and a named linetype, e.g., "red dotted" or "blue dashed".
@@ -207,15 +220,14 @@ check_accumulation <- function(ct_dataframe,
             G <- G + 
                 geom_line(data = OverlayCT, 
                           aes(x = Time, y = Conc, linetype = Inhibitor), 
-                          inherit.aes = F, 
-                          color = "gray20") +
+                          inherit.aes = F, color = "gray50") +
                 scale_linetype_manual(values = c("solid", "dashed"))
         } else {
             
             G <- G + 
                 geom_line(data = OverlayCT, 
-                          aes(x = Time, y = Conc), inherit.aes = F, 
-                          color = "gray20")
+                          aes(x = Time, y = Conc),
+                          inherit.aes = F, color = "gray50")
         }
         
         # Adding 2nd y axis if there were big differences in scale.
@@ -244,23 +256,22 @@ check_accumulation <- function(ct_dataframe,
         }
         
         # Adding legend item saying that points are for accum_compoundID and
-        # lines are for overlay_compoundID. NOT CURRENTLY WORKING.
-        Empty <- data.frame(Time = mean(OverlayCT$Time), 
-                            Conc = as.numeric(NA))
-        G <- G + 
-            geom_point(data = Empty, aes(x = Time, y = Conc, 
-                                         alpha = accum_compoundID), 
+        # lines are for overlay_compoundID. 
+        Empty <- data.frame(Time = mean(OverlayCT$Time),
+                            Conc = as.numeric(NA), 
+                            Type = c(accum_compoundID, overlay_compoundID))
+        G <- G +
+            geom_point(data = Empty, aes(x = Time, y = Conc, alpha = Type),
                        inherit.aes = F) +
-            geom_line(data = Empty, aes(x = Time, y = Conc, 
-                                        alpha = overlay_compoundID),
-                      inherit.aes = F) +
+            geom_line(data = Empty, aes(x = Time, y = Conc, alpha = Type),
+                      inherit.aes = F)  +
             scale_alpha_manual(
                 name = "Compound", values = c(1,1),
-                breaks = c(accum_compoundID, overlay_compoundID), 
-                guide = guide_legend(override.aes = 
-                                         list(lintetype = c("blank", "solid"), 
-                                              shape = c(16, NA), 
-                                              color = "black")))
+                breaks = c(accum_compoundID, overlay_compoundID),
+                guide = guide_legend(override.aes =
+                                         list(linetype = c("blank", "solid"),
+                                              shape = c(16, NA),
+                                              color = c("#7030A0", "gray50"))))
         
     } else {
         G <- G + 
@@ -272,10 +283,6 @@ check_accumulation <- function(ct_dataframe,
                         "tlast" = expression(C[last]~"(ng/mL)")))
         
     }
-    
-    G <- G + guides(alpha = guide_legend(order = 1), 
-                    linetype = guide_legend(order = 2), 
-                    color = guide_legend(order = 3))
     
     return(G)
     
