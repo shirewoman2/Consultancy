@@ -643,6 +643,10 @@ pksummary_table <- function(sim_data_file = NA,
                                  "mean", Stat), 
                    PKParam = sub("_CV", "", PKParam))
         
+        if(complete.cases(sheet_PKparameters)){
+            MyObsPK$PKParam <- sub("_first|_dose1|_last", "", MyObsPK$PKParam)
+        }
+        
         # Calculating S/O
         suppressMessages(
             SOratios <- MyPKResults %>% 
