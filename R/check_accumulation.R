@@ -279,11 +279,7 @@ check_accumulation <- function(ct_dataframe,
                       inherit.aes = F)  +
             scale_alpha_manual(
                 name = "Compound", values = c(1,1),
-                breaks = c(accum_compoundID, overlay_compoundID),
-                guide = guide_legend(override.aes =
-                                         list(linetype = c("blank", "solid"),
-                                              shape = c(16, NA),
-                                              color = c("#7030A0", "gray50"))))
+                breaks = c(accum_compoundID, overlay_compoundID))
         
     } else {
         G <- G + 
@@ -295,6 +291,17 @@ check_accumulation <- function(ct_dataframe,
                         "Clast" = expression(C[last]~"(ng/mL)")))
         
     }
+    
+    # Setting order of legend items 
+    G <- G + 
+        guides(alpha = guide_legend(order = 1, 
+                                    override.aes =
+                                        list(linetype = c("blank", "solid"),
+                                             shape = c(16, NA),
+                                             color = c("#7030A0", "gray50"))), 
+               color = guide_legend(order = 2),
+               linetype = guide_legend(order = 3))
+               
     
     return(G)
     
