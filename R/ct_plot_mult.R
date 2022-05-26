@@ -1,8 +1,8 @@
 #' Make graphs for multiple Simulator output files at once
 #'
 #' This function was designed for making nicely arranged concentration-time
-#' graphs from several Simcyp Simulator output files all together or for making
-#' multiple files -- one for each Simulator file -- all at once.
+#' graphs from several Simcyp Simulator output files all together \emph{OR} for
+#' making multiple files -- one for each Simulator file -- all at once.
 #'
 #' \strong{A note on the order of the graphs:} This function arranges graphs
 #' first by file, then by compound ID, and then by tissue, and all sorting is
@@ -40,14 +40,14 @@
 #' @param ncol number of columns of small graphs in the arrangement. If left as
 #'   NA, a reasonable guess will be made. (Not applicable if
 #'   \code{single_out_file = FALSE}.)
-#' @param linear_or_log the type of graph to be returned. Options: "semi-log",
-#'   "linear", "both vertical" (default, graphs are stacked vertically), or
+#' @param linear_or_log the type of graph to be returned. Options: "semi-log"
+#'   (default), "linear", "both vertical" (graphs are stacked vertically), or
 #'   "both horizontal" (graphs are side by side).
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
-#' @param include_title TRUE or FALSE on whether to include a title for each
-#'   small graph. NOTE: This is not currently working well when you choose to
-#'   get both linear and semi-log plots; the title overlaps the graph. UNDER
-#'   CONSTRUCTION.
+#' @param include_title TRUE or FALSE (default) on whether to include a title
+#'   for each small graph. NOTE: This is not currently working as well as we'd
+#'   like, especially when you choose to get both linear and semi-log plots,
+#'   when the title overlaps the graph. UNDER CONSTRUCTION.
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -72,7 +72,7 @@ ct_plot_mult <- function(ct_dataframe,
                          single_out_file = TRUE, 
                          file_order = NA,
                          linear_or_log = "semi-log",
-                         include_title = TRUE,
+                         include_title = FALSE,
                          graph_labels = TRUE,
                          legend_position = "none",
                          nrow = NULL, 
@@ -178,25 +178,62 @@ ct_plot_mult <- function(ct_dataframe,
         # print(i)
         # print(head(AllData[[i]]))
         
-        AllGraphs[[i]] <- 
-            ct_plot(ct_dataframe = AllData[[i]], 
-                    ...,
-                    include_legend = ifelse(legend_position == "none",
-                                            FALSE, TRUE),
-                    linear_or_log = linear_or_log)
-        
-        if(linear_or_log %in% c("linear", "log", "semi-log") &
-           include_title){
-            AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i) +
-                theme(title = element_text(size = 10))
-        } else {
+        if(linear_or_log %in% c("linear", "log", "semi-log") | 
+           include_title == FALSE){
+            # This takes care of all plots where there isn't a title, including
+            # when they want both linear and semi-log, and it works fine for
+            # when user wants only one of linear or log and also wants a title.
+            # If they want both types of graphs AND they want a title, though,
+            # the spacing just doesn't work and we need to generate those graphs
+            # separately.
+            
+            AllGraphs[[i]] <- 
+                ct_plot(ct_dataframe = AllData[[i]], 
+                        ..., # comment this when developing
+                        include_legend = ifelse(legend_position == "none",
+                                                FALSE, TRUE),
+                        linear_or_log = linear_or_log)
+            
             if(include_title){
-                AllGraphs[[i]] <- ggpubr::ggarrange(AllGraphs[[i]],
-                                                    labels = Title_i)
-                # Need a way to increase the viewport b/c vjust = 0 or label.y = 1.5
-                # both put the title off the top of the graph. Not sure how to do
-                # this.
+                # This is for when they only want one of linear or log.
+                AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i) +
+                    theme(title = element_text(size = 10))
+                
+                # if(include_title){
+                #     AllGraphs[[i]] <- 
+                #         ggpubr::ggarrange(
+                #             AllGraphs[[i]] +
+                #                 theme(plot.margin = unit(c(1.5, 0, 0, 0), "lines")),
+                #             labels = Title_i, label.x = -0.15)
+                # }
             }
+            
+        } else {
+            # If the user wanted both linear and log plots AND they want a
+            # title, we really need to just run ct_plot function twice for each
+            # graph. Otherwise, we just don't have enough control over graph
+            # placement and the spacing needed for titles.
+            AllGraphs[[i]] <- 
+                ggpubr::ggarrange(
+                    plotlist = list(
+                        # linear plot on top
+                        ct_plot(ct_dataframe = AllData[[i]], 
+                                # ..., # comment this when developing
+                                linear_or_log = "linear") +
+                            ggtitle(Title_i) + 
+                            theme(title = element_text(size = 10), 
+                                  plot.margin = unit(c(0, 0, 0, 0), "lines")), 
+                        
+                        # semi-log on bottom
+                        ct_plot(ct_dataframe = AllData[[i]], 
+                                # ..., # comment this when developing
+                                linear_or_log = "semi-log")),
+                    
+                    align = "hv", labels = "AUTO",
+                    nrow = ifelse(linear_or_log %in% c("both", "both vertical"), 
+                                  2, 1), 
+                    common.legend = TRUE, 
+                    legend = legend_position)
         }
         
         rm(Title_i)

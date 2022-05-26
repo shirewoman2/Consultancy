@@ -9,7 +9,7 @@ ct_plot_mult(
   single_out_file = TRUE,
   file_order = NA,
   linear_or_log = "semi-log",
-  include_title = TRUE,
+  include_title = FALSE,
   graph_labels = TRUE,
   legend_position = "none",
   nrow = NULL,
@@ -40,14 +40,14 @@ what the title should be for that file. Example of acceptable input:
 you specified, please double check that you have specified the file names
 \emph{exactly} as they appear in \code{ct_dataframe}.}
 
-\item{linear_or_log}{the type of graph to be returned. Options: "semi-log",
-"linear", "both vertical" (default, graphs are stacked vertically), or
+\item{linear_or_log}{the type of graph to be returned. Options: "semi-log"
+(default), "linear", "both vertical" (graphs are stacked vertically), or
 "both horizontal" (graphs are side by side).}
 
-\item{include_title}{TRUE or FALSE on whether to include a title for each
-small graph. NOTE: This is not currently working well when you choose to
-get both linear and semi-log plots; the title overlaps the graph. UNDER
-CONSTRUCTION.}
+\item{include_title}{TRUE or FALSE (default) on whether to include a title
+for each small graph. NOTE: This is not currently working as well as we'd
+like, especially when you choose to get both linear and semi-log plots,
+when the title overlaps the graph. UNDER CONSTRUCTION.}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if
@@ -85,8 +85,8 @@ to its Simulator output file.)}
 }
 \description{
 This function was designed for making nicely arranged concentration-time
-graphs from several Simcyp Simulator output files all together or for making
-multiple files -- one for each Simulator file -- all at once.
+graphs from several Simcyp Simulator output files all together \emph{OR} for
+making multiple files -- one for each Simulator file -- all at once.
 }
 \details{
 \strong{A note on the order of the graphs:} This function arranges graphs
