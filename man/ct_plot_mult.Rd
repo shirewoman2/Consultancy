@@ -7,7 +7,7 @@
 ct_plot_mult(
   ct_dataframe,
   single_out_file = TRUE,
-  file_order = NA,
+  file_labels = NA,
   linear_or_log = "semi-log",
   include_title = FALSE,
   graph_labels = TRUE,
@@ -30,24 +30,24 @@ graphs nicely arranged together. FALSE means that each Simulator output
 file will have its own output file, and that graph's output file will be
 named to match the Simulator output file name.}
 
-\item{file_order}{optionally specify the order in which the files are graphed
-with a character vector of the files in the order you would like. (Not
-applicable if \code{single_out_file = FALSE}.) If you would like to include
-graph titles to make it clear which graph is which, you can also specify
-what the title should be for that file. Example of acceptable input:
-\code{c("simfile3.xlsx" = "10 mg SD", "simfile1.xlsx" = "50 mg SD",
-"simfile1.xlsx" = "100 mg SD")}. If you get an order that you didn't think
-you specified, please double check that you have specified the file names
-\emph{exactly} as they appear in \code{ct_dataframe}.}
+\item{file_labels}{optionally specify a label to be used for the file name in
+the graphs (this applies when \code{include_title = TRUE}) and/or specify
+the order in which the files are graphed with a named character vector of
+the files in the order you would like. (Not applicable if
+\code{single_out_file = FALSE}.) The file name must \emph{perfectly} match
+the file name listed in ct_dataframe or it won't be used. An example of how
+this might be specified: \code{alt_title = c("My file 1.xlsx" = "Healthy
+volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an
+order that you didn't think you specified, please double check that you
+have specified the file names \emph{exactly} as they appear in
+\code{ct_dataframe}.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log"
 (default), "linear", "both vertical" (graphs are stacked vertically), or
 "both horizontal" (graphs are side by side).}
 
 \item{include_title}{TRUE or FALSE (default) on whether to include a title
-for each small graph. NOTE: This is not currently working as well as we'd
-like, especially when you choose to get both linear and semi-log plots,
-when the title overlaps the graph. UNDER CONSTRUCTION.}
+for each small graph.}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if
@@ -55,7 +55,10 @@ etc.) for each of the small graphs. (Not applicable if
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
-at all.}
+at all. If you include the legend but then some graphs do have a legend and
+some graphs do not (e.g., some have effectors and some do not so there's
+nothing to put in a legend), the alignment between sets of graphs will be a
+bit off.}
 
 \item{nrow}{number of rows of small graphs in the arrangement. If left as NA,
 a reasonable guess will be made. (Not applicable if \code{single_out_file =
@@ -93,12 +96,12 @@ making multiple files -- one for each Simulator file -- all at once.
 first by file, then by compound ID, and then by tissue, and all sorting is
 alphabetical. However, since sorting alphabetically might not be the optimal
 graph arrangement for your scenario, you \emph{can} specify the order of the
-graphs using either the \code{file_order} argument or, if you're comfortable
+graphs using either the \code{file_labels} argument or, if you're comfortable
 with setting factors in R, by making any of File, CompoundID, Tissue, and
 subsection_ADAM factor rather than character data and setting the levels how
 you wish. If you're unfamiliar with setting factor levels in R and setting
-\code{file_order} isn't achieving what you want, please ask a member of the R
-Working Group for assistance.
+\code{file_labels} isn't achieving what you want, please ask a member of the
+R Working Group for assistance.
 }
 \examples{
 # No examples yet

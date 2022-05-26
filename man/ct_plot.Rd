@@ -29,6 +29,7 @@ ct_plot(
   legend_label = NA,
   prettify_effector_name = TRUE,
   linear_or_log = "both vertical",
+  include_graph_labels = TRUE,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -252,6 +253,10 @@ your legend if you would like something different. For example,
 
   \item{"both horizontal"}{both the linear and the semi-log graphs will be
   returned, and graphs are stacked horizontally}}}
+
+\item{include_graph_labels}{for graphs that include both a linear and a
+semi-log plot, TRUE (default) or FALSE for whether to include "A" next to
+the linear plot and "B" next to the semi-log plot}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
