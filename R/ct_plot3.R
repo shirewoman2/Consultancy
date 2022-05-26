@@ -13,6 +13,14 @@
 #' @param overlay TRUE or FALSE for whether to make overlaid graphs, i.e.,
 #'   whether to use \code{\link{ct_plot_overlay}} (TRUE) or use
 #'   \code{\link{ct_plot}} (FALSE) to generate the graphs
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+#'   will be saved as a png file, but if you specify a different file extension,
+#'   it will be saved as that file format. Acceptable extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+#'   means the file will not be saved to disk.
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 5
 #' @param ... arguments that pass through to \code{\link{ct_plot}} or
 #'   \code{\link{ct_plot_overlay}}
 #'
@@ -35,6 +43,9 @@
 
 ct_plot3 <- function(ct_dataframe, 
                      overlay = FALSE, 
+                     save_graph = NA,
+                     fig_height = 6,
+                     fig_width = 5,
                      ...){
     
     if(length(sort(unique(ct_dataframe$DoseNum))) == 1){
@@ -50,7 +61,7 @@ ct_plot3 <- function(ct_dataframe,
         A <- ct_plot_overlay(ct_dataframe = ct_dataframe,
                              time_range = NA,
                              ..., # comment this for development
-                             include_messages = F) +
+                             save_graph = NA) +
             ggtitle("Full time range")
         
         # Suppressing messages and warnings after the 1st set.
@@ -58,14 +69,14 @@ ct_plot3 <- function(ct_dataframe,
             B <- ct_plot_overlay(ct_dataframe = ct_dataframe,
                                  time_range = "first dose",
                                  ..., # comment this for development
-                                 include_messages = F) +
+                                 save_graph = NA) +
                 ggtitle("First dose")))
         
         suppressWarnings(suppressMessages(
             C <- ct_plot_overlay(ct_dataframe = ct_dataframe,
                                  time_range = "last dose", 
                                  ..., # comment this for development
-                                 include_messages = F) +
+                                 save_graph = NA) +
                 ggtitle("Last dose")))
         
         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
@@ -80,23 +91,45 @@ ct_plot3 <- function(ct_dataframe,
         
         A <- ct_plot(ct_dataframe = ct_dataframe,
                      ..., # comment this for development
-                     time_range = NA) +
+                     time_range = NA, 
+                     save_graph = NA) +
             ggtitle("Full time range")
         
         suppressWarnings(suppressMessages(
             B <- ct_plot(ct_dataframe = ct_dataframe,
                          ..., # comment this for development
-                         time_range = "first dose") +
+                         time_range = "first dose", 
+                         save_graph = NA) +
                 ggtitle("First dose")))
         
         suppressWarnings(suppressMessages(
             C <- ct_plot(ct_dataframe = ct_dataframe,
                          ..., # comment this for development
-                         time_range = "last dose") +
+                         time_range = "last dose", 
+                         save_graph = NA) +
                 ggtitle("Last dose")))
         
         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
                                  nrow = 2, common.legend = TRUE, legend = "bottom")
+    }
+    
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
+        }
+        
+        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+               plot = Out)
+        
     }
     
     return(Out)
