@@ -22,6 +22,15 @@
 "MDZct"
 
 
+#' Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
+#' ketoconazole, including data for both substrate and inhibitor. Format of the
+#' data are the same as the output from \code{\link{extractConcTime_mult}}.
+#'
+#' @format A data.frame with 15 columns "MDZ_Keto"
+"MDZ_Keto"
+
+
+
 
 #' Simcyp colors used in the PowerPoint template
 #'
