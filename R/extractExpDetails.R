@@ -405,7 +405,15 @@ extractExpDetails <- function(sim_data_file,
                        "SecondaryMetabolite" = "Compound Name",
                        "Inhibitor1" = "Compound Name",
                        "Inhibitor2" = "Compound Name",
-                       "Inhibitor1Metabolite" = "Compound Name")
+                       "Inhibitor1Metabolite" = "Compound Name", 
+                       "BindingProtein" = "Reference Binding Component",
+                       "Ptrans" = "Intrinsic Transcellular Permeability \\(",
+                       "ParticleRadius" = "Mono[Dd]ispersed Radius \\(",
+                       "ParticleDensity" = "Particle density \\(",
+                       "IntrinsicSol" = "Intrinsic Solubility \\(",
+                       "CritSupersatRatio" = "CSR value",
+                       "PrecipRateConst" = "PRC \\("
+                )
             
             NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
             Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
