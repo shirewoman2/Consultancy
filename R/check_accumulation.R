@@ -1,7 +1,7 @@
 #' Create a graph of simulated concentrations to check for accumulation
 #'
 #' Create a graph with time on the x axis and then some useful concentration
-#' point -- C0, Cmax, Cmin (see notes on useage), or Clast for each dose -- on
+#' point -- C0, Cmax, Cmin (see notes on usage), or Clast for each dose -- on
 #' the y axis. Optionally overlay this graph with the concentration-time data
 #' for that same compound or a different one. For example, you could create a
 #' graph with points for Clast for an inhibitor and then lines showing the
@@ -49,6 +49,14 @@
 #'   as points, and then plot the concentration-time profile of a substrate over
 #'   that to make sure that the inhibitor is present the whole time the
 #'   substrate is being eliminated.
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png". If you do not designate a
+#'   file extension, it will be saved as a png file, but if you specify a
+#'   different file extension, it will be saved as that file format. Acceptable
+#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   Leaving this as NA means the file will not be automatically saved to disk.
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 5
 #'
 #' @return
 #' @export
@@ -56,6 +64,13 @@
 #' @examples
 #'
 #' check_accumulation(ct_dataframe = MDZ_Keto)
+#' 
+#' check_accumulation(ct_dataframe = MDZ_Keto, conc_point = "Cmax") 
+#' 
+#' check_accumulation(ct_dataframe = MDZ_Keto, conc_point = "Cmax",
+#'    accum_compoundID = "inhibitor 1", overlay_compoundID = "none", 
+#'    mark_dosing = "pink dotted", diff_cutoff = 0.01, 
+#'    save_graph = "MDZ keto accumulation check.png")
 #'
 #' 
 check_accumulation <- function(ct_dataframe,
@@ -66,7 +81,10 @@ check_accumulation <- function(ct_dataframe,
                                mark_dosing = "none",
                                diff_cutoff = 0.05,
                                mean_type = "arithmetic", 
-                               x_axis_interval = NA){
+                               x_axis_interval = NA,
+                               save_graph = NA,
+                               fig_height = 4,
+                               fig_width = 8){
     
     MyMeanType <- ct_dataframe %>%
         filter(CompoundID == accum_compoundID & 
@@ -188,7 +206,7 @@ check_accumulation <- function(ct_dataframe,
     }
     
     G <- G +
-        geom_point(size = 1) + 
+        geom_point(size = 2) + 
         labs(color = paste(str_to_title(accum_compoundID),
                            "difference\nfrom previous point"), 
              linetype = paste(str_to_title(overlay_compoundID), "concentration")) +
@@ -220,7 +238,7 @@ check_accumulation <- function(ct_dataframe,
         # overlay_compoundID
         ScaleChallenges <- abs(max(SScheck$Conc, na.rm = T) - 
                                    max(OverlayCT$Conc, na.rm = T))
-            
+        
         if(complete.cases(ScaleChallenges) && ScaleChallenges > 100){
             OverlayCT <- OverlayCT %>% 
                 mutate(Conc = Conc * round_up(max(SScheck$Conc, na.rm = T) /
@@ -298,10 +316,29 @@ check_accumulation <- function(ct_dataframe,
                                     override.aes =
                                         list(linetype = c("blank", "solid"),
                                              shape = c(16, NA),
+                                             size = c(2, 0.5),
                                              color = c("#7030A0", "gray50"))), 
                color = guide_legend(order = 2),
                linetype = guide_legend(order = 3))
-               
+    
+    
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
+        }
+        
+        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+               plot = G)
+    }
     
     return(G)
     

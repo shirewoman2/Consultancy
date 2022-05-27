@@ -13,7 +13,10 @@ check_accumulation(
   mark_dosing = "none",
   diff_cutoff = 0.05,
   mean_type = "arithmetic",
-  x_axis_interval = NA
+  x_axis_interval = NA,
+  save_graph = NA,
+  fig_height = 4,
+  fig_width = 8
 )
 }
 \arguments{
@@ -63,13 +66,24 @@ difference to be red.}
 
 \item{mean_type}{the mean type to use since this function only displays
 summary data; defaults to the arithmetic mean}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png". If you do not designate a
+file extension, it will be saved as a png file, but if you specify a
+different file extension, it will be saved as that file format. Acceptable
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Leaving this as NA means the file will not be automatically saved to disk.}
+
+\item{fig_height}{figure height in inches; default is 6}
+
+\item{fig_width}{figure width in inches; default is 5}
 }
 \value{
 
 }
 \description{
 Create a graph with time on the x axis and then some useful concentration
-point -- C0, Cmax, Cmin (see notes on useage), or Clast for each dose -- on
+point -- C0, Cmax, Cmin (see notes on usage), or Clast for each dose -- on
 the y axis. Optionally overlay this graph with the concentration-time data
 for that same compound or a different one. For example, you could create a
 graph with points for Clast for an inhibitor and then lines showing the
@@ -81,6 +95,13 @@ time the substrate was getting eliminated.
 \examples{
 
 check_accumulation(ct_dataframe = MDZ_Keto)
+
+check_accumulation(ct_dataframe = MDZ_Keto, conc_point = "Cmax") 
+
+check_accumulation(ct_dataframe = MDZ_Keto, conc_point = "Cmax",
+   accum_compoundID = "inhibitor 1", overlay_compoundID = "none", 
+   mark_dosing = "pink dotted", diff_cutoff = 0.01, 
+   save_graph = "MDZ keto accumulation check.png")
 
 
 }
