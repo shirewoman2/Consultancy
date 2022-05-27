@@ -1,7 +1,7 @@
 #' Make graphs for multiple Simulator output files at once
 #'
 #' This function was designed for making nicely arranged concentration-time
-#' graphs from several Simcyp Simulator output files all together \emph{OR} for
+#' graphs from several Simcyp Simulator output files all together \emph{or} for
 #' making multiple files -- one for each Simulator file -- all at once.
 #'
 #' \strong{A note on the order of the graphs:} This function arranges graphs
@@ -53,7 +53,7 @@
 #'   at all. If you include the legend but then some graphs do have a legend and
 #'   some graphs do not (e.g., some have effectors and some do not so there's
 #'   nothing to put in a legend), the alignment between sets of graphs will be a
-#'   bit off. 
+#'   bit off.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -69,14 +69,24 @@
 #' @export
 #'
 #' @examples
-#' # No examples yet
+#' 
+#' data(MDZct)
+#' ct_plot_mult(ct_dataframe = MDZct) 
+#' 
+#' ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE)
+#' 
+#' ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE, 
+#'    file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1", 
+#'                    "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8", 
+#'                    "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6", 
+#'                    "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
 #' 
 ct_plot_mult <- function(ct_dataframe, 
                          single_out_file = TRUE, 
-                         file_labels = NA,
                          linear_or_log = "semi-log",
-                         include_title = FALSE,
                          graph_labels = TRUE,
+                         include_title = FALSE,
+                         file_labels = NA,
                          legend_position = "none",
                          nrow = NULL, 
                          ncol = NULL,
@@ -116,7 +126,7 @@ ct_plot_mult <- function(ct_dataframe,
         # them to set the order of the files they DID specify but not omit files
         # that they forgot. The forgotten files just won't have pretty titles.
         file_labels_all <- unique(c(names(file_labels), 
-                                   sort(unique(as.character(ct_dataframe$File_bn)))))
+                                    sort(unique(as.character(ct_dataframe$File_bn)))))
         
         # Name items in file_labels_all according to file_labels.
         names(file_labels_all) <- file_labels_all
@@ -158,22 +168,11 @@ ct_plot_mult <- function(ct_dataframe,
         mutate(Order = paste(File, CompoundID, Tissue, subsection_ADAM, sep = ".")) %>% 
         pull(Order)
     
-    
-    # Titles <- c("File" = length(sort(unique(AllData$File))), 
-    #             "CompoundID" = length(sort(unique(AllData$CompoundID))),
-    #             "Tissue" = length(sort(unique(AllData$Tissue))),
-    #             "subsection_ADAM" = length(sort(unique(AllData$subsection_ADAM))))
-    # Titles <- Titles[which(Titles != 1)]
-    
     AllData <- split(AllData, 
                      f = list(as.character(AllData$File_bn),
                               as.character(AllData$CompoundID), 
                               as.character(AllData$Tissue), 
                               as.character(AllData$subsection_ADAM)))
-    
-    # TitlesDF <- data.frame(AllData = names(AllData), 
-    #                        TitleType = names(Titles)) %>% 
-    #     mutate(Title = ifelse(TitleType == "File"))
     
     for(i in Order){
         Title_i <- file_labels_all[as.character(unique(AllData[[i]]$File_bn))]
@@ -207,14 +206,6 @@ ct_plot_mult <- function(ct_dataframe,
                 # This is for when they only want one of linear or log.
                 AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i) +
                     theme(title = element_text(size = 10))
-                
-                # if(include_title){
-                #     AllGraphs[[i]] <- 
-                #         ggpubr::ggarrange(
-                #             AllGraphs[[i]] +
-                #                 theme(plot.margin = unit(c(1.5, 0, 0, 0), "lines")),
-                #             labels = Title_i, label.x = -0.15)
-                # }
             }
             
         } else {
@@ -292,6 +283,8 @@ ct_plot_mult <- function(ct_dataframe,
             
         }
         
+        return(Out)
+        
     } else {
         
         for(i in names(AllGraphs)){
@@ -300,8 +293,6 @@ ct_plot_mult <- function(ct_dataframe,
                    plot = AllGraphs[[i]])
         }
     }
-    
-    return(Out)
     
 }
 

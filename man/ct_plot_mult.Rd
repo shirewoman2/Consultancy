@@ -7,10 +7,10 @@
 ct_plot_mult(
   ct_dataframe,
   single_out_file = TRUE,
-  file_labels = NA,
   linear_or_log = "semi-log",
-  include_title = FALSE,
   graph_labels = TRUE,
+  include_title = FALSE,
+  file_labels = NA,
   legend_position = "none",
   nrow = NULL,
   ncol = NULL,
@@ -30,6 +30,17 @@ graphs nicely arranged together. FALSE means that each Simulator output
 file will have its own output file, and that graph's output file will be
 named to match the Simulator output file name.}
 
+\item{linear_or_log}{the type of graph to be returned. Options: "semi-log"
+(default), "linear", "both vertical" (graphs are stacked vertically), or
+"both horizontal" (graphs are side by side).}
+
+\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
+etc.) for each of the small graphs. (Not applicable if
+\code{single_out_file = FALSE}.)}
+
+\item{include_title}{TRUE or FALSE (default) on whether to include a title
+for each small graph.}
+
 \item{file_labels}{optionally specify a label to be used for the file name in
 the graphs (this applies when \code{include_title = TRUE}) and/or specify
 the order in which the files are graphed with a named character vector of
@@ -41,17 +52,6 @@ volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an
 order that you didn't think you specified, please double check that you
 have specified the file names \emph{exactly} as they appear in
 \code{ct_dataframe}.}
-
-\item{linear_or_log}{the type of graph to be returned. Options: "semi-log"
-(default), "linear", "both vertical" (graphs are stacked vertically), or
-"both horizontal" (graphs are side by side).}
-
-\item{include_title}{TRUE or FALSE (default) on whether to include a title
-for each small graph.}
-
-\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
-etc.) for each of the small graphs. (Not applicable if
-\code{single_out_file = FALSE}.)}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
@@ -88,7 +88,7 @@ to its Simulator output file.)}
 }
 \description{
 This function was designed for making nicely arranged concentration-time
-graphs from several Simcyp Simulator output files all together \emph{OR} for
+graphs from several Simcyp Simulator output files all together \emph{or} for
 making multiple files -- one for each Simulator file -- all at once.
 }
 \details{
@@ -104,6 +104,16 @@ you wish. If you're unfamiliar with setting factor levels in R and setting
 R Working Group for assistance.
 }
 \examples{
-# No examples yet
+
+data(MDZct)
+ct_plot_mult(ct_dataframe = MDZct) 
+
+ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE)
+
+ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE, 
+   file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1", 
+                   "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8", 
+                   "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6", 
+                   "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
 
 }
