@@ -41,6 +41,17 @@ extractForestData <- function(sim_data_files,
                               checkDataSource = checkDataSource)
         )
         
+        # If only one parameter was found, then the 1st item in the list will be
+        # a vector named as the parameter rather than a data.frame named
+        # "aggregate". Adjusting for that.
+        if("data.frame" %in% class(temp[[1]]) == FALSE){
+            origname <- names(temp)[1]
+            names(temp)[1] <- "aggregate"
+            temp$aggregate <- as.data.frame(temp$aggregate) %>% 
+                mutate(Statistic = names(temp$aggregate))
+            names(temp$aggregate)[1] <- origname
+        }
+        
         Forest_l[[i]] <- temp$aggregate %>% mutate(File = i)
         Deets[[i]] <- as.data.frame(temp$ExpDetails) %>% mutate(File = i)
         if(checkDataSource){
