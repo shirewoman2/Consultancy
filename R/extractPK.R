@@ -423,12 +423,8 @@ extractPK <- function(sim_data_file,
                         } else {
                             StartCol <-
                                 which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                 ifelse(Deets$Regimen_sub == "Single Dose",
-                                                        "^Inhibited$|^Inhibited AUC integrated from",
-                                                        "Truncated AUCt_inh for the first dose")))
-                            StartColText <- ifelse(Deets$Regimen_sub == "Single Dose",
-                                                   "^Inhibited$|^Inhibited AUC integrated from",
-                                                   "Truncated AUCt_inh for the first dose")
+                                                 "^Inhibited$|^Inhibited AUC integrated from|Truncated AUCt_inh for the first dose"))
+                            StartColText <- "^Inhibited$|^Inhibited AUC integrated from|Truncated AUCt_inh for the first dose"
                             
                         }
                     }
