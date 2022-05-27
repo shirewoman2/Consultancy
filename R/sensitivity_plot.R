@@ -1,9 +1,9 @@
 #' Make graphs of sensitivity analysis results - UNDER CONSTRUCTION
 #'
-#' Doesn't detect units yet. Would need to check that sheet names are
-#' consistent. I bet they're not. Would like to add options for axis breaks and
-#' limits as well as color schemes. Will need to add more options for labeling
-#' the sensitivity parameter in the graphs. Does not do 3D graphs and I have no
+#' Doesn't detect units yet. Would need to check that sheet names are consistent
+#' b/c I bet they're not. Would like to add options for axis breaks and limits
+#' as well as color schemes. Will need to add more options for labeling the
+#' sensitivity parameter in the graphs. Does not do 3D graphs and I have no
 #' plans to add option for 3D graphs b/c A) they're just not easy to interpret
 #' and B) there aren't great R packages out there for 3D graphs.
 #'
@@ -14,18 +14,32 @@
 #'   Concentration", that parameter \emph{must} be one of the ones you requested
 #'   when you ran the sensitivity analysis. Currently case sensitive.
 #' @param title (optional) a title to include on your graph in quotes
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+#'   will be saved as a png file, but if you specify a different file extension,
+#'   it will be saved as that file format. Acceptable extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+#'   means the file will not be saved to disk.
+#' @param fig_height figure height in inches; default is 4
+#' @param fig_width figure width in inches; default is 5
 #'
 #' @return
 #' @export
 #'
 #' @examples
 #'
-#' SA_file = "../SA example.xlsx"
-#' dependent_variable = "CL"
+#' sensitivity_plot(SA_file = "SA example.xlsx",
+#'                  dependent_variable = "Cmax", 
+#'                  title = "My pretty sensitivity-analysis graph that's not pink", 
+#'                  save_graph = "SA graph")
 #' 
+ 
 sensitivity_plot <- function(SA_file, 
                              dependent_variable, 
-                             title = NA){
+                             title = NA,
+                             save_graph = NA,
+                             fig_height = 4,
+                             fig_width = 5){
     
     # If they didn't include ".xlsx" at the end, add that.
     SA_file <- ifelse(str_detect(SA_file, "xlsx$"), 
@@ -131,6 +145,25 @@ sensitivity_plot <- function(SA_file,
     
     if(complete.cases(title)){
         G <- G + ggtitle(title)
+    }
+    
+    if(complete.cases(save_graph)){
+        FileName <- save_graph
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+        } else {
+            FileName <- paste0(FileName, ".png")
+        }
+        
+        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+               plot = G)
+        
     }
     
     return(G)

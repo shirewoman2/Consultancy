@@ -4,7 +4,14 @@
 \alias{sensitivity_plot}
 \title{Make graphs of sensitivity analysis results - UNDER CONSTRUCTION}
 \usage{
-sensitivity_plot(SA_file, dependent_variable, title = NA)
+sensitivity_plot(
+  SA_file,
+  dependent_variable,
+  title = NA,
+  save_graph = NA,
+  fig_height = 4,
+  fig_width = 5
+)
 }
 \arguments{
 \item{SA_file}{sensitivity analysis Excel file}
@@ -16,21 +23,34 @@ Concentration", that parameter \emph{must} be one of the ones you requested
 when you ran the sensitivity analysis. Currently case sensitive.}
 
 \item{title}{(optional) a title to include on your graph in quotes}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
+will be saved as a png file, but if you specify a different file extension,
+it will be saved as that file format. Acceptable extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be saved to disk.}
+
+\item{fig_height}{figure height in inches; default is 4}
+
+\item{fig_width}{figure width in inches; default is 5}
 }
 \value{
 
 }
 \description{
-Doesn't detect units yet. Would need to check that sheet names are
-consistent. I bet they're not. Would like to add options for axis breaks and
-limits as well as color schemes. Will need to add more options for labeling
-the sensitivity parameter in the graphs. Does not do 3D graphs and I have no
+Doesn't detect units yet. Would need to check that sheet names are consistent
+b/c I bet they're not. Would like to add options for axis breaks and limits
+as well as color schemes. Will need to add more options for labeling the
+sensitivity parameter in the graphs. Does not do 3D graphs and I have no
 plans to add option for 3D graphs b/c A) they're just not easy to interpret
 and B) there aren't great R packages out there for 3D graphs.
 }
 \examples{
 
-SA_file = "../SA example.xlsx"
-dependent_variable = "CL"
+sensitivity_plot(SA_file = "SA example.xlsx",
+                 dependent_variable = "Cmax", 
+                 title = "My pretty sensitivity-analysis graph that's not pink", 
+                 save_graph = "SA graph")
 
 }
