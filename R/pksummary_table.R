@@ -882,16 +882,6 @@ pksummary_table <- function(sim_data_file = NA,
         
     }
     
-    # I think the bit below should have already been done by now
-    
-    # # If the user specified the sheet to use, we don't actually know whether
-    # # those were dose 1 or last-dose values. Removing indications of dose number
-    # # from column titles.
-    # if(complete.cases(sheet_PKparameters)){
-    #     names(MyPKResults) <- str_trim(sub("Last dose|Dose 1|_last|_first", "", 
-    #                                        names(MyPKResults)))
-    # }
-    
     if(complete.cases(save_table)){
         if(str_detect(save_table, "\\.")){
             FileName <- sub("\\..*", ".csv", save_table)
