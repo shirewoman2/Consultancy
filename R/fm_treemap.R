@@ -1,15 +1,17 @@
-#' Make a treemap of fm values as opposed to the odious and easily
-#' misinterpreted pie chart
+#' For comparing fm values, make a treemap as opposed to the standard and
+#' arguably inferior pie chart
 #'
 #' Create a treemap -- filled rectangles -- to indicate the fraction of
-#' metabolism due to various pathways. The size of the rectangles are
-#' proportional to the given fm. This is a (in Laura's opinion) superior option
-#' compared to a pie chart since rectangles are easier for the human eye to
-#' interpret and compare than pie slices. Rectangles will include labels for the
-#' drug-metabolizing enzyme involved and the percentage that enzyme is
-#' responsible for. Any rectangles that would be smaller than some
-#' user-specified cutoff (see arugment "label_fm_cutoff") will be pulled out
-#' underneath the graph for readability.
+#' metabolism due to various pathways. Rectangles are proportional in size to
+#' the fm values and include labels for the drug-metabolizing enzyme involved
+#' and the percentage that enzyme is responsible for. Any rectangles that would
+#' be smaller than some user-specified cutoff (see argument "label_fm_cutoff")
+#' will be pulled out underneath the graph for readability. Why bother with a
+#' treemap as opposed to a pie chart? Rectangles are easier to compare visually
+#' than the sizes of pie slices, making a treemap easier to understand and
+#' interpret (reference: "The Visual Display of Quantitative Information" by
+#' Edward Tufte, Professor Emeritus of Political Science, Statistics, and
+#' Computer Science at Yale University).
 #'
 #'
 #' @param fm_dataframe a data.frame containing columns for
@@ -42,7 +44,7 @@
 #'                       fm = c(0.79, 0.20, 0.01))
 #' fm_treemap(fm_dataframe = Lenv_fm)
 #' fm_treemap(fm_dataframe = Lenv_fm, color_set = "blue-green")
-#' fm_treemap(fm_dataframe = Lenv_fm, color_set = "set 1", 
+#' fm_treemap(fm_dataframe = Lenv_fm, color_set = "set 1",
 #'     label_fm_cutoff = 0.01)
 #' 
 fm_treemap <- function(fm_dataframe,
