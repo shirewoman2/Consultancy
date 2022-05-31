@@ -96,6 +96,10 @@
 #'   the trials rather than the range of means.}} An example of acceptable input
 #'   here: \code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
 #'   "Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.
+#' @param PKorder Would you like the order of the PK parameters to be the the
+#'   order specified in the Consultancy Report Template (default), or would you
+#'   like the order to match the order you specified with the argument
+#'   \code{PKparameters}? Options are "default" or "user specified".
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
@@ -175,17 +179,18 @@
 #'                       AUCinf_dose1_CV = 0.38,
 #'                       Cmax_dose1 = 22,
 #'                       Cmax_dose1_CV = 0.24)
-#' 
-#' # Or you can supply a named numeric vector:                        
+#'
+#' # Or you can supply a named numeric vector:
 #' MyObsPK <- c("AUCinf_dose1" = 60,
 #'              "AUCinf_dose1_CV" = 0.38,
 #'              "Cmax_dose1" = 22,
 #'              "Cmax_dose1_CV" = 0.24)
-#'                       
+#'
 #' pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 
 pksummary_table <- function(sim_data_file = NA, 
                             PKparameters = NA,
+                            PKorder = "default", 
                             sheet_PKparameters = NA,
                             mean_type = NA,
                             tissue = "plasma",
@@ -246,6 +251,16 @@ pksummary_table <- function(sim_data_file = NA,
     } else {
         sectionInfo <- FALSE
     }
+    
+    if(PKorder %in% c("default", "user specified") == FALSE){
+        stop(paste0("The value '", PKorder, "' is not one of the possibilities for the argument 'PKorder'. Please enter one of 'default' or 'user specified'."))
+    }
+    
+    if(PKorder != "default" & is.na(PKparameters[1])){
+        warning("You have requested 'user specified' for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument 'PKparameters'. The order will be the default order from the Consultancy Report Template.")
+        PKorder <- "default"
+    }
+    
     
     # Figuring out what kind of means user wants, experimental details, etc.
     
@@ -816,6 +831,12 @@ pksummary_table <- function(sim_data_file = NA,
         
         PKlevels <- sort(PKlevels)
     } 
+    
+    # If the user wants to specify the order, allowing that here.
+    if(PKorder == "user specified"){
+        PKlevels <- PKparameters
+    }
+    
     PKToPull <- factor(PKToPull, levels = PKlevels)
     PKToPull <- sort(PKToPull)
     

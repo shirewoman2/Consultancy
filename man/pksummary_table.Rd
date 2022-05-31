@@ -7,6 +7,7 @@
 pksummary_table(
   sim_data_file = NA,
   PKparameters = NA,
+  PKorder = "default",
   sheet_PKparameters = NA,
   mean_type = NA,
   tissue = "plasma",
@@ -60,6 +61,11 @@ this blank.}
   the trials rather than the range of means.}} An example of acceptable input
   here: \code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
   "Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.}
+
+\item{PKorder}{Would you like the order of the PK parameters to be the the
+order specified in the Consultancy Report Template (default), or would you
+like the order to match the order you specified with the argument
+\code{PKparameters}? Options are "default" or "user specified".}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
@@ -219,11 +225,11 @@ MyObsPK <- data.frame(AUCinf_dose1 = 60,
                       Cmax_dose1 = 22,
                       Cmax_dose1_CV = 0.24)
 
-# Or you can supply a named numeric vector:                        
+# Or you can supply a named numeric vector:
 MyObsPK <- c("AUCinf_dose1" = 60,
              "AUCinf_dose1_CV" = 0.38,
              "Cmax_dose1" = 22,
              "Cmax_dose1_CV" = 0.24)
-                      
+
 pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 }
