@@ -611,7 +611,8 @@ pksummary_table <- function(sim_data_file = NA,
                               mutate(PKparameter_lower = tolower(PKparameter))) %>% 
                 mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
                                             paste0(PKparameter, "_CV"), 
-                                            PKparameter))
+                                            PKparameter), 
+                       PKparameter = ifelse(OrigName == "File", "File", PKparameter))
             
             MyObsPK <- observed_PK
             names(MyObsPK) <- ObsNames$PKparameter
