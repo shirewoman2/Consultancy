@@ -533,10 +533,12 @@ ct_plot_overlay <- function(ct_dataframe,
         filter(Trial == MyMeanType) %>% 
         select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique()
     
-    UniqueGroups <- ct_dataframe %>% 
+    UniqueGroups1 <- ct_dataframe %>% 
         summarize(across(.cols = c(File, Tissue, CompoundID, Compound,
                                    Inhibitor), 
-                         .fns = function(x) length(unique(x)))) %>% 
+                         .fns = function(x) length(unique(x)))) 
+    
+    UniqueGroups <- UniqueGroups1 %>% 
         t() %>% as.data.frame() %>% 
         mutate(MyCols = rownames(.)) %>% 
         filter(V1 > 1) %>% pull(MyCols)
@@ -549,6 +551,14 @@ ct_plot_overlay <- function(ct_dataframe,
     # If there are only 2 groups for the colorBy_column and color_set was set to
     # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
     # aethetically pleasing.
+    if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
+       color_set == "default"){
+        color_set <- "Brewer set 1"
+    }
+    
+    # If there are only 2 groups for the colorBy_column and color_set was set to
+    # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
+    # aesthetically pleasing.
     if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
        color_set == "default"){
         color_set <- "Brewer set 1"
