@@ -328,6 +328,19 @@ ct_plot <- function(ct_dataframe = NA,
         stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
     }
     
+    # If user had already filtered ct_dataframe to include only the ADAM data
+    # they wanted, the subsection_ADAM column might not include the default
+    # value for subsection_ADAM. In that case, just switch to the subsection
+    # that *was* included and make the plot.
+    if(subsection_ADAM == "free compound in lumen" & 
+       length(unique(ct_dataframe$subsection_ADAM)) == 1 && 
+       unique(ct_dataframe$subsection_ADAM) %in% 
+       c("solid compound", "Heff", "absorption rate",
+         "unreleased substrate in faeces", "unreleased inhibitor in faeces",
+         "dissolved compound", "luminal CLint of compound")){
+        subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+    }
+    
     MyMeanType <- ct_dataframe %>%
         filter(Trial %in% c("geomean", "mean", "median")) %>% 
         pull(Trial) %>% unique() %>% 
@@ -551,7 +564,7 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     if(nrow(obs_data) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
-                                              "percentile ribbon", "ribbon")){
+                                                                    "percentile ribbon", "ribbon")){
         warning(paste0("You have requested a figure type of '", 
                        figure_type, 
                        "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
@@ -1027,7 +1040,7 @@ ct_plot <- function(ct_dataframe = NA,
                                breaks = YBreaks,
                                labels = YLabels,
                                expand = expansion(mult = pad_y_num)) 
-            
+        
     } else {
         A <- A +
             coord_cartesian(xlim = time_range_relative, 
