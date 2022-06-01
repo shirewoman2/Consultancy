@@ -188,6 +188,9 @@
 #' @param line_width optionally specify how thick to make the lines. Acceptable
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
 #'   give you an idea of where to start.
+#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
+#'   etc.) for each of the small graphs. (Not applicable if only outputting
+#'   linear or only semi-log graphs.)
 #' @param legend_label optionally indicate on the legend whether the effector is
 #'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as the
@@ -212,9 +215,6 @@
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
-#' @param include_graph_labels for graphs that include both a linear and a
-#'   semi-log plot, TRUE (default) or FALSE for whether to include "A" next to
-#'   the linear plot and "B" next to the semi-log plot
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -300,7 +300,7 @@ ct_plot <- function(ct_dataframe = NA,
                     legend_label = NA,
                     prettify_effector_name = TRUE,
                     linear_or_log = "both vertical",
-                    include_graph_labels = TRUE,
+                    graph_labels = TRUE,
                     save_graph = NA,
                     fig_height = 6,
                     fig_width = 5){
@@ -313,6 +313,19 @@ ct_plot <- function(ct_dataframe = NA,
                           "ribbon") == FALSE){
         stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.",
              call. = FALSE)
+    }
+    
+    if(length(unique(ct_dataframe$Conc_units)) > 1){
+        stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+    }
+    
+    if(length(unique(ct_dataframe$Compound)) > 1 | 
+       length(unique(ct_dataframe$CompoundID)) > 1){
+        stop("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+    }
+    
+    if(length(unique(ct_dataframe$Inhibitor)) > 2){
+        stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
     }
     
     MyMeanType <- ct_dataframe %>%
@@ -1081,22 +1094,24 @@ ct_plot <- function(ct_dataframe = NA,
                             ylim = Ylim_log)
     )
     
+    if(graph_labels){
+        labels <- "AUTO"
+    } else {
+        labels <- NULL
+    }
+    
     # both plots together, aligned vertically
     if(compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                 "inhibitor 1 metabolite")){
         AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, 
-                              labels = switch(as.character(include_graph_labels), 
-                                                              "TRUE" = c("A", "B"), 
-                                                              "FALSE" = NULL),
+                              labels = labels,
                               align = "v")
         )
         
         ABhoriz <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 2, 
-                              labels = switch(as.character(include_graph_labels), 
-                                              "TRUE" = c("A", "B"), 
-                                              "FALSE" = NULL),
+                              labels = labels,
                               align = "hv")
         )
         
@@ -1108,31 +1123,23 @@ ct_plot <- function(ct_dataframe = NA,
                                     "inhibitor 1 metabolite")){
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1, 
-                                  labels = switch(as.character(include_graph_labels), 
-                                                  "TRUE" = c("A", "B"), 
-                                                  "FALSE" = NULL),
+                                  labels = labels,
                                   legend = "none", align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = switch(as.character(include_graph_labels), 
-                                                  "TRUE" = c("A", "B"), 
-                                                  "FALSE" = NULL),
+                                  labels = labels,
                                   legend = "none", align = "hv"))
         } else {
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1,  
-                                  labels = switch(as.character(include_graph_labels), 
-                                                  "TRUE" = c("A", "B"), 
-                                                  "FALSE" = NULL),
+                                  labels = labels,
                                   common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = switch(as.character(include_graph_labels), 
-                                                  "TRUE" = c("A", "B"), 
-                                                  "FALSE" = NULL),
+                                  labels = labels,
                                   common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
         }
