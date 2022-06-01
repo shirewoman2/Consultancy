@@ -315,6 +315,19 @@ ct_plot <- function(ct_dataframe = NA,
              call. = FALSE)
     }
     
+    if(length(unique(ct_dataframe$Conc_units)) > 1){
+        stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+    }
+    
+    if(length(unique(ct_dataframe$Compound)) > 1 | 
+       length(unique(ct_dataframe$CompoundID)) > 1){
+        stop("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+    }
+    
+    if(length(unique(ct_dataframe$Inhibitor)) > 2){
+        stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+    }
+    
     MyMeanType <- ct_dataframe %>%
         filter(Trial %in% c("geomean", "mean", "median")) %>% 
         pull(Trial) %>% unique() %>% 

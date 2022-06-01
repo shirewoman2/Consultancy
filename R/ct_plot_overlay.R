@@ -335,6 +335,26 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     # error catching -------------------------------------------------------
+    # Checking for ADAM model data b/c those don't work well here. 
+    if(any(unique(ct_dataframe$Tissue) %in% 
+           c("stomach", "duodenum", "jejunum I", "jejunum II", 
+             "ileum I", "ileum II", "ileum III", "ileum IV",
+             "colon", "faeces", "gut tissue"))){
+        if(all(unique(ct_dataframe$Tissue) %in% 
+               c("stomach", "duodenum", "jejunum I", "jejunum II", 
+                 "ileum I", "ileum II", "ileum III", "ileum IV",
+                 "colon", "faeces", "gut tissue"))){
+            stop("We're sorry, but this function has not been set up to deal with ADAM-model tissue concentrations since the units can be so different from other concentration-time data. Since all of the supplied data are ADAM model concentrations, no graph can be made.")
+        } else {
+            warning("Some of the data you supplied are ADAM-model tissue concentrations, but this function has not been set up to deal with that since the units can be so different from other concentration-time data. The ADAM-model data will be omitted from the graph.")
+        }
+    }
+    
+    ct_dataframe <- ct_dataframe %>% 
+        filter(!Tissue %in% c("stomach", "duodenum", "jejunum I", "jejunum II", 
+                              "ileum I", "ileum II", "ileum III", "ileum IV",
+                              "colon", "faeces", "gut tissue"))
+    
     if(length(time_range) == 1 && complete.cases(time_range[1]) &&
        !str_detect(time_range, "dose|last obs|all obs")){
         if(complete.cases(time_range)){
@@ -818,7 +838,7 @@ ct_plot_overlay <- function(ct_dataframe,
        length(unique(linetypes)) == 1){
         A <- A + guides(linetype = "none") 
     }
-
+    
     if(length(unique(sim_dataframe$colorBy_column)) == 1){
         A <- A + guides(color = "none")
     }
