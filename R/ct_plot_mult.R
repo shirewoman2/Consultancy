@@ -174,16 +174,16 @@
 #' @export
 #'
 #' @examples
-#' 
+#'
 #' data(MDZct)
-#' ct_plot_mult(ct_dataframe = MDZct) 
-#' 
+#' ct_plot_mult(ct_dataframe = MDZct)
+#'
 #' ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE)
-#' 
-#' ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE, 
-#'    file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1", 
-#'                    "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8", 
-#'                    "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6", 
+#'
+#' ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE,
+#'    file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
+#'                    "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
+#'                    "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
 #'                    "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
 #' 
 ct_plot_mult <- function(ct_dataframe, 
@@ -355,7 +355,7 @@ ct_plot_mult <- function(ct_dataframe,
                                 legend_label = legend_label, 
                                 graph_labels = graph_labels, 
                                 ... # comment this when developing
-                                ) +
+                        ) +
                             ggtitle(Title_i) + 
                             theme(title = element_text(size = 10), 
                                   plot.margin = unit(c(0, 0, 0, 0), "lines")), 

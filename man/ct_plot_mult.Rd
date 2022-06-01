@@ -227,14 +227,14 @@ R Working Group for assistance.
 \examples{
 
 data(MDZct)
-ct_plot_mult(ct_dataframe = MDZct) 
+ct_plot_mult(ct_dataframe = MDZct)
 
 ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE)
 
-ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE, 
-   file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1", 
-                   "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8", 
-                   "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6", 
+ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE,
+   file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
+                   "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
+                   "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
                    "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
 
 }
