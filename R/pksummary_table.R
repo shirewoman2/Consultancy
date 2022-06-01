@@ -626,7 +626,8 @@ pksummary_table <- function(sim_data_file = NA,
                               mutate(PKparameter_lower = tolower(PKparameter))) %>% 
                 mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
                                             paste0(PKparameter, "_CV"), 
-                                            PKparameter))
+                                            PKparameter), 
+                       PKparameter = ifelse(OrigName == "File", "File", PKparameter))
             
             MyObsPK <- observed_PK
             names(MyObsPK) <- ObsNames$PKparameter
@@ -902,6 +903,16 @@ pksummary_table <- function(sim_data_file = NA,
         names(MyPKResults) <- c("Statistic", PrettyCol)
         
     }
+    
+    # I think the bit below should have already been done by now
+    
+    # # If the user specified the sheet to use, we don't actually know whether
+    # # those were dose 1 or last-dose values. Removing indications of dose number
+    # # from column titles.
+    # if(complete.cases(sheet_PKparameters)){
+    #     names(MyPKResults) <- str_trim(sub("Last dose|Dose 1|_last|_first", "", 
+    #                                        names(MyPKResults)))
+    # }
     
     if(complete.cases(save_table)){
         if(str_detect(save_table, "\\.")){
