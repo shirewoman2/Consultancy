@@ -79,6 +79,17 @@
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
+#' @param linetype_column the column in \code{ct_dataframe} that should be used
+#'   for determining the line types. Default is to use the column Inhibitor and
+#'   to have a solid line for no inhibitor present and a dashed line when an
+#'   inhibitor is present.
+#' @param linetypes the linetypes to use. Default is "solid" for all lines, but,
+#'   if you have an effector present and would like to match the Consultancy
+#'   Template graphs, set this to \code{linetypes = c("solid", "dashed")}. The
+#'   tricky part is that you'll need one linetype for each possible value in the
+#'   column you specified for \code{linetype_column}. Check what the unique
+#'   values are in that column if you get a graph you didn't expect as far as
+#'   line types go. 
 #' @param colorBy_column the column in \code{ct_dataframe} that should be used
 #'   for determining which color lines and/or points will be. Default is to use
 #'   the column File. This should be unquoted, e.g., \code{colorBy_column =
@@ -198,6 +209,9 @@
 #'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
 #'   linear plot will be automatically selected. This only applies when you have
 #'   requested a linear plot with \code{linear_or_log}.
+#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
+#'   etc.) for each of the small graphs. (Not applicable if only outputting
+#'   linear or only semi-log graphs.)
 #' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
@@ -250,6 +264,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             color_labels = NA, 
                             color_set = "default",
                             obs_transparency = NA, 
+                            linetype_column = Inhibitor, 
+                            linetypes = "solid",
                             facet1_column,
                             facet2_column, 
                             floating_facet_scale = FALSE,
@@ -260,6 +276,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             pad_y_axis = TRUE,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
+                            graph_labels = TRUE,
                             legend_position = NA,
                             legend_label = NA,
                             save_graph = NA,
@@ -271,11 +288,12 @@ ct_plot_overlay <- function(ct_dataframe,
     facet1_column <- rlang::enquo(facet1_column)
     facet2_column <- rlang::enquo(facet2_column)
     colorBy_column <- rlang::enquo(colorBy_column)
+    linetype_column <- rlang::enquo(linetype_column)
     
     # I *would* be doing this whole function with nonstandard evaluation except
     # that I CANNOT figure out how to use NSE to redefine a user-supplied
     # column, so I'm going to have to rename all of them. This makes the rest of
-    # checking and developing this function easier, too, though. 
+    # checking and developing this function easier, too, though.
     
     # ct_dataframe <- ct_dataframe %>%
     #     mutate(colorBy_column = ifelse(as_label(colorBy_column) == "<empty>", NA, {{colorBy_column}}),
@@ -292,6 +310,17 @@ ct_plot_overlay <- function(ct_dataframe,
             Levels <- sort(unique(ct_dataframe$colorBy_column))
             ct_dataframe <- ct_dataframe %>% 
                 mutate(colorBy_column = factor(colorBy_column, levels = Levels))
+        }
+    }
+    
+    if(as_label(linetype_column) != "<empty>"){
+        ct_dataframe <- ct_dataframe %>%
+            mutate(linetype_column = {{linetype_column}})
+        
+        if(class(ct_dataframe$linetype_column) == "numeric"){
+            Levels <- sort(unique(ct_dataframe$linetype_column))
+            ct_dataframe <- ct_dataframe %>% 
+                mutate(linetype_column = factor(linetype_column, levels = Levels))
         }
     }
     
@@ -401,15 +430,15 @@ ct_plot_overlay <- function(ct_dataframe,
     } 
     
     # Dealing with the fact that the observed data will list the inhibitor as
-    # "inhibitor" unless the user changes it, but the sim data will list its name
+    # "inhibitor" unless the user changes it, but that sim data will list its
+    # name
     if(nrow(obs_data) > 0 & any(obs_data$Inhibitor == "inhibitor")){
         ct_dataframe <- ct_dataframe %>% 
             mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitor"))
     }
     
     # Now that all columns in both sim and obs data are filled in whenever they
-    # need to be, setting factors for color_labels, facet1_column, and
-    # facet2_column
+    # need to be, setting factors for color_labels. 
     if(complete.cases(color_labels[1])){
         simcheck <- sim_dataframe %>% 
             filter(colorBy_column %in% names(color_labels)) %>% 
@@ -443,6 +472,24 @@ ct_plot_overlay <- function(ct_dataframe,
             }
         }
     }
+    
+    # Taking care of linetypes
+    NumLT <- length(unique(sim_dataframe$linetype_column))
+    if(NumLT < length(linetypes)){ linetypes = linetypes[1:NumLT] }
+    if(NumLT > length(linetypes)){ linetypes = rep(linetypes, 100)[1:NumLT]}
+    
+    # If the original data.frame included levels for linetype_column, then use
+    # those levels. Otherwise, make "none" the base level since most of the
+    # time, this will be used for the column "Inhibitor".
+    if(class(sim_dataframe$linetype_column) != "factor"){
+        if("none" %in% unique(sim_dataframe$linetype_column)){
+            sim_dataframe <- sim_dataframe %>% 
+                mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
+        } else {
+            sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
+        }
+    }
+    
     
     # Not sure how I'm going to relabel the facets, actually. Commenting this
     # out for now.
@@ -514,6 +561,7 @@ ct_plot_overlay <- function(ct_dataframe,
         filter(V1 > 1) %>% pull(MyCols)
     
     MyAES <- c("color" = as_label(colorBy_column), 
+               "linetype" = as_label(linetype_column),
                "facet1" = as_label(facet1_column), 
                "facet2" = as_label(facet2_column))
     UniqueAES <- MyAES[which(MyAES != "<empty>")]
@@ -534,6 +582,19 @@ ct_plot_overlay <- function(ct_dataframe,
                 call. = FALSE)
         message(paste("Unique datasets:", str_comma(UniqueGroups)))
         message(paste("Unique aesthetics:", str_comma(UniqueAES)))
+    }
+    
+    # If there are multiple values in linetype_column but user has only listed
+    # the default "solid" for linetypes, then warn the user that they might want
+    # to specify more line types.
+    if(length(unique(ct_dataframe$linetype_column)) > 1 & 
+       length(unique(linetypes)) == 1){
+        warning(paste0("There are ", length(unique(ct_dataframe$linetype_column)),
+                       " unique values in the column ", as_label(linetype_column),
+                       ", but you have only requested ", 
+                       length(unique(linetypes)), " linetype(s): ", 
+                       str_comma(unique(linetypes)), 
+                       ". You will get a more interpretable graph if you specify more values for the argument 'linetypes'."))
     }
     
     # Some of the options inherited from ct_plot depend on there being just one
@@ -571,6 +632,7 @@ ct_plot_overlay <- function(ct_dataframe,
     if(figure_type == "means only"){
         A <- ggplot(sim_dataframe,
                     aes(x = Time, y = Conc, color = colorBy_column, 
+                        linetype = linetype_column,
                         group = Group)) +
             geom_line()
         
@@ -606,7 +668,8 @@ ct_plot_overlay <- function(ct_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                  color = colorBy_column, fill = colorBy_column)) + 
+                                  color = colorBy_column, fill = colorBy_column, 
+                                  linetype = linetype_column)) + 
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
         
@@ -647,22 +710,6 @@ ct_plot_overlay <- function(ct_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
-    if(is.na(legend_label)){
-        if(complete.cases(color_labels[1])){
-            A <- A + labs(color = NULL, fill = NULL)
-        } else {
-            A <- A + labs(color = as_label(colorBy_column), 
-                          fill = as_label(colorBy_column))
-        }
-    } else {
-        A <- A + 
-            labs(x = xlab, y = ylab,
-                 linetype = legend_label,
-                 shape = legend_label,
-                 color = legend_label, 
-                 fill = legend_label)
-    }
-    
     if(floating_facet_scale){
         A <- A + 
             scale_x_continuous(expand = expansion(
@@ -686,7 +733,7 @@ ct_plot_overlay <- function(ct_dataframe,
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
     }
     
-    # Colors ----------------------------------------------------------------
+    # Colors, linetypes, & legends -------------------------------------------
     
     # Adding options for colors
     colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
@@ -739,11 +786,42 @@ ct_plot_overlay <- function(ct_dataframe,
         }
     }
     
+    # Adding legend label for color as appropriate
+    if(is.na(legend_label)){
+        if(complete.cases(color_labels[1])){
+            A <- A + labs(color = NULL, fill = NULL, 
+                          linetype = as_label(linetype_column))
+        } else {
+            A <- A + labs(color = as_label(colorBy_column), 
+                          fill = as_label(colorBy_column), 
+                          linetype = as_label(linetype_column))
+        }
+    } else {
+        A <- A + 
+            labs(linetype = as_label(linetype_column),
+                 shape = legend_label,
+                 color = legend_label, 
+                 fill = legend_label)
+    }
+    
+    # Specifying linetypes
+    A <- A + scale_linetype_manual(values = linetypes)
+    
     ## Adding spacing between facets if requested
     if(complete.cases(facet_spacing)){
         A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
     }
     
+    # If any of the items in the legend have length = 1, don't show that in the
+    # legend.
+    if(length(unique(sim_dataframe$linetype_column)) == 1 | 
+       length(unique(linetypes)) == 1){
+        A <- A + guides(linetype = "none") 
+    }
+
+    if(length(unique(sim_dataframe$colorBy_column)) == 1){
+        A <- A + guides(color = "none")
+    }
     
     ## Making semi-log graph ------------------------------------------------
     
@@ -762,9 +840,15 @@ ct_plot_overlay <- function(ct_dataframe,
         B <- B + theme(legend.position = legend_position)
     }    
     
+    if(graph_labels){
+        labels <- "AUTO"
+    } else {
+        labels <- NULL
+    }
+    
     # both plots together, aligned vertically
     AB <- suppressWarnings(
-        ggpubr::ggarrange(A, B, ncol = 1, labels = c("A", "B"),
+        ggpubr::ggarrange(A, B, ncol = 1, labels = labels,
                           common.legend = TRUE, align = "hv", 
                           legend = ifelse(is.na(legend_position), 
                                           "right", legend_position))
@@ -772,7 +856,7 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # both plots together, aligned horizontally
     ABhoriz <- suppressWarnings(
-        ggpubr::ggarrange(A, B, ncol = 2, labels = c("A", "B"),
+        ggpubr::ggarrange(A, B, ncol = 2, labels = labels,
                           common.legend = TRUE, align = "hv", 
                           legend = ifelse(is.na(legend_position), 
                                           "bottom", legend_position))

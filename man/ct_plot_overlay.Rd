@@ -13,6 +13,8 @@ ct_plot_overlay(
   color_labels = NA,
   color_set = "default",
   obs_transparency = NA,
+  linetype_column = Inhibitor,
+  linetypes = "solid",
   facet1_column,
   facet2_column,
   floating_facet_scale = FALSE,
@@ -23,6 +25,7 @@ ct_plot_overlay(
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  graph_labels = TRUE,
   legend_position = NA,
   legend_label = NA,
   save_graph = NA,
@@ -106,6 +109,19 @@ order designated here.}
 semi-transparent, which can be helpful when there are numerous
 observations. Acceptable values are 0 (completely transparent) to 1
 (completely opaque).}
+
+\item{linetype_column}{the column in \code{ct_dataframe} that should be used
+for determining the line types. Default is to use the column Inhibitor and
+to have a solid line for no inhibitor present and a dashed line when an
+inhibitor is present.}
+
+\item{linetypes}{the linetypes to use. Default is "solid" for all lines, but,
+if you have an effector present and would like to match the Consultancy
+Template graphs, set this to \code{linetypes = c("solid", "dashed")}. The
+tricky part is that you'll need one linetype for each possible value in the
+column you specified for \code{linetype_column}. Check what the unique
+values are in that column if you get a graph you didn't expect as far as
+line types go.}
 
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the
@@ -194,6 +210,10 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected. This only
 applies when you have requested a semi-log plot with \code{linear_or_log}.}
+
+\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
+etc.) for each of the small graphs. (Not applicable if only outputting
+linear or only semi-log graphs.)}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
