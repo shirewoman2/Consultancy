@@ -23,6 +23,7 @@ ct_plot_overlay(
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  graph_labels = TRUE,
   legend_position = NA,
   legend_label = NA,
   save_graph = NA,
@@ -81,7 +82,10 @@ order designated here.}
   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
   that are friendly to those with red-green colorblindness. The first three
   colors are green, orange, and purple. This can also be referred to as
-  "Brewer set 2".}
+  "Brewer set 2". If there are only two unique values in the colorBy_column,
+  then Brewer set 1 will be used since red and blue are still easily
+  distinguishable but also more aesthetically pleasing than green and
+  orange.}
 
   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
   first three colors are red, blue, and green.}
@@ -191,6 +195,10 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected. This only
 applies when you have requested a semi-log plot with \code{linear_or_log}.}
+
+\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
+etc.) for each of the small graphs. (Not applicable if only outputting
+linear or only semi-log graphs.)}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if

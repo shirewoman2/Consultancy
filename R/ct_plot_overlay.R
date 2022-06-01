@@ -540,6 +540,14 @@ ct_plot_overlay <- function(ct_dataframe,
                "facet2" = as_label(facet2_column))
     UniqueAES <- MyAES[which(MyAES != "<empty>")]
     
+    # If there are only 2 groups for the colorBy_column and color_set was set to
+    # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
+    # aethetically pleasing.
+    if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
+       color_set == "default"){
+        color_set <- "Brewer set 1"
+    }
+    
     if(length(UniqueGroups[UniqueGroups != "Compound"]) > length(UniqueAES)){
         warning(paste("You have requested", length(UniqueGroups[UniqueGroups != "Compound"]),
                       "unique data sets but only", 
