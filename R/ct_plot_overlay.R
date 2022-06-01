@@ -344,9 +344,11 @@ ct_plot_overlay <- function(ct_dataframe,
                c("stomach", "duodenum", "jejunum I", "jejunum II", 
                  "ileum I", "ileum II", "ileum III", "ileum IV",
                  "colon", "faeces", "gut tissue"))){
-            stop("We're sorry, but this function has not been set up to deal with ADAM-model tissue concentrations since the units can be so different from other concentration-time data. Since all of the supplied data are ADAM model concentrations, no graph can be made.")
+            stop("We're sorry, but this function has not been set up to deal with ADAM-model tissue concentrations since the units can be so different from other concentration-time data. Since all of the supplied data are ADAM model concentrations, no graph can be made.",
+                 call. = FALSE)
         } else {
-            warning("Some of the data you supplied are ADAM-model tissue concentrations, but this function has not been set up to deal with that since the units can be so different from other concentration-time data. The ADAM-model data will be omitted from the graph.")
+            warning("Some of the data you supplied are ADAM-model tissue concentrations, but this function has not been set up to deal with that since the units can be so different from other concentration-time data. The ADAM-model data will be omitted from the graph.",
+                    call. = FALSE)
         }
     }
     
@@ -405,11 +407,15 @@ ct_plot_overlay <- function(ct_dataframe,
         
     }
     
-    ct_dataframe <- ct_dataframe %>% 
-        # At least at this point, I can't see this function working well with
-        # ADAM model data b/c the y axis units differ. Removing all ADAM model
-        # data.
-        filter(is.na(subsection_ADAM)) %>%
+    if("subsection_ADAM" %in% names(ct_dataframe)){
+        ct_dataframe <- ct_dataframe %>% 
+            # At least at this point, I can't see this function working well with
+            # ADAM model data b/c the y axis units differ. Removing all ADAM model
+            # data.
+            filter(is.na(subsection_ADAM))
+    }
+    
+    ct_dataframe <- ct_dataframe %>%
         # If it's dose number 0, remove those rows so that we'll show only the
         # parts we want when facetting and user wants scales to float freely.
         filter(DoseNum != 0 | Simulated == FALSE) %>% 
@@ -607,14 +613,16 @@ ct_plot_overlay <- function(ct_dataframe,
     # If there are multiple values in linetype_column but user has only listed
     # the default "solid" for linetypes, then warn the user that they might want
     # to specify more line types.
-    if(length(unique(ct_dataframe$linetype_column)) > 1 & 
+    if(as_label(colorBy_column) != as_label(linetype_column) &&
+       length(unique(ct_dataframe$linetype_column)) > 1 & 
        length(unique(linetypes)) == 1){
         warning(paste0("There are ", length(unique(ct_dataframe$linetype_column)),
                        " unique values in the column ", as_label(linetype_column),
                        ", but you have only requested ", 
                        length(unique(linetypes)), " linetype(s): ", 
                        str_comma(unique(linetypes)), 
-                       ". You will get a more interpretable graph if you specify more values for the argument 'linetypes'."))
+                       ". You will get a more interpretable graph if you specify more values for the argument 'linetypes'."),
+                call. = FALSE)
     }
     
     # Some of the options inherited from ct_plot depend on there being just one
