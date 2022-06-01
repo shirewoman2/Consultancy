@@ -220,12 +220,19 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
-#' @param legend_label optionally indicate on the legend something explanatory
-#'   about what the colors are for. For example, if \code{colorBy_column = File}
-#'   and \code{legend_label = "Simulations with various fa values"}, that will
-#'   make the label above the file names in the legend more explanatory than
-#'   just "File". The default is to use whatever the column name is for
-#'   \code{colorBy_column}.
+#' @param legend_label_color optionally indicate on the legend something
+#'   explanatory about what the colors represent. For example, if
+#'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
+#'   with various fa values"}, that will make the label above the file names in
+#'   the legend more explanatory than just "File". The default is to use
+#'   whatever the column name is for \code{colorBy_column}.
+#' @param legend_label_linetype optionally indicate on the legend something
+#'   explanatory about what the line types represent. For example, if
+#'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
+#'   "Inhibitor present"}, that will make the label in the legend above, e.g.,
+#'   "none", and whatever effector was present more explanatory than just
+#'   "Inhibitor". The default is to use whatever the column name is for
+#'   \code{linetype_column}.
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
@@ -278,7 +285,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             y_axis_limits_log = NA, 
                             graph_labels = TRUE,
                             legend_position = NA,
-                            legend_label = NA,
+                            legend_label_color = NA,
+                            legend_label_linetype = NA,
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5){
@@ -814,26 +822,19 @@ ct_plot_overlay <- function(ct_dataframe,
         }
     }
     
-    # Adding legend label for color as appropriate
-    if(is.na(legend_label)){
-        if(complete.cases(color_labels[1])){
-            A <- A + labs(color = NULL, fill = NULL, 
-                          linetype = as_label(linetype_column))
-        } else {
-            A <- A + labs(color = as_label(colorBy_column), 
-                          fill = as_label(colorBy_column), 
-                          linetype = as_label(linetype_column))
-        }
-    } else {
-        A <- A + 
-            labs(linetype = as_label(linetype_column),
-                 shape = legend_label,
-                 color = legend_label, 
-                 fill = legend_label)
-    }
-    
     # Specifying linetypes
     A <- A + scale_linetype_manual(values = linetypes)
+    
+    # Adding legend label for color and linetype as appropriate
+    A <- A + labs(color = switch(as.character(complete.cases(legend_label_color)), 
+                                 "TRUE" = legend_label_color, 
+                                 "FALSE" = as_label(colorBy_column)), 
+                  fill = switch(as.character(complete.cases(legend_label_color)), 
+                                "TRUE" = legend_label_color, 
+                                "FALSE" = as_label(colorBy_column)), 
+                  linetype = switch(as.character(complete.cases(legend_label_linetype)), 
+                                    "TRUE" = legend_label_linetype, 
+                                    "FALSE" = as_label(linetype_column)))
     
     ## Adding spacing between facets if requested
     if(complete.cases(facet_spacing)){
