@@ -89,7 +89,7 @@
 #'   tricky part is that you'll need one linetype for each possible value in the
 #'   column you specified for \code{linetype_column}. Check what the unique
 #'   values are in that column if you get a graph you didn't expect as far as
-#'   line types go. 
+#'   line types go.
 #' @param colorBy_column the column in \code{ct_dataframe} that should be used
 #'   for determining which color lines and/or points will be. Default is to use
 #'   the column File. This should be unquoted, e.g., \code{colorBy_column =
