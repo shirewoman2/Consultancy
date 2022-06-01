@@ -369,55 +369,112 @@ extractConcTime_mult <- function(sim_data_files = NA,
             group_by(CompoundID, Inhibitor, DoseInt, DoseNum) %>% 
             summarize(TimeRounded = round(min(Time)))
         
-        # If there are both SD and MD data, which is the case when DoseInt is
-        # sometimes NA and sometimes has a value, then give user a warning about
-        # that but don't try to assign dose numbers to obs data since we have no
-        # way of knowing which is which.
-        if(any(is.na(SimDoseInfo$DoseInt)) & 
-           any(complete.cases(SimDoseInfo$DoseInt))){
-            warning("It looks like you have both single-dose and multiple-dose simulated data present. We thus cannot safely assign the observed data to any particular dose number since we don't know which simulated files the observed data match. Output will include both simulated and observed data, but the observed data will have NA values for DoseInt and DoseNum.",
+        # If there is only "InhbitorX" and "none" in the column "Inhibitor" for
+        # the simulated data and there's only "inhibitor 1" and no other
+        # effectors, then it's safe to assume that "inhibitor 1" should be
+        # labeled as "InhibitorX" in the observed data, too.
+        SimEffector <- unique(MultData$Inhibitor)
+        SimEffector <- SimEffector[!SimEffector == "none"]
+        if(length(SimEffector) == 1 &&
+           "inhibitor 1" %in% SimDoseInfo$CompoundID &&
+           any(c("inhibitor 2", "inhibitor 1 metabolite") %in% 
+               SimDoseInfo$CompoundID) == FALSE){
+            MultObsData$Inhibitor[MultObsData$Inhibitor != "none"] <- SimEffector
+        }
+        
+        # Similarly, if there's only one value for Compound for each CompoundID,
+        # then assigning that value to the observed data.
+        CompoundCheck <- MultData %>% group_by(CompoundID) %>% 
+            summarize(OneCompound = length(unique(Compound)) == 1) %>% 
+            filter(OneCompound == TRUE) %>% pull(CompoundID)
+        
+        if(length(CompoundCheck) > 0){
+            MultObsData <- MultObsData %>% 
+                left_join(MultData %>% filter(CompoundID %in% CompoundCheck) %>% 
+                              select(Compound, CompoundID) %>% unique(), 
+                          by = "CompoundID")
+        }
+        
+        # If there are both SD and MD data for a given CompoundID, which is the
+        # case when DoseInt is sometimes NA and sometimes has a value, then give
+        # user a warning about that but don't try to assign dose numbers to obs
+        # data since we have no way of knowing which is which.
+        MultRegimenCheck <- SimDoseInfo %>% group_by(CompoundID) %>% 
+            summarize(MultRegimens = length(unique(DoseInt)) > 1) %>% 
+            filter(MultRegimens == TRUE)
+        
+        if(nrow(MultRegimenCheck) > 0){
+            warning(paste0("It looks like you have both single-dose and multiple-dose simulated data present for the compound(s) ",
+                           str_comma(MultRegimenCheck$CompoundID), 
+                           ". We thus cannot safely assign the observed data for that/those compound(s) to any particular dose number since we don't know which simulated files the observed data match. Output will include both simulated and observed data, but the observed data will have NA values for DoseInt and DoseNum for those compounds."),
                     call. = FALSE)
-        } else if(all(is.na(SimDoseInfo$DoseInt))){
-            if(nrow(SimDoseInfo) == 1){
-                MultObsData <- MultObsData %>% 
-                    mutate(DoseNum = ifelse(Time >= SimDoseInfo$TimeRounded, 
-                                            1, 0))
-            } 
-            # if there's more than 1 row for SimDoseInfo, then everything was
-            # single dose, but dosing started at different times. Not setting
-            # this here b/c that's pretty tricky to address and not sure it's
-            # worth the time trying to figure it out.
         } else {
+            SimDoseInfo_list <- 
+                split(SimDoseInfo %>%
+                          filter(CompoundID %in% MultRegimenCheck$CompoundID == FALSE),
+                      f = list(SimDoseInfo$CompoundID, 
+                               SimDoseInfo$Inhibitor))
+            SimDoseInfo_list <- SimDoseInfo_list[which(
+                sapply(SimDoseInfo_list, FUN = nrow) > 0)]
+            MultObsData <- split(MultObsData, 
+                                 f = list(MultObsData$CompoundID, 
+                                          MultObsData$Inhibitor))
             
-            MultObsData <- split(MultObsData, f = list(MultObsData$CompoundID, 
-                                                       MultObsData$Inhibitor))
-            SimDoseInfo <- split(SimDoseInfo, f = list(SimDoseInfo$CompoundID, 
-                                                       SimDoseInfo$Inhibitor))
-            
-            for(i in names(MultObsData)){
+            for(i in intersect(names(SimDoseInfo_list), names(MultObsData))){
                 
-                SimDoseInfo[[i]] <- SimDoseInfo[[i]] %>% 
-                    ungroup() %>% 
-                    mutate(Breaks = as.character(
-                        cut(TimeRounded, breaks = TimeRounded, right = FALSE)))
-                
-                MultObsData[[i]] <- MultObsData[[i]] %>% 
-                    mutate(TimeRounded = round(Time),
-                           Breaks = as.character(
-                               cut(Time, breaks = SimDoseInfo[[i]]$TimeRounded, 
-                                   right = FALSE))) %>% 
-                    left_join(SimDoseInfo[[i]] %>% select(Breaks, DoseInt, DoseNum), 
-                              by = c("Breaks"))
-                
-                # Checking for when the simulation ends right at the last dose
-                # b/c then, setting that number to 1 dose lower
-                if(length(MultObsData[[i]] %>%
-                          filter(DoseNum == max(MultObsData[[i]]$DoseNum)) %>%
-                          pull(Time) %>% unique()) == 1){
-                    MyMaxDoseNum <- max(MultObsData[[i]]$DoseNum)
-                    MultObsData[[i]] <- MultObsData[[i]] %>%
-                        mutate(DoseNum = ifelse(DoseNum == MyMaxDoseNum,
-                                                MyMaxDoseNum - 1, DoseNum))
+                if(all(is.na(SimDoseInfo_list[[i]]$DoseInt)) &&
+                   nrow(SimDoseInfo_list[[i]]) == 1){
+                    # This is when it was a single dose and there was only one
+                    # dosing time. If there's more than 1 row here for
+                    # SimDoseInfo_list[[i]], then everything was single dose but
+                    # dosing started at different times. Not setting DoseNum
+                    # here then b/c that's tricky to figure out which start time
+                    # matches which observed file and not sure it's worth the
+                    # time trying to figure it out. For the other scenario, when
+                    # there's only one start time, setting dose number to 1 for
+                    # any times after dose administration and to 0 for any time
+                    # before then.
+                    DoseTime <- SimDoseInfo_list[[i]]$TimeRounded
+                    MultObsData[[i]] <- MultObsData[[i]] %>% 
+                        mutate(DoseNum = ifelse(Time >= {{DoseTime}}, 1, 0))
+                    rm(DoseTime)
+                    
+                } else {
+                    
+                    # This is the scenario when there were multiple doses. The
+                    # dosing interval doesn't have to be the same each time (ok
+                    # if it's custom dosing), but there must be only one value
+                    # for TimeRounded for each DoseNum for us to be able to
+                    # assign which observed data went with which dose number.
+                    
+                    Check <- SimDoseInfo_list[[i]] %>% group_by(DoseNum) %>% 
+                        summarise(SingleDoseTime = n() == 1)
+                    
+                    if(all(Check$SingleDoseTime)){
+                        SimDoseInfo_list[[i]] <- SimDoseInfo_list[[i]] %>% 
+                            ungroup() %>% 
+                            mutate(Breaks = as.character(
+                                cut(TimeRounded, breaks = TimeRounded, right = FALSE)))
+                        
+                        MultObsData[[i]] <- MultObsData[[i]] %>% 
+                            mutate(TimeRounded = round(Time),
+                                   Breaks = as.character(
+                                       cut(Time, breaks = SimDoseInfo_list[[i]]$TimeRounded, 
+                                           right = FALSE))) %>% 
+                            left_join(SimDoseInfo_list[[i]] %>% select(Breaks, DoseInt, DoseNum), 
+                                      by = c("Breaks"))
+                        
+                        # Checking for when the simulation ends right at the last dose
+                        # b/c then, setting that number to 1 dose lower
+                        if(length(MultObsData[[i]] %>%
+                                  filter(DoseNum == max(MultObsData[[i]]$DoseNum)) %>%
+                                  pull(Time) %>% unique()) == 1){
+                            MyMaxDoseNum <- max(MultObsData[[i]]$DoseNum)
+                            MultObsData[[i]] <- MultObsData[[i]] %>%
+                                mutate(DoseNum = ifelse(DoseNum == MyMaxDoseNum,
+                                                        MyMaxDoseNum - 1, DoseNum))
+                        }
+                    }
                 }
             }
             

@@ -319,9 +319,11 @@ ct_plot_overlay <- function(ct_dataframe,
                c("stomach", "duodenum", "jejunum I", "jejunum II", 
                  "ileum I", "ileum II", "ileum III", "ileum IV",
                  "colon", "faeces", "gut tissue"))){
-            stop("We're sorry, but this function has not been set up to deal with ADAM-model tissue concentrations since the units can be so different from other concentration-time data. Since all of the supplied data are ADAM model concentrations, no graph can be made.")
+            stop("We're sorry, but this function has not been set up to deal with ADAM-model tissue concentrations since the units can be so different from other concentration-time data. Since all of the supplied data are ADAM model concentrations, no graph can be made.",
+                 call. = FALSE)
         } else {
-            warning("Some of the data you supplied are ADAM-model tissue concentrations, but this function has not been set up to deal with that since the units can be so different from other concentration-time data. The ADAM-model data will be omitted from the graph.")
+            warning("Some of the data you supplied are ADAM-model tissue concentrations, but this function has not been set up to deal with that since the units can be so different from other concentration-time data. The ADAM-model data will be omitted from the graph.",
+                    call. = FALSE)
         }
     }
     
@@ -380,11 +382,15 @@ ct_plot_overlay <- function(ct_dataframe,
         
     }
     
-    ct_dataframe <- ct_dataframe %>% 
-        # At least at this point, I can't see this function working well with
-        # ADAM model data b/c the y axis units differ. Removing all ADAM model
-        # data.
-        filter(is.na(subsection_ADAM)) %>%
+    if("subsection_ADAM" %in% names(ct_dataframe)){
+        ct_dataframe <- ct_dataframe %>% 
+            # At least at this point, I can't see this function working well with
+            # ADAM model data b/c the y axis units differ. Removing all ADAM model
+            # data.
+            filter(is.na(subsection_ADAM))
+    }
+    
+    ct_dataframe <- ct_dataframe %>%
         # If it's dose number 0, remove those rows so that we'll show only the
         # parts we want when facetting and user wants scales to float freely.
         filter(DoseNum != 0 | Simulated == FALSE) %>% 
