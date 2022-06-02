@@ -217,8 +217,12 @@ pksummary_mult <- function(sim_data_files,
     
     OutQC <- bind_rows(OutQC)
     
-    Out <- list(OutPK, OutQC)
-    names(Out) <- c("Table", "QC")
+    if(checkDataSource){
+        Out <- list(OutPK, OutQC)
+        names(Out) <- c("Table", "QC")
+    } else {
+        Out <- OutPK
+    }
     
     if(complete.cases(save_table)){
         
