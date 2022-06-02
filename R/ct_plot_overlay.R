@@ -225,14 +225,16 @@
 #'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
 #'   with various fa values"}, that will make the label above the file names in
 #'   the legend more explanatory than just "File". The default is to use
-#'   whatever the column name is for \code{colorBy_column}.
+#'   whatever the column name is for \code{colorBy_column}. If you don't want a
+#'   label for this legend item, set this to "none".
 #' @param legend_label_linetype optionally indicate on the legend something
 #'   explanatory about what the line types represent. For example, if
 #'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
 #'   "Inhibitor present"}, that will make the label in the legend above, e.g.,
 #'   "none", and whatever effector was present more explanatory than just
 #'   "Inhibitor". The default is to use whatever the column name is for
-#'   \code{linetype_column}.
+#'   \code{linetype_column}. If you don't want a label for this legend item, set
+#'   this to "none".
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
@@ -580,13 +582,22 @@ ct_plot_overlay <- function(ct_dataframe,
     #     }
     # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
     
+    MyAES <- c("color" = as_label(colorBy_column), 
+               "linetype" = as_label(linetype_column),
+               "facet1" = as_label(facet1_column), 
+               "facet2" = as_label(facet2_column))
+    UniqueAES <- MyAES[which(MyAES != "<empty>")]
+    
     MyUniqueData <- ct_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
-        select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique()
+        select(union(UniqueAES, 
+                     c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
+        unique()
     
     UniqueGroups1 <- ct_dataframe %>% 
-        summarize(across(.cols = c(File, Tissue, CompoundID, Compound,
-                                   Inhibitor), 
+        summarize(across(.cols = union(UniqueAES, 
+                                       c("File", "Tissue", "CompoundID",
+                                         "Compound", "Inhibitor")),
                          .fns = function(x) length(unique(x)))) 
     
     UniqueGroups <- UniqueGroups1 %>% 
@@ -594,11 +605,6 @@ ct_plot_overlay <- function(ct_dataframe,
         mutate(MyCols = rownames(.)) %>% 
         filter(V1 > 1) %>% pull(MyCols)
     
-    MyAES <- c("color" = as_label(colorBy_column), 
-               "linetype" = as_label(linetype_column),
-               "facet1" = as_label(facet1_column), 
-               "facet2" = as_label(facet2_column))
-    UniqueAES <- MyAES[which(MyAES != "<empty>")]
     
     # If there are only 2 groups for the colorBy_column and color_set was set to
     # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
@@ -826,15 +832,27 @@ ct_plot_overlay <- function(ct_dataframe,
     A <- A + scale_linetype_manual(values = linetypes)
     
     # Adding legend label for color and linetype as appropriate
-    A <- A + labs(color = switch(as.character(complete.cases(legend_label_color)), 
-                                 "TRUE" = legend_label_color, 
-                                 "FALSE" = as_label(colorBy_column)), 
-                  fill = switch(as.character(complete.cases(legend_label_color)), 
-                                "TRUE" = legend_label_color, 
-                                "FALSE" = as_label(colorBy_column)), 
-                  linetype = switch(as.character(complete.cases(legend_label_linetype)), 
-                                    "TRUE" = legend_label_linetype, 
-                                    "FALSE" = as_label(linetype_column)))
+    if(complete.cases(legend_label_color) &&
+       legend_label_color == "none"){
+        A <- A + labs(color = NULL, fill = NULL)
+    } else {
+        A <- A + labs(color = switch(as.character(complete.cases(legend_label_color)), 
+                                     "TRUE" = legend_label_color, 
+                                     "FALSE" = as_label(colorBy_column)), 
+                      fill = switch(as.character(complete.cases(legend_label_color)), 
+                                    "TRUE" = legend_label_color,
+                                    "FALSE" = as_label(colorBy_column)))
+    }
+    
+    
+    if(complete.cases(legend_label_linetype) && 
+       legend_label_linetype == "none"){
+        A <- A + labs(linetype = NULL)
+    } else {
+        A <- A + labs(fill = switch(as.character(complete.cases(legend_label_color)), 
+                                    "TRUE" = legend_label_color,
+                                    "FALSE" = as_label(colorBy_column)))
+    }
     
     ## Adding spacing between facets if requested
     if(complete.cases(facet_spacing)){
