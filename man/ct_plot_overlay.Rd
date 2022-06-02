@@ -225,7 +225,8 @@ explanatory about what the colors represent. For example, if
 \code{colorBy_column = File} and \code{legend_label_color = "Simulations
 with various fa values"}, that will make the label above the file names in
 the legend more explanatory than just "File". The default is to use
-whatever the column name is for \code{colorBy_column}.}
+whatever the column name is for \code{colorBy_column}. If you don't want a
+label for this legend item, set this to "none".}
 
 \item{legend_label_linetype}{optionally indicate on the legend something
 explanatory about what the line types represent. For example, if
@@ -233,7 +234,8 @@ explanatory about what the line types represent. For example, if
 "Inhibitor present"}, that will make the label in the legend above, e.g.,
 "none", and whatever effector was present more explanatory than just
 "Inhibitor". The default is to use whatever the column name is for
-\code{linetype_column}.}
+\code{linetype_column}. If you don't want a label for this legend item, set
+this to "none".}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you do not designate a
