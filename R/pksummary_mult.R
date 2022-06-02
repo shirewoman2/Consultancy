@@ -158,8 +158,13 @@ pksummary_mult <- function(sim_data_files,
                 checkDataSource = checkDataSource,
                 prettify_effector_name = "effector")
             
-            OutPK[[i]] <- temp$Table %>% 
-                mutate(File = observed_PK$File[i])
+            if(checkDataSource){
+                OutPK[[i]] <- temp$Table %>% 
+                    mutate(File = i)
+            } else {
+                OutPK[[i]] <- temp %>% 
+                    mutate(File = i)    
+            }
             
             if(checkDataSource){
                 OutQC[[i]] <- temp$QC
