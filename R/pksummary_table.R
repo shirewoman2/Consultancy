@@ -163,7 +163,8 @@
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
 #'   the table saved as a Word or csv file. If you supply only the file
 #'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
-#'   \code{sim_data_file} with that extension. If supply something else for the
+#'   \code{sim_data_file} with that extension and output will be located in the
+#'   same folder as \code{sim_data_file}. If you supply something else for the
 #'   file name but you leave off the file extension, we'll assume you want it to
 #'   be ".csv". If you requested both the table and the QC info and wanted the
 #'   output to be a Word document, the Word file will contain both tables. If
@@ -910,56 +911,56 @@ pksummary_table <- function(sim_data_file = NA,
         
     }
     
-    # I think the bit below should have already been done by now
-    
-    # # If the user specified the sheet to use, we don't actually know whether
-    # # those were dose 1 or last-dose values. Removing indications of dose number
-    # # from column titles.
-    # if(complete.cases(sheet_PKparameters)){
-    #     names(MyPKResults) <- str_trim(sub("Last dose|Dose 1|_last|_first", "", 
-    #                                        names(MyPKResults)))
-    # }
-    
     if(complete.cases(save_table)){
-        OutPath <- dirname(save_table)
-        save_table <- basename(save_table)
         
-        # This is when they want a Word file as output
-        if(str_detect(save_table, "docx")){ 
-            # If they only supplied the file extension, make the file name
-            # sim_data_file.
-            if(str_detect(sub("\\.", "", save_table), "^docx$")){
-                save_table = paste0(sub("\\.xlsx", "", sim_data_file), ".docx")
-            }
-            
-            # saving Word file
-            render(switch(as.character(checkDataSource), 
-                          "TRUE" = system.file("rmd/PKSummaryOutputWithQC.Rmd", package="SimcypConsultancy"),
-                          "FALSE" = system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy")), 
-                   output_dir = getwd(), 
-                   output_file = save_table)
-            # Note: The "system.file" part of the call means "go to where the
-            # package is installed, search for the file listed, and return its
-            # full path.
-
+        # Checking whether they have specified just "docx" or just "csv" for
+        # output b/c then, we'll use sim_data_file as file name. This allows us
+        # to determine what the path should be, too, for either sim_data_file or
+        # for some specified file name.
+        if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
+            OutPath <- dirname(sim_data_file)
+            save_table <- sub("xlsx", 
+                              # If they included "." at the beginning of the
+                              # file exension, need to remove that here.
+                              sub("\\.", "", save_table),
+                              basename(sim_data_file))
         } else {
-            # This is when they want a .csv file as output
+            # If they supplied something other than just "docx" or just "csv",
+            # then check whether that file name is formatted appropriately.
             
-            # If they only supplied the file extension, make the file name
-            # sim_data_file.
-            if(str_detect(sub("\\.", "", save_table), "^csv$")){
-                save_table = paste0(sub("\\.xlsx", "", basename(sim_data_file)),
-                                    ".csv")
-            }
-            
-            if(str_detect(save_table, "\\.")){
-                # If they specified a file extension that wasn't docx, make that
-                # file extension be .csv
-                save_table <- sub("\\..*", ".csv", save_table)
+            if(str_detect(basename(save_table), "\\..*")){
+                if(str_detect(basename(save_table), "\\.docx") == FALSE){
+                    # If they specified a file extension that wasn't docx, make that
+                    # file extension be .csv
+                    save_table <- sub("\\..*", ".csv", save_table)
+                }
             } else {
                 # If they didn't specify a file extension at all, make it .csv. 
                 save_table <- paste0(save_table, ".csv")
             }
+            
+            # Now that the file should have an appropriate extension, check what
+            # the path and basename should be.
+            OutPath <- dirname(save_table)
+            save_table <- basename(save_table)
+        }
+        
+        if(str_detect(save_table, "docx")){ 
+            # This is when they want a Word file as output
+            
+            render(switch(as.character(checkDataSource), 
+                          "TRUE" = system.file("rmd/PKSummaryOutputWithQC.Rmd", package="SimcypConsultancy"),
+                          "FALSE" = system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy")), 
+                   output_dir = OutPath, 
+                   output_file = save_table, 
+                   quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
+            
+        } else {
+            # This is when they want a .csv file as output
+            
             write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
         }
     }
@@ -971,10 +972,7 @@ pksummary_table <- function(sim_data_file = NA,
         
         if(complete.cases(save_table) && str_detect(save_table, "\\.csv")){ 
             # Only saving the csv version of QC info b/c docx QC info already
-            # taken care of above. csv QC info is its own file; docx QC info is
-            # a 2nd table below the main one in the same Word file. Also, we
-            # have already cleaned up any issues with the file name above, so
-            # it's safe to just leave save_table as is.
+            # taken care of above. 
             write.csv(MyPKResults_all$QC, FileName, row.names = F)
         }
     }
