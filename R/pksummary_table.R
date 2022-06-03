@@ -265,7 +265,8 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     if(PKorder != "default" & is.na(PKparameters[1])){
-        warning("You have requested 'user specified' for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument 'PKparameters'. The order will be the default order from the Consultancy Report Template.")
+        warning("You have requested 'user specified' for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument 'PKparameters'. The order will be the default order from the Consultancy Report Template.", 
+                call. = FALSE)
         PKorder <- "default"
     }
     

@@ -74,7 +74,8 @@ fm_treemap <- function(fm_dataframe,
     
     if(color_set == "default" & NumColors > 5){
         color_set <- "viridis"
-        warning("You requested the color_set 'default', which has 5 possible colors, but your graph requires more colors than that. The color set 'viridis' will be used instead.")
+        warning("You requested the color_set 'default', which has 5 possible colors, but your graph requires more colors than that. The color set 'viridis' will be used instead.", 
+                call. = FALSE)
     }
     
     colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",

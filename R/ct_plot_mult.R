@@ -17,11 +17,16 @@
 #'
 #' @param ct_dataframe the data.frame with multiple sets of concentration-time
 #'   data
-#' @param single_out_file TRUE (default) or FALSE for whether to make multiple
-#'   output files. TRUE means that there will be a single file with all of the
-#'   graphs nicely arranged together. FALSE means that each Simulator output
-#'   file will have its own output file, and that graph's output file will be
-#'   named to match the Simulator output file name.
+#' @param graph_arrangement set how to arrange the graphs. Options are
+#'   \describe{\item{"all together"}{(default) for all graphs being nicely
+#'   arranged and aligned together,} \item{"separate files"}{to make one output
+#'   file per simulator file, or} \item{"numrows x numcols"}{where you replace
+#'   "numrows" with the number of rows of graphs you'd like and "numcols" with
+#'   the number of column and the result is a single, nicely arranged graph. For
+#'   example, "2 x 4" will make a set of graphs with 2 rows and 4 columns. This
+#'   is the same as the option "all together" except with more control.}} If you
+#'   choose "separate files", each Simulator output file will have its own graph
+#'   file, named to match the Simulator output file name.
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -94,7 +99,6 @@
 #'   be limited to the start of the last dose until the last observed data
 #'   point.}
 #'
-#'
 #'   }
 #'
 #' @param pad_x_axis optionally add a smidge of padding to the the x axis
@@ -142,22 +146,16 @@
 #'   the graphs (this applies when \code{include_title = TRUE}) and/or specify
 #'   the order in which the files are graphed with a named character vector of
 #'   the files in the order you would like. (Not applicable if
-#'   \code{single_out_file = FALSE}.) The file name must \emph{perfectly} match
-#'   the file name listed in ct_dataframe or it won't be used. An example of how
-#'   this might be specified: \code{alt_title = c("My file 1.xlsx" = "Healthy
-#'   volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an
-#'   order that you didn't think you specified, please double check that you
-#'   have specified the file names \emph{exactly} as they appear in
+#'   \code{graph_arrangement = FALSE}.) The file name must \emph{perfectly}
+#'   match the file name listed in ct_dataframe or it won't be used. An example
+#'   of how this might be specified: \code{alt_title = c("My file 1.xlsx" =
+#'   "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If
+#'   you get an order that you didn't think you specified, please double check
+#'   that you have specified the file names \emph{exactly} as they appear in
 #'   \code{ct_dataframe}.
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if
-#'   \code{single_out_file = FALSE}.)
-#' @param nrow number of rows of small graphs in the arrangement. If left as NA,
-#'   a reasonable guess will be made. (Not applicable if \code{single_out_file =
-#'   FALSE}.)
-#' @param ncol number of columns of small graphs in the arrangement. If left as
-#'   NA, a reasonable guess will be made. (Not applicable if
-#'   \code{single_out_file = FALSE}.)
+#'   \code{graph_arrangement = FALSE}.)
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
@@ -165,8 +163,16 @@
 #'   it will be saved as that file format. Acceptable extensions are "eps",
 #'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
 #'   means the file will not be automatically saved to disk. (Not applicable if
-#'   \code{single_out_file = FALSE} because each graph will be named according
+#'   \code{graph_arrangement = FALSE} because each graph will be named according
 #'   to its Simulator output file.)
+#' @param file_suffix optionally add a file suffix to explain what each graph
+#'   it. For example, you might run this function once and with
+#'   \code{figure_type = "means only"} and once with \code{figure_type =
+#'   "percentiles"}, so you could set file_suffix to, e.g., "means only" for the
+#'   former and "percentiles" for the latter, and the graph file names would be
+#'   something like "abc-5mg-sd - means only.png" and "abc-5mg-sd -
+#'   percentiles.png". This is only used when \code{graph_arrangement =
+#'   "separate files"}.
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 8
 #'
@@ -187,7 +193,7 @@
 #'                    "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
 #' 
 ct_plot_mult <- function(ct_dataframe, 
-                         single_out_file = TRUE, 
+                         graph_arrangement = "all together", 
                          figure_type = "percentiles",
                          mean_type = "arithmetic",
                          linear_or_log = "semi-log",
@@ -201,10 +207,9 @@ ct_plot_mult <- function(ct_dataframe,
                          legend_label = NA, 
                          include_title = FALSE,
                          file_labels = NA,
-                         nrow = NULL, 
-                         ncol = NULL,
                          graph_labels = TRUE,
                          save_graph = NA,
+                         file_suffix = NA,
                          fig_height = 8,
                          fig_width = 8,
                          ...){
@@ -395,7 +400,34 @@ ct_plot_mult <- function(ct_dataframe,
         labels <- NULL
     }
     
-    if(single_out_file){
+    if(graph_arrangement != "separate files"){
+        
+        # Checking on number of columns and rows requested
+        if(graph_arrangement == "all together"){
+            nrow <- NULL
+            ncol <- NULL
+        } else {
+            graph_arrangement <- gsub(" ", "", tolower(graph_arrangement))
+            graph_arrangement <- as.numeric(
+                str_split(graph_arrangement, pattern = "x", simplify = TRUE))
+            nrow <- graph_arrangement[1]
+            ncol <- graph_arrangement[2]
+            
+            # Checking that these are sensible numbers. If there are blank spots
+            # where there aren't enough graphs -- for example, there are only 3
+            # graphs and they asked for 2 rows and 2 columns -- that's ok, but
+            # this gives unexpected output if there are not enough slots to fit
+            # all the graphs.
+            if(nrow * ncol < length(AllGraphs)){
+                warning(paste0("You requested ", nrow, " row(s) and ", 
+                               ncol, " column(s) of graphs, which allows space for up to ", 
+                               nrow * ncol, " graphs. However, you have ", 
+                               length(AllGraphs), " graphs. We're going to guess at more reasonable numbers of rows and columns for you."),
+                        call. = FALSE)
+                nrow <- NULL
+                ncol <- NULL
+            }
+        }
         
         if(legend_position == "none"){
             Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
@@ -436,7 +468,9 @@ ct_plot_mult <- function(ct_dataframe,
     } else {
         
         for(i in names(AllGraphs)){
-            ggsave(paste0(basename(gsub("\\.xlsx.*", "", i)), ".png"), 
+            ggsave(paste0(gsub("\\.xlsx.*", "", basename(i)), 
+                          ifelse(complete.cases(file_suffix),
+                                 paste0(" - ", file_suffix), ""), ".png"), 
                    height = fig_height, width = fig_width, dpi = 600, 
                    plot = AllGraphs[[i]])
         }
