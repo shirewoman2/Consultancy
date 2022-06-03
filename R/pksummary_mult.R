@@ -89,9 +89,18 @@
 #'   simulator output file. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
-#'   table.csv". If you leave off ".csv", it will still be saved as a csv file.
-#'   If you requested both the table and the QC info, the QC file will have "-
-#'   QC" added to the end of the file name.#'
+#'   table.docx" or "My table.csv", depending on whether you'd prefer to have
+#'   the table saved as a Word or csv file. If you supply only the file
+#'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
+#'   "PK summary table" plus the date and time (so you don't accidentally
+#'   overwrite anything) with that extension. If you supply something other than
+#'   just "docx" or just "csv" for the file name but you leave off the file
+#'   extension, we'll assume you want it to be ".csv". All PK info will be
+#'   included in a single Word or csv file, and, if \code{checkDataSource =
+#'   TRUE}, that will be saved in a single csv file. (This works a little
+#'   differently from \code{\link{pksummary_table}} output options, but we think
+#'   it's what you'll probably want most of the time here.)
+#'
 #' @return Returns a data.frame with summary PK parameters from multiple
 #'   simulator output files
 #' @export
@@ -136,13 +145,13 @@ pksummary_mult <- function(sim_data_files,
     }
     
     # Getting the data
-    OutPK <- list()
+    MyPKResults <- list()
     OutQC <- list()
     
     if(exists("observed_PKDF", inherits = FALSE)){
         
         for(i in 1:nrow(observed_PKDF)){
-            temp <- pksummary_table(#sim_data_file = NA,
+            temp <- pksummary_table(
                 observed_PK = observed_PKDF[i, ], 
                 PKparameters = PKparameters, 
                 PKorder = PKorder, 
@@ -160,14 +169,14 @@ pksummary_mult <- function(sim_data_files,
             
             if(checkDataSource){
                 
-                OutPK[[i]] <- temp$Table %>% 
+                MyPKResults[[i]] <- temp$Table %>% 
                     mutate(File = i)
                 
                 OutQC[[i]] <- temp$QC
                 
             } else {
                 
-                OutPK[[i]] <- temp %>% 
+                MyPKResults[[i]] <- temp %>% 
                     mutate(File = i)    
                 
             }
@@ -195,14 +204,14 @@ pksummary_mult <- function(sim_data_files,
             
             if(checkDataSource){
                 
-                OutPK[[i]] <- temp$Table %>% 
+                MyPKResults[[i]] <- temp$Table %>% 
                     mutate(File = i)
                 
                 OutQC[[i]] <- temp$QC
                 
             } else {
                 
-                OutPK[[i]] <- temp %>% 
+                MyPKResults[[i]] <- temp %>% 
                     mutate(File = i)    
                 
             }
@@ -212,37 +221,66 @@ pksummary_mult <- function(sim_data_files,
         }
     }
     
-    OutPK <- bind_rows(OutPK) %>% 
+    MyPKResults <- bind_rows(MyPKResults) %>% 
         select(File, everything())
     
     OutQC <- bind_rows(OutQC)
     
     if(checkDataSource){
-        Out <- list(OutPK, OutQC)
+        Out <- list(MyPKResults, OutQC)
         names(Out) <- c("Table", "QC")
     } else {
-        Out <- OutPK
+        Out <- MyPKResults
     }
     
     if(complete.cases(save_table)){
         
-        if(str_detect(save_table, "\\.")){
-            FileName <- sub("\\..*", ".csv", save_table)
+        # Checking whether they have specified just "docx" or just "csv" for
+        # output b/c then, we'll use "PK summary table" plus the data and time
+        # as file name. 
+        if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
+            OutPath <- "."
+            save_table <- paste0("PK summary table ", 
+                                 gsub("\\.", "-", 
+                                      sub("X", "", make.names(Sys.time()))),
+                                 ".docx")
         } else {
-            FileName <- paste0(save_table, ".csv")
-        }
-        
-        write.csv(OutPK, FileName, row.names = F)
-        
-        if(checkDataSource){
+            # If they supplied something other than just "docx" or just "csv",
+            # then check whether that file name is formatted appropriately.
             
-            if(str_detect(save_table, "\\.")){
-                FileName <- sub("\\..*", " - QC.csv", save_table)
+            if(str_detect(basename(save_table), "\\..*")){
+                if(str_detect(basename(save_table), "\\.docx") == FALSE){
+                    # If they specified a file extension that wasn't docx, make that
+                    # file extension be .csv
+                    save_table <- sub("\\..*", ".csv", save_table)
+                }
             } else {
-                FileName <- paste0(save_table, " - QC.csv")
+                # If they didn't specify a file extension at all, make it .csv. 
+                save_table <- paste0(save_table, ".csv")
             }
             
-            write.csv(OutQC, FileName, row.names = F)
+            # Now that the file should have an appropriate extension, check what
+            # the path and basename should be.
+            OutPath <- dirname(save_table)
+            save_table <- basename(save_table)
+        }
+        
+        if(str_detect(save_table, "\\.csv")){
+            # This is when they want a csv file as output
+            write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
+        } else {
+            # This is when they want a Word file as output
+            render(system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy"),
+                   output_dir = OutPath, 
+                   output_file = save_table, 
+                   quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
+        }
+        
+        if(checkDataSource){
+            write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
     }
     

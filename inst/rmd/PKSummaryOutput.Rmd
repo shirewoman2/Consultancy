@@ -39,6 +39,11 @@ flextable_simcyp <- function(DF){
 
 ```{r}
 
+if("File" %in% names(MyPKResults)){
+    MyPKResults <- MyPKResults %>% 
+        select(!matches("File"), File)
+}
+
 flextable_simcyp(MyPKResults)
 
 ```

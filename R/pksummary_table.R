@@ -164,12 +164,13 @@
 #'   the table saved as a Word or csv file. If you supply only the file
 #'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
 #'   \code{sim_data_file} with that extension and output will be located in the
-#'   same folder as \code{sim_data_file}. If you supply something else for the
-#'   file name but you leave off the file extension, we'll assume you want it to
-#'   be ".csv". If you requested both the table and the QC info and wanted the
-#'   output to be a Word document, the Word file will contain both tables. If
-#'   you requested csv output, the QC data will be in a file on its own and will
-#'   have "- QC" added to the end of the file name.
+#'   same folder as \code{sim_data_file}. If you supply something other than
+#'   just "docx" or just "csv" for the file name but you leave off the file
+#'   extension, we'll assume you want it to be ".csv". If you requested both the
+#'   table and the QC info and wanted the output to be a Word document, the Word
+#'   file will contain both tables. If you requested csv output, the QC data
+#'   will be in a file on its own and will have "- QC" added to the end of the
+#'   file name.
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -947,7 +948,6 @@ pksummary_table <- function(sim_data_file = NA,
         
         if(str_detect(save_table, "docx")){ 
             # This is when they want a Word file as output
-            
             render(switch(as.character(checkDataSource), 
                           "TRUE" = system.file("rmd/PKSummaryOutputWithQC.Rmd", package="SimcypConsultancy"),
                           "FALSE" = system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy")), 
@@ -960,20 +960,20 @@ pksummary_table <- function(sim_data_file = NA,
             
         } else {
             # This is when they want a .csv file as output
-            
             write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
         }
     }
     
     if(checkDataSource){
-        MyPKResults <- list("Table" = MyPKResults,
-                            "QC" = MyPKResults_all$QC)
+        OutQC <- MyPKResults_all$QC
         
+        MyPKResults <- list("Table" = MyPKResults,
+                            "QC" = OutQC)
         
         if(complete.cases(save_table) && str_detect(save_table, "\\.csv")){ 
             # Only saving the csv version of QC info b/c docx QC info already
             # taken care of above. 
-            write.csv(MyPKResults_all$QC, FileName, row.names = F)
+            write.csv(OutQC, FileName, row.names = F)
         }
     }
     

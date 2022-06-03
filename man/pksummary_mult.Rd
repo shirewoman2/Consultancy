@@ -126,9 +126,17 @@ simulator output file. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.csv". If you leave off ".csv", it will still be saved as a csv file.
-If you requested both the table and the QC info, the QC file will have "-
-QC" added to the end of the file name.#'}
+table.docx" or "My table.csv", depending on whether you'd prefer to have
+the table saved as a Word or csv file. If you supply only the file
+extension, e.g., \code{save_table = "docx"}, the name of the file will be
+"PK summary table" plus the date and time (so you don't accidentally
+overwrite anything) with that extension. If you supply something other than
+just "docx" or just "csv" for the file name but you leave off the file
+extension, we'll assume you want it to be ".csv". All PK info will be
+included in a single Word or csv file, and, if \code{checkDataSource =
+TRUE}, that will be saved in a single csv file. (This works a little
+differently from \code{\link{pksummary_table}} output options, but we think
+it's what you'll probably want most of the time here.)}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple

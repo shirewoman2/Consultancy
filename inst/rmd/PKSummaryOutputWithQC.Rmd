@@ -39,6 +39,11 @@ flextable_simcyp <- function(DF){
 
 ```{r}
 
+if("File" %in% names(MyPKResults)){
+    MyPKResults <- MyPKResults %>% 
+        select(!matches("File"), File)
+}
+
 flextable_simcyp(MyPKResults)
 
 ```
@@ -48,7 +53,7 @@ Info for QCing:
 
 ```{r}
 
-flextable_simcyp(MyPKResults_all$QC)
+flextable_simcyp(OutQC)
 
 ```
 
