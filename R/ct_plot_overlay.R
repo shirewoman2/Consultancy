@@ -191,7 +191,13 @@
 #'   \item{"blue-green"}{a set of blues and greens}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-#'   package}}
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}}
+#'   
 #' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
 #'   observations. Acceptable values are 0 (completely transparent) to 1
@@ -786,10 +792,10 @@ ct_plot_overlay <- function(ct_dataframe,
     blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
                                     "dodgerblue3", "royalblue4"))
     
-    NumColorsNeeded <- sim_dataframe %>% pull(MyAES["color"]) %>% 
+    NumColors <- sim_dataframe %>% pull(MyAES["color"]) %>% 
         unique() %>% length()
     
-    # print(NumColorsNeeded)
+    # print(NumColors)
     
     if(length(sort(unique(ct_dataframe$colorBy_column))) == 1){
         A <- A + scale_color_manual(values = "black")
@@ -802,13 +808,13 @@ ct_plot_overlay <- function(ct_dataframe,
         }
         
         if(color_set == "blue-green"){
-            A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-                scale_fill_manual(values = blueGreen(NumColorsNeeded))
+            A <- A + scale_color_manual(values = blueGreen(NumColors)) +
+                scale_fill_manual(values = blueGreen(NumColors))
         }
         
         if(color_set == "rainbow"){
-            A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-                scale_fill_manual(values = colRainbow(NumColorsNeeded))
+            A <- A + scale_color_manual(values = colRainbow(NumColors)) +
+                scale_fill_manual(values = colRainbow(NumColors))
         }
         
         if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
@@ -825,6 +831,11 @@ ct_plot_overlay <- function(ct_dataframe,
         if(color_set == "Tableau"){
             A <- A + ggthemes::scale_color_tableau() +
                 ggthemes::scale_fill_tableau()
+        }
+        
+        if(color_set == "viridis"){
+            A <- A + viridis::scale_color_viridis(discrete = TRUE) +
+                viridis::scale_fill_viridis(discrete = TRUE)
         }
     }
     

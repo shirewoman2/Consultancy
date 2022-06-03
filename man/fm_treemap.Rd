@@ -22,8 +22,12 @@ metaboilized}}}
 \item{color_set}{the set of colors to use. Options are "default", which
 matches Simcyp colors in PowerPoint presentations and is rather nice, "set
 1" for Brewer set 1, "set 2" for Brewer set 2 (colorblind friendly),
-"rainbow", which works well when there are a LOT of fm's to visualize, or
-"blue-green", which makes a pretty gradient of blues and greens.}
+"rainbow", which works well when there are a LOT of fm's to visualize,
+"blue-green", which makes a pretty gradient of blues and greens, or
+"viridis", which is from the eponymous package by Simon Garnier and ranges
+colors from purple to blue to green to yellow in a manner that is
+"printer-friendly, perceptually uniform and easy to read by those with
+colorblindness", according to the package author.}
 
 \item{label_fm_cutoff}{cutoff to use for having a label show up underneath
 the graph; default is 0.05. You may want to play around with this a bit in

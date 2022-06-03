@@ -91,7 +91,12 @@ values or this will fail!}
   \item{"blue-green"}{a set of blues and greens}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-  package}}}
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}}}
 
 \item{y_axis_limits}{optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 If left as NA, the Y axis limits will be automatically selected. (Reminder:

@@ -104,7 +104,12 @@ order designated here.}
   \item{"blue-green"}{a set of blues and greens}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-  package}}}
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}}}
 
 \item{obs_transparency}{Optionally make the observed data points
 semi-transparent, which can be helpful when there are numerous

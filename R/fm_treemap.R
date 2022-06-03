@@ -20,8 +20,12 @@
 #' @param color_set the set of colors to use. Options are "default", which
 #'   matches Simcyp colors in PowerPoint presentations and is rather nice, "set
 #'   1" for Brewer set 1, "set 2" for Brewer set 2 (colorblind friendly),
-#'   "rainbow", which works well when there are a LOT of fm's to visualize, or
-#'   "blue-green", which makes a pretty gradient of blues and greens.
+#'   "rainbow", which works well when there are a LOT of fm's to visualize,
+#'   "blue-green", which makes a pretty gradient of blues and greens, or
+#'   "viridis", which is from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author.
 #' @param label_fm_cutoff cutoff to use for having a label show up underneath
 #'   the graph; default is 0.05. You may want to play around with this a bit in
 #'   the final graphic file because how this graph looks is extremely dependent
@@ -56,7 +60,7 @@ fm_treemap <- function(fm_dataframe,
     
     # Checking format of fm_dataframe
     if(all(c("fm", "DME") %in% names(fm_dataframe)) == FALSE){
-        stop("fm_dataframe must contain columns titled 'fm' and 'DME', and those are not present.")
+        stop("fm_dataframe must contain columns titled 'fm' and 'DME', and one or both of those are not present.")
     }
     
     # Adding labels 
@@ -68,6 +72,11 @@ fm_treemap <- function(fm_dataframe,
     # Adding options for colors
     NumColors <- length(levels(fm_dataframe$Label))
     
+    if(color_set == "default" & NumColors > 5){
+        color_set <- "viridis"
+        warning("You requested the color_set 'default', which has 5 possible colors, but your graph requires more colors than that. The color set 'viridis' will be used instead.")
+    }
+    
     colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
                                      "darkorange", "green3", "seagreen3",
                                      "cadetblue", "dodgerblue3", "royalblue4",
@@ -75,12 +84,14 @@ fm_treemap <- function(fm_dataframe,
     
     blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
                                     "dodgerblue3", "royalblue4"))
+    
     MyColors <- switch(color_set, 
                        "default" = SimcypColors, 
                        "set 1" = RColorBrewer::brewer.pal(NumColors, "Set1"),
                        "set 2" = RColorBrewer::brewer.pal(NumColors, "Dark2"),
                        "rainbow" = colRainbow(NumColors), 
-                       "blue-green" = blueGreen(NumColors))
+                       "blue-green" = blueGreen(NumColors),
+                       "viridis" = viridis::viridis(NumColors))
     
     # Adjusting default colors based on number of levels to the combos I like
     # best. :-)
