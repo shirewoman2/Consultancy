@@ -912,6 +912,8 @@ pksummary_table <- function(sim_data_file = NA,
         
     }
     
+    if(checkDataSource){OutQC <- MyPKResults_all$QC}
+    
     if(complete.cases(save_table)){
         
         # Checking whether they have specified just "docx" or just "csv" for
@@ -948,12 +950,13 @@ pksummary_table <- function(sim_data_file = NA,
         
         if(str_detect(save_table, "docx")){ 
             # This is when they want a Word file as output
-            render(switch(as.character(checkDataSource), 
-                          "TRUE" = system.file("rmd/PKSummaryOutputWithQC.Rmd", package="SimcypConsultancy"),
-                          "FALSE" = system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy")), 
-                   output_dir = OutPath, 
-                   output_file = save_table, 
-                   quiet = TRUE)
+            rmarkdown::render(
+                switch(as.character(checkDataSource), 
+                       "TRUE" = system.file("rmd/PKSummaryOutputWithQC.Rmd", package="SimcypConsultancy"),
+                       "FALSE" = system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy")), 
+                output_dir = OutPath, 
+                output_file = save_table, 
+                quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
@@ -965,8 +968,6 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     if(checkDataSource){
-        OutQC <- MyPKResults_all$QC
-        
         MyPKResults <- list("Table" = MyPKResults,
                             "QC" = OutQC)
         

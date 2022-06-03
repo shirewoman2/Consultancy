@@ -270,10 +270,11 @@ pksummary_mult <- function(sim_data_files,
             write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
         } else {
             # This is when they want a Word file as output
-            render(system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy"),
-                   output_dir = OutPath, 
-                   output_file = save_table, 
-                   quiet = TRUE)
+            rmarkdown::render(
+                system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy"),
+                output_dir = OutPath, 
+                output_file = save_table, 
+                quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
