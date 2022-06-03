@@ -1,0 +1,56 @@
+---
+title: "PK summary table"
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r set-options, echo=FALSE}
+
+suppressWarnings(library(knitr))
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 300, 
+                      fig.width = 6, 
+                      fig.height = 5)
+
+```
+
+```{r}
+
+# library(tidyverse)
+# library(SimcypConsultancy)
+library(flextable)
+library(officer)
+
+flextable_simcyp <- function(DF){
+
+   DF %>% flextable() %>% 
+      bold(part = "header") %>%
+      bold(j = 1, part = "body") %>% 
+      align(align = "center", part = "header") %>%
+      border_remove() %>% 
+      border_inner_v(part = "all", border = fp_border(width = 0.5)) %>% 
+   border_outer(border = fp_border(width = 0.5)) %>% 
+   set_table_properties(width = 1, layout = "autofit")
+
+}
+
+```
+
+```{r}
+
+flextable_simcyp(MyPKResults)
+
+```
+
+
+Info for QCing: 
+
+```{r}
+
+flextable_simcyp(MyPKResults_all$QC)
+
+```
+
+
+
