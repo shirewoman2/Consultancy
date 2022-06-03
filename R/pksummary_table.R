@@ -974,7 +974,7 @@ pksummary_table <- function(sim_data_file = NA,
         if(complete.cases(save_table) && str_detect(save_table, "\\.csv")){ 
             # Only saving the csv version of QC info b/c docx QC info already
             # taken care of above. 
-            write.csv(OutQC, FileName, row.names = F)
+            write.csv(OutQC, sub(".csv", " - QC.csv", save_table), row.names = F)
         }
     }
     
