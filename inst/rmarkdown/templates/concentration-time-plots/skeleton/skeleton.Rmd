@@ -1,0 +1,23 @@
+---
+title: "Concentration-time plots"
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupctplot, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+```{r ctplot, fig.width = fig_width, fig.height = fig_height}
+
+Out 
+
+```
+
+*Depicted are simulated (lines) and observed data (circles; mean of n = \*\* individuals; Clinical Study \*\*). The grey lines represent mean values of simulated individual trials and the black lines portray the mean data of the simulated population (n = \*\*) Source simulated data: `r unique(ct_dataframe$File)`.*
+
+
+

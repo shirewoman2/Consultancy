@@ -1191,7 +1191,8 @@ ct_plot <- function(ct_dataframe = NA,
             OutPath <- dirname(FileName)
             FileName <- basename(FileName)
             
-            rmarkdown::render(system.file("rmd/ctplot.Rmd", package="SimcypConsultancy"), 
+            rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
                 output_dir = OutPath, 
                 output_file = FileName, 
                 quiet = TRUE)

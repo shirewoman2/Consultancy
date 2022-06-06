@@ -949,7 +949,8 @@ ct_plot_overlay <- function(ct_dataframe,
             OutPath <- dirname(FileName)
             FileName <- basename(FileName)
             
-            rmarkdown::render(system.file("rmd/ctplot_mult.Rmd", package="SimcypConsultancy"), 
+            rmarkdown::render(system.file("rmarkdown/templates/multiple-or-overlaid-concentration-time-plots/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
                               output_dir = OutPath, 
                               output_file = FileName, 
                               quiet = TRUE)

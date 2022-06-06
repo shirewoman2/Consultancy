@@ -953,8 +953,10 @@ pksummary_table <- function(sim_data_file = NA,
             # This is when they want a Word file as output
             rmarkdown::render(
                 switch(as.character(checkDataSource), 
-                       "TRUE" = system.file("rmd/PKSummaryOutputWithQC.Rmd", package="SimcypConsultancy"),
-                       "FALSE" = system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy")), 
+                       "TRUE" = system.file("rmarkdown/templates/pk-summary-table-with-qc-info/skeleton/skeleton.Rmd",
+                                            package="SimcypConsultancy"),
+                       "FALSE" = system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
+                                             package="SimcypConsultancy")), 
                 output_dir = OutPath, 
                 output_file = save_table, 
                 quiet = TRUE)
