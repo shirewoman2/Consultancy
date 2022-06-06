@@ -1,0 +1,4 @@
+name: PK Summary Table with QC info
+description: >
+   A Word document with output from the function pksummary_table, including info for QCing
+create_dir: FALSE
