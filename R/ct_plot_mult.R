@@ -158,13 +158,14 @@
 #'   \code{graph_arrangement = FALSE}.)
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
 #' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
-#'   will be saved as a png file, but if you specify a different file extension,
-#'   it will be saved as that file format. Acceptable extensions are "eps",
-#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-#'   means the file will not be automatically saved to disk. (Not applicable if
-#'   \code{graph_arrangement = FALSE} because each graph will be named according
-#'   to its Simulator output file.)
+#'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
+#'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
+#'   you specify a different graphical file extension, it will be saved as that
+#'   file format. Acceptable extensions are "eps", "ps", "jpeg", "jpg", "tiff",
+#'   "png", "bmp", or "svg". Leaving this as NA means the file will not be
+#'   automatically saved to disk. (Not applicable if \code{graph_arrangement =
+#'   FALSE} because each graph will be named according to its Simulator output
+#'   file.)
 #' @param file_suffix optionally add a file suffix to explain what each graph
 #'   it. For example, you might run this function once and with
 #'   \code{figure_type = "means only"} and once with \code{figure_type =
@@ -451,16 +452,34 @@ ct_plot_mult <- function(ct_dataframe,
                 Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
                 FileName <- sub(paste0(".", Ext), "", FileName)
                 Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                         "png", "bmp", "svg", "jpg"), 
+                                         "png", "bmp", "svg", "jpg", "docx"), 
                               Ext, "png")
                 FileName <- paste0(FileName, ".", Ext)
             } else {
                 FileName <- paste0(FileName, ".png")
             }
             
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = Out)
-            
+            if(Ext == "docx"){
+                # This is when they want a Word file as output
+                
+                OutPath <- dirname(FileName)
+                FileName <- basename(FileName)
+                
+                rmarkdown::render(system.file("rmd/ctplot_mult.Rmd", package="SimcypConsultancy"), 
+                                  output_dir = OutPath, 
+                                  output_file = FileName, 
+                                  quiet = TRUE)
+                # Note: The "system.file" part of the call means "go to where the
+                # package is installed, search for the file listed, and return its
+                # full path.
+                
+            } else {
+                # This is when they want any kind of graphical file format.
+                
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = Out)
+                
+            }
         }
         
         return(Out)

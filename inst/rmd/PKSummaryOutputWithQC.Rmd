@@ -7,7 +7,7 @@ output: word_document
 ```{r setupPKSummaryWithQC, echo=FALSE}
 
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
-                      dpi = 300, 
+                      dpi = 600, 
                       fig.width = 6, 
                       fig.height = 5)
 
@@ -41,6 +41,9 @@ if("File" %in% names(MyPKResults)){
 flextable_simcyp(MyPKResults)
 
 ```
+
+*t~max~: median, min, max; CI: Confidence Interval; CV: Coefficient of Variation; S/O: Simulated/Observed; Source observed data: Clinical Study \*\*; Source simulated data: `r sim_data_file`* 
+
 
 
 Info for QCing: 

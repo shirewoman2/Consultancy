@@ -197,17 +197,18 @@
 #'   colors from purple to blue to green to yellow in a manner that is
 #'   "printer-friendly, perceptually uniform and easy to read by those with
 #'   colorblindness", according to the package author}}
-#'   
+#'
 #' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
 #'   observations. Acceptable values are 0 (completely transparent) to 1
 #'   (completely opaque).
 #' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My conc time graph.png". If you do not designate a
-#'   file extension, it will be saved as a png file, but if you specify a
-#'   different file extension, it will be saved as that file format. Acceptable
-#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-#'   Leaving this as NA means the file will not be automatically saved to disk.
+#'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
+#'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
+#'   you specify a different graphical file extension, it will be saved as that
+#'   file format. Acceptable extensions are "eps", "ps", "jpeg", "jpg", "tiff",
+#'   "png", "bmp", or "svg". Leaving this as NA means the file will not be
+#'   automatically saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -935,31 +936,49 @@ ct_plot_overlay <- function(ct_dataframe,
             Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
             FileName <- sub(paste0(".", Ext), "", FileName)
             Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg"), 
+                                     "png", "bmp", "svg", "jpg", "docx"), 
                           Ext, "png")
             FileName <- paste0(FileName, ".", Ext)
         } else {
             FileName <- paste0(FileName, ".png")
         }
         
-        if(linear_or_log %in% c("both", "both vertical")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                   plot = AB)
-        }
-        
-        if(linear_or_log %in% c("both horizontal")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                   plot = ABhoriz)
-        }
-        
-        if(linear_or_log == "linear"){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = A)
-        }
-        
-        if(str_detect(linear_or_log, "log")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = B)
+        if(Ext == "docx"){
+            # This is when they want a Word file as output
+            
+            OutPath <- dirname(FileName)
+            FileName <- basename(FileName)
+            
+            rmarkdown::render(system.file("rmd/ctplot_mult.Rmd", package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = FileName, 
+                              quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
+            
+        } else {
+            # This is when they want any kind of graphical file format.
+            
+            if(linear_or_log %in% c("both", "both vertical")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                       plot = AB)
+            }
+            
+            if(linear_or_log %in% c("both horizontal")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                       plot = ABhoriz)
+            }
+            
+            if(linear_or_log == "linear"){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = A)
+            }
+            
+            if(str_detect(linear_or_log, "log")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = B)
+            }
         }
     }
     
