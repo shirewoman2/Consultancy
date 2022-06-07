@@ -51,7 +51,7 @@ FigText2 <- ifelse(Dose1included & LastDoseincluded,
 
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r mean_type` mean PK parameters for `r `Deets$Substrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", Deets$Substrate)` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean PK parameters for `r Deets$Substrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", Deets$Substrate)` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
 
 
 ```{r makeTablePKSummaryOutput}
@@ -67,20 +67,36 @@ flextable_simcyp(MyPKResults)
 
 ```{r captionPKSummary}
 
-CapText1 <- ifelse(any(str_detect(PKToPull, "tmax")), 
-                   "t~max~: median, min, max; ", "")
-
 if(exists("sim_data_files", inherits = FALSE)){
+    CapText1 <- paste0(ifelse(any(str_detect(names(MyPKResults), "tmax")), 
+                              "t~max~: median, min, max; ", ""), 
+                       ifelse(str_detect(MyPKResults$Statistic, " CI"),
+                              "CI: Confidence Interval; ", ""), 
+                       ifelse(str_detect(MyPKResults$Statistic, "CV"),
+                              "CV: Coefficient of Variation; ", ""), 
+                       ifelse(Observedincluded, 
+                              "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
+                              ""))
+    
     CapText2 <- str_comma(sim_data_files)
+    
 } else {
+    CapText1 <- paste0(ifelse(any(str_detect(PKToPull, "tmax")), 
+                              "t~max~: median, min, max; ", ""), 
+                       ifelse(str_detect(MyPKResults$Statistic, " CI"),
+                              "CI: Confidence Interval; ", ""), 
+                       ifelse(str_detect(MyPKResults$Statistic, "CV"),
+                              "CV: Coefficient of Variation; ", ""), 
+                       ifelse(Observedincluded, 
+                              "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
+                              ""))
+    
     CapText2 <- sim_data_file
 }
-
-
 
 ```
 
 
-*`r CapText1``r ifelse(str_detect(MyPKResults$Statistic, " CI"), "CI: Confidence Interval; ", "")``r ifelse(str_detect(MyPKResults$Statistic, "CV"), "CV: Coefficient of Variation; ", "")``r ifelse(Observedincluded, "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ", "")`Source simulated data: `r CapText2`* 
+*`r CapText1`Source simulated data: `r CapText2`* 
 
 

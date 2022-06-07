@@ -77,7 +77,7 @@ CapText1 <-
                          "mean of n = XXX individuals; Clinical Study XXX)"), 
                    ""), 
             MyTissue, "concentration-time profiles of", MySubstrate, 
-            "following a single oral dose of", MySubstrate, 
+            "following", FigText3, "of", MySubstrate, 
             "in the absence of", MyEffector, 
             " (solid line) and on the XXXth day of XXX days of dosing of", 
             MyEffector, "(dashed line)"))
