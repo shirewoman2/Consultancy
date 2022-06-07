@@ -17,7 +17,42 @@ Out
 
 ```
 
-*Depicted are simulated (lines) and observed data (circles; mean of n = \*\* individuals; Clinical Study \*\*). The grey lines represent mean values of simulated individual trials and the black lines portray the mean data of the simulated population (n = \*\*) Source simulated data: `r str_comma(unique(ct_dataframe$File))`.*
+```{r ctplotmultCaption}
+
+InhibPresent <- any(ct_dataframe$Inhibitor != "none")
+
+CapText1 <-
+    switch(as.character(
+        InhibPresent), 
+        "FALSE" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                         "and observed data (circles; mean of n = ** individuals; Clinical Study **)", 
+                         ""), 
+        
+        "TRUE" = paste0(
+            ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                   "and observed (circles; mean of n = ** individuals; Clinical Study **)", 
+                   ""), 
+            " plasma concentration-time profiles of ",
+            unique(ct_dataframe$Compound), 
+            " following a single oral dose of ", 
+            unique(ct_dataframe$Compound), 
+            " in the absence of ", 
+            unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"]), 
+            " (solid line) and on the **th day of ** days of dosing of ", 
+            unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"]), 
+            " (dashed line)"))
+
+CapText2 <- switch(figure_type, 
+                   "trial means" = "The grey lines represent mean values of simulated individual trials and the black lines portray the mean data of the simulated population (n = **)", 
+                   "percentiles" = "The grey lines represent the 5th and 95th percentiles and the solid black line the mean data for the simulated population (n = **)", 
+                   "percentile ribbon" = "The shaded regions represent the 5th to the 95th percentiles and the solid black line the mean data for the simulated population (n = **)", 
+                   "means only" = "The solid black line represents the mean data for the simulated population (n = **)", 
+                   "Freddy" = "The grey lines represent mean values of simulated individual trials and the black lines portray the mean data of the simulated population (n = **). The dashed lines represent the 5th and 95th percentiles")
+
+```
+
+*Depicted are simulated (lines) `r CapText1`. `r CapText2`. Source simulated data: `r unique(ct_dataframe$File)`.*
+
 
 
 

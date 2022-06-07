@@ -42,6 +42,6 @@ flextable_simcyp(MyPKResults)
 
 ```
 
-*t~max~: median, min, max; CI: Confidence Interval; CV: Coefficient of Variation; S/O: Simulated/Observed; Source observed data: Clinical Study \*\*; Source simulated data: `r sim_data_file`* 
+*t~max~: median, min, max; CI: Confidence Interval; CV: Coefficient of Variation; S/O: Simulated/Observed; Source observed data: Clinical Study \*\*; Source simulated data: `r str_comma(unique(sim_data_files))`* 
 
 

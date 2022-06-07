@@ -206,9 +206,9 @@
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
 #'   you specify a different graphical file extension, it will be saved as that
-#'   file format. Acceptable extensions are "eps", "ps", "jpeg", "jpg", "tiff",
-#'   "png", "bmp", or "svg". Leaving this as NA means the file will not be
-#'   automatically saved to disk.
+#'   file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
+#'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
+#'   will not be automatically saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -945,7 +945,6 @@ ct_plot_overlay <- function(ct_dataframe,
         
         if(Ext == "docx"){
             # This is when they want a Word file as output
-            
             OutPath <- dirname(FileName)
             FileName <- basename(FileName)
             
@@ -960,7 +959,6 @@ ct_plot_overlay <- function(ct_dataframe,
             
         } else {
             # This is when they want any kind of graphical file format.
-            
             if(linear_or_log %in% c("both", "both vertical")){
                 ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
                        plot = AB)

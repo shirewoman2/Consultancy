@@ -188,11 +188,9 @@ etc.) for each of the small graphs. (Not applicable if
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 If you leave off ".png" or ".docx", it will be saved as a png file, but if
 you specify a different graphical file extension, it will be saved as that
-file format. Acceptable extensions are "eps", "ps", "jpeg", "jpg", "tiff",
-"png", "bmp", or "svg". Leaving this as NA means the file will not be
-automatically saved to disk. (Not applicable if \code{graph_arrangement =
-FALSE} because each graph will be named according to its Simulator output
-file.)}
+file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
+"jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
+will not be automatically saved to disk.}
 
 \item{file_suffix}{optionally add a file suffix to explain what each graph
 it. For example, you might run this function once and with

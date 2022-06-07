@@ -92,14 +92,11 @@
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
 #'   the table saved as a Word or csv file. If you supply only the file
 #'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
-#'   "PK summary table" plus the date and time (so you don't accidentally
-#'   overwrite anything) with that extension. If you supply something other than
+#'   "PK summary table" with that extension. If you supply something other than
 #'   just "docx" or just "csv" for the file name but you leave off the file
 #'   extension, we'll assume you want it to be ".csv". All PK info will be
 #'   included in a single Word or csv file, and, if \code{checkDataSource =
-#'   TRUE}, that will be saved in a single csv file. (This works a little
-#'   differently from \code{\link{pksummary_table}} output options, but we think
-#'   it's what you'll probably want most of the time here.)
+#'   TRUE}, that will be saved in a single csv file. 
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
 #'   simulator output files
@@ -236,14 +233,10 @@ pksummary_mult <- function(sim_data_files,
     if(complete.cases(save_table)){
         
         # Checking whether they have specified just "docx" or just "csv" for
-        # output b/c then, we'll use "PK summary table" plus the data and time
-        # as file name. 
+        # output b/c then, we'll use "PK summary table" as file name.
         if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
             OutPath <- "."
-            save_table <- paste0("PK summary table ", 
-                                 gsub("\\.", "-", 
-                                      sub("X", "", make.names(Sys.time()))),
-                                 ".docx")
+            save_table <- paste0("PK summary table.", sub("\\.", "", save_table))
         } else {
             # If they supplied something other than just "docx" or just "csv",
             # then check whether that file name is formatted appropriately.
@@ -271,7 +264,8 @@ pksummary_mult <- function(sim_data_files,
         } else {
             # This is when they want a Word file as output
             rmarkdown::render(
-                system.file("rmd/PKSummaryOutput.Rmd", package="SimcypConsultancy"),
+                system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd", 
+                            package="SimcypConsultancy"),
                 output_dir = OutPath, 
                 output_file = save_table, 
                 quiet = TRUE)

@@ -161,16 +161,15 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the table saved as a Word or csv file. If you supply only the file
+#'   the main PK table saved as a Word or csv file. If you supply only the file
 #'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
-#'   \code{sim_data_file} with that extension and output will be located in the
-#'   same folder as \code{sim_data_file}. If you supply something other than
-#'   just "docx" or just "csv" for the file name but you leave off the file
-#'   extension, we'll assume you want it to be ".csv". If you requested both the
-#'   table and the QC info and wanted the output to be a Word document, the Word
-#'   file will contain both tables. If you requested csv output, the QC data
-#'   will be in a file on its own and will have "- QC" added to the end of the
-#'   file name.
+#'   the file name plus "PK summary table" with that extension and output will
+#'   be located in the same folder as \code{sim_data_file}. If you supply
+#'   something other than just "docx" or just "csv" for the file name but you
+#'   leave off the file extension, we'll assume you want it to be ".csv". While
+#'   the main PK table data will be in whatever file format you requsted, if you
+#'   set \code{checkDataSource = TRUE}, the QC data will be in a csv file on its
+#'   own and will have "- QC" added to the end of the file name.
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -951,15 +950,11 @@ pksummary_table <- function(sim_data_file = NA,
         
         if(str_detect(save_table, "docx")){ 
             # This is when they want a Word file as output
-            rmarkdown::render(
-                switch(as.character(checkDataSource), 
-                       "TRUE" = system.file("rmarkdown/templates/pk-summary-table-with-qc-info/skeleton/skeleton.Rmd",
-                                            package="SimcypConsultancy"),
-                       "FALSE" = system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
-                                             package="SimcypConsultancy")), 
-                output_dir = OutPath, 
-                output_file = save_table, 
-                quiet = TRUE)
+            rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = save_table, 
+                              quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
@@ -974,11 +969,10 @@ pksummary_table <- function(sim_data_file = NA,
         MyPKResults <- list("Table" = MyPKResults,
                             "QC" = OutQC)
         
-        if(complete.cases(save_table) && str_detect(save_table, "\\.csv")){ 
-            # Only saving the csv version of QC info b/c docx QC info already
-            # taken care of above. 
-            write.csv(OutQC, sub(".csv", " - QC.csv", save_table), row.names = F)
+        if(complete.cases(save_table)){ 
+            write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
+        
     }
     
     return(MyPKResults)

@@ -151,16 +151,15 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the table saved as a Word or csv file. If you supply only the file
+the main PK table saved as a Word or csv file. If you supply only the file
 extension, e.g., \code{save_table = "docx"}, the name of the file will be
-\code{sim_data_file} with that extension and output will be located in the
-same folder as \code{sim_data_file}. If you supply something other than
-just "docx" or just "csv" for the file name but you leave off the file
-extension, we'll assume you want it to be ".csv". If you requested both the
-table and the QC info and wanted the output to be a Word document, the Word
-file will contain both tables. If you requested csv output, the QC data
-will be in a file on its own and will have "- QC" added to the end of the
-file name.}
+the file name plus "PK summary table" with that extension and output will
+be located in the same folder as \code{sim_data_file}. If you supply
+something other than just "docx" or just "csv" for the file name but you
+leave off the file extension, we'll assume you want it to be ".csv". While
+the main PK table data will be in whatever file format you requsted, if you
+set \code{checkDataSource = TRUE}, the QC data will be in a csv file on its
+own and will have "- QC" added to the end of the file name.}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were

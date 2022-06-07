@@ -129,14 +129,11 @@ info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
 the table saved as a Word or csv file. If you supply only the file
 extension, e.g., \code{save_table = "docx"}, the name of the file will be
-"PK summary table" plus the date and time (so you don't accidentally
-overwrite anything) with that extension. If you supply something other than
+"PK summary table" with that extension. If you supply something other than
 just "docx" or just "csv" for the file name but you leave off the file
 extension, we'll assume you want it to be ".csv". All PK info will be
 included in a single Word or csv file, and, if \code{checkDataSource =
-TRUE}, that will be saved in a single csv file. (This works a little
-differently from \code{\link{pksummary_table}} output options, but we think
-it's what you'll probably want most of the time here.)}
+TRUE}, that will be saved in a single csv file.}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple

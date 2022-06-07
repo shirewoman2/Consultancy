@@ -219,9 +219,9 @@
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 #'   be saved as a png file, but if you specify a different graphical file
-#'   extension, it will be saved as that file format. Acceptable extensions are
-#'   "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as
-#'   NA means the file will not be saved to disk.
+#'   extension, it will be saved as that file format. Acceptable graphical file
+#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param legend_position specify where you want the legend to be. Options are
@@ -1187,22 +1187,28 @@ ct_plot <- function(ct_dataframe = NA,
         
         if(Ext == "docx"){
             # This is when they want a Word file as output
-            
             OutPath <- dirname(FileName)
             FileName <- basename(FileName)
             
-            rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
-                                          package="SimcypConsultancy"), 
-                output_dir = OutPath, 
-                output_file = FileName, 
-                quiet = TRUE)
-            # Note: The "system.file" part of the call means "go to where the
-            # package is installed, search for the file listed, and return its
-            # full path.
+            if(EnzPlot){
+                rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",
+                                              package="SimcypConsultancy"), 
+                                  output_dir = OutPath, 
+                                  output_file = FileName, 
+                                  quiet = TRUE)
+            } else {
+                rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
+                                              package="SimcypConsultancy"), 
+                                  output_dir = OutPath, 
+                                  output_file = FileName, 
+                                  quiet = TRUE)
+                # Note: The "system.file" part of the call means "go to where the
+                # package is installed, search for the file listed, and return its
+                # full path.
+            }
             
         } else {
             # This is when they want any kind of graphical file format.
-            
             if(linear_or_log %in% c("both", "both vertical")){
                 ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
                        plot = AB)
