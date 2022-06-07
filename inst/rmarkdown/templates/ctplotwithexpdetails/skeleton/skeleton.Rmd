@@ -20,19 +20,21 @@ Deets <- extractExpDetails(sim_data_file =
 InhibPresent <- length(MyEffector) > 0 && complete.cases(MyEffector)
 MySubstrate <- Deets$Substrate
 MyTissue <- unique(ct_dataframe$Tissue)
+NumSubjtext <- paste(Deets$NumTrials, "trials of", Deets$NumSubjTrial, 
+                     "subjects each")
 
 FigText1 <- switch(linear_or_log, 
-                 "semi-log" = "",
-                 "linear" = "", 
-                 "both" = ifelse(graph_labels, 
-                                 "Linear (A) and log-linear (B)",
-                                 "Linear (top) and log-linear (bottom)"), 
-                 "both vertical" = ifelse(graph_labels, 
-                                 "Linear (A) and log-linear (B)",
-                                 "Linear (top) and log-linear (bottom)"), 
-                 "both horizontal" = ifelse(graph_labels, 
-                                 "Linear (A) and log-linear (B)",
-                                 "Linear (left) and log-linear (right)"))
+                   "semi-log" = "",
+                   "linear" = "", 
+                   "both" = ifelse(graph_labels, 
+                                   "Linear (A) and log-linear (B)",
+                                   "Linear (top) and log-linear (bottom)"), 
+                   "both vertical" = ifelse(graph_labels, 
+                                            "Linear (A) and log-linear (B)",
+                                            "Linear (top) and log-linear (bottom)"), 
+                   "both horizontal" = ifelse(graph_labels, 
+                                              "Linear (A) and log-linear (B)",
+                                              "Linear (left) and log-linear (right)"))
 
 FigText2 <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0, 
                    "and observed ", "")
@@ -45,7 +47,7 @@ FigText3 <- ifelse(Deets$DoseRoute_sub == "Oral",
                           "Single Dose" = paste("a single", Deets$DoseRoute_sub,
                                                 "dose"),
                           "Multiple Dose" = paste("multiple", Deets$DoseRoute_sub,
-                                                   "doses")))
+                                                  "doses")))
 
 
 ```
@@ -83,27 +85,30 @@ CapText1 <-
 CapText2 <- switch(
     figure_type, 
     "trial means" = 
-        paste("The grey lines represent",
-              mean_type, 
-              "mean values of simulated individual trials and the black lines portray the",
-              mean_type, 
-              "mean data of the simulated population (n = XXX)"), 
+        paste0("The grey lines represent ",
+               mean_type, 
+               " mean values of simulated individual trials and the black lines portray the ",
+               mean_type, 
+               " mean data of the simulated population (n = ", NumSubjtext, ")"), 
     "percentiles" = 
-        paste("The grey lines represent the 5th and 95th percentiles and the solid black line the",
-              mean_type, 
-              "mean data for the simulated population (n = XXX)"), 
+        paste0("The grey lines represent the 5th and 95th percentiles and the solid black line the ",
+               mean_type, 
+               " mean data of the simulated population (n = ", NumSubjtext, ")"), 
     "percentile ribbon" = 
-        paste("The shaded regions represent the 5th to the 95th percentiles and the solid black line the",
-              mean_type, "mean data for the simulated population (n = XXX)"), 
+        paste0("The shaded regions represent the 5th to the 95th percentiles and the solid black line the ",
+               mean_type,
+               " mean data of the simulated population (n = ", NumSubjtext, ")"), 
     "means only" = 
-        paste("The solid black line represents the", 
-              mean_type, "mean data for the simulated population (n = XXX)"), 
+        paste0("The solid black line represents the ", 
+               mean_type, 
+               " mean data of the simulated population (n = ", NumSubjtext, ")"), 
     "Freddy" = 
-        paste("The grey lines represent", 
-              mean_type, 
-              "mean values of simulated individual trials and the black lines portray the",
-              mean_type, 
-              "mean data of the simulated population (n = XXX). The dashed lines represent the 5th and 95th percentiles"))
+        paste0("The grey lines represent ", 
+               mean_type, 
+               " mean values of simulated individual trials and the black lines portray the ",
+               mean_type, 
+               "mean data of the simulated population (n = ", NumSubjtext, 
+               "). The dashed lines represent the 5th and 95th percentiles"))
 
 ```
 

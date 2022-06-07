@@ -31,6 +31,29 @@ flextable_simcyp <- function(DF){
 
 ```
 
+```{r FigtextPKSummary}
+
+Dose1included <- any(str_detect(PKToPull, "_dose1"))
+LastDoseincluded <- any(str_detect(PKToPull, "_last"))
+Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
+
+FigText2 <- ifelse(Dose1included & LastDoseincluded, 
+                   ifelse(Deets$DoseRoute_sub == "Oral", 
+                          "the first and multiple oral doses", 
+                          paste("the first and multiple", Deets$DoseRoute_sub, "doses")),
+                   ifelse(Dose1included, 
+                          ifelse(Deets$DoseRoute_sub == "Oral", 
+                                 "the first oral dose",
+                                 paste("the first", Deets$DoseRoute_sub, "dose")),
+                          ifelse(Deets$DoseRoute_sub == "Oral", 
+                                 "multiple oral doses", 
+                                 paste("multiple", Deets$DoseRoute_sub, "doses"))))
+
+```
+
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r mean_type` mean PK parameters for `r `Deets$Substrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", Deets$Substrate)` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
+
+
 ```{r makeTablePKSummaryOutput}
 
 if("File" %in% names(MyPKResults)){
@@ -44,16 +67,20 @@ flextable_simcyp(MyPKResults)
 
 ```{r captionPKSummary}
 
+CapText1 <- ifelse(any(str_detect(PKToPull, "tmax")), 
+                   "t~max~: median, min, max; ", "")
+
 if(exists("sim_data_files", inherits = FALSE)){
-    CapText <- str_comma(sim_data_files)
+    CapText2 <- str_comma(sim_data_files)
 } else {
-    CapText <- sim_data_file
+    CapText2 <- sim_data_file
 }
+
+
 
 ```
 
 
-
-*t~max~: median, min, max; CI: Confidence Interval; CV: Coefficient of Variation; S/O: Simulated/Observed; Source observed data: Clinical Study \*\*; Source simulated data: `r CapText`* 
+*`r CapText1``r ifelse(str_detect(MyPKResults$Statistic, " CI"), "CI: Confidence Interval; ", "")``r ifelse(str_detect(MyPKResults$Statistic, "CV"), "CV: Coefficient of Variation; ", "")``r ifelse(Observedincluded, "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ", "")`Source simulated data: `r CapText2`* 
 
 
