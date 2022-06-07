@@ -396,7 +396,7 @@ extractPK <- function(sim_data_file,
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the tab 'AUC' cannot be found."))
                     suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
                     PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                     next
@@ -484,7 +484,7 @@ extractPK <- function(sim_data_file,
                     
                     if(length(ColNum) == 0 | is.na(ColNum)){
                         message(paste("The column with information for", i,
-                                      "cannot be found."))
+                                      "on the tab 'AUC' cannot be found."))
                         suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
                         PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                         next
@@ -568,7 +568,13 @@ extractPK <- function(sim_data_file,
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
         PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE)){
         # Error catching
-        if(any(str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
+        if(any(str_detect(AllSheets, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
+            # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")
+            # is actually NOT for the 1st dose but for the 1st user-defined
+            # interval! Do NOT use that tab unless/until we do something further
+            # to check which dosing interval the data are for, e.g., read the
+            # top line that says "something something integrated from time A to
+            # time B".
             
             warning(paste0("A sheet with a name like 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
                            sub("and", "or", str_comma(PKparameters_AUC0)),
@@ -576,7 +582,7 @@ extractPK <- function(sim_data_file,
                     call. = FALSE)
         } else {
             
-            Sheet <- AllSheets[str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
+            Sheet <- AllSheets[str_detect(AllSheets, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
             
             AUC0_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, sheet = Sheet,
@@ -608,7 +614,7 @@ extractPK <- function(sim_data_file,
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the tab for the 1st dose AUC cannot be found."))
                     suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_AUC0 <- setdiff(PKparameters_AUC0, i)
                     next
@@ -706,7 +712,7 @@ extractPK <- function(sim_data_file,
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the tab for the last dose cannot be found."))
                     suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_AUCX <- setdiff(PKparameters_AUCX, i)
                     next
@@ -727,7 +733,7 @@ extractPK <- function(sim_data_file,
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
                         bind_rows(data.frame(PKparam = i, 
-                                             Tab = Sheet,
+                                             Tab = Tab_last,
                                              SearchText = ToDetect$SearchText,
                                              Column = ColNum, 
                                              StartRow_agg = StartRow_agg,
@@ -802,7 +808,7 @@ extractPK <- function(sim_data_file,
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the 'Absorption' tab cannot be found."))
                     suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_Abs <- setdiff(PKparameters_Abs, i)
                     next
@@ -872,7 +878,7 @@ extractPK <- function(sim_data_file,
                 
                 if(length(ColNum) == 0){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the 'Absorption' tab cannot be found."))
                     suppressWarnings(rm(ColNum, SearchText))
                     next
                 }
@@ -943,7 +949,7 @@ extractPK <- function(sim_data_file,
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the 'Clearance Trials SS' tab cannot be found."))
                     suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
@@ -1003,7 +1009,7 @@ extractPK <- function(sim_data_file,
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the 'Clearance Trials SS' tab cannot be found."))
                     suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
@@ -1088,10 +1094,6 @@ extractPK <- function(sim_data_file,
                 filter(PKparameter == i) %>% 
                 select(PKparameter, SearchText) %>% unique()
             
-            if(nrow(ToDetect) != 1){
-                warning("ToDetect nrow > 1")
-            }
-            
             # Looking for the regular expression specific to this parameter
             # i. 
             ColNum <- which(str_detect(as.vector(t(XL[HeaderRow, ])),
@@ -1099,7 +1101,7 @@ extractPK <- function(sim_data_file,
             
             if(length(ColNum) == 0 || is.na(ColNum)){
                 message(paste("The column with information for", i,
-                              "cannot be found."))
+                              "on the tab", sheet, "cannot be found."))
                 suppressMessages(rm(ToDetect, ColNum))
                 PKparameters <- setdiff(PKparameters, i)
                 next
