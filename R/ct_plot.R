@@ -1183,6 +1183,7 @@ ct_plot <- function(ct_dataframe = NA,
             FileName <- paste0(FileName, ".", Ext)
         } else {
             FileName <- paste0(FileName, ".png")
+            Ext <- "png"
         }
         
         if(Ext == "docx"){

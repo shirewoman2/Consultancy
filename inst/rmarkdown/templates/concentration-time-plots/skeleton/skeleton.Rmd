@@ -25,8 +25,8 @@ CapText1 <-
     switch(as.character(
         InhibPresent), 
         "FALSE" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                         "and observed data (circles; mean of n = ** individuals; Clinical Study **)", 
-                         ""), 
+                         "simulated (lines) and observed data (circles; mean of n = ** individuals; Clinical Study **)", 
+                         "simulated data (lines)"), 
         
         "TRUE" = paste0(
             ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
@@ -51,6 +51,6 @@ CapText2 <- switch(figure_type,
 
 ```
 
-*Depicted are simulated (lines) `r CapText1`. `r CapText2`. Source simulated data: `r unique(ct_dataframe$File)`.*
+*Depicted are `r CapText1`. `r CapText2`. Source simulated data: `r unique(ct_dataframe$File)`.*
 
 

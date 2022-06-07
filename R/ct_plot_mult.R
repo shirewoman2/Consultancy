@@ -455,6 +455,7 @@ ct_plot_mult <- function(ct_dataframe,
                 FileName <- paste0(FileName, ".", Ext)
             } else {
                 FileName <- paste0(FileName, ".png")
+                Ext <- "png"
             }
             
             if(Ext == "docx"){

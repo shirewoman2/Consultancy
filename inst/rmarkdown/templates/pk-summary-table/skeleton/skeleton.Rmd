@@ -42,6 +42,18 @@ flextable_simcyp(MyPKResults)
 
 ```
 
-*t~max~: median, min, max; CI: Confidence Interval; CV: Coefficient of Variation; S/O: Simulated/Observed; Source observed data: Clinical Study \*\*; Source simulated data: `r str_comma(unique(sim_data_files))`* 
+```{r captionPKSummary}
+
+if(exists("sim_data_files", inherits = FALSE)){
+    CapText <- str_comma(sim_data_files)
+} else {
+    CapText <- sim_data_file
+}
+
+```
+
+
+
+*t~max~: median, min, max; CI: Confidence Interval; CV: Coefficient of Variation; S/O: Simulated/Observed; Source observed data: Clinical Study \*\*; Source simulated data: `r CapText`* 
 
 
