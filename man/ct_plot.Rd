@@ -32,7 +32,8 @@ ct_plot(
   graph_labels = TRUE,
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5
+  fig_width = 5,
+  include_expdetails = FALSE
 )
 }
 \arguments{
@@ -269,6 +270,12 @@ Leaving this as NA means the file will not be saved to disk.}
 \item{fig_height}{figure height in inches; default is 6}
 
 \item{fig_width}{figure width in inches; default is 5}
+
+\item{include_expdetails}{TRUE or FALSE (default) to optionally get the
+experimental details for the simulation to include in the figure caption.
+This only applies when you save the graph as a Word file. The simulator
+file included in ct_dataframe must be located in the current directory for
+this to work.}
 }
 \value{
 Output is a graph.

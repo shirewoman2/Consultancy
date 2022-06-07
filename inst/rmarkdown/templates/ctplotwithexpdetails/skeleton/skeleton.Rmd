@@ -1,5 +1,5 @@
 ---
-title: "Concentration-time plots"
+title: "Concentration-time plots with experimental details"
 date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
 output: word_document
 ---
@@ -11,17 +11,55 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```
 
+
+```{r ctplotdetails}
+
+Deets <- extractExpDetails(sim_data_file = 
+                               paste0(CurrentDir, "/", unique(ct_dataframe$File)))
+
+InhibPresent <- length(MyEffector) > 0 && complete.cases(MyEffector)
+MySubstrate <- Deets$Substrate
+MyTissue <- unique(ct_dataframe$Tissue)
+
+FigText1 <- switch(linear_or_log, 
+                 "semi-log" = "",
+                 "linear" = "", 
+                 "both" = ifelse(graph_labels, 
+                                 "Linear (A) and log-linear (B)",
+                                 "Linear (top) and log-linear (bottom)"), 
+                 "both vertical" = ifelse(graph_labels, 
+                                 "Linear (A) and log-linear (B)",
+                                 "Linear (top) and log-linear (bottom)"), 
+                 "both horizontal" = ifelse(graph_labels, 
+                                 "Linear (A) and log-linear (B)",
+                                 "Linear (left) and log-linear (right)"))
+
+FigText2 <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0, 
+                   "and observed ", "")
+
+FigText3 <- ifelse(Deets$DoseRoute_sub == "Oral", 
+                   switch(Deets$Regimen_sub, 
+                          "Single Dose" = "a single oral dose", 
+                          "Multiple Dose" = "multiple oral doses"), 
+                   switch(Deets$Regimen_sub, 
+                          "Single Dose" = paste("a single", Deets$DoseRoute_sub,
+                                                "dose"),
+                          "Multiple Dose" = paste("multiple", Deets$DoseRoute_sub,
+                                                   "doses")))
+
+
+```
+
+Figure XXX. `r FigText1` simulated `r FigText2``r mean_type` mean `r MyTissue` concentration-time profiles of `r FigText3` of `r paste(Deets$Dose_sub, "mg", Deets$Substrate)` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.
+
+
 ```{r ctplot, fig.width = fig_width, fig.height = fig_height}
 Out
 
 ```
 
-```{r ctplotCaption}
 
-InhibPresent <- length(MyEffector) > 0 && complete.cases(MyEffector)
-MySubstrate <- unique(ct_dataframe$Compound[ct_dataframe$CompoundID == "substrate"])
-MySubstrate <- ifelse(length(MySubstrate) == 0, "substrate", MySubstrate)
-MyTissue <- unique(ct_dataframe$Tissue)
+```{r ctplotCaption}
 
 CapText1 <-
     switch(as.character(
@@ -39,7 +77,7 @@ CapText1 <-
             MyTissue, "concentration-time profiles of", MySubstrate, 
             "following a single oral dose of", MySubstrate, 
             "in the absence of", MyEffector, 
-            " (solid line) and on the XXth day of XX days of dosing of", 
+            " (solid line) and on the XXXth day of XXX days of dosing of", 
             MyEffector, "(dashed line)"))
 
 CapText2 <- switch(

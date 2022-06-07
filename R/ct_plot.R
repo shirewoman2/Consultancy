@@ -215,6 +215,9 @@
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
+#' @param legend_position specify where you want the legend to be. Options are
+#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
+#'   at all.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -224,9 +227,11 @@
 #'   Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
-#' @param legend_position specify where you want the legend to be. Options are
-#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
-#'   at all.
+#' @param include_expdetails TRUE or FALSE (default) to optionally get the
+#'   experimental details for the simulation to include in the figure caption.
+#'   This only applies when you save the graph as a Word file. The simulator
+#'   file included in ct_dataframe must be located in the current directory for
+#'   this to work. 
 #' @param include_legend SOON TO BE DEPRECATED. TRUE or FALSE (default) for
 #'   whether to include a legend. If there was only one thing plotted on your
 #'   graph, even if you set this to TRUE, no legend will be shown because
@@ -304,7 +309,8 @@ ct_plot <- function(ct_dataframe = NA,
                     graph_labels = TRUE,
                     save_graph = NA,
                     fig_height = 6,
-                    fig_width = 5){
+                    fig_width = 5, 
+                    include_expdetails = FALSE){
     
     # Error catching
     if(length(figure_type) != 1 |
@@ -327,6 +333,10 @@ ct_plot <- function(ct_dataframe = NA,
     
     if(length(unique(ct_dataframe$Inhibitor)) > 2){
         stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+    }
+    
+    if(length(unique(ct_dataframe$File)) > 1){
+        stop("It looks like you have more than one kind of data here because you have multiple Simulator output files. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
     }
     
     # If user had already filtered ct_dataframe to include only the ADAM data
@@ -1198,14 +1208,35 @@ ct_plot <- function(ct_dataframe = NA,
                                   output_file = FileName, 
                                   quiet = TRUE)
             } else {
-                rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
-                                              package="SimcypConsultancy"), 
-                                  output_dir = OutPath, 
-                                  output_file = FileName, 
-                                  quiet = TRUE)
-                # Note: The "system.file" part of the call means "go to where the
-                # package is installed, search for the file listed, and return its
-                # full path.
+                
+                # Checking that the file listed in ct_dataframe is present in
+                # the current working directory.
+                CurrentDir <- getwd()
+                PathCheck <- length(list.files(
+                    pattern = unique(basename(ct_dataframe$File)))) > 0
+                
+                if(include_expdetails && PathCheck){
+                    rmarkdown::render(system.file("rmarkdown/templates/ctplotwithexpdetails/skeleton/skeleton.Rmd",
+                                                  package="SimcypConsultancy"), 
+                                      output_dir = OutPath, 
+                                      output_file = FileName, 
+                                      quiet = TRUE)    
+                } else {
+                    
+                    rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
+                                                  package="SimcypConsultancy"), 
+                                      output_dir = OutPath, 
+                                      output_file = FileName, 
+                                      quiet = TRUE)
+                    # Note: The "system.file" part of the call means "go to where the
+                    # package is installed, search for the file listed, and return its
+                    # full path.
+                    
+                    if(include_expdetails & PathCheck == FALSE){
+                        warning("You requested that the text accompanying the figure include details about the simulation, but we couldn't find the Simulator file in the current directory. Those details will be omitted from the Word document.", 
+                                call. = FALSE)
+                    }
+                }
             }
             
         } else {
