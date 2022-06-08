@@ -1,0 +1,74 @@
+---
+title: "Multiple PK summary tables together"
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupPKSummaryOutput, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600, 
+                      fig.width = 6, 
+                      fig.height = 5)
+
+```
+
+```{r flextablePKSummaryOutput}
+
+flextable_simcyp <- function(DF){
+    
+    DF %>% flextable::flextable() %>% 
+        flextable::bold(part = "header") %>%
+        flextable::bold(j = 1, part = "body") %>% 
+        flextable::align(align = "center", part = "header") %>%
+        flextable::border_remove() %>% 
+        flextable::border_inner_v(part = "all", 
+                                  border = officer::fp_border(width = 0.5)) %>% 
+        flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
+        flextable::set_table_properties(width = 1, layout = "autofit")
+    
+}
+
+```
+
+```{r FigtextPKSummary}
+
+Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
+MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
+
+```
+
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean PK parameters.*
+
+```{r makeTablePKSummaryOutput}
+
+if("File" %in% names(MyPKResults)){
+    MyPKResults <- MyPKResults %>% 
+        select(!matches("File"), File)
+}
+
+flextable_simcyp(MyPKResults)
+
+```
+
+```{r captionPKSummary}
+
+CapText1a <- paste0(ifelse(any(str_detect(names(MyPKResults), "tmax")), 
+                              "t~max~: median, min, max; ", ""), 
+                       ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
+                              "CV: Coefficient of Variation; ", ""), 
+                       ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
+                              "CI: Confidence Interval; ", ""))
+
+CapText1 <- paste0(sub("; $", ".", CapText1a), 
+                   ifelse(Observedincluded, 
+                          "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
+                          ""))
+    
+CapText2 <- str_comma(sim_data_files)
+
+```
+
+*`r CapText1` Source simulated data: `r CapText2`* 
+
+
