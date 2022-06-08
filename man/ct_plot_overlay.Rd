@@ -29,6 +29,7 @@ ct_plot_overlay(
   legend_position = NA,
   legend_label_color = NA,
   legend_label_linetype = NA,
+  prettify_effector_name = TRUE,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -241,6 +242,16 @@ explanatory about what the line types represent. For example, if
 "Inhibitor". The default is to use whatever the column name is for
 \code{linetype_column}. If you don't want a label for this legend item, set
 this to "none".}
+
+\item{prettify_effector_name}{TRUE (default) or FALSE for whether to make the
+effector name prettier in the legend. This was designed for simulations
+where Inhibitor 1 is one of the standard options for the simulator, and
+leaving \code{prettify_effector_name = TRUE} will make the name of
+Inhibitor 1 be something more human readable. For example,
+"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
+BID" will become "ketoconazole". Set it to the name you'd prefer to see in
+your legend if you would like something different. For example,
+\code{prettify_effector_name = "Drug ABC"}}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".

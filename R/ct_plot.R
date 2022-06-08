@@ -231,7 +231,7 @@
 #'   experimental details for the simulation to include in the figure caption.
 #'   This only applies when you save the graph as a Word file. The simulator
 #'   file included in ct_dataframe must be located in the current directory for
-#'   this to work. 
+#'   this to work.
 #' @param include_legend SOON TO BE DEPRECATED. TRUE or FALSE (default) for
 #'   whether to include a legend. If there was only one thing plotted on your
 #'   graph, even if you set this to TRUE, no legend will be shown because
@@ -309,8 +309,7 @@ ct_plot <- function(ct_dataframe = NA,
                     graph_labels = TRUE,
                     save_graph = NA,
                     fig_height = 6,
-                    fig_width = 5, 
-                    include_expdetails = FALSE){
+                    fig_width = 5){
     
     # Error catching
     if(length(figure_type) != 1 |
@@ -1215,7 +1214,7 @@ ct_plot <- function(ct_dataframe = NA,
                 PathCheck <- length(list.files(
                     pattern = unique(basename(ct_dataframe$File)))) > 0
                 
-                if(include_expdetails && PathCheck){
+                if(PathCheck){
                     rmarkdown::render(system.file("rmarkdown/templates/ctplotwithexpdetails/skeleton/skeleton.Rmd",
                                                   package="SimcypConsultancy"), 
                                       output_dir = OutPath, 
@@ -1233,7 +1232,7 @@ ct_plot <- function(ct_dataframe = NA,
                     # full path.
                     
                     if(include_expdetails & PathCheck == FALSE){
-                        warning("You requested that the text accompanying the figure include details about the simulation, but we couldn't find the Simulator file in the current directory. Those details will be omitted from the Word document.", 
+                        warning("We couldn't find the Simulator file in the current directory, so there won't be as many file-specific details in the figure heading or caption. If you would like the full figure text, please set the working directory to where your file is located.", 
                                 call. = FALSE)
                     }
                 }

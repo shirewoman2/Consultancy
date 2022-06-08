@@ -242,6 +242,15 @@
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
+#' @param prettify_compound_names TRUE (default) or FALSE for whether to make the
+#'   effector name prettier in the legend. This was designed for simulations
+#'   where Inhibitor 1 is one of the standard options for the simulator, and
+#'   leaving \code{prettify_compound_names = TRUE} will make the name of
+#'   Inhibitor 1 be something more human readable. For example,
+#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
+#'   BID" will become "ketoconazole". Set it to the name you'd prefer to see in
+#'   your legend if you would like something different. For example,
+#'   \code{prettify_compound_names = "Drug ABC"} <- NEED TO WORK ON THIS. 
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
@@ -296,6 +305,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             legend_position = NA,
                             legend_label_color = NA,
                             legend_label_linetype = NA,
+                            prettify_compound_names = TRUE,
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5){
@@ -442,6 +452,22 @@ ct_plot_overlay <- function(ct_dataframe,
                                               "primary metabolite 2", "secondary metabolite",
                                               "inhibitor 1", "inhibitor 1 metabolite", 
                                               "inhibitor 2"))) 
+    
+    if(class(prettify_compound_names) == "logical" &&
+       prettify_compound_names){
+        
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     sim_dataframe <- ct_dataframe %>%
         filter(Simulated == TRUE &

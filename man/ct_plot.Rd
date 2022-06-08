@@ -32,8 +32,7 @@ ct_plot(
   graph_labels = TRUE,
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5,
-  include_expdetails = FALSE
+  fig_width = 5
 )
 }
 \arguments{

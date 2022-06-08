@@ -81,6 +81,6 @@ CapText1 <- paste0(sub("; $", ".", CapText1a),
 
 ```
 
-*`r CapText1`Source simulated data: `r sim_data_file`* 
+*`r CapText1` Source simulated data: `r sim_data_file`* 
 
 
