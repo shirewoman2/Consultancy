@@ -67,36 +67,20 @@ flextable_simcyp(MyPKResults)
 
 ```{r captionPKSummary}
 
-if(exists("sim_data_files", where = -1)){
-    CapText1 <- paste0(ifelse(any(str_detect(names(MyPKResults), "tmax")), 
-                              "t~max~: median, min, max; ", ""), 
-                       ifelse(str_detect(MyPKResults$Statistic, " CI"),
-                              "CI: Confidence Interval; ", ""), 
-                       ifelse(str_detect(MyPKResults$Statistic, "CV"),
-                              "CV: Coefficient of Variation; ", ""), 
-                       ifelse(Observedincluded, 
-                              "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
-                              ""))
-    
-    CapText2 <- str_comma(sim_data_files)
-    
-} else {
-    CapText1 <- paste0(ifelse(any(str_detect(PKToPull, "tmax")), 
-                              "t~max~: median, min, max; ", ""), 
-                       ifelse(str_detect(MyPKResults$Statistic, " CI"),
-                              "CI: Confidence Interval; ", ""), 
-                       ifelse(str_detect(MyPKResults$Statistic, "CV"),
-                              "CV: Coefficient of Variation; ", ""), 
-                       ifelse(Observedincluded, 
-                              "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
-                              ""))
-    
-    CapText2 <- sim_data_file
-}
+CapText1a <- paste0(ifelse(any(str_detect(names(MyPKResults), "tmax")), 
+                           "t~max~: median, min, max; ", ""), 
+                    ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
+                           "CV: Coefficient of Variation; ", ""), 
+                    ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
+                           "CI: Confidence Interval; ", ""))
+
+CapText1 <- paste0(sub("; $", ".", CapText1a), 
+                   ifelse(Observedincluded, 
+                          "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
+                          ""))
 
 ```
 
-
-*`r CapText1`Source simulated data: `r CapText2`* 
+*`r CapText1`Source simulated data: `r sim_data_file`* 
 
 

@@ -39,23 +39,25 @@ FigText1 <- switch(linear_or_log,
 FigText2 <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0, 
                    "and observed ", "")
 
-FigText3 <- ifelse(Deets$DoseRoute_sub == "Oral", 
-                   switch(Deets$Regimen_sub, 
-                          "Single Dose" = "a single oral dose", 
-                          "Multiple Dose" = "multiple oral doses"), 
-                   switch(Deets$Regimen_sub, 
-                          "Single Dose" = paste("a single", Deets$DoseRoute_sub,
-                                                "dose"),
-                          "Multiple Dose" = paste("multiple", Deets$DoseRoute_sub,
-                                                  "doses")))
+FigText3a <- ifelse(Deets$DoseRoute_sub == "Oral", 
+                    switch(Deets$Regimen_sub, 
+                           "Single Dose" = "a single oral dose", 
+                           "Multiple Dose" = "multiple oral doses"), 
+                    switch(Deets$Regimen_sub, 
+                           "Single Dose" = paste("a single", Deets$DoseRoute_sub,
+                                                 "dose"),
+                           "Multiple Dose" = paste("multiple", Deets$DoseRoute_sub,
+                                                   "doses")))
 
+FigText3 <- paste(FigText3a, "of", Deets$Dose_sub, "mg", Deets$Substrate)
 
 ```
 
-Figure XXX. `r FigText1` simulated `r FigText2``r mean_type` mean `r MyTissue` concentration-time profiles of `r FigText3` of `r paste(Deets$Dose_sub, "mg", Deets$Substrate)` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.
+Figure XXX. `r FigText1` simulated `r FigText2``r mean_type` mean `r MyTissue` concentration-time profiles after `r FigText3` in `r tidyPop(Deets$Population)$PopulationSimpleLower`. 
 
 
 ```{r ctplot, fig.width = fig_width, fig.height = fig_height}
+
 Out
 
 ```
@@ -63,24 +65,44 @@ Out
 
 ```{r ctplotCaption}
 
-CapText1 <-
-    switch(as.character(
-        InhibPresent), 
-        "FALSE" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                         paste0("simulated (lines) and observed data (circles;", 
-                                mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
-                         "simulated data (lines)"), 
-        
-        "TRUE" = paste(
+MyCompound <- switch(unique(ct_dataframe$CompoundID),
+                     "substrate" = Deets$Substrate,
+                     "inhibitor 1" = Deets$Inhibitor1,
+                     "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                     "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                     "secondary metabolite" = Deets$SecondaryMetabolite,
+                     "inhibitor 2" = Deets$Inhibitor2,
+                     "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+
+
+if(InhibPresent){
+    if(unique(ct_dataframe$CompoundID) %in% c("inhibitor 1", "inhibitor 2", 
+                                              "inhibitor 1 metabolite")){
+        CapText1a <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                           paste0("simulated (lines) and observed data (circles;", 
+                                  mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
+                           "simulated data (lines)") 
+    } else {
+        CapText1a <- paste(
             ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
                    paste("and observed (circles;", mean_type, 
                          "mean of n = XXX individuals; Clinical Study XXX)"), 
                    ""), 
-            MyTissue, "concentration-time profiles of", MySubstrate, 
-            "following", FigText3, "of", MySubstrate, 
+            MyTissue, "concentration-time profiles of", MyCompound, 
+            "following", FigText3, 
             "in the absence of", MyEffector, 
-            " (solid line) and on the XXXth day of XXX days of dosing of", 
-            MyEffector, "(dashed line)"))
+            "(solid line) and on the XXXth day of XXX days of dosing of", 
+            MyEffector, "(dashed line)")
+    }
+    
+} else {
+        CapText1a <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                           paste0("simulated (lines) and observed data (circles;", 
+                                  mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
+                           "simulated data (lines)")
+}
+
+CapText1 <- paste(CapText1a, "for", MyCompound)
 
 CapText2 <- switch(
     figure_type, 

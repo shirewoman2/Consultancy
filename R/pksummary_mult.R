@@ -264,7 +264,7 @@ pksummary_mult <- function(sim_data_files,
         } else {
             # This is when they want a Word file as output
             rmarkdown::render(
-                system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd", 
+                system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
                             package="SimcypConsultancy"),
                 output_dir = OutPath, 
                 output_file = save_table, 

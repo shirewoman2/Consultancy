@@ -26,11 +26,11 @@ CapText1 <-
         InhibPresent), 
         "FALSE" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
                          "and observed data (circles; mean of n = XXX individuals; Clinical Study XXX)", 
-                         ""), 
+                         "data (lines)"), 
         
         "TRUE" = paste0(
             ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                   "and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                   " and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
                    ""), 
             " plasma concentration-time profiles of ",
             unique(ct_dataframe$Compound), 
@@ -51,7 +51,7 @@ CapText2 <- switch(figure_type,
 
 ```
 
-*Depicted are simulated (lines) `r CapText1`. `r CapText2`. Source simulated data: `r unique(ct_dataframe$File)`.*
+*Depicted are simulated `r CapText1`. `r CapText2`. Source simulated data: `r str_comma(unique(ct_dataframe$File))`.*
 
 
 
