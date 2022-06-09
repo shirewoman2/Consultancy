@@ -14,9 +14,9 @@ as "mutate". .}
 
 \item{case}{set the case to be "lower" (default), "title" (only the first
 letter in each word is capitalized), or "original" (nothing about the case
-changes). Compounds with "OH-" or "O-" as a prefix will still have that
-capitalized, and if anyone has any other common exceptions they'd like,
-email Laura Shireman.}
+changes). If you set the case to "lower" or "title", compounds with "OH-"
+or "O-" as a prefix will still have that capitalized, and if anyone has any
+other common exceptions they'd like, email Laura Shireman.}
 }
 \value{
 a vector of prettier compound names

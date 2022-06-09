@@ -242,15 +242,16 @@
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
-#' @param prettify_compound_names TRUE (default) or FALSE for whether to make the
-#'   effector name prettier in the legend. This was designed for simulations
-#'   where Inhibitor 1 is one of the standard options for the simulator, and
-#'   leaving \code{prettify_compound_names = TRUE} will make the name of
-#'   Inhibitor 1 be something more human readable. For example,
-#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
-#'   BID" will become "ketoconazole". Set it to the name you'd prefer to see in
-#'   your legend if you would like something different. For example,
-#'   \code{prettify_compound_names = "Drug ABC"} <- NEED TO WORK ON THIS. 
+#' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
+#'   whether to make the compound names in the legend prettier or b) supply a
+#'   named character vector to set it to the exact name you'd prefer to see in
+#'   your legend. For example, \code{prettify_compound_names =
+#'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+#'   legend, and \code{prettify_compound_names = TRUE} will make some reasonable
+#'   guesses about what a prettier compound name should be. An example of
+#'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
+#'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
@@ -309,6 +310,29 @@ ct_plot_overlay <- function(ct_dataframe,
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5){
+    
+    # Prettifying compound names before doing anything else 
+    if(class(prettify_compound_names) == "logical" && # NB: "prettify_compound_names" is the argument value
+       prettify_compound_names){
+        ct_dataframe <- ct_dataframe %>% 
+            mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
+                   Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+    } else {
+        
+        # Any compounds that the user omitted from prettify_compound_names
+        # should be added to that and kept as their original values.
+        MissingNames <- setdiff(unique(c(ct_dataframe$Compound,
+                                         ct_dataframe$Inhibitor)), 
+                                names(prettify_compound_names))
+        OrigPrettyNames <- prettify_compound_names
+        prettify_compound_names <- c(prettify_compound_names, MissingNames)
+        names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+            MissingNames
+        
+        ct_dataframe <- ct_dataframe %>% 
+            mutate(Compound = prettify_compound_names[Compound], 
+                   Inhibitor = prettify_compound_names[Inhibitor])
+    }
     
     # Setting things up for some nonstandard evaluation -------------------------
     
@@ -452,22 +476,6 @@ ct_plot_overlay <- function(ct_dataframe,
                                               "primary metabolite 2", "secondary metabolite",
                                               "inhibitor 1", "inhibitor 1 metabolite", 
                                               "inhibitor 2"))) 
-    
-    if(class(prettify_compound_names) == "logical" &&
-       prettify_compound_names){
-        
-        
-        
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     sim_dataframe <- ct_dataframe %>%
         filter(Simulated == TRUE &

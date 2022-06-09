@@ -452,16 +452,7 @@ ct_plot <- function(ct_dataframe = NA,
         
         if(class(prettify_effector_name) == "logical" &&
            prettify_effector_name){
-            MyEffector <-
-                tolower(gsub(
-                    "sv-|sim-|wsp-|_ec|_sr|-md|-sd|_fo|-[1-9]00 mg [qmstbi]{1,2}d|_fasted soln|_fed capsule",
-                    "", tolower(MyEffector)))
-            # Adjusting for compounds (metabolites) w/"OH" in name or other
-            # idiosyncracies
-            MyEffector <- sub("oh bupropion", "OH-bupropion", MyEffector)
-            MyEffector <- sub("oh-", "OH-", MyEffector)
-            MyEffector <- sub("o-", "O-", MyEffector)
-            MyEffector <- sub("o-", "O-", MyEffector)
+            MyEffector <- prettify_compound_name(MyEffector)
         }
         
         if(class(prettify_effector_name) == "character"){
