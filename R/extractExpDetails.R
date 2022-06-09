@@ -36,10 +36,18 @@
 #'   listed on the "Summary" tab. If you want experimental details on a second
 #'   inhibitor or more information on metabolites, try pulling them from the
 #'   "Input sheet" instead of the "Summary" tab, which doesn't have as much
-#'   information on those compounds.} \item{We have limited experience with
-#'   extracting these data when a custom dosing regimen was used, so it would be
-#'   a good idea to carefully check that the data are being pulled correctly in
-#'   that scenario.}}
+#'   information on those compounds.} \item{There are a few places where
+#'   requesting one item as input will get you multiple items as output:
+#'   intrinsic clearance, interaction parameters, and transport parameters. For
+#'   example, if you request intrinsic clearance values (ex: "CLint_sub"),
+#'   you'll get all the intrinsic clearance values for that compound, and
+#'   they'll be named according to which parameter it is, which enzyme it's for,
+#'   etc. Same thing with requesting interaction parameters (ex:
+#'   "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
+#'   and transporter parameters (ex: "Transport_sub").} \item{We have limited
+#'   experience with extracting these data when a custom dosing regimen was
+#'   used, so it would be a good idea to carefully check that the data are being
+#'   pulled correctly in that scenario.}}
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
@@ -72,7 +80,7 @@ extractExpDetails <- function(sim_data_file,
     # Cleaning up possible problems w/how exp_details by tab might be inputted
     if(str_detect(tolower(exp_details[1]), "summary")){exp_details <- "Summary tab"}
     if(str_detect(tolower(exp_details[1]), "input")){exp_details <- "Input sheet"}
-    if(str_detect(tolower(exp_details[1]), "population sheet")){exp_details <- "population tab"}
+    if(str_detect(tolower(exp_details[1]), "population")){exp_details <- "population tab"}
     
     # Noting which details are possible, which columns to search for their
     # names, which columns contain their values for substrates or inhibitors,
@@ -445,7 +453,9 @@ extractExpDetails <- function(sim_data_file,
         
         # pullValue doesn't work for CL, so those are separate. Also need
         # to do StartDayTime_x separately.
-        MyInputDeets1 <- MyInputDeets[!str_detect(MyInputDeets, "CLint_|Interaction_|^StartDayTime")]
+        MyInputDeets1 <-
+            MyInputDeets[!str_detect(MyInputDeets, 
+                                     "CLint_|Interaction_|^StartDayTime|Transport_")]
         
         if(length(MyInputDeets1) > 0){
             for(i in MyInputDeets1){
@@ -767,6 +777,70 @@ extractExpDetails <- function(sim_data_file,
                     Out[[j]] <- paste(paste0("Day ", Val_day),
                                       Val_time, sep = ", ")
                 }
+            }
+        }
+        
+        
+        # Transport parameters
+        MyInputDeets5 <- MyInputDeets[str_detect(MyInputDeets, "Transport_")]
+        
+        if(length(MyInputDeets5) > 0){
+            
+            for(j in MyInputDeets5){
+                
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
+                NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
+                OrganRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
+                                              "^Organ/Tissue"))
+                TransRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
+                                              "^Transporter"))
+                
+                for(i in TransRows){
+                    
+                    # Last row always seems to contain RAF/REF
+                    TransRowLast <- which(str_detect(InputTab[ , NameCol] %>% pull(), 
+                                                     "RAF/REF"))
+                    TransRowLast <- TransRowLast[which(TransRowLast > i)][1]
+                    
+                    Transporter <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
+                    
+                    Organ <- OrganRows[which(OrganRows < TransRowLast)]
+                    Organ <- Organ[length(Organ)]
+                    Organ <- gsub(" |\\(|\\)|-|/", "", InputTab[Organ, NameCol + 1])
+                    
+                    TransRowNames <- InputTab[i:TransRowLast, NameCol] %>% pull(1)
+                    
+                    Location <- InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
+                                         ValueCol] %>% pull(1)
+                    
+                    ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
+                    
+                    suppressWarnings(
+                        Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
+                            as.numeric(
+                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
+                                         ValueCol] %>% pull(1))
+                    )
+                    
+                    suppressWarnings(
+                        Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- 
+                            as.numeric(
+                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                         ValueCol] %>% pull(1))
+                    )
+                    
+                    suppressWarnings(
+                        Out[[paste0(ParamPrefix, "_RAFREF", Suffix)]] <- 
+                            as.numeric(
+                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                         ValueCol] %>% pull(1))
+                    )
+                    
+                    rm(TransRowLast, Transporter, Organ, TransRowNames, Location, 
+                       ParamPrefix)
+                }
+                
+                rm(Suffix, NameCol, OrganRows, TransRows)
             }
         }
     }

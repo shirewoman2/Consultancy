@@ -41,10 +41,18 @@ in quotes}
   listed on the "Summary" tab. If you want experimental details on a second
   inhibitor or more information on metabolites, try pulling them from the
   "Input sheet" instead of the "Summary" tab, which doesn't have as much
-  information on those compounds.} \item{We have limited experience with
-  extracting these data when a custom dosing regimen was used, so it would be
-  a good idea to carefully check that the data are being pulled correctly in
-  that scenario.}}}
+  information on those compounds.} \item{There are a few places where
+  requesting one item as input will get you multiple items as output:
+  intrinsic clearance, interaction parameters, and transport parameters. For
+  example, if you request intrinsic clearance values (ex: "CLint_sub"),
+  you'll get all the intrinsic clearance values for that compound, and
+  they'll be named according to which parameter it is, which enzyme it's for,
+  etc. Same thing with requesting interaction parameters (ex:
+  "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
+  and transporter parameters (ex: "Transport_sub").} \item{We have limited
+  experience with extracting these data when a custom dosing regimen was
+  used, so it would be a good idea to carefully check that the data are being
+  pulled correctly in that scenario.}}}
 
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
