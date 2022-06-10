@@ -439,7 +439,7 @@ extractPK <- function(sim_data_file,
                     
                     PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
                     
-                    suppressWarning(rm(StartCol, EndCol, ColNum, ToDetect))
+                    suppressWarnings(rm(StartCol, EndCol, ColNum, ToDetect))
                     
                     ToDetect <- AllPKParameters %>% 
                         filter(Sheet == "AUC" & PKparameter == NewParam) %>% 

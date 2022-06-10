@@ -338,7 +338,7 @@ extractConcTime <- function(sim_data_file,
             )
     }
     
-    if(tissue == "faeces"){
+    if(tissue == "faeces"){ # NEED TO ADJUST THIS TO DEAL WITH MULT FUNCTION.
         SheetToDetect <- switch(compoundToExtract, 
                                 "inhibitor 1" = "Faeces Prof. .Inh 1", 
                                 # inhibitor 2 does not appear to be available
@@ -373,26 +373,51 @@ extractConcTime <- function(sim_data_file,
     # If "interaction" or "Csys" or other similar strings are part of the name
     # of any of the compounds, that messes up the regex. Substituting to
     # standardize the compound names.
-    sim_data_xl$...1 <- sub(Deets$Substrate, "SUBSTRATE", sim_data_xl$...1)
+    sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Substrate),
+                            "SUBSTRATE", sim_data_xl$...1)
     
     if(complete.cases(Deets$PrimaryMetabolite1)){
-        sim_data_xl$...1 <- sub(Deets$PrimaryMetabolite1, "PRIMET1", sim_data_xl$...1)
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite1),
+                                "PRIMET1", sim_data_xl$...1)
+    } else if("primary metabolite 1" %in% compoundToExtract){
+        compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 1")
     }
+    
     if(complete.cases(Deets$PrimaryMetabolite2)){
-        sim_data_xl$...1 <- sub(Deets$PrimaryMetabolite2, "PRIMET2", sim_data_xl$...1)
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite2),
+                                "PRIMET2", sim_data_xl$...1)
+    } else if("primary metabolite 2" %in% compoundToExtract){
+        compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 2")
     }
+    
     if(complete.cases(Deets$SecondaryMetabolite)){
-        sim_data_xl$...1 <- sub(Deets$SecondaryMetabolite, "SECMET", sim_data_xl$...1)
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$SecondaryMetabolite),
+                                "SECMET", sim_data_xl$...1)
+    } else if("secondary metabolite" %in% compoundToExtract){
+        compoundToExtract <- setdiff(compoundToExtract, "secondary metabolite")
     }
+    
     if(complete.cases(Deets$Inhibitor1)){
-        sim_data_xl$...1 <- sub(Deets$Inhibitor1, "EFFECTOR1", sim_data_xl$...1)
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1),
+                                "EFFECTOR1", sim_data_xl$...1)
+    } else if("inhibitor 1" %in% compoundToExtract){
+        compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1")
     }
+    
     if(complete.cases(Deets$Inhibitor2)){
-        sim_data_xl$...1 <- sub(Deets$Inhibitor2, "EFFECTOR2", sim_data_xl$...1)
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor2),
+                                "EFFECTOR2", sim_data_xl$...1)
+    } else if("inhibitor 2" %in% compoundToExtract){
+        compoundToExtract <- setdiff(compoundToExtract, "inhibitor 2")
     }
+    
     if(complete.cases(Deets$Inhibitor1Metabolite)){
-        sim_data_xl$...1 <- sub(Deets$Inhibitor1Metabolite, "EFFECTOR1MET", sim_data_xl$...1)
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1Metabolite),
+                                "EFFECTOR1MET", sim_data_xl$...1)
+    } else if("inhibitor 1 metabolite" %in% compoundToExtract){
+        compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1 metabolite")
     }
+    
     
     # Determining concentration and time units
     SimConcUnits <- as.character(
