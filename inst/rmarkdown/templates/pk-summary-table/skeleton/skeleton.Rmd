@@ -51,7 +51,7 @@ FigText2 <- ifelse(Dose1included & LastDoseincluded,
 
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean PK parameters for `r Deets$Substrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", Deets$Substrate)` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean PK parameters for `r prettify_compound_name(Deets$Substrate)` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", prettify_compound_name(Deets$Substrate))` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
 
 
 ```{r makeTablePKSummaryOutput}

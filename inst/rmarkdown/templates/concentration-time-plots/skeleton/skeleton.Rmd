@@ -20,7 +20,8 @@ Out
 
 InhibPresent <- length(MyEffector) > 0 && complete.cases(MyEffector)
 MySubstrate <- unique(ct_dataframe$Compound[ct_dataframe$CompoundID == "substrate"])
-MySubstrate <- ifelse(length(MySubstrate) == 0, "substrate", MySubstrate)
+MySubstrate <- prettify_compound_name(
+    ifelse(length(MySubstrate) == 0, "substrate", MySubstrate))
 MyTissue <- unique(ct_dataframe$Tissue)
 
 CapText1 <-
@@ -38,9 +39,9 @@ CapText1 <-
                    ""), 
             MyTissue, "concentration-time profiles of", MySubstrate, 
             "following a single oral dose of", MySubstrate, 
-            "in the absence of", MyEffector, 
+            "in the absence of", prettify_compound_name(MyEffector), 
             " (solid line) and on the XXth day of XX days of dosing of", 
-            MyEffector, "(dashed line)"))
+            prettify_compound_name(MyEffector), "(dashed line)"))
 
 CapText2 <- switch(
     figure_type, 

@@ -1,5 +1,5 @@
 ---
-title: "Concentration-time plots with experimental details"
+title: "Concentration-time plots"
 date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
 output: word_document
 ---
@@ -18,7 +18,7 @@ Deets <- extractExpDetails(sim_data_file =
                                paste0(CurrentDir, "/", unique(ct_dataframe$File)))
 
 InhibPresent <- length(MyEffector) > 0 && complete.cases(MyEffector)
-MySubstrate <- Deets$Substrate
+MySubstrate <- prettify_compound_name(Deets$Substrate)
 MyTissue <- unique(ct_dataframe$Tissue)
 NumSubjtext <- paste(Deets$NumTrials, "trials of", Deets$NumSubjTrial, 
                      "subjects each")
@@ -49,7 +49,8 @@ FigText3a <- ifelse(Deets$DoseRoute_sub == "Oral",
                            "Multiple Dose" = paste("multiple", Deets$DoseRoute_sub,
                                                    "doses")))
 
-FigText3 <- paste(FigText3a, "of", Deets$Dose_sub, "mg", Deets$Substrate)
+FigText3 <- paste(FigText3a, "of", Deets$Dose_sub, "mg",
+                  prettify_compound_name(Deets$Substrate))
 
 ```
 
@@ -65,23 +66,24 @@ Out
 
 ```{r ctplotCaption}
 
-MyCompound <- switch(unique(ct_dataframe$CompoundID),
-                     "substrate" = Deets$Substrate,
-                     "inhibitor 1" = Deets$Inhibitor1,
-                     "primary metabolite 1" = Deets$PrimaryMetabolite1,
-                     "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                     "secondary metabolite" = Deets$SecondaryMetabolite,
-                     "inhibitor 2" = Deets$Inhibitor2,
-                     "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+MyCompound <- prettify_compound_name(
+    switch(unique(ct_dataframe$CompoundID),
+           "substrate" = Deets$Substrate,
+           "inhibitor 1" = Deets$Inhibitor1,
+           "primary metabolite 1" = Deets$PrimaryMetabolite1,
+           "primary metabolite 2" = Deets$PrimaryMetabolite2,
+           "secondary metabolite" = Deets$SecondaryMetabolite,
+           "inhibitor 2" = Deets$Inhibitor2,
+           "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))
 
 
 if(InhibPresent){
     if(unique(ct_dataframe$CompoundID) %in% c("inhibitor 1", "inhibitor 2", 
                                               "inhibitor 1 metabolite")){
         CapText1a <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                           paste0("simulated (lines) and observed data (circles;", 
-                                  mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
-                           "simulated data (lines)") 
+                            paste0("simulated (lines) and observed data (circles;", 
+                                   mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
+                            "simulated data (lines)") 
     } else {
         CapText1a <- paste(
             ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
@@ -96,10 +98,10 @@ if(InhibPresent){
     }
     
 } else {
-        CapText1a <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                           paste0("simulated (lines) and observed data (circles;", 
-                                  mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
-                           "simulated data (lines)")
+    CapText1a <- ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                        paste0("simulated (lines) and observed data (circles;", 
+                               mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
+                        "simulated data (lines)")
 }
 
 CapText1 <- paste(CapText1a, "for", MyCompound)

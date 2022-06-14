@@ -28,11 +28,11 @@ CapText1 <-
         "FALSE" = unique(sim_enz_dataframe$Substrate),
         
         "TRUE" = paste0(
-            unique(sim_enz_dataframe$Substrate), 
+            prettify_compound_name(unique(sim_enz_dataframe$Substrate)), 
             "in the absence of ",
-            unique(sim_enz_dataframe$Inhibitor[!sim_enz_dataframe$Inhibitor == "none"]),
+            prettify_compound_name(unique(sim_enz_dataframe$Inhibitor[!sim_enz_dataframe$Inhibitor == "none"])),
             " (solid line) and on the **th day of ** days of dosing of ", 
-            unique(sim_enz_dataframe$Inhibitor[!sim_enz_dataframe$Inhibitor == "none"]),
+            prettify_compound_name(unique(sim_enz_dataframe$Inhibitor[!sim_enz_dataframe$Inhibitor == "none"])),
             " (dashed line). The lines represent the arithmetic/geometric mean data for the simulated population (n = **)"))
 
 

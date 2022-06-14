@@ -197,7 +197,8 @@
 #'   default NA when a legend is included and an effector is present, the label
 #'   in the legend will be "Inhibitor".
 #' @param prettify_effector_name TRUE (default) or FALSE for whether to make the
-#'   effector name prettier in the legend. This was designed for simulations
+#'   effector name prettier in the legend and, if you request a Word file
+#'   output, the figure heading and caption. This was designed for simulations
 #'   where Inhibitor 1 is one of the standard options for the simulator, and
 #'   leaving \code{prettify_effector_name = TRUE} will make the name of
 #'   Inhibitor 1 be something more human readable. For example,
