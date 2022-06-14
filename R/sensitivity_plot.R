@@ -42,26 +42,39 @@ sensitivity_plot <- function(SA_file,
                              fig_height = 4,
                              fig_width = 5){
     
+    # Error catching ------------------------------------------------------
+    
+    if(missing(SA_file)){
+        stop("You must provide a sensitivity-analysis Excel file for the argument 'SA_file'.", 
+             call. = FALSE)
+    }
+    
     # If they didn't include ".xlsx" at the end, add that.
     SA_file <- ifelse(str_detect(SA_file, "xlsx$"), 
                       SA_file, paste0(SA_file, ".xlsx"))
     
+    if(missing(dependent_variable)){
+        stop("You have not provided a dependent variable, so we don't know what to graph. Please check the help file for a list of acceptable values for the argument 'dependent_variable'.", 
+             call. = FALSE)
+    }
+    
+    
     # Get data ------------------------------------------------------------
     AllSheets <- readxl::excel_sheets(path = SA_file)
     
-    DVsheets = c("CL" = "CL (L per h) (PKPD Paramete...)",
-                 "Dose over AUC" = "Dose over AUC (L per h) (Sub)",
-                 "AUC over Dose" = "AUC over Dose (h per L) (Sub)",
-                 "Vss" = "Vss(L per kg) (Sub)",
-                 "Fg" = "Fg (PKPD Parameters) (Sub)",
-                 "Fh" = "Fh (PKPD Parameters) (Sub)",
-                 "fa" = "fa (PKPD Parameters) (Sub)",
-                 "CLpo" = "CLpo (L per h) (PKPD Parame...)",
-                 "Cmax" = "Cmax  (Sub)",
-                 "AUC" = "AUC  (Sub)",
-                 "tmax" = "Tmax (h) (Sub)",
+    DVsheets = c("CL" = AllSheets[str_detect(AllSheets, "CL .L per h. .PKPD")],
+                 "Dose over AUC" = AllSheets[str_detect(AllSheets, "Dose over AUC")],
+                 "AUC over Dose" = AllSheets[str_detect(AllSheets, "AUC over Dose")],
+                 "Vss" = AllSheets[str_detect(AllSheets, "Vss")],
+                 "Fg" = AllSheets[str_detect(AllSheets, "Fg .PKPD")],
+                 "Fh" = AllSheets[str_detect(AllSheets, "Fh .PKPD")],
+                 "fa" = AllSheets[str_detect(AllSheets, "fa .PKPD")],
+                 "CLpo" = AllSheets[str_detect(AllSheets, "CLpo.*PKPD")],
+                 "Cmax" = AllSheets[str_detect(AllSheets, "^Cmax")],
+                 "AUC" = AllSheets[str_detect(AllSheets, "^AUC.*\\(")],
+                 "tmax" = AllSheets[str_detect(AllSheets, "Tmax")],
                  # "Multiple EI Plot",
-                 "Plasma Concentration" = "Plasma Concentration (Sub)")
+                 "Plasma Concentration" = AllSheets[str_detect(AllSheets, "Plasma Concentration")])
     
     Summary <- read.xlsx(SA_file, sheetName = "ASA Summary", 
                          header = FALSE)
