@@ -122,13 +122,14 @@ for determining the line types. Default is to use the column Inhibitor and
 to have a solid line for no inhibitor present and a dashed line when an
 inhibitor is present.}
 
-\item{linetypes}{the linetypes to use. Default is "solid" for all lines, but,
-if you have an effector present and would like to match the Consultancy
-Template graphs, set this to \code{linetypes = c("solid", "dashed")}. The
-tricky part is that you'll need one linetype for each possible value in the
-column you specified for \code{linetype_column}. Check what the unique
-values are in that column if you get a graph you didn't expect as far as
-line types go.}
+\item{linetypes}{the line types to use. Default is "solid" for all lines,
+but, if you have an effector present and would like to match the
+Consultancy Template graphs, set this to \code{linetypes = c("solid",
+"dashed")}. You'll need one line type for each possible value in the column
+you specified for \code{linetype_column}. Check what the unique values are
+in that column if you get a graph you didn't expect as far as line types
+go. To see possible line types by name, please enter
+\code{ggpubr::show_line_types()} into the console.}
 
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the

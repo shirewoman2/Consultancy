@@ -83,13 +83,14 @@
 #'   for determining the line types. Default is to use the column Inhibitor and
 #'   to have a solid line for no inhibitor present and a dashed line when an
 #'   inhibitor is present.
-#' @param linetypes the linetypes to use. Default is "solid" for all lines, but,
-#'   if you have an effector present and would like to match the Consultancy
-#'   Template graphs, set this to \code{linetypes = c("solid", "dashed")}. The
-#'   tricky part is that you'll need one linetype for each possible value in the
-#'   column you specified for \code{linetype_column}. Check what the unique
-#'   values are in that column if you get a graph you didn't expect as far as
-#'   line types go.
+#' @param linetypes the line types to use. Default is "solid" for all lines,
+#'   but, if you have an effector present and would like to match the
+#'   Consultancy Template graphs, set this to \code{linetypes = c("solid",
+#'   "dashed")}. You'll need one line type for each possible value in the column
+#'   you specified for \code{linetype_column}. Check what the unique values are
+#'   in that column if you get a graph you didn't expect as far as line types
+#'   go. To see possible line types by name, please enter
+#'   \code{ggpubr::show_line_types()} into the console.
 #' @param colorBy_column the column in \code{ct_dataframe} that should be used
 #'   for determining which color lines and/or points will be. Default is to use
 #'   the column File. This should be unquoted, e.g., \code{colorBy_column =
@@ -890,14 +891,13 @@ ct_plot_overlay <- function(ct_dataframe,
                                     "FALSE" = as_label(colorBy_column)))
     }
     
-    
     if(complete.cases(legend_label_linetype) && 
        legend_label_linetype == "none"){
         A <- A + labs(linetype = NULL)
     } else {
-        A <- A + labs(fill = switch(as.character(complete.cases(legend_label_color)), 
-                                    "TRUE" = legend_label_color,
-                                    "FALSE" = as_label(colorBy_column)))
+        A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
+                                    "TRUE" = legend_label_linetype,
+                                    "FALSE" = as_label(linetype_column)))
     }
     
     ## Adding spacing between facets if requested
