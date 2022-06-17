@@ -790,57 +790,68 @@ extractExpDetails <- function(sim_data_file,
                 
                 Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
-                OrganRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
-                                              "^Organ/Tissue"))
-                TransRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
-                                              "^Transporter"))
                 
-                for(i in TransRows){
+                # There can be transporter interactions higher up on the tab,
+                # but parameters that are actually just transport parameters all
+                # come after the title "Transport".
+                StartTrans <- which(InputTab[, NameCol] %>% pull() == "Transport")
+                
+                if(length(StartTrans) > 0){
+                    OrganRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
+                                                  "^Organ/Tissue"))
+                    TransRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
+                                                  "^Transporter"))
+                    TransRows <- TransRows[TransRows > StartTrans]
                     
-                    # Last row always seems to contain RAF/REF
-                    TransRowLast <- which(str_detect(InputTab[ , NameCol] %>% pull(), 
-                                                     "RAF/REF"))
-                    TransRowLast <- TransRowLast[which(TransRowLast > i)][1]
+                    if(length(TransRows) > 0){
+                        for(i in TransRows){
+                            
+                            # Last row always seems to contain RAF/REF
+                            TransRowLast <- which(str_detect(InputTab[ , NameCol] %>% pull(), 
+                                                             "RAF/REF"))
+                            TransRowLast <- TransRowLast[which(TransRowLast > i)][1]
+                            
+                            Transporter <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
+                            
+                            Organ <- OrganRows[which(OrganRows < TransRowLast)]
+                            Organ <- Organ[length(Organ)]
+                            Organ <- gsub(" |\\(|\\)|-|/", "", InputTab[Organ, NameCol + 1])
+                            
+                            TransRowNames <- InputTab[i:TransRowLast, NameCol] %>% pull(1)
+                            
+                            Location <- InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
+                                                 ValueCol] %>% pull(1)
+                            
+                            ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
+                            
+                            suppressWarnings(
+                                Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
+                                    as.numeric(
+                                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
+                                                 ValueCol] %>% pull(1))
+                            )
+                            
+                            suppressWarnings(
+                                Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- 
+                                    as.numeric(
+                                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                                 ValueCol] %>% pull(1))
+                            )
+                            
+                            suppressWarnings(
+                                Out[[paste0(ParamPrefix, "_RAFREF", Suffix)]] <- 
+                                    as.numeric(
+                                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                                 ValueCol] %>% pull(1))
+                            )
+                            
+                            rm(TransRowLast, Transporter, Organ, TransRowNames, Location, 
+                               ParamPrefix)
+                        }
+                    }
                     
-                    Transporter <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
-                    
-                    Organ <- OrganRows[which(OrganRows < TransRowLast)]
-                    Organ <- Organ[length(Organ)]
-                    Organ <- gsub(" |\\(|\\)|-|/", "", InputTab[Organ, NameCol + 1])
-                    
-                    TransRowNames <- InputTab[i:TransRowLast, NameCol] %>% pull(1)
-                    
-                    Location <- InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
-                                         ValueCol] %>% pull(1)
-                    
-                    ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
-                    
-                    suppressWarnings(
-                        Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
-                            as.numeric(
-                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
-                                         ValueCol] %>% pull(1))
-                    )
-                    
-                    suppressWarnings(
-                        Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- 
-                            as.numeric(
-                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
-                                         ValueCol] %>% pull(1))
-                    )
-                    
-                    suppressWarnings(
-                        Out[[paste0(ParamPrefix, "_RAFREF", Suffix)]] <- 
-                            as.numeric(
-                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
-                                         ValueCol] %>% pull(1))
-                    )
-                    
-                    rm(TransRowLast, Transporter, Organ, TransRowNames, Location, 
-                       ParamPrefix)
+                    rm(Suffix, NameCol, OrganRows, TransRows)
                 }
-                
-                rm(Suffix, NameCol, OrganRows, TransRows)
             }
         }
     }
