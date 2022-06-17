@@ -783,6 +783,9 @@ extractExpDetails <- function(sim_data_file,
         
         # Transport parameters
         MyInputDeets5 <- MyInputDeets[str_detect(MyInputDeets, "Transport_")]
+        MyInputDeets5 <- InputDeets %>% 
+            filter(Deet %in% MyInputDeets5 & complete.cases(NameCol)) %>%
+            pull(Deet)
         
         if(length(MyInputDeets5) > 0){
             
@@ -790,6 +793,7 @@ extractExpDetails <- function(sim_data_file,
                 
                 Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
+                ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
                 
                 # There can be transporter interactions higher up on the tab,
                 # but parameters that are actually just transport parameters all
@@ -806,9 +810,9 @@ extractExpDetails <- function(sim_data_file,
                     if(length(TransRows) > 0){
                         for(i in TransRows){
                             
-                            # Last row always seems to contain RAF/REF
+                            # Last row always seems to contain RAF/REF or ISEF,T
                             TransRowLast <- which(str_detect(InputTab[ , NameCol] %>% pull(), 
-                                                             "RAF/REF"))
+                                                             "RAF/REF|ISEF"))
                             TransRowLast <- TransRowLast[which(TransRowLast > i)][1]
                             
                             Transporter <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
@@ -819,8 +823,9 @@ extractExpDetails <- function(sim_data_file,
                             
                             TransRowNames <- InputTab[i:TransRowLast, NameCol] %>% pull(1)
                             
-                            Location <- InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
-                                                 ValueCol] %>% pull(1)
+                            Location <- gsub(" |\\(|\\)|-|/", "", 
+                                             InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
+                                                 ValueCol] %>% pull(1))
                             
                             ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
                             
