@@ -58,6 +58,11 @@ fm_treemap <- function(fm_dataframe,
                        fig_height = 3, 
                        fig_width = 4){
     
+    # Check whether treemapify has been installed. 
+    if("treemapify" %in% installed.packages() == FALSE){
+        stop("The function fm_treemap requires the package treemapify. Please run `install.packages('treemapify')`.")
+    }
+    
     # Checking format of fm_dataframe
     if(all(c("fm", "DME") %in% names(fm_dataframe)) == FALSE){
         stop("fm_dataframe must contain columns titled 'fm' and 'DME', and one or both of those are not present.")
