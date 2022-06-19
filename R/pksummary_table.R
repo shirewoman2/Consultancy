@@ -903,7 +903,31 @@ pksummary_table <- function(sim_data_file = NA,
         
     }
     
-    if(checkDataSource){OutQC <- MyPKResults_all$QC}
+    if(checkDataSource){
+        
+        ColsToInclude <- c("PKparam", "File", "Tab", 
+                           switch(MeanType,
+                                  "arithmetic" = "mean",
+                                  "geometric" = "geomean"))
+        
+        if(includeConfInt){
+            ColsToInclude <- c(ColsToInclude, "CI90_low", "CI90_high")
+        }
+        
+        if(includeCV){
+            ColsToInclude <- c(ColsToInclude, 
+                               switch(MeanType, 
+                                      "arithmetic" = "CV", 
+                                      "geometric" = "GCV"))
+        }
+        
+        if(includePerc){
+            ColsToInclude <- c(ColsToInclude, "per5", "per95")
+        }
+        
+        OutQC <- MyPKResults_all$QC %>% 
+            select(PKparam, File, matches(ColsToInclude))
+    }
     
     if(complete.cases(save_table)){
         
