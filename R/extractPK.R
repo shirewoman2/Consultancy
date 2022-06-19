@@ -123,7 +123,7 @@ extractPK <- function(sim_data_file,
                        str_to_title(tissue), 
                        "|AUC", LastDoseNum, "\\(Sub\\)\\(C", str_to_title(tissue))
     Tab_last <- AllSheets[which(str_detect(AllSheets, Tab_last))][1]
-    if(LastDoseNum == -Inf && length(Tab_last) == 0){
+    if(LastDoseNum == -Inf && length(Tab_last) == 0 | is.na(Tab_last)){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
             Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[1-9]{1,1}[0-9]{0,}") &
