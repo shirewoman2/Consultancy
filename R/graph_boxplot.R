@@ -124,12 +124,13 @@ graph_boxplot <- function(DF,
                           fig_width = 6, fig_height = 4){
     
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # Setting things up for nonstandard evaluation -------------------------
-    
-    # Defining pipe operator and bang bang
-    `%>%` <- magrittr::`%>%`
-    `!!` <- rlang::`!!`
-    
     category_column <- rlang::enquo(category_column)
     value_column <- rlang::enquo(value_column)
     facet1_column <- rlang::enquo(facet1_column)

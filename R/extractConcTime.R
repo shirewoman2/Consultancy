@@ -150,11 +150,17 @@ extractConcTime <- function(sim_data_file,
                             expdetails = NA,
                             fromMultFunction = FALSE){
     
-    if(returnAggregateOrIndiv[1] == "both"){
+    # Error catching ------------------------------------------------------
+    
+    # Check whether tidyverse is loaded
+	if("package:tidyverse" %in% search() == FALSE){
+	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+	}
+
+	if(returnAggregateOrIndiv[1] == "both"){
         returnAggregateOrIndiv <- c("aggregate", "individual")
     }
     
-    # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,
              length(returnAggregateOrIndiv) > 2,
              any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual", "both") == FALSE)))) {
@@ -181,6 +187,9 @@ extractConcTime <- function(sim_data_file,
         stop("You must enter one and only one option for 'compoundToExtract'. (Default is the substrate.)",
              call. = FALSE)
     }
+    
+    
+    # Main body of function ------------------------------------------------
     
     tissue <- tolower(tissue)
     PossTiss <- c("gi tissue", "lung", "additional organ", "adipose",

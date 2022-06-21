@@ -50,6 +50,12 @@
 
 generateReportInputForm <- function(filename){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # Check for "\" b/c people will probably paste the path from Windows
     filename <- gsub("\\\\", "/", filename)
     
@@ -70,6 +76,7 @@ generateReportInputForm <- function(filename){
              call. = FALSE)
     }
     
+    # Main body of function ------------------------------------------------
     # Loading the forms
     data("ReportInputForm")
     
@@ -119,7 +126,7 @@ generateReportInputForm <- function(filename){
     
     StudyNoDDI <- StudyNoDDI[2:nrow(StudyNoDDI), ]
     formatXL(StudyNoDDI %>% rename("Simulated data (no DDI)" = X1,
-                                 "ignore" = X2, "_" = X3),
+                                   "ignore" = X2, "_" = X3),
              file = filename,
              sheet = "study info - no DDI",
              colWidth = list(colNum = 1:3,
@@ -142,7 +149,7 @@ generateReportInputForm <- function(filename){
                  list(rows = 13, columns = 1:3, 
                       font = list(bold = TRUE, size = 14), fill = "#DDEBF7"),
                  list(rows = 14:24, columns = 1:3, fill = "#DDEBF7"),
-                      
+                 
                  # Multiple-dose data
                  list(rows = 26, columns = 1:3, 
                       font = list(bold = TRUE, size = 14), fill = "#E2EFDA"),
@@ -151,8 +158,8 @@ generateReportInputForm <- function(filename){
     
     StudyDDI <- StudyDDI[2:nrow(StudyDDI), ]
     formatXL(StudyDDI %>% rename("Simulated data (DDI)" = X1,
-                               "ignore" = X2, "_" = X3, "__" = X4,
-                               "ignore2" = X5, "___" = X6),
+                                 "ignore" = X2, "_" = X3, "__" = X4,
+                                 "ignore2" = X5, "___" = X6),
              file = filename,
              sheet = "study info - DDI",
              colWidth = list(colNum = 1:6,

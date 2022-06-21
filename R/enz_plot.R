@@ -34,7 +34,12 @@ enz_plot <- function(sim_enz_dataframe,
                      enzyme = "CYP3A4",
                      tissue = "liver"){
     
-    Data <- sim_enz_dataframe
+    # Check whether tidyverse is loaded
+	if("package:tidyverse" %in% search() == FALSE){
+	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+	}
+
+	Data <- sim_enz_dataframe
     
     if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
         Data <- Data %>% filter(Tissue == gut_tissue)

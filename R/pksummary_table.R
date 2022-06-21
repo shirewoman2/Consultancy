@@ -214,6 +214,14 @@ pksummary_table <- function(sim_data_file = NA,
                             checkDataSource = TRUE, 
                             save_table = NA){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    
+    # Main body of function --------------------------------------------------
     # If they supplied observed_PK, get the sim_data_file from that. 
     if(complete.cases(observed_PK[1]) && 
        (class(observed_PK) == "character" | "data.frame" %in% class(observed_PK))){

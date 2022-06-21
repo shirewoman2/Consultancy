@@ -89,6 +89,12 @@ extractPK <- function(sim_data_file,
                       returnExpDetails = FALSE, 
                       checkDataSource = TRUE){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
     PKparameters <- sub("tau_dose1", "t_dose1", PKparameters)
     
@@ -101,6 +107,8 @@ extractPK <- function(sim_data_file,
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
+    # Main body of function ---------------------------------------------------
     
     if(returnAggregateOrIndiv[1] == "both"){
         returnAggregateOrIndiv <- c("aggregate", "individual")

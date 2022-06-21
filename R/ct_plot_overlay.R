@@ -312,6 +312,12 @@ ct_plot_overlay <- function(ct_dataframe,
                             fig_height = 6,
                             fig_width = 5){
     
+    # Error catching ---------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # Prettifying compound names before doing anything else 
     if(class(prettify_compound_names) == "logical" && # NB: "prettify_compound_names" is the argument value
        prettify_compound_names){
@@ -794,6 +800,22 @@ ct_plot_overlay <- function(ct_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
+    if(is.na(legend_label)){
+        if(complete.cases(color_labels[1])){
+            A <- A + labs(color = NULL, fill = NULL)
+        } else {
+            A <- A + labs(color = as_label(colorBy_column), 
+                          fill = as_label(colorBy_column))
+        }
+    } else {
+        A <- A + 
+            labs(x = xlab, y = ylab,
+                 linetype = legend_label,
+                 shape = legend_label,
+                 color = legend_label, 
+                 fill = legend_label)
+    }
+    
     if(floating_facet_scale){
         A <- A + 
             scale_x_continuous(expand = expansion(
@@ -828,10 +850,10 @@ ct_plot_overlay <- function(ct_dataframe,
     blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
                                     "dodgerblue3", "royalblue4"))
     
-    NumColors <- sim_dataframe %>% pull(MyAES["color"]) %>% 
+    NumColorsNeeded <- sim_dataframe %>% pull(MyAES["color"]) %>% 
         unique() %>% length()
     
-    # print(NumColors)
+    # print(NumColorsNeeded)
     
     if(length(sort(unique(ct_dataframe$colorBy_column))) == 1){
         A <- A + scale_color_manual(values = "black")
@@ -846,11 +868,13 @@ ct_plot_overlay <- function(ct_dataframe,
         if(color_set == "blue-green"){
             A <- A + scale_color_manual(values = blueGreen(NumColors)) +
                 scale_fill_manual(values = blueGreen(NumColors))
+            A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
+                scale_fill_manual(values = blueGreen(NumColorsNeeded))
         }
         
         if(color_set == "rainbow"){
-            A <- A + scale_color_manual(values = colRainbow(NumColors)) +
-                scale_fill_manual(values = colRainbow(NumColors))
+            A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
+                scale_fill_manual(values = colRainbow(NumColorsNeeded))
         }
         
         if(str_detect(tolower(color_set), "brewer.*2|set.*2")){

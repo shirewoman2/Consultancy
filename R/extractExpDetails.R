@@ -70,6 +70,12 @@ extractExpDetails <- function(sim_data_file,
                               exp_details = "Summary tab", 
                               save_output = NA){
     
+    # Error catching ---------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
@@ -81,6 +87,8 @@ extractExpDetails <- function(sim_data_file,
     if(str_detect(tolower(exp_details[1]), "summary")){exp_details <- "Summary tab"}
     if(str_detect(tolower(exp_details[1]), "input")){exp_details <- "Input sheet"}
     if(str_detect(tolower(exp_details[1]), "population")){exp_details <- "population tab"}
+    
+    # Main body of function ----------------------------------------------------
     
     # Noting which details are possible, which columns to search for their
     # names, which columns contain their values for substrates or inhibitors,

@@ -70,11 +70,16 @@ extractEnzAbund <- function(sim_data_file,
                             tissue = "liver",
                             returnAggregateOrIndiv = "both"){
     
+	# Error catching --------------------------------------------------------------------
+    # Check whether tidyverse is loaded
+	if("package:tidyverse" %in% search() == FALSE){
+	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+	}
+
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
     
-    # Error catching
     if(any(c(length(returnAggregateOrIndiv) < 1,
              length(returnAggregateOrIndiv) > 2,
              any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual", "both") == FALSE)))) {
@@ -92,10 +97,12 @@ extractEnzAbund <- function(sim_data_file,
              call. = FALSE)
     }
     
+	
+	# Main body of function ----------------------------------------------------------------
     tissue <- tolower(tissue)
     enzyme <- gsub(" |_|-", "", toupper(enzyme))
     
-    # Getting experimental details
+    # Getting experimental details 
     Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     
     AllSheets <- readxl::excel_sheets(sim_data_file)

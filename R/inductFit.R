@@ -151,12 +151,13 @@ inductFit <- function(DF,
                       fig_width = 5.5, 
                       save_output = NA){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # Setting things up for nonstandard evaluation -------------------------
-    
-    # Defining pipe operator and bang bang
-    `%>%` <- magrittr::`%>%`
-    `!!` <- rlang::`!!`
-    
     conc_column <- rlang::enquo(conc_column)
     fold_change_column <- rlang::enquo(fold_change_column)
     donor_column <- rlang::enquo(donor_column)
