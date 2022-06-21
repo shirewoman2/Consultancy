@@ -209,12 +209,6 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
-#' @param legend_label optionally indicate on the legend something explanatory
-#'   about what the colors are for. For example, if \code{colorBy_column = File}
-#'   and \code{legend_label = "Simulations with various fa values"}, that will
-#'   make the label above the file names in the legend more explanatory than
-#'   just "File". The default is to use whatever the column name is for
-#'   \code{colorBy_column}.
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
@@ -265,7 +259,6 @@ ct_plot_overlay <- function(ct_dataframe,
                             y_axis_limits_log = NA, 
                             graph_labels = TRUE,
                             legend_position = NA,
-                            legend_label = NA,
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5){
@@ -691,20 +684,11 @@ ct_plot_overlay <- function(ct_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
-    if(is.na(legend_label)){
-        if(complete.cases(color_labels[1])){
-            A <- A + labs(color = NULL, fill = NULL)
-        } else {
-            A <- A + labs(color = as_label(colorBy_column), 
-                          fill = as_label(colorBy_column))
-        }
+    if(complete.cases(color_labels[1])){
+        A <- A + labs(color = NULL, fill = NULL)
     } else {
-        A <- A + 
-            labs(x = xlab, y = ylab,
-                 linetype = legend_label,
-                 shape = legend_label,
-                 color = legend_label, 
-                 fill = legend_label)
+        A <- A + labs(color = as_label(colorBy_column), 
+                      fill = as_label(colorBy_column))
     }
     
     if(floating_facet_scale){

@@ -25,7 +25,6 @@ ct_plot_overlay(
   y_axis_limits_log = NA,
   graph_labels = TRUE,
   legend_position = NA,
-  legend_label = NA,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -203,13 +202,6 @@ linear or only semi-log graphs.)}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
-
-\item{legend_label}{optionally indicate on the legend something explanatory
-about what the colors are for. For example, if \code{colorBy_column = File}
-and \code{legend_label = "Simulations with various fa values"}, that will
-make the label above the file names in the legend more explanatory than
-just "File". The default is to use whatever the column name is for
-\code{colorBy_column}.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you do not designate a
