@@ -26,6 +26,14 @@
 #' 
 match_units <- function(DF_to_adjust, goodunits){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    
+    # Main body of function -------------------------------------------------
     # If user only wants to change conc units or only time units, make the other
     # option be whatever the DF_to_adjust already has.
     if("data.frame" %in% class(goodunits) == FALSE && 

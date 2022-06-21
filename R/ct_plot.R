@@ -305,8 +305,14 @@ ct_plot <- function(ct_dataframe = NA,
                     fig_height = 6,
                     fig_width = 5){
     
-    # Error catching
-    if(length(figure_type) != 1 |
+    # Error catching ----------------------------------------------------------
+    
+	# Check whether tidyverse is loaded
+	if("package:tidyverse" %in% search() == FALSE){
+	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+	}
+
+	if(length(figure_type) != 1 |
        figure_type %in% c("trial means", "percentiles", "trial percentiles",
                           "Freddy", "means only", "overlay", 
                           "percentile ribbon", "percentile ribbons", 
@@ -328,6 +334,8 @@ ct_plot <- function(ct_dataframe = NA,
         stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
     }
     
+    
+    # Main body of function --------------------------------------------------
     # If user had already filtered ct_dataframe to include only the ADAM data
     # they wanted, the subsection_ADAM column might not include the default
     # value for subsection_ADAM. In that case, just switch to the subsection

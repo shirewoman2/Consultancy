@@ -24,6 +24,14 @@
 getReferences <- function(main_directory = ".", 
                           save_output = NA){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Main body of function -------------------------------------------------
+    
     # Check for "\" b/c people will probably paste the path from Windows
     main_directory <- gsub("\\\\", "/", main_directory)
     

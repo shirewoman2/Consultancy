@@ -270,6 +270,12 @@ ct_plot_overlay <- function(ct_dataframe,
                             fig_height = 6,
                             fig_width = 5){
     
+    # Error catching ---------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # Setting things up for some nonstandard evaluation -------------------------
     
     facet1_column <- rlang::enquo(facet1_column)

@@ -91,12 +91,20 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    overwrite = FALSE,
                                    save_output = NA){
     
+	# Error catching ---------------------------------------------------------
+    # Check whether tidyverse is loaded
+	if("package:tidyverse" %in% search() == FALSE){
+	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+	}
+
     # If user did not supply files, then extract all the files in the current
     # folder that end in "xlsx".
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         sim_data_files <- list.files(pattern = "xlsx$")
     }
     
+	# Main body of function ---------------------------------------------------
+	
     # print(quo_name(enquo(existing_exp_details))) # for bug fixing
     
     if(exists(substitute(existing_exp_details))){

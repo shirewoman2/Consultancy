@@ -22,10 +22,18 @@
 getSectionInfo <- function(report_input_file = NA,
                            sheet_report = "study info - no DDI"){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # If they didn't include ".xlsx" at the end, add that.
     report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
                                 report_input_file, paste0(report_input_file, ".xlsx"))
     
+    
+    # Main body of function -------------------------------------------------
     InputXL <- suppressMessages(
         readxl::read_excel(path = report_input_file,
                            sheet = sheet_report, skip = 1)) %>% 

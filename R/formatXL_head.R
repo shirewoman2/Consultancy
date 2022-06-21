@@ -23,14 +23,19 @@
 #'
 formatXL_head <- function(DF, file, sheet = NA){
     
-    # Defining pipe operator
-    `%>%` <- magrittr::`%>%`
+    # Error catching ---------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
     
     # All the columns must be named for this to work well. Checking that.
     if(any(is.na(names(DF)))){
         stop("All the columns in your data.frame must be named.",
              call. = FALSE)
     }
+    
+    # Main body of function ---------------------------------------------------
     
     # Guessing at appropriate column width based on max number of characters
     # in that column. First, need to include headers as a row so that it will

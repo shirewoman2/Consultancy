@@ -115,6 +115,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  returnAggregateOrIndiv = "aggregate",
                                  ...){
     
+    # Error catching -------------------------------------------------------
+    
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    
+    # Main body of function -----------------------------------------------
+    
     compoundsToExtract <- tolower(compoundsToExtract)
     
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
