@@ -108,7 +108,9 @@
 #'   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
 #'   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
 #'   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
-#'   in faeces", "dissolved compound", or "luminal CLint of compound". }
+#'   in faeces", "dissolved compound", "luminal CLint of compound", "cumulative
+#'   fraction of dissolved X" or "cumulative fraction of absorbed X" (X =
+#'   substrate or inhibitor 1, depending on the options selected). }
 #'
 #'   \item{Dose_num}{the dose number}
 #'
@@ -451,7 +453,7 @@ extractConcTime <- function(sim_data_file,
             rename(OrigVal = ...1) %>% 
             mutate(TypeCode = str_extract(
                 OrigVal, 
-                "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved"), 
+                "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed"), 
                 Type = recode(TypeCode, 
                               "Ms" = "solid compound", 
                               "C Lumen Free" = "free compound in lumen", 
@@ -461,11 +463,13 @@ extractConcTime <- function(sim_data_file,
                               "Inh Mur" = "unreleased inhibitor in faeces", 
                               "Md" = "dissolved compound", 
                               "Luminal CLint" = "luminal CLint of compound", 
-                              "absorbed" = paste("Cumulative fraction of absorbed", 
+                              "absorbed" = paste("cumulative fraction of absorbed", 
                                                  compoundToExtract),
                               "dissolved" = paste("cumulative fraction of dissolved", 
                                                   compoundToExtract)), 
-                ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h|Cumulative fraction")) %>% 
+                ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h|Cumulative fraction"), 
+                # Making "Cumulative" lower case
+                ConcUnit = sub("Cumulative", "cumulative", ConcUnit)) %>% 
             filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique()
     }
     
@@ -610,7 +614,9 @@ extractConcTime <- function(sim_data_file,
         # ADAM data include multiple types of concentrations. Dealing
         # with that and extracting each one.
         if(ADAM){
-            subsection_ADAMs <- SimConcUnits$Type
+            # Getting the correct ADAM-model subsections and also making
+            # "Cumulative" for cumulative absorption/dissolution lower case
+            subsection_ADAMs <- sub("Cumulative", "cumulative", SimConcUnits$Type)
         } else {
             subsection_ADAMs <- "regular"
         }
@@ -644,7 +650,7 @@ extractConcTime <- function(sim_data_file,
                         if(ADAM){
                             Include <- 
                                 which(str_detect(NamesToCheck,
-                                                 paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                 paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                                "", "^"), 
                                                         tolower(SimConcUnits$TypeCode[
                                                             SimConcUnits$Type == n]))))
@@ -742,7 +748,7 @@ extractConcTime <- function(sim_data_file,
                             if(ADAM){
                                 Include <- 
                                     which(str_detect(NamesToCheck,
-                                                     paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                     paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                                    "", "^"), 
                                                             tolower(SimConcUnits$TypeCode[
                                                                 SimConcUnits$Type == n]))))
@@ -881,7 +887,7 @@ extractConcTime <- function(sim_data_file,
                             if(ADAM){
                                 Include <- 
                                     which(str_detect(NamesToCheck,
-                                                     paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                     paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                                    "", "^"), 
                                                             tolower(SimConcUnits$TypeCode[
                                                                 SimConcUnits$Type == n]))))
@@ -983,7 +989,7 @@ extractConcTime <- function(sim_data_file,
                     if(ADAM){
                         RowsToUse <- which(
                             str_detect(tolower(sim_data_xl$...1), 
-                                       paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                       paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                      "", "^"), 
                                               tolower(SimConcUnits$TypeCode[
                                                   SimConcUnits$Type == n]))) &
@@ -1054,7 +1060,7 @@ extractConcTime <- function(sim_data_file,
                             RowsToUse <- intersect(
                                 which(
                                     str_detect(tolower(sim_data_xl$...1), 
-                                               paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                               paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                              "", "^"), 
                                                       tolower(SimConcUnits$TypeCode[
                                                           SimConcUnits$Type == n])))), 
@@ -1176,7 +1182,7 @@ extractConcTime <- function(sim_data_file,
                             if(ADAM){
                                 Include <- 
                                     which(str_detect(NamesToCheck,
-                                                     paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                     paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                                    "", "^"), 
                                                             SimConcUnits$TypeCode[
                                                                 SimConcUnits$Type == n])))
@@ -1199,7 +1205,7 @@ extractConcTime <- function(sim_data_file,
                             RowsToUse <- 
                                 which(
                                     str_detect(sim_data_xl$...1, 
-                                               paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                               paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                              "", "^"), 
                                                       SimConcUnits$TypeCode[
                                                           SimConcUnits$Type == n])))
