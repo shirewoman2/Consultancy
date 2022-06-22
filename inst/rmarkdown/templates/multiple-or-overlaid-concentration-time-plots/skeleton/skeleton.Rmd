@@ -43,11 +43,25 @@ CapText1 <-
             " (dashed line)"))
 
 CapText2 <- switch(figure_type, 
-                   "trial means" = "The grey lines represent mean values of simulated individual trials and the black lines portray the mean data of the simulated population (n = XXX)", 
-                   "percentiles" = "The grey lines represent the 5th and 95th percentiles and the solid black line the mean data for the simulated population (n = XXX)", 
-                   "percentile ribbon" = "The shaded regions represent the 5th to the 95th percentiles and the solid black line the mean data for the simulated population (n = XXX)", 
-                   "means only" = "The solid black line represents the mean data for the simulated population (n = XXX)", 
-                   "Freddy" = "The grey lines represent mean values of simulated individual trials and the black lines portray the mean data of the simulated population (n = XXX). The dashed lines represent the 5th and 95th percentiles")
+                   "trial means" = paste("The grey lines represent the", 
+                                         mean_type, 
+                                         "mean values of simulated individual trials and the black lines portray the",
+                                         mean_type, 
+                                         "mean data of the simulated population (n = XXX)"), 
+                   "percentiles" = paste("The grey lines represent the 5th and 95th percentiles and the solid black line the",
+                                         mean_type, 
+                                         "mean data for the simulated population (n = XXX)"), 
+                   "percentile ribbon" = paste("The shaded regions represent the 5th to the 95th percentiles and the solid black line the",
+                                               mean_type, 
+                                               "mean data for the simulated population (n = XXX)"), 
+                   "means only" = paste("The solid lines represent the",
+                                        mean_type, 
+                                        "mean data for the simulated population (n = XXX)"), 
+                   "Freddy" = paste("The grey lines represent",
+                                    mean_type, 
+                                    "mean values of simulated individual trials and the black lines portray the",
+                                    mean_type, 
+                                    "mean data of the simulated population (n = XXX). The dashed lines represent the 5th and 95th percentiles"))
 
 ```
 
