@@ -69,6 +69,6 @@ CapText2 <- str_comma(sim_data_files)
 
 ```
 
-*`r CapText1` Source simulated data: `r CapText2`* 
+*Simulated values listed are the `r MeanType` mean. `r CapText1` Source simulated data: `r CapText2`* 
 
 
