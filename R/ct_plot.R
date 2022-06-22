@@ -228,11 +228,6 @@
 #'   Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
-#' @param include_expdetails TRUE or FALSE (default) to optionally get the
-#'   experimental details for the simulation to include in the figure caption.
-#'   This only applies when you save the graph as a Word file. The simulator
-#'   file included in ct_dataframe must be located in the current directory for
-#'   this to work.
 #' @param include_legend SOON TO BE DEPRECATED. TRUE or FALSE (default) for
 #'   whether to include a legend. If there was only one thing plotted on your
 #'   graph, even if you set this to TRUE, no legend will be shown because
@@ -352,7 +347,11 @@ ct_plot <- function(ct_dataframe = NA,
        unique(ct_dataframe$subsection_ADAM) %in% 
        c("solid compound", "Heff", "absorption rate",
          "unreleased substrate in faeces", "unreleased inhibitor in faeces",
-         "dissolved compound", "luminal CLint of compound")){
+         "dissolved compound", "luminal CLint of compound", 
+         paste("cumulative fraction of absorbed", 
+               unique(ct_dataframe$CompoundID)),
+         paste("cumulative fraction of dissolved",
+               unique(ct_dataframe$CompoundID)))){
         subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
     }
     
@@ -401,7 +400,8 @@ ct_plot <- function(ct_dataframe = NA,
     ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
                                        "jejunum II", "ileum I", "ileum II",
                                        "ileum III", "ileum IV", "colon", 
-                                       "faeces") &&
+                                       "faeces", "cumulative absorption", 
+                                       "cumulative dissolution") &&
         EnzPlot == FALSE
     
     # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
@@ -417,6 +417,10 @@ ct_plot <- function(ct_dataframe = NA,
                                   "unreleased substrate in faeces",
                                   "unreleased inhibitor in faeces",
                                   "dissolved compound",
+                                  paste("cumulative fraction of absorbed", 
+                                        unique(ct_dataframe$CompoundID)),
+                                  paste("cumulative fraction of dissolved",
+                                        unique(ct_dataframe$CompoundID)),
                                   "luminal CLint of compound") == FALSE){
             stop(paste0("The concentration type you requested, ", subsection_ADAM,
                         ", is not one of the options. Please set this value to one of 'solid compound', 'free compound in lumen', 'Heff', 'absorption rate', 'unreleased substrate in faeces', 'unreleased inhibitor in faeces', 'dissolved compound', or 'luminal CLint of compound'"),
@@ -1226,11 +1230,6 @@ ct_plot <- function(ct_dataframe = NA,
                     # Note: The "system.file" part of the call means "go to where the
                     # package is installed, search for the file listed, and return its
                     # full path.
-                    
-                    if(include_expdetails & PathCheck == FALSE){
-                        warning("We couldn't find the Simulator file in the current directory, so there won't be as many file-specific details in the figure heading or caption. If you would like the full figure text, please set the working directory to where your file is located.", 
-                                call. = FALSE)
-                    }
                 }
             }
             

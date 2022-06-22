@@ -11,10 +11,12 @@ ct_plot_overlay(
   linear_or_log = "semi-log",
   colorBy_column = File,
   color_labels = NA,
+  legend_label_color = NA,
   color_set = "default",
   obs_transparency = NA,
   linetype_column = Inhibitor,
   linetypes = "solid",
+  legend_label_linetype = NA,
   facet1_column,
   facet2_column,
   floating_facet_scale = FALSE,
@@ -27,8 +29,6 @@ ct_plot_overlay(
   y_axis_limits_log = NA,
   graph_labels = TRUE,
   legend_position = NA,
-  legend_label_color = NA,
-  legend_label_linetype = NA,
   prettify_compound_names = TRUE,
   save_graph = NA,
   fig_height = 6,
@@ -81,6 +81,14 @@ the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
 "file 2.xlsx" is for an fa of 0.2. The order in the legend will match the
 order designated here.}
 
+\item{legend_label_color}{optionally indicate on the legend something
+explanatory about what the colors represent. For example, if
+\code{colorBy_column = File} and \code{legend_label_color = "Simulations
+with various fa values"}, that will make the label above the file names in
+the legend more explanatory than just "File". The default is to use
+whatever the column name is for \code{colorBy_column}. If you don't want a
+label for this legend item, set this to "none".}
+
 \item{color_set}{the set of colors to use. Options: \describe{
 
   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -130,6 +138,15 @@ you specified for \code{linetype_column}. Check what the unique values are
 in that column if you get a graph you didn't expect as far as line types
 go. To see possible line types by name, please enter
 \code{ggpubr::show_line_types()} into the console.}
+
+\item{legend_label_linetype}{optionally indicate on the legend something
+explanatory about what the line types represent. For example, if
+\code{linetype_column = Inhibitor} and \code{legend_label_linetype =
+"Inhibitor present"}, that will make the label in the legend above, e.g.,
+"none", and whatever effector was present more explanatory than just
+"Inhibitor". The default is to use whatever the column name is for
+\code{linetype_column}. If you don't want a label for this legend item, set
+this to "none".}
 
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the
@@ -227,23 +244,6 @@ linear or only semi-log graphs.)}
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
 
-\item{legend_label_color}{optionally indicate on the legend something
-explanatory about what the colors represent. For example, if
-\code{colorBy_column = File} and \code{legend_label_color = "Simulations
-with various fa values"}, that will make the label above the file names in
-the legend more explanatory than just "File". The default is to use
-whatever the column name is for \code{colorBy_column}. If you don't want a
-label for this legend item, set this to "none".}
-
-\item{legend_label_linetype}{optionally indicate on the legend something
-explanatory about what the line types represent. For example, if
-\code{linetype_column = Inhibitor} and \code{legend_label_linetype =
-"Inhibitor present"}, that will make the label in the legend above, e.g.,
-"none", and whatever effector was present more explanatory than just
-"Inhibitor". The default is to use whatever the column name is for
-\code{linetype_column}. If you don't want a label for this legend item, set
-this to "none".}
-
 \item{prettify_compound_names}{set this to a) TRUE (default) or FALSE for
 whether to make the compound names in the legend prettier or b) supply a
 named character vector to set it to the exact name you'd prefer to see in
@@ -277,7 +277,7 @@ concentration-time data of multiple tissues, compounds, or Simcyp Simulator
 output files for easy comparisons. \emph{Note:} There are some nuances to
 overlaying observed data. Please see the "Details" section at the bottom of
 this help file. Also, this hasn't really been developed or tested with
-enzyme-abundance data or ADAM data yet.
+enzyme-abundance data yet and only a little bit tested with ADAM-model data.
 }
 \details{
 \strong{Notes on including observed data:} We recently added the option of

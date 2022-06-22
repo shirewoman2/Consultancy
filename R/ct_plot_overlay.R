@@ -6,7 +6,7 @@
 #' output files for easy comparisons. \emph{Note:} There are some nuances to
 #' overlaying observed data. Please see the "Details" section at the bottom of
 #' this help file. Also, this hasn't really been developed or tested with
-#' enzyme-abundance data or ADAM data yet.
+#' enzyme-abundance data yet and only a little bit tested with ADAM-model data.
 #'
 #' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include
@@ -289,10 +289,12 @@ ct_plot_overlay <- function(ct_dataframe,
                             linear_or_log = "semi-log",
                             colorBy_column = File,
                             color_labels = NA, 
+                            legend_label_color = NA,
                             color_set = "default",
                             obs_transparency = NA, 
                             linetype_column = Inhibitor, 
                             linetypes = "solid",
+                            legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
                             floating_facet_scale = FALSE,
@@ -305,8 +307,6 @@ ct_plot_overlay <- function(ct_dataframe,
                             y_axis_limits_log = NA, 
                             graph_labels = TRUE,
                             legend_position = NA,
-                            legend_label_color = NA,
-                            legend_label_linetype = NA,
                             prettify_compound_names = TRUE,
                             save_graph = NA,
                             fig_height = 6,
@@ -318,6 +318,16 @@ ct_plot_overlay <- function(ct_dataframe,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
+    # Checking for more than one tissue or ADAM data type b/c there's only one y
+    # axis and it should have only one concentration type.
+    if(length(unique(ct_dataframe$Tissue)) > 1 |
+       length(unique(ct_dataframe$subsection_ADAM)) > 1){
+        stop("We're sorry, but this function can only deal with one type of tissue at a time, and the supplied data.frame contains more than one unique value in either the `Tissue` column or the `subsection_ADAM` column. Please supply a data.frame with only one type of tissue or ADAM-model subsection.",
+             call. = FALSE)
+    }
+    
+    
+    # Main body of function -------------------------------------------------
     # Prettifying compound names before doing anything else 
     if(class(prettify_compound_names) == "logical" && # NB: "prettify_compound_names" is the argument value
        prettify_compound_names){
@@ -392,28 +402,12 @@ ct_plot_overlay <- function(ct_dataframe,
             mutate(FC2 = {{facet2_column}})
     }
     
-    # error catching -------------------------------------------------------
-    # Checking for ADAM model data b/c those don't work well here. 
-    if(any(unique(ct_dataframe$Tissue) %in% 
-           c("stomach", "duodenum", "jejunum I", "jejunum II", 
-             "ileum I", "ileum II", "ileum III", "ileum IV",
-             "colon", "faeces", "gut tissue"))){
-        if(all(unique(ct_dataframe$Tissue) %in% 
-               c("stomach", "duodenum", "jejunum I", "jejunum II", 
-                 "ileum I", "ileum II", "ileum III", "ileum IV",
-                 "colon", "faeces", "gut tissue"))){
-            stop("We're sorry, but this function has not been set up to deal with ADAM-model tissue concentrations since the units can be so different from other concentration-time data. Since all of the supplied data are ADAM model concentrations, no graph can be made.",
-                 call. = FALSE)
-        } else {
-            warning("Some of the data you supplied are ADAM-model tissue concentrations, but this function has not been set up to deal with that since the units can be so different from other concentration-time data. The ADAM-model data will be omitted from the graph.",
-                    call. = FALSE)
-        }
-    }
-    
-    ct_dataframe <- ct_dataframe %>% 
-        filter(!Tissue %in% c("stomach", "duodenum", "jejunum I", "jejunum II", 
-                              "ileum I", "ileum II", "ileum III", "ileum IV",
-                              "colon", "faeces", "gut tissue"))
+    # Noting whether the tissue was from an ADAM model
+    ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+                                       "jejunum II", "ileum I", "ileum II",
+                                       "ileum III", "ileum IV", "colon", 
+                                       "faeces", "cumulative absorption", 
+                                       "cumulative dissolution")
     
     if(length(time_range) == 1 && complete.cases(time_range[1]) &&
        !str_detect(time_range, "dose|last obs|all obs")){
@@ -456,6 +450,10 @@ ct_plot_overlay <- function(ct_dataframe,
                        "s will be used."),
                 call. = FALSE)
         MyMeanType <- MyMeanType[1] %>% as.character()
+        mean_type <-  switch(MyMeanType,
+                             "mean" = "arithmetic", 
+                             "geomean" = "geometric",
+                             "median" = "median")
         
     } else {
         
@@ -463,14 +461,6 @@ ct_plot_overlay <- function(ct_dataframe,
                              "geometric" = "geomean",
                              "median" = "median")
         
-    }
-    
-    if("subsection_ADAM" %in% names(ct_dataframe)){
-        ct_dataframe <- ct_dataframe %>% 
-            # At least at this point, I can't see this function working well with
-            # ADAM model data b/c the y axis units differ. Removing all ADAM model
-            # data.
-            filter(is.na(subsection_ADAM))
     }
     
     ct_dataframe <- ct_dataframe %>%
@@ -706,8 +696,8 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Setting up the y axis using the subfunction ct_y_axis
     ct_y_axis(Data = ct_dataframe, 
-              ADAM = FALSE, 
-              subsection_ADAM = "free compound in lumen", # This is just a placeholder since no ADAM data are currently allowed.
+              ADAM = ADAM, 
+              subsection_ADAM = unique(ct_dataframe$subsection_ADAM), 
               EnzPlot = FALSE, 
               time_range_relative = time_range_relative,
               Ylim_data = ct_dataframe %>% mutate(Time_orig = Time), 

@@ -39,25 +39,26 @@
 #' @param tissue From which tissue should the desired concentrations be
 #'   extracted? Default is plasma for typical plasma concentration-time data.
 #'   Other options are "blood" or any tissues included in "Sheet Options",
-#'   "Tissues" in the simulator. All possible options: "plasma", "blood",
-#'   "unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
-#'   "brain", "feto-placenta", "GI tissue" (this is for a 1st-order absorption
-#'   model; not ADAM model), "heart", "kidney", "liver", "lung", "muscle",
-#'   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
-#'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
-#'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
-#'   or "spleen". If you have an ADAM model, additional options are: "stomach",
+#'   "Tissues" in the simulator. Notes: \itemize{ \item{All possible options for
+#'   first-order absorption models: "plasma", "blood", "unbound blood", "unbound
+#'   plasma", "additional organ", "adipose", "bone", "brain", "feto-placenta",
+#'   "GI tissue", "heart", "kidney", "liver", "lung", "muscle", "pancreas",
+#'   "peripheral blood", "peripheral plasma", "peripheral unbound blood",
+#'   "peripheral unbound plasma", "portal vein blood", "portal vein plasma",
+#'   "portal vein unbound blood", "portal vein unbound plasma", "skin", or
+#'   "spleen".} \item{Additional options for ADAM-model simulations: "stomach",
 #'   "duodenum", "jejunum I", "jejunum II", "ileum I", "ileum II", "ileum III",
-#'   "ileum IV", "colon", "faeces", or "gut tissue". Not case sensitive.
+#'   "ileum IV", "colon", "faeces", "gut tissue", "cumulative absorption", or
+#'   "cumulative dissolution". \strong{This has not been thoroughly tested for
+#'   very many ADAM-model scenarios, so please check that the data extracted are
+#'   correct.}}} Not case sensitive.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are "substrate" (default), "primary
 #'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
 #'   1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
 #'   labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
 #'   inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-#'   primary metabolite of inhibitor 1. \emph{Note:} The simulator will report
-#'   up to one metabolite for the 1st inhibitor but no other inhibitor
-#'   metabolites. (Someone please correct me if that's wrong! -LS)
+#'   primary metabolite of inhibitor 1.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate", "individual", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
@@ -153,11 +154,11 @@ extractConcTime <- function(sim_data_file,
     # Error catching ------------------------------------------------------
     
     # Check whether tidyverse is loaded
-	if("package:tidyverse" %in% search() == FALSE){
-	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-	}
-
-	if(returnAggregateOrIndiv[1] == "both"){
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    if(returnAggregateOrIndiv[1] == "both"){
         returnAggregateOrIndiv <- c("aggregate", "individual")
     }
     
@@ -202,7 +203,7 @@ extractConcTime <- function(sim_data_file,
                   "portal vein unbound plasma", "portal vein unbound blood",
                   "stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
                   "ileum ii", "ileum iii", "ileum iv", "colon", "faeces",
-                  "gut tissue")
+                  "gut tissue", "cumulative absorption", "cumulative dissolution")
     
     if(tissue %in% PossTiss == FALSE){
         stop("The requested tissue must be plasma, blood, or one of the options listed under 'Sheet Options', 'Tissues' in the Simulator or one of the ADAM model tissues. Please see the help file description for the 'tissue' argument.",
@@ -220,7 +221,8 @@ extractConcTime <- function(sim_data_file,
     
     # Noting whether the tissue was from an ADAM model
     ADAM <- tissue %in% c("stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
-                          "ileum ii", "ileum iii", "ileum iv", "colon", "faeces")
+                          "ileum ii", "ileum iii", "ileum iv", "colon", "faeces", 
+                          "cumulative absorption", "cumulative dissolution")
     
     # Getting summary data for the simulation(s)
     if(fromMultFunction){
@@ -343,7 +345,12 @@ extractConcTime <- function(sim_data_file,
                    "ileum iv" = "Ileum IV Prof",
                    "colon" = "Colon Prof",
                    "faeces" = "Faeces Prof",
-                   "gut tissue" = "Gut Tissue Conc"
+                   "gut tissue" = "Gut Tissue Conc", 
+                   "cumulative absorption" = "Cumulative Abs",
+                   "cumulative dissolution" = paste0("Cum.*Dissolution.*",
+                                                     switch(compoundToExtract, 
+                                                            "substrate" = "Sub",
+                                                            "inhibitor 1" = "Inhib")) # Need to check this for inhibitor 1 ADAM model data. This is just my guess as to what the sheet name will be!
             )
     }
     
@@ -428,7 +435,8 @@ extractConcTime <- function(sim_data_file,
     }
     
     
-    # Determining concentration and time units
+    # Determining concentration and time units. This will be NA for most ADAM
+    # tissues.
     SimConcUnits <- as.character(
         sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]), "CMax"))])[1]
     SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
@@ -443,7 +451,7 @@ extractConcTime <- function(sim_data_file,
             rename(OrigVal = ...1) %>% 
             mutate(TypeCode = str_extract(
                 OrigVal, 
-                "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue"), 
+                "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved"), 
                 Type = recode(TypeCode, 
                               "Ms" = "solid compound", 
                               "C Lumen Free" = "free compound in lumen", 
@@ -452,8 +460,12 @@ extractConcTime <- function(sim_data_file,
                               "Mur" = "unreleased substrate in faeces", 
                               "Inh Mur" = "unreleased inhibitor in faeces", 
                               "Md" = "dissolved compound", 
-                              "Luminal CLint" = "luminal CLint of compound"), 
-                ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h")) %>% 
+                              "Luminal CLint" = "luminal CLint of compound", 
+                              "absorbed" = paste("Cumulative fraction of absorbed", 
+                                                 compoundToExtract),
+                              "dissolved" = paste("cumulative fraction of dissolved", 
+                                                  compoundToExtract)), 
+                ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h|Cumulative fraction")) %>% 
             filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique()
     }
     
@@ -630,10 +642,13 @@ extractConcTime <- function(sim_data_file,
                     # options.
                     if(str_detect(tissue, "portal") | TissueType == "tissue"){
                         if(ADAM){
-                            Include <- which(str_detect(NamesToCheck,
-                                                        paste0("^", 
-                                                               tolower(SimConcUnits$TypeCode[
-                                                                   SimConcUnits$Type == n]))))
+                            Include <- 
+                                which(str_detect(NamesToCheck,
+                                                 paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                               "", "^"), 
+                                                        tolower(SimConcUnits$TypeCode[
+                                                            SimConcUnits$Type == n]))))
+                            
                         } else {
                             Include <-
                                 which(str_detect(
@@ -697,6 +712,7 @@ extractConcTime <- function(sim_data_file,
                             as.data.frame() %>% slice(-(1:3)) %>%
                             mutate_all(as.numeric)
                     )
+                    
                     names(sim_data_mean[[m]][[n]]) <- c("Time", names(RowsToUse))
                     sim_data_mean[[m]][[n]] <- sim_data_mean[[m]][[n]] %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc",
@@ -724,10 +740,12 @@ extractConcTime <- function(sim_data_file,
                         # options.
                         if(str_detect(tissue, "portal") | TissueType == "tissue"){
                             if(ADAM){
-                                Include <- which(str_detect(NamesToCheck,
-                                                            paste0("^", 
-                                                                   tolower(SimConcUnits$TypeCode[
-                                                                       SimConcUnits$Type == n]))))
+                                Include <- 
+                                    which(str_detect(NamesToCheck,
+                                                     paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                                   "", "^"), 
+                                                            tolower(SimConcUnits$TypeCode[
+                                                                SimConcUnits$Type == n]))))
                             } else {
                                 Include <-
                                     which(str_detect(
@@ -861,10 +879,13 @@ extractConcTime <- function(sim_data_file,
                         # options.
                         if(str_detect(tissue, "portal") | TissueType == "tissue"){
                             if(ADAM){
-                                Include <- which(str_detect(NamesToCheck,
-                                                            paste0("^", 
-                                                                   SimConcUnits$TypeCode[
-                                                                       SimConcUnits$Type == n])))
+                                Include <- 
+                                    which(str_detect(NamesToCheck,
+                                                     paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                                   "", "^"), 
+                                                            tolower(SimConcUnits$TypeCode[
+                                                                SimConcUnits$Type == n]))))
+                                
                             } else {
                                 Include <- which(str_detect(NamesToCheck, NumCheck[i]))
                             }
@@ -962,7 +983,8 @@ extractConcTime <- function(sim_data_file,
                     if(ADAM){
                         RowsToUse <- which(
                             str_detect(tolower(sim_data_xl$...1), 
-                                       paste0("^", 
+                                       paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                     "", "^"), 
                                               tolower(SimConcUnits$TypeCode[
                                                   SimConcUnits$Type == n]))) &
                                 !str_detect(sim_data_xl$...1, 
@@ -1032,7 +1054,8 @@ extractConcTime <- function(sim_data_file,
                             RowsToUse <- intersect(
                                 which(
                                     str_detect(tolower(sim_data_xl$...1), 
-                                               paste0("^", 
+                                               paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                             "", "^"), 
                                                       tolower(SimConcUnits$TypeCode[
                                                           SimConcUnits$Type == n])))), 
                                 which(
@@ -1153,7 +1176,8 @@ extractConcTime <- function(sim_data_file,
                             if(ADAM){
                                 Include <- 
                                     which(str_detect(NamesToCheck,
-                                                     paste0("^", 
+                                                     paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                                   "", "^"), 
                                                             SimConcUnits$TypeCode[
                                                                 SimConcUnits$Type == n])))
                             } else {
@@ -1175,7 +1199,8 @@ extractConcTime <- function(sim_data_file,
                             RowsToUse <- 
                                 which(
                                     str_detect(sim_data_xl$...1, 
-                                               paste0("^", 
+                                               paste0(ifelse(SimConcUnits$TypeCode == "dissolved",
+                                                             "", "^"), 
                                                       SimConcUnits$TypeCode[
                                                           SimConcUnits$Type == n])))
                         } else {

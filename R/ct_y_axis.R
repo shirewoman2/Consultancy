@@ -28,8 +28,25 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         ObsConcUnits <- sort(unique(Data$Conc_units))
     }
     
-    if(ADAM && subsection_ADAM == "Heff"){
-        ylab <- expression(H[eff])
+    if(ADAM){
+        if(subsection_ADAM == "Heff"){
+            ylab <- expression(H[eff])
+        } else {
+            ylab <- switch(subsection_ADAM, 
+                        "cumulative fraction of dissolved substrate" =
+                            expression(atop("Cumulative fraction",
+                                            "of dissolved substrate")),
+                        "cumulative fraction of dissolved inhibitor 1" =
+                            expression(atop("Cumulative fraction",
+                                            "of dissolved inhibitor 1")),
+                        "cumulative fraction of absorbed substrate" =
+                            expression(atop("Cumulative fraction",
+                                            "of absorbed substrate")),
+                        "cumulative fraction of absorbed inhibitor 1" =
+                            expression(atop("Cumulative fraction",
+                                            "of absorbed inhibitor 1"))
+                           )
+        }
     } else {
         
         PossConcUnits <- list("µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
