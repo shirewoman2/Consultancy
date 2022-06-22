@@ -800,7 +800,7 @@ ct_plot_overlay <- function(ct_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
-    if(is.na(legend_label)){
+    if(is.na(legend_label_color)){
         if(complete.cases(color_labels[1])){
             A <- A + labs(color = NULL, fill = NULL)
         } else {
@@ -810,10 +810,10 @@ ct_plot_overlay <- function(ct_dataframe,
     } else {
         A <- A + 
             labs(x = xlab, y = ylab,
-                 linetype = legend_label,
-                 shape = legend_label,
-                 color = legend_label, 
-                 fill = legend_label)
+                 linetype = legend_label_linetype,
+                 shape = legend_label_color,
+                 color = legend_label_color, 
+                 fill = legend_label_color)
     }
     
     if(floating_facet_scale){
