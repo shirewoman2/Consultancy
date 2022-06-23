@@ -112,7 +112,9 @@ A data.frame of concentration-time data with the following columns:
   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
-  in faeces", "dissolved compound", or "luminal CLint of compound". }
+  in faeces", "dissolved compound", "luminal CLint of compound", "cumulative
+  fraction of dissolved X" or "cumulative fraction of absorbed X" (X =
+  substrate or inhibitor 1, depending on the options selected). }
 
   \item{Dose_num}{the dose number}
 
