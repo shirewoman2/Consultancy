@@ -9,6 +9,7 @@
 #'
 #' @param DF a data.frame, usually output from \code{\link{pksummary_table}} or
 #'   \code{\link{pksummary_mult}}
+#' @param fontsize the numeric font size for the output. Default is 11 point.
 #'
 #' @return
 #' @export
@@ -18,7 +19,7 @@
 #' pksummary_table(sim_data_file = "My simulation.xlsx")$Table %>% 
 #'     formatTable_Simcyp()
 #' 
-formatTable_Simcyp <- function(DF){
+formatTable_Simcyp <- function(DF, fontsize = 11){
     
     FT <- DF %>% 
         flextable::flextable() %>% 
@@ -35,6 +36,12 @@ formatTable_Simcyp <- function(DF){
         # center the columns with numbers, i.e., the 2nd column through the
         # penultimate column
         flextable::align(align = "center", j = 2:ncol(DF)) %>%
+        
+        # Set the font size
+        flextable::fontsize(part = "all", size = fontsize) %>% 
+        
+        # Set the font name
+        flextable::font(part = "all", fontname = "Calibri") %>% 
         
         # setting up which borderlines to show
         flextable::border_remove() %>% 

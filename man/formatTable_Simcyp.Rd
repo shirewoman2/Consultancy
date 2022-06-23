@@ -4,11 +4,13 @@
 \alias{formatTable_Simcyp}
 \title{Format tables according to Simcyp Consultancy Team specfications}
 \usage{
-formatTable_Simcyp(DF)
+formatTable_Simcyp(DF, fontsize = 11)
 }
 \arguments{
 \item{DF}{a data.frame, usually output from \code{\link{pksummary_table}} or
 \code{\link{pksummary_mult}}}
+
+\item{fontsize}{the numeric font size for the output. Default is 11 point.}
 }
 \value{
 
