@@ -53,14 +53,14 @@ formatTable_Simcyp <- function(DF, fontsize = 11){
         flextable::set_table_properties(width = 1, layout = "autofit")
     
     # Dealing with subscripts
-    NamePattern <- " AUCt | AUCinf | AUCtau | Cmax "
+    NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa | fg | fh | ka | tlag "
     
     ColNames <- data.frame(OrigName = names(DF)) %>% 
         mutate(Part1 = sapply(OrigName, 
                               FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][1]}), 
-               Part2 = sub("inf|tau|max", "", str_trim(str_extract(OrigName, NamePattern))), 
+               Part2 = sub("inf|tau|max|min|a|g|h|lag", "", str_trim(str_extract(OrigName, NamePattern))), 
                Part2 = sub("AUCt", "AUC", Part2),
-               Subscript = sub(" AUC| C", "", str_extract(OrigName, NamePattern)), 
+               Subscript = sub(" AUC| C| t| f| k", "", str_extract(OrigName, NamePattern)), 
                Part3 = sapply(OrigName, 
                               FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][2]})) 
     

@@ -1206,7 +1206,7 @@ ct_plot <- function(ct_dataframe = NA,
             if(EnzPlot){
                 rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",
                                               package="SimcypConsultancy"), 
-                                  output_dir = OutPath, 
+                                  output_dir = OutPath,
                                   output_file = FileName, 
                                   quiet = TRUE)
             } else {
@@ -1220,14 +1220,14 @@ ct_plot <- function(ct_dataframe = NA,
                 if(PathCheck){
                     rmarkdown::render(system.file("rmarkdown/templates/ctplotwithexpdetails/skeleton/skeleton.Rmd",
                                                   package="SimcypConsultancy"), 
-                                      output_dir = OutPath, 
+                                      output_dir = OutPath,
                                       output_file = FileName, 
                                       quiet = TRUE)    
                 } else {
                     
                     rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
                                                   package="SimcypConsultancy"), 
-                                      output_dir = OutPath, 
+                                      output_dir = OutPath,
                                       output_file = FileName, 
                                       quiet = TRUE)
                     # Note: The "system.file" part of the call means "go to where the
