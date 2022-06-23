@@ -78,9 +78,17 @@ sensitivity_plot <- function(SA_file,
     
     Summary <- read.xlsx(SA_file, sheetName = "ASA Summary", 
                          header = FALSE)
+    
+    # Checking for a 2nd independent parameter
+    if(complete.cases(Summary$X3[which(Summary$X1 == "Run Number")])){
+        warning("It looks like this sensitivity analysis contains more than one independent variable. Unfortunately, this function has only been set up to graph a single independent variable, so only the first one will be graphed.", 
+                call. = FALSE)
+    }
+    
+    # Getting the name of the independent variable
     SensParam <- Summary$X2[which(Summary$X1 == "Run Number")]
-    SensParam <- str_sub(SensParam, start = 1, 
-                         end = str_locate(SensParam, " ")[1] - 1)
+    # SensParam <- str_sub(SensParam, start = 1, 
+    #                      end = str_locate(SensParam, " ")[1] - 1)
     
     RunInfo <- Summary[(which(Summary$X1 == "Run Number") + 1):nrow(Summary), 1:2]
     names(RunInfo) <- c("Run", "SensValue")
