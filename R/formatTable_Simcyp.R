@@ -63,10 +63,10 @@ formatTable_Simcyp <- function(DF){
             FT <- FT %>% 
                 flextable::compose(part = "header",
                                    j = which(names(DF) == ColNames$OrigName[i]),
-                                   value = as_paragraph(ColNames$Part1[i], " ",
-                                                        ColNames$Part2[i],
-                                                        as_sub(ColNames$Subscript[i]), 
-                                                        ColNames$Part3[i]))
+                                   value = flextable::as_paragraph(ColNames$Part1[i], " ",
+                                                                   ColNames$Part2[i],
+                                                                   flextable::as_sub(ColNames$Subscript[i]), 
+                                                                   ColNames$Part3[i]))
         }
     }
     
