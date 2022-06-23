@@ -405,7 +405,7 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     # Noting whether the tissue was from an ADAM model
-    ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+    ADAM <- unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
                                        "jejunum II", "ileum I", "ileum II",
                                        "ileum III", "ileum IV", "colon", 
                                        "faeces", "cumulative absorption", 
