@@ -22,7 +22,8 @@ pksummary_table(
   prettify_columns = TRUE,
   prettify_effector_name = TRUE,
   checkDataSource = TRUE,
-  save_table = NA
+  save_table = NA,
+  fontsize = 11
 )
 }
 \arguments{
@@ -163,6 +164,9 @@ own and will have "- QC" added to the end of the file name.
 \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 Microsoft issue, not an R issue. It \emph{will} work on the Large File
 Store.}
+
+\item{fontsize}{the numeric font size for Word output. Default is 11 point.
+This only applies when you save the table as a Word file.}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were

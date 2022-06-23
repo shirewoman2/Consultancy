@@ -19,7 +19,8 @@ pksummary_mult(
   concatVariability = FALSE,
   prettify_columns = TRUE,
   checkDataSource = TRUE,
-  save_table = NA
+  save_table = NA,
+  fontsize = 11
 )
 }
 \arguments{
@@ -136,6 +137,9 @@ included in a single Word or csv file, and, if \code{checkDataSource =
 TRUE}, that will be saved in a single csv file. \strong{WARNING:} SAVING TO
 WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft issue, not an R
 issue. It \emph{will} work on the Large File Store.}
+
+\item{fontsize}{the numeric font size for Word output. Default is 11 point.
+This only applies when you save the table as a Word file.}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple

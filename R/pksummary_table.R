@@ -173,6 +173,8 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft issue, not an R issue. It \emph{will} work on the Large File
 #'   Store.
+#' @param fontsize the numeric font size for Word output. Default is 11 point.
+#'   This only applies when you save the table as a Word file.
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -215,7 +217,8 @@ pksummary_table <- function(sim_data_file = NA,
                             prettify_columns = TRUE,
                             prettify_effector_name = TRUE, 
                             checkDataSource = TRUE, 
-                            save_table = NA){
+                            save_table = NA, 
+                            fontsize = 11){
     
     # Error catching ----------------------------------------------------------
     # Check whether tidyverse is loaded

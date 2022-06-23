@@ -99,6 +99,8 @@
 #'   TRUE}, that will be saved in a single csv file. \strong{WARNING:} SAVING TO
 #'   WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft issue, not an R
 #'   issue. It \emph{will} work on the Large File Store.
+#' @param fontsize the numeric font size for Word output. Default is 11 point.
+#'   This only applies when you save the table as a Word file.
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
 #'   simulator output files
@@ -122,7 +124,8 @@ pksummary_mult <- function(sim_data_files,
                            concatVariability = FALSE, 
                            prettify_columns = TRUE, 
                            checkDataSource = TRUE, 
-                           save_table = NA){
+                           save_table = NA, 
+                           fontsize = 11){
     
     # Read in the observed_PK data if it's not already a data.frame. Note that
     # the class of observed_PK will be logical if left as NA.
