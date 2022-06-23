@@ -226,6 +226,9 @@
 #'   extension, it will be saved as that file format. Acceptable graphical file
 #'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
 #'   Leaving this as NA means the file will not be saved to disk.
+#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+#'   Microsoft issue, not an R issue. It \emph{will} work on the Large File
+#'   Store.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param include_legend SOON TO BE DEPRECATED. TRUE or FALSE (default) for

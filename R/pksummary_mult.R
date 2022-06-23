@@ -96,7 +96,9 @@
 #'   just "docx" or just "csv" for the file name but you leave off the file
 #'   extension, we'll assume you want it to be ".csv". All PK info will be
 #'   included in a single Word or csv file, and, if \code{checkDataSource =
-#'   TRUE}, that will be saved in a single csv file. 
+#'   TRUE}, that will be saved in a single csv file. \strong{WARNING:} SAVING TO
+#'   WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft issue, not an R
+#'   issue. It \emph{will} work on the Large File Store.
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
 #'   simulator output files

@@ -30,7 +30,10 @@ graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
 extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be saved to disk.}
+Leaving this as NA means the file will not be saved to disk.
+\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+Microsoft issue, not an R issue. It \emph{will} work on the Large File
+Store.}
 
 \item{fig_height}{figure height in inches; default is 4}
 
@@ -50,8 +53,8 @@ and B) there aren't great R packages out there for 3D graphs.
 \examples{
 
 sensitivity_plot(SA_file = "SA example.xlsx",
-                 dependent_variable = "Cmax", 
-                 title = "My pretty sensitivity-analysis graph that's not pink", 
+                 dependent_variable = "Cmax",
+                 title = "My pretty sensitivity-analysis graph that's not pink",
                  save_graph = "SA graph")
 
 }

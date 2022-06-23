@@ -163,7 +163,9 @@
 #'   you specify a different graphical file extension, it will be saved as that
 #'   file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
 #'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
-#'   will not be automatically saved to disk. 
+#'   will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
+#'   DOES NOT WORK ON SHAREPOINT. This is a Microsoft issue, not an R issue. It
+#'   \emph{will} work on the Large File Store.
 #' @param file_suffix optionally add a file suffix to explain what each graph
 #'   it. For example, you might run this function once and with
 #'   \code{figure_type = "means only"} and once with \code{figure_type =

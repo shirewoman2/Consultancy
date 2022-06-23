@@ -20,6 +20,9 @@
 #'   extension, it will be saved as that file format. Acceptable graphical file
 #'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
 #'   Leaving this as NA means the file will not be saved to disk.
+#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+#'   Microsoft issue, not an R issue. It \emph{will} work on the Large File
+#'   Store.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param ... arguments that pass through to \code{\link{ct_plot}} or
@@ -29,10 +32,10 @@
 #' @export
 #'
 #' @examples
-#' 
+#'
 #' data(LMVct)
 #' ct_plot3(ct_dataframe = LMVct, linear_or_log = "log")
-#' 
+#'
 #' data(MDZ_Keto)
 #' ct_plot3(ct_dataframe = MDZ_Keto, overlay = TRUE, colorBy_column = CompoundID)
 #' 

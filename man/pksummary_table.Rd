@@ -159,7 +159,10 @@ something other than just "docx" or just "csv" for the file name but you
 leave off the file extension, we'll assume you want it to be ".csv". While
 the main PK table data will be in whatever file format you requsted, if you
 set \code{checkDataSource = TRUE}, the QC data will be in a csv file on its
-own and will have "- QC" added to the end of the file name.}
+own and will have "- QC" added to the end of the file name.
+\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+Microsoft issue, not an R issue. It \emph{will} work on the Large File
+Store.}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were
