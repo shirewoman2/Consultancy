@@ -18,7 +18,6 @@ ct_plot_mult(
   y_axis_limits_log = NA,
   legend_position = "none",
   legend_label = NA,
-  include_title = FALSE,
   file_labels = NA,
   graph_labels = TRUE,
   save_graph = NA,
@@ -33,15 +32,21 @@ ct_plot_mult(
 data}
 
 \item{graph_arrangement}{set how to arrange the graphs. Options are
-\describe{\item{"all together"}{(default) for all graphs being nicely
-arranged and aligned together,} \item{"separate files"}{to make one output
-file per simulator file, or} \item{"numrows x numcols"}{where you replace
-"numrows" with the number of rows of graphs you'd like and "numcols" with
-the number of column and the result is a single, nicely arranged graph. For
-example, "2 x 4" will make a set of graphs with 2 rows and 4 columns. This
-is the same as the option "all together" except with more control.}} If you
-choose "separate files", each Simulator output file will have its own graph
-file, named to match the Simulator output file name.}
+  \describe{\item{"all together"}{(default) for all graphs being nicely
+  arranged and aligned together,}
+
+  \item{"separate files"}{to make one output file per simulator file, or}
+
+  \item{"numrows x numcols"}{where you replace "numrows" with the number of
+  rows of graphs you'd like and "numcols" with the number of column and the
+  result is a single, nicely arranged graph. For example, "2 x 4" will make a
+  set of graphs with 2 rows and 4 columns. This is the same as the option
+  "all together" except with more control.}}
+
+  If you choose "separate files", each Simulator output file will have its
+  own graph file, named to match the Simulator output file name and you don't
+  need to specify anything for \code{save_graph}. (In fact, anything you
+  specify for \code{save_graph} will be ignored.)}
 
 \item{figure_type}{type of figure to plot. Options are:
 
@@ -73,14 +78,9 @@ file, named to match the Simulator output file name.}
 
   \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
-  dashed lines, and the observed data in semi-transparent purple-blue. Graphs
-  with an effector present lose the trial means, and the percentiles switch
-  to solid, gray lines. \strong{An editorial comment:} While this does not
-  align with the officially sanctioned template at this time, this looks
-  \emph{sharp}, makes it easy to see the defining characteristics of the
-  data, and I recommend checking it out, even just for your own purposes of
-  examining your data. If the color is too much for you but you like the
-  rest, try setting \code{obs_color = "none"}. -LS}}}
+  dashed lines, and the observed data in semi-transparent purple-blue points.
+  Graphs with an effector present lose the trial means, and the percentiles
+  switch to solid, gray lines.}}}
 
 \item{mean_type}{graph "arithmetic" (default) or "geometric" means or
 "median" for median concentrations}
@@ -165,24 +165,21 @@ label in the legend for the line style and the shape. If left as the
 default NA when a legend is included and an effector is present, the label
 in the legend will be "Inhibitor".}
 
-\item{include_title}{TRUE or FALSE (default) on whether to include a title
-for each small graph.}
-
 \item{file_labels}{optionally specify a label to be used for the file name in
-the graphs (this applies when \code{include_title = TRUE}) and/or specify
-the order in which the files are graphed with a named character vector of
-the files in the order you would like. (Not applicable if
-\code{graph_arrangement = FALSE}.) The file name must \emph{perfectly}
-match the file name listed in ct_dataframe or it won't be used. An example
-of how this might be specified: \code{alt_title = c("My file 1.xlsx" =
-"Healthy volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If
-you get an order that you didn't think you specified, please double check
-that you have specified the file names \emph{exactly} as they appear in
-\code{ct_dataframe}.}
+the graphs and specify the order in which the files are graphed with a
+named character vector of the files in the order you would like. (Not
+applicable if \code{graph_arrangement = "separate files"}.) The file name
+must \emph{perfectly} match the file name listed in ct_dataframe or it
+won't be used. An example of how this might be specified: \code{alt_title =
+c("My file 1.xlsx" = "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic
+impairment")}  If you get an order that you didn't think you specified,
+please double check that you have specified the file names \emph{exactly}
+as they appear in \code{ct_dataframe}.}
 
-\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
-etc.) for each of the small graphs. (Not applicable if
-\code{graph_arrangement = FALSE}.)}
+\item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
+B, C, etc.) for each of the small graphs. This is only slightly different
+from \code{file_labels}, so please try out the options to see what we mean.
+Not applicable if \code{graph_arrangement = "separate files"}.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
@@ -190,9 +187,14 @@ If you leave off ".png" or ".docx", it will be saved as a png file, but if
 you specify a different graphical file extension, it will be saved as that
 file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
 "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
-will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
-DOES NOT WORK ON SHAREPOINT. This is a Microsoft issue, not an R issue. It
-\emph{will} work on the Large File Store.}
+will not be automatically saved to disk, except when \code{graph_arrangment
+= "separate files"}, when anything you specify here will be ignored and it
+will be saved by file name anyway. \strong{WARNING:} SAVING TO WORD DOES
+NOT WORK ON SHAREPOINT OR THE LARGE FILE STORE. This is a Microsoft
+permissions issue, not an R issue. If you temporarily change your working
+directory to a local folder, it will work fine and you can copy those files
+later back to SharePoint or the Large File Store. We wish we had a better
+solution for this!}
 
 \item{file_suffix}{optionally add a file suffix to explain what each graph
 it. For example, you might run this function once and with
@@ -234,9 +236,7 @@ R Working Group for assistance.
 data(MDZct)
 ct_plot_mult(ct_dataframe = MDZct)
 
-ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE)
-
-ct_plot_mult(ct_dataframe = MDZct, include_title = TRUE,
+ct_plot_mult(ct_dataframe = MDZct,
    file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
                    "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
                    "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",

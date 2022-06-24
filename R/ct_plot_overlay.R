@@ -203,18 +203,6 @@
 #'   semi-transparent, which can be helpful when there are numerous
 #'   observations. Acceptable values are 0 (completely transparent) to 1
 #'   (completely opaque).
-#' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
-#'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
-#'   you specify a different graphical file extension, it will be saved as that
-#'   file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
-#'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
-#'   will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
-#'   DOES NOT WORK ON SHAREPOINT. This is a Microsoft issue, not an R issue. It
-#'   \emph{will} work on the Large File Store.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 5
-#'
 #' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
 #'   linear plot will be automatically selected. This only applies when you have
@@ -259,6 +247,20 @@
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
 #'   should not be in quotes.)
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
+#'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
+#'   you specify a different graphical file extension, it will be saved as that
+#'   file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
+#'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
+#'   will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
+#'   DOES NOT WORK ON SHAREPOINT OR THE LARGE FILE STORE. This is a Microsoft
+#'   permissions issue, not an R issue. If you temporarily change your working
+#'   directory to a local folder, it will work fine and you can copy those files
+#'   later back to SharePoint or the Large File Store. We wish we had a better
+#'   solution for this!
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 5
 #'
 #'
 #' @return
