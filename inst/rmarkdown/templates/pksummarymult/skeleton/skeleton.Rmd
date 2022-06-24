@@ -20,7 +20,7 @@ MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean PK parameters.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters.*
 
 ```{r makeTablePKSummaryOutput}
 
@@ -35,22 +35,24 @@ formatTable_Simcyp(MyPKResults, fontsize = fontsize)
 
 ```{r captionPKSummary}
 
-CapText1a <- paste0(ifelse(any(str_detect(names(MyPKResults), "tmax")), 
-                              "t~max~: median, min, max; ", ""), 
-                       ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
-                              "CV: Coefficient of Variation; ", ""), 
-                       ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
-                              "CI: Confidence Interval; ", ""))
+CapText1 <- ifelse(any(str_detect(names(MyPKResults), "tmax")), 
+                   paste("the", MeanType, "means, except for t~max~, which is median, minimum, and maximum"),
+                   paste("the", MeanType, "means"))
 
-CapText1 <- paste0(sub("; $", ".", CapText1a), 
+CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
+                           "CV: coefficient of variation; ", ""), 
+                    ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
+                           "CI: confidence interval; ", ""))
+
+CapText2 <- paste0(sub("; $", ".", CapText2a), 
                    ifelse(Observedincluded, 
-                          "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
+                          "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
                           ""))
-    
-CapText2 <- str_comma(sim_data_files)
 
 ```
 
-*Simulated values listed are the `r MeanType` means. `r CapText1` Source simulated data: `r CapText2`* 
+*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r str_comma(sim_data_files)`* 
+
+
 
 

@@ -15,6 +15,16 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r FigtextPKSummary}
 
+if(class(prettify_compound_names) == "logical" &&
+   # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
+   prettify_compound_names){
+    MySubstrate <- prettify_compound_name(Deets$Substrate)
+} else if(class(prettify_compound_names) == "character"){
+    MySubstrate <- prettify_compound_names["substrate"]
+} else {
+    MySubstrate <- Deets$Substrate
+}
+
 Dose1included <- any(str_detect(PKToPull, "_dose1"))
 LastDoseincluded <- any(str_detect(PKToPull, "_last"))
 Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
@@ -31,9 +41,13 @@ FigText2 <- ifelse(Dose1included & LastDoseincluded,
                                  "multiple oral doses", 
                                  paste("multiple", Deets$DoseRoute_sub, "doses"))))
 
+FigText3 <- ifelse(any(complete.cases(MyEffector)),
+                   paste0("with or without ", MyEffector, " "),
+                   "")
+
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean PK parameters for `r prettify_compound_name(Deets$Substrate)` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", prettify_compound_name(Deets$Substrate))` in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters for `r MySubstrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", MySubstrate)` `r FigText3`in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
 
 
 ```{r makeTablePKSummaryOutput}
@@ -49,20 +63,22 @@ formatTable_Simcyp(MyPKResults, fontsize = fontsize)
 
 ```{r captionPKSummary}
 
-CapText1a <- paste0(ifelse(any(str_detect(names(MyPKResults), "tmax")), 
-                           "t~max~: median, min, max; ", ""), 
-                    ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
-                           "CV: Coefficient of Variation; ", ""), 
-                    ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
-                           "CI: Confidence Interval; ", ""))
+CapText1 <- ifelse(any(str_detect(names(MyPKResults), "tmax")), 
+                   paste("the", MeanType, "means, except for t~max~, which is median, minimum, and maximum"),
+                   paste("the", MeanType, "means"))
 
-CapText1 <- paste0(sub("; $", ".", CapText1a), 
+CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
+                           "CV: coefficient of variation; ", ""), 
+                    ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
+                           "CI: confidence interval; ", ""))
+
+CapText2 <- paste0(sub("; $", ".", CapText2a), 
                    ifelse(Observedincluded, 
-                          "S/O: Simulated/Observed; Source observed data: Clinical Study XXX; ",
+                          "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
                           ""))
 
 ```
 
-*Simulated values listed are the `r MeanType` means. `r CapText1` Source simulated data: `r sim_data_file`* 
+*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r sim_data_file`* 
 
 
