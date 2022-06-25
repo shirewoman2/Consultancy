@@ -196,15 +196,22 @@
 #'   label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and an effector is present, the label
 #'   in the legend will be "Inhibitor".
-#' @param prettify_effector_name TRUE (default) or FALSE for whether to make the
-#'   effector name prettier in the legend. This was designed for simulations
-#'   where Inhibitor 1 is one of the standard options for the simulator, and
-#'   leaving \code{prettify_effector_name = TRUE} will make the name of
-#'   Inhibitor 1 be something more human readable. For example,
-#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
-#'   BID" will become "ketoconazole". Set it to the name you'd prefer to see in
-#'   your legend if you would like something different. For example,
-#'   \code{prettify_effector_name = "Drug ABC"}
+#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#'   compound names prettier in legend entries and in any Word output files.
+#'   This was designed for simulations where the substrate and any metabolites,
+#'   effectors, or effector metabolites are among the standard options for the
+#'   simulator, and leaving \code{prettify_compound_names = TRUE} will make the
+#'   name of those compounds something more human readable. For example,
+#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
+#'   become "midazolam". Set each compound to the name you'd prefer to see in
+#'   your legend and Word output if you would like something different. For
+#'   example, \code{prettify_compound_names = c("inhibitor" = "defartinib",
+#'   "substrate" = "superstatin")}. Please note that "inhibitor" includes
+#'   \emph{all} the effectors and effector metabolites present, so, if you're
+#'   setting the effector name, you really should use something like this if
+#'   you're including effector metabolites: \code{prettify_compound_names =
+#'   c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
+#'   "superstatin")}.
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed}
 #'
@@ -215,17 +222,23 @@
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
-#' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
-#'   will be saved as a png file, but if you specify a different file extension,
-#'   it will be saved as that file format. Acceptable extensions are "eps",
-#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
-#'   means the file will not be saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 5
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png" or "My conc time
+#'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
+#'   be saved as a png file, but if you specify a different graphical file
+#'   extension, it will be saved as that file format. Acceptable graphical file
+#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   Leaving this as NA means the file will not be saved to disk.
+#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT OR THE LARGE
+#'   FILE STORE. This is a Microsoft permissions issue, not an R issue. If you
+#'   temporarily change your working directory to a local folder, it will work
+#'   fine and you can copy those files later back to SharePoint or the Large
+#'   File Store. We wish we had a better solution for this!#'
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 5
 #' @param include_legend SOON TO BE DEPRECATED. TRUE or FALSE (default) for
 #'   whether to include a legend. If there was only one thing plotted on your
 #'   graph, even if you set this to TRUE, no legend will be shown because
@@ -298,7 +311,7 @@ ct_plot <- function(ct_dataframe = NA,
                     legend_position = "none", 
                     include_legend = FALSE,
                     legend_label = NA,
-                    prettify_effector_name = TRUE,
+                    prettify_compound_names = TRUE,
                     linear_or_log = "both vertical",
                     graph_labels = TRUE,
                     save_graph = NA,
@@ -345,7 +358,11 @@ ct_plot <- function(ct_dataframe = NA,
        unique(ct_dataframe$subsection_ADAM) %in% 
        c("solid compound", "Heff", "absorption rate",
          "unreleased substrate in faeces", "unreleased inhibitor in faeces",
-         "dissolved compound", "luminal CLint of compound")){
+         "dissolved compound", "luminal CLint of compound", 
+         paste("cumulative fraction of absorbed", 
+               unique(ct_dataframe$CompoundID)),
+         paste("cumulative fraction of dissolved",
+               unique(ct_dataframe$CompoundID)))){
         subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
     }
     
@@ -394,7 +411,8 @@ ct_plot <- function(ct_dataframe = NA,
     ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
                                        "jejunum II", "ileum I", "ileum II",
                                        "ileum III", "ileum IV", "colon", 
-                                       "faeces") &&
+                                       "faeces", "cumulative absorption", 
+                                       "cumulative dissolution") &&
         EnzPlot == FALSE
     
     # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
@@ -410,6 +428,10 @@ ct_plot <- function(ct_dataframe = NA,
                                   "unreleased substrate in faeces",
                                   "unreleased inhibitor in faeces",
                                   "dissolved compound",
+                                  paste("cumulative fraction of absorbed", 
+                                        unique(ct_dataframe$CompoundID)),
+                                  paste("cumulative fraction of dissolved",
+                                        unique(ct_dataframe$CompoundID)),
                                   "luminal CLint of compound") == FALSE){
             stop(paste0("The concentration type you requested, ", subsection_ADAM,
                         ", is not one of the options. Please set this value to one of 'solid compound', 'free compound in lumen', 'Heff', 'absorption rate', 'unreleased substrate in faeces', 'unreleased inhibitor in faeces', 'dissolved compound', or 'luminal CLint of compound'"),
@@ -448,22 +470,13 @@ ct_plot <- function(ct_dataframe = NA,
                    Inhibitor = as.character(ifelse(is.na(Inhibitor),
                                                    "none", Inhibitor)))
         
-        if(class(prettify_effector_name) == "logical" &&
-           prettify_effector_name){
-            MyEffector <-
-                tolower(gsub(
-                    "sv-|sim-|wsp-|_ec|_sr|-md|-sd|_fo|-[1-9]00 mg [qmstbi]{1,2}d|_fasted soln|_fed capsule",
-                    "", tolower(MyEffector)))
-            # Adjusting for compounds (metabolites) w/"OH" in name or other
-            # idiosyncracies
-            MyEffector <- sub("oh bupropion", "OH-bupropion", MyEffector)
-            MyEffector <- sub("oh-", "OH-", MyEffector)
-            MyEffector <- sub("o-", "O-", MyEffector)
-            MyEffector <- sub("o-", "O-", MyEffector)
+        if(class(prettify_compound_names) == "logical" &&
+           prettify_compound_names){
+            MyEffector <- prettify_compound_name(MyEffector)
         }
         
-        if(class(prettify_effector_name) == "character"){
-            MyEffector <- prettify_effector_name
+        if(class(prettify_compound_names) == "character"){
+            MyEffector <- prettify_compound_names["inhibitor"]
         }
         
         Data <- 
@@ -1185,31 +1198,73 @@ ct_plot <- function(ct_dataframe = NA,
             Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
             FileName <- sub(paste0(".", Ext), "", FileName)
             Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg"), 
+                                     "png", "bmp", "svg", "jpg", "docx"), 
                           Ext, "png")
             FileName <- paste0(FileName, ".", Ext)
         } else {
             FileName <- paste0(FileName, ".png")
+            Ext <- "png"
         }
         
-        if(linear_or_log %in% c("both", "both vertical")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                   plot = AB)
-        }
-        
-        if(linear_or_log == "both horizontal"){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = ABhoriz)
-        }
-        
-        if(linear_or_log == "linear"){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = A)
-        }
-        
-        if(str_detect(linear_or_log, "log")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = B)
+        if(Ext == "docx"){
+            # This is when they want a Word file as output
+            OutPath <- dirname(FileName)
+            FileName <- basename(FileName)
+            
+            if(EnzPlot){
+                rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",
+                                              package="SimcypConsultancy"), 
+                                  output_dir = OutPath,
+                                  output_file = FileName, 
+                                  quiet = TRUE)
+            } else {
+                
+                # Checking that the file listed in ct_dataframe is present in
+                # the current working directory.
+                CurrentDir <- getwd()
+                PathCheck <- length(list.files(
+                    pattern = unique(basename(ct_dataframe$File)))) > 0
+                
+                if(PathCheck){
+                    rmarkdown::render(system.file("rmarkdown/templates/ctplotwithexpdetails/skeleton/skeleton.Rmd",
+                                                  package="SimcypConsultancy"), 
+                                      output_dir = OutPath,
+                                      output_file = FileName, 
+                                      quiet = TRUE)    
+                } else {
+                    
+                    rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
+                                                  package="SimcypConsultancy"), 
+                                      output_dir = OutPath,
+                                      output_file = FileName, 
+                                      quiet = TRUE)
+                    # Note: The "system.file" part of the call means "go to where the
+                    # package is installed, search for the file listed, and return its
+                    # full path.
+                }
+            }
+            
+        } else {
+            # This is when they want any kind of graphical file format.
+            if(linear_or_log %in% c("both", "both vertical")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                       plot = AB)
+            }
+            
+            if(linear_or_log == "both horizontal"){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = ABhoriz)
+            }
+            
+            if(linear_or_log == "linear"){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = A)
+            }
+            
+            if(str_detect(linear_or_log, "log")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = B)
+            }
         }
     }
     

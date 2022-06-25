@@ -11,8 +11,12 @@ ct_plot_overlay(
   linear_or_log = "semi-log",
   colorBy_column = File,
   color_labels = NA,
+  legend_label_color = NA,
   color_set = "default",
   obs_transparency = NA,
+  linetype_column = Inhibitor,
+  linetypes = "solid",
+  legend_label_linetype = NA,
   facet1_column,
   facet2_column,
   floating_facet_scale = FALSE,
@@ -25,6 +29,7 @@ ct_plot_overlay(
   y_axis_limits_log = NA,
   graph_labels = TRUE,
   legend_position = NA,
+  prettify_compound_names = TRUE,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -76,6 +81,14 @@ the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
 "file 2.xlsx" is for an fa of 0.2. The order in the legend will match the
 order designated here.}
 
+\item{legend_label_color}{optionally indicate on the legend something
+explanatory about what the colors represent. For example, if
+\code{colorBy_column = File} and \code{legend_label_color = "Simulations
+with various fa values"}, that will make the label above the file names in
+the legend more explanatory than just "File". The default is to use
+whatever the column name is for \code{colorBy_column}. If you don't want a
+label for this legend item, set this to "none".}
+
 \item{color_set}{the set of colors to use. Options: \describe{
 
   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -100,12 +113,40 @@ order designated here.}
   \item{"blue-green"}{a set of blues and greens}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-  package}}}
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}}}
 
 \item{obs_transparency}{Optionally make the observed data points
 semi-transparent, which can be helpful when there are numerous
 observations. Acceptable values are 0 (completely transparent) to 1
 (completely opaque).}
+
+\item{linetype_column}{the column in \code{ct_dataframe} that should be used
+for determining the line types. Default is to use the column Inhibitor and
+to have a solid line for no inhibitor present and a dashed line when an
+inhibitor is present.}
+
+\item{linetypes}{the line types to use. Default is "solid" for all lines,
+but, if you have an effector present and would like to match the
+Consultancy Template graphs, set this to \code{linetypes = c("solid",
+"dashed")}. You'll need one line type for each possible value in the column
+you specified for \code{linetype_column}. Check what the unique values are
+in that column if you get a graph you didn't expect as far as line types
+go. To see possible line types by name, please enter
+\code{ggpubr::show_line_types()} into the console.}
+
+\item{legend_label_linetype}{optionally indicate on the legend something
+explanatory about what the line types represent. For example, if
+\code{linetype_column = Inhibitor} and \code{legend_label_linetype =
+"Inhibitor present"}, that will make the label in the legend above, e.g.,
+"none", and whatever effector was present more explanatory than just
+"Inhibitor". The default is to use whatever the column name is for
+\code{linetype_column}. If you don't want a label for this legend item, set
+this to "none".}
 
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the
@@ -203,12 +244,29 @@ linear or only semi-log graphs.)}
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
 
+\item{prettify_compound_names}{set this to a) TRUE (default) or FALSE for
+whether to make the compound names in the legend prettier or b) supply a
+named character vector to set it to the exact name you'd prefer to see in
+your legend. For example, \code{prettify_compound_names =
+c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+"Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+legend, and \code{prettify_compound_names = TRUE} will make some reasonable
+guesses about what a prettier compound name should be. An example of
+setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
+"Sim-Ketoconazole-200 mg BID" would become "ketoconazole".}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
-in quotes here, e.g., "My conc time graph.png". If you do not designate a
-file extension, it will be saved as a png file, but if you specify a
-different file extension, it will be saved as that file format. Acceptable
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be automatically saved to disk.}
+in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
+If you leave off ".png" or ".docx", it will be saved as a png file, but if
+you specify a different graphical file extension, it will be saved as that
+file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
+"jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
+will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
+DOES NOT WORK ON SHAREPOINT OR THE LARGE FILE STORE. This is a Microsoft
+permissions issue, not an R issue. If you temporarily change your working
+directory to a local folder, it will work fine and you can copy those files
+later back to SharePoint or the Large File Store. We wish we had a better
+solution for this!}
 
 \item{fig_height}{figure height in inches; default is 6}
 
@@ -224,7 +282,7 @@ concentration-time data of multiple tissues, compounds, or Simcyp Simulator
 output files for easy comparisons. \emph{Note:} There are some nuances to
 overlaying observed data. Please see the "Details" section at the bottom of
 this help file. Also, this hasn't really been developed or tested with
-enzyme-abundance data or ADAM data yet.
+enzyme-abundance data yet and only a little bit tested with ADAM-model data.
 }
 \details{
 \strong{Notes on including observed data:} We recently added the option of

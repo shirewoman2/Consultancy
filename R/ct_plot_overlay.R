@@ -6,7 +6,7 @@
 #' output files for easy comparisons. \emph{Note:} There are some nuances to
 #' overlaying observed data. Please see the "Details" section at the bottom of
 #' this help file. Also, this hasn't really been developed or tested with
-#' enzyme-abundance data or ADAM data yet.
+#' enzyme-abundance data yet and only a little bit tested with ADAM-model data.
 #'
 #' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include
@@ -79,6 +79,18 @@
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
+#' @param linetype_column the column in \code{ct_dataframe} that should be used
+#'   for determining the line types. Default is to use the column Inhibitor and
+#'   to have a solid line for no inhibitor present and a dashed line when an
+#'   inhibitor is present.
+#' @param linetypes the line types to use. Default is "solid" for all lines,
+#'   but, if you have an effector present and would like to match the
+#'   Consultancy Template graphs, set this to \code{linetypes = c("solid",
+#'   "dashed")}. You'll need one line type for each possible value in the column
+#'   you specified for \code{linetype_column}. Check what the unique values are
+#'   in that column if you get a graph you didn't expect as far as line types
+#'   go. To see possible line types by name, please enter
+#'   \code{ggpubr::show_line_types()} into the console.
 #' @param colorBy_column the column in \code{ct_dataframe} that should be used
 #'   for determining which color lines and/or points will be. Default is to use
 #'   the column File. This should be unquoted, e.g., \code{colorBy_column =
@@ -180,20 +192,17 @@
 #'   \item{"blue-green"}{a set of blues and greens}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-#'   package}}
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}}
+#'
 #' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
 #'   observations. Acceptable values are 0 (completely transparent) to 1
 #'   (completely opaque).
-#' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My conc time graph.png". If you do not designate a
-#'   file extension, it will be saved as a png file, but if you specify a
-#'   different file extension, it will be saved as that file format. Acceptable
-#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-#'   Leaving this as NA means the file will not be automatically saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 5
-#'
 #' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
 #'   linear plot will be automatically selected. This only applies when you have
@@ -209,10 +218,49 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param legend_label_color optionally indicate on the legend something
+#'   explanatory about what the colors represent. For example, if
+#'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
+#'   with various fa values"}, that will make the label above the file names in
+#'   the legend more explanatory than just "File". The default is to use
+#'   whatever the column name is for \code{colorBy_column}. If you don't want a
+#'   label for this legend item, set this to "none".
+#' @param legend_label_linetype optionally indicate on the legend something
+#'   explanatory about what the line types represent. For example, if
+#'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
+#'   "Inhibitor present"}, that will make the label in the legend above, e.g.,
+#'   "none", and whatever effector was present more explanatory than just
+#'   "Inhibitor". The default is to use whatever the column name is for
+#'   \code{linetype_column}. If you don't want a label for this legend item, set
+#'   this to "none".
+#' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
+#'   whether to make the compound names in the legend prettier or b) supply a
+#'   named character vector to set it to the exact name you'd prefer to see in
+#'   your legend. For example, \code{prettify_compound_names =
+#'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+#'   legend, and \code{prettify_compound_names = TRUE} will make some reasonable
+#'   guesses about what a prettier compound name should be. An example of
+#'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
+#'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
 #'   should not be in quotes.)
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
+#'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
+#'   you specify a different graphical file extension, it will be saved as that
+#'   file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
+#'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
+#'   will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
+#'   DOES NOT WORK ON SHAREPOINT OR THE LARGE FILE STORE. This is a Microsoft
+#'   permissions issue, not an R issue. If you temporarily change your working
+#'   directory to a local folder, it will work fine and you can copy those files
+#'   later back to SharePoint or the Large File Store. We wish we had a better
+#'   solution for this!
+#' @param fig_height figure height in inches; default is 6
+#' @param fig_width figure width in inches; default is 5
 #'
 #'
 #' @return
@@ -245,8 +293,12 @@ ct_plot_overlay <- function(ct_dataframe,
                             linear_or_log = "semi-log",
                             colorBy_column = File,
                             color_labels = NA, 
+                            legend_label_color = NA,
                             color_set = "default",
                             obs_transparency = NA, 
+                            linetype_column = Inhibitor, 
+                            linetypes = "solid",
+                            legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
                             floating_facet_scale = FALSE,
@@ -259,6 +311,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             y_axis_limits_log = NA, 
                             graph_labels = TRUE,
                             legend_position = NA,
+                            prettify_compound_names = TRUE,
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5){
@@ -269,16 +322,50 @@ ct_plot_overlay <- function(ct_dataframe,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
+    # Checking for more than one tissue or ADAM data type b/c there's only one y
+    # axis and it should have only one concentration type.
+    if(length(unique(ct_dataframe$Tissue)) > 1 |
+       length(unique(ct_dataframe$subsection_ADAM)) > 1){
+        stop("We're sorry, but this function can only deal with one type of tissue at a time, and the supplied data.frame contains more than one unique value in either the `Tissue` column or the `subsection_ADAM` column. Please supply a data.frame with only one type of tissue or ADAM-model subsection.",
+             call. = FALSE)
+    }
+    
+    
+    # Main body of function -------------------------------------------------
+    # Prettifying compound names before doing anything else 
+    if(class(prettify_compound_names) == "logical" && # NB: "prettify_compound_names" is the argument value
+       prettify_compound_names){
+        ct_dataframe <- ct_dataframe %>% 
+            mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
+                   Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+    } else {
+        
+        # Any compounds that the user omitted from prettify_compound_names
+        # should be added to that and kept as their original values.
+        MissingNames <- setdiff(unique(c(ct_dataframe$Compound,
+                                         ct_dataframe$Inhibitor)), 
+                                names(prettify_compound_names))
+        OrigPrettyNames <- prettify_compound_names
+        prettify_compound_names <- c(prettify_compound_names, MissingNames)
+        names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+            MissingNames
+        
+        ct_dataframe <- ct_dataframe %>% 
+            mutate(Compound = prettify_compound_names[Compound], 
+                   Inhibitor = prettify_compound_names[Inhibitor])
+    }
+    
     # Setting things up for some nonstandard evaluation -------------------------
     
     facet1_column <- rlang::enquo(facet1_column)
     facet2_column <- rlang::enquo(facet2_column)
     colorBy_column <- rlang::enquo(colorBy_column)
+    linetype_column <- rlang::enquo(linetype_column)
     
     # I *would* be doing this whole function with nonstandard evaluation except
     # that I CANNOT figure out how to use NSE to redefine a user-supplied
     # column, so I'm going to have to rename all of them. This makes the rest of
-    # checking and developing this function easier, too, though. 
+    # checking and developing this function easier, too, though.
     
     # ct_dataframe <- ct_dataframe %>%
     #     mutate(colorBy_column = ifelse(as_label(colorBy_column) == "<empty>", NA, {{colorBy_column}}),
@@ -298,6 +385,17 @@ ct_plot_overlay <- function(ct_dataframe,
         }
     }
     
+    if(as_label(linetype_column) != "<empty>"){
+        ct_dataframe <- ct_dataframe %>%
+            mutate(linetype_column = {{linetype_column}})
+        
+        if(class(ct_dataframe$linetype_column) == "numeric"){
+            Levels <- sort(unique(ct_dataframe$linetype_column))
+            ct_dataframe <- ct_dataframe %>% 
+                mutate(linetype_column = factor(linetype_column, levels = Levels))
+        }
+    }
+    
     if(as_label(facet1_column) != "<empty>"){
         ct_dataframe <- ct_dataframe %>%
             mutate(FC1 = {{facet1_column}})
@@ -308,28 +406,12 @@ ct_plot_overlay <- function(ct_dataframe,
             mutate(FC2 = {{facet2_column}})
     }
     
-    # error catching -------------------------------------------------------
-    # Checking for ADAM model data b/c those don't work well here. 
-    if(any(unique(ct_dataframe$Tissue) %in% 
-           c("stomach", "duodenum", "jejunum I", "jejunum II", 
-             "ileum I", "ileum II", "ileum III", "ileum IV",
-             "colon", "faeces", "gut tissue"))){
-        if(all(unique(ct_dataframe$Tissue) %in% 
-               c("stomach", "duodenum", "jejunum I", "jejunum II", 
-                 "ileum I", "ileum II", "ileum III", "ileum IV",
-                 "colon", "faeces", "gut tissue"))){
-            stop("We're sorry, but this function has not been set up to deal with ADAM-model tissue concentrations since the units can be so different from other concentration-time data. Since all of the supplied data are ADAM model concentrations, no graph can be made.",
-                 call. = FALSE)
-        } else {
-            warning("Some of the data you supplied are ADAM-model tissue concentrations, but this function has not been set up to deal with that since the units can be so different from other concentration-time data. The ADAM-model data will be omitted from the graph.",
-                    call. = FALSE)
-        }
-    }
-    
-    ct_dataframe <- ct_dataframe %>% 
-        filter(!Tissue %in% c("stomach", "duodenum", "jejunum I", "jejunum II", 
-                              "ileum I", "ileum II", "ileum III", "ileum IV",
-                              "colon", "faeces", "gut tissue"))
+    # Noting whether the tissue was from an ADAM model
+    ADAM <- unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+                                       "jejunum II", "ileum I", "ileum II",
+                                       "ileum III", "ileum IV", "colon", 
+                                       "faeces", "cumulative absorption", 
+                                       "cumulative dissolution")
     
     if(length(time_range) == 1 && complete.cases(time_range[1]) &&
        !str_detect(time_range, "dose|last obs|all obs")){
@@ -372,6 +454,10 @@ ct_plot_overlay <- function(ct_dataframe,
                        "s will be used."),
                 call. = FALSE)
         MyMeanType <- MyMeanType[1] %>% as.character()
+        mean_type <-  switch(MyMeanType,
+                             "mean" = "arithmetic", 
+                             "geomean" = "geometric",
+                             "median" = "median")
         
     } else {
         
@@ -379,14 +465,6 @@ ct_plot_overlay <- function(ct_dataframe,
                              "geometric" = "geomean",
                              "median" = "median")
         
-    }
-    
-    if("subsection_ADAM" %in% names(ct_dataframe)){
-        ct_dataframe <- ct_dataframe %>% 
-            # At least at this point, I can't see this function working well with
-            # ADAM model data b/c the y axis units differ. Removing all ADAM model
-            # data.
-            filter(is.na(subsection_ADAM))
     }
     
     ct_dataframe <- ct_dataframe %>%
@@ -473,6 +551,24 @@ ct_plot_overlay <- function(ct_dataframe,
         }
     }
     
+    # Taking care of linetypes
+    NumLT <- length(unique(sim_dataframe$linetype_column))
+    if(NumLT < length(linetypes)){ linetypes = linetypes[1:NumLT] }
+    if(NumLT > length(linetypes)){ linetypes = rep(linetypes, 100)[1:NumLT]}
+    
+    # If the original data.frame included levels for linetype_column, then use
+    # those levels. Otherwise, make "none" the base level since most of the
+    # time, this will be used for the column "Inhibitor".
+    if(class(sim_dataframe$linetype_column) != "factor"){
+        if("none" %in% unique(sim_dataframe$linetype_column)){
+            sim_dataframe <- sim_dataframe %>% 
+                mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
+        } else {
+            sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
+        }
+    }
+    
+    
     # Not sure how I'm going to relabel the facets, actually. Commenting this
     # out for now.
     
@@ -528,13 +624,22 @@ ct_plot_overlay <- function(ct_dataframe,
     #     }
     # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
     
+    MyAES <- c("color" = as_label(colorBy_column), 
+               "linetype" = as_label(linetype_column),
+               "facet1" = as_label(facet1_column), 
+               "facet2" = as_label(facet2_column))
+    UniqueAES <- MyAES[which(MyAES != "<empty>")]
+    
     MyUniqueData <- ct_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
-        select(File, Tissue, CompoundID, Compound, Inhibitor) %>% unique()
+        select(union(UniqueAES, 
+                     c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
+        unique()
     
     UniqueGroups1 <- ct_dataframe %>% 
-        summarize(across(.cols = c(File, Tissue, CompoundID, Compound,
-                                   Inhibitor), 
+        summarize(across(.cols = union(UniqueAES, 
+                                       c("File", "Tissue", "CompoundID",
+                                         "Compound", "Inhibitor")),
                          .fns = function(x) length(unique(x)))) 
     
     UniqueGroups <- UniqueGroups1 %>% 
@@ -542,22 +647,10 @@ ct_plot_overlay <- function(ct_dataframe,
         mutate(MyCols = rownames(.)) %>% 
         filter(V1 > 1) %>% pull(MyCols)
     
-    MyAES <- c("color" = as_label(colorBy_column), 
-               "facet1" = as_label(facet1_column), 
-               "facet2" = as_label(facet2_column))
-    UniqueAES <- MyAES[which(MyAES != "<empty>")]
     
     # If there are only 2 groups for the colorBy_column and color_set was set to
     # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
     # aethetically pleasing.
-    if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
-       color_set == "default"){
-        color_set <- "Brewer set 1"
-    }
-    
-    # If there are only 2 groups for the colorBy_column and color_set was set to
-    # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
-    # aesthetically pleasing.
     if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
        color_set == "default"){
         color_set <- "Brewer set 1"
@@ -571,6 +664,21 @@ ct_plot_overlay <- function(ct_dataframe,
                 call. = FALSE)
         message(paste("Unique datasets:", str_comma(UniqueGroups)))
         message(paste("Unique aesthetics:", str_comma(UniqueAES)))
+    }
+    
+    # If there are multiple values in linetype_column but user has only listed
+    # the default "solid" for linetypes, then warn the user that they might want
+    # to specify more line types.
+    if(as_label(colorBy_column) != as_label(linetype_column) &&
+       length(unique(ct_dataframe$linetype_column)) > 1 & 
+       length(unique(linetypes)) == 1){
+        warning(paste0("There are ", length(unique(ct_dataframe$linetype_column)),
+                       " unique values in the column ", as_label(linetype_column),
+                       ", but you have only requested ", 
+                       length(unique(linetypes)), " linetype(s): ", 
+                       str_comma(unique(linetypes)), 
+                       ". You will get a more interpretable graph if you specify more values for the argument 'linetypes'."),
+                call. = FALSE)
     }
     
     # Some of the options inherited from ct_plot depend on there being just one
@@ -592,8 +700,8 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Setting up the y axis using the subfunction ct_y_axis
     ct_y_axis(Data = ct_dataframe, 
-              ADAM = FALSE, 
-              subsection_ADAM = "free compound in lumen", # This is just a placeholder since no ADAM data are currently allowed.
+              ADAM = ADAM, 
+              subsection_ADAM = unique(ct_dataframe$subsection_ADAM), 
               EnzPlot = FALSE, 
               time_range_relative = time_range_relative,
               Ylim_data = ct_dataframe %>% mutate(Time_orig = Time), 
@@ -608,6 +716,7 @@ ct_plot_overlay <- function(ct_dataframe,
     if(figure_type == "means only"){
         A <- ggplot(sim_dataframe,
                     aes(x = Time, y = Conc, color = colorBy_column, 
+                        linetype = linetype_column,
                         group = Group)) +
             geom_line()
         
@@ -643,7 +752,8 @@ ct_plot_overlay <- function(ct_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                  color = colorBy_column, fill = colorBy_column)) + 
+                                  color = colorBy_column, fill = colorBy_column, 
+                                  linetype = linetype_column)) + 
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
         
@@ -684,11 +794,20 @@ ct_plot_overlay <- function(ct_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
-    if(complete.cases(color_labels[1])){
-        A <- A + labs(color = NULL, fill = NULL)
+    if(is.na(legend_label_color)){
+        if(complete.cases(color_labels[1])){
+            A <- A + labs(color = NULL, fill = NULL)
+        } else {
+            A <- A + labs(color = as_label(colorBy_column), 
+                          fill = as_label(colorBy_column))
+        }
     } else {
-        A <- A + labs(color = as_label(colorBy_column), 
-                      fill = as_label(colorBy_column))
+        A <- A + 
+            labs(x = xlab, y = ylab,
+                 linetype = legend_label_linetype,
+                 shape = legend_label_color,
+                 color = legend_label_color, 
+                 fill = legend_label_color)
     }
     
     if(floating_facet_scale){
@@ -714,7 +833,7 @@ ct_plot_overlay <- function(ct_dataframe,
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
     }
     
-    # Colors ----------------------------------------------------------------
+    # Colors, linetypes, & legends -------------------------------------------
     
     # Adding options for colors
     colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
@@ -741,6 +860,8 @@ ct_plot_overlay <- function(ct_dataframe,
         }
         
         if(color_set == "blue-green"){
+            A <- A + scale_color_manual(values = blueGreen(NumColors)) +
+                scale_fill_manual(values = blueGreen(NumColors))
             A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
                 scale_fill_manual(values = blueGreen(NumColorsNeeded))
         }
@@ -765,6 +886,36 @@ ct_plot_overlay <- function(ct_dataframe,
             A <- A + ggthemes::scale_color_tableau() +
                 ggthemes::scale_fill_tableau()
         }
+        
+        if(color_set == "viridis"){
+            A <- A + viridis::scale_color_viridis(discrete = TRUE) +
+                viridis::scale_fill_viridis(discrete = TRUE)
+        }
+    }
+    
+    # Specifying linetypes
+    A <- A + scale_linetype_manual(values = linetypes)
+    
+    # Adding legend label for color and linetype as appropriate
+    if(complete.cases(legend_label_color) &&
+       legend_label_color == "none"){
+        A <- A + labs(color = NULL, fill = NULL)
+    } else {
+        A <- A + labs(color = switch(as.character(complete.cases(legend_label_color)), 
+                                     "TRUE" = legend_label_color, 
+                                     "FALSE" = as_label(colorBy_column)), 
+                      fill = switch(as.character(complete.cases(legend_label_color)), 
+                                    "TRUE" = legend_label_color,
+                                    "FALSE" = as_label(colorBy_column)))
+    }
+    
+    if(complete.cases(legend_label_linetype) && 
+       legend_label_linetype == "none"){
+        A <- A + labs(linetype = NULL)
+    } else {
+        A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
+                                    "TRUE" = legend_label_linetype,
+                                    "FALSE" = as_label(linetype_column)))
     }
     
     ## Adding spacing between facets if requested
@@ -772,6 +923,16 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
     }
     
+    # If any of the items in the legend have length = 1, don't show that in the
+    # legend.
+    if(length(unique(sim_dataframe$linetype_column)) == 1 | 
+       length(unique(linetypes)) == 1){
+        A <- A + guides(linetype = "none") 
+    }
+    
+    if(length(unique(sim_dataframe$colorBy_column)) == 1){
+        A <- A + guides(color = "none")
+    }
     
     ## Making semi-log graph ------------------------------------------------
     
@@ -827,31 +988,49 @@ ct_plot_overlay <- function(ct_dataframe,
             Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
             FileName <- sub(paste0(".", Ext), "", FileName)
             Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg"), 
+                                     "png", "bmp", "svg", "jpg", "docx"), 
                           Ext, "png")
             FileName <- paste0(FileName, ".", Ext)
         } else {
             FileName <- paste0(FileName, ".png")
+            Ext <- "png"
         }
         
-        if(linear_or_log %in% c("both", "both vertical")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                   plot = AB)
-        }
-        
-        if(linear_or_log %in% c("both horizontal")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                   plot = ABhoriz)
-        }
-        
-        if(linear_or_log == "linear"){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = A)
-        }
-        
-        if(str_detect(linear_or_log, "log")){
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = B)
+        if(Ext == "docx"){
+            # This is when they want a Word file as output
+            OutPath <- dirname(FileName)
+            FileName <- basename(FileName)
+            
+            rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = FileName, 
+                              quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
+            
+        } else {
+            # This is when they want any kind of graphical file format.
+            if(linear_or_log %in% c("both", "both vertical")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                       plot = AB)
+            }
+            
+            if(linear_or_log %in% c("both horizontal")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                       plot = ABhoriz)
+            }
+            
+            if(linear_or_log == "linear"){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = A)
+            }
+            
+            if(str_detect(linear_or_log, "log")){
+                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                       plot = B)
+            }
         }
     }
     
