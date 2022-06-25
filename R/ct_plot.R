@@ -320,12 +320,12 @@ ct_plot <- function(ct_dataframe = NA,
     
     # Error catching ----------------------------------------------------------
     
-	# Check whether tidyverse is loaded
-	if("package:tidyverse" %in% search() == FALSE){
-	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-	}
-
-	if(length(figure_type) != 1 |
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    if(length(figure_type) != 1 |
        figure_type %in% c("trial means", "percentiles", "trial percentiles",
                           "Freddy", "means only", "overlay", 
                           "percentile ribbon", "percentile ribbons", 
@@ -1209,6 +1209,25 @@ ct_plot <- function(ct_dataframe = NA,
         if(Ext == "docx"){
             # This is when they want a Word file as output
             OutPath <- dirname(FileName)
+            if(OutPath == "."){
+                OutPath <- getwd()
+            }
+            
+            # All the \\\\ are necessary b/c \ is an escape character, and often
+            # the SharePoint and Large File Store directory paths start with
+            # \\\\.
+            if(str_detect(sub("\\\\\\\\", "//", OutPath), 
+                          paste0(SimcypDir$LgFileDir, "|", 
+                                 SimcypDir$SharePtDir))){
+                
+                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
+                                  "/Documents")
+                warning(paste0("You have attempted to save a Word file from this function on either the Large File Store or SharePoint, and Windows permissions do not allow this. We will attempt to set your working directory to your Documents folder, which we think should be ", 
+                               OutPath,
+                               ". Since your Documents folder is a local directory, you should be able to save Word output and then, later, copy it to the drive you originally requested."), 
+                        call. = FALSE)
+            }
+            
             FileName <- basename(FileName)
             
             if(EnzPlot){

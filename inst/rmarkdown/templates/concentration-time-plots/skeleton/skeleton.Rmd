@@ -31,7 +31,7 @@ if(length(MySubstrate) > 0){
     MyCompound <- MySubstrate
     
     Text2 <- ifelse(InhibPresent, 
-                    paste0("co-administered with", MyEffector, " "), "")
+                    paste0("co-administered with ", MyEffector, " "), "")
     
 } else {
     Text2 <- paste("XXX mg", MyEffector, "QD/BID/TID ")
@@ -73,7 +73,7 @@ if(length(MySubstrate) > 0){
                              "mean of n = XXX individuals; Clinical Study XXX)"), 
                        ""), 
                 MyTissue, "concentration-time profiles of", MySubstrate, 
-                "following a single oral dose of", MySubstrate, 
+                "following a SINGLE/MULTIPLE ORAL/IV DOSES of", MySubstrate, 
                 "in the absence of", prettify_compound_name(MyEffector), 
                 " (solid line) and on the XXth day of XX days of dosing of", 
                 prettify_compound_name(MyEffector), "(dashed line)"))
