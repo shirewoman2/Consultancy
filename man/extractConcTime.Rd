@@ -38,16 +38,19 @@ are listed in the Excel file.}
 \item{tissue}{From which tissue should the desired concentrations be
 extracted? Default is plasma for typical plasma concentration-time data.
 Other options are "blood" or any tissues included in "Sheet Options",
-"Tissues" in the simulator. All possible options: "plasma", "blood",
-"unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
-"brain", "feto-placenta", "GI tissue" (this is for a 1st-order absorption
-model; not ADAM model), "heart", "kidney", "liver", "lung", "muscle",
-"pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
-blood", "peripheral unbound plasma", "portal vein blood", "portal vein
-plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
-or "spleen". If you have an ADAM model, additional options are: "stomach",
+"Tissues" in the simulator. Notes: \itemize{ \item{All possible options for
+first-order absorption models: "plasma", "blood", "unbound blood", "unbound
+plasma", "additional organ", "adipose", "bone", "brain", "feto-placenta",
+"GI tissue", "heart", "kidney", "liver", "lung", "muscle", "pancreas",
+"peripheral blood", "peripheral plasma", "peripheral unbound blood",
+"peripheral unbound plasma", "portal vein blood", "portal vein plasma",
+"portal vein unbound blood", "portal vein unbound plasma", "skin", or
+"spleen".} \item{Additional options for ADAM-model simulations: "stomach",
 "duodenum", "jejunum I", "jejunum II", "ileum I", "ileum II", "ileum III",
-"ileum IV", "colon", "faeces", or "gut tissue". Not case sensitive.}
+"ileum IV", "colon", "faeces", "gut tissue", "cumulative absorption", or
+"cumulative dissolution". \strong{This has not been thoroughly tested for
+very many ADAM-model scenarios, so please check that the data extracted are
+correct.}}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are "substrate" (default), "primary
@@ -55,9 +58,7 @@ metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
 1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
 labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
 inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-primary metabolite of inhibitor 1. \emph{Note:} The simulator will report
-up to one metabolite for the 1st inhibitor but no other inhibitor
-metabolites. (Someone please correct me if that's wrong! -LS)}
+primary metabolite of inhibitor 1.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are "aggregate", "individual", or "both"
@@ -111,7 +112,9 @@ A data.frame of concentration-time data with the following columns:
   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
-  in faeces", "dissolved compound", or "luminal CLint of compound". }
+  in faeces", "dissolved compound", "luminal CLint of compound", "cumulative
+  fraction of dissolved X" or "cumulative fraction of absorbed X" (X =
+  substrate or inhibitor 1, depending on the options selected). }
 
   \item{Dose_num}{the dose number}
 

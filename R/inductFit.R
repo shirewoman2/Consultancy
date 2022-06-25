@@ -73,7 +73,13 @@
 #'   \item{"blue-green"}{a set of blues and greens}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-#'   package}}
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}}
+#'   
 #' @param y_axis_limits optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 #'   If left as NA, the Y axis limits will be automatically selected. (Reminder:
 #'   Numeric data should not be in quotes.)
@@ -712,7 +718,7 @@ inductFit <- function(DF,
     blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
                                     "dodgerblue3", "royalblue4"))
     
-    NumColorsNeeded <- length(unique(DF$DonorID))
+    NumColors <- length(unique(DF$DonorID))
     
     if(color_set == "default"){
         # Using "Dark2" b/c "Set2" is just really, really light. 
@@ -723,14 +729,14 @@ inductFit <- function(DF,
     
     if(color_set == "blue-green"){
         Out$Graph <- Out$Graph + 
-            scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-            scale_fill_manual(values = blueGreen(NumColorsNeeded))
+            scale_color_manual(values = blueGreen(NumColors)) +
+            scale_fill_manual(values = blueGreen(NumColors))
     }
     
     if(color_set == "rainbow"){
         Out$Graph <- Out$Graph + 
-            scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-            scale_fill_manual(values = colRainbow(NumColorsNeeded))
+            scale_color_manual(values = colRainbow(NumColors)) +
+            scale_fill_manual(values = colRainbow(NumColors))
     }
     
     if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
@@ -746,13 +752,15 @@ inductFit <- function(DF,
             scale_color_brewer(palette = "Set1")
     }
     
-    
-    
-    
     if(color_set == "Tableau"){
         Out$Graph <- Out$Graph + 
             ggthemes::scale_color_tableau() +
             ggthemes::scale_fill_tableau()
+    }
+    
+    if(color_set == "viridis"){
+        G <- G + viridis::scale_color_viridis(discrete = TRUE) +
+            viridis::scale_fill_viridis(discrete = TRUE)
     }
     
     # saving and formatting output ---------------------------------------------

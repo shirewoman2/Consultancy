@@ -120,18 +120,18 @@ extractPK <- function(sim_data_file,
     # of the substrate (not the inhibitor... at least, not at this point).
     Tab_last <- AllSheets[str_detect(AllSheets, "AUC(t)?[1-9]{1,1}[0-9]{0,}") &
                               !str_detect(AllSheets, "Inh")]
-    ssNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
+    LastDoseNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
     # It's the highest dose number and it can't be 0 b/c that's dose 1.
-    ssNum <- suppressWarnings(max(ssNum[ssNum != 0]))
-    # If ssNum is now "-Inf" b/c it was all zeroes in the previous line but
+    LastDoseNum <- suppressWarnings(max(LastDoseNum[LastDoseNum != 0]))
+    # If LastDoseNum is now "-Inf" b/c it was all zeroes in the previous line but
     # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
     # that one.
     Tab_last <- paste0("AUC(t)?", as.numeric(str_extract(Tab_last, "[0-9]{1,}")[1]),
                        "(_CI)?\\(Sub\\)\\(C",
                        str_to_title(tissue), 
-                       "|AUC", ssNum, "\\(Sub\\)\\(C", str_to_title(tissue))
+                       "|AUC", LastDoseNum, "\\(Sub\\)\\(C", str_to_title(tissue))
     Tab_last <- AllSheets[which(str_detect(AllSheets, Tab_last))][1]
-    if(ssNum == -Inf && length(Tab_last) == 0){
+    if(LastDoseNum == -Inf && length(Tab_last) == 0 | is.na(Tab_last)){
         if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
                !str_detect(AllSheets, "Inh"))){
             Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[1-9]{1,1}[0-9]{0,}") &
@@ -289,7 +289,7 @@ extractPK <- function(sim_data_file,
                             EndRow_ind = as.numeric(NA),
                             Note = as.character(NA))
     
-    # Pulling data from the "AUC" sheet ------------------------------------------
+    # Pulling data from "AUC" sheet ------------------------------------------
     
     # Need to pull these parameters if either a) they requested a set of
     # parameters rather than asking for a set of parameters by sheet name (AUC
@@ -320,10 +320,12 @@ extractPK <- function(sim_data_file,
             }
         } else {
             
+            # Determining which sheet to read
             SheetAUC <- ifelse("AUC" %in% AllSheets == FALSE, 
                                ifelse("AUC_CI" %in% AllSheets == FALSE, 
                                       "AUC_SD", "AUC_CI"), "AUC")
             
+            # Reading the sheet for AUC tab results
             AUC_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, 
                                    # If the user requested the "AUC" tab for PK
@@ -332,10 +334,11 @@ extractPK <- function(sim_data_file,
                                    sheet = SheetAUC,
                                    col_names = FALSE))
             
+            # Finding the last row of the individual data
             EndRow_ind <- which(AUC_xl$...2 == "Statistics") - 2
             
             # If tissue is blood, REMOVE the plasma columns entirely. I
-            # think this will be easier to code. -LS
+            # think this will be easier to code. -LSh
             if(tissue == "blood"){
                 PlasmaCols <- c(which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1]:
                                     (which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1] -1))
@@ -344,218 +347,65 @@ extractPK <- function(sim_data_file,
                 }
             }
             
-            # sub function for finding correct column
-            findCol <- function(PKparam){
-                
-                ToDetect <- switch(PKparam,
-                                   "AccumulationIndex" = "Accumulation Index$",
-                                   "AccumulationRatio" = "Accumulation Ratio$",
-                                   "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
-                                   "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
-                                   "AUCt_dose1" = "^AUC \\(|AUCt.0. \\(|AUC\\(blood", # AUCt for blood column heading includes "blood" w/out space after AUC. This should work fine for when the tissue is plasma, though, b/c this will only search plasma columns in that scenario.
-                                   "AUCt_dose1_withInhib" = "^AUCt.0._Inh \\(|^AUCinh \\(",
-                                   "AUCt_ratio_dose1" = "^AUC Ratio$",
-                                   "AUCinf_dose1" = "^AUC_INF",
-                                   "AUCinf_dose1_withInhib" = "^AUC_INF",
-                                   "AUCinf_ratio_dose1" = "^AUC_INF ratio$",
-                                   "AUCtau_last" = "AUCt\\(n\\) \\(|^AUC \\(",
-                                   "AUCtau_last_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
-                                   "AUCtau_ratio_last" = "AUC Ratio",
-                                   "CLinf_dose1" = "CL .Dose/AUC_INF",
-                                   "CLinf_dose1_withInhib" = "CL \\(Dose/AUC_INF_Inh\\)",
-                                   "CLt_dose1" = "CL .Dose/AUC", # <----------------- !!!! NEEDS TO BE THE 2ND INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE
-                                   "CLt_dose1_withInhib" = "CLinh \\(Dose/AUC\\)", # <----------------- !!!! NEEDS TO BE THE 3RD INSTANCE OF THIS B/C 1ST INSTANCE IS LAST DOSE W/OUT INHIB AND 2ND IS 1ST DOSE W/OUT INHIB. 3RD INSTANCE IS CLtau FOR 1ST DOSE.
-                                   "CLt_ratio_dose1" = "CL Ratio",
-                                   "CLtau_last" = "CL \\(Dose/AUC\\)",
-                                   "CLtau_last_withInhib" = "CL \\(Dose/AUC\\)|CLinh \\(Dose/AUC\\)",
-                                   "Cmax_dose1" = "CMax \\(",
-                                   "Cmax_dose1_withInhib" = "CMaxinh \\(",
-                                   "Cmax_ratio_dose1" = "^CMax Ratio$",
-                                   "Cmax_last" = "^CMax",
-                                   "Cmax_last_withInhib" = "^CMax",
-                                   "Cmax_ratio_last" = "^CMax Ratio$",
-                                   "HalfLife_dose1" = "Half-life \\(",
-                                   "HalfLife_dose1_withInhib" = "Half-life_Inh \\(",
-                                   "tmax_dose1" = "^TMax \\(",
-                                   "tmax_dose1_withInhib" = "^TMaxinh \\(",
-                                   "tmax_last" = "^TMax \\(", # RETURN TO THIS. Need to make sure it's going to pull the correct tmax.
-                                   "tmax_last_withInhib" = "TMaxinh \\("
-                )
-                
-                # The AUC and Cmax ratios are listed with the parameters
-                # with inhibitor present and need those columns to be
-                # searched, even though "_withInhib" is not in the
-                # name. Temporarily changing the parameter name to
-                # search the appropriate columns. Note that this regex
-                # will catch, e.g., "AUCinf_ratio_dose1" but NOT
-                # "AccumulationRatio". That is by design.
-                suppressWarnings(
-                    PKparam <- ifelse(str_detect(PKparam, "ratio"), 
-                                      paste0(PKparam, "_withInhib"),
-                                      PKparam)
-                )
-                
-                # Similarly, AccumulationIndex, AccumulationRatio, and
-                # HalfLife_dose1 are actually found in the same section of the
-                # AUC sheet as AUCinf_dose1, so appending suffix of "inf_dose1"
-                # to those.
-                PKparam <- sub("AccumulationIndex", "AccumulationIndexinf_dose1", PKparam)
-                PKparam <- sub("AccumulationRatio", "AccumulationRatioinf_dose1", PKparam)
-                PKparam <- sub("HalfLife_dose1", "HalfLifeinf_dose1", PKparam)
-                
-                # Dose 1 tmax and Cmax are only available for the 0 to tau
-                # columns, so changing those parameter names temporarily. RETURN
-                # TO THIS: If the user requests integration of the last dose,
-                # doesn't that show up here? CHECK.
-                suppressWarnings(
-                    PKparam <- ifelse(str_detect(PKparam, "[Ct]max"),
-                                      sub("max", "maxtau", PKparam),
-                                      PKparam)
-                )
-                
-                if(str_detect(PKparam, "_withInhib")){
-                    
-                    # If there is an inhibitor involved, need to start looking
-                    # for the correct column after "for the Xth dose in the
-                    # presence of inhibitor" unless the parameter requested was
-                    # for the dosing interval rather than extrapolated.
-                    
-                    # dose1 data
-                    if(str_detect(PKparam, "dose1_withInhib")){
-                        if(str_detect(PKparam, "inf")){
-                            StartCol <-
-                                which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                 "for the first dose in the presence of inhibitor"))
-                            StartColText <- "for the first dose in the presence of inhibitor"
-                            
-                        } else {
-                            StartCol <-
-                                which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                 "^Inhibited$|^Inhibited AUC integrated from|Truncated AUCt_inh for the first dose"))
-                            StartColText <- "^Inhibited$|^Inhibited AUC integrated from|Truncated AUCt_inh for the first dose"
-                            
-                        }
-                    }
-                    
-                    # last dose data
-                    if(str_detect(PKparam, "_last_withInhib")){
-                        StartCol <-
-                            which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                             "for the last dose in the presence of inhibitor|^Inhibited$|Inhibited AUC integrated from"))[1]
-                        StartColText <- "for the last dose in the presence of inhibitor|^Inhibited$|Inhibited AUC integrated from"
-                    }
-                    
-                } else {
-                    
-                    # first dose
-                    if(str_detect(PKparam, "inf.*_dose1")){
-                        StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                      "^Extrapolated AUC_INF for the first dose$"))
-                        StartColText <- "^Extrapolated AUC_INF for the first dose$"
-                    }
-                    
-                    if(str_detect(PKparam, "t(au)?.*_dose1") &
-                       Deets$Regimen_sub %in% c("Single Dose")){
-                        
-                        StartCol <-  which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                      "^AUC integrated from"))
-                        StartColText <- "^AUC integrated from"
-                    }
-                    
-                    if(str_detect(PKparam, "t(au)?.*_dose1") &
-                       !str_detect(PKparam, "Accumulation") &
-                       Deets$Regimen_sub %in% c("Multiple Dose", "custom dosing")){
-                        # For MD scenarios, the subheading "Truncated..." must
-                        # be present or that might be the AUC for the last dose.
-                        StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                     "^Truncated AUCt for the first dose"))[1]
-                        StartColText <- "^Truncated AUCt for the first dose"
-                    }
-                    
-                    # last dose
-                    if(str_detect(PKparam, "_last")){
-                        
-                        StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                     "^Truncated AUCt for the last dose$"))
-                        StartColText <- "^Truncated AUCt for the last dose"
-                        if(length(StartCol) == 0){
-                            StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])),
-                                                         "^AUC integrated from"))
-                            StartColText <- "^AUC integrated from"
-                        }
-                    }
-                    
-                    # # accumulation index or other # <------------------------ No longer needed I think
-                    # if(str_detect(PKparam, "_dose1") == FALSE &
-                    #    str_detect(PKparam, "_last") == FALSE){
-                    #     StartCol <- 1
-                    #     StartColText <- NA
-                    # }
-                }
-                
-                if(exists("StartCol", inherits = FALSE)){
-                    StartCol <- StartCol[1]
-                } else {
-                    StartCol <- 1
-                }
-                
-                if(length(StartCol) == 0){
-                    
-                    OutCol <- StartCol
-                    
-                } else {
-                    
-                    # Find the last column at the end of whatever subheading this was under
-                    EndCol <- which(complete.cases(as.vector(t(AUC_xl[2, ]))))
-                    EndCol <- EndCol[EndCol > StartCol][1] - 1
-                    EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
-                    
-                    # # accumulation index etc. # <------------------- I think I no longer need these since I'm trying to catch AccumulationIndex and AccumulationRatio differently now. 
-                    # if(str_detect(PKparam, "_dose1") == FALSE &
-                    #    str_detect(PKparam, "_last") == FALSE){
-                    #     EndCol <- ncol(AUC_xl)
-                    # }
-                    
-                    if(is.na(StartCol)){
-                        PKparameters_AUC <- PKparameters_AUC[!PKparameters_AUC == PKparam]
-                        OutCol <- NA
-                    } else {
-                        
-                        PossCol <- StartCol:EndCol
-                        
-                        OutCol <- PossCol[
-                            which(str_detect(as.vector(t(
-                                AUC_xl[3, PossCol])), ToDetect) &
-                                    !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
-                        
-                    }
-                    
-                    if(checkDataSource & complete.cases(OutCol)){
-                        assign("SearchText4Col", value = StartColText,
-                               pos = 1)
-                        assign("SearchText", value = ToDetect,
-                               pos = 1)
-                    }
-                }
-                
-                return(OutCol)
-                
-            }
-            # end of subfunction
-            
-            # finding the PK parameters requested
+            # Finding the aggregate data rows 
             StartRow_agg <- which(AUC_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUC_xl$...2))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
             EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl), EndRow_agg)
             
+            # Looping through parameters and extracting values
             for(i in PKparameters_AUC){
-                ColNum <- findCol(i)
+                
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. For
+                # the AUC tab specifically, you also have to make sure that
+                # you're looking under the correct subheading, so that's what
+                # the column in "AllPKParameters" called "AUC_StartColText" is
+                # looking for.
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "AUC" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText, AUCtab_StartColText)
+                
+                # Looking for the correct subheading 
+                StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])), 
+                                             ToDetect$AUCtab_StartColText))[1]
+                
+                if(length(StartCol) == 0){
+                    StartCol <- 1
+                }
+                
+                # Find the last column for this particular subheading 
+                EndCol <- which(complete.cases(as.vector(t(AUC_xl[2, ]))))
+                EndCol <- EndCol[EndCol > StartCol][1] - 1
+                EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
+                
+                if(is.na(StartCol)){
+                    # If the subheading can't be found, then this parameter
+                    # isn't on the AUC tab (or, at least, we can't currently
+                    # find it). Removing that parameter from the parameters to
+                    # extract from the AUC tab.
+                    PKparameters_AUC <- PKparameters_AUC[!PKparameters_AUC == i]
+                    ColNum <- NA
+                } else {
+                    
+                    # If the subheading CAN be found, look for the regular
+                    # expression specific to this parameter i. Since there are
+                    # often more than one column with the same title, we only
+                    # want the 1st one. (The second would be for the wrong
+                    # tissue, e.g., blood when user asked for plasma.)
+                    PossCol <- StartCol:EndCol
+                    ColNum <- PossCol[
+                        which(str_detect(as.vector(t(
+                            AUC_xl[3, PossCol])), ToDetect$SearchText) &
+                                !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
+                    
+                }
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
-                    suppressWarnings(rm(ColNum, SearchText4Col, SearchText))
+                                  "on the tab 'AUC' cannot be found."))
+                    suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
                     PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                     next
                 }
@@ -565,61 +415,13 @@ extractPK <- function(sim_data_file,
                         pull(1) %>% as.numeric
                 )
                 
-                if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
-                    # Simulator sometimes can't extrapolate to infinity well and
-                    # you end up with NA values. If this happens, then AUCinf is
-                    # NOT reliable and we SHOULD NOT use aggregated measures of
-                    # it b/c they don't include all the data! Instead, pull
-                    # AUCtau as well and give user a warning.
-                    
-                    NewParam <- ifelse(str_detect(i, "dose1"), 
-                                       sub("inf", "t", i), sub("inf", "tau", i))
-                    warning(paste0("The parameter ", i, " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
-                                   NewParam, " will be returned to use in place of ",
-                                   i, " as you deem appropriate."),
-                            call. = TRUE)
-                    
-                    PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
-                    
-                    ColNum_NewParam <- findCol(NewParam)
-                    
-                    if(length(ColNum) == 0 | is.na(ColNum_NewParam)){
-                        message(paste("The column with information for", NewParam,
-                                      "cannot be found."))
-                        suppressWarnings(rm(ColNum_NewParam, SearchText4Col, SearchText))
-                        PKparameters_AUC <- setdiff(PKparameters_AUC, NewParam)
-                        rm(NewParam)
-                        next
-                    }
-                    
-                    suppressWarnings(
-                        Out_ind[[NewParam]] <- AUC_xl[4:EndRow_ind, ColNum_NewParam] %>%
-                            pull(1) %>% as.numeric
-                    )
-                    
-                    suppressWarnings(
-                        Out_agg[[NewParam]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum_NewParam] %>%
-                            pull(1) %>% as.numeric()
-                    )
-                    names(Out_agg[[NewParam]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
-                        pull(1)
-                    
-                } else {
-                    suppressWarnings(
-                        Out_agg[[i]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum] %>%
-                            pull(1) %>% as.numeric()
-                    )
-                    names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
-                        pull(1)
-                }
-                
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
                         bind_rows(data.frame(PKparam = i, 
                                              Tab = ifelse("AUC" %in% AllSheets == FALSE, 
                                                           "AUC_CI", "AUC"),
-                                             StartColText = SearchText4Col,
-                                             SearchText = SearchText,
+                                             StartColText = ToDetect$AUCtab_StartColText,
+                                             SearchText = ToDetect$SearchText,
                                              Column = ifelse(tissue == "plasma", 
                                                              ColNum, 
                                                              ColNum + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
@@ -628,29 +430,125 @@ extractPK <- function(sim_data_file,
                                              StartRow_ind = 4,
                                              EndRow_ind = EndRow_ind,
                                              Note = "StartColText is looking in row 2."))
+                }
+                
+                if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
+                    # Simulator sometimes can't extrapolate to infinity well and
+                    # you end up with NA values. If this happens, then AUCinf is
+                    # NOT reliable and we SHOULD NOT use aggregated measures of
+                    # it b/c they don't include all the data! Instead, pull
+                    # AUCtau as well and give user a warning.
+                    NewParam <- ifelse(str_detect(i, "dose1"), 
+                                       sub("inf", "t", i), sub("inf", "tau", i))
+                    warning(paste0("For the file ", sim_data_file, 
+                                   ", the parameter ", i, 
+                                   " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
+                                   NewParam, " will be returned to use in place of ",
+                                   i, " as you deem appropriate."),
+                            call. = TRUE)
                     
-                    if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
+                    PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
+                    
+                    suppressWarnings(rm(StartCol, EndCol, ColNum, ToDetect))
+                    
+                    ToDetect <- AllPKParameters %>% 
+                        filter(Sheet == "AUC" & PKparameter == NewParam) %>% 
+                        select(PKparameter, SearchText, AUCtab_StartColText)
+                    
+                    # !!! STARTING HERE, ALL TEXT IS SAME AS MAIN CODE ABOVE.
+                    
+                    # Looking for the correct subheading 
+                    StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])), 
+                                                 ToDetect$AUCtab_StartColText))[1]
+                    
+                    if(length(StartCol) == 0){
+                        StartCol <- 1
+                    }
+                    
+                    # Find the last column for this particular subheading 
+                    EndCol <- which(complete.cases(as.vector(t(AUC_xl[2, ]))))
+                    EndCol <- EndCol[EndCol > StartCol][1] - 1
+                    EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
+                    
+                    if(is.na(StartCol)){
+                        # If the subheading can't be found, then this parameter
+                        # isn't on the AUC tab (or, at least, we can't currently
+                        # find it). Removing that parameter from the parameters to
+                        # extract from the AUC tab.
+                        PKparameters_AUC <- PKparameters_AUC[!PKparameters_AUC == i]
+                        ColNum <- NA
+                    } else {
+                        
+                        # If the subheading CAN be found, look for the regular
+                        # expression specific to this parameter i. Since there are
+                        # often more than one column with the same title, we only
+                        # want the 1st one. (The second would be for the wrong
+                        # tissue, e.g., blood when user asked for plasma.)
+                        PossCol <- StartCol:EndCol
+                        ColNum <- PossCol[
+                            which(str_detect(as.vector(t(
+                                AUC_xl[3, PossCol])), ToDetect$SearchText) &
+                                    !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
+                        
+                    }
+                    
+                    if(length(ColNum) == 0 | is.na(ColNum)){
+                        message(paste("The column with information for", i,
+                                      "on the tab 'AUC' cannot be found."))
+                        suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
+                        PKparameters_AUC <- setdiff(PKparameters_AUC, i)
+                        next
+                    }
+                    
+                    # !!! ENDING HERE. TEXT BELOW HERE IS NO LONGER SAME AS MAIN
+                    # CODE ABOVE.
+                    suppressWarnings(
+                        Out_ind[[NewParam]] <- AUC_xl[4:EndRow_ind, ColNum] %>%
+                            pull(1) %>% as.numeric
+                    )
+                    
+                    suppressWarnings(
+                        Out_agg[[NewParam]] <- AUC_xl[StartRow_agg:EndRow_agg,
+                                                      ColNum] %>%
+                            pull(1) %>% as.numeric()
+                    )
+                    names(Out_agg[[NewParam]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
+                        pull(1)
+                    
+                    if(checkDataSource){
                         DataCheck <- DataCheck %>%
                             bind_rows(data.frame(PKparam = NewParam, 
                                                  Tab = ifelse("AUC" %in% AllSheets == FALSE, 
                                                               "AUC_CI", "AUC"),
-                                                 StartColText = SearchText4Col,
-                                                 SearchText = SearchText,
+                                                 StartColText = ToDetect$AUCtab_StartColText,
+                                                 SearchText = ToDetect$SearchText,
                                                  Column = ifelse(tissue == "plasma", 
-                                                                 ColNum_NewParam, 
-                                                                 ColNum_NewParam + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
+                                                                 ColNum, 
+                                                                 ColNum + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
                                                  StartRow_agg = StartRow_agg,
                                                  EndRow_agg = EndRow_agg,
                                                  StartRow_ind = 4,
                                                  EndRow_ind = EndRow_ind,
                                                  Note = "StartColText is looking in row 2."))
-                        rm(ColNum_NewParam, NewParam)
                     }
                     
-                    suppressWarnings(rm(SearchText4Col, SearchText))
+                    suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
+                    
+                } else {
+                    
+                    # At this point in the code is where we're back to the
+                    # scenario where there were no NA values for extrapolating
+                    # to infinity.
+                    
+                    suppressWarnings(
+                        Out_agg[[i]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                            pull(1) %>% as.numeric()
+                    )
+                    names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
+                        pull(1)
                 }
                 
-                # end of iteration i
+                suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
             }
             
             if(includeTrialInfo){
@@ -661,12 +559,10 @@ extractPK <- function(sim_data_file,
                 Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
                                              as.data.frame(Out_ind[PKparameters_AUC]))
             }
-            rm(findCol)
         }
     }
     
-    
-    # Pulling data from the "AUC0(Sub)(CPlasma)" tab -------------------------
+    # Pulling data from AUC0 tab -------------------------
     PKparameters_AUC0 <- intersect(PKparameters, ParamAUC0)
     
     # Some PK parameters show up on multiple sheets. No need to pull
@@ -682,60 +578,55 @@ extractPK <- function(sim_data_file,
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
         PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE)){
         # Error catching
-        if(any(str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
+        if(any(str_detect(AllSheets, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
+            # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")
+            # is actually NOT for the 1st dose but for the 1st user-defined
+            # interval! Do NOT use that tab unless/until we do something further
+            # to check which dosing interval the data are for, e.g., read the
+            # top line that says "something something integrated from time A to
+            # time B".
             
-            warning(paste0("The sheet 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
+            warning(paste0("A sheet with a name like 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
                            sub("and", "or", str_comma(PKparameters_AUC0)),
                            ". None of these parameters can be extracted."),
                     call. = FALSE)
         } else {
             
-            Sheet <- AllSheets[str_detect(AllSheets, "AUC(t)?0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
+            Sheet <- AllSheets[str_detect(AllSheets, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
             
             AUC0_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, sheet = Sheet,
                                    col_names = FALSE))
             
+            # Finding the last row of the individual data
             EndRow_ind <- which(AUC0_xl$...2 == "Statistics") - 3
             
-            findCol <- function(PKparam){
-                
-                ToDetect <- switch(PKparam,
-                                   "AUCt_dose1" = "^AUC \\(",
-                                   "AUCt_dose1_withInhib" = "^AUCinh \\(",
-                                   "AUCt_ratio_dose1" = "AUC Ratio",
-                                   "CLt_dose1" = "CL .Dose/AUC",
-                                   "CLt_dose1_withInhib" = "CL \\(Dose/AUCinh\\)",
-                                   "CLt_ratio_dose1" = "CL Ratio",
-                                   "Cmax_dose1" = "CMax \\(",
-                                   "Cmax_dose1_withInhib" = "CMaxinh",
-                                   "Cmax_ratio_dose1" = "^CMax Ratio$",
-                                   "tmax_dose1" = "TMax",
-                                   "tmax_dose1_withInhib" = "TMaxinh")
-                
-                if(checkDataSource){
-                    assign("SearchText", value = ToDetect,
-                           pos = 1)
-                }
-                
-                return(which(str_detect(as.vector(t(AUC0_xl[2, ])),
-                                        ToDetect))[1])
-            }
-            # end of subfunction
-            
-            # finding the PK parameters requested
+            # Finding the aggregate data rows 
             StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUC0_xl$...2))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
             EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC0_xl), EndRow_agg)
             
+            # Looping through parameters and extracting values
             for(i in PKparameters_AUC0){
-                ColNum <- findCol(i)
+                
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. 
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "AUC0" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText)
+                
+                # Looking for the regular expression specific to this parameter
+                # i. 
+                ColNum <- which(str_detect(as.vector(t(AUC0_xl[2, ])),
+                                           ToDetect$SearchText))
+                
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the tab for the 1st dose AUC cannot be found."))
+                    suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_AUC0 <- setdiff(PKparameters_AUC0, i)
-                    suppressWarnings(rm(ColNum, SearchText))
                     next
                 }
                 
@@ -753,17 +644,16 @@ extractPK <- function(sim_data_file,
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i,
+                        bind_rows(data.frame(PKparam = i, 
                                              Tab = Sheet,
-                                             SearchText = SearchText,
-                                             Column = ColNum,
+                                             SearchText = ToDetect$SearchText,
+                                             Column = ColNum, 
                                              StartRow_agg = StartRow_agg,
                                              EndRow_agg = EndRow_agg,
                                              StartRow_ind = 3,
                                              EndRow_ind = EndRow_ind))
                 }
-                suppressWarnings(rm(ColNum, SearchText))
-            }
+            }   
             
             if(includeTrialInfo){
                 # Subject and trial info
@@ -774,12 +664,12 @@ extractPK <- function(sim_data_file,
                                               as.data.frame(Out_ind[PKparameters_AUC0]))
             }
             
-            rm(EndRow_ind, findCol, Sheet)
+            suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
         }
     }
     
     
-    # Pulling data from the AUCX(Sub)(CPlasma) sheet ----------------------------
+    # Pulling data from AUCX sheet ----------------------------
     PKparameters_AUCX <- intersect(PKparameters, ParamAUCX)
     
     # Some PK parameters show up on multiple sheets. No need to pull
@@ -806,50 +696,35 @@ extractPK <- function(sim_data_file,
                 readxl::read_excel(path = sim_data_file, sheet = Tab_last,
                                    col_names = FALSE))
             
+            # Finding the last row of the individual data
             EndRow_ind <- which(AUCX_xl$...2 == "Statistics") - 3
             
-            findCol <- function(PKparam){
-                
-                ToDetect <- switch(PKparam,
-                                   "AUCtau_last" = "AUC \\(",
-                                   "AUCtau_last_withInhib" = "AUCinh \\(",
-                                   "AUCtau_ratio_last" = "AUC Ratio",
-                                   "CLtau_last" = "CL \\(Dose/AUC",
-                                   "CLtau_last_withInhib" = "CLinh \\(Dose/AUCinh",
-                                   "CLtau_ratio_last" = "CL Ratio",
-                                   "Cmax_last" = "CMax \\(",
-                                   "Cmax_last_withInhib" = "CMaxinh \\(",
-                                   "Cmax_ratio_last" = "CMax Ratio",
-                                   "Cmin_last" = "CMin \\(",
-                                   "Cmin_last_withInhib" = "CMininh \\(",
-                                   "Cmin_ratio_last" = "CMin Ratio",
-                                   "tmax_last" = "^TMax \\(",
-                                   "tmax_last_withInhib" = "TMaxinh \\(")
-                
-                if(checkDataSource){
-                    assign("SearchText", value = ToDetect,
-                           pos = 1)
-                }
-                
-                return(which(str_detect(as.vector(t(AUCX_xl[2, ])),
-                                        ToDetect))[1])
-            }
-            # end subfunction
-            
-            # finding the PK parameters requested
+            # Finding the aggregate data rows 
             StartRow_agg <- which(AUCX_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUCX_xl$...2))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
             EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUCX_xl), EndRow_agg)
             
+            # Looping through parameters and extracting values
             for(i in PKparameters_AUCX){
-                ColNum <- findCol(i)
                 
-                if(length(ColNum) == 0){
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. 
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "AUCX" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText)
+                
+                # Looking for the regular expression specific to this parameter
+                # i. 
+                ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
+                                           ToDetect$SearchText))
+                
+                if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the tab for the last dose cannot be found."))
+                    suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_AUCX <- setdiff(PKparameters_AUCX, i)
-                    suppressWarnings(rm(ColNum, SearchText))
                     next
                 }
                 
@@ -867,29 +742,27 @@ extractPK <- function(sim_data_file,
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i,
+                        bind_rows(data.frame(PKparam = i, 
                                              Tab = Tab_last,
-                                             SearchText = SearchText,
-                                             Column = ColNum,
+                                             SearchText = ToDetect$SearchText,
+                                             Column = ColNum, 
                                              StartRow_agg = StartRow_agg,
                                              EndRow_agg = EndRow_agg,
                                              StartRow_ind = 3,
                                              EndRow_ind = EndRow_ind))
                 }
-                suppressWarnings(rm(ColNum, SearchText))
-            }
+            }   
             
             if(includeTrialInfo){
                 # Subject and trial info
                 SubjTrial_AUCX <- AUCX_xl[3:EndRow_ind, 1:2] %>%
                     rename("Individual" = ...1, "Trial" = ...2)
                 
-                Out_ind[["AUCXtab"]] <- cbind(SubjTrial_AUCX,
+                Out_ind[["AUC0tab"]] <- cbind(SubjTrial_AUCX,
                                               as.data.frame(Out_ind[PKparameters_AUCX]))
             }
             
-            rm(EndRow_ind, findCol, StartRow_agg, EndRow_agg)
-            
+            suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
         }
     }
     
@@ -922,104 +795,78 @@ extractPK <- function(sim_data_file,
             SubCols <- which(as.character(Abs_xl[8, ]) == "Substrate")[1]
             InhibCols <- which(as.character(Abs_xl[8, ]) == "Inhibitor 1")[1]
             
-            # sub function for finding correct column
-            findCol <- function(PKparam){
-                
-                ToDetect <- switch(PKparam,
-                                   "ka_sub" = "^ka \\(1/",
-                                   "ka_inhib" = "^ka \\(1/",
-                                   "fa_sub" = "^fa$",
-                                   "fa_inhib" = "^fa$",
-                                   "tlag_sub" = "lag time \\(",
-                                   "tlag_inhib" = "lag time \\(")
-                
-                StartCol <- ifelse(str_detect(PKparam, "sub"),
-                                   SubCols, InhibCols)
-                OutCol <- which(str_detect(
-                    as.character(Abs_xl[9, StartCol:(StartCol+2)]),
-                    ToDetect)) + StartCol - 1
-                
-                if(checkDataSource){
-                    assign("SearchText", value = ToDetect,
-                           pos = 1)
-                }
-                
-                return(OutCol)
-            }
-            # end of subfunction
-            
-            # finding the PK parameters requested
+            # Looping through parameters and extracting values
             for(i in PKparameters_Abs){
-                ColNum <- findCol(i)
-                if(length(ColNum) == 0){
+                
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. 
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "Absorption" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText)
+                
+                # Looking for the regular expression specific to this parameter
+                # i. For the absorption tab, there are columns for the substrate
+                # and columns for Inhibitor 1. (There are also columns for
+                # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
+                StartCol <- ifelse(str_detect(i, "sub"),
+                                   SubCols, InhibCols)
+                
+                ColNum <- which(str_detect(
+                    as.character(Abs_xl[9, StartCol:(StartCol+2)]),
+                    ToDetect$SearchText)) + StartCol - 1
+                
+                if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the 'Absorption' tab cannot be found."))
+                    suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_Abs <- setdiff(PKparameters_Abs, i)
-                    suppressWarnings(rm(ColNum, SearchText))
                     next
                 }
                 
                 suppressWarnings(
-                    Out_ind[[i]] <- Abs_xl[10:nrow(Abs_xl), ColNum] %>% rename(Values = 1) %>%
-                        filter(complete.cases(Values)) %>% pull(Values) %>% as.numeric
+                    Out_ind[[i]] <- Abs_xl[10:nrow(Abs_xl), ColNum] %>%
+                        pull(1) %>% as.numeric
                 )
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
                         bind_rows(data.frame(PKparam = i,
                                              Tab = "Absorption",
-                                             SearchText = SearchText,
+                                             SearchText = ToDetect$SearchText,
                                              Column = ColNum,
                                              StartRow_agg = NA,
                                              EndRow_agg = NA,
                                              StartRow_ind = 10,
                                              EndRow_ind = nrow(Abs_xl)))
                 }
-                
-                suppressWarnings(rm(ColNum, SearchText))
             }
             
             if(includeTrialInfo){
                 # Subject and trial info
-                StartRow_ind <- which(Abs_xl$...1 == "Index") + 1
-                EndRow_ind <- which(is.na(Abs_xl$...1)) - 1
-                EndRow_ind <- EndRow_ind[which(EndRow_ind > StartRow_ind)][1]
-                
-                SubjTrial_Abs <- Abs_xl[StartRow_ind:EndRow_ind, 1:2] %>%
+                SubjTrial_Abs <- Abs_xl[10:nrow(Abs_xl), 1:2] %>%
                     rename("Individual" = ...1, "Trial" = ...2)
                 
                 Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
                                              as.data.frame(Out_ind[PKparameters_Abs]))
-                
-                rm(StartRow_ind, EndRow_ind)
             }
             
-            rm(findCol)
-            
-            # AGGREGATE VALUES: For the absorption tab, the aggregate
-            # values are stored in a COMPLETELY different place, so
-            # extracting those values completely separately.
-            
-            # I think the data always start in column 20, but I'm not
-            # positive. The value in the column that starts the aggregate
-            # data is "Trial Groups", so looking for that. It's in the
-            # same row where the value is "Index" in column 1. The 1st
-            # instance of "Trial" is for the individual data, so it has to
-            # be the 2nd instance.
+            # AGGREGATE VALUES: For the absorption tab, the aggregate values are
+            # stored in a COMPLETELY different place, so extracting those values
+            # completely separately.
             IndexRow <- which(Abs_xl$...1 == "Index")
             StartCol_agg <- which(str_detect(t(Abs_xl[IndexRow, ]), "Trial"))[2]
             
-            # They are NOT LABELED (!!!!) as such, but the summary stats
-            # are for fa, ka, and lag time in order for 1) the substrate,
-            # 2) inhibitor 1, 3) inhibitor 2, and 4) inhibitor 3. Getting
-            # the appropriate columns.
+            # They are NOT ALWAYS LABELED (!!!!) as such, but the summary stats
+            # are for fa, ka, and lag time in order for 1) the substrate, 2)
+            # inhibitor 1, 3) inhibitor 2, and 4) inhibitor 3. Getting the
+            # appropriate columns.
             SubCols <- StartCol_agg:(StartCol_agg + 2)
             Inhib1Cols <- (StartCol_agg + 3):(StartCol_agg + 5)
             Inhib2Cols <- (StartCol_agg + 6):(StartCol_agg + 8)
             Inhib3Cols <- (StartCol_agg + 9):(StartCol_agg + 11)
-            # Note to self: I have only set this up for substrate and
-            # inhibitor 1 so far. Return to this later if/when we want
-            # more.
+            # Note: I have only set this up for substrate and inhibitor 1 so
+            # far. Return to this later if/when we want more. -LSh
             
             # "Statistics" is in the column before StartCol_agg, so looking
             # for that next.
@@ -1028,40 +875,20 @@ extractPK <- function(sim_data_file,
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
             EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(Abs_xl), EndRow_agg)
             
-            # sub function for finding the correct column
-            findCol <- function(PKparam){
-                
-                ToDetect <- switch(PKparam,
-                                   "ka_sub" = "^ka \\(1/",
-                                   "ka_inhib" = "^ka \\(1/",
-                                   "fa_sub" = "^fa$",
-                                   "fa_inhib" = "^fa$",
-                                   "tlag_sub" = "lag time \\(",
-                                   "tlag_inhib" = "lag time \\(")
-                
-                MyCols <- switch(str_extract(PKparam, "sub|inhib"),
-                                 "sub" = SubCols,
-                                 "inhib" = Inhib1Cols)
-                OutCol <- MyCols[
-                    which(str_detect(
-                        as.character(Abs_xl[StartRow_agg, MyCols]),
-                        ToDetect))]
-                
-                if(checkDataSource){
-                    assign("SearchText", value = ToDetect,
-                           pos = 1)
-                }
-                
-                return(OutCol)
-            }
-            # end of subfunction
-            
             # finding the PK parameters requested
             for(i in PKparameters_Abs){
-                ColNum <- findCol(i)
+                
+                MyCols <- switch(str_extract(i, "sub|inhib"), 
+                                 "sub" = SubCols, 
+                                 "inhib" = InhibCols)
+                
+                ColNum <- MyCols[which(str_detect(
+                    as.character(Abs_xl[StartRow_agg, MyCols]), 
+                    ToDetect$SearchText))]
+                
                 if(length(ColNum) == 0){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the 'Absorption' tab cannot be found."))
                     suppressWarnings(rm(ColNum, SearchText))
                     next
                 }
@@ -1070,7 +897,6 @@ extractPK <- function(sim_data_file,
                     Out_agg[[i]] <- Abs_xl[(StartRow_agg + 1):EndRow_agg, ColNum] %>%
                         pull(1) %>% as.numeric
                 )
-                
                 names(Out_agg[[i]]) <- Abs_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg - 1] %>%
                     pull(1)
                 
@@ -1078,14 +904,14 @@ extractPK <- function(sim_data_file,
                     DataCheck <- DataCheck %>%
                         bind_rows(data.frame(PKparam = i,
                                              Tab = "Absorption",
-                                             SearchText = SearchText,
+                                             SearchText = ToDetect$SearchText,
                                              Column = ColNum,
                                              StartRow_agg = StartRow_agg + 1,
                                              EndRow_agg = EndRow_agg,
                                              StartRow_ind = NA,
                                              EndRow_ind = NA))
                 }
-                suppressWarnings(rm(ColNum, SearchText))
+                suppressWarnings(rm(ColNum, MyCols))
             }
         }
     }
@@ -1116,61 +942,46 @@ extractPK <- function(sim_data_file,
                 readxl::read_excel(path = sim_data_file, sheet = "Clearance Trials SS",
                                    col_names = FALSE))
             
-            # sub function for finding correct column
-            findCol <- function(PKparam){
-                
-                ToDetect <- switch(PKparam,
-                                   "CL_hepatic" = "CL \\(L",
-                                   "CLpo" = "CLpo",
-                                   "F_sub" = "F\\(Sub",
-                                   "fh_sub" = "Fh\\(Sub",
-                                   "fg_sub" = "Fg\\(Sub")
-                
-                OutCol <- which(str_detect(as.vector(t(CLTSS_xl[1, ])),
-                                           ToDetect))
-                
-                if(checkDataSource){
-                    assign("SearchText", value = ToDetect,
-                           pos = 1)
-                }
-                
-                return(OutCol)
-            }
-            # end of subfunction
-            
-            # finding the PK parameters requested
+            # Looping through parameters and extracting values
             for(i in PKparameters_CLTSS){
-                ColNum <- findCol(i)
-                if(length(ColNum) == 0){
+                
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. 
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "Clearance Trials SS" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText)
+                
+                # Looking for the regular expression specific to this parameter
+                # i. 
+                ColNum <- which(str_detect(as.vector(t(CLTSS_xl[1, ])),
+                                           ToDetect$SearchText))
+                
+                if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
+                                  "on the 'Clearance Trials SS' tab cannot be found."))
+                    suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
-                    suppressWarninsg(rm(ColNum, SearchText))
                     next
                 }
                 
                 suppressWarnings(
                     Out_ind[[i]] <- CLTSS_xl[2:nrow(CLTSS_xl), ColNum] %>%
-                        rename(Values = 1) %>%
-                        pull(Values) %>% as.numeric
+                        pull(1) %>% as.numeric
                 )
-                
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i,
+                        bind_rows(data.frame(PKparam = i, 
                                              Tab = "Clearance Trials SS",
-                                             SearchText = SearchText,
-                                             Column = ColNum,
+                                             SearchText = ToDetect$SearchText,
+                                             Column = ColNum, 
                                              StartRow_agg = NA,
                                              EndRow_agg = NA,
                                              StartRow_ind = 2,
                                              EndRow_ind = nrow(CLTSS_xl)))
                 }
-                
-                suppressWarnings(rm(ColNum, SearchText))
-                
-            }
+            }   
             
             if(includeTrialInfo){
                 # Subject and trial info
@@ -1181,48 +992,36 @@ extractPK <- function(sim_data_file,
                                                as.data.frame(Out_ind[PKparameters_CLTSS]))
             }
             
-            rm(findCol)
-            
-            # AGGREGATE VALUES: For the CLTSS tab, the aggregate values
-            # are stored in a COMPLETELY different place, so extracting
-            # those values completely separately. I *think* the aggregate
-            # values always start in column 10, but I'm not sure, so let's
-            # check each time.
+            # AGGREGATE VALUES: For the CLTSS tab, the aggregate values are
+            # stored in a COMPLETELY different place, so extracting those values
+            # completely separately. I *think* the aggregate values always start
+            # in column 10, but I'm not sure, so let's check each time.
             StartCol_agg <- which(str_detect(t(CLTSS_xl[1, ]), "Total Systemic"))
             StartRow_agg <- which(CLTSS_xl[, StartCol_agg] == "Statistics") + 1
             EndRow_agg <- which(is.na(CLTSS_xl[, StartCol_agg]))
             EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
             EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(CLTSS_xl), EndRow_agg)
             
-            # sub function for finding correct column
-            findCol <- function(PKparam){
-                
-                ToDetect <- switch(PKparam,
-                                   "CL_hepatic" = "CL \\(L",
-                                   "CLpo" = "CLpo",
-                                   "F_sub" = "F\\(Sub",
-                                   "fh_sub" = "Fh\\(Sub",
-                                   "fg_sub" = "Fg\\(Sub")
-                
-                OutCol <- which(str_detect(as.vector(t(CLTSS_xl[StartRow_agg, ])),
-                                           ToDetect))
-                
-                if(checkDataSource){
-                    assign("SearchText", value = ToDetect,
-                           pos = 1)
-                }
-                
-                return(OutCol)
-            }
-            # end of subfunction
-            
-            # finding the PK parameters requested
+            # Looping through parameters and extracting values
             for(i in PKparameters_CLTSS){
-                ColNum <- findCol(i)
-                if(length(ColNum) == 0){
+                
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. 
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "Clearance Trials SS" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText)
+                
+                # Looking for the regular expression specific to this parameter
+                # i. 
+                ColNum <-  which(str_detect(as.vector(t(CLTSS_xl[StartRow_agg, ])),
+                                            ToDetect$SearchText))
+                
+                if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
-                                  "cannot be found."))
-                    suppressWarnings(rm(ColNum, SearchText))
+                                  "on the 'Clearance Trials SS' tab cannot be found."))
+                    suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
+                    PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
                 }
                 
@@ -1230,15 +1029,14 @@ extractPK <- function(sim_data_file,
                     Out_agg[[i]] <- CLTSS_xl[(StartRow_agg + 1):EndRow_agg, ColNum] %>%
                         pull(1) %>% as.numeric
                 )
-                
                 names(Out_agg[[i]]) <- CLTSS_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg] %>%
                     pull(1)
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i,
+                        bind_rows(data.frame(PKparam = i, 
                                              Tab = "Clearance Trials SS",
-                                             SearchText = SearchText,
+                                             SearchText = ToDetect$SearchText,
                                              Column = ColNum,
                                              StartRow_agg = StartRow_agg + 1,
                                              EndRow_agg = EndRow_agg,
@@ -1246,10 +1044,11 @@ extractPK <- function(sim_data_file,
                                              EndRow_ind = NA))
                 }
                 
-                suppressWarnings(rm(ColNum, SearchText))
+                # end of iteration i
+                suppressWarnings(rm(ToDetect, ColNum))
             }
             
-            
+            suppressWarnings(rm(StartRow_agg, EndRow_agg, StartCol_agg, EndRow_ind))
         }
     }
     
@@ -1294,64 +1093,27 @@ extractPK <- function(sim_data_file,
                                  "F_sub", "F_inhib", "fg_sub", "fg_inhib",
                                  "fh_sub", "fh_inhib")]
         
-        # sub function for finding correct column
-        findCol <- function(PKparam){
-            
-            ToDetect <- switch(PKparam,
-                               "AccumulationIndex" = "Accumulation Index$",
-                               "AccumulationRatio" = "Accumulation Ratio$",
-                               "AccumulationIndex_withInhib" = "Accumulation Index_Inh",
-                               "AccumulationRatio_withInhib" = "Accumulation Ratio_Inh",
-                               "AUCinf" = "^AUC_INF \\(",
-                               "AUCinf_withInhib" = "^AUC_INF_Inh",
-                               "AUCinf_ratio" = "^AUC_INF ratio$",
-                               "AUCtau" = "AUCt\\(n\\) \\(|^AUC \\(|^AUC integrated from",
-                               "AUCt" = "AUCt\\(n\\) \\(|^AUC \\(|^AUC integrated from",
-                               "AUCtau_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
-                               "AUCt_withInhib" = "AUCt\\(n\\)_Inh|AUCinh \\(",
-                               "AUCtau_ratio" = "AUC Ratio",
-                               "AUCt_ratio" = "AUC Ratio",
-                               "CLt" = "CL \\(Dose/AUC\\)",
-                               "CLt_withInhib" = "CLinh \\(Dose/AUC\\)|CL \\(Dose/AUCinh\\)|CLinh \\(Dose/AUCinh\\)",
-                               "CLt_ratio" = "CL Ratio",
-                               "CLtau" = "CL \\(Dose/AUC\\)",
-                               "CLtau_withInhib" = "CLinh \\(Dose/AUC\\)|CL \\(Dose/AUCinh\\)|CLinh \\(Dose/AUCinh\\)",
-                               "CLtau_ratio" = "CL Ratio",
-                               "Cmax" = "CMax \\(",
-                               "Cmax_withInhib" = "CMaxinh", 
-                               "Cmax_ratio" = "CMax Ratio",
-                               "Cmin" = "CMin \\(",
-                               "Cmin_withInhib" = "CMininh \\(",
-                               "Cmin_ratio" = "CMin Ratio",
-                               "HalfLife" = "Half-life \\(",
-                               "HalfLife_withInhib" = "Half-life_Inh \\(",
-                               "tmax" = "TMax ", 
-                               "tmax_withInhib" = "TMaxinh")
-            
-            if(is.null(ToDetect)){
-                stop(paste("Extraction of the parameter", PKparam, "has not been set up correctly."),
-                     call. = FALSE)
-            }
-            
-            OutCol <- which(str_detect(as.vector(t(
-                XL[HeaderRow, ])), ToDetect) &
-                    !str_detect(as.vector(t(XL[HeaderRow, ])), "%"))
-            
-            if(checkDataSource){
-                assign("SearchText", value = ToDetect,
-                       pos = 1)
-            }
-            
-            return(OutCol)
-        }
-        # end of subfunction
-        
-        # finding the PK parameters requested
+        # Looping through parameters and extracting values
         for(i in PKparameters){
-            ColNum <- findCol(i)
-            if(length(ColNum) == 0){
-                rm(ColNum)
-                PKparameters <- PKparameters[!PKparameters == i]
+            
+            # Using regex to find the correct column. See
+            # data(AllPKParameters) for all the possible parameters as well
+            # as what regular expressions are being searched for each. 
+            ToDetect <- AllPKParameters %>% 
+                mutate(PKparameter = sub("_dose1|_last", "", PKparameter)) %>% 
+                filter(PKparameter == i) %>% 
+                select(PKparameter, SearchText) %>% unique()
+            
+            # Looking for the regular expression specific to this parameter
+            # i. 
+            ColNum <- which(str_detect(as.vector(t(XL[HeaderRow, ])),
+                                       ToDetect$SearchText))
+            
+            if(length(ColNum) == 0 || is.na(ColNum)){
+                message(paste("The column with information for", i,
+                              "on the tab", sheet, "cannot be found."))
+                suppressMessages(rm(ToDetect, ColNum))
+                PKparameters <- setdiff(PKparameters, i)
                 next
             }
             
@@ -1369,19 +1131,16 @@ extractPK <- function(sim_data_file,
             
             if(checkDataSource){
                 DataCheck <- DataCheck %>%
-                    bind_rows(data.frame(PKparam = i, Tab = sheet,
-                                         SearchText = SearchText,
-                                         Column = ColNum,
+                    bind_rows(data.frame(PKparam = i, 
+                                         Tab = sheet,
+                                         SearchText = ToDetect$SearchText,
+                                         Column = ColNum, 
                                          StartRow_agg = StartRow_agg,
                                          EndRow_agg = EndRow_agg,
                                          StartRow_ind = HeaderRow+1,
-                                         EndRow_ind = EndRow_ind,
-                                         Note = "StartColText is looking in row 2."))
-                
+                                         EndRow_ind = EndRow_ind))
             }
-            
-            rm(ColNum)
-        }
+        }   
         
         if(includeTrialInfo){
             # Subject and trial info
@@ -1394,7 +1153,8 @@ extractPK <- function(sim_data_file,
                                        as.data.frame(Out_ind[PKparameters]))
         }
         
-        rm(EndRow_ind, findCol)
+        suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, HeaderRow,
+                            IndexCol))
     }
     
     

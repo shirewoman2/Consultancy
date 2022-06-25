@@ -74,7 +74,12 @@ the name of value_column.}
   \item{"blue-green"}{a set of blues and greens}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-  package}}}
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}}}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it

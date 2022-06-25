@@ -1,0 +1,121 @@
+---
+title: "Concentration-time plots"
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupctplot, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+```{r ctplotheading}
+
+InhibPresent <- length(MyEffector) > 0 && complete.cases(MyEffector)
+MySubstrate <- unique(Data$Compound[Data$CompoundID == "substrate"])
+MyTissue <- unique(ct_dataframe$Tissue)
+
+if(length(MySubstrate) > 0){
+    
+    if(class(prettify_compound_names) == "logical" &&
+       # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
+       prettify_compound_names){
+        MySubstrate <- prettify_compound_name(MySubstrate)
+    } else if(class(prettify_compound_names) == "character"){
+        MySubstrate <- prettify_compound_names["substrate"]
+    } 
+    
+    MySubstrate <- ifelse(length(MySubstrate) == 0, "substrate", MySubstrate)
+    MyCompound <- MySubstrate
+    
+    Text2 <- ifelse(InhibPresent, 
+                    paste0("co-administered with", MyEffector, " "), "")
+    
+} else {
+    Text2 <- paste("XXX mg", MyEffector, "QD/BID/TID ")
+    MyCompound <- ""
+}
+
+Text1 <- switch(linear_or_log, 
+                "both" = "Linear (A) and log-linear (B)",
+                "both horizontal" ="Linear (A) and log-linear (B)",
+                "both vertical" = "Linear (A) and log-linear (B)",
+                "linear" = "Linear", 
+                "log" = "Log-linear",
+                "semi-log" = "Log-linear")
+
+```
+
+*Figure XXX: `r Text1` simulated `r MyTissue` concentration-time profiles of `r MyCompound` `r Text2`in healthy subjects / patients with [complaint].*
+
+```{r ctplot, fig.width = fig_width, fig.height = fig_height}
+Out
+
+```
+
+```{r ctplotCaption}
+
+if(length(MySubstrate) > 0){
+    
+    CapText1 <-
+        switch(as.character(
+            InhibPresent), 
+            "FALSE" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                             paste0("simulated (lines) and observed data (circles;", 
+                                    mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
+                             "simulated data (lines)"), 
+            
+            "TRUE" = paste(
+                ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                       paste("and observed (circles;", mean_type, 
+                             "mean of n = XXX individuals; Clinical Study XXX)"), 
+                       ""), 
+                MyTissue, "concentration-time profiles of", MySubstrate, 
+                "following a single oral dose of", MySubstrate, 
+                "in the absence of", prettify_compound_name(MyEffector), 
+                " (solid line) and on the XXth day of XX days of dosing of", 
+                prettify_compound_name(MyEffector), "(dashed line)"))
+} else {
+    
+    CapText1 <- paste(
+        ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+               paste("and observed (circles;", mean_type, 
+                     "mean of n = XXX individuals; Clinical Study XXX)"), 
+               ""), 
+        MyTissue, "concentration-time profiles of", MyEffector, 
+        "with administration of [drug] on the XXXth day of dosing")
+}
+
+CapText2 <- switch(
+    figure_type, 
+    "trial means" = 
+        paste("The grey lines represent",
+              mean_type, 
+              "mean values of simulated individual trials and the black lines portray the",
+              mean_type, 
+              "mean data of the simulated population (n = XXX)"), 
+    "percentiles" = 
+        paste("The grey lines represent the 5th and 95th percentiles and the solid black line the",
+              mean_type, 
+              "mean data for the simulated population (n = XXX)"), 
+    "percentile ribbon" = 
+        paste("The shaded regions represent the 5th to the 95th percentiles and the solid black line the",
+              mean_type, "mean data for the simulated population (n = XXX)"), 
+    "means only" = 
+        paste("The solid black line represents the", 
+              mean_type, "mean data for the simulated population (n = XXX)"), 
+    "Freddy" = 
+        paste("The grey lines represent", 
+              mean_type, 
+              "mean values of simulated individual trials and the black lines portray the",
+              mean_type, 
+              "mean data of the simulated population (n = XXX). The dashed lines represent the 5th and 95th percentiles"))
+
+
+```
+
+*Depicted are `r CapText1`. `r CapText2`. Source simulated data: `r unique(ct_dataframe$File)`.*
+
+

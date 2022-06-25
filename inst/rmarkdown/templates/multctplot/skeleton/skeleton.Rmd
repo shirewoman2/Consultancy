@@ -1,0 +1,87 @@
+---
+title: "Concentration-time plots"
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupctplotmult, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+```{r figheading}
+
+Text1 <- switch(linear_or_log, 
+                "both" = "Linear (A) and log-linear (B)",
+                "both horizontal" ="Linear (A) and log-linear (B)",
+                "both vertical" = "Linear (A) and log-linear (B)",
+                "linear" = "Linear", 
+                "log" = "Log-linear",
+                "semi-log" = "Log-linear")
+
+```
+
+
+*Figure XXX: `r Text1` simulated `r unique(ct_dataframe$Tissue)` concentration-time profiles of `r str_comma(unique(ct_dataframe$Compound))`.*
+
+```{r ctplotmult, fig.width = fig_width, fig.height = fig_height}
+
+Out 
+
+```
+
+```{r ctplotmultCaption}
+
+InhibPresent <- any(ct_dataframe$Inhibitor != "none")
+
+CapText1 <-
+    switch(as.character(
+        InhibPresent), 
+        "FALSE" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                         "and observed data (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                         "data (lines)"), 
+        
+        "TRUE" = paste0(
+            ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                   " and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                   ""), 
+            " plasma concentration-time profiles of ",
+            prettify_compound_name(unique(ct_dataframe$Compound)), 
+            " following a single oral dose of ", 
+            prettify_compound_name(unique(ct_dataframe$Compound)), 
+            " in the absence of ", 
+            prettify_compound_name(unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+            " (solid line) and on the XXXth day of XXX days of dosing of ", 
+            prettify_compound_name(unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+            " (dashed line)"))
+
+CapText2 <- switch(figure_type, 
+                   "trial means" = paste("The grey lines represent the", 
+                                         mean_type, 
+                                         "mean values of simulated individual trials and the black lines portray the",
+                                         mean_type, 
+                                         "mean data of the simulated population (n = XXX)"), 
+                   "percentiles" = paste("The grey lines represent the 5th and 95th percentiles and the solid black line the",
+                                         mean_type, 
+                                         "mean data for the simulated population (n = XXX)"), 
+                   "percentile ribbon" = paste("The shaded regions represent the 5th to the 95th percentiles and the solid black line the",
+                                               mean_type, 
+                                               "mean data for the simulated population (n = XXX)"), 
+                   "means only" = paste("The solid lines represent the",
+                                        mean_type, 
+                                        "mean data for the simulated population (n = XXX)"), 
+                   "Freddy" = paste("The grey lines represent",
+                                    mean_type, 
+                                    "mean values of simulated individual trials and the black lines portray the",
+                                    mean_type, 
+                                    "mean data of the simulated population (n = XXX). The dashed lines represent the 5th and 95th percentiles"))
+
+```
+
+*Depicted are simulated `r CapText1`. `r CapText2`. Source simulated data: `r str_comma(unique(ct_dataframe$File))`.*
+
+
+
+

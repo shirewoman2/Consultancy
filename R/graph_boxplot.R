@@ -49,7 +49,12 @@
 #'   \item{"blue-green"}{a set of blues and greens}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
-#'   package}}
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -210,6 +215,7 @@ graph_boxplot <- function(DF,
     blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
                                     "dodgerblue3", "royalblue4"))
     
+    NumColors <- length(unique(DF %>% pull(!!category_column)))
     
     if(color_set == "default"){
         # Using "Dark2" b/c "Set2" is just really, really light. 
@@ -219,17 +225,13 @@ graph_boxplot <- function(DF,
     
     if(color_set == "blue-green"){
         G <- G + 
-            scale_color_manual(
-                values = blueGreen(length(unique(DF %>% pull(!!category_column))))) +
-            scale_fill_manual(
-                values = blueGreen(length(unique(DF %>% pull(!!category_column)))))
+            scale_color_manual(values = blueGreen(NumColors)) +
+            scale_fill_manual(values = blueGreen(NumColors))
     }
     
     if(color_set == "rainbow"){
-        G <- G + scale_color_manual(
-            values = colRainbow(length(unique(DF %>% pull(!!category_column))))) +
-            scale_fill_manual(
-                values = colRainbow(length(unique(DF %>% pull(!!category_column)))))
+        G <- G + scale_color_manual(values = colRainbow(NumColors)) +
+            scale_fill_manual(values = colRainbow(NumColors))
     }
     
     if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
@@ -246,6 +248,11 @@ graph_boxplot <- function(DF,
     if(color_set == "Tableau"){
         G <- G + ggthemes::scale_color_tableau() +
             ggthemes::scale_fill_tableau()
+    }
+    
+    if(color_set == "viridis"){
+        G <- G + viridis::scale_color_viridis(discrete = TRUE) +
+            viridis::scale_fill_viridis(discrete = TRUE)
     }
     
     if(complete.cases(save_graph)){

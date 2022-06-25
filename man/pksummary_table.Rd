@@ -7,6 +7,7 @@
 pksummary_table(
   sim_data_file = NA,
   PKparameters = NA,
+  PKorder = "default",
   sheet_PKparameters = NA,
   mean_type = NA,
   tissue = "plasma",
@@ -19,9 +20,10 @@ pksummary_table(
   includeTrialMeans = FALSE,
   concatVariability = FALSE,
   prettify_columns = TRUE,
-  prettify_effector_name = TRUE,
+  prettify_compound_names = TRUE,
   checkDataSource = TRUE,
-  save_table = NA
+  save_table = NA,
+  fontsize = 11
 )
 }
 \arguments{
@@ -60,6 +62,11 @@ this blank.}
   the trials rather than the range of means.}} An example of acceptable input
   here: \code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
   "Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.}
+
+\item{PKorder}{Would you like the order of the PK parameters to be the the
+order specified in the Consultancy Report Template (default), or would you
+like the order to match the order you specified with the argument
+\code{PKparameters}? Options are "default" or "user specified".}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
@@ -127,16 +134,22 @@ human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
-\item{prettify_effector_name}{TRUE (default) or FALSE on whether to make
-effector name prettier in the prettified column titles. This was designed
-for simulations where the effector is one of the standard options for the
-simulator, and leaving \code{prettify_effector_name = TRUE} will make the
-name of that effector (or effectors if there are any effector metabolites
-or other effectors present) be something more human readable. For example,
-"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
-BID" will become "ketoconazole". Set it to the name you'd prefer to see in
-your column titles if you would like something different. For example,
-\code{prettify_effector_name = "Drug ABC"}}
+\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
+compound names prettier in the prettified column titles and in any Word
+output files. This was designed for simulations where the substrate and any
+metabolites, effectors, or effector metabolites are among the standard
+options for the simulator, and leaving \code{prettify_compound_names =
+TRUE} will make the name of those compounds something more human readable.
+For example, "SV-Rifampicin-MD" will become "rifampicin", and
+"Sim-Midazolam" will become "midazolam". Set each compound to the name
+you'd prefer to see in your column titles if you would like something
+different. For example, \code{prettify_compound_names = c("inhibitor" =
+"defartinib", "substrate" = "superstatin")}. Please note that "inhibitor"
+includes \emph{all} the effectors and effector metabolites present, so, if
+you're setting the effector name, you really should use something like this
+if you're including effector metabolites: \code{prettify_compound_names =
+c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
+"superstatin")}.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
@@ -144,9 +157,22 @@ simulator output file. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.csv". If you leave off ".csv", it will still be saved as a csv file.
-If you requested both the table and the QC info, the QC file will have "-
-QC" added to the end of the file name.}
+table.docx" or "My table.csv", depending on whether you'd prefer to have
+the main PK table saved as a Word or csv file. If you supply only the file
+extension, e.g., \code{save_table = "docx"}, the name of the file will be
+the file name plus "PK summary table" with that extension and output will
+be located in the same folder as \code{sim_data_file}. If you supply
+something other than just "docx" or just "csv" for the file name but you
+leave off the file extension, we'll assume you want it to be ".csv". While
+the main PK table data will be in whatever file format you requsted, if you
+set \code{checkDataSource = TRUE}, the QC data will be in a csv file on its
+own and will have "- QC" added to the end of the file name.
+\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+Microsoft issue, not an R issue. It \emph{will} work on the Large File
+Store.}
+
+\item{fontsize}{the numeric font size for Word output. Default is 11 point.
+This only applies when you save the table as a Word file.}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were
@@ -219,11 +245,11 @@ MyObsPK <- data.frame(AUCinf_dose1 = 60,
                       Cmax_dose1 = 22,
                       Cmax_dose1_CV = 0.24)
 
-# Or you can supply a named numeric vector:                        
+# Or you can supply a named numeric vector:
 MyObsPK <- c("AUCinf_dose1" = 60,
              "AUCinf_dose1_CV" = 0.38,
              "Cmax_dose1" = 22,
              "Cmax_dose1_CV" = 0.24)
-                      
+
 pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 }

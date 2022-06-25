@@ -96,6 +96,10 @@
 #'   the trials rather than the range of means.}} An example of acceptable input
 #'   here: \code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
 #'   "Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.
+#' @param PKorder Would you like the order of the PK parameters to be the the
+#'   order specified in the Consultancy Report Template (default), or would you
+#'   like the order to match the order you specified with the argument
+#'   \code{PKparameters}? Options are "default" or "user specified".
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
@@ -141,24 +145,42 @@
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 #'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
-#' @param prettify_effector_name TRUE (default) or FALSE on whether to make
-#'   effector name prettier in the prettified column titles. This was designed
-#'   for simulations where the effector is one of the standard options for the
-#'   simulator, and leaving \code{prettify_effector_name = TRUE} will make the
-#'   name of that effector (or effectors if there are any effector metabolites
-#'   or other effectors present) be something more human readable. For example,
-#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
-#'   BID" will become "ketoconazole". Set it to the name you'd prefer to see in
-#'   your column titles if you would like something different. For example,
-#'   \code{prettify_effector_name = "Drug ABC"}
+#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#'   compound names prettier in the prettified column titles and in any Word
+#'   output files. This was designed for simulations where the substrate and any
+#'   metabolites, effectors, or effector metabolites are among the standard
+#'   options for the simulator, and leaving \code{prettify_compound_names =
+#'   TRUE} will make the name of those compounds something more human readable.
+#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
+#'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
+#'   you'd prefer to see in your column titles if you would like something
+#'   different. For example, \code{prettify_compound_names = c("inhibitor" =
+#'   "defartinib", "substrate" = "superstatin")}. Please note that "inhibitor"
+#'   includes \emph{all} the effectors and effector metabolites present, so, if
+#'   you're setting the effector name, you really should use something like this
+#'   if you're including effector metabolites: \code{prettify_compound_names =
+#'   c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
+#'   "superstatin")}.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
-#'   table.csv". If you leave off ".csv", it will still be saved as a csv file.
-#'   If you requested both the table and the QC info, the QC file will have "-
-#'   QC" added to the end of the file name.
+#'   table.docx" or "My table.csv", depending on whether you'd prefer to have
+#'   the main PK table saved as a Word or csv file. If you supply only the file
+#'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
+#'   the file name plus "PK summary table" with that extension and output will
+#'   be located in the same folder as \code{sim_data_file}. If you supply
+#'   something other than just "docx" or just "csv" for the file name but you
+#'   leave off the file extension, we'll assume you want it to be ".csv". While
+#'   the main PK table data will be in whatever file format you requsted, if you
+#'   set \code{checkDataSource = TRUE}, the QC data will be in a csv file on its
+#'   own and will have "- QC" added to the end of the file name.
+#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+#'   Microsoft issue, not an R issue. It \emph{will} work on the Large File
+#'   Store.
+#' @param fontsize the numeric font size for Word output. Default is 11 point.
+#'   This only applies when you save the table as a Word file.
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -175,17 +197,18 @@
 #'                       AUCinf_dose1_CV = 0.38,
 #'                       Cmax_dose1 = 22,
 #'                       Cmax_dose1_CV = 0.24)
-#' 
-#' # Or you can supply a named numeric vector:                        
+#'
+#' # Or you can supply a named numeric vector:
 #' MyObsPK <- c("AUCinf_dose1" = 60,
 #'              "AUCinf_dose1_CV" = 0.38,
 #'              "Cmax_dose1" = 22,
 #'              "Cmax_dose1_CV" = 0.24)
-#'                       
+#'
 #' pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
 
 pksummary_table <- function(sim_data_file = NA, 
                             PKparameters = NA,
+                            PKorder = "default", 
                             sheet_PKparameters = NA,
                             mean_type = NA,
                             tissue = "plasma",
@@ -198,9 +221,10 @@ pksummary_table <- function(sim_data_file = NA,
                             includeTrialMeans = FALSE,
                             concatVariability = FALSE,
                             prettify_columns = TRUE,
-                            prettify_effector_name = TRUE, 
+                            prettify_compound_names = TRUE, 
                             checkDataSource = TRUE, 
-                            save_table = NA){
+                            save_table = NA, 
+                            fontsize = 11){
     
     # Error catching ----------------------------------------------------------
     # Check whether tidyverse is loaded
@@ -254,6 +278,17 @@ pksummary_table <- function(sim_data_file = NA,
     } else {
         sectionInfo <- FALSE
     }
+    
+    if(PKorder %in% c("default", "user specified") == FALSE){
+        stop(paste0("The value '", PKorder, "' is not one of the possibilities for the argument 'PKorder'. Please enter one of 'default' or 'user specified'."))
+    }
+    
+    if(PKorder != "default" & is.na(PKparameters[1])){
+        warning("You have requested 'user specified' for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument 'PKparameters'. The order will be the default order from the Consultancy Report Template.", 
+                call. = FALSE)
+        PKorder <- "default"
+    }
+    
     
     # Figuring out what kind of means user wants, experimental details, etc.
     
@@ -825,6 +860,12 @@ pksummary_table <- function(sim_data_file = NA,
         
         PKlevels <- sort(PKlevels)
     } 
+    
+    # If the user wants to specify the order, allowing that here.
+    if(PKorder == "user specified"){
+        PKlevels <- PKparameters
+    }
+    
     PKToPull <- factor(PKToPull, levels = PKlevels)
     PKToPull <- sort(PKToPull)
     
@@ -863,25 +904,17 @@ pksummary_table <- function(sim_data_file = NA,
         
         MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
                         Deets$Inhibitor2)
+        
         if(any(complete.cases(MyEffector))){
             MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
             
-            if(class(prettify_effector_name) == "logical" &&
-               prettify_effector_name){
-                MyEffector <-
-                    tolower(gsub(
-                        "sv-|sim-|wsp-|_ec|_sr|-md|-sd|_fo|-[1-9]00 mg [qmstbi]{1,2}d|_fasted soln|_fed capsule",
-                        "", tolower(MyEffector)))
-                # Adjusting for compounds (metabolites) w/"OH" in name or other
-                # idiosyncracies
-                MyEffector <- sub("oh bupropion", "OH-bupropion", MyEffector)
-                MyEffector <- sub("oh-", "OH-", MyEffector)
-                MyEffector <- sub("o-", "O-", MyEffector)
-                MyEffector <- sub("o-", "O-", MyEffector)
+            if(class(prettify_compound_names) == "logical" &&
+               prettify_compound_names){
+                MyEffector <- prettify_compound_name(MyEffector)
             }
             
-            if(class(prettify_effector_name) == "character"){
-                MyEffector <- prettify_effector_name
+            if(class(prettify_compound_names) == "character"){
+                MyEffector <- prettify_compound_names["inhibitor"]
             }
             
             PrettyCol <- sub("effector", MyEffector, PrettyCol)
@@ -891,37 +924,91 @@ pksummary_table <- function(sim_data_file = NA,
         
     }
     
-    # I think the bit below should have already been done by now
-    
-    # # If the user specified the sheet to use, we don't actually know whether
-    # # those were dose 1 or last-dose values. Removing indications of dose number
-    # # from column titles.
-    # if(complete.cases(sheet_PKparameters)){
-    #     names(MyPKResults) <- str_trim(sub("Last dose|Dose 1|_last|_first", "", 
-    #                                        names(MyPKResults)))
-    # }
+    if(checkDataSource){
+        
+        ColsToInclude <- c("PKparam", "File", "Tab", 
+                           switch(MeanType,
+                                  "arithmetic" = "mean",
+                                  "geometric" = "geomean"))
+        
+        if(includeConfInt){
+            ColsToInclude <- c(ColsToInclude, "CI90_low", "CI90_high")
+        }
+        
+        if(includeCV){
+            ColsToInclude <- c(ColsToInclude, 
+                               switch(MeanType, 
+                                      "arithmetic" = "CV", 
+                                      "geometric" = "GCV"))
+        }
+        
+        if(includePerc){
+            ColsToInclude <- c(ColsToInclude, "per5", "per95")
+        }
+        
+        OutQC <- MyPKResults_all$QC %>% 
+            select(PKparam, File, matches(ColsToInclude))
+    }
     
     if(complete.cases(save_table)){
-        if(str_detect(save_table, "\\.")){
-            FileName <- sub("\\..*", ".csv", save_table)
+        
+        # Checking whether they have specified just "docx" or just "csv" for
+        # output b/c then, we'll use sim_data_file as file name. This allows us
+        # to determine what the path should be, too, for either sim_data_file or
+        # for some specified file name.
+        if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
+            OutPath <- dirname(sim_data_file)
+            save_table <- sub("xlsx", 
+                              # If they included "." at the beginning of the
+                              # file exension, need to remove that here.
+                              sub("\\.", "", save_table),
+                              basename(sim_data_file))
         } else {
-            FileName <- paste0(save_table, ".csv")
+            # If they supplied something other than just "docx" or just "csv",
+            # then check whether that file name is formatted appropriately.
+            
+            if(str_detect(basename(save_table), "\\..*")){
+                if(str_detect(basename(save_table), "\\.docx") == FALSE){
+                    # If they specified a file extension that wasn't docx, make that
+                    # file extension be .csv
+                    save_table <- sub("\\..*", ".csv", save_table)
+                }
+            } else {
+                # If they didn't specify a file extension at all, make it .csv. 
+                save_table <- paste0(save_table, ".csv")
+            }
+            
+            # Now that the file should have an appropriate extension, check what
+            # the path and basename should be.
+            OutPath <- dirname(save_table)
+            save_table <- basename(save_table)
         }
-        write.csv(MyPKResults, FileName, row.names = F)
+        
+        if(str_detect(save_table, "docx")){ 
+            # This is when they want a Word file as output
+            rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = save_table, 
+                              quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
+            
+        } else {
+            # This is when they want a .csv file as output
+            write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
+        }
     }
     
     if(checkDataSource){
         MyPKResults <- list("Table" = MyPKResults,
-                            "QC" = MyPKResults_all$QC)
+                            "QC" = OutQC)
         
-        if(complete.cases(save_table)){
-            if(str_detect(save_table, "\\.")){
-                FileName <- sub("\\..*", " - QC.csv", save_table)
-            } else {
-                FileName <- paste0(save_table, " - QC.csv")
-            }
-            write.csv(MyPKResults_all$QC, FileName, row.names = F)
+        if(complete.cases(save_table)){ 
+            write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
+        
     }
     
     return(MyPKResults)
