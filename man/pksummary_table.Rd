@@ -20,7 +20,7 @@ pksummary_table(
   includeTrialMeans = FALSE,
   concatVariability = FALSE,
   prettify_columns = TRUE,
-  prettify_effector_name = TRUE,
+  prettify_compound_names = TRUE,
   checkDataSource = TRUE,
   save_table = NA,
   fontsize = 11
@@ -134,16 +134,22 @@ human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
-\item{prettify_effector_name}{TRUE (default) or FALSE on whether to make
-effector name prettier in the prettified column titles. This was designed
-for simulations where the effector is one of the standard options for the
-simulator, and leaving \code{prettify_effector_name = TRUE} will make the
-name of that effector (or effectors if there are any effector metabolites
-or other effectors present) be something more human readable. For example,
-"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
-BID" will become "ketoconazole". Set it to the name you'd prefer to see in
-your column titles if you would like something different. For example,
-\code{prettify_effector_name = "Drug ABC"}}
+\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
+compound names prettier in the prettified column titles and in any Word
+output files. This was designed for simulations where the substrate and any
+metabolites, effectors, or effector metabolites are among the standard
+options for the simulator, and leaving \code{prettify_compound_names =
+TRUE} will make the name of those compounds something more human readable.
+For example, "SV-Rifampicin-MD" will become "rifampicin", and
+"Sim-Midazolam" will become "midazolam". Set each compound to the name
+you'd prefer to see in your column titles if you would like something
+different. For example, \code{prettify_compound_names = c("inhibitor" =
+"defartinib", "substrate" = "superstatin")}. Please note that "inhibitor"
+includes \emph{all} the effectors and effector metabolites present, so, if
+you're setting the effector name, you really should use something like this
+if you're including effector metabolites: \code{prettify_compound_names =
+c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
+"superstatin")}.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the

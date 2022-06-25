@@ -27,7 +27,7 @@ ct_plot(
   legend_position = "none",
   include_legend = FALSE,
   legend_label = NA,
-  prettify_effector_name = TRUE,
+  prettify_compound_names = TRUE,
   linear_or_log = "both vertical",
   graph_labels = TRUE,
   save_graph = NA,
@@ -233,16 +233,22 @@ label in the legend for the line style and the shape. If left as the
 default NA when a legend is included and an effector is present, the label
 in the legend will be "Inhibitor".}
 
-\item{prettify_effector_name}{TRUE (default) or FALSE for whether to make the
-effector name prettier in the legend and, if you request a Word file
-output, the figure heading and caption. This was designed for simulations
-where Inhibitor 1 is one of the standard options for the simulator, and
-leaving \code{prettify_effector_name = TRUE} will make the name of
-Inhibitor 1 be something more human readable. For example,
-"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Ketoconazole-200 mg
-BID" will become "ketoconazole". Set it to the name you'd prefer to see in
-your legend if you would like something different. For example,
-\code{prettify_effector_name = "Drug ABC"}}
+\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
+compound names prettier in legend entries and in any Word output files.
+This was designed for simulations where the substrate and any metabolites,
+effectors, or effector metabolites are among the standard options for the
+simulator, and leaving \code{prettify_compound_names = TRUE} will make the
+name of those compounds something more human readable. For example,
+"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
+become "midazolam". Set each compound to the name you'd prefer to see in
+your legend and Word output if you would like something different. For
+example, \code{prettify_compound_names = c("inhibitor" = "defartinib",
+"substrate" = "superstatin")}. Please note that "inhibitor" includes
+\emph{all} the effectors and effector metabolites present, so, if you're
+setting the effector name, you really should use something like this if
+you're including effector metabolites: \code{prettify_compound_names =
+c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
+"superstatin")}.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
   \item{"semi-log"}{y axis is log transformed}
@@ -270,7 +276,7 @@ Leaving this as NA means the file will not be saved to disk.
 FILE STORE. This is a Microsoft permissions issue, not an R issue. If you
 temporarily change your working directory to a local folder, it will work
 fine and you can copy those files later back to SharePoint or the Large
-File Store. We wish we had a better solution for this!}
+File Store. We wish we had a better solution for this!#'}
 
 \item{fig_height}{figure height in inches; default is 6}
 
