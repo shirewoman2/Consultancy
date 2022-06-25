@@ -432,7 +432,13 @@ extractExpDetails <- function(sim_data_file,
                        "ParticleDensity" = "Particle density \\(",
                        "IntrinsicSol" = "Intrinsic Solubility \\(",
                        "CritSupersatRatio" = "CSR value",
-                       "PrecipRateConst" = "PRC \\("
+                       "PrecipRateConst" = "PRC \\(", 
+                       "InputForm" = "Input Form",
+                       "Formulation" = "Formulation",
+                       "SegregatedTransTimeModel" = "Segregated transit time model",
+                       "ParticleSizeDist" = "Particle Size Distribution",
+                       "DispersionType" = "Dispersion Type"
+                       
                 )
             
             NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
