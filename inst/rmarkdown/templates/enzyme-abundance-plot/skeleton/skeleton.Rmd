@@ -1,0 +1,43 @@
+---
+title: "Enzyme-abundance plots"
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupenzplot, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+```{r enzplot, fig.width = fig_width, fig.height = fig_height}
+
+Out
+
+```
+
+
+```{r enzplotCaption}
+
+InhibPresent <- any(sim_enz_dataframe$Inhibitor != "none")
+
+CapText1 <-
+    switch(as.character(
+        InhibPresent), 
+        "FALSE" = unique(sim_enz_dataframe$Substrate),
+        
+        "TRUE" = paste0(
+            prettify_compound_name(unique(sim_enz_dataframe$Substrate)), 
+            "in the absence of ",
+            prettify_compound_name(unique(sim_enz_dataframe$Inhibitor[!sim_enz_dataframe$Inhibitor == "none"])),
+            " (solid line) and on the **th day of ** days of dosing of ", 
+            prettify_compound_name(unique(sim_enz_dataframe$Inhibitor[!sim_enz_dataframe$Inhibitor == "none"])),
+            " (dashed line). The lines represent the arithmetic/geometric mean data for the simulated population (n = **)"))
+
+
+```
+
+*Depicted are simulated `r ifelse(Tissue) == "liver", "hepatic", "gut")` `r unique(sim_enz_dataframe$Enzyme)` levels following A SINGLE/MULTIPLE ORAL DOSE(s) of `r CapText1`. Source simulated data: `r unique(sim_enz_dataframe$File)`.*
+
+
