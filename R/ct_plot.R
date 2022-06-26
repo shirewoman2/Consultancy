@@ -1207,6 +1207,7 @@ ct_plot <- function(ct_dataframe = NA,
         }
         
         if(Ext == "docx"){
+            
             # This is when they want a Word file as output
             OutPath <- dirname(FileName)
             if(OutPath == "."){

@@ -997,6 +997,7 @@ ct_plot_overlay <- function(ct_dataframe,
         }
         
         if(Ext == "docx"){
+            
             # This is when they want a Word file as output
             OutPath <- dirname(FileName)
             if(OutPath == "."){

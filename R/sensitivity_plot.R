@@ -190,6 +190,7 @@ sensitivity_plot <- function(SA_file,
         }
         
         if(Ext == "docx"){
+            
             # This is when they want a Word file as output
             OutPath <- dirname(FileName)
             

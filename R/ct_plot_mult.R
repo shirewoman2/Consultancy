@@ -463,6 +463,7 @@ ct_plot_mult <- function(ct_dataframe,
             }
             
             if(Ext == "docx"){
+                
                 # This is when they want a Word file as output
                 OutPath <- dirname(FileName)
                 if(OutPath == "."){
