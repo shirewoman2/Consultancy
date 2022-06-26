@@ -986,6 +986,30 @@ pksummary_table <- function(sim_data_file = NA,
         
         if(str_detect(save_table, "docx")){ 
             # This is when they want a Word file as output
+            
+            # May need to change the working directory temporarily, so
+            # determining what it is now
+            CurrDir <- getwd()
+            
+            OutPath <- dirname(save_table)
+            if(OutPath == "."){
+                OutPath <- getwd()
+            }
+            
+            # All the \\\\ are necessary b/c \ is an escape character, and often
+            # the SharePoint and Large File Store directory paths start with
+            # \\\\.
+            if(str_detect(sub("\\\\\\\\", "//", OutPath), 
+                          SimcypDir$SharePtDir)){
+                
+                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
+                                  "/Documents")
+                warning(paste0("You have attempted to save a Word file from this function on SharePoint, and Windows permissions do not allow this. We will attempt to set your working directory to your Documents folder, which we think should be ", 
+                               OutPath,
+                               ". Since your Documents folder is a local directory, you should be able to save Word output and then, later, copy it to the drive you originally requested."), 
+                        call. = FALSE)
+            }
+            
             rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
                               output_dir = OutPath, 

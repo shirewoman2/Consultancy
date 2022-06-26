@@ -63,14 +63,14 @@ if(length(MySubstrate) > 0){
         switch(as.character(
             InhibPresent), 
             "FALSE" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                             paste0("simulated (lines) and observed data (circles;", 
+                             paste0("simulated (lines) and observed data (circles; ", 
                                     mean_type, " mean of n = XXX individuals; Clinical Study XXX)"), 
                              "simulated data (lines)"), 
             
             "TRUE" = paste(
                 ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                       paste("and observed (circles;", mean_type, 
-                             "mean of n = XXX individuals; Clinical Study XXX)"), 
+                       paste0("and observed (circles; ", mean_type, 
+                             " mean of n = XXX individuals; Clinical Study XXX)"), 
                        ""), 
                 MyTissue, "concentration-time profiles of", MySubstrate, 
                 "following a SINGLE/MULTIPLE ORAL/IV DOSES of", MySubstrate, 
