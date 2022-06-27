@@ -11,15 +11,9 @@
 #' extracting PK for an effector. \strong{A request for assistance:} If you
 #' extract PK data for an effector by specifying an Excel sheet for that
 #' compound, please check the values and tell Laura Shireman how well it works!}
-#' \item{Currently, if you request prettified output columns, the column titles
-#' list units of ng, mL, and h for AUC and Cmax, and the function doesn't check
-#' what units are actually present in the data. If your units are something
-#' else, our apologies, but please change the units in the column titles when
-#' you use the output table. (The values in the table are fine.) We're working
-#' on making this detect what the units were and print those.} \item{ If the
-#' simulator output Excel file lives on SharePoint, you'll need to close it or
-#' this function will just keep running and not generate any output while it
-#' waits for access to the file.}}
+#' \item{ If the simulator output Excel file lives on SharePoint, you'll need to
+#' close it or this function will just keep running and not generate any output
+#' while it waits for access to the file.}}
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame of the observed PK
@@ -179,7 +173,7 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder. 
+#'   your Documents folder.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
@@ -403,15 +397,14 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Getting PK parameters. 
     suppressWarnings(
-        MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
-                                     PKparameters = PKToPull,
-                                     tissue = tissue,
-                                     sheet = sheet_PKparameters, 
-                                     returnAggregateOrIndiv =
-                                         switch(as.character(includeTrialMeans),
-                                                "TRUE" = c("aggregate", "individual"),
-                                                "FALSE" = "aggregate"))
-    )
+            MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
+                                         PKparameters = PKToPull,
+                                         tissue = tissue,
+                                         sheet = sheet_PKparameters, 
+                                         returnAggregateOrIndiv =
+                                             switch(as.character(includeTrialMeans),
+                                                    "TRUE" = c("aggregate", "individual"),
+                                                    "FALSE" = "aggregate")))
     
     # PKToPull must be changed if user specified a tab b/c then the parameters
     # won't have _last or _dose1 suffixes.
@@ -902,6 +895,12 @@ pksummary_table <- function(sim_data_file = NA,
                     pull(PrettifiedNames)
             )
         }
+        
+        # Adjusting units as needed.
+        PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
+        PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
+        PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
+        PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
         
         MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
                         Deets$Inhibitor2)
