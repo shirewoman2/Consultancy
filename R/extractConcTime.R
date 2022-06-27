@@ -1349,7 +1349,7 @@ extractConcTime <- function(sim_data_file,
                                         mutate(ID = 1:nrow(.)) %>%
                                         pivot_longer(cols = -c(ID, Time),
                                                      names_to = "Param",
-                                                     values_to = "Value") %>%
+                                                     values_to = "Conc") %>%
                                         separate(col = Param,
                                                  into = c("Indiv_code", "DV"),
                                                  sep = "_") %>%
