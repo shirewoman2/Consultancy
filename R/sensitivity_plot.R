@@ -21,11 +21,10 @@
 #'   extension, it will be saved as that file format. Acceptable graphical file
 #'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
 #'   Leaving this as NA means the file will not be saved to disk.
-#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT OR THE LARGE
-#'   FILE STORE. This is a Microsoft permissions issue, not an R issue. If you
-#'   temporarily change your working directory to a local folder, it will work
-#'   fine and you can copy those files later back to SharePoint or the Large
-#'   File Store. We wish we had a better solution for this!
+#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+#'   Microsoft permissions issue, not an R issue. If you try to save on
+#'   SharePoint, you will get a warning that R will save your file instead to
+#'   your Documents folder. 
 #' @param fig_height figure height in inches; default is 4
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -198,31 +197,51 @@ sensitivity_plot <- function(SA_file,
                 OutPath <- getwd()
             }
             
-            # All the \\\\ are necessary b/c \ is an escape character, and often
-            # the SharePoint and Large File Store directory paths start with
-            # \\\\.
-            if(str_detect(sub("\\\\\\\\", "//", OutPath), 
-                          paste0(SimcypDir$LgFileDir, "|", 
-                                 SimcypDir$SharePtDir))){
+            # Check for whether they're trying to save on SharePoint, which DOES
+            # NOT WORK. If they're trying to save to SharePoint, instead, save
+            # to their Documents folder.
+            
+            # Side regex note: The myriad \ in the "sub" call are necessary b/c
+            # \ is an escape character, and often the SharePoint and Large File
+            # Store directory paths start with \\\\.
+            if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
                 
                 OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
                                   "/Documents")
-                warning(paste0("You have attempted to use this function to save a Word file to SharePoint or the Large File Store, and Windows permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
+                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
                                OutPath,
-                               ". Since your Documents folder is a local directory, you should be able to save Word output and then, later, copy it to the drive you originally requested."), 
+                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
                         call. = FALSE)
+            }
+            
+            LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
+            
+            if(LFSPath){
+                # Create a temporary directory in the user's AppData/Local/Temp
+                # folder.
+                TempDir <- tempdir()
+                
+                # Upon exiting this function, delete that temporary directory.
+                on.exit(unlink(TempDir))
+                
             }
             
             FileName <- basename(FileName)
             
             rmarkdown::render(system.file("rmarkdown/templates/sensitivity-analysis-plot/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
-                              output_dir = OutPath, 
+                              output_dir = switch(as.character(LFSPath), 
+                                                  "TRUE" = TempDir,
+                                                  "FALSE" = OutPath),
                               output_file = FileName, 
                               quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
+            
+            if(LFSPath){
+                file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
+            }
             
         } else {
             # This is when they want any kind of graphical file format.

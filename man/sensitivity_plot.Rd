@@ -31,11 +31,10 @@ be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
 extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
 Leaving this as NA means the file will not be saved to disk.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT OR THE LARGE
-FILE STORE. This is a Microsoft permissions issue, not an R issue. If you
-temporarily change your working directory to a local folder, it will work
-fine and you can copy those files later back to SharePoint or the Large
-File Store. We wish we had a better solution for this!}
+\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+Microsoft permissions issue, not an R issue. If you try to save on
+SharePoint, you will get a warning that R will save your file instead to
+your Documents folder.}
 
 \item{fig_height}{figure height in inches; default is 4}
 
