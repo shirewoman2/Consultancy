@@ -312,11 +312,21 @@ extractPK <- function(sim_data_file,
         if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE){
             if(length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0,
                                               ParamAUCX, ParamCLTSS))) > 0){
-                warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
-                               sub("and", "or", 
-                                   str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
-                               ". None of these parameters can be extracted."),
-                        call. = FALSE)
+                
+                if(all(PKparameters %in% c(ParamAbsorption, ParamAUC0,
+                                       ParamAUCX, ParamCLTSS) == FALSE)){
+                    stop(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                                sub("and", "or", 
+                                    str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
+                                ". None of these parameters can be extracted."),
+                         call. = FALSE)
+                } else {
+                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                                   sub("and", "or", 
+                                       str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
+                                   ". None of these parameters can be extracted."),
+                            call. = FALSE)
+                }
             }
         } else {
             
@@ -1189,6 +1199,16 @@ extractPK <- function(sim_data_file,
                     as.data.frame()
             }
         }
+    }
+    
+    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
+           length(Out_agg) == 0){
+        stop("No PK parameters were found. Did you include PK info as part of your simulation output?")
+    }
+    
+    if(any(c("individual", "both") %in% returnAggregateOrIndiv) &
+       length(Out_ind) == 0){
+        stop("No PK parameters were found. Did you include PK info as part of your simulation output?")
     }
     
     if("aggregate" %in% returnAggregateOrIndiv &

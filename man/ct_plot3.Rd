@@ -7,6 +7,8 @@
 ct_plot3(
   ct_dataframe,
   overlay = FALSE,
+  figure_type = "means only",
+  mean_type = "arithmetic",
   linear_or_log = "semi-log",
   save_graph = NA,
   fig_height = 6,
