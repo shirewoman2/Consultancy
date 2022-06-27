@@ -168,8 +168,9 @@ the main PK table data will be in whatever file format you requsted, if you
 set \code{checkDataSource = TRUE}, the QC data will be in a csv file on its
 own and will have "- QC" added to the end of the file name.
 \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft issue, not an R issue. It \emph{will} work on the Large File
-Store.}
+Microsoft permissions issue, not an R issue. If you try to save on
+SharePoint, you will get a warning that R will save your file instead to
+your Documents folder.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}

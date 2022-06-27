@@ -97,8 +97,9 @@
 #'   extension, we'll assume you want it to be ".csv". All PK info will be
 #'   included in a single Word or csv file, and, if \code{checkDataSource =
 #'   TRUE}, that will be saved in a single csv file. \strong{WARNING:} SAVING TO
-#'   WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft issue, not an R
-#'   issue. It \emph{will} work on the Large File Store.
+#'   WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue,
+#'   not an R issue. If you try to save on SharePoint, you will get a warning
+#'   that R will save your file instead to your Documents folder.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
@@ -271,38 +272,59 @@ pksummary_mult <- function(sim_data_files,
         } else {
             # This is when they want a Word file as output
             
-            # May need to change the working directory temporarily, so
-            # determining what it is now
-            CurrDir <- getwd()
-            
             OutPath <- dirname(save_table)
+            
             if(OutPath == "."){
                 OutPath <- getwd()
             }
             
-            # All the \\\\ are necessary b/c \ is an escape character, and often
-            # the SharePoint and Large File Store directory paths start with
-            # \\\\.
-            if(str_detect(sub("\\\\\\\\", "//", OutPath), 
-                          SimcypDir$SharePtDir)){
+            # Check for whether they're trying to save on SharePoint, which DOES
+            # NOT WORK. If they're trying to save to SharePoint, instead, save
+            # to their Documents folder.
+            
+            # Side regex note: The myriad \ in the "sub" call are necessary b/c
+            # \ is an escape character, and often the SharePoint and Large File
+            # Store directory paths start with \\\\.
+            if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
                 
                 OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
                                   "/Documents")
-                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Windows permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
+                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
                                OutPath,
-                               ". Since your Documents folder is a local directory, you should be able to save Word output and then, later, copy it to the drive you originally requested."), 
+                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
                         call. = FALSE)
             }
-
+            
+            LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
+            
+            if(LFSPath){
+                # Create a temporary directory in the user's AppData/Local/Temp
+                # folder.
+                TempDir <- tempdir()
+                
+                # Upon exiting this function, delete that temporary directory.
+                on.exit(unlink(TempDir))
+                
+            }
+            
+            FileName <- basename(save_table)
+            
             rmarkdown::render(
                 system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
                             package="SimcypConsultancy"),
-                output_dir = OutPath, 
-                output_file = save_table, 
+                output_dir = switch(as.character(LFSPath), 
+                                    "TRUE" = TempDir,
+                                    "FALSE" = OutPath),
+                output_file = FileName, 
                 quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
+            
+            if(LFSPath){
+                file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
+            }
+            
         }
         
         if(checkDataSource){

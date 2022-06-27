@@ -25,7 +25,6 @@ ct_plot(
   line_color = NA,
   line_width = NA,
   legend_position = "none",
-  include_legend = FALSE,
   legend_label = NA,
   prettify_compound_names = TRUE,
   linear_or_log = "both vertical",
@@ -221,12 +220,6 @@ give you an idea of where to start.}
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all.}
 
-\item{include_legend}{SOON TO BE DEPRECATED. TRUE or FALSE (default) for
-whether to include a legend. If there was only one thing plotted on your
-graph, even if you set this to TRUE, no legend will be shown because
-there's nothing to differentiate the data. If \code{legend_position} is set
-to something other than "none", that will override this argument.}
-
 \item{legend_label}{optionally indicate on the legend whether the effector is
 an inhibitor, inducer, activator, or suppressor. Input will be used as the
 label in the legend for the line style and the shape. If left as the
@@ -272,11 +265,10 @@ be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
 extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
 Leaving this as NA means the file will not be saved to disk.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT OR THE LARGE
-FILE STORE. This is a Microsoft permissions issue, not an R issue. If you
-temporarily change your working directory to a local folder, it will work
-fine and you can copy those files later back to SharePoint or the Large
-File Store. We wish we had a better solution for this!#'}
+\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+Microsoft permissions issue, not an R issue. If you try to save on
+SharePoint, you will get a warning that R will save your file instead to
+your Documents folder.}
 
 \item{fig_height}{figure height in inches; default is 6}
 
@@ -346,6 +338,5 @@ ct_plot(ct_dataframe = LMVct,
         line_color = "blue",
         y_axis_limits_log = c(50, 2000),
         pad_x_axis = TRUE,
-        include_legend = TRUE,
         legend_label = "Inhibitor")
 }
