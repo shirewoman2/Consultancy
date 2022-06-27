@@ -1210,6 +1210,7 @@ ct_plot <- function(ct_dataframe = NA,
             
             # This is when they want a Word file as output
             OutPath <- dirname(FileName)
+            
             if(OutPath == "."){
                 OutPath <- getwd()
             }
@@ -1229,6 +1230,7 @@ ct_plot <- function(ct_dataframe = NA,
                         call. = FALSE)
             }
             
+            
             FileName <- basename(FileName)
             
             if(EnzPlot){
@@ -1239,29 +1241,14 @@ ct_plot <- function(ct_dataframe = NA,
                                   quiet = TRUE)
             } else {
                 
-                # Checking that the file listed in ct_dataframe is present in
-                # the current working directory.
-                CurrentDir <- getwd()
-                PathCheck <- length(list.files(
-                    pattern = unique(basename(ct_dataframe$File)))) > 0
-                
-                if(PathCheck){
-                    rmarkdown::render(system.file("rmarkdown/templates/ctplotwithexpdetails/skeleton/skeleton.Rmd",
-                                                  package="SimcypConsultancy"), 
-                                      output_dir = OutPath,
-                                      output_file = FileName, 
-                                      quiet = TRUE)    
-                } else {
-                    
-                    rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
-                                                  package="SimcypConsultancy"), 
-                                      output_dir = OutPath,
-                                      output_file = FileName, 
-                                      quiet = TRUE)
-                    # Note: The "system.file" part of the call means "go to where the
-                    # package is installed, search for the file listed, and return its
-                    # full path.
-                }
+                rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
+                                              package="SimcypConsultancy"), 
+                                  output_dir = OutPath,
+                                  output_file = FileName, 
+                                  quiet = TRUE)
+                # Note: The "system.file" part of the call means "go to where the
+                # package is installed, search for the file listed, and return its
+                # full path.
             }
             
         } else {
