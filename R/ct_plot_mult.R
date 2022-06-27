@@ -463,6 +463,7 @@ ct_plot_mult <- function(ct_dataframe,
             }
             
             if(Ext == "docx"){
+                
                 # This is when they want a Word file as output
                 OutPath <- dirname(FileName)
                 if(OutPath == "."){
@@ -478,7 +479,7 @@ ct_plot_mult <- function(ct_dataframe,
                     
                     OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
                                       "/Documents")
-                    warning(paste0("You have attempted to save a Word file from this function on either the Large File Store or SharePoint, and Windows permissions do not allow this. We will attempt to set your working directory to your Documents folder, which we think should be ", 
+                    warning(paste0("You have attempted to use this function to save a Word file to SharePoint or the Large File Store, and Windows permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
                                    OutPath,
                                    ". Since your Documents folder is a local directory, you should be able to save Word output and then, later, copy it to the drive you originally requested."), 
                             call. = FALSE)
