@@ -1318,42 +1318,55 @@ extractConcTime <- function(sim_data_file,
                             warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.",
                                     call. = FALSE)
                             
-                            NewNamesObs <- obs_data[1, ]
-                            NewNamesObs[str_detect(NewNamesObs, "Time")] <- "Time"
-                            # NewNamesObs <- gsub(" |\\: DV [0-9]", "", NewNamesObs)
-                            TimeCols <- which(NewNamesObs == "Time")
-                            ConcCols <- which(NewNamesObs != "Time")
-                            NewNamesObs[TimeCols] <- paste0("Time_", NewNamesObs[ConcCols])
-                            NewNamesObs[ConcCols] <- paste0("Conc_", NewNamesObs[ConcCols])
-                            names(obs_data) <- NewNamesObs
+                            # If subject names include special characters s/a
+                            # "_", that messes up the regex below. Dealing with
+                            # that here.
+                            NewNamesObs <- sim_data_xl[StartRow_obs:nrow(sim_data_xl), 1] %>% 
+                                rename("OrigName" = 1) %>% 
+                                mutate(Individual = 
+                                           as.character(sapply(OrigName,
+                                                               FUN = function(x) 
+                                                                   str_split(x, pattern = "Subject ")[[1]][2])), 
+                                       Individual = sub(" : DV [0-9]{1,}", "", Individual),
+                                       DV = str_extract(OrigName, "DV [0-9]{1,}"), 
+                                       DV = as.numeric(sub("DV ", "", DV)),
+                                       TempName = paste0("Subject", 1:nrow(.), 
+                                                         "_DV", DV), 
+                                       TempName = ifelse(str_detect(OrigName, "^Time"), 
+                                                         paste0("REMOVE", 1:nrow(.)),
+                                                         TempName), 
+                                       TempName = ifelse(TempName == "REMOVE1",
+                                                         "Time", TempName), 
+                                       Indiv_code = sub("_DV[0-9]{1,}", "", TempName))
                             
-                            suppressWarnings(
-                                obs_data <- obs_data %>%
-                                    mutate_all(as.numeric) %>%
-                                    mutate(ID = 1:nrow(.)) %>%
-                                    pivot_longer(cols = -ID,
-                                                 names_to = "Param",
-                                                 values_to = "Value") %>%
-                                    separate(col = Param,
-                                             into = c("Parameter", "Individual"),
-                                             sep = "_") %>%
-                                    pivot_wider(names_from = Parameter,
-                                                values_from = Value) %>%
-                                    filter(complete.cases(Time)) %>%
-                                    mutate(Trial = "obs",
-                                           Inhibitor = "none",
-                                           CompoundID = m,
-                                           Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
-                                           # The simulator doesn't provide much
-                                           # info on the identity of the
-                                           # compound for the observed data
-                                           # included in a simjlator file.
-                                           ObsFile = NA,
-                                           Individual = sub("^Subject", "", Individual),
-                                           Time_units = SimTimeUnits,
-                                           Conc_units = SimConcUnits) %>%
-                                    select(-ID)
-                            )
+                            names(obs_data) <- NewNamesObs$TempName
+                            
+                            suppressMessages(
+                                suppressWarnings(
+                                    obs_data <- obs_data[4:nrow(obs_data), ] %>%
+                                        select(-matches("REMOVE")) %>% 
+                                        mutate_all(as.numeric) %>%
+                                        mutate(ID = 1:nrow(.)) %>%
+                                        pivot_longer(cols = -c(ID, Time),
+                                                     names_to = "Param",
+                                                     values_to = "Value") %>%
+                                        separate(col = Param,
+                                                 into = c("Indiv_code", "DV"),
+                                                 sep = "_") %>%
+                                        filter(complete.cases(Time)) %>% 
+                                        left_join(NewNamesObs %>% select(Indiv_code, Individual)) %>%
+                                        mutate(Trial = "obs",
+                                               Inhibitor = "none",
+                                               CompoundID = m,
+                                               Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
+                                               # The simulator doesn't provide much
+                                               # info on the identity of the
+                                               # compound for the observed data
+                                               # included in a simjlator file.
+                                               ObsFile = NA,
+                                               Time_units = SimTimeUnits,
+                                               Conc_units = SimConcUnits) %>%
+                                        select(-ID, -Indiv_code, -DV)))
                         }
                     }
                 }
