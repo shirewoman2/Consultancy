@@ -639,7 +639,8 @@ pksummary_table <- function(sim_data_file = NA,
             }
             
             # Making obs PK names match correct PK parameters regardless of case
-            ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
+            suppressMessages(
+                ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
                 mutate(PKparameter_lower = sub("_first", "_dose1",
                                                tolower(OrigName)), 
                        PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
@@ -650,6 +651,7 @@ pksummary_table <- function(sim_data_file = NA,
                                             paste0(PKparameter, "_CV"), 
                                             PKparameter), 
                        PKparameter = ifelse(OrigName == "File", "File", PKparameter))
+            )
             
             MyObsPK <- observed_PK
             names(MyObsPK) <- ObsNames$PKparameter

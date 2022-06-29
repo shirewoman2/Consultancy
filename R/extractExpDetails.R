@@ -252,7 +252,7 @@ extractExpDetails <- function(sim_data_file,
                                "SimStartDayTime" = "Start Day/Time",
                                "SimEndDayTime" = "End Day/Time",
                                "SimulatorVersion" = "Simcyp Version",
-                               "StudyDuration" = "Study Duration",
+                               "SimDuration" = "Study Duration",
                                "PrandialSt_sub" = "Prandial State",
                                "PrandialSt_inhib" = "Prandial State",
                                "DoseRoute_sub" = "Route",
@@ -298,7 +298,7 @@ extractExpDetails <- function(sim_data_file,
             Val <- ifelse(str_detect(deet, "^Unit"),
                           gsub("Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(",
                                "", Val), Val)
-            Val <- ifelse(deet %in% c("StudyDuration"),
+            Val <- ifelse(deet %in% c("SimDuration"),
                           as.numeric(Val), Val)
             Val <- ifelse(deet == "SimulatorVersion",
                           str_extract(Val, "Version [12][0-9]"),
@@ -396,6 +396,7 @@ extractExpDetails <- function(sim_data_file,
                        "Age_min" = "Minimum Age",
                        "Age_max" = "Maximum Age",
                        "CLrenal" = "CL R \\(L/h",
+                       "DLMPartHandModel" = "DLM Particle Handling Model",
                        "DoseInt" = "Dose Interval",
                        "fa" = "^fa$",
                        "ka" = "^ka \\(",
@@ -407,7 +408,8 @@ extractExpDetails <- function(sim_data_file,
                        "Papp_MDCK" = "MDCK\\(10E-06 cm/s\\)",
                        "Papp_Caco" = "PCaco-2",
                        "Papp_calibrator" = "Reference Compound Value \\(10E-06 cm/s\\)",
-                       "Peff" = "Peff.*man.*10-4 cm/s",
+                       "Peff_cap" = "Peff.*man Cap \\(10",
+                       "Peff" = "Peff.*man \\(10-4 cm/s",
                        "Peff_type" = "Peff.*[Tt]ype",
                        "PercFemale" = "Propn. of Females",
                        "UserAddnOrgan" = "User-defined Additional",
@@ -513,8 +515,10 @@ extractExpDetails <- function(sim_data_file,
                         
                         Enzyme <- gsub(" ", "", InputTab[i, NameCol + 1])
                         Pathway <- gsub(" |-", "", InputTab[i - 1, NameCol + 1])
-                        if(InputTab[i+1, NameCol] == "Genotype"){
+                        if(as.character(InputTab[i+1, NameCol]) == "Genotype"){
                             Enzyme <- paste0(Enzyme, InputTab[i+1, NameCol + 1])
+                            CLrow <- i + 2
+                        } else if(str_detect(Enzyme, "User")){
                             CLrow <- i + 2
                         } else {
                             CLrow <- i + 1
