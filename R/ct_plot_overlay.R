@@ -322,9 +322,8 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Checking for more than one tissue or ADAM data type b/c there's only one y
     # axis and it should have only one concentration type.
-    if(length(unique(ct_dataframe$Tissue)) > 1 |
-       length(unique(ct_dataframe$subsection_ADAM)) > 1){
-        stop("We're sorry, but this function can only deal with one type of tissue at a time, and the supplied data.frame contains more than one unique value in either the `Tissue` column or the `subsection_ADAM` column. Please supply a data.frame with only one type of tissue or ADAM-model subsection.",
+    if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
+        stop("We're sorry, but this function can only deal with one type of tissue at a time, and the supplied data.frame contains more than one unique value in the `subsection_ADAM` column. Please supply a data.frame with only one type of ADAM-model subsection.",
              call. = FALSE)
     }
     
