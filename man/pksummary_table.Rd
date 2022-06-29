@@ -193,15 +193,9 @@ parameters are for the \emph{substrate}. We're still validating this for
 extracting PK for an effector. \strong{A request for assistance:} If you
 extract PK data for an effector by specifying an Excel sheet for that
 compound, please check the values and tell Laura Shireman how well it works!}
-\item{Currently, if you request prettified output columns, the column titles
-list units of ng, mL, and h for AUC and Cmax, and the function doesn't check
-what units are actually present in the data. If your units are something
-else, our apologies, but please change the units in the column titles when
-you use the output table. (The values in the table are fine.) We're working
-on making this detect what the units were and print those.} \item{ If the
-simulator output Excel file lives on SharePoint, you'll need to close it or
-this function will just keep running and not generate any output while it
-waits for access to the file.}}
+\item{ If the simulator output Excel file lives on SharePoint, you'll need to
+close it or this function will just keep running and not generate any output
+while it waits for access to the file.}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up
