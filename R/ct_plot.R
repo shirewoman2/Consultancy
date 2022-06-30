@@ -326,12 +326,12 @@ ct_plot <- function(ct_dataframe = NA,
              call. = FALSE)
     }
     
-    if(length(unique(ct_dataframe$Conc_units)) > 1){
+    if("Conc_units" %in% names(ct_dataframe) && length(unique(ct_dataframe$Conc_units)) > 1){
         stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
     }
     
-    if(length(unique(ct_dataframe$Compound)) > 1 | 
-       length(unique(ct_dataframe$CompoundID)) > 1){
+    if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
+       ("CompoundID" %in% names(ct_dataframe) && length(unique(ct_dataframe$CompoundID)) > 1)){
         stop("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
     }
     
@@ -341,11 +341,17 @@ ct_plot <- function(ct_dataframe = NA,
     
     
     # Main body of function --------------------------------------------------
+    
+    # Noting whether this is an enzyme-abundance plot b/c some options change
+    # then.
+    EnzPlot <- "Enzyme" %in% names(ct_dataframe)
+    
     # If user had already filtered ct_dataframe to include only the ADAM data
     # they wanted, the subsection_ADAM column might not include the default
     # value for subsection_ADAM. In that case, just switch to the subsection
     # that *was* included and make the plot.
-    if(subsection_ADAM == "free compound in lumen" & 
+    if(EnzPlot == FALSE && 
+       (subsection_ADAM == "free compound in lumen" & 
        length(unique(ct_dataframe$subsection_ADAM)) == 1 && 
        unique(ct_dataframe$subsection_ADAM) %in% 
        c("solid compound", "Heff", "absorption rate",
@@ -354,7 +360,7 @@ ct_plot <- function(ct_dataframe = NA,
          paste("cumulative fraction of absorbed", 
                unique(ct_dataframe$CompoundID)),
          paste("cumulative fraction of dissolved",
-               unique(ct_dataframe$CompoundID)))){
+               unique(ct_dataframe$CompoundID))))){
         subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
     }
     
@@ -389,7 +395,6 @@ ct_plot <- function(ct_dataframe = NA,
                                     MyMeanType))
     
     # Set compoundToExtract to whatever compound was included.
-    EnzPlot <- "Enzyme" %in% names(Data)
     compoundToExtract <- ifelse(EnzPlot, unique(Data$Enzyme), 
                                 unique(Data$CompoundID))
     if(EnzPlot){
@@ -408,7 +413,7 @@ ct_plot <- function(ct_dataframe = NA,
         EnzPlot == FALSE
     
     # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
-    if(ADAM){
+    if(any(ADAM)){
         
         if(length(subsection_ADAM) > 1){
             stop("You can only enter one option for the concentration type for ADAM-model tissues. Please set subsection_ADAM to one of 'solid compound', 'free compound in lumen', 'Heff', 'absorption rate', 'unreleased substrate in faeces', 'unreleased inhibitor in faeces', 'dissolved compound', or 'luminal CLint of compound'",
@@ -588,11 +593,11 @@ ct_plot <- function(ct_dataframe = NA,
     # Setting up the y axis using the subfunction ct_y_axis -------------------
     
     # Setting Y axis limits for both linear and semi-log plots
-    if (figure_type == "trial means") {
+    if(figure_type == "trial means") {
         Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if (str_detect(figure_type, "percentiles|Freddy|ribbon")) {
+    } else if(str_detect(figure_type, "percentiles|Freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
-    } else if (figure_type == "means only") {
+    } else if(figure_type == "means only") {
         Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
     }
     
@@ -1093,7 +1098,7 @@ ct_plot <- function(ct_dataframe = NA,
                                                             "inhibitor 1 metabolite")){
         A <- A + theme(legend.position = "none")
     } else {
-        # Otherwise, make the legend a little wider to actually show the dashes
+        # Otherwise, make the legend a little wider to actually show any dashes
         A <- A + theme(legend.position = legend_position, 
                        legend.key.width = unit(2, "lines"))
     }
@@ -1204,12 +1209,12 @@ ct_plot <- function(ct_dataframe = NA,
             # Store directory paths start with \\\\.
             if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
                 
-            OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
-                              "/Documents")
-            warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
-                           OutPath,
-                           ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
-                    call. = FALSE)
+                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
+                                  "/Documents")
+                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
+                               OutPath,
+                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
+                        call. = FALSE)
             }
             
             LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)

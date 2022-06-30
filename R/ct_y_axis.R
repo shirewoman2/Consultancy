@@ -28,7 +28,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         ObsConcUnits <- sort(unique(Data$Conc_units))
     }
     
-    if(ADAM){
+    if(any(ADAM)){
         if(subsection_ADAM == "Heff"){
             ylab <- expression(H[eff])
         } else {
