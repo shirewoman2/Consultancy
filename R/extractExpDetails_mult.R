@@ -205,7 +205,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                 left_join(ExpDetailDefinitions, by = "Detail")
             
         } else {
-            OutDF <- as.data.frame(Out)
+            OutDF <- as.data.frame(MyDeets)
         }
         
         write.csv(OutDF, FileName, row.names = F)
