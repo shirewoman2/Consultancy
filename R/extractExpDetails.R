@@ -856,12 +856,33 @@ extractExpDetails <- function(sim_data_file,
                             
                             ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
                             
+                            # Either CLint,T or Jmax and Km values will be listed
+                            if(any(str_detect(TransRowNames, "CLint,T"))){
+                                
                             suppressWarnings(
                                 Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
                                     as.numeric(
                                         InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
                                                  ValueCol] %>% pull(1))
                             )
+                                
+                            } else if(any(str_detect(TransRowNames, "Jmax"))){
+                                
+                                suppressWarnings(
+                                    Out[[paste0(ParamPrefix, "_Jmax", Suffix)]] <- 
+                                        as.numeric(
+                                            InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Jmax"))],
+                                                     ValueCol] %>% pull(1))
+                                )
+                                
+                                suppressWarnings(
+                                    Out[[paste0(ParamPrefix, "_Km", Suffix)]] <- 
+                                        as.numeric(
+                                            InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Km"))],
+                                                     ValueCol] %>% pull(1))
+                                )
+                                
+                            }
                             
                             suppressWarnings(
                                 Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- 
