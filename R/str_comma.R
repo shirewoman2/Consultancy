@@ -15,6 +15,8 @@
 #'
 #' @param x vector to collapse
 #' @param oxford TRUE or FALSE for whether to use the Oxford comma
+#' @param conjunction the conjunction to use to join the character strings.
+#'   Options are "and" (default) and "or".
 #'
 #' @return Returns a single, collapsed character string
 #' @import stringr
@@ -24,19 +26,26 @@
 #' str_comma(LETTERS[1:4])
 #' str_comma(LETTERS[1:4], oxford = FALSE)
 #'
-#'
-str_comma <- function(x, oxford = TRUE){
+#' 
+str_comma <- function(x, oxford = TRUE, conjunction = "and"){
+    
+    conjunction <- tolower(conjunction)
+    
+    if(conjunction %in% c("and", "or") == FALSE){
+        stop("You have attempted to use a word other than `and` or `or` as the conjunction, which is not permitted. Please set the conjunction to one of those and try again.",
+             call. = FALSE)
+    }
     
     if(length(x) <= 2){
-        Out <- stringr::str_c(x, collapse = " and ")
+        Out <- stringr::str_c(x, collapse = paste0(" ", conjunction, " "))
     } else {
         Last <- x[length(x)]
         Others <- x[1:(length(x) - 1)]
         Out <- stringr::str_c(
             paste0(c(stringr::str_c(Others, collapse = ", "),
-                     "and", Last), collapse = " "))
+                     conjunction, Last), collapse = " "))
         if(oxford){
-            Out <- sub(" and", ", and", Out)
+            Out <- sub(" and| or", paste0(", ", conjunction), Out)
         }
     }
     
