@@ -185,6 +185,12 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     }
     
     if(complete.cases(save_output)){
+        
+        # Creating the object exp_details_input just so this section of code
+        # better matches that in extractExpDetails. This is purely for ease of
+        # coding.
+        exp_details_input <- exp_details
+        
         if(str_detect(save_output, "\\.")){
             # If they specified a file extension, replace whatever they supplied
             # with csv b/c that's the only option for file format here.
@@ -199,10 +205,57 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                 mutate(across(.cols = everything(), .fns = as.character)) %>% 
                 pivot_longer(cols = -File,
                              names_to = "Detail", 
-                             values_to = "Value") %>% 
+                             values_to = "Value")
+            
+            if(exp_details_input == "summary tab"){
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions %>% 
+                                  filter(Sheet %in% c("calculated", "Summary")),
+                              by = "Detail")
+            } else if(exp_details_input == "input sheet"){
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions %>% 
+                                  filter(Sheet %in% c("calculated", "Input Sheet")),
+                              by = "Detail")
+            } else if(exp_details_input == "population tab"){
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions %>% 
+                                  filter(Sheet %in% c("calculated", "population",
+                                                      "Summary")),
+                              by = "Detail")
+            } else {
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions, by = "Detail")
+            }
+            
+            OutDF <- OutDF %>% 
+                group_by(File, Detail, Compound, SimulatorSection, 
+                         Notes, Value) %>% 
+                summarize(Sheet = str_comma(Sheet, conjunction = "or")) %>% 
+                mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
+                                          Detail == "SimDuration", 
+                                      "Summary", Sheet)) %>% 
                 pivot_wider(names_from = File, 
-                            values_from = Value) %>% 
-                left_join(ExpDetailDefinitions, by = "Detail")
+                            values_from = Value)
+            
+            # Metabolism and interaction parameters won't match input details, so
+            # adding which sheet they came from and what simulator section they
+            # were.
+            OutDF <- OutDF %>% 
+                mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+                                      "Input Sheet", Sheet), 
+                       SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+                                                 "Elimination", SimulatorSection), 
+                       Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                                      "Input Sheet", Sheet),
+                       SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                                                 "Interaction", SimulatorSection), 
+                       Sheet = ifelse(str_detect(Detail, "^Transport"), 
+                                      "Input Sheet", Sheet),
+                       SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
+                                                 "Transporters", SimulatorSection)) %>% 
+                select(SimulatorSection, Sheet, Notes, Compound, Detail, everything()) %>% 
+                arrange(SimulatorSection, Detail)
             
         } else {
             OutDF <- as.data.frame(MyDeets)

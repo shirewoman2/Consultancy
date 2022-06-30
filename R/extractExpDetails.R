@@ -859,12 +859,12 @@ extractExpDetails <- function(sim_data_file,
                             # Either CLint,T or Jmax and Km values will be listed
                             if(any(str_detect(TransRowNames, "CLint,T"))){
                                 
-                            suppressWarnings(
-                                Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
-                                    as.numeric(
-                                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
-                                                 ValueCol] %>% pull(1))
-                            )
+                                suppressWarnings(
+                                    Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
+                                        as.numeric(
+                                            InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
+                                                     ValueCol] %>% pull(1))
+                                )
                                 
                             } else if(any(str_detect(TransRowNames, "Jmax"))){
                                 
@@ -1213,30 +1213,28 @@ extractExpDetails <- function(sim_data_file,
                                           Detail == "SimDuration", 
                                       "Summary", Sheet))
             
+            # Metabolism and interaction parameters won't match input details, so
+            # adding which sheet they came from and what simulator section they
+            # were.
+            OutDF <- OutDF %>% 
+                mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+                                      "Input Sheet", Sheet), 
+                       SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+                                                 "Elimination", SimulatorSection), 
+                       Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                                      "Input Sheet", Sheet),
+                       SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                                                 "Interaction", SimulatorSection), 
+                       Sheet = ifelse(str_detect(Detail, "^Transport"), 
+                                      "Input Sheet", Sheet),
+                       SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
+                                                 "Transporters", SimulatorSection)) %>% 
+                select(SimulatorSection, Sheet, Notes, Compound, Detail, Value) %>% 
+                arrange(SimulatorSection, Detail)
+            
         } else {
             OutDF <- as.data.frame(Out)
         }
-        
-        
-        
-        # Metabolism and interaction parameters won't match input details, so
-        # adding which sheet they came from and what simulator section they
-        # were.
-        OutDF <- OutDF %>% 
-            mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
-                                  "Input Sheet", Sheet), 
-                   SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
-                                  "Elimination", SimulatorSection), 
-                   Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
-                                  "Input Sheet", Sheet),
-                   SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
-                                  "Interaction", SimulatorSection), 
-                   Sheet = ifelse(str_detect(Detail, "^Transport"), 
-                                  "Input Sheet", Sheet),
-                   SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
-                                             "Transporters", SimulatorSection)) %>% 
-            select(SimulatorSection, Sheet, Notes, Compound, Detail, Value) %>% 
-            arrange(SimulatorSection, )
         
         write.csv(OutDF, FileName, row.names = F)
     }
