@@ -248,11 +248,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     # Need to handle ADAM data specially
                     ADAMtissue <- c("stomach", "duodenum", "jejunum i",
                                     "jejunum ii", "ileum i", "ileum ii",
-                                    "ileum iii", "ileum iv", "colon", "faeces")
+                                    "ileum iii", "ileum iv", "colon", "faeces",
+                                    "cumulative absorption", "cumulative dissolution")
                     if(any(MultData[[f]][[j]]$Tissue %in% ADAMtissue)){
                         CT_adam <- MultData[[f]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue)
-                        
                         
                         CT_nonadam <- MultData[[f]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue == FALSE)

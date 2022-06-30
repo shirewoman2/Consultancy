@@ -322,9 +322,8 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Checking for more than one tissue or ADAM data type b/c there's only one y
     # axis and it should have only one concentration type.
-    if(length(unique(ct_dataframe$Tissue)) > 1 |
-       length(unique(ct_dataframe$subsection_ADAM)) > 1){
-        stop("We're sorry, but this function can only deal with one type of tissue at a time, and the supplied data.frame contains more than one unique value in either the `Tissue` column or the `subsection_ADAM` column. Please supply a data.frame with only one type of tissue or ADAM-model subsection.",
+    if(length(unique(ct_dataframe$Conc_units)) > 1){
+        stop("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit.",
              call. = FALSE)
     }
     
