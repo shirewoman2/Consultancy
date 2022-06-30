@@ -51,6 +51,13 @@
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
+#' @param transpose_output TRUE or FALSE (default) on whether to transpose the
+#'   rows and columns in the output. Setting this to TRUE makes the output table
+#'   longer instead of wider and also adds columns to the output for a) which
+#'   compound the information pertains to (substrate, inhibitor, etc.), b) which
+#'   section of the Simcyp Simulator this detail is found in (physchem,
+#'   absorption, distribution, etc.), c) notes describing what the detail is,
+#'   and d) which sheet in the Excel file the information was pulled from.
 #'
 #' @return Returns a named list of the experimental details
 #' @import tidyverse
@@ -68,7 +75,8 @@
 #' 
 extractExpDetails <- function(sim_data_file,
                               exp_details = "Summary tab", 
-                              save_output = NA){
+                              save_output = NA, 
+                              transpose_output = FALSE){
     
     # Error catching ---------------------------------------------------------
     # Check whether tidyverse is loaded
@@ -415,6 +423,7 @@ extractExpDetails <- function(sim_data_file,
                        "UserAddnOrgan" = "User-defined Additional",
                        "SimulatorVersion" = "Version number",
                        "SimStartDayTime" = "Start Day/Time",
+                       "SolubilityType" = "Solubility Type",
                        "Qgut" = "Q\\(Gut\\) \\(L/h",
                        "Regimen" = "Dosing Regimen",
                        "NumDoses" = "Number of Doses",
@@ -843,16 +852,37 @@ extractExpDetails <- function(sim_data_file,
                             
                             Location <- gsub(" |\\(|\\)|-|/", "", 
                                              InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
-                                                 ValueCol] %>% pull(1))
+                                                      ValueCol] %>% pull(1))
                             
                             ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
                             
+                            # Either CLint,T or Jmax and Km values will be listed
+                            if(any(str_detect(TransRowNames, "CLint,T"))){
+                                
                             suppressWarnings(
                                 Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
                                     as.numeric(
                                         InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
                                                  ValueCol] %>% pull(1))
                             )
+                                
+                            } else if(any(str_detect(TransRowNames, "Jmax"))){
+                                
+                                suppressWarnings(
+                                    Out[[paste0(ParamPrefix, "_Jmax", Suffix)]] <- 
+                                        as.numeric(
+                                            InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Jmax"))],
+                                                     ValueCol] %>% pull(1))
+                                )
+                                
+                                suppressWarnings(
+                                    Out[[paste0(ParamPrefix, "_Km", Suffix)]] <- 
+                                        as.numeric(
+                                            InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Km"))],
+                                                     ValueCol] %>% pull(1))
+                                )
+                                
+                            }
                             
                             suppressWarnings(
                                 Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- 
@@ -1140,11 +1170,75 @@ extractExpDetails <- function(sim_data_file,
     
     if(complete.cases(save_output)){
         if(str_detect(save_output, "\\.")){
+            # If they specified a file extension, replace whatever they supplied
+            # with csv b/c that's the only option for file format here.
             FileName <- sub("\\..*", ".csv", save_output)
         } else {
+            # If they didn't specify file extension, make it csv.
             FileName <- paste0(save_output, ".csv")
         }
-        write.csv(as.data.frame(Out), FileName, row.names = F)
+        
+        if(transpose_output){
+            OutDF <- as.data.frame(t(as.data.frame(Out))) %>% 
+                mutate(Detail = row.names(.)) %>% 
+                rename(Value = V1) %>% 
+                select(Detail, Value)
+            
+            if(exp_details_input == "summary tab"){
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions %>% 
+                                  filter(Sheet %in% c("calculated", "Summary")),
+                              by = "Detail")
+            } else if(exp_details_input == "input sheet"){
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions %>% 
+                                  filter(Sheet %in% c("calculated", "Input Sheet")),
+                              by = "Detail")
+            } else if(exp_details_input == "population tab"){
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions %>% 
+                                  filter(Sheet %in% c("calculated", "population",
+                                                      "Summary")),
+                              by = "Detail")
+            } else {
+                OutDF <- OutDF %>% 
+                    left_join(ExpDetailDefinitions, by = "Detail")
+            }
+            
+            OutDF <- OutDF %>% 
+                group_by(Detail, Compound, SimulatorSection, 
+                         Notes, Value) %>% 
+                summarize(Sheet = str_comma(Sheet, conjunction = "or")) %>% 
+                mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
+                                          Detail == "SimDuration", 
+                                      "Summary", Sheet))
+            
+        } else {
+            OutDF <- as.data.frame(Out)
+        }
+        
+        
+        
+        # Metabolism and interaction parameters won't match input details, so
+        # adding which sheet they came from and what simulator section they
+        # were.
+        OutDF <- OutDF %>% 
+            mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+                                  "Input Sheet", Sheet), 
+                   SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+                                  "Elimination", SimulatorSection), 
+                   Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                                  "Input Sheet", Sheet),
+                   SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                                  "Interaction", SimulatorSection), 
+                   Sheet = ifelse(str_detect(Detail, "^Transport"), 
+                                  "Input Sheet", Sheet),
+                   SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
+                                             "Transporters", SimulatorSection)) %>% 
+            select(SimulatorSection, Sheet, Notes, Compound, Detail, Value) %>% 
+            arrange(SimulatorSection, )
+        
+        write.csv(OutDF, FileName, row.names = F)
     }
     
     return(Out)

@@ -46,12 +46,9 @@
 #'   cannot easily be made to fit with the rest of the output for
 #'   \code{extractExpDetails_mult}. That's because each simulator file and
 #'   compound with a custom-dosing regimen will have its own data.frame with the
-#'   time, time units, dose number, dose amount, dose units, and dose route.
-#'   For that reason, custom-dosing information will largely be ignored here.
+#'   time, time units, dose number, dose amount, dose units, and dose route. For
+#'   that reason, custom-dosing information will largely be ignored here.
 #'
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
 #' @param existing_exp_details (optional) a data.frame that contains previously
 #'   extracted experimental details. This should NOT be in quotes. Because we
 #'   can see scenarios where you might want to extract some experimental details
@@ -67,6 +64,16 @@
 #'   changed input parameters for simulations and re-run them OR when you have
 #'   extracted only some of the possible experimental details and you now would
 #'   like more experimental details from each simulator output file.
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+#'   it will still be saved as a csv file.
+#' @param transpose_output TRUE or FALSE (default) on whether to transpose the
+#'   rows and columns in the output. Setting this to TRUE makes the output table
+#'   longer instead of wider and also adds columns to the output for a) which
+#'   compound the information pertains to (substrate, inhibitor, etc.), b) which
+#'   section of the Simcyp Simulator this detail is found in (physchem,
+#'   absorption, distribution, etc.), c) notes describing what the detail is,
+#'   and d) which sheet in the Excel file the information was pulled from.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #' @import tidyverse
@@ -89,22 +96,23 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    exp_details = "all", 
                                    existing_exp_details = Deets, 
                                    overwrite = FALSE,
-                                   save_output = NA){
+                                   save_output = NA,
+                                   transpose_output = FALSE){
     
-	# Error catching ---------------------------------------------------------
+    # Error catching ---------------------------------------------------------
     # Check whether tidyverse is loaded
-	if("package:tidyverse" %in% search() == FALSE){
-	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-	}
-
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
     # If user did not supply files, then extract all the files in the current
     # folder that end in "xlsx".
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         sim_data_files <- list.files(pattern = "xlsx$")
     }
     
-	# Main body of function ---------------------------------------------------
-	
+    # Main body of function ---------------------------------------------------
+    
     # print(quo_name(enquo(existing_exp_details))) # for bug fixing
     
     if(exists(substitute(existing_exp_details))){
@@ -178,11 +186,29 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     
     if(complete.cases(save_output)){
         if(str_detect(save_output, "\\.")){
+            # If they specified a file extension, replace whatever they supplied
+            # with csv b/c that's the only option for file format here.
             FileName <- sub("\\..*", ".csv", save_output)
         } else {
+            # If they didn't specify file extension, make it csv.
             FileName <- paste0(save_output, ".csv")
         }
-        write.csv(MyDeets, FileName, row.names = F)
+        
+        if(transpose_output){
+            OutDF <- MyDeets %>% 
+                mutate(across(.cols = everything(), .fns = as.character)) %>% 
+                pivot_longer(cols = -File,
+                             names_to = "Detail", 
+                             values_to = "Value") %>% 
+                pivot_wider(names_from = File, 
+                            values_from = Value) %>% 
+                left_join(ExpDetailDefinitions, by = "Detail")
+            
+        } else {
+            OutDF <- as.data.frame(MyDeets)
+        }
+        
+        write.csv(OutDF, FileName, row.names = F)
     }
     
     return(MyDeets)

@@ -4,7 +4,12 @@
 \alias{extractExpDetails}
 \title{Extract details about the experimental design}
 \usage{
-extractExpDetails(sim_data_file, exp_details = "Summary tab", save_output = NA)
+extractExpDetails(
+  sim_data_file,
+  exp_details = "Summary tab",
+  save_output = NA,
+  transpose_output = FALSE
+)
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output,
@@ -57,6 +62,14 @@ in quotes}
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 it will still be saved as a csv file.}
+
+\item{transpose_output}{TRUE or FALSE (default) on whether to transpose the
+rows and columns in the output. Setting this to TRUE makes the output table
+longer instead of wider and also adds columns to the output for a) which
+compound the information pertains to (substrate, inhibitor, etc.), b) which
+section of the Simcyp Simulator this detail is found in (physchem,
+absorption, distribution, etc.), c) notes describing what the detail is,
+and d) which sheet in the Excel file the information was pulled from.}
 }
 \value{
 Returns a named list of the experimental details
