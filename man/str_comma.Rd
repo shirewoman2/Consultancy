@@ -5,12 +5,15 @@
 \title{Collapse a vector of character strings into one readable string, separated by
 commas and by "and"}
 \usage{
-str_comma(x, oxford = TRUE)
+str_comma(x, oxford = TRUE, conjunction = "and")
 }
 \arguments{
 \item{x}{vector to collapse}
 
 \item{oxford}{TRUE or FALSE for whether to use the Oxford comma}
+
+\item{conjunction}{the conjunction to use to join the character strings.
+Options are "and" (default) and "or".}
 }
 \value{
 Returns a single, collapsed character string
