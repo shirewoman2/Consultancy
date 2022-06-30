@@ -9,7 +9,8 @@ extractExpDetails_mult(
   exp_details = "all",
   existing_exp_details = Deets,
   overwrite = FALSE,
-  save_output = NA
+  save_output = NA,
+  transpose_output = FALSE
 )
 }
 \arguments{
@@ -55,8 +56,8 @@ will result in an error and return no data.}
   cannot easily be made to fit with the rest of the output for
   \code{extractExpDetails_mult}. That's because each simulator file and
   compound with a custom-dosing regimen will have its own data.frame with the
-  time, time units, dose number, dose amount, dose units, and dose route.
-  For that reason, custom-dosing information will largely be ignored here.}
+  time, time units, dose number, dose amount, dose units, and dose route. For
+  that reason, custom-dosing information will largely be ignored here.}
 
 \item{existing_exp_details}{(optional) a data.frame that contains previously
 extracted experimental details. This should NOT be in quotes. Because we
@@ -78,6 +79,14 @@ like more experimental details from each simulator output file.}
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 it will still be saved as a csv file.}
+
+\item{transpose_output}{TRUE or FALSE (default) on whether to transpose the
+rows and columns in the output. Setting this to TRUE makes the output table
+longer instead of wider and also adds columns to the output for a) which
+compound the information pertains to (substrate, inhibitor, etc.), b) which
+section of the Simcyp Simulator this detail is found in (physchem,
+absorption, distribution, etc.), c) notes describing what the detail is,
+and d) which sheet in the Excel file the information was pulled from.}
 }
 \value{
 Returns a data.frame of experimental details for simulator files
