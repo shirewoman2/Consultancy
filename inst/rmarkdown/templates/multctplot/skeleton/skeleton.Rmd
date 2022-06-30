@@ -80,7 +80,7 @@ CapText2 <- switch(figure_type,
 
 ```
 
-*Depicted are simulated `r CapText1`. `r CapText2`. Source simulated data: `r str_comma(unique(ct_dataframe$File))`.*
+*Depicted are simulated `r CapText1`. `r CapText2`. Source simulated data: `r str_comma(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))`.*
 
 
 

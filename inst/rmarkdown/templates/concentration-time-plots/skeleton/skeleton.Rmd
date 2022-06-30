@@ -116,6 +116,6 @@ CapText2 <- switch(
 
 ```
 
-*Depicted are `r CapText1`. `r CapText2`. Source simulated data: `r unique(ct_dataframe$File)`.*
+*Depicted are `r CapText1`. `r CapText2`. Source simulated data: `r unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE])`.*
 
 
