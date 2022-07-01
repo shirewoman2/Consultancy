@@ -88,6 +88,19 @@ extractExpDetails <- function(sim_data_file,
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
     
+    # Checking that the file is, indeed, a simulator output file.
+    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                           error = openxlsx::getSheetNames(sim_data_file))
+    if("Input Sheet" %in% SheetNames == FALSE){
+        # Using "warning" instead of "stop" here b/c I want this to be able to
+        # pass through to extractExpDetails_mult and just skip any files that
+        # aren't simulator output.
+        warning(paste("The file", sim_data_file,
+                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                call. = FALSE)
+        return(list())
+    }
+    
     # Noting exp_details requested for later
     exp_details_input <- tolower(exp_details)
     
@@ -918,8 +931,6 @@ extractExpDetails <- function(sim_data_file,
         # then the dosing start time should be pulled from a "Custom Dosing"
         # tab. Pulling any custom dosing sheets here.
         
-        SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                               error = openxlsx::getSheetNames(sim_data_file))
         CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
         
         for(j in CustomDoseSheets){
