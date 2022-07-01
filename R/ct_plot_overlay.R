@@ -906,6 +906,20 @@ ct_plot_overlay <- function(ct_dataframe,
     } else {
         
         if(length(color_set) > 1){
+            
+            # If they supply a named character vector whose values are not
+            # present in the data, convert it to an unnamed character vector.
+            if(is.null(names(color_set)) == FALSE && 
+               all(unique(ct_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+                warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
+                              as_label(colorBy_column),
+                              " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                              as_label(colorBy_column), "."), 
+                        call. = FALSE)
+                
+                color_set <- as.character(color_set)
+            }
+            
             if(length(color_set) < NumColorsNeeded){
                 warning(paste("There are", NumColorsNeeded,
                               "unique values in the column you have specified for the colors, but you have only specified", 
@@ -916,7 +930,8 @@ ct_plot_overlay <- function(ct_dataframe,
                 color_set <- rep(color_set, 100)[1:NumColorsNeeded]
             }
             
-            A <- A + scale_color_manual(values = color_set)
+            A <- A + scale_color_manual(values = color_set) +
+                scale_fill_manual(values = color_set)
         } else {
             
             if(color_set == "default"){
