@@ -933,7 +933,7 @@ pksummary_table <- function(sim_data_file = NA,
                                   "arithmetic" = "mean",
                                   "geometric" = "geomean"))
         
-        if(any(str_detect(PKparameters, "tmax"))){
+        if(any(str_detect(PKToPull, "tmax"))){
             ColsToInclude <- c(ColsToInclude, "min", "max", "median")
         }
         
