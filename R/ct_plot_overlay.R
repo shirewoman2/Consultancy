@@ -197,7 +197,16 @@
 #'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
 #'   colors from purple to blue to green to yellow in a manner that is
 #'   "printer-friendly, perceptually uniform and easy to read by those with
-#'   colorblindness", according to the package author}}
+#'   colorblindness", according to the package author}
+#'
+#'   \item{a character vector of colors}{If you'd prefer to set all the colors
+#'   yourself to \emph{exactly} the colors you want, you can specify those
+#'   colors here. An example of how the syntax should look: \code{color_set =
+#'   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+#'   which item in \code{colorBy_column} gets which color, you can supply a
+#'   named vector. For example, if you're coloring the lines by the compound ID,
+#'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}}}
 #'
 #' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
@@ -555,6 +564,11 @@ ct_plot_overlay <- function(ct_dataframe,
     } else if(NumLT < length(linetypes)){
         linetypes = linetypes[1:NumLT] 
     } else if(NumLT > length(linetypes)){
+        warning(paste("There are", NumLT,
+                      "unique values in the column you have specified for the line types, but you have only specified", 
+                      length(linetypes), 
+                      "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph."), 
+                call. = FALSE)
         linetypes = rep(linetypes, 100)[1:NumLT]
     }
     
@@ -637,9 +651,9 @@ ct_plot_overlay <- function(ct_dataframe,
     # If each compound has only 1 compound ID and vice versa, no need to
     # consider compound in the set of unique aesthetics.
     if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
-                  summarize(LengthUni = length(unique(CompoundID))), 
-              ct_dataframe %>% group_by(CompoundID) %>% 
-                  summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
+                     summarize(LengthUni = length(unique(CompoundID))), 
+                     ct_dataframe %>% group_by(CompoundID) %>% 
+                     summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
         
         MyUniqueData <- ct_dataframe %>% 
             filter(Trial == MyMeanType) %>% 
@@ -682,7 +696,7 @@ ct_plot_overlay <- function(ct_dataframe,
     # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
     # aethetically pleasing.
     if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
-       color_set == "default"){
+       color_set[1] == "default"){
         color_set <- "Brewer set 1"
     }
     
@@ -707,7 +721,7 @@ ct_plot_overlay <- function(ct_dataframe,
                        ", but you have only requested ", 
                        length(unique(linetypes)), " linetype(s): ", 
                        str_comma(unique(linetypes)), 
-                       ". You will get a more interpretable graph if you specify more values for the argument 'linetypes'."),
+                       ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'."),
                 call. = FALSE)
     }
     
@@ -791,7 +805,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                         linetype = linetype_column),
                            "FALSE" = aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
                                          color = colorBy_column, fill = colorBy_column))
-                    ) +
+        ) +
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
         
@@ -891,43 +905,58 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- A + scale_color_manual(values = "black")
     } else {
         
-        if(color_set == "default"){
-            # Using "Dark2" b/c "Set2" is just really, really light. 
-            A <- A + scale_color_brewer(palette = "Dark2") +
-                scale_fill_brewer(palette="Dark2")
-        }
-        
-        if(color_set == "blue-green"){
-            A <- A + scale_color_manual(values = blueGreen(NumColors)) +
-                scale_fill_manual(values = blueGreen(NumColors))
-            A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-                scale_fill_manual(values = blueGreen(NumColorsNeeded))
-        }
-        
-        if(color_set == "rainbow"){
-            A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-                scale_fill_manual(values = colRainbow(NumColorsNeeded))
-        }
-        
-        if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
-            # Using "Dark2" b/c "Set2" is just really, really light. 
-            A <- A + scale_fill_brewer(palette = "Dark2") +
-                scale_color_brewer(palette = "Dark2")
-        }
-        
-        if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
-            A <- A + scale_fill_brewer(palette = "Set1") +
-                scale_color_brewer(palette = "Set1")
-        }
-        
-        if(color_set == "Tableau"){
-            A <- A + ggthemes::scale_color_tableau() +
-                ggthemes::scale_fill_tableau()
-        }
-        
-        if(color_set == "viridis"){
-            A <- A + viridis::scale_color_viridis(discrete = TRUE) +
-                viridis::scale_fill_viridis(discrete = TRUE)
+        if(length(color_set) > 1){
+            if(length(color_set) < NumColorsNeeded){
+                warning(paste("There are", NumColorsNeeded,
+                              "unique values in the column you have specified for the colors, but you have only specified", 
+                              length(color_set), 
+                              "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
+                        call. = FALSE)
+                
+                color_set <- rep(color_set, 100)[1:NumColorsNeeded]
+            }
+            
+            A <- A + scale_color_manual(values = color_set)
+        } else {
+            
+            if(color_set == "default"){
+                # Using "Dark2" b/c "Set2" is just really, really light. 
+                A <- A + scale_color_brewer(palette = "Dark2") +
+                    scale_fill_brewer(palette="Dark2")
+            }
+            
+            if(color_set == "blue-green"){
+                A <- A + scale_color_manual(values = blueGreen(NumColors)) +
+                    scale_fill_manual(values = blueGreen(NumColors))
+                A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
+                    scale_fill_manual(values = blueGreen(NumColorsNeeded))
+            }
+            
+            if(color_set == "rainbow"){
+                A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
+                    scale_fill_manual(values = colRainbow(NumColorsNeeded))
+            }
+            
+            if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
+                # Using "Dark2" b/c "Set2" is just really, really light. 
+                A <- A + scale_fill_brewer(palette = "Dark2") +
+                    scale_color_brewer(palette = "Dark2")
+            }
+            
+            if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
+                A <- A + scale_fill_brewer(palette = "Set1") +
+                    scale_color_brewer(palette = "Set1")
+            }
+            
+            if(color_set == "Tableau"){
+                A <- A + ggthemes::scale_color_tableau() +
+                    ggthemes::scale_fill_tableau()
+            }
+            
+            if(color_set == "viridis"){
+                A <- A + viridis::scale_color_viridis(discrete = TRUE) +
+                    viridis::scale_fill_viridis(discrete = TRUE)
+            }
         }
     }
     

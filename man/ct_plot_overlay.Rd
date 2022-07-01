@@ -118,7 +118,16 @@ label for this legend item, set this to "none".}
   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
   colors from purple to blue to green to yellow in a manner that is
   "printer-friendly, perceptually uniform and easy to read by those with
-  colorblindness", according to the package author}}}
+  colorblindness", according to the package author}
+
+  \item{a character vector of colors}{If you'd prefer to set all the colors
+  yourself to \emph{exactly} the colors you want, you can specify those
+  colors here. An example of how the syntax should look: \code{color_set =
+  c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+  which item in \code{colorBy_column} gets which color, you can supply a
+  named vector. For example, if you're coloring the lines by the compound ID,
+  you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}}}}
 
 \item{obs_transparency}{Optionally make the observed data points
 semi-transparent, which can be helpful when there are numerous
