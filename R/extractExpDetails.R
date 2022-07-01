@@ -101,13 +101,13 @@ extractExpDetails <- function(sim_data_file,
         return(list())
     }
     
-    # Noting exp_details requested for later
-    exp_details_input <- tolower(exp_details)
-    
     # Cleaning up possible problems w/how exp_details by tab might be inputted
     if(str_detect(tolower(exp_details[1]), "summary")){exp_details <- "Summary tab"}
     if(str_detect(tolower(exp_details[1]), "input")){exp_details <- "Input sheet"}
     if(str_detect(tolower(exp_details[1]), "population")){exp_details <- "population tab"}
+    
+    # Noting exp_details requested for later
+    exp_details_input <- tolower(exp_details)
     
     # Main body of function ----------------------------------------------------
     
@@ -333,6 +333,12 @@ extractExpDetails <- function(sim_data_file,
             if(str_detect(i, "^StartDayTime") & is.na(Out[[i]])){
                 CustomDosing <- c(CustomDosing, TRUE)
             }
+        }
+        
+        # Removing details that don't apply, e.g., _inhib parameters when there
+        # was no inhibitor.
+        if(is.na(Out$Inhibitor1)){
+            Out <- Out[-which(str_detect(names(Out), "_inhib$"))]
         }
     }
     
