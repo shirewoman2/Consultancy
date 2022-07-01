@@ -1,4 +1,4 @@
-#' Make graphs of sensitivity analysis results - UNDER CONSTRUCTION
+#' Make graphs of sensitivity analysis results
 #'
 #' Doesn't detect units yet. Would need to check that sheet names are consistent
 #' b/c I bet they're not. Would like to add options for axis breaks and limits
@@ -10,9 +10,18 @@
 #' @param SA_file sensitivity analysis Excel file
 #' @param dependent_variable dependent variable to plot. Options are: "CL",
 #'   "Dose over AUC", "AUC over Dose", "Vss", "Fg", "Fh", "fa", "CLpo", "Cmax",
-#'   "AUC", "tmax", or "Plasma Concentration", and, other than "Plasma
-#'   Concentration", that parameter \emph{must} be one of the ones you requested
-#'   when you ran the sensitivity analysis. Currently case sensitive.
+#'   "AUC", "tmax", or "plasma concentration" (just "plasma" will also work).
+#'   Other than "plasma concentration", that parameter \emph{must} be one of the
+#'   ones you requested when you ran the sensitivity analysis. Not case
+#'   sensitive.
+#' @param ind_var_label optionally specify what text use for labeling the
+#'   independent variable. If left as NA, R will find the value listed next to
+#'   "Run Number" on the "ASA Summary" tab, which may be something not terribly
+#'   pretty like "Fugut Value (Sub) (No Units)", and attempt to prettify it. If
+#'   we haven't set things up to prettify that value, which is likely as we
+#'   haven't used this function with very many sensitivity-analysis scenarios
+#'   yet, the value will be unchanged. (If you have an independent variable
+#'   you'd like to add to our list, email Laura Shireman!)
 #' @param title (optional) a title to include on your graph in quotes
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -24,7 +33,7 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder. 
+#'   your Documents folder.
 #' @param fig_height figure height in inches; default is 4
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -41,6 +50,7 @@
 
 sensitivity_plot <- function(SA_file, 
                              dependent_variable, 
+                             ind_var_label = NA,
                              title = NA,
                              save_graph = NA,
                              fig_height = 4,
@@ -66,19 +76,24 @@ sensitivity_plot <- function(SA_file,
     # Get data ------------------------------------------------------------
     AllSheets <- readxl::excel_sheets(path = SA_file)
     
-    DVsheets = c("CL" = AllSheets[str_detect(AllSheets, "CL .L per h. .PKPD")],
-                 "Dose over AUC" = AllSheets[str_detect(AllSheets, "Dose over AUC")],
-                 "AUC over Dose" = AllSheets[str_detect(AllSheets, "AUC over Dose")],
-                 "Vss" = AllSheets[str_detect(AllSheets, "Vss")],
-                 "Fg" = AllSheets[str_detect(AllSheets, "Fg .PKPD")],
-                 "Fh" = AllSheets[str_detect(AllSheets, "Fh .PKPD")],
+    dependent_variable <- tolower(dependent_variable)
+    
+    DVsheets = c("cl" = AllSheets[str_detect(AllSheets, "CL .L per h. .PKPD")],
+                 "dose over auc" = AllSheets[str_detect(AllSheets, "Dose over AUC")],
+                 "auc over dose" = AllSheets[str_detect(AllSheets, "AUC over Dose")],
+                 "vss" = AllSheets[str_detect(AllSheets, "Vss")],
+                 "fg" = AllSheets[str_detect(AllSheets, "Fg .PKPD")],
+                 "fh" = AllSheets[str_detect(AllSheets, "Fh .PKPD")],
                  "fa" = AllSheets[str_detect(AllSheets, "fa .PKPD")],
-                 "CLpo" = AllSheets[str_detect(AllSheets, "CLpo.*PKPD")],
-                 "Cmax" = AllSheets[str_detect(AllSheets, "^Cmax")],
-                 "AUC" = AllSheets[str_detect(AllSheets, "^AUC.*\\(")],
+                 "clpo" = AllSheets[str_detect(AllSheets, "CLpo.*PKPD")],
+                 "cmax" = AllSheets[str_detect(AllSheets, "^Cmax")],
+                 "auc" = AllSheets[str_detect(AllSheets, "^AUC.*\\(")],
                  "tmax" = AllSheets[str_detect(AllSheets, "Tmax")],
                  # "Multiple EI Plot",
-                 "Plasma Concentration" = AllSheets[str_detect(AllSheets, "Plasma Concentration")])
+                 "plasma concentration" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
+                 "plasma" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
+                 "plasma conc" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
+                 "plasma concentrations" = AllSheets[str_detect(AllSheets, "Plasma Concentration")])
     
     Summary <- read.xlsx(SA_file, sheetName = "ASA Summary", 
                          header = FALSE)
@@ -101,7 +116,7 @@ sensitivity_plot <- function(SA_file,
     # Reading data
     SAdata <- read.xlsx(SA_file, sheetName = DVsheets[dependent_variable])
     
-    if(dependent_variable == "Plasma Concentration"){
+    if(str_detect(dependent_variable, "plasma")){
         SAdata <- as.data.frame(t(SAdata[, c(4:ncol(SAdata))]))
         names(SAdata)[1] <- "Time"
         names(SAdata)[2:ncol(SAdata)] <- paste0("Run", RunInfo$Run)
@@ -136,18 +151,24 @@ sensitivity_plot <- function(SA_file,
                             "Vss" = expression(V[ss]~"(L/kg)"),
                             "Lag Time" = expression("lag time (h)"))
     
-    if(SensParam %in% names(PrettySensParam) == FALSE){
-        PrettySensParam <- list(SensParam)
-        names(PrettySensParam) <- SensParam
+    if(is.na(ind_var_label)){
+        if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))){
+            
+            ind_var_label <- PrettySensParam[which(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))][[1]]
+            
+        } else {
+            ind_var_label <- SensParam
+        }
     }
+    
     # Will need to expand this based on what output names are. Need to make sure
     # they match.
     
-    if(dependent_variable == "Plasma Concentration"){
+    if(str_detect(dependent_variable, "plasma")){
         G <- ggplot(SAdata, aes(x = Time, y = Conc, color = SensValue, 
                                 group = SensValue)) +
             geom_line() +
-            labs(color = SensParam) +
+            labs(color = ind_var_label) +
             xlab("Time (h)") +
             ylab("Concentration (ng/mL)")
         
@@ -157,7 +178,7 @@ sensitivity_plot <- function(SA_file,
         G <- ggplot(SAdata, aes(x = SensParameter, y = DV)) +
             geom_point() + geom_line() + 
             ylab(PrettyDV[[dependent_variable]]) +
-            xlab(PrettySensParam[[SensParam]])
+            xlab(ind_var_label)
     }
     
     G <- G + 

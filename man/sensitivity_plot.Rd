@@ -2,11 +2,12 @@
 % Please edit documentation in R/sensitivity_plot.R
 \name{sensitivity_plot}
 \alias{sensitivity_plot}
-\title{Make graphs of sensitivity analysis results - UNDER CONSTRUCTION}
+\title{Make graphs of sensitivity analysis results}
 \usage{
 sensitivity_plot(
   SA_file,
   dependent_variable,
+  ind_var_label = NA,
   title = NA,
   save_graph = NA,
   fig_height = 4,
@@ -18,9 +19,19 @@ sensitivity_plot(
 
 \item{dependent_variable}{dependent variable to plot. Options are: "CL",
 "Dose over AUC", "AUC over Dose", "Vss", "Fg", "Fh", "fa", "CLpo", "Cmax",
-"AUC", "tmax", or "Plasma Concentration", and, other than "Plasma
-Concentration", that parameter \emph{must} be one of the ones you requested
-when you ran the sensitivity analysis. Currently case sensitive.}
+"AUC", "tmax", or "plasma concentration" (just "plasma" will also work).
+Other than "plasma concentration", that parameter \emph{must} be one of the
+ones you requested when you ran the sensitivity analysis. Not case
+sensitive.}
+
+\item{ind_var_label}{optionally specify what text use for labeling the
+independent variable. If left as NA, R will find the value listed next to
+"Run Number" on the "ASA Summary" tab, which may be something not terribly
+pretty like "Fugut Value (Sub) (No Units)", and attempt to prettify it. If
+we haven't set things up to prettify that value, which is likely as we
+haven't used this function with very many sensitivity-analysis scenarios
+yet, the value will be unchanged. (If you have an independent variable
+you'd like to add to our list, email Laura Shireman!)}
 
 \item{title}{(optional) a title to include on your graph in quotes}
 
