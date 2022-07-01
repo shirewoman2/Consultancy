@@ -3,8 +3,9 @@
 #' @param sim_data_files a character vector of simulator output files, e.g.,
 #'   \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
 #'   want all the Excel files in the current folder, \code{sim_data_files =
-#'   list.files("xlsx")}. If you supply something for \code{observed_PK}, you
-#'   can leave this unspecified.
+#'   list.files("xlsx")}. If you supply data for \code{observed_PK}, anything
+#'   you enter here will be ignored because the file names will be pulled from
+#'   there instead.
 #' @param observed_PK (optional) If you have a data.frame or an Excel or csv
 #'   file with observed PK parameters, supply the data.frame or the full file
 #'   name in quotes here, and the simulated-to-observed mean ratios will be
@@ -14,9 +15,8 @@
 #'   match the PK parameter options listed in
 #'   \code{data(PKParameterDefinitions)}. If you would like the output table to
 #'   include the observed data CV for any of the parameters, add "_CV" to the
-#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Note: Whatever you list
-#'   for "File" will override anything specified for the argument
-#'   \code{sim_data_file}.
+#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the examples
+#'   for example syntax for providing a data.frame here.
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. Notes: \itemize{
 #'
@@ -109,7 +109,19 @@
 #'
 #' @examples
 #'
-#' # No examples yet
+#' # Create PK summary tables for all the Simulator output
+#' # files in your working directory; get the default PK parameters
+#' pksummary_mult(sim_data_files = NA)
+#'
+#' # Include a data.frame of observed data for S/O comparisons
+#' pksummary_mult(
+#'     sim_data_files = NA,
+#'     observed_PK = data.frame(File = c("mdz-5mg-qd-keto-400mg-qd.xlsx",
+#'                                       "mdz-5mg-qd-rif-600mg-qd.xlsx"),
+#'                              AUCtau_last = c(55, 55),
+#'                              Cmax_last = c(20, 20),
+#'                              AUCtau_last_withInhib = c(800, 20),
+#'                              Cmax_last_withInhib = c(100, 5)))
 #' 
 pksummary_mult <- function(sim_data_files, 
                            observed_PK = NA,
@@ -155,6 +167,7 @@ pksummary_mult <- function(sim_data_files,
         
         for(i in 1:nrow(observed_PKDF)){
             temp <- pksummary_table(
+                sim_data_file = as.character(observed_PKDF[i, "File"]),
                 observed_PK = observed_PKDF[i, ], 
                 PKparameters = PKparameters, 
                 PKorder = PKorder, 
@@ -174,14 +187,14 @@ pksummary_mult <- function(sim_data_files,
             if(checkDataSource){
                 
                 MyPKResults[[i]] <- temp$Table %>% 
-                    mutate(File = i)
+                    mutate(File = as.character(observed_PKDF[i, "File"]))
                 
                 OutQC[[i]] <- temp$QC
                 
             } else {
                 
                 MyPKResults[[i]] <- temp %>% 
-                    mutate(File = i)    
+                    mutate(File = as.character(observed_PKDF[i, "File"]))    
                 
             }
             
