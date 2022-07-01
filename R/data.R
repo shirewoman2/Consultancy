@@ -98,7 +98,8 @@
 #'   \item{Detail}{the experimental detail name to use with
 #'   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
 #'
-#'   \item{Compound}{the specific compound this experimental detail applies to}
+#'   \item{CompoundID}{the specific compound ID this experimental detail applies
+#'   to, e.g., "substrate", "inhibitor 1", etc.}
 #'
 #'   \item{Notes}{an explanation of what the experimental detail is}
 #'
@@ -135,11 +136,12 @@
 #'   \item{Detail}{the experimental detail name to use with
 #'   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
 #'
-#'   \item{Compound}{the specific compound this experimental detail applies to}
+#'   \item{Compound ID}{the specific compound this experimental detail applies
+#'   to, e.g., "substrate", "inhibitor 1", etc.}
 #'
 #'   \item{SimulatorSection}{the part of the simulator that this detail applies
 #'   to}
-#'   
+#'
 #'   \item{Notes}{an explanation of what the experimental detail is}
 #'
 #'   \item{Sheet}{Which simulator output sheet this detail is extracted from}

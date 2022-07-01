@@ -13,7 +13,8 @@ A data.frame with 10 columns: \describe{
   \item{Detail}{the experimental detail name to use with
   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
 
-  \item{Compound}{the specific compound this experimental detail applies to}
+  \item{CompoundID}{the specific compound ID this experimental detail applies
+  to, e.g., "substrate", "inhibitor 1", etc.}
 
   \item{Notes}{an explanation of what the experimental detail is}
 

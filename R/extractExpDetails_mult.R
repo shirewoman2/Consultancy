@@ -1,8 +1,8 @@
 #' Extract experimental details for multiple files at once
 #'
-#' \code{extractExpDetails_mult} takes a character vector of simulator output
-#' files -- or all the Excel files in the current directory if no files are
-#' specified -- and collects experimental details for the simulations into a
+#' \code{extractExpDetails_mult} takes a character vector of Simcyp Simulator
+#' output files -- or all the Excel files in the current directory if no files
+#' are specified -- and collects experimental details for the simulations into a
 #' single table. It optionally saves that table to a csv or Excel file.
 #'
 #' @param sim_data_files a character vector of simulator output files, each in
@@ -67,9 +67,9 @@
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
-#' @param transpose_output TRUE or FALSE (default) on whether to transpose the
-#'   rows and columns in the output. Setting this to TRUE makes the output table
-#'   longer instead of wider and also adds columns to the output for a) which
+#' @param annotate_output TRUE or FALSE (default) on whether to transpose the
+#'   rows and columns in the output, making the output table
+#'   longer instead of wider, and adding columns to the output for a) which
 #'   compound the information pertains to (substrate, inhibitor, etc.), b) which
 #'   section of the Simcyp Simulator this detail is found in (physchem,
 #'   absorption, distribution, etc.), c) notes describing what the detail is,
@@ -96,8 +96,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    exp_details = "all", 
                                    existing_exp_details = Deets, 
                                    overwrite = FALSE,
-                                   save_output = NA,
-                                   transpose_output = FALSE){
+                                   annotate_output = FALSE,
+                                   save_output = NA){
     
     # Error catching ---------------------------------------------------------
     # Check whether tidyverse is loaded
@@ -115,7 +115,9 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     
     # print(quo_name(enquo(existing_exp_details))) # for bug fixing
     
-    if(exists(substitute(existing_exp_details))){
+    AnyExistingDeets <- exists(deparse(substitute(existing_exp_details)))
+    
+    if(AnyExistingDeets){
         if(class(existing_exp_details)[1] == "list"){
             existing_exp_details <- bind_rows(existing_exp_details)
         }
@@ -165,7 +167,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     }
     
     if(any(CustomDosing) | 
-       (exists(substitute(existing_exp_details)) && 
+       (AnyExistingDeets && 
         any(sapply(existing_exp_details %>% 
                    select(any_of(c("Dose_sub", "Dose_inhib", 
                                    "DoseInt_sub", "DoseInt_inhib"))), 
@@ -178,10 +180,14 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         }
     }
     
-    MyDeets <- bind_rows(MyDeets)
+    Out <- bind_rows(MyDeets)
     
-    if(exists(substitute(existing_exp_details))){
-        MyDeets <- bind_rows(MyDeets, existing_exp_details)
+    if(AnyExistingDeets){
+        Out <- bind_rows(Out, existing_exp_details)
+    }
+    
+    if(annotate_output){
+        OutDF <- annotateDetails(Out)
     }
     
     if(complete.cases(save_output)){
@@ -200,71 +206,16 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             FileName <- paste0(save_output, ".csv")
         }
         
-        if(transpose_output){
-            OutDF <- MyDeets %>% 
-                mutate(across(.cols = everything(), .fns = as.character)) %>% 
-                pivot_longer(cols = -File,
-                             names_to = "Detail", 
-                             values_to = "Value")
-            
-            if(exp_details_input == "summary tab"){
-                OutDF <- OutDF %>% 
-                    left_join(ExpDetailDefinitions %>% 
-                                  filter(Sheet %in% c("calculated", "Summary")),
-                              by = "Detail")
-            } else if(exp_details_input == "input sheet"){
-                OutDF <- OutDF %>% 
-                    left_join(ExpDetailDefinitions %>% 
-                                  filter(Sheet %in% c("calculated", "Input Sheet")),
-                              by = "Detail")
-            } else if(exp_details_input == "population tab"){
-                OutDF <- OutDF %>% 
-                    left_join(ExpDetailDefinitions %>% 
-                                  filter(Sheet %in% c("calculated", "population",
-                                                      "Summary")),
-                              by = "Detail")
-            } else {
-                OutDF <- OutDF %>% 
-                    left_join(ExpDetailDefinitions, by = "Detail")
-            }
-            
-            OutDF <- OutDF %>% 
-                group_by(File, Detail, Compound, SimulatorSection, 
-                         Notes, Value) %>% 
-                summarize(Sheet = str_comma(Sheet, conjunction = "or")) %>% 
-                mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
-                                          Detail == "SimDuration", 
-                                      "Summary", Sheet)) %>% 
-                pivot_wider(names_from = File, 
-                            values_from = Value)
-            
-            # Metabolism and interaction parameters won't match input details, so
-            # adding which sheet they came from and what simulator section they
-            # were.
-            OutDF <- OutDF %>% 
-                mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
-                                      "Input Sheet", Sheet), 
-                       SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
-                                                 "Elimination", SimulatorSection), 
-                       Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
-                                      "Input Sheet", Sheet),
-                       SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
-                                                 "Interaction", SimulatorSection), 
-                       Sheet = ifelse(str_detect(Detail, "^Transport"), 
-                                      "Input Sheet", Sheet),
-                       SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
-                                                 "Transporters", SimulatorSection)) %>% 
-                select(SimulatorSection, Sheet, Notes, Compound, Detail, everything()) %>% 
-                arrange(SimulatorSection, Detail)
-            
-        } else {
-            OutDF <- as.data.frame(MyDeets)
+        if(annotate_output == FALSE){
+            OutDF <- as.data.frame(Out)
         }
         
         write.csv(OutDF, FileName, row.names = F)
     }
     
-    return(MyDeets)
+    return(switch(as.character(annotate_output), 
+                  "TRUE" = OutDF,
+                  "FALSE" = Out))
 }
 
 
