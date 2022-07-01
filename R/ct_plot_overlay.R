@@ -729,12 +729,13 @@ ct_plot_overlay <- function(ct_dataframe,
               compoundToExtract = AnchorCompound, EnzPlot = FALSE)
     
     # Setting up the y axis using the subfunction ct_y_axis
-    ct_y_axis(Data = ct_dataframe, 
+    ct_y_axis(Data = bind_rows(sim_dataframe, obs_data), 
               ADAM = ADAM, 
               subsection_ADAM = unique(ct_dataframe$subsection_ADAM), 
               EnzPlot = FALSE, 
               time_range_relative = time_range_relative,
-              Ylim_data = ct_dataframe %>% mutate(Time_orig = Time), 
+              Ylim_data = bind_rows(sim_dataframe, obs_data) %>%
+                  mutate(Time_orig = Time), 
               pad_y_axis = pad_y_axis,
               y_axis_limits_lin = y_axis_limits_lin, 
               time_range = time_range,

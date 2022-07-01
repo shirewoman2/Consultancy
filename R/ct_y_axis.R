@@ -85,9 +85,10 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     # would not provide that. We're holding off on implementing that until we
     # hear from users that they want that.
     
-    Ylim <- Ylim_data %>% filter(Time_orig >= time_range[1] &
-                                     Time_orig <= time_range[2] &
-                                     complete.cases(Conc)) %>% pull(Conc) %>%
+    Ylim <- Ylim_data %>% 
+        filter(Time_orig >= time_range[1] &
+                   Time_orig <= time_range[2] &
+                   complete.cases(Conc)) %>% pull(Conc) %>%
         range()
     
     if(all(Ylim == 0) && (any(is.na(y_axis_limits_lin) | any(is.na(y_axis_limits_log))))){
