@@ -294,8 +294,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             legend_label_color = NA,
                             color_set = "default",
                             obs_transparency = NA, 
-                            linetype_column = Inhibitor, 
-                            linetypes = "solid",
+                            linetype_column, 
+                            linetypes = c("solid", "dashed"),
                             legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
@@ -404,11 +404,11 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     # Noting whether the tissue was from an ADAM model
-    ADAM <- unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
-                                               "jejunum II", "ileum I", "ileum II",
-                                               "ileum III", "ileum IV", "colon", 
-                                               "faeces", "cumulative absorption", 
-                                               "cumulative dissolution")
+    ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+                                                   "jejunum II", "ileum I", "ileum II",
+                                                   "ileum III", "ileum IV", "colon", 
+                                                   "faeces", "cumulative absorption", 
+                                                   "cumulative dissolution"))
     
     if(length(time_range) == 1 && complete.cases(time_range[1]) &&
        !str_detect(time_range, "dose|last obs|all obs")){
@@ -550,21 +550,28 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Taking care of linetypes
     NumLT <- length(unique(sim_dataframe$linetype_column))
-    if(NumLT < length(linetypes)){ linetypes = linetypes[1:NumLT] }
-    if(NumLT > length(linetypes)){ linetypes = rep(linetypes, 100)[1:NumLT]}
-    
-    # If the original data.frame included levels for linetype_column, then use
-    # those levels. Otherwise, make "none" the base level since most of the
-    # time, this will be used for the column "Inhibitor".
-    if(class(sim_dataframe$linetype_column) != "factor"){
-        if("none" %in% unique(sim_dataframe$linetype_column)){
-            sim_dataframe <- sim_dataframe %>% 
-                mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
-        } else {
-            sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
-        }
+    if(NumLT == 0){
+        linetypes = "solid"
+    } else if(NumLT < length(linetypes)){
+        linetypes = linetypes[1:NumLT] 
+    } else if(NumLT > length(linetypes)){
+        linetypes = rep(linetypes, 100)[1:NumLT]
     }
     
+    if(as_label(linetype_column) != "<empty>"){
+        
+        # If the original data.frame included levels for linetype_column, then use
+        # those levels. Otherwise, make "none" the base level since most of the
+        # time, this will be used for the column "Inhibitor".
+        if(class(sim_dataframe$linetype_column) != "factor"){
+            if("none" %in% unique(sim_dataframe$linetype_column)){
+                sim_dataframe <- sim_dataframe %>% 
+                    mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
+            } else {
+                sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
+            }
+        }
+    }
     
     # Not sure how I'm going to relabel the facets, actually. Commenting this
     # out for now.
@@ -627,17 +634,43 @@ ct_plot_overlay <- function(ct_dataframe,
                "facet2" = as_label(facet2_column))
     UniqueAES <- MyAES[which(MyAES != "<empty>")]
     
-    MyUniqueData <- ct_dataframe %>% 
-        filter(Trial == MyMeanType) %>% 
-        select(union(UniqueAES, 
-                     c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
-        unique()
-    
-    UniqueGroups1 <- ct_dataframe %>% 
-        summarize(across(.cols = union(UniqueAES, 
-                                       c("File", "Tissue", "CompoundID",
-                                         "Compound", "Inhibitor")),
-                         .fns = function(x) length(unique(x)))) 
+    # If each compound has only 1 compound ID and vice versa, no need to
+    # consider compound in the set of unique aesthetics.
+    if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
+                  summarize(LengthUni = length(unique(CompoundID))), 
+              ct_dataframe %>% group_by(CompoundID) %>% 
+                  summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
+        
+        MyUniqueData <- ct_dataframe %>% 
+            filter(Trial == MyMeanType) %>% 
+            select(union(UniqueAES, 
+                         c("File", "Tissue", as.character(UniqueAES), "Inhibitor"))) %>% 
+            unique()
+        
+        UniqueGroups1 <- ct_dataframe %>% 
+            summarize(across(.cols = union(UniqueAES, 
+                                           c("File", "Tissue", 
+                                             as.character(UniqueAES), 
+                                             "Inhibitor")),
+                             .fns = function(x) length(unique(x)))) 
+        
+        
+    } else {
+        
+        MyUniqueData <- ct_dataframe %>% 
+            filter(Trial == MyMeanType) %>% 
+            select(union(UniqueAES, 
+                         c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
+            unique()
+        
+        UniqueGroups1 <- ct_dataframe %>% 
+            summarize(across(.cols = union(UniqueAES, 
+                                           c("File", "Tissue", "CompoundID",
+                                             "Compound", "Inhibitor")),
+                             .fns = function(x) length(unique(x)))) 
+        
+        
+    }
     
     UniqueGroups <- UniqueGroups1 %>% 
         t() %>% as.data.frame() %>% 
@@ -653,11 +686,11 @@ ct_plot_overlay <- function(ct_dataframe,
         color_set <- "Brewer set 1"
     }
     
-    if(length(UniqueGroups[UniqueGroups != "Compound"]) > length(UniqueAES)){
-        warning(paste("You have requested", length(UniqueGroups[UniqueGroups != "Compound"]),
+    if(length(UniqueGroups) > length(UniqueAES)){
+        warning(paste("You have requested", length(UniqueGroups),
                       "unique data sets but only", 
-                      length(which(complete.cases(MyAES))), 
-                      "unique aesthetics for denoting those datasets. This is may result in an unclear graph."),
+                      length(UniqueAES), 
+                      "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
                 call. = FALSE)
         message(paste("Unique datasets:", str_comma(UniqueGroups)))
         message(paste("Unique aesthetics:", str_comma(UniqueAES)))
@@ -712,9 +745,11 @@ ct_plot_overlay <- function(ct_dataframe,
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
         A <- ggplot(sim_dataframe,
-                    aes(x = Time, y = Conc, color = colorBy_column, 
-                        linetype = linetype_column,
-                        group = Group)) +
+                    switch(as.character(as_label(linetype_column) != "<empty>"), 
+                           "TRUE" = aes(x = Time, y = Conc, color = colorBy_column, 
+                                        linetype = linetype_column, group = Group),
+                           "FALSE" = aes(x = Time, y = Conc, color = colorBy_column, 
+                                         group = Group))) +
             geom_line()
         
         if(nrow(obs_data) > 0){
@@ -748,9 +783,14 @@ ct_plot_overlay <- function(ct_dataframe,
             pivot_wider(names_from = Trial, values_from = Conc)
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
-        A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                  color = colorBy_column, fill = colorBy_column, 
-                                  linetype = linetype_column)) + 
+        A <- ggplot(RibbonDF, 
+                    switch(as.character(as_label(linetype_column) != "<empty>"), 
+                           "TRUE" = aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
+                                        color = colorBy_column, fill = colorBy_column, 
+                                        linetype = linetype_column),
+                           "FALSE" = aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
+                                         color = colorBy_column, fill = colorBy_column))
+                    ) +
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
         
