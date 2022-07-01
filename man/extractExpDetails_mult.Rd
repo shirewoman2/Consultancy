@@ -17,10 +17,10 @@ extractExpDetails_mult(
 \item{sim_data_files}{a character vector of simulator output files, each in
 quotes and encapsulated with \code{c(...)}, or NA to extract experimental
 details for \emph{all} the Excel files in the current folder. Example of
-acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. Note that, if some of
-your Excel files are not regular simulator output, e.g. they are
-sensitivity analyses or a file where you were doing some calculations, this
-will result in an error and return no data.}
+acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. If some of your Excel
+files are not regular simulator output, e.g. they are sensitivity analyses
+or a file where you were doing some calculations, those files will be
+skipped.}
 
 \item{exp_details}{experimental details you want to extract from the
   simulator output files using the function \code{\link{extractExpDetails}}.
@@ -77,12 +77,12 @@ extracted only some of the possible experimental details and you now would
 like more experimental details from each simulator output file.}
 
 \item{annotate_output}{TRUE or FALSE (default) on whether to transpose the
-rows and columns in the output, making the output table
-longer instead of wider, and adding columns to the output for a) which
-compound the information pertains to (substrate, inhibitor, etc.), b) which
-section of the Simcyp Simulator this detail is found in (physchem,
-absorption, distribution, etc.), c) notes describing what the detail is,
-and d) which sheet in the Excel file the information was pulled from.}
+rows and columns in the output, making the output table longer instead of
+wider, and adding columns to the output for a) which compound the
+information pertains to (substrate, inhibitor, etc.), b) which section of
+the Simcyp Simulator this detail is found in (physchem, absorption,
+distribution, etc.), c) notes describing what the detail is, and d) which
+sheet in the Excel file the information was pulled from.}
 
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
