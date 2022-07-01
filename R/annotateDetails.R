@@ -22,23 +22,28 @@
 annotateDetails <- function(Deets){
     
     if(class(Deets)[1] == "list"){
-        Deets <- as.data.frame(t(as.data.frame(Deets))) %>% 
-            mutate(Detail = row.names(.)) %>% 
-            rename(Value = V1) %>% 
-            select(Detail, Value)
+        # This is when the output is the default list from extractExpDetails
+        Deets <- as.data.frame(Deets)
     }
     
-    if("File" %in% names(Deets)){
-        # This is when Deets came from extractExpDetails_mult; this step isn't
-        # necessary when Deets came from extractExpDetails.
-        OutDF <- Deets %>% 
-            mutate(across(.cols = everything(), .fns = as.character)) %>% 
-            pivot_longer(cols = -File,
-                         names_to = "Detail", 
-                         values_to = "Value")
-    } else {
-        OutDF <- Deets
-    }
+    OutDF <- Deets %>% 
+        mutate(across(.cols = everything(), .fns = as.character)) %>% 
+        pivot_longer(cols = -File,
+                     names_to = "Detail", 
+                     values_to = "Value")
+    
+    CompoundNames <- OutDF %>%
+        filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
+                             "PrimaryMetabolite2", "SecondaryMetabolite", 
+                             "Inhibitor1", "Inhibitor2", 
+                             "Inhibitor1Metabolite")) %>% 
+        mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
+                                      Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
+                                      Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
+                                      Detail == "Inhibitor1" ~ "inhibitor 1", 
+                                      Detail == "Inhibitor2" ~ "inhibitor 2", 
+                                      Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
+        rename("Compound" = Value) %>% select(-Detail)
     
     suppressMessages(
         OutDF <- OutDF %>% 
@@ -52,14 +57,11 @@ annotateDetails <- function(Deets){
             summarize(Sheet = str_comma(Sheet, conjunction = "or")) %>% 
             mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
                                       Detail == "SimDuration", 
-                                  "Summary", Sheet))
-    )
-    
-    if("File" %in% names(OutDF)){
-        OutDF <- OutDF %>% 
+                                  "Summary", Sheet)) %>% 
+            left_join(CompoundNames) %>% 
             pivot_wider(names_from = File, 
                         values_from = Value)
-    }
+    )
     
     # Metabolism and interaction parameters won't match input details, so
     # adding which sheet they came from and what simulator section they
@@ -77,7 +79,7 @@ annotateDetails <- function(Deets){
                               "Input Sheet", Sheet),
                SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
                                          "Transporters", SimulatorSection)) %>% 
-        select(SimulatorSection, Sheet, Notes, CompoundID, Detail, everything()) %>% 
+        select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail, everything()) %>% 
         arrange(SimulatorSection, Detail)
     
 }
