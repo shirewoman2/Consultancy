@@ -108,10 +108,8 @@ match_units <- function(DF_to_adjust, goodunits){
                    1 # PD response
         ) )
     
-    if(any(unique(goodunits$Conc_units) %in% ConvTable_conc$ToAdjustUnits == FALSE) |
-       (length(unique(DF_to_adjust$Conc_units[complete.cases(DF_to_adjust$subsection_ADAM)])) > 0 &&
-       unique(DF_to_adjust$Conc_units[complete.cases(DF_to_adjust$subsection_ADAM)]) %in%
-       ConvTable_conc$GoodUnits == FALSE)){
+    if(unique(goodunits$Conc_units) %in% ConvTable_conc$ToAdjustUnits == FALSE |
+       unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$GoodUnits == FALSE){
         stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
              call. = FALSE)
     }
