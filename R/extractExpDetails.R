@@ -1177,6 +1177,10 @@ extractExpDetails <- function(sim_data_file,
         Out$Inhibitor1Metabolite <- NA
     }
     
+    # Always including the file name. It's just a good practice and it makes
+    # extractExpDetails output more like extractExpDetails_mult.
+    Out$File <- sim_data_file
+    
     Out <- Out[sort(names(Out))]
     
     if(annotate_output){
