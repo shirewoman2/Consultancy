@@ -49,6 +49,14 @@ tidyPop <- function(input_pop){
     PopulationSimple <- ifelse(Population == "preterm infants",
                                "preterm infants", PopulationSimple)
     Population1stCap <- str_to_sentence(Population)
+    Population1stCap <- ifelse(str_detect(Population1stCap, "score of [abc]"), 
+                               sub("score of [abc]",
+                                   switch(str_extract(Population1stCap, "score of [abc]"),
+                                          "score of a" = "score of A", 
+                                          "score of b" = "score of B",
+                                          "score of c" = "score of C"),
+                                   Population1stCap), Population1stCap)
+    Population1stCap <- sub("child-pugh", "Child-Pugh", Population1stCap)
     PopulationCap <- str_to_title(Population)
     PopulationCap <- ifelse(str_detect(Population, "CP"),
                             sub("Cp", "CP", PopulationCap), PopulationCap)
