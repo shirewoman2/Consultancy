@@ -16,6 +16,7 @@ ct_plot_overlay(
   obs_transparency = NA,
   linetype_column,
   linetypes = c("solid", "dashed"),
+  line_width = NA,
   legend_label_linetype = NA,
   facet1_column,
   facet2_column,
@@ -147,6 +148,10 @@ you specified for \code{linetype_column}. Check what the unique values are
 in that column if you get a graph you didn't expect as far as line types
 go. To see possible line types by name, please enter
 \code{ggpubr::show_line_types()} into the console.}
+
+\item{line_width}{optionally specify how thick to make the lines. Acceptable
+input is a number; the default is 1 for most lines and 0.8 for some, to
+give you an idea of where to start.}
 
 \item{legend_label_linetype}{optionally indicate on the legend something
 explanatory about what the line types represent. For example, if

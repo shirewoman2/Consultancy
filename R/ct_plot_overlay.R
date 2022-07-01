@@ -91,6 +91,9 @@
 #'   in that column if you get a graph you didn't expect as far as line types
 #'   go. To see possible line types by name, please enter
 #'   \code{ggpubr::show_line_types()} into the console.
+#' @param line_width optionally specify how thick to make the lines. Acceptable
+#'   input is a number; the default is 1 for most lines and 0.8 for some, to
+#'   give you an idea of where to start.
 #' @param colorBy_column the column in \code{ct_dataframe} that should be used
 #'   for determining which color lines and/or points will be. Default is to use
 #'   the column File. This should be unquoted, e.g., \code{colorBy_column =
@@ -305,6 +308,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_transparency = NA, 
                             linetype_column, 
                             linetypes = c("solid", "dashed"),
+                            line_width = NA,
                             legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
@@ -765,7 +769,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                         linetype = linetype_column, group = Group),
                            "FALSE" = aes(x = Time, y = Conc, color = colorBy_column, 
                                          group = Group))) +
-            geom_line()
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
         if(nrow(obs_data) > 0){
             if(InternalAssignFile){
@@ -807,7 +811,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                          color = colorBy_column, fill = colorBy_column))
         ) +
             geom_ribbon(alpha = 0.25, color = NA) +
-            geom_line()
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
         if(nrow(obs_data) > 0){
             if(InternalAssignFile){
