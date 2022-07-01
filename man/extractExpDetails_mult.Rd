@@ -9,8 +9,8 @@ extractExpDetails_mult(
   exp_details = "all",
   existing_exp_details = Deets,
   overwrite = FALSE,
-  save_output = NA,
-  transpose_output = FALSE
+  annotate_output = FALSE,
+  save_output = NA
 )
 }
 \arguments{
@@ -76,25 +76,25 @@ changed input parameters for simulations and re-run them OR when you have
 extracted only some of the possible experimental details and you now would
 like more experimental details from each simulator output file.}
 
-\item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-it will still be saved as a csv file.}
-
-\item{transpose_output}{TRUE or FALSE (default) on whether to transpose the
-rows and columns in the output. Setting this to TRUE makes the output table
-longer instead of wider and also adds columns to the output for a) which
+\item{annotate_output}{TRUE or FALSE (default) on whether to transpose the
+rows and columns in the output, making the output table
+longer instead of wider, and adding columns to the output for a) which
 compound the information pertains to (substrate, inhibitor, etc.), b) which
 section of the Simcyp Simulator this detail is found in (physchem,
 absorption, distribution, etc.), c) notes describing what the detail is,
 and d) which sheet in the Excel file the information was pulled from.}
+
+\item{save_output}{optionally save the output by supplying a file name in
+quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+it will still be saved as a csv file.}
 }
 \value{
 Returns a data.frame of experimental details for simulator files
 }
 \description{
-\code{extractExpDetails_mult} takes a character vector of simulator output
-files -- or all the Excel files in the current directory if no files are
-specified -- and collects experimental details for the simulations into a
+\code{extractExpDetails_mult} takes a character vector of Simcyp Simulator
+output files -- or all the Excel files in the current directory if no files
+are specified -- and collects experimental details for the simulations into a
 single table. It optionally saves that table to a csv or Excel file.
 }
 \examples{

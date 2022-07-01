@@ -7,8 +7,8 @@
 extractExpDetails(
   sim_data_file,
   exp_details = "Summary tab",
-  save_output = NA,
-  transpose_output = FALSE
+  annotate_output = FALSE,
+  save_output = NA
 )
 }
 \arguments{
@@ -59,24 +59,24 @@ in quotes}
   used, so it would be a good idea to carefully check that the data are being
   pulled correctly in that scenario.}}}
 
-\item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-it will still be saved as a csv file.}
-
-\item{transpose_output}{TRUE or FALSE (default) on whether to transpose the
-rows and columns in the output. Setting this to TRUE makes the output table
-longer instead of wider and also adds columns to the output for a) which
+\item{annotate_output}{TRUE or FALSE (default) on whether to transpose the
+rows and columns in the output, making the output table
+longer instead of wider, and adding columns to the output for a) which
 compound the information pertains to (substrate, inhibitor, etc.), b) which
 section of the Simcyp Simulator this detail is found in (physchem,
 absorption, distribution, etc.), c) notes describing what the detail is,
 and d) which sheet in the Excel file the information was pulled from.}
+
+\item{save_output}{optionally save the output by supplying a file name in
+quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+it will still be saved as a csv file.}
 }
 \value{
 Returns a named list of the experimental details
 }
 \description{
 \code{extractExpDetails} looks up experimental design details from a Simcyp
-simulator output file.
+Simulator output file.
 }
 \examples{
 
