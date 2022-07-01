@@ -27,10 +27,9 @@
 #'   the Excel files in the current directory. Example of acceptable input:
 #'   \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be included with the
 #'   file names if they are located somewhere other than your working directory.
-#'   Note that, if you leave this as NA and some of the Excel files are not
-#'   regular simulator output, e.g. they are sensitivity analyses or a file
-#'   where you were doing some calculations, this will result in an error and
-#'   return no data.
+#'   If some of your Excel files are not regular simulator output, e.g. they are
+#'   sensitivity analyses or a file where you were doing some calculations,
+#'   those files will be skipped.
 #' @param obs_data_files a character vector of the observed data filess, each in
 #'   quotes and encapsulated with \code{c(...)}, that you'd like to compare,
 #'   e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. The path should be
@@ -248,11 +247,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     # Need to handle ADAM data specially
                     ADAMtissue <- c("stomach", "duodenum", "jejunum i",
                                     "jejunum ii", "ileum i", "ileum ii",
-                                    "ileum iii", "ileum iv", "colon", "faeces",
-                                    "cumulative absorption", "cumulative dissolution")
+                                    "ileum iii", "ileum iv", "colon", "faeces")
                     if(any(MultData[[f]][[j]]$Tissue %in% ADAMtissue)){
                         CT_adam <- MultData[[f]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue)
+                        
                         
                         CT_nonadam <- MultData[[f]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue == FALSE)

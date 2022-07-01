@@ -108,18 +108,30 @@ extractPK <- function(sim_data_file,
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
     
+    # Checking that the file is, indeed, a simulator output file.
+    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                           error = openxlsx::getSheetNames(sim_data_file))
+    if("Input Sheet" %in% SheetNames == FALSE){
+        # Using "warning" instead of "stop" here b/c I want this to be able to
+        # pass through to other functions and just skip any files that
+        # aren't simulator output.
+        warning(paste("The file", sim_data_file,
+                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                call. = FALSE)
+        return(list())
+    }
+    
+    
     # Main body of function ---------------------------------------------------
     
     if(returnAggregateOrIndiv[1] == "both"){
         returnAggregateOrIndiv <- c("aggregate", "individual")
     }
     
-    AllSheets <- readxl::excel_sheets(path = sim_data_file)
-    
     # Determining the name of the tab that contains PK data for the last dose
     # of the substrate (not the inhibitor... at least, not at this point).
-    Tab_last <- AllSheets[str_detect(AllSheets, "AUC(t)?[1-9]{1,1}[0-9]{0,}") &
-                              !str_detect(AllSheets, "Inh")]
+    Tab_last <- SheetNames[str_detect(SheetNames, "AUC(t)?[1-9]{1,1}[0-9]{0,}") &
+                              !str_detect(SheetNames, "Inh")]
     LastDoseNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
     # It's the highest dose number and it can't be 0 b/c that's dose 1.
     LastDoseNum <- suppressWarnings(max(LastDoseNum[LastDoseNum != 0]))
@@ -130,16 +142,16 @@ extractPK <- function(sim_data_file,
                        "(_CI)?\\(Sub\\)\\(C",
                        str_to_title(tissue), 
                        "|AUC", LastDoseNum, "\\(Sub\\)\\(C", str_to_title(tissue))
-    Tab_last <- AllSheets[which(str_detect(AllSheets, Tab_last))][1]
+    Tab_last <- SheetNames[which(str_detect(SheetNames, Tab_last))][1]
     if(LastDoseNum == -Inf && length(Tab_last) == 0 | is.na(Tab_last)){
-        if(any(str_detect(AllSheets, "AUCt[0-9]{1,}") &
-               !str_detect(AllSheets, "Inh"))){
-            Tab_last <- AllSheets[str_detect(AllSheets, "AUCt[1-9]{1,1}[0-9]{0,}") &
-                                      !str_detect(AllSheets, "Inh")]
-        } else if(any(str_detect(AllSheets, "AUC last"))){
+        if(any(str_detect(SheetNames, "AUCt[0-9]{1,}") &
+               !str_detect(SheetNames, "Inh"))){
+            Tab_last <- SheetNames[str_detect(SheetNames, "AUCt[1-9]{1,1}[0-9]{0,}") &
+                                      !str_detect(SheetNames, "Inh")]
+        } else if(any(str_detect(SheetNames, "AUC last"))){
             # Tab name could include "last" instead of a number, e.g., "Int AUC
             # last_CI(Sub)(CPlasma)"
-            Tab_last <- AllSheets[str_detect(AllSheets, "AUC last")][1]
+            Tab_last <- SheetNames[str_detect(SheetNames, "AUC last")][1]
         } else {
             Tab_last <- NA
         }
@@ -157,9 +169,9 @@ extractPK <- function(sim_data_file,
     }
     
     if(tolower(PKparameters_orig[1]) == "auc tab" & 
-       "AUC" %in% AllSheets == FALSE & 
-       any(c("AUC0(Sub)(CPlasma)") %in% AllSheets)){ # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
-        Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), AllSheets)[1]
+       "AUC" %in% SheetNames == FALSE & 
+       any(c("AUC0(Sub)(CPlasma)") %in% SheetNames)){ # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
+        Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), SheetNames)[1]
         
         warning(paste0("You requested all the parameters from the 'AUC' sheet, but that sheet is not present in ",
                        sim_data_file, ". However, the tab ", Sheet, 
@@ -170,7 +182,7 @@ extractPK <- function(sim_data_file,
     }
     
     # Error catching
-    if(complete.cases(sheet) & sheet %in% AllSheets == FALSE){
+    if(complete.cases(sheet) & sheet %in% SheetNames == FALSE){
         stop("The sheet requested could not be found in the Excel file.",
              call. = FALSE)
     }
@@ -304,12 +316,12 @@ extractPK <- function(sim_data_file,
         
         # b)
         (PKparameters_orig[1] == "AUC tab" & 
-         any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets)))){
+         any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames)))){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
         # Error catching
-        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% AllSheets) == FALSE){
+        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames) == FALSE){
             if(length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0,
                                               ParamAUCX, ParamCLTSS))) > 0){
                 
@@ -331,8 +343,8 @@ extractPK <- function(sim_data_file,
         } else {
             
             # Determining which sheet to read
-            SheetAUC <- ifelse("AUC" %in% AllSheets == FALSE, 
-                               ifelse("AUC_CI" %in% AllSheets == FALSE, 
+            SheetAUC <- ifelse("AUC" %in% SheetNames == FALSE, 
+                               ifelse("AUC_CI" %in% SheetNames == FALSE, 
                                       "AUC_SD", "AUC_CI"), "AUC")
             
             # Reading the sheet for AUC tab results
@@ -428,7 +440,7 @@ extractPK <- function(sim_data_file,
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
                         bind_rows(data.frame(PKparam = i, 
-                                             Tab = ifelse("AUC" %in% AllSheets == FALSE, 
+                                             Tab = ifelse("AUC" %in% SheetNames == FALSE, 
                                                           "AUC_CI", "AUC"),
                                              StartColText = ToDetect$AUCtab_StartColText,
                                              SearchText = ToDetect$SearchText,
@@ -528,7 +540,7 @@ extractPK <- function(sim_data_file,
                     if(checkDataSource){
                         DataCheck <- DataCheck %>%
                             bind_rows(data.frame(PKparam = NewParam, 
-                                                 Tab = ifelse("AUC" %in% AllSheets == FALSE, 
+                                                 Tab = ifelse("AUC" %in% SheetNames == FALSE, 
                                                               "AUC_CI", "AUC"),
                                                  StartColText = ToDetect$AUCtab_StartColText,
                                                  SearchText = ToDetect$SearchText,
@@ -586,9 +598,9 @@ extractPK <- function(sim_data_file,
     
     if(length(PKparameters_AUC0) > 0 &
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
-        PKparameters_orig[1] == "AUC tab" & "AUC" %in% AllSheets == FALSE)){
+        PKparameters_orig[1] == "AUC tab" & "AUC" %in% SheetNames == FALSE)){
         # Error catching
-        if(any(str_detect(AllSheets, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
+        if(any(str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
             # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")
             # is actually NOT for the 1st dose but for the 1st user-defined
             # interval! Do NOT use that tab unless/until we do something further
@@ -602,7 +614,7 @@ extractPK <- function(sim_data_file,
                     call. = FALSE)
         } else {
             
-            Sheet <- AllSheets[str_detect(AllSheets, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
+            Sheet <- SheetNames[str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
             
             AUC0_xl <- suppressMessages(
                 readxl::read_excel(path = sim_data_file, sheet = Sheet,
@@ -791,7 +803,7 @@ extractPK <- function(sim_data_file,
     if(length(PKparameters_Abs) > 0 &
        PKparameters_orig[1] %in% c("AUC tab") == FALSE){
         # Error catching
-        if("Absorption" %in% AllSheets == FALSE){
+        if("Absorption" %in% SheetNames == FALSE){
             warning(paste0("The sheet 'Absorption' must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_Abs, collapse = ", "),
                            ". None of these parameters can be extracted."),
@@ -941,7 +953,7 @@ extractPK <- function(sim_data_file,
     if(length(PKparameters_CLTSS) > 0 &
        PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
         # Error catching
-        if("Clearance Trials SS" %in% AllSheets == FALSE){
+        if("Clearance Trials SS" %in% SheetNames == FALSE){
             warning(paste0("The sheet 'Clearance Trials SS' must be present in the Excel simulated data file to extract the PK parameters ",
                            str_c(PKparameters_CLTSS, collapse = ", "),
                            ". None of these parameters can be extracted."),
