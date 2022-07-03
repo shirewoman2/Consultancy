@@ -30,7 +30,15 @@ annotateDetails <- function(Deets){
         mutate(across(.cols = everything(), .fns = as.character)) %>% 
         pivot_longer(cols = -File,
                      names_to = "Detail", 
-                     values_to = "Value")
+                     values_to = "Value") %>% 
+        mutate(CompoundID = str_extract(Detail, "_sub$|_inhib$|_primet1$|_primet2$|_secmet$|_inhib2$|_inhib1met$"),
+               CompoundID = case_when(CompoundID == "_sub" | Detail == "Substrate" ~ "substrate",
+                                      CompoundID == "_inhib" | Detail == "Inhibitor1" ~ "inhibitor 1",
+                                      CompoundID == "_inhib2" | Detail == "Inhibitor2" ~ "inhibitor 2", 
+                                      CompoundID == "_met1" | Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
+                                      CompoundID == "_met2" | Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
+                                      CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
+                                      CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
     CompoundNames <- OutDF %>%
         filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
@@ -43,11 +51,13 @@ annotateDetails <- function(Deets){
                                       Detail == "Inhibitor1" ~ "inhibitor 1", 
                                       Detail == "Inhibitor2" ~ "inhibitor 2", 
                                       Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
-        rename("Compound" = Value) %>% select(-Detail)
+        rename("Compound" = Value) %>% 
+        filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
+        select(-Detail)
     
     suppressMessages(
         OutDF <- OutDF %>% 
-            left_join(ExpDetailDefinitions, by = "Detail") %>% 
+            left_join(ExpDetailDefinitions, by = c("Detail", "CompoundID")) %>% 
             # Finding some artifacts from row binding output from both of
             # extractExpDetails and extractExpDetails_mult. I think this should
             # fix the issue.
@@ -58,6 +68,7 @@ annotateDetails <- function(Deets){
             mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
                                       Detail == "SimDuration", 
                                   "Summary", Sheet)) %>% 
+            ungroup() %>% 
             left_join(CompoundNames) %>% 
             pivot_wider(names_from = File, 
                         values_from = Value)
@@ -81,6 +92,8 @@ annotateDetails <- function(Deets){
                                          "Transporters", SimulatorSection)) %>% 
         select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail, everything()) %>% 
         arrange(SimulatorSection, Detail)
+    
+    return(OutDF)
     
 }
 
