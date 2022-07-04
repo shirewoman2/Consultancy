@@ -5,7 +5,7 @@
 \title{Make PK summary tables from multiple simulator output files at once}
 \usage{
 pksummary_mult(
-  sim_data_files,
+  sim_data_files = NA,
   observed_PK = NA,
   PKparameters = NA,
   PKorder = "default",

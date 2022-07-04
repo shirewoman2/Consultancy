@@ -15,8 +15,9 @@
 #'   match the PK parameter options listed in
 #'   \code{data(PKParameterDefinitions)}. If you would like the output table to
 #'   include the observed data CV for any of the parameters, add "_CV" to the
-#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the examples
-#'   for example syntax for providing a data.frame here.
+#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the example
+#'   section at the bottom of the help file for example syntax for providing a
+#'   data.frame here.
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. Notes: \itemize{
 #'
@@ -123,7 +124,7 @@
 #'                              AUCtau_last_withInhib = c(800, 20),
 #'                              Cmax_last_withInhib = c(100, 5)))
 #' 
-pksummary_mult <- function(sim_data_files, 
+pksummary_mult <- function(sim_data_files = NA, 
                            observed_PK = NA,
                            PKparameters = NA,
                            PKorder = "default", 
@@ -147,6 +148,13 @@ pksummary_mult <- function(sim_data_files,
                                 "csv" = read.csv(observed_PK), 
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                          sheetIndex = 1))
+    } else {
+        
+        # If user did not supply specific files, then extract all the files in
+        # the current folder that end in "xlsx".
+        if(length(sim_data_files) == 1 && is.na(sim_data_files)){
+            sim_data_files <- list.files(pattern = "xlsx$")
+        }
     }
     
     if("data.frame" %in% class(observed_PK)){
@@ -166,6 +174,9 @@ pksummary_mult <- function(sim_data_files,
     if(exists("observed_PKDF", inherits = FALSE)){
         
         for(i in 1:nrow(observed_PKDF)){
+            
+            print(paste("Extracting data from", observed_PKDF$File[i]))
+            
             temp <- pksummary_table(
                 sim_data_file = as.character(observed_PKDF[i, "File"]),
                 observed_PK = observed_PKDF[i, ], 
@@ -204,6 +215,9 @@ pksummary_mult <- function(sim_data_files,
     } else {
         
         for(i in sim_data_files){
+            
+            print(paste("Extracting data from", i))
+            
             temp <- pksummary_table(sim_data_file = i, 
                                     PKparameters = PKparameters, 
                                     PKorder = PKorder, 
@@ -219,6 +233,11 @@ pksummary_mult <- function(sim_data_files,
                                     checkDataSource = checkDataSource,
                                     prettify_compound_names = c("inhibitor" = "effector",
                                                                 "substrate" = "substrate"))
+            
+            if(length(temp) == 0){
+                rm(temp)
+                next
+            }
             
             if(checkDataSource){
                 
@@ -239,8 +258,24 @@ pksummary_mult <- function(sim_data_files,
         }
     }
     
-    MyPKResults <- bind_rows(MyPKResults) %>% 
-        select(File, everything())
+    if(PKorder == "default"){
+        
+        MyPKResults <- bind_rows(MyPKResults)
+        MyPKResults <- MyPKResults %>% 
+            select(File, 
+                   any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
+                              left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
+                              filter(complete.cases(SortOrder)) %>% 
+                              arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
+                   everything())
+        
+    } else {
+        
+        MyPKResults <- bind_rows(MyPKResults) %>% 
+            select(File, 
+                   any_of(PKparameters), everything())
+        
+    }
     
     OutQC <- bind_rows(OutQC)
     

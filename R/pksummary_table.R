@@ -309,6 +309,16 @@ pksummary_table <- function(sim_data_file = NA,
         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
         GMR_mean_type <- "geometric"
         Deets <- extractExpDetails(sim_data_file = sim_data_file)
+        
+        # extractExpDetails will check whether the Excel file provided was, in
+        # fact, a Simulator output file and return a list of length 0 if not.
+        # Checking for that here.
+        if(length(Deets) == 0){
+            # warning(paste0("The file ", sim_data_file, 
+            #                " is not a Simulator output file and will be skipped."))
+            return(list())
+        }
+        
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
         DoseRegimen <- Deets$Regimen_sub
         sim_data_file <- sim_data_file
