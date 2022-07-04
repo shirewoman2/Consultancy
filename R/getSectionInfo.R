@@ -98,33 +98,41 @@ getSectionInfo <- function(report_input_file = NA,
                        "8" = "TID",
                        "Single Dose" = "single dose", 
                        "custom dosing" = "custom dosing")
-    Deets[["Inhibitor1"]] <- tolower(gsub(
-        "SV-|Sim-|_EC|_SR|-MD|-SD|_FO|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
-        "",
-        Deets[["Inhibitor1"]]))
-    Deets[["Inhibitor2"]] <- tolower(gsub(
-        "SV-|Sim-|_EC|_SR|-MD|-SD|_FO|-[1-9]00 mg [QMSTBI]{1,2}D|_Fasted Soln|_Fed Capsule",
-        "",
-        Deets[["Inhibitor2"]]))
-    DoseFreq_inhib <- switch(as.character(Deets[["DoseInt_inhib"]]),
-                             "12" = "BID",
-                             "24" = "QD",
-                             "8" = "TID",
-                             "Single Dose" = "single dose", 
-                             "custom dosing" = "custom dosing")
+    DoseFreq <- ifelse(is.na(Deets[["DoseInt_sub"]]), "single dose", DoseFreq)
+    
+    if(DDI){
+        
+        Deets[["Inhibitor1"]] <- prettify_compound_name(Deets[["Inhibitor1"]])
+        Deets[["Inhibitor2"]] <- prettify_compound_name(Deets[["Inhibitor2"]])
+        
+        if(length(Deets[["DoseInt_inhib"]]) > 0){
+            DoseFreq_inhib <- switch(as.character(Deets[["DoseInt_inhib"]]),
+                                     "12" = "BID",
+                                     "24" = "QD",
+                                     "8" = "TID",
+                                     "Single Dose" = "single dose", 
+                                     "custom dosing" = "custom dosing")
+        } else {
+            DoseFreq_inhib <- NA
+        }
+        
+        # Days inhibitor was administered
+        StartDoseDay_inhib <- as.numeric(sub("Day ", "",
+                                             str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]][1]))
+        
+        LastDoseDay_inhib <-
+            (Deets[["DoseInt_inhib"]] * Deets[["NumDoses_inhib"]])/24
+        
+    } else {
+        DoseFreq_inhib <- NA
+        StartDoseDay_inhib <- NA
+        LastDoseDay_inhib <- NA
+    }
     
     # Day substrate was administered
     StartDoseDay_sub <-
         as.numeric(sub("Day ", "",
                        str_split(Deets[["StartDayTime_sub"]], ", ")[[1]][1]))
-    
-    # Days inhibitor was administered
-    StartDoseDay_inhib <- as.numeric(sub("Day ", "",
-                                         str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]][1]))
-    
-    LastDoseDay_inhib <-
-        (Deets[["DoseInt_inhib"]] * Deets[["NumDoses_inhib"]])/24
-    
     
     # Putting everything together
     sectionInfo <- c(Deets, Population,

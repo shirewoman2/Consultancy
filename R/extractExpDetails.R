@@ -95,8 +95,8 @@ extractExpDetails <- function(sim_data_file,
         # Using "warning" instead of "stop" here b/c I want this to be able to
         # pass through to extractExpDetails_mult and just skip any files that
         # aren't simulator output.
-        warning(paste("The file", sim_data_file,
-                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+        warning(paste0("The file `", sim_data_file,
+                      "` does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
                 call. = FALSE)
         return(list())
     }
