@@ -916,9 +916,9 @@ ct_plot_overlay <- function(ct_dataframe,
             if(is.null(names(color_set)) == FALSE && 
                all(unique(ct_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
                 warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                              as_label(colorBy_column),
-                              " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                              as_label(colorBy_column), "."), 
+                               as_label(colorBy_column),
+                               " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                               as_label(colorBy_column), "."), 
                         call. = FALSE)
                 
                 color_set <- as.character(color_set)

@@ -133,16 +133,16 @@ sensitivity_plot <- function(SA_file,
     
     # Graph ----------------------------------------------------------------
     
-    PrettyDV <- list("CL" = expression(CL~"L/h"), 
-                     "Dose over AUC" = expression(Dose~over~AUC~"(L/h)"),
-                     "AUC over Dose" = expression("AUC over Dose (h/L)"),
-                     "Vss" = expression(V[ss]~"(L/kg)"),
-                     "Fg" = expression(F[g]),
-                     "Fh" = expression(F[h]),
+    PrettyDV <- list("cl" = expression(CL~"L/h"), 
+                     "dose over auc" = expression(Dose~over~AUC~"(L/h)"),
+                     "auc over dose" = expression("AUC over Dose (h/L)"),
+                     "vss" = expression(V[ss]~"(L/kg)"),
+                     "fg" = expression(F[g]),
+                     "fh" = expression(F[h]),
                      "fa" = expression(f[a]),
-                     "CLpo" = expression(CL[PO]~"(L/h)"), 
-                     "Cmax" = expression(C[max]~"(ng/mL)"), 
-                     "AUC" = expression(AUC~"(ng/mL.h)"), 
+                     "clpo" = expression(CL[PO]~"(L/h)"), 
+                     "cmax" = expression(C[max]~"(ng/mL)"), 
+                     "auc" = expression(AUC~"(ng/mL.h)"), 
                      "tmax" = expression(t[max]~"(h)"))
     
     PrettySensParam <- list("Fugut" = expression(f[u[gut]]), 
