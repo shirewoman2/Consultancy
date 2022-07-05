@@ -165,7 +165,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                 }
             }
             
-            if(SingleDose & time_range_input %in% c("last dose", "penultimate dose")){
+            if(SingleDose & 
+               any(time_range_input %in% c("last dose", "penultimate dose"))){
                 warning(paste0("You requested the ", time_range_input,
                                ", but the compound was administered as a single dose. The graph x axis will cover the substrate administration time until the end of the simulation."),
                         call. = FALSE)
@@ -232,7 +233,7 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         } else {
             
             # Multiple compound scenario here
-            if(str_detect(time_range_input, "dose|last obs")){
+            if(any(str_detect(time_range_input, "dose|last obs"))){
                 warning(paste0("You requested the ", time_range_input,
                                ", but this is a graph of multiple compounds, which may have different dose intervals. The graph x axis will cover the full time range of the simulation."),
                         call. = FALSE)

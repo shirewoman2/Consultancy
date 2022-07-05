@@ -123,6 +123,16 @@
 #'                              Cmax_last = c(20, 20),
 #'                              AUCtau_last_withInhib = c(800, 20),
 #'                              Cmax_last_withInhib = c(100, 5)))
+#'
+#' # Include a data.frame of observed data for S/O comparisons
+#' pksummary_mult(
+#'     sim_data_files = NA,
+#'     observed_PK = data.frame(File = c("mdz-5mg-qd-keto-400mg-qd.xlsx",
+#'                                       "mdz-5mg-qd-rif-600mg-qd.xlsx"),
+#'                              AUCtau_last = c(55, 55),
+#'                              Cmax_last = c(20, 20),
+#'                              AUCtau_last_withInhib = c(800, 20),
+#'                              Cmax_last_withInhib = c(100, 5)))
 #' 
 pksummary_mult <- function(sim_data_files = NA, 
                            observed_PK = NA,

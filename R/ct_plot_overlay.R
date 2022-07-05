@@ -91,6 +91,9 @@
 #'   in that column if you get a graph you didn't expect as far as line types
 #'   go. To see possible line types by name, please enter
 #'   \code{ggpubr::show_line_types()} into the console.
+#' @param line_width optionally specify how thick to make the lines. Acceptable
+#'   input is a number; the default is 1 for most lines and 0.8 for some, to
+#'   give you an idea of where to start.
 #' @param colorBy_column the column in \code{ct_dataframe} that should be used
 #'   for determining which color lines and/or points will be. Default is to use
 #'   the column File. This should be unquoted, e.g., \code{colorBy_column =
@@ -197,7 +200,16 @@
 #'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
 #'   colors from purple to blue to green to yellow in a manner that is
 #'   "printer-friendly, perceptually uniform and easy to read by those with
-#'   colorblindness", according to the package author}}
+#'   colorblindness", according to the package author}
+#'
+#'   \item{a character vector of colors}{If you'd prefer to set all the colors
+#'   yourself to \emph{exactly} the colors you want, you can specify those
+#'   colors here. An example of how the syntax should look: \code{color_set =
+#'   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+#'   which item in \code{colorBy_column} gets which color, you can supply a
+#'   named vector. For example, if you're coloring the lines by the compound ID,
+#'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}}}
 #'
 #' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
@@ -296,6 +308,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_transparency = NA, 
                             linetype_column, 
                             linetypes = c("solid", "dashed"),
+                            line_width = NA,
                             legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
@@ -555,6 +568,11 @@ ct_plot_overlay <- function(ct_dataframe,
     } else if(NumLT < length(linetypes)){
         linetypes = linetypes[1:NumLT] 
     } else if(NumLT > length(linetypes)){
+        warning(paste("There are", NumLT,
+                      "unique values in the column you have specified for the line types, but you have only specified", 
+                      length(linetypes), 
+                      "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph."), 
+                call. = FALSE)
         linetypes = rep(linetypes, 100)[1:NumLT]
     }
     
@@ -682,7 +700,7 @@ ct_plot_overlay <- function(ct_dataframe,
     # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
     # aethetically pleasing.
     if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
-       color_set == "default"){
+       color_set[1] == "default"){
         color_set <- "Brewer set 1"
     }
     
@@ -707,7 +725,7 @@ ct_plot_overlay <- function(ct_dataframe,
                        ", but you have only requested ", 
                        length(unique(linetypes)), " linetype(s): ", 
                        str_comma(unique(linetypes)), 
-                       ". You will get a more interpretable graph if you specify more values for the argument 'linetypes'."),
+                       ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'."),
                 call. = FALSE)
     }
     
@@ -751,7 +769,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                         linetype = linetype_column, group = Group),
                            "FALSE" = aes(x = Time, y = Conc, color = colorBy_column, 
                                          group = Group))) +
-            geom_line()
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
         if(nrow(obs_data) > 0){
             if(InternalAssignFile){
@@ -793,7 +811,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                          color = colorBy_column, fill = colorBy_column))
         ) +
             geom_ribbon(alpha = 0.25, color = NA) +
-            geom_line()
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
         if(nrow(obs_data) > 0){
             if(InternalAssignFile){
@@ -891,43 +909,73 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- A + scale_color_manual(values = "black")
     } else {
         
-        if(color_set == "default"){
-            # Using "Dark2" b/c "Set2" is just really, really light. 
-            A <- A + scale_color_brewer(palette = "Dark2") +
-                scale_fill_brewer(palette="Dark2")
-        }
-        
-        if(color_set == "blue-green"){
-            A <- A + scale_color_manual(values = blueGreen(NumColors)) +
-                scale_fill_manual(values = blueGreen(NumColors))
-            A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-                scale_fill_manual(values = blueGreen(NumColorsNeeded))
-        }
-        
-        if(color_set == "rainbow"){
-            A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-                scale_fill_manual(values = colRainbow(NumColorsNeeded))
-        }
-        
-        if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
-            # Using "Dark2" b/c "Set2" is just really, really light. 
-            A <- A + scale_fill_brewer(palette = "Dark2") +
-                scale_color_brewer(palette = "Dark2")
-        }
-        
-        if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
-            A <- A + scale_fill_brewer(palette = "Set1") +
-                scale_color_brewer(palette = "Set1")
-        }
-        
-        if(color_set == "Tableau"){
-            A <- A + ggthemes::scale_color_tableau() +
-                ggthemes::scale_fill_tableau()
-        }
-        
-        if(color_set == "viridis"){
-            A <- A + viridis::scale_color_viridis(discrete = TRUE) +
-                viridis::scale_fill_viridis(discrete = TRUE)
+        if(length(color_set) > 1){
+            
+            # If they supply a named character vector whose values are not
+            # present in the data, convert it to an unnamed character vector.
+            if(is.null(names(color_set)) == FALSE && 
+               all(unique(ct_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+                warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
+                               as_label(colorBy_column),
+                               " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                               as_label(colorBy_column), "."), 
+                        call. = FALSE)
+                
+                color_set <- as.character(color_set)
+            }
+            
+            if(length(color_set) < NumColorsNeeded){
+                warning(paste("There are", NumColorsNeeded,
+                              "unique values in the column you have specified for the colors, but you have only specified", 
+                              length(color_set), 
+                              "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
+                        call. = FALSE)
+                
+                color_set <- rep(color_set, 100)[1:NumColorsNeeded]
+            }
+            
+            A <- A + scale_color_manual(values = color_set) +
+                scale_fill_manual(values = color_set)
+        } else {
+            
+            if(color_set == "default"){
+                # Using "Dark2" b/c "Set2" is just really, really light. 
+                A <- A + scale_color_brewer(palette = "Dark2") +
+                    scale_fill_brewer(palette="Dark2")
+            }
+            
+            if(color_set == "blue-green"){
+                A <- A + scale_color_manual(values = blueGreen(NumColors)) +
+                    scale_fill_manual(values = blueGreen(NumColors))
+                A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
+                    scale_fill_manual(values = blueGreen(NumColorsNeeded))
+            }
+            
+            if(color_set == "rainbow"){
+                A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
+                    scale_fill_manual(values = colRainbow(NumColorsNeeded))
+            }
+            
+            if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
+                # Using "Dark2" b/c "Set2" is just really, really light. 
+                A <- A + scale_fill_brewer(palette = "Dark2") +
+                    scale_color_brewer(palette = "Dark2")
+            }
+            
+            if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
+                A <- A + scale_fill_brewer(palette = "Set1") +
+                    scale_color_brewer(palette = "Set1")
+            }
+            
+            if(color_set == "Tableau"){
+                A <- A + ggthemes::scale_color_tableau() +
+                    ggthemes::scale_fill_tableau()
+            }
+            
+            if(color_set == "viridis"){
+                A <- A + viridis::scale_color_viridis(discrete = TRUE) +
+                    viridis::scale_fill_viridis(discrete = TRUE)
+            }
         }
     }
     
@@ -954,6 +1002,14 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
                                         "TRUE" = legend_label_linetype,
                                         "FALSE" = as_label(linetype_column)))
+        
+        if(any(linetypes != "solid")){
+            # When the linetype is dashed (or possibly some other user-specified
+            # line type that I'm not even considering), then the legend glyph
+            # often cuts off the 2nd dash and it's unclear how solid vs. dashed
+            # lines differ in the legend. Fixing that here.
+            A <- A + theme(legend.key.width = unit(2, "lines"))
+        }
     }
     
     ## Adding spacing between facets if requested
