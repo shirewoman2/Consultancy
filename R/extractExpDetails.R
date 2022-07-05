@@ -96,7 +96,7 @@ extractExpDetails <- function(sim_data_file,
         # pass through to extractExpDetails_mult and just skip any files that
         # aren't simulator output.
         warning(paste0("The file `", sim_data_file,
-                      "` does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                       "` does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
                 call. = FALSE)
         return(list())
     }
@@ -903,19 +903,29 @@ extractExpDetails <- function(sim_data_file,
                                 
                             }
                             
-                            suppressWarnings(
-                                Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- 
-                                    as.numeric(
-                                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
-                                                 ValueCol] %>% pull(1))
-                            )
+                            # Checking for fuinc values b/c they're not always there
+                            fuinc <- as.numeric(
+                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                         ValueCol] %>% pull(1))
                             
-                            suppressWarnings(
-                                Out[[paste0(ParamPrefix, "_RAFREF", Suffix)]] <- 
-                                    as.numeric(
-                                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
-                                                 ValueCol] %>% pull(1))
-                            )
+                            if(length(fuinc) > 0){
+                                suppressWarnings(
+                                    Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- fuinc
+                                )
+                            }
+                            rm(fuinc)
+                            
+                            # Checking for RAF/REF values b/c they're not always there
+                            RAFREF <- as.numeric(
+                                InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                         ValueCol] %>% pull(1))
+                            
+                            if(length(RAFREF) > 0){
+                                suppressWarnings(
+                                    Out[[paste0(ParamPrefix, "_RAFREF", Suffix)]] <- RAFREF
+                                )
+                            }
+                            rm(RAFREF)
                             
                             rm(TransRowLast, Transporter, Organ, TransRowNames, Location, 
                                ParamPrefix)
