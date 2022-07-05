@@ -637,9 +637,9 @@ ct_plot_overlay <- function(ct_dataframe,
     # If each compound has only 1 compound ID and vice versa, no need to
     # consider compound in the set of unique aesthetics.
     if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
-                  summarize(LengthUni = length(unique(CompoundID))), 
-              ct_dataframe %>% group_by(CompoundID) %>% 
-                  summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
+                     summarize(LengthUni = length(unique(CompoundID))), 
+                     ct_dataframe %>% group_by(CompoundID) %>% 
+                     summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
         
         MyUniqueData <- ct_dataframe %>% 
             filter(Trial == MyMeanType) %>% 
@@ -791,7 +791,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                         linetype = linetype_column),
                            "FALSE" = aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
                                          color = colorBy_column, fill = colorBy_column))
-                    ) +
+        ) +
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line()
         
