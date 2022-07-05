@@ -1002,6 +1002,14 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
                                         "TRUE" = legend_label_linetype,
                                         "FALSE" = as_label(linetype_column)))
+        
+        if(any(linetypes != "solid")){
+            # When the linetype is dashed (or possibly some other user-specified
+            # line type that I'm not even considering), then the legend glyph
+            # often cuts off the 2nd dash and it's unclear how solid vs. dashed
+            # lines differ in the legend. Fixing that here.
+            A <- A + theme(legend.key.width = unit(2, "lines"))
+        }
     }
     
     ## Adding spacing between facets if requested
