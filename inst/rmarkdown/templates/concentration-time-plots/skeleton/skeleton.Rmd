@@ -1,5 +1,6 @@
 ---
 title: "Concentration-time plots"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
 date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
 output: word_document
 ---
