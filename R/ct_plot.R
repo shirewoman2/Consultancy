@@ -352,15 +352,15 @@ ct_plot <- function(ct_dataframe = NA,
     # that *was* included and make the plot.
     if(EnzPlot == FALSE && 
        (subsection_ADAM == "free compound in lumen" & 
-       length(unique(ct_dataframe$subsection_ADAM)) == 1 && 
-       unique(ct_dataframe$subsection_ADAM) %in% 
-       c("solid compound", "Heff", "absorption rate",
-         "unreleased substrate in faeces", "unreleased inhibitor in faeces",
-         "dissolved compound", "luminal CLint of compound", 
-         paste("cumulative fraction of absorbed", 
-               unique(ct_dataframe$CompoundID)),
-         paste("cumulative fraction of dissolved",
-               unique(ct_dataframe$CompoundID))))){
+        length(unique(ct_dataframe$subsection_ADAM)) == 1 && 
+        unique(ct_dataframe$subsection_ADAM) %in% 
+        c("solid compound", "Heff", "absorption rate",
+          "unreleased substrate in faeces", "unreleased inhibitor in faeces",
+          "dissolved compound", "luminal CLint of compound", 
+          paste("cumulative fraction of absorbed", 
+                unique(ct_dataframe$CompoundID)),
+          paste("cumulative fraction of dissolved",
+                unique(ct_dataframe$CompoundID))))){
         subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
     }
     
@@ -815,27 +815,35 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    A <- A + geom_point(data = obs_data, 
-                                        aes(x = Time, y = Conc, color = Inhibitor,
-                                            shape = Inhibitor, fill = Inhibitor),
-                                        inherit.aes = FALSE, size = 2,
-                                        stroke = 1, fill = NA)
-                } else {
-                    A <- A +
+                    A <- A + 
                         geom_point(data = obs_data, 
                                    aes(x = Time, y = Conc, color = Inhibitor,
                                        shape = Inhibitor, fill = Inhibitor),
                                    inherit.aes = FALSE, size = 2,
-                                   alpha = 0.5, stroke = 1) +
-                        scale_fill_manual(values = obs_color) +
-                        # have to add geom_point 2x b/c alpha applies to both
-                        # color (as in, the outline of the point) AND the fill
-                        # of the point
+                                   alpha = 0.5, stroke = 1) + 
                         geom_point(data = obs_data, 
                                    aes(x = Time, y = Conc, color = Inhibitor,
                                        shape = Inhibitor, fill = Inhibitor),
                                    inherit.aes = FALSE, size = 2,
                                    fill = NA, stroke = 1)
+                } else {
+                    suppressMessages(
+                        A <- A +
+                            geom_point(data = obs_data, 
+                                       aes(x = Time, y = Conc, color = Inhibitor,
+                                           shape = Inhibitor, fill = Inhibitor),
+                                       inherit.aes = FALSE, size = 2,
+                                       alpha = 0.5, stroke = 1) +
+                            scale_fill_manual(values = obs_color) +
+                            # have to add geom_point 2x b/c alpha applies to both
+                            # color (as in, the outline of the point) AND the fill
+                            # of the point
+                            geom_point(data = obs_data, 
+                                       aes(x = Time, y = Conc, color = Inhibitor,
+                                           shape = Inhibitor, fill = Inhibitor),
+                                       inherit.aes = FALSE, size = 2,
+                                       fill = NA, stroke = 1)
+                    )
                 }
             }
             
