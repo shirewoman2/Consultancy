@@ -22,6 +22,8 @@
 #'   haven't used this function with very many sensitivity-analysis scenarios
 #'   yet, the value will be unchanged. (If you have an independent variable
 #'   you'd like to add to our list, email Laura Shireman!)
+#' @param linear_or_log make the y axis "linear" (default) or "log" for plasma
+#'   concentration-time plots (this is ignored for all other plots)
 #' @param title (optional) a title to include on your graph in quotes
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -51,6 +53,7 @@
 sensitivity_plot <- function(SA_file, 
                              dependent_variable, 
                              ind_var_label = NA,
+                             linear_or_log = "linear",
                              title = NA,
                              save_graph = NA,
                              fig_height = 4,
@@ -164,13 +167,38 @@ sensitivity_plot <- function(SA_file,
     # Will need to expand this based on what output names are. Need to make sure
     # they match.
     
-    if(str_detect(dependent_variable, "plasma")){
+    if(str_detect(dependent_variable, "plasma|conc")){
+        
+        ct_x_axis(Data = SAdata %>% 
+                      # adding some placeholder values that aren't important for
+                      # the SA plot but are required for ct_x_axis.
+                      mutate(Time_units = "hours",
+                                           Simulated = TRUE,
+                                           DoseNum = 1, 
+                                           File = SA_file, 
+                                           Compound = "My compound",
+                                           CompoundID = "substrate", 
+                                           Inhibitor = "none"), 
+                  time_range = range(SAdata$Time), 
+                  t0 = "simulation start", 
+                  x_axis_interval = NA, 
+                  compoundToExtract = "substrate", 
+                  pad_x_axis = FALSE,
+                  EnzPlot = FALSE)
+        
         G <- ggplot(SAdata, aes(x = Time, y = Conc, color = SensValue, 
                                 group = SensValue)) +
             geom_line() +
             labs(color = ind_var_label) +
+            scale_x_continuous(breaks = XBreaks, 
+                               labels = XLabels) +
             xlab("Time (h)") +
             ylab("Concentration (ng/mL)")
+        
+        if(linear_or_log != "linear"){
+            G <- G + 
+                scale_y_log10()
+        }
         
         
     } else {

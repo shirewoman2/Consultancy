@@ -40,8 +40,9 @@ parameters you would like to compare, and those column names \emph{must}
 match the PK parameter options listed in
 \code{data(PKParameterDefinitions)}. If you would like the output table to
 include the observed data CV for any of the parameters, add "_CV" to the
-end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the examples
-for example syntax for providing a data.frame here.}
+end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the example
+section at the bottom of the help file for example syntax for providing a
+data.frame here.}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. Notes: \itemize{
@@ -154,6 +155,16 @@ Make PK summary tables from multiple simulator output files at once
 # Create PK summary tables for all the Simulator output
 # files in your working directory; get the default PK parameters
 pksummary_mult(sim_data_files = NA)
+
+# Include a data.frame of observed data for S/O comparisons
+pksummary_mult(
+    sim_data_files = NA,
+    observed_PK = data.frame(File = c("mdz-5mg-qd-keto-400mg-qd.xlsx",
+                                      "mdz-5mg-qd-rif-600mg-qd.xlsx"),
+                             AUCtau_last = c(55, 55),
+                             Cmax_last = c(20, 20),
+                             AUCtau_last_withInhib = c(800, 20),
+                             Cmax_last_withInhib = c(100, 5)))
 
 # Include a data.frame of observed data for S/O comparisons
 pksummary_mult(
