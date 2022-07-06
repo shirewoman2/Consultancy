@@ -164,6 +164,7 @@ pksummary_mult <- function(sim_data_files = NA,
         # the current folder that end in "xlsx".
         if(length(sim_data_files) == 1 && is.na(sim_data_files)){
             sim_data_files <- list.files(pattern = "xlsx$")
+            sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
         }
     }
     
