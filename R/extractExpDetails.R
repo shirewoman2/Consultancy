@@ -52,12 +52,12 @@
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
 #' @param annotate_output TRUE or FALSE (default) on whether to transpose the
-#'   rows and columns in the output, making the output table
-#'   longer instead of wider, and adding columns to the output for a) which
-#'   compound the information pertains to (substrate, inhibitor, etc.), b) which
-#'   section of the Simcyp Simulator this detail is found in (physchem,
-#'   absorption, distribution, etc.), c) notes describing what the detail is,
-#'   and d) which sheet in the Excel file the information was pulled from.
+#'   rows and columns in the output, making the output table longer instead of
+#'   wider, and adding columns to the output for a) which compound the
+#'   information pertains to (substrate, inhibitor, etc.), b) which section of
+#'   the Simcyp Simulator this detail is found in (physchem, absorption,
+#'   distribution, etc.), c) notes describing what the detail is, and d) which
+#'   sheet in the Excel file the information was pulled from.
 #'
 #' @return Returns a named list of the experimental details
 #' @import tidyverse
@@ -333,6 +333,13 @@ extractExpDetails <- function(sim_data_file,
             if(str_detect(i, "^StartDayTime") & is.na(Out[[i]])){
                 CustomDosing <- c(CustomDosing, TRUE)
             }
+            if(i == "Population" & is.na(Out[[i]])){
+                # This can happen when the simulator output is actually from Simcyp
+                # Discovery or the Simcyp Animal Simulator. Look for
+                # "species" in that case.
+                Out[[i]] <- as.character(SummaryTab[which(SummaryTab$...1 == "Species"), 2])
+            }
+            
         }
         
         # Removing details that don't apply, e.g., _inhib parameters when there
@@ -1097,6 +1104,11 @@ extractExpDetails <- function(sim_data_file,
                                "Abund_CYP3A7_CV" = "Abundance : CYP3A7 EM CV")
             
             NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
+            
+            if(ncol(PopTab) < NameCol){
+                # This happens when it's an animal simulation.
+                return(NA)
+            }
             Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
             Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
                 pull()
