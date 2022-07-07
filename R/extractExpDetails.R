@@ -116,10 +116,6 @@ extractExpDetails <- function(sim_data_file,
     # and what kind of data to format the output as at the end. Using data
     # object AllExpDetails.
     
-    # Still need to add info for searching for some details. Removing those
-    # from consideration for now.
-    AllExpDetails <- AllExpDetails %>% filter(!str_detect(Sheet, "NEED TO ADD"))
-    
     SumDeets <- AllExpDetails %>% filter(Sheet == "Summary") %>% 
         rename(Deet = Detail)
     PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
@@ -274,6 +270,7 @@ extractExpDetails <- function(sim_data_file,
                                "SimEndDayTime" = "End Day/Time",
                                "SimulatorVersion" = "Simcyp Version",
                                "SimDuration" = "Study Duration",
+                               "Species" = "Species",
                                "PrandialSt_sub" = "Prandial State",
                                "PrandialSt_inhib" = "Prandial State",
                                "DoseRoute_sub" = "Route",
@@ -438,6 +435,7 @@ extractExpDetails <- function(sim_data_file,
                        "tlag" = "lag time \\(",
                        "fluid_intake" = "Fluid intake with dose",
                        "fu_gut" = "fu\\(Gut\\)$",
+                       "fu" = "^fu$",
                        "Ontogeny" = "Ontogeny Profile",
                        "Papp_MDCK" = "MDCK\\(10E-06 cm/s\\)",
                        "Papp_Caco" = "PCaco-2",
@@ -449,6 +447,7 @@ extractExpDetails <- function(sim_data_file,
                        "UserAddnOrgan" = "User-defined Additional",
                        "SimulatorVersion" = "Version number",
                        "SimStartDayTime" = "Start Day/Time",
+                       "Species" = "Species name",
                        "SolubilityType" = "Solubility Type",
                        "Qgut" = "Q\\(Gut\\) \\(L/h",
                        "Regimen" = "Dosing Regimen",
