@@ -91,7 +91,7 @@ extractExpDetails <- function(sim_data_file,
     # Checking that the file is, indeed, a simulator output file.
     SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
                            error = openxlsx::getSheetNames(sim_data_file))
-    if("Input Sheet" %in% SheetNames == FALSE){
+    if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
         # Using "warning" instead of "stop" here b/c I want this to be able to
         # pass through to extractExpDetails_mult and just skip any files that
         # aren't simulator output.
@@ -521,7 +521,7 @@ extractExpDetails <- function(sim_data_file,
             
             for(j in MyInputDeets2){
                 
-                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_met2$|_secmet$|_inh1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                 ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
                 CLRows <- which(
