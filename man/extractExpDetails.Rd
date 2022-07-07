@@ -60,12 +60,12 @@ in quotes}
   pulled correctly in that scenario.}}}
 
 \item{annotate_output}{TRUE or FALSE (default) on whether to transpose the
-rows and columns in the output, making the output table
-longer instead of wider, and adding columns to the output for a) which
-compound the information pertains to (substrate, inhibitor, etc.), b) which
-section of the Simcyp Simulator this detail is found in (physchem,
-absorption, distribution, etc.), c) notes describing what the detail is,
-and d) which sheet in the Excel file the information was pulled from.}
+rows and columns in the output, making the output table longer instead of
+wider, and adding columns to the output for a) which compound the
+information pertains to (substrate, inhibitor, etc.), b) which section of
+the Simcyp Simulator this detail is found in (physchem, absorption,
+distribution, etc.), c) notes describing what the detail is, and d) which
+sheet in the Excel file the information was pulled from.}
 
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
