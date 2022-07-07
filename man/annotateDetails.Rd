@@ -5,11 +5,25 @@
 \title{Annotate Simcyp Simulator experimental details and format into a long
 data.frame instead of a wide one}
 \usage{
-annotateDetails(Deets)
+annotateDetails(Deets, show_compound_col = TRUE)
 }
 \arguments{
 \item{Deets}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}}}
+
+\item{show_compound_col}{TRUE (default), FALSE, or "concatenate" for whether
+to include in the results the column "Compound", which is the compound's
+specific name in each simulation. Why would you ever omit this? If you have
+a compound with a slightly different name across multiple simulations,
+e.g., "DrugX" and "Drug X", and "Drug X - reduced Ki", you'll get a new row
+for every possible combination of "Compound" and "Detail", which might not
+make for easy comparisons. For example, a Ki value for "DrugX" will be in
+one row and the same Ki value for "Drug X" will be on a separate row. Try
+setting this to TRUE when you have similarly named compounds that really
+should be compared and see how that compares to the default. If you set
+this to "concatenate", you'll get all the possible compound names together;
+for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
+as the compound.}
 }
 \value{
 
