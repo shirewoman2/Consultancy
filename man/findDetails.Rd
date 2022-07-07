@@ -28,7 +28,7 @@ that/those compound(s). Remember to contain more than one value with
 specific compound name to get all possible compounds that match that.
 Regular expressions are acceptable here, e.g., \code{compound =
 "midaz|keto"} to find any compound with either "midaz" or "keto" in the
-name.}
+name. Not case sensitive.}
 
 \item{show_compound_col}{TRUE (default), FALSE, or "concatenate" for whether
 to include in the results the column "Compound", which is the compound's
