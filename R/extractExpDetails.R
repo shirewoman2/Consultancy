@@ -1175,7 +1175,7 @@ extractExpDetails <- function(sim_data_file,
         }
     }
     
-    # Calculated details ------------------------------------------------
+    # Calculated details & data cleanup ----------------------------------------
     if("StartHr_sub" %in% exp_details && 
        "StartDayTime_sub" %in% names(Out) &&
        Out$StartDayTime_sub != "custom dosing"){
@@ -1253,6 +1253,19 @@ extractExpDetails <- function(sim_data_file,
     # Always including the file name. It's just a good practice and it makes
     # extractExpDetails output more like extractExpDetails_mult.
     Out$File <- sim_data_file
+    
+    # Species should be lower case and not have "Sim" in front of it to work
+    # more smoothly with other functions and also just look better. Setting
+    # "beagle" to "dog" and setting it to "human" if it's missing, which it will
+    # be for regular simulator output.
+    if("Species" %in% names(Out)){
+        Out$Species <- tolower(sub("Sim-", "", Out$Species))
+        Out$Species <- ifelse(Out$Species == "beagle", "dog", Out$Species)
+        
+        if(is.na(Out$Species)){
+            Out$Species <- "human"
+        }
+    }
     
     Out <- Out[sort(names(Out))]
     
