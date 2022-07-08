@@ -143,7 +143,7 @@
 #' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'                 tissue = "lung")
 #'
-#' 
+#'
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
                             adjust_obs_time = FALSE,
@@ -1378,6 +1378,10 @@ extractConcTime <- function(sim_data_file,
                                                # compound for the observed data
                                                # included in a simjlator file.
                                                ObsFile = NA,
+                                               Species = ifelse(is.na(Deets$Species), 
+                                                                "human", 
+                                                                sub("sim-", "", 
+                                                                    tolower(Deets$Species))),
                                                Time_units = SimTimeUnits,
                                                Conc_units = SimConcUnits) %>%
                                         select(-ID, -Indiv_code, -DV)))
@@ -1688,8 +1692,7 @@ extractConcTime <- function(sim_data_file,
         arrange(across(any_of(c("Compound", "Inhibitor", "Simulated",
                                 "Individual", "Trial", "Time")))) %>%
         select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
-                        "Species",
-                        "Tissue", "Individual", "Trial",
+                        "Species", "Tissue", "Individual", "Trial",
                         "Simulated", "Time", "Conc",
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
                         "DoseInt", "File", "ObsFile")))

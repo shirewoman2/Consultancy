@@ -483,6 +483,19 @@ extractExpDetails <- function(sim_data_file,
                             InputDeets$ValueCol[
                                 which(InputDeets$Deet == deet)]] %>% pull()
             
+            # If SimStartDayTime is not found, which will happen with animal
+            # sims, it may be possible to piece together from other data. 
+            if(length(Val) == 0 & deet == "SimStartDayTime"){
+                StartDay <- as.character(InputTab[which(InputTab$...1 == "Start Day"), 2])
+                StartTime <- as.character(InputTab[which(InputTab$...1 == "Start Time"), 2])
+                StartTime <- str_split(sub("m", "", StartTime), "h")[[1]]
+                Val <- 
+                    paste0("Day ", StartDay, ", ",
+                           StartTime[1], ":",
+                           formatC(as.numeric(StartTime[2]), width = 2, flag = "0"))
+                rm(StartDay, StartTime)
+            }
+            
             # Ontogeny profile is listed twice in output for some reason.
             # Only keeping the 1st value. Really, keeping only the unique
             # set of values for all deets. This will still throw an error
