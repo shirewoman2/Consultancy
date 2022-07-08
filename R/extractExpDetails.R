@@ -664,11 +664,44 @@ extractExpDetails <- function(sim_data_file,
                     }
                     
                     if(str_detect(as.character(InputTab[i, ValueCol]),
-                                  "In Vivo Clear")){
+                                  "In Vivo Clearance")){
+                        
+                        MyNames <- InputTab$...1[
+                            i:min(c(IntRowStart, CLRows[which(CLRows == i) + 1], 
+                                    nrow(InputTab)), na.rm = T)]
+                        
                         suppressWarnings(
-                            Out[[paste0("CLint_InVivo", Suffix)]] <- 
-                                as.numeric(InputTab[i, NameCol + 1])
+                            Out[[paste0("CLiv_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "CL.*iv.*[(]mL")) + i - 1,
+                                    ValueCol])
                         )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLbiliary_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "Biliary Clearance")) + i - 1,
+                                    ValueCol])
+                        )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLrenal_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "CL R [(]mL/min")) + i - 1,
+                                    ValueCol])
+                        )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLadditional_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "Additional Systemic Clearance")) + i - 1,
+                                    ValueCol])
+                        )
+                        
                     }
                 }
                 
