@@ -246,7 +246,7 @@ extractConcTime <- function(sim_data_file,
     } 
     
     # Noting whether this was animal data
-    Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog")
+    Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
     Animal <- ifelse(is.na(Animal), FALSE, Animal)
     
     # Effector present?
@@ -1500,7 +1500,8 @@ extractConcTime <- function(sim_data_file,
             mutate(Species = tolower(sub("Sim-", "", Species)))
     }
     
-    Data <- bind_rows(Data)
+    Data <- bind_rows(Data) %>% 
+        mutate(Species = ifelse(Species == "beagle", "dog", Species))
     
     if("individual" %in% returnAggregateOrIndiv){
         Data <- Data %>%

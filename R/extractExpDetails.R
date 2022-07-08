@@ -491,7 +491,7 @@ extractExpDetails <- function(sim_data_file,
                 StartTime <- str_split(sub("m", "", StartTime), "h")[[1]]
                 Val <- 
                     paste0("Day ", StartDay, ", ",
-                           StartTime[1], ":",
+                           formatC(as.numeric(StartTime[1]), width = 2, flag = "0"), ":",
                            formatC(as.numeric(StartTime[2]), width = 2, flag = "0"))
                 rm(StartDay, StartTime)
             }
