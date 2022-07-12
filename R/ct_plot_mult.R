@@ -142,13 +142,24 @@
 #'   label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and an effector is present, the label
 #'   in the legend will be "Inhibitor".
-#' @param file_labels optionally specify a label to be used for the file name in
-#'   the graphs and specify the order in which the files are graphed with a
-#'   named character vector of the files in the order you would like. (Not
-#'   applicable if \code{graph_arrangement = "separate files"}.) The file name
-#'   must \emph{perfectly} match the file name listed in ct_dataframe or it
-#'   won't be used. An example of how this might be specified: \code{alt_title =
-#'   c("My file 1.xlsx" = "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic
+#' @param graph_titles optionally specify titles to be used in place of the file
+#'   name in the graphs and specify the order in which the files are graphed.
+#'   Input should be a named character vector of the files in the order you
+#'   would like. (Not applicable if \code{graph_arrangement = "separate
+#'   files"}.) The file name must \emph{perfectly} match the file name listed in
+#'   ct_dataframe or it won't be used. An example of how this might be
+#'   specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
+#'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
+#'   you didn't think you specified, please double check that you have specified
+#'   the file names \emph{exactly} as they appear in \code{ct_dataframe}.
+#' @param file_labels SOON TO BE DEPRECATED. Please use \code{graph_titles}
+#'   instead. optionally specify a label to be used for the file name in the
+#'   graphs and specify the order in which the files are graphed with a named
+#'   character vector of the files in the order you would like. (Not applicable
+#'   if \code{graph_arrangement = "separate files"}.) The file name must
+#'   \emph{perfectly} match the file name listed in ct_dataframe or it won't be
+#'   used. An example of how this might be specified: \code{file_labels = c("My
+#'   file 1.xlsx" = "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic
 #'   impairment")}  If you get an order that you didn't think you specified,
 #'   please double check that you have specified the file names \emph{exactly}
 #'   as they appear in \code{ct_dataframe}.
@@ -209,18 +220,25 @@ ct_plot_mult <- function(ct_dataframe,
                          y_axis_limits_log = NA, 
                          legend_position = "none",
                          legend_label = NA, 
-                         file_labels = NA,
+                         graph_titles = NA,
                          graph_labels = TRUE,
                          save_graph = NA,
                          file_suffix = NA,
                          fig_height = 8,
                          fig_width = 8,
-                         ...){
+                         ..., 
+                         file_labels = NA){
     
     # Much easier to deal with things if we've got base file names in
     # ct_dataframe. Taking care of that here.
     ct_dataframe <- ct_dataframe %>% 
         mutate(File_bn = basename(File))
+    
+    if(complete.cases(file_labels)[1] & is.na(graph_titles)[1]){
+        graph_titles <- file_labels
+        warning("You have specified values for the argument `file_labels`; this argument will soon be deprecated as we replace it with the (hopefully clearer) argument `graph_titles`. In the future, please use `graph_titles` instead.", 
+                call. = FALSE)
+    }
     
     if(length(file_labels) > 1 && complete.cases(file_labels[1])){
         
