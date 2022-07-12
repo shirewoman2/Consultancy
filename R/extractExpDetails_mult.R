@@ -50,7 +50,8 @@
 #'   that reason, custom-dosing information will largely be ignored here.
 #'
 #' @param existing_exp_details (optional) a data.frame that contains previously
-#'   extracted experimental details. This should NOT be in quotes. Because we
+#'   extracted experimental details. If this object \emph{does} exist, it should
+#'   NOT be in quotes, e.g. \code{existing_exp_details = MyDeets}. Because we
 #'   can see scenarios where you might want to extract some experimental details
 #'   and then run more simulations for comparisons, this function will
 #'   \emph{add} data to that data.frame. It will \emph{not} overwrite existing
@@ -107,7 +108,7 @@
 #'  
 extractExpDetails_mult <- function(sim_data_files = NA, 
                                    exp_details = "all", 
-                                   existing_exp_details = Deets, 
+                                   existing_exp_details = "none", 
                                    overwrite = FALSE,
                                    annotate_output = TRUE,
                                    show_compound_col = "concatenate",
@@ -138,8 +139,19 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         }
         
         if("data.frame" %in% class(existing_exp_details)){
-            if("File" %in% names(existing_exp_details) == FALSE){
-                existing_exp_details$File <- "unknown file"
+            if(all(c("SimulatorSection", "Sheet") %in% names(Deets))){
+                # This is when existing_exp_details has been annotated.
+                # Ironically, need to de-annotate here to make this work well
+                # with the rest of the function.
+                existing_exp_details <- existing_exp_details %>% 
+                    select(-any_of(c("SimulatorSection", "Sheet", "Notes",
+                                     "CompoundID", "Compound"))) %>% 
+                    pivot_longer(cols = -Detail, 
+                                 names_to = "File", values_to = "Value") %>% 
+                    pivot_wider(names_from = Detail, values_from = Value)
+                
+            } else if("File" %in% names(existing_exp_details) == FALSE){
+                existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
             }
             
             if(overwrite == FALSE){
@@ -198,6 +210,10 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     Out <- bind_rows(MyDeets)
     
     if(AnyExistingDeets){
+        if(annotate_output | all(sapply(existing_exp_details, class) == "character")){
+            Out <- Out %>% mutate(across(.fns = as.character))
+        } 
+        
         Out <- bind_rows(Out, existing_exp_details)
     }
     
