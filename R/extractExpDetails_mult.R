@@ -67,13 +67,26 @@
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
-#' @param annotate_output TRUE or FALSE (default) on whether to transpose the
+#' @param annotate_output TRUE (default) or FALSE on whether to transpose the
 #'   rows and columns in the output, making the output table longer instead of
 #'   wider, and adding columns to the output for a) which compound the
 #'   information pertains to (substrate, inhibitor, etc.), b) which section of
 #'   the Simcyp Simulator this detail is found in (physchem, absorption,
 #'   distribution, etc.), c) notes describing what the detail is, and d) which
 #'   sheet in the Excel file the information was pulled from.
+#' @param show_compound_col TRUE, FALSE, or "concatenate" (default) for whether
+#'   to include in the results the column "Compound", which is the compound's
+#'   specific name in each simulation. Why would you ever omit this? If you have
+#'   a compound with a slightly different name across multiple simulations,
+#'   e.g., "DrugX" and "Drug X", and "Drug X - reduced Ki", you'll get a new row
+#'   for every possible combination of "Compound" and "Detail", which might not
+#'   make for easy comparisons. For example, a Ki value for "DrugX" will be in
+#'   one row and the same Ki value for "Drug X" will be on a separate row. Try
+#'   setting this to TRUE when you have similarly named compounds that really
+#'   should be compared and see how that compares to the default. If you set
+#'   this to "concatenate", you'll get all the possible compound names together;
+#'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
+#'   as the compound.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #' @import tidyverse
@@ -96,7 +109,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    exp_details = "all", 
                                    existing_exp_details = Deets, 
                                    overwrite = FALSE,
-                                   annotate_output = FALSE,
+                                   annotate_output = TRUE,
+                                   show_compound_col = "concatenate",
                                    save_output = NA){
     
     # Error catching ---------------------------------------------------------
@@ -188,7 +202,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     }
     
     if(annotate_output){
-        OutDF <- annotateDetails(Out)
+        Out <- annotateDetails(Out, 
+                               show_compound_col = show_compound_col)
     }
     
     if(complete.cases(save_output)){
@@ -207,16 +222,11 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             FileName <- paste0(save_output, ".csv")
         }
         
-        if(annotate_output == FALSE){
-            OutDF <- as.data.frame(Out)
-        }
-        
-        write.csv(OutDF, FileName, row.names = F)
+        write.csv(Out, FileName, row.names = F)
     }
     
-    return(switch(as.character(annotate_output), 
-                  "TRUE" = OutDF,
-                  "FALSE" = Out))
+    
+    return(Out)
 }
 
 
