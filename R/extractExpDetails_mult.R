@@ -237,11 +237,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     
     if(complete.cases(save_output)){
         
-        # Creating the object exp_details_input just so this section of code
-        # better matches that in extractExpDetails. This is purely for ease of
-        # coding.
-        exp_details_input <- exp_details
-        
         if(str_detect(save_output, "\\.")){
             # If they specified a file extension, replace whatever they supplied
             # with csv b/c that's the only option for file format here.

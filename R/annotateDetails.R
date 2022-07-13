@@ -24,6 +24,11 @@
 #'   this to "concatenate", you'll get all the possible compound names together;
 #'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 #'   as the compound.
+#' @param omit_all_missing TRUE or FALSE (default) for whether to omit a detail
+#'   if the values are NA for all files
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+#'   it will still be saved as a csv file.
 #'
 #' @return
 #' @export
@@ -33,15 +38,44 @@
 #' annotateDetails(Deets)
 #' 
 annotateDetails <- function(Deets,
-                            show_compound_col = TRUE){
+                            show_compound_col = TRUE,
+                            omit_all_missing = FALSE, 
+                            save_output = NA){
     
     if(class(Deets)[1] == "list"){
         # This is when the output is the default list from extractExpDetails
         Deets <- as.data.frame(Deets)
     }
     
+    if(all(c("SimulatorSection", "Sheet") %in% names(Deets))){
+        # This is when Deets has been annotated.
+        # Ironically, need to de-annotate here to make this work well
+        # with the rest of the function.
+        Deets <- Deets %>% 
+            select(-any_of(c("SimulatorSection", "Sheet", "Notes",
+                             "CompoundID", "Compound"))) %>% 
+            pivot_longer(cols = -Detail, 
+                         names_to = "File", values_to = "Value") %>% 
+            pivot_wider(names_from = Detail, values_from = Value)
+        
+    } else if("File" %in% names(Deets) == FALSE){
+        Deets$File <- paste("unknown file", 1:nrow(Deets))
+    }
+    
     Out <- Deets %>% 
-        mutate(across(.cols = everything(), .fns = as.character)) %>% 
+        mutate(across(.cols = everything(), .fns = as.character))
+    
+    # Removing anything that was all NA's if that's what user requested
+    if(omit_all_missing){
+        Keep <- 
+            Out %>% summarize(across(.fns = function(.) all(is.na(.)))) %>% 
+            pivot_longer(cols = -File, names_to = "ColName", values_to = "Val") %>% 
+            filter(Val == FALSE) %>% pull(ColName)
+        
+        Out <- Out[, c("File", Keep)]
+    }
+    
+    Out <- Out %>% 
         pivot_longer(cols = -File,
                      names_to = "Detail", 
                      values_to = "Value") %>% 
@@ -124,6 +158,20 @@ annotateDetails <- function(Deets,
         pivot_wider(names_from = File, 
                     values_from = Value)
     
+    
+    if(complete.cases(save_output)){
+        
+        if(str_detect(save_output, "\\.")){
+            # If they specified a file extension, replace whatever they supplied
+            # with csv b/c that's the only option for file format here.
+            FileName <- sub("\\..*", ".csv", save_output)
+        } else {
+            # If they didn't specify file extension, make it csv.
+            FileName <- paste0(save_output, ".csv")
+        }
+        
+        write.csv(Out, FileName, row.names = F)
+    }
     
     return(Out)
     

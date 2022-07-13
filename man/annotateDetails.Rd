@@ -5,7 +5,12 @@
 \title{Annotate Simcyp Simulator experimental details and format into a long
 data.frame instead of a wide one}
 \usage{
-annotateDetails(Deets, show_compound_col = TRUE)
+annotateDetails(
+  Deets,
+  show_compound_col = TRUE,
+  omit_all_missing = FALSE,
+  save_output = NA
+)
 }
 \arguments{
 \item{Deets}{output from \code{\link{extractExpDetails}} or
@@ -24,6 +29,13 @@ should be compared and see how that compares to the default. If you set
 this to "concatenate", you'll get all the possible compound names together;
 for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 as the compound.}
+
+\item{omit_all_missing}{TRUE or FALSE (default) for whether to omit a detail
+if the values are NA for all files}
+
+\item{save_output}{optionally save the output by supplying a file name in
+quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+it will still be saved as a csv file.}
 }
 \value{
 
