@@ -56,6 +56,16 @@ annotateDetails <- function(Deets,
                              "CompoundID", "Compound"))) %>% 
             pivot_longer(cols = -Detail, 
                          names_to = "File", values_to = "Value") %>% 
+            # Need to remove NA values here b/c they can otherwise lead to
+            # multiple values for a given detail when one value is for the
+            # correct compound and the other is for compounds that are present
+            # in other files but DO have that particular compound ID. For
+            # example, metabolite 1 might be OH-MDZ for some files and
+            # OH-bupropion for others, and that will have multiple rows. Removed
+            # NA values should mostly come out in the wash, I think, but there
+            # is a risk that we'll lose some NA values that should be included.
+            # I think that's an acceptable risk. - LSh
+            filter(complete.cases(Value)) %>% 
             pivot_wider(names_from = Detail, values_from = Value)
         
     } else if("File" %in% names(Deets) == FALSE){
