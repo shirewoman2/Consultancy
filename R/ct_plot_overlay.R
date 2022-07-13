@@ -94,10 +94,9 @@
 #' @param line_width optionally specify how thick to make the lines. Acceptable
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
 #'   give you an idea of where to start.
-#' @param colorBy_column the column in \code{ct_dataframe} that should be used
-#'   for determining which color lines and/or points will be. Default is to use
-#'   the column File. This should be unquoted, e.g., \code{colorBy_column =
-#'   Tissue}.
+#' @param colorBy_column (optional) the column in \code{ct_dataframe} that
+#'   should be used for determining which color lines and/or points will be.
+#'   This should be unquoted, e.g., \code{colorBy_column = Tissue}.
 #' @param color_labels optionally specify a character vector for how you'd like
 #'   the labels for whatever you choose for \code{colorBy_column} to show up in
 #'   the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
@@ -301,7 +300,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             mean_type = "arithmetic",
                             figure_type = "means only", 
                             linear_or_log = "semi-log",
-                            colorBy_column = File,
+                            colorBy_column,
                             color_labels = NA, 
                             legend_label_color = NA,
                             color_set = "default",
@@ -646,11 +645,14 @@ ct_plot_overlay <- function(ct_dataframe,
     #     }
     # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
     
-    MyAES <- c("color" = as_label(colorBy_column), 
-               "linetype" = as_label(linetype_column),
-               "facet1" = as_label(facet1_column), 
-               "facet2" = as_label(facet2_column))
-    UniqueAES <- MyAES[which(MyAES != "<empty>")]
+    AESCols <- c("color" = as_label(colorBy_column), 
+                 "linetype" = as_label(linetype_column),
+                 "facet1" = as_label(facet1_column), 
+                 "facet2" = as_label(facet2_column))
+    UniqueAES <- AESCols[which(AESCols != "<empty>")]
+    
+    AES <- str_c(names(AESCols[1:2])[!AESCols == "<empty>"], collapse = "-")
+    AES <- ifelse(AES == "", "none", AES)
     
     # If each compound has only 1 compound ID and vice versa, no need to
     # consider compound in the set of unique aesthetics.
@@ -699,7 +701,8 @@ ct_plot_overlay <- function(ct_dataframe,
     # If there are only 2 groups for the colorBy_column and color_set was set to
     # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
     # aethetically pleasing.
-    if(UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
+    if(as_label(colorBy_column) != "<empty>" &&
+       UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
        color_set[1] == "default"){
         color_set <- "Brewer set 1"
     }
@@ -764,11 +767,17 @@ ct_plot_overlay <- function(ct_dataframe,
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
         A <- ggplot(sim_dataframe,
-                    switch(as.character(as_label(linetype_column) != "<empty>"), 
-                           "TRUE" = aes(x = Time, y = Conc, color = colorBy_column, 
-                                        linetype = linetype_column, group = Group),
-                           "FALSE" = aes(x = Time, y = Conc, color = colorBy_column, 
-                                         group = Group))) +
+                    switch(AES, 
+                           "color-linetype" = aes(x = Time, y = Conc, 
+                                                  color = colorBy_column, 
+                                                  linetype = linetype_column, 
+                                                  group = Group),
+                           "color" = aes(x = Time, y = Conc, color = colorBy_column, 
+                                         group = Group), 
+                           "linetype" = aes(x = Time, y = Conc, 
+                                            linetype = linetype_column, 
+                                            group = Group),
+                           "none" = aes(x = Time, y = Conc, group = Group))) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
         if(nrow(obs_data) > 0){
@@ -782,8 +791,15 @@ ct_plot_overlay <- function(ct_dataframe,
             } else {
                 A <- A +
                     geom_point(data = obs_data, inherit.aes = FALSE,
-                               aes(x = Time, y = Conc, group = Group,
-                                   color = colorBy_column), 
+                               switch(AES, 
+                                      "color-linetype" = aes(x = Time, y = Conc,
+                                                             group = Group,
+                                                             color = colorBy_column), 
+                                      "linetype" = aes(x = Time, y = Conc, 
+                                                       group = Group), 
+                                      "color" = aes(x = Time, y = Conc,
+                                                    group = Group,
+                                                    color = colorBy_column)),
                                alpha = ifelse(complete.cases(obs_transparency), 
                                               obs_transparency, 1), 
                                show.legend = FALSE)
@@ -803,13 +819,21 @@ ct_plot_overlay <- function(ct_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, 
-                    switch(as.character(as_label(linetype_column) != "<empty>"), 
-                           "TRUE" = aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                        color = colorBy_column, fill = colorBy_column, 
-                                        linetype = linetype_column),
-                           "FALSE" = aes(x = Time, y = MyMean, ymin = per5, ymax = per95, 
-                                         color = colorBy_column, fill = colorBy_column))
-        ) +
+                    switch(AES, 
+                           "color-linetype" = aes(x = Time, y = MyMean, 
+                                                  ymin = per5, ymax = per95, 
+                                                  color = colorBy_column, 
+                                                  fill = colorBy_column, 
+                                                  linetype = linetype_column),
+                           "linetype" = aes(x = Time, y = MyMean, 
+                                            ymin = per5, ymax = per95, 
+                                            linetype = linetype_column),
+                           "color" = aes(x = Time, y = MyMean, 
+                                         ymin = per5, ymax = per95, 
+                                         color = colorBy_column, 
+                                         fill = colorBy_column), 
+                           "none" = aes(x = Time, y = MyMean, 
+                                        ymin = per5, ymax = per95))) +
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
@@ -826,8 +850,17 @@ ct_plot_overlay <- function(ct_dataframe,
             } else {
                 A <- A + 
                     geom_point(data = obs_data, 
-                               aes(x = Time, y = Conc, group = Group,
-                                   color = colorBy_column), 
+                               switch(AES, 
+                                      "color-linetype" = aes(x = Time, y = Conc,
+                                                             group = Group,
+                                                             color = colorBy_column), 
+                                      "linetype" = aes(x = Time, y = Conc,
+                                                       group = Group),
+                                      "color" = aes(x = Time, y = Conc,
+                                                    group = Group,
+                                                    color = colorBy_column),
+                                      "none" = aes(x = Time, y = Conc,
+                                                   group = Group)),
                                inherit.aes = FALSE, 
                                alpha = ifelse(complete.cases(obs_transparency), 
                                               obs_transparency, 1), 
@@ -891,92 +924,96 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Colors, linetypes, & legends -------------------------------------------
     
-    # Adding options for colors
-    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                     "darkorange", "green3", "seagreen3",
-                                     "cadetblue", "dodgerblue3", "royalblue4",
-                                     "darkorchid4"))
-    
-    blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
-                                    "dodgerblue3", "royalblue4"))
-    
-    NumColorsNeeded <- sim_dataframe %>% pull(MyAES["color"]) %>% 
-        unique() %>% length()
-    
-    # print(NumColorsNeeded)
-    
-    if(length(sort(unique(ct_dataframe$colorBy_column))) == 1){
-        A <- A + scale_color_manual(values = "black")
-    } else {
+    if(AES %in% c("color", "color-linetype")){
         
-        if(length(color_set) > 1){
-            
-            # If they supply a named character vector whose values are not
-            # present in the data, convert it to an unnamed character vector.
-            if(is.null(names(color_set)) == FALSE && 
-               all(unique(ct_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
-                warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                               as_label(colorBy_column),
-                               " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                               as_label(colorBy_column), "."), 
-                        call. = FALSE)
-                
-                color_set <- as.character(color_set)
-            }
-            
-            if(length(color_set) < NumColorsNeeded){
-                warning(paste("There are", NumColorsNeeded,
-                              "unique values in the column you have specified for the colors, but you have only specified", 
-                              length(color_set), 
-                              "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
-                        call. = FALSE)
-                
-                color_set <- rep(color_set, 100)[1:NumColorsNeeded]
-            }
-            
-            A <- A + scale_color_manual(values = color_set) +
-                scale_fill_manual(values = color_set)
+        # Adding options for colors
+        colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
+                                         "darkorange", "green3", "seagreen3",
+                                         "cadetblue", "dodgerblue3", "royalblue4",
+                                         "darkorchid4"))
+        
+        blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
+                                        "dodgerblue3", "royalblue4"))
+        
+        NumColorsNeeded <- sim_dataframe %>% pull(AESCols["color"]) %>% 
+            unique() %>% length()
+        
+        # print(NumColorsNeeded)
+        
+        if(length(sort(unique(ct_dataframe$colorBy_column))) == 1){
+            A <- A + scale_color_manual(values = "black")
         } else {
             
-            if(color_set == "default"){
-                # Using "Dark2" b/c "Set2" is just really, really light. 
-                A <- A + scale_color_brewer(palette = "Dark2") +
-                    scale_fill_brewer(palette="Dark2")
-            }
-            
-            if(color_set == "blue-green"){
-                A <- A + scale_color_manual(values = blueGreen(NumColors)) +
-                    scale_fill_manual(values = blueGreen(NumColors))
-                A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-                    scale_fill_manual(values = blueGreen(NumColorsNeeded))
-            }
-            
-            if(color_set == "rainbow"){
-                A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-                    scale_fill_manual(values = colRainbow(NumColorsNeeded))
-            }
-            
-            if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
-                # Using "Dark2" b/c "Set2" is just really, really light. 
-                A <- A + scale_fill_brewer(palette = "Dark2") +
-                    scale_color_brewer(palette = "Dark2")
-            }
-            
-            if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
-                A <- A + scale_fill_brewer(palette = "Set1") +
-                    scale_color_brewer(palette = "Set1")
-            }
-            
-            if(color_set == "Tableau"){
-                A <- A + ggthemes::scale_color_tableau() +
-                    ggthemes::scale_fill_tableau()
-            }
-            
-            if(color_set == "viridis"){
-                A <- A + viridis::scale_color_viridis(discrete = TRUE) +
-                    viridis::scale_fill_viridis(discrete = TRUE)
+            if(length(color_set) > 1){
+                
+                # If they supply a named character vector whose values are not
+                # present in the data, convert it to an unnamed character vector.
+                if(is.null(names(color_set)) == FALSE && 
+                   all(unique(ct_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+                    warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
+                                   as_label(colorBy_column),
+                                   " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                                   as_label(colorBy_column), "."), 
+                            call. = FALSE)
+                    
+                    color_set <- as.character(color_set)
+                }
+                
+                if(length(color_set) < NumColorsNeeded){
+                    warning(paste("There are", NumColorsNeeded,
+                                  "unique values in the column you have specified for the colors, but you have only specified", 
+                                  length(color_set), 
+                                  "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
+                            call. = FALSE)
+                    
+                    color_set <- rep(color_set, 100)[1:NumColorsNeeded]
+                }
+                
+                A <- A + scale_color_manual(values = color_set) +
+                    scale_fill_manual(values = color_set)
+            } else {
+                
+                if(color_set == "default"){
+                    # Using "Dark2" b/c "Set2" is just really, really light. 
+                    A <- A + scale_color_brewer(palette = "Dark2") +
+                        scale_fill_brewer(palette="Dark2")
+                }
+                
+                if(color_set == "blue-green"){
+                    A <- A + scale_color_manual(values = blueGreen(NumColors)) +
+                        scale_fill_manual(values = blueGreen(NumColors))
+                    A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
+                        scale_fill_manual(values = blueGreen(NumColorsNeeded))
+                }
+                
+                if(color_set == "rainbow"){
+                    A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
+                        scale_fill_manual(values = colRainbow(NumColorsNeeded))
+                }
+                
+                if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
+                    # Using "Dark2" b/c "Set2" is just really, really light. 
+                    A <- A + scale_fill_brewer(palette = "Dark2") +
+                        scale_color_brewer(palette = "Dark2")
+                }
+                
+                if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
+                    A <- A + scale_fill_brewer(palette = "Set1") +
+                        scale_color_brewer(palette = "Set1")
+                }
+                
+                if(color_set == "Tableau"){
+                    A <- A + ggthemes::scale_color_tableau() +
+                        ggthemes::scale_fill_tableau()
+                }
+                
+                if(color_set == "viridis"){
+                    A <- A + viridis::scale_color_viridis(discrete = TRUE) +
+                        viridis::scale_fill_viridis(discrete = TRUE)
+                }
             }
         }
+        
     }
     
     # Specifying linetypes
@@ -1024,7 +1061,8 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- A + guides(linetype = "none") 
     }
     
-    if(length(unique(sim_dataframe$colorBy_column)) == 1){
+    if(length(unique(sim_dataframe$colorBy_column)) == 1 |
+       AES %in% c("linetype", "none")){
         A <- A + guides(color = "none")
     }
     

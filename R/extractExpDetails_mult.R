@@ -65,9 +65,6 @@
 #'   changed input parameters for simulations and re-run them OR when you have
 #'   extracted only some of the possible experimental details and you now would
 #'   like more experimental details from each simulator output file.
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
 #' @param annotate_output TRUE (default) or FALSE on whether to transpose the
 #'   rows and columns in the output, making the output table longer instead of
 #'   wider, and adding columns to the output for a) which compound the
@@ -88,6 +85,11 @@
 #'   this to "concatenate", you'll get all the possible compound names together;
 #'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 #'   as the compound.
+#' @param omit_all_missing TRUE or FALSE (default) for whether to omit a detail
+#'   if the values are NA for all files
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+#'   it will still be saved as a csv file.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #' @import tidyverse
@@ -112,6 +114,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    overwrite = FALSE,
                                    annotate_output = TRUE,
                                    show_compound_col = "concatenate",
+                                   omit_all_missing = FALSE, 
                                    save_output = NA){
     
     # Error catching ---------------------------------------------------------
@@ -215,6 +218,16 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         } 
         
         Out <- bind_rows(Out, existing_exp_details)
+    }
+    
+    # Removing anything that was all NA's if that's what user requested
+    if(omit_all_missing){
+        Keep <- 
+            Out %>% summarize(across(.fns = function(.) all(is.na(.)))) %>% 
+            pivot_longer(cols = -File, names_to = "ColName", values_to = "Val") %>% 
+            filter(Val == FALSE) %>% pull(ColName)
+        
+        Out <- Out[, c("File", Keep)]
     }
     
     if(annotate_output){

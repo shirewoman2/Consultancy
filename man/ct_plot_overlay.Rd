@@ -9,7 +9,7 @@ ct_plot_overlay(
   mean_type = "arithmetic",
   figure_type = "means only",
   linear_or_log = "semi-log",
-  colorBy_column = File,
+  colorBy_column,
   color_labels = NA,
   legend_label_color = NA,
   color_set = "default",
@@ -70,10 +70,9 @@ simulator output, you'll receive a warning message and we'll plot one that
   \item{"both horizontal"}{both the linear and the semi-log graphs will be
   returned, and graphs are stacked horizontally}}}
 
-\item{colorBy_column}{the column in \code{ct_dataframe} that should be used
-for determining which color lines and/or points will be. Default is to use
-the column File. This should be unquoted, e.g., \code{colorBy_column =
-Tissue}.}
+\item{colorBy_column}{(optional) the column in \code{ct_dataframe} that
+should be used for determining which color lines and/or points will be.
+This should be unquoted, e.g., \code{colorBy_column = Tissue}.}
 
 \item{color_labels}{optionally specify a character vector for how you'd like
 the labels for whatever you choose for \code{colorBy_column} to show up in
