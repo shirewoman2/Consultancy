@@ -1090,12 +1090,11 @@ ct_plot_overlay <- function(ct_dataframe,
     B <- suppressMessages(
         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
                           expand = expansion(mult = pad_y_num)) +
-            coord_cartesian(ylim = Ylim_log)
+            switch(as.character(floating_facet_scale), 
+                   "TRUE" = coord_cartesian(ylim = Ylim_log, 
+                                            xlim = time_range_relative), 
+                   "FALSE" = coord_cartesian(ylim = Ylim_log))
     )
-    
-    if(floating_facet_scale == FALSE){
-        B <- suppressMessages(B + coord_cartesian(xlim = time_range_relative))
-    }
     
     if(complete.cases(legend_position)){
         A <- A + theme(legend.position = legend_position)  
