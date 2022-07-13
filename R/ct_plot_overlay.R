@@ -655,7 +655,8 @@ ct_plot_overlay <- function(ct_dataframe,
                  "facet2" = as_label(facet2_column))
     UniqueAES <- AESCols[which(AESCols != "<empty>")]
     
-    AES <- str_c(names(AESCols[1:2])[!AESCols == "<empty>"], collapse = "-")
+    AES <- names(AESCols[1:2])[!AESCols == "<empty>"]
+    AES <- str_c(AES[complete.cases(AES)], collapse = "-")
     AES <- ifelse(AES == "" | is.na(AES), "none", AES)
     
     # If each compound has only 1 compound ID and vice versa, no need to
