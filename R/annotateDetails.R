@@ -55,7 +55,7 @@ annotateDetails <- function(Deets,
             select(Compound, CompoundID, matches("xlsx$")) %>% 
             pivot_longer(cols = -c(Compound, CompoundID),
                          names_to = "File", values_to = "Value") %>%
-            filter(complete.cases(Value)) %>% 
+            filter(complete.cases(Value) & complete.cases(Compound)) %>% 
             select(File, Compound, CompoundID) %>% unique()
         
         # This is when Deets has been annotated.
@@ -85,9 +85,7 @@ annotateDetails <- function(Deets,
     }
     
     Out <- Deets %>% 
-        mutate(across(.cols = everything(), .fns = as.character))
-    
-    Out <- Out %>% 
+        mutate(across(.cols = everything(), .fns = as.character)) %>% 
         pivot_longer(cols = -File,
                      names_to = "Detail", 
                      values_to = "Value") %>% 
@@ -170,7 +168,10 @@ annotateDetails <- function(Deets,
     
     Out <- Out %>% 
         pivot_wider(names_from = File, 
-                    values_from = Value)
+                    values_from = Value) %>% 
+        mutate(ToOmit = complete.cases(CompoundID) & 
+                   is.na(Compound)) %>% 
+        filter(ToOmit == FALSE) %>% select(-ToOmit)
     
     # Removing anything that was all NA's if that's what user requested
     if(omit_all_missing){
