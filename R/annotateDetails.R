@@ -47,7 +47,17 @@ annotateDetails <- function(Deets,
         Deets <- as.data.frame(Deets)
     }
     
-    if(all(c("SimulatorSection", "Sheet") %in% names(Deets))){
+    PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(Deets))
+    
+    if(PrevAnnotated){
+        
+        CompoundNames <- Deets %>% 
+            select(Compound, CompoundID, matches("xlsx$")) %>% 
+            pivot_longer(cols = -c(Compound, CompoundID),
+                         names_to = "File", values_to = "Value") %>%
+            filter(complete.cases(Value)) %>% 
+            select(File, Compound, CompoundID) %>% unique()
+        
         # This is when Deets has been annotated.
         # Ironically, need to de-annotate here to make this work well
         # with the rest of the function.
@@ -68,22 +78,14 @@ annotateDetails <- function(Deets,
             filter(complete.cases(Value)) %>% 
             pivot_wider(names_from = Detail, values_from = Value)
         
+        
+        
     } else if("File" %in% names(Deets) == FALSE){
         Deets$File <- paste("unknown file", 1:nrow(Deets))
     }
     
     Out <- Deets %>% 
         mutate(across(.cols = everything(), .fns = as.character))
-    
-    # Removing anything that was all NA's if that's what user requested
-    if(omit_all_missing){
-        Keep <- 
-            Out %>% summarize(across(.fns = function(.) all(is.na(.)))) %>% 
-            pivot_longer(cols = -File, names_to = "ColName", values_to = "Val") %>% 
-            filter(Val == FALSE) %>% pull(ColName)
-        
-        Out <- Out[, c("File", Keep)]
-    }
     
     Out <- Out %>% 
         pivot_longer(cols = -File,
@@ -98,21 +100,23 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
-    CompoundNames <- Out %>%
-        filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
-                             "PrimaryMetabolite2", "SecondaryMetabolite", 
-                             "Inhibitor1", "Inhibitor2", 
-                             "Inhibitor1Metabolite")) %>% 
-        mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
-                                      Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
-                                      Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
-                                      Detail == "SecondaryMetabolite" ~ "secondary metabolite",
-                                      Detail == "Inhibitor1" ~ "inhibitor 1", 
-                                      Detail == "Inhibitor2" ~ "inhibitor 2", 
-                                      Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
-        rename("Compound" = Value) %>% 
-        filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
-        select(-Detail)
+    if(PrevAnnotated == FALSE){
+        CompoundNames <- Out %>%
+            filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
+                                 "PrimaryMetabolite2", "SecondaryMetabolite", 
+                                 "Inhibitor1", "Inhibitor2", 
+                                 "Inhibitor1Metabolite")) %>% 
+            mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
+                                          Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
+                                          Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
+                                          Detail == "SecondaryMetabolite" ~ "secondary metabolite",
+                                          Detail == "Inhibitor1" ~ "inhibitor 1", 
+                                          Detail == "Inhibitor2" ~ "inhibitor 2", 
+                                          Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
+            rename("Compound" = Value) %>% 
+            filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
+            select(-Detail)
+    }
     
     suppressMessages(
         Out <- Out %>% 
@@ -168,6 +172,13 @@ annotateDetails <- function(Deets,
         pivot_wider(names_from = File, 
                     values_from = Value)
     
+    # Removing anything that was all NA's if that's what user requested
+    if(omit_all_missing){
+        Out$AllNA <- apply(Out[, names(Out)[str_detect(names(Out), "xlsx$")]], 
+                           MARGIN = 1, FUN = function(.) all(is.na(.)))    
+        
+        Out <- Out %>% filter(AllNA == FALSE) %>% select(-AllNA)
+    }
     
     if(complete.cases(save_output)){
         
