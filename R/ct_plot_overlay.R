@@ -561,7 +561,11 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     # Taking care of linetypes
-    NumLT <- length(unique(sim_dataframe$linetype_column))
+    if(as_label(linetype_column) != "<empty>"){
+        NumLT <- length(unique(sim_dataframe$linetype_column))
+    } else {
+        NumLT <- 0
+    }
     if(NumLT == 0){
         linetypes = "solid"
     } else if(NumLT < length(linetypes)){
@@ -573,7 +577,7 @@ ct_plot_overlay <- function(ct_dataframe,
                       "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph."), 
                 call. = FALSE)
         linetypes = rep(linetypes, 100)[1:NumLT]
-    }
+    } 
     
     if(as_label(linetype_column) != "<empty>"){
         
@@ -799,7 +803,9 @@ ct_plot_overlay <- function(ct_dataframe,
                                                        group = Group), 
                                       "color" = aes(x = Time, y = Conc,
                                                     group = Group,
-                                                    color = colorBy_column)),
+                                                    color = colorBy_column), 
+                                      "none" = aes(x = Time, y = Conc, 
+                                                   group = Group)),
                                alpha = ifelse(complete.cases(obs_transparency), 
                                               obs_transparency, 1), 
                                show.legend = FALSE)
@@ -885,12 +891,23 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(is.na(legend_label_color)){
         if(complete.cases(color_labels[1])){
+            # If user did not request a label on the legend for color but DID
+            # set any of the color labels, that means that the legend label for
+            # color probably should not be the same as the column title. Do not
+            # include a legend label for color in that scenario.
             A <- A + labs(color = NULL, fill = NULL)
-        } else {
+        } else if(AES %in% c("color", "color-linetype")){
+            # However, if they did not include anything for legend_label_color
+            # but there is a column that is mapped to color, then they probably
+            # do want the title for colors on the legend to be the same as the
+            # colorBy_column name.
             A <- A + labs(color = as_label(colorBy_column), 
                           fill = as_label(colorBy_column))
         }
     } else {
+        # Note: If they user set something for legend_label_color but did NOT
+        # set anything for colorBy_column, they'll get an error from ggplot2
+        # here. That's probably fine and likely not a common scenario.
         A <- A + 
             labs(x = xlab, y = ylab,
                  linetype = legend_label_linetype,
@@ -1056,22 +1073,23 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # If any of the items in the legend have length = 1, don't show that in the
     # legend.
-    if(length(unique(sim_dataframe$linetype_column)) == 1 | 
-       length(unique(linetypes)) == 1){
+    if(AES %in% c("linetype", "color-linetype") &&
+       (length(unique(sim_dataframe$linetype_column)) == 1 | 
+        length(unique(linetypes)) == 1)){
         A <- A + guides(linetype = "none") 
     }
     
-    if(length(unique(sim_dataframe$colorBy_column)) == 1 |
-       AES %in% c("linetype", "none")){
+    if(AES %in% c("color", "color-linetype") &&
+       length(unique(sim_dataframe$colorBy_column)) == 1){
         A <- A + guides(color = "none")
     }
     
     ## Making semi-log graph ------------------------------------------------
     
     B <- suppressMessages(
-        A + scale_y_log10(limits = Ylim_log, breaks = YLogBreaks,
-                          labels = YLogLabels,
-                          expand = expansion(mult = pad_y_num)) 
+        A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
+                          expand = expansion(mult = pad_y_num)) +
+            coord_cartesian(ylim = Ylim_log)
     )
     
     if(floating_facet_scale == FALSE){
