@@ -5,7 +5,12 @@
 \title{Annotate Simcyp Simulator experimental details and format into a long
 data.frame instead of a wide one}
 \usage{
-annotateDetails(Deets, show_compound_col = TRUE)
+annotateDetails(
+  Deets,
+  show_compound_col = TRUE,
+  omit_all_missing = FALSE,
+  save_output = NA
+)
 }
 \arguments{
 \item{Deets}{output from \code{\link{extractExpDetails}} or
@@ -24,6 +29,13 @@ should be compared and see how that compares to the default. If you set
 this to "concatenate", you'll get all the possible compound names together;
 for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 as the compound.}
+
+\item{omit_all_missing}{TRUE or FALSE (default) for whether to omit a detail
+if the values are NA for all files}
+
+\item{save_output}{optionally save the output by supplying a file name in
+quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+it will still be saved as a csv file.}
 }
 \value{
 
@@ -31,11 +43,12 @@ as the compound.}
 \description{
 \code{annotateDetails} converts output from either
 \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
-a long data.frame and adds to that data.frame columns for a) which compound
-the information pertains to (substrate, inhibitor, etc.), b) which section of
-the Simcyp Simulator this detail is found in (physchem, absorption,
-distribution, etc.), c) notes describing what the detail is, and d) which
-sheet in the Excel file the information was pulled from.
+a long data.frame and adds to that data.frame columns for
+\enumerate{\item{which compound the information pertains to (substrate,
+inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
+found in (physchem, absorption, distribution, etc.),} \item{notes describing
+what the detail is, and} \item{which sheet in the Excel file the information
+was pulled from.}}
 }
 \examples{
 

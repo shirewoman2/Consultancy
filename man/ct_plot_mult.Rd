@@ -18,13 +18,14 @@ ct_plot_mult(
   y_axis_limits_log = NA,
   legend_position = "none",
   legend_label = NA,
-  file_labels = NA,
+  graph_titles = NA,
   graph_labels = TRUE,
   save_graph = NA,
   file_suffix = NA,
   fig_height = 8,
   fig_width = 8,
-  ...
+  ...,
+  file_labels = NA
 )
 }
 \arguments{
@@ -165,16 +166,16 @@ label in the legend for the line style and the shape. If left as the
 default NA when a legend is included and an effector is present, the label
 in the legend will be "Inhibitor".}
 
-\item{file_labels}{optionally specify a label to be used for the file name in
-the graphs and specify the order in which the files are graphed with a
-named character vector of the files in the order you would like. (Not
-applicable if \code{graph_arrangement = "separate files"}.) The file name
-must \emph{perfectly} match the file name listed in ct_dataframe or it
-won't be used. An example of how this might be specified: \code{alt_title =
-c("My file 1.xlsx" = "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic
-impairment")}  If you get an order that you didn't think you specified,
-please double check that you have specified the file names \emph{exactly}
-as they appear in \code{ct_dataframe}.}
+\item{graph_titles}{optionally specify titles to be used in place of the file
+name in the graphs and specify the order in which the files are graphed.
+Input should be a named character vector of the files in the order you
+would like. (Not applicable if \code{graph_arrangement = "separate
+files"}.) The file name must \emph{perfectly} match the file name listed in
+ct_dataframe or it won't be used. An example of how this might be
+specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
+"My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
+you didn't think you specified, please double check that you have specified
+the file names \emph{exactly} as they appear in \code{ct_dataframe}.}
 
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C, etc.) for each of the small graphs. This is only slightly different
@@ -210,6 +211,18 @@ percentiles.png". This is only used when \code{graph_arrangement =
 \item{fig_width}{figure width in inches; default is 8}
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
+
+\item{file_labels}{SOON TO BE DEPRECATED. Please use \code{graph_titles}
+instead. optionally specify a label to be used for the file name in the
+graphs and specify the order in which the files are graphed with a named
+character vector of the files in the order you would like. (Not applicable
+if \code{graph_arrangement = "separate files"}.) The file name must
+\emph{perfectly} match the file name listed in ct_dataframe or it won't be
+used. An example of how this might be specified: \code{file_labels = c("My
+file 1.xlsx" = "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic
+impairment")}  If you get an order that you didn't think you specified,
+please double check that you have specified the file names \emph{exactly}
+as they appear in \code{ct_dataframe}.}
 }
 \value{
 
