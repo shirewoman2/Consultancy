@@ -116,10 +116,6 @@ extractExpDetails <- function(sim_data_file,
     # and what kind of data to format the output as at the end. Using data
     # object AllExpDetails.
     
-    # Still need to add info for searching for some details. Removing those
-    # from consideration for now.
-    AllExpDetails <- AllExpDetails %>% filter(!str_detect(Sheet, "NEED TO ADD"))
-    
     SumDeets <- AllExpDetails %>% filter(Sheet == "Summary") %>% 
         rename(Deet = Detail)
     PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
@@ -240,70 +236,8 @@ extractExpDetails <- function(sim_data_file,
         pullValue <- function(deet){
             
             # Setting up regex to search
-            ToDetect <- switch(deet,
-                               "Substrate" = "Compound Name",
-                               "PrimaryMetabolite1" = "Sub Pri Metabolite1",
-                               "PrimaryMetabolite2" = "Sub Pri Metabolite2",
-                               "SecondaryMetabolite" = "Sub Sec Metabolite",
-                               "Inhibitor1Metabolite" = "Inh 1 Metabolite",
-                               "Inhibitor1" = "Compound Name",
-                               "Inhibitor2" = "Inhibitor 2",
-                               "MW_sub" = "Mol Weight",
-                               "MW_inhib" = "Mol Weight",
-                               "logP_sub" = "log P",
-                               "logP_inhib" = "log P",
-                               "CompoundType_sub" = "Compound Type",
-                               "CompoundType_inhib" = "Compound Type",
-                               "pKa1_sub" = "pKa 1",
-                               "pKa1_inhib" = "pKa 1",
-                               "pKa2_sub" = "pKa 2",
-                               "pKa2_inhib" = "pKa 2",
-                               "BPratio_sub" = "B/P",
-                               "BPratio_inhib" = "B/P",
-                               "Hematocrit" = "Haematocrit",
-                               "Haematocrit" = "Haematocrit",
-                               "fu_sub" = "^fu$",
-                               "fu_inhib" = "^fu$",
-                               "ModelType_sub" = "Distribution Model",
-                               "ModelType_inhib" = "Distribution Model",
-                               "Population" = "Population Name",
-                               "PopSize" = "Population Size",
-                               "NumTrials" = "Number of Trials",
-                               "NumSubjTrial" = "No. of Subjects per Trial",
-                               "SimStartDayTime" = "Start Day/Time",
-                               "SimEndDayTime" = "End Day/Time",
-                               "SimulatorVersion" = "Simcyp Version",
-                               "SimDuration" = "Study Duration",
-                               "PrandialSt_sub" = "Prandial State",
-                               "PrandialSt_inhib" = "Prandial State",
-                               "DoseRoute_sub" = "Route",
-                               "DoseRoute_inhib" = "Route",
-                               "Units_dose_sub" = "Dose Units",
-                               "Units_dose_inhib" = "Dose Units",
-                               "Dose_sub" = "^Dose$",
-                               "Dose_inhib" = "^Dose$",
-                               "PercDoseInhaled_sub" = "Amount of dose inhaled",
-                               "PercDoseSwallowed_sub" = "Amount of dose swallowed",
-                               "PercDoseInhaled_inhib" = "Amount of dose inhaled",
-                               "PercDoseSwallowed_inhib" = "Amount of dose swallowed",
-                               "StartDayTime_sub" = "Start Day/Time",
-                               "StartDayTime_inhib" = "Start Day/Time",
-                               "Regimen_sub" = "Dosing Regimen",
-                               "Regimen_inhib" = "Dosing Regimen",
-                               "DoseInt_sub" = "Dose Interval",
-                               "DoseInt_inhib" = "Dose Interval",
-                               "NumDoses_sub" = "Number of Doses",
-                               "NumDoses_inhib" = "Number of Doses",
-                               "GIAbsModel_sub" = "GI Absorption Model",
-                               "GIAbsModel_inhib" = "GI Absorption Model",
-                               "Units_AUC" = "^AUC \\(",
-                               "Units_Cmax" = "^CMax \\(",
-                               "Units_tmax" = "^TMax \\(",
-                               "Units_CL" = "CL \\(Dose/AUC",
-                               "Vss_input_sub" = "^Vss \\(L/kg\\)$",
-                               "Vss_input_inhib" = "^Vss \\(L/kg\\)$",
-                               "VssPredMeth_sub" = "Prediction Method",
-                               "VssPredMeth_inhib" = "Prediction Method")
+            ToDetect <- AllExpDetails %>% 
+                filter(Detail == deet & Sheet == "Summary") %>% pull(Regex)
             NameCol <- SumDeets$NameCol[which(SumDeets$Deet == deet)]
             Row <- which(str_detect(SummaryTab[, NameCol] %>% pull(), ToDetect))
             Val <- SummaryTab[Row, SumDeets$ValueCol[SumDeets$Deet == deet]] %>%
@@ -344,8 +278,28 @@ extractExpDetails <- function(sim_data_file,
         
         # Removing details that don't apply, e.g., _inhib parameters when there
         # was no inhibitor.
-        if(is.na(Out$Inhibitor1)){
+        if(is.na(Out$Inhibitor1) & any(str_detect(names(Out), "_inhib$"))){
             Out <- Out[-which(str_detect(names(Out), "_inhib$"))]
+        }
+        
+        if(is.na(Out$Inhibitor2) & any(str_detect(names(Out), "_inhib2$"))){
+            Out <- Out[-which(str_detect(names(Out), "_inhib2$"))]
+        }
+        
+        if(is.na(Out$Inhibitor1Metabolite) & any(str_detect(names(Out), "_inhib1met$"))){
+            Out <- Out[-which(str_detect(names(Out), "_inhib1met$"))]
+        }
+        
+        if(is.na(Out$PrimaryMetabolite1) & any(str_detect(names(Out), "_met$"))){
+            Out <- Out[-which(str_detect(names(Out), "_met$"))]
+        }
+        
+        if(is.na(Out$PrimaryMetabolite2) & any(str_detect(names(Out), "_met2$"))){
+            Out <- Out[-which(str_detect(names(Out), "_met2$"))]
+        }
+        
+        if(is.na(Out$SecondaryMetabolite) & any(str_detect(names(Out), "secmet$"))){
+            Out <- Out[-which(str_detect(names(Out), "_secmet$"))]
         }
     }
     
@@ -420,69 +374,26 @@ extractExpDetails <- function(sim_data_file,
         pullValue <- function(deet){
             
             # Setting up regex to search
-            ToDetect <-
-                switch(sub("_sub|_inhib|_met1|_met2|_secmet|_inhib1met|_inhib2",
-                           "", deet),
-                       "Abs_model" = "Absorption Model",
-                       "Abs_scalars" = "Absorption Scalars .no units",
-                       "Abs_scalar_colon" = "Absorption Scalar Colon",
-                       "Abs_scalar_SI" = "Absorption Scalar SI Global",
-                       "Age_min" = "Minimum Age",
-                       "Age_max" = "Maximum Age",
-                       "CLrenal" = "CL R \\(L/h",
-                       "DLMPartHandModel" = "DLM Particle Handling Model",
-                       "DoseInt" = "Dose Interval",
-                       "fa" = "^fa$",
-                       "ka" = "^ka \\(",
-                       "kp_scalar" = "Kp Scalar",
-                       "tlag" = "lag time \\(",
-                       "fluid_intake" = "Fluid intake with dose",
-                       "fu_gut" = "fu\\(Gut\\)$",
-                       "Ontogeny" = "Ontogeny Profile",
-                       "Papp_MDCK" = "MDCK\\(10E-06 cm/s\\)",
-                       "Papp_Caco" = "PCaco-2",
-                       "Papp_calibrator" = "Reference Compound Value \\(10E-06 cm/s\\)",
-                       "Peff_cap" = "Peff.*man Cap \\(10",
-                       "Peff" = "Peff.*man \\(10-4 cm/s",
-                       "Peff_type" = "Peff.*[Tt]ype",
-                       "PercFemale" = "Propn. of Females",
-                       "UserAddnOrgan" = "User-defined Additional",
-                       "SimulatorVersion" = "Version number",
-                       "SimStartDayTime" = "Start Day/Time",
-                       "SolubilityType" = "Solubility Type",
-                       "Qgut" = "Q\\(Gut\\) \\(L/h",
-                       "Regimen" = "Dosing Regimen",
-                       "NumDoses" = "Number of Doses",
-                       "kin_sac" = "SAC kin",
-                       "kout_sac" = "SAC kout",
-                       "Vsac" = "Volume .Vsac",
-                       "Substrate" = "Compound Name",
-                       "PrimaryMetabolite1" = "Compound Name",
-                       "PrimaryMetabolite2" = "Compound Name",
-                       "SecondaryMetabolite" = "Compound Name",
-                       "Inhibitor1" = "Compound Name",
-                       "Inhibitor2" = "Compound Name",
-                       "Inhibitor1Metabolite" = "Compound Name", 
-                       "BindingProtein" = "Reference Binding Component",
-                       "Ptrans" = "Intrinsic Transcellular Permeability \\(",
-                       "ParticleRadius" = "Mono[Dd]ispersed Radius \\(",
-                       "ParticleDensity" = "Particle density \\(",
-                       "IntrinsicSol" = "Intrinsic Solubility \\(",
-                       "CritSupersatRatio" = "CSR value",
-                       "PrecipRateConst" = "PRC \\(", 
-                       "InputForm" = "Input Form",
-                       "Formulation" = "Formulation",
-                       "SegregatedTransTimeModel" = "Segregated transit time model",
-                       "ParticleSizeDist" = "Particle Size Distribution",
-                       "DispersionType" = "Dispersion Type"
-                       
-                )
-            
+            ToDetect <- AllExpDetails %>% 
+                filter(Detail == deet & Sheet == "Input Sheet") %>% pull(Regex)
             NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
             Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
             Val <- InputTab[Row,
                             InputDeets$ValueCol[
                                 which(InputDeets$Deet == deet)]] %>% pull()
+            
+            # If SimStartDayTime is not found, which will happen with animal
+            # sims, it may be possible to piece together from other data. 
+            if(length(Val) == 0 & deet == "SimStartDayTime"){
+                StartDay <- as.character(InputTab[which(InputTab$...1 == "Start Day"), 2])
+                StartTime <- as.character(InputTab[which(InputTab$...1 == "Start Time"), 2])
+                StartTime <- str_split(sub("m", "", StartTime), "h")[[1]]
+                Val <- 
+                    paste0("Day ", StartDay, ", ",
+                           formatC(as.numeric(StartTime[1]), width = 2, flag = "0"), ":",
+                           formatC(as.numeric(StartTime[2]), width = 2, flag = "0"))
+                rm(StartDay, StartTime)
+            }
             
             # Ontogeny profile is listed twice in output for some reason.
             # Only keeping the 1st value. Really, keeping only the unique
@@ -652,11 +563,44 @@ extractExpDetails <- function(sim_data_file,
                     }
                     
                     if(str_detect(as.character(InputTab[i, ValueCol]),
-                                  "In Vivo Clear")){
+                                  "In Vivo Clearance")){
+                        
+                        MyNames <- InputTab$...1[
+                            i:min(c(IntRowStart, CLRows[which(CLRows == i) + 1], 
+                                    nrow(InputTab)), na.rm = T)]
+                        
                         suppressWarnings(
-                            Out[[paste0("CLint_InVivo", Suffix)]] <- 
-                                as.numeric(InputTab[i, NameCol + 1])
+                            Out[[paste0("CLiv_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "CL.*iv.*[(]mL")) + i - 1,
+                                    ValueCol])
                         )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLbiliary_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "Biliary Clearance")) + i - 1,
+                                    ValueCol])
+                        )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLrenal_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "CL R [(]mL/min")) + i - 1,
+                                    ValueCol])
+                        )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLadditional_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "Additional Systemic Clearance")) + i - 1,
+                                    ValueCol])
+                        )
+                        
                     }
                 }
                 
@@ -1063,46 +1007,8 @@ extractExpDetails <- function(sim_data_file,
         pullValue <- function(deet){
             
             # Setting up regex to search
-            ToDetect <- switch(deet,
-                               "HSA_female" = "HSA : Female",
-                               "HSA_male" = "HSA : Male",
-                               "HSA_C0_female" = "HSA C0 : Female",
-                               "HSA_C0_male" = "HSA C0 : Male",
-                               "HSA_C1_female" = "HSA C1 : Female",
-                               "HSA_C1_male" = "HSA C1 : Male",
-                               "HSA_C2_female" = "HSA C2 : Female",
-                               "HSA_C2_male" = "HSA C2 : Male",
-                               "AGP_male" = "AGP Mean : Male",
-                               "AGP_female" = "AGP Mean : Female",
-                               "Hematocrit_male" = "Haematocrit Mean : Male",
-                               "Hematocrit_female" = "Haematocrit Mean : Female",
-                               "Haematocrit_male" = "Haematocrit Mean : Male",
-                               "Haematocrit_female" = "Haematocrit Mean : Female", 
-                               "Abund_CYP1A2_mean" = "Abundance : CYP1A2 EM Mean",
-                               "Abund_CYP1A2_CV" = "Abundance : CYP1A2 EM CV",
-                               "Abund_CYP2A6_mean" = "Abundance : CYP2A6 EM Mean",
-                               "Abund_CYP2A6_CV" = "Abundance : CYP2A6 EM CV",
-                               "Abund_CYP2B6_mean" = "Abundance : CYP2B6 EM Mean",
-                               "Abund_CYP2B6_CV" = "Abundance : CYP2B6 EM CV",
-                               "Abund_CYP2C9_mean" = "Abundance : CYP2C9 EM Mean",
-                               "Abund_CYP2C9_CV" = "Abundance : CYP2C9 EM CV",
-                               "Abund_CYP2C18_mean" = "Abundance : CYP2C18 EM Mean",
-                               "Abund_CYP2C18_CV" = "Abundance : CYP2C18 EM CV",
-                               "Abund_CYP2C19_mean" = "Abundance : CYP2C19 EM Mean",
-                               "Abund_CYP2C19_CV" = "Abundance : CYP2C19 EM CV",
-                               "Abund_CYP2D6_mean" = "Abundance : CYP2D6 EM Mean",
-                               "Abund_CYP2D6_CV" = "Abundance : CYP2D6 EM CV",
-                               "Abund_CYP2E1_mean" = "Abundance : CYP2E1 EM Mean",
-                               "Abund_CYP2E1_CV" = "Abundance : CYP2E1 EM CV",
-                               "Abund_CYP2J2_mean" = "Abundance : CYP2J2 EM Mean",
-                               "Abund_CYP2J2_CV" = "Abundance : CYP2J2 EM CV",
-                               "Abund_CYP3A4_mean" = "Abundance : CYP3A4 EM Mean",
-                               "Abund_CYP3A4_CV" = "Abundance : CYP3A4 EM CV",
-                               "Abund_CYP3A5_mean" = "Abundance : CYP3A5 EM Mean",
-                               "Abund_CYP3A5_CV" = "Abundance : CYP3A5 EM CV",
-                               "Abund_CYP3A7_mean" = "Abundance : CYP3A7 EM Mean",
-                               "Abund_CYP3A7_CV" = "Abundance : CYP3A7 EM CV")
-            
+            ToDetect <- AllExpDetails %>% 
+                filter(Detail == deet & Sheet == "population") %>% pull(Regex)
             NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
             
             if(ncol(PopTab) < NameCol){
@@ -1130,7 +1036,7 @@ extractExpDetails <- function(sim_data_file,
         }
     }
     
-    # Calculated details ------------------------------------------------
+    # Calculated details & data cleanup ----------------------------------------
     if("StartHr_sub" %in% exp_details && 
        "StartDayTime_sub" %in% names(Out) &&
        Out$StartDayTime_sub != "custom dosing"){
@@ -1208,6 +1114,19 @@ extractExpDetails <- function(sim_data_file,
     # Always including the file name. It's just a good practice and it makes
     # extractExpDetails output more like extractExpDetails_mult.
     Out$File <- sim_data_file
+    
+    # Species should be lower case and not have "Sim" in front of it to work
+    # more smoothly with other functions and also just look better. Setting
+    # "beagle" to "dog" and setting it to "human" if it's missing, which it will
+    # be for regular simulator output.
+    if("Species" %in% names(Out)){
+        Out$Species <- tolower(sub("Sim-", "", Out$Species))
+        Out$Species <- ifelse(Out$Species == "beagle", "dog", Out$Species)
+        
+        if(is.na(Out$Species)){
+            Out$Species <- "human"
+        }
+    }
     
     Out <- Out[sort(names(Out))]
     

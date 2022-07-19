@@ -131,7 +131,7 @@ extractPK <- function(sim_data_file,
     # Determining the name of the tab that contains PK data for the last dose
     # of the substrate (not the inhibitor... at least, not at this point).
     Tab_last <- SheetNames[str_detect(SheetNames, "AUC(t)?[1-9]{1,1}[0-9]{0,}") &
-                              !str_detect(SheetNames, "Inh")]
+                               !str_detect(SheetNames, "Inh")]
     LastDoseNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
     # It's the highest dose number and it can't be 0 b/c that's dose 1.
     LastDoseNum <- suppressWarnings(max(LastDoseNum[LastDoseNum != 0]))
@@ -147,7 +147,7 @@ extractPK <- function(sim_data_file,
         if(any(str_detect(SheetNames, "AUCt[0-9]{1,}") &
                !str_detect(SheetNames, "Inh"))){
             Tab_last <- SheetNames[str_detect(SheetNames, "AUCt[1-9]{1,1}[0-9]{0,}") &
-                                      !str_detect(SheetNames, "Inh")]
+                                       !str_detect(SheetNames, "Inh")]
         } else if(any(str_detect(SheetNames, "AUC last"))){
             # Tab name could include "last" instead of a number, e.g., "Int AUC
             # last_CI(Sub)(CPlasma)"
@@ -321,12 +321,13 @@ extractPK <- function(sim_data_file,
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
         # Error catching
-        if(any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames) == FALSE){
+        if(Deets$Species == "human" && 
+           any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames) == FALSE){
             if(length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0,
                                               ParamAUCX, ParamCLTSS))) > 0){
                 
                 if(all(PKparameters %in% c(ParamAbsorption, ParamAUC0,
-                                       ParamAUCX, ParamCLTSS) == FALSE)){
+                                           ParamAUCX, ParamCLTSS) == FALSE)){
                     stop(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
                                 sub("and", "or", 
                                     str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
@@ -340,12 +341,19 @@ extractPK <- function(sim_data_file,
                             call. = FALSE)
                 }
             }
+            
         } else {
             
             # Determining which sheet to read
             SheetAUC <- ifelse("AUC" %in% SheetNames == FALSE, 
                                ifelse("AUC_CI" %in% SheetNames == FALSE, 
                                       "AUC_SD", "AUC_CI"), "AUC")
+            if(Deets$Species != "human"){
+                # If it's from Simcyp Discovery, there's only one AUC sheet and
+                # it's either for the only dose in a SD sim or the last dose for
+                # a MD sim. Not sure about the regular Simcyp Animal, though. 
+                SheetAUC <- SheetNames[which(str_detect(SheetNames, "AUC"))]
+            }
             
             # Reading the sheet for AUC tab results
             AUC_xl <- suppressMessages(
@@ -357,7 +365,8 @@ extractPK <- function(sim_data_file,
                                    col_names = FALSE))
             
             # Finding the last row of the individual data
-            EndRow_ind <- which(AUC_xl$...2 == "Statistics") - 2
+            EndRow_ind <- which(AUC_xl$...2 == "Statistics")
+            EndRow_ind <- max(which(complete.cases(AUC_xl$...2[1:(EndRow_ind-1)])))
             
             # If tissue is blood, REMOVE the plasma columns entirely. I
             # think this will be easier to code. -LSh
@@ -389,16 +398,27 @@ extractPK <- function(sim_data_file,
                     filter(Sheet == "AUC" & PKparameter == i) %>% 
                     select(PKparameter, SearchText, AUCtab_StartColText)
                 
+                if(Deets$Species != "human" & i == "HalfLife_dose1"){
+                    ToDetect <- data.frame(PKparameter = "HalfLife_dose1", 
+                                           SearchText = "t 1/2 ", 
+                                           AUCtab_StartColText = "^AUC.*integrated from")
+                }
+                
+                # Figuring out which rows to search for which text
+                IndexRow <- which(AUC_xl$...1 == "Index")
+                
                 # Looking for the correct subheading 
-                StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])), 
-                                             ToDetect$AUCtab_StartColText))[1]
+                StartCol <- which(str_detect(as.vector(t(
+                    AUC_xl[IndexRow - 1, ])), 
+                    ToDetect$AUCtab_StartColText))[1]
                 
                 if(length(StartCol) == 0){
                     StartCol <- 1
                 }
                 
-                # Find the last column for this particular subheading 
-                EndCol <- which(complete.cases(as.vector(t(AUC_xl[2, ]))))
+                # Find the last column for this particular subheading
+                EndCol <- which(complete.cases(as.vector(t(
+                    AUC_xl[IndexRow - 1, ]))))
                 EndCol <- EndCol[EndCol > StartCol][1] - 1
                 EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
                 
@@ -419,7 +439,8 @@ extractPK <- function(sim_data_file,
                     PossCol <- StartCol:EndCol
                     ColNum <- PossCol[
                         which(str_detect(as.vector(t(
-                            AUC_xl[3, PossCol])), ToDetect$SearchText) &
+                            AUC_xl[IndexRow, PossCol])),
+                            ToDetect$SearchText) &
                                 !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
                     
                 }
@@ -427,21 +448,20 @@ extractPK <- function(sim_data_file,
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
                                   "on the tab 'AUC' cannot be found."))
-                    suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
+                    suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                     next
                 }
                 
                 suppressWarnings(
-                    Out_ind[[i]] <- AUC_xl[4:EndRow_ind, ColNum] %>%
+                    Out_ind[[i]] <- AUC_xl[(IndexRow + 1):EndRow_ind, ColNum] %>%
                         pull(1) %>% as.numeric
                 )
                 
                 if(checkDataSource){
                     DataCheck <- DataCheck %>%
                         bind_rows(data.frame(PKparam = i, 
-                                             Tab = ifelse("AUC" %in% SheetNames == FALSE, 
-                                                          "AUC_CI", "AUC"),
+                                             Tab = SheetAUC,
                                              StartColText = ToDetect$AUCtab_StartColText,
                                              SearchText = ToDetect$SearchText,
                                              Column = ifelse(tissue == "plasma", 
@@ -449,9 +469,9 @@ extractPK <- function(sim_data_file,
                                                              ColNum + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
                                              StartRow_agg = StartRow_agg,
                                              EndRow_agg = EndRow_agg,
-                                             StartRow_ind = 4,
+                                             StartRow_ind = IndexRow + 1,
                                              EndRow_ind = EndRow_ind,
-                                             Note = "StartColText is looking in row 2."))
+                                             Note = paste("StartColText is looking in row", IndexRow - 1)))
                 }
                 
                 if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
@@ -480,15 +500,17 @@ extractPK <- function(sim_data_file,
                     # !!! STARTING HERE, ALL TEXT IS SAME AS MAIN CODE ABOVE.
                     
                     # Looking for the correct subheading 
-                    StartCol <- which(str_detect(as.vector(t(AUC_xl[2, ])), 
-                                                 ToDetect$AUCtab_StartColText))[1]
+                    StartCol <- which(str_detect(as.vector(t(
+                        AUC_xl[IndexRow - 1, ])), 
+                        ToDetect$AUCtab_StartColText))[1]
                     
                     if(length(StartCol) == 0){
                         StartCol <- 1
                     }
                     
-                    # Find the last column for this particular subheading 
-                    EndCol <- which(complete.cases(as.vector(t(AUC_xl[2, ]))))
+                    # Find the last column for this particular subheading
+                    EndCol <- which(complete.cases(as.vector(t(
+                        AUC_xl[IndexRow - 1, ]))))
                     EndCol <- EndCol[EndCol > StartCol][1] - 1
                     EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
                     
@@ -509,7 +531,8 @@ extractPK <- function(sim_data_file,
                         PossCol <- StartCol:EndCol
                         ColNum <- PossCol[
                             which(str_detect(as.vector(t(
-                                AUC_xl[3, PossCol])), ToDetect$SearchText) &
+                                AUC_xl[IndexRow, PossCol])),
+                                ToDetect$SearchText) &
                                     !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
                         
                     }
@@ -517,7 +540,7 @@ extractPK <- function(sim_data_file,
                     if(length(ColNum) == 0 | is.na(ColNum)){
                         message(paste("The column with information for", i,
                                       "on the tab 'AUC' cannot be found."))
-                        suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
+                        suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                         PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                         next
                     }
@@ -525,7 +548,7 @@ extractPK <- function(sim_data_file,
                     # !!! ENDING HERE. TEXT BELOW HERE IS NO LONGER SAME AS MAIN
                     # CODE ABOVE.
                     suppressWarnings(
-                        Out_ind[[NewParam]] <- AUC_xl[4:EndRow_ind, ColNum] %>%
+                        Out_ind[[NewParam]] <- AUC_xl[(IndexRow+1):EndRow_ind, ColNum] %>%
                             pull(1) %>% as.numeric
                     )
                     
@@ -540,8 +563,7 @@ extractPK <- function(sim_data_file,
                     if(checkDataSource){
                         DataCheck <- DataCheck %>%
                             bind_rows(data.frame(PKparam = NewParam, 
-                                                 Tab = ifelse("AUC" %in% SheetNames == FALSE, 
-                                                              "AUC_CI", "AUC"),
+                                                 Tab = SheetAUC,
                                                  StartColText = ToDetect$AUCtab_StartColText,
                                                  SearchText = ToDetect$SearchText,
                                                  Column = ifelse(tissue == "plasma", 
@@ -549,9 +571,9 @@ extractPK <- function(sim_data_file,
                                                                  ColNum + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
                                                  StartRow_agg = StartRow_agg,
                                                  EndRow_agg = EndRow_agg,
-                                                 StartRow_ind = 4,
+                                                 StartRow_ind = IndexRow + 1,
                                                  EndRow_ind = EndRow_ind,
-                                                 Note = "StartColText is looking in row 2."))
+                                                 Note = paste("StartColText is looking in row", IndexRow - 1)))
                     }
                     
                     suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
@@ -575,7 +597,7 @@ extractPK <- function(sim_data_file,
             
             if(includeTrialInfo){
                 # Subject and trial info
-                SubjTrial_AUC <- AUC_xl[4:EndRow_ind, 1:2] %>%
+                SubjTrial_AUC <- AUC_xl[(IndexRow + 1):EndRow_ind, 1:2] %>%
                     rename("Individual" = ...1, "Trial" = ...2)
                 
                 Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
@@ -808,6 +830,9 @@ extractPK <- function(sim_data_file,
                            str_c(PKparameters_Abs, collapse = ", "),
                            ". None of these parameters can be extracted."),
                     call. = FALSE)
+        } else if(Deets$Species != "human"){
+            warning("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet.", 
+                    call. = FALSE)
         } else {
             
             Abs_xl <- suppressMessages(
@@ -982,7 +1007,7 @@ extractPK <- function(sim_data_file,
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
                                   "on the 'Clearance Trials SS' tab cannot be found."))
-                    suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
+                    suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
                 }
@@ -1042,7 +1067,7 @@ extractPK <- function(sim_data_file,
                 if(length(ColNum) == 0 | is.na(ColNum)){
                     message(paste("The column with information for", i,
                                   "on the 'Clearance Trials SS' tab cannot be found."))
-                    suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum))
+                    suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
                 }
@@ -1214,7 +1239,7 @@ extractPK <- function(sim_data_file,
     }
     
     if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
-           length(Out_agg) == 0){
+       length(Out_agg) == 0){
         stop("No PK parameters were found. Did you include PK info as part of your simulation output?")
     }
     
