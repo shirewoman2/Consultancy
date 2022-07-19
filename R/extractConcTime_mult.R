@@ -357,6 +357,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
         if(overwrite){
             ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% obs_data_files)
             for(f in obs_data_files){
+                message(paste("Extracting data from observed data file =", f))
                 MultObsData[[f]] <- extractObsConcTime(f)
             }
         } else {

@@ -16,7 +16,8 @@ findDetails(
 }
 \arguments{
 \item{Deets}{output from \code{\link{extractExpDetails}} or
-\code{\link{extractExpDetails_mult}}}
+\code{\link{extractExpDetails_mult}} or annotated output from running
+either of those plus \code{\link{annotateDetails}}.}
 
 \item{compoundID}{optionally supply one or more of "substrate", "primary
 metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor

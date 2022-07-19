@@ -3,11 +3,12 @@
 #'
 #' \code{annotateDetails} converts output from either
 #' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
-#' a long data.frame and adds to that data.frame columns for a) which compound
-#' the information pertains to (substrate, inhibitor, etc.), b) which section of
-#' the Simcyp Simulator this detail is found in (physchem, absorption,
-#' distribution, etc.), c) notes describing what the detail is, and d) which
-#' sheet in the Excel file the information was pulled from.
+#' a long data.frame and adds to that data.frame columns for
+#' \enumerate{\item{which compound the information pertains to (substrate,
+#' inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
+#' found in (physchem, absorption, distribution, etc.),} \item{notes describing
+#' what the detail is, and} \item{which sheet in the Excel file the information
+#' was pulled from.}}
 #'
 #' @param Deets output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}

@@ -15,7 +15,8 @@
 #' to get everything on absorption, for example, or everything on interactions.
 #'
 #' @param Deets output from \code{\link{extractExpDetails}} or
-#'   \code{\link{extractExpDetails_mult}}
+#'   \code{\link{extractExpDetails_mult}} or annotated output from running
+#'   either of those plus \code{\link{annotateDetails}}. 
 #' @param compoundID optionally supply one or more of "substrate", "primary
 #'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
 #'   1", "inhibitor 2", or "inhibitor 1 metabolite" to get information on
@@ -25,7 +26,7 @@
 #'   specific compound name to get all possible compounds that match that.
 #'   Regular expressions are acceptable here, e.g., \code{compound =
 #'   "midaz|keto"} to find any compound with either "midaz" or "keto" in the
-#'   name. Not case sensitive. 
+#'   name. Not case sensitive.
 #' @param show_compound_col TRUE (default), FALSE, or "concatenate" for whether
 #'   to include in the results the column "Compound", which is the compound's
 #'   specific name in each simulation. Why would you ever omit this? If you have
