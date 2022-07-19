@@ -109,11 +109,11 @@
 #'
 #' 
 annotateDetails <- function(Deets,
-                            show_compound_col = TRUE,
                             compoundID = NA, 
                             compound = NA,
                             detail_set = NA, 
                             simulator_section = NA, 
+                            show_compound_col = TRUE,
                             omit_all_missing = FALSE, 
                             save_output = NA){
     

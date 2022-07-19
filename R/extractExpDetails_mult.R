@@ -113,7 +113,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    existing_exp_details = "none", 
                                    overwrite = FALSE,
                                    annotate_output = TRUE,
-                                   show_compound_col = "concatenate",
+                                   show_compound_col = TRUE,
                                    omit_all_missing = FALSE, 
                                    save_output = NA){
     
@@ -232,7 +232,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     
     if(annotate_output){
         Out <- annotateDetails(Out, 
-                               show_compound_col = show_compound_col)
+                               show_compound_col = show_compound_col, 
+                               save_output = NA)
     }
     
     if(complete.cases(save_output)){
