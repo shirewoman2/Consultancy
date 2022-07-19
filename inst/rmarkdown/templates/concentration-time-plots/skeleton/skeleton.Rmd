@@ -45,7 +45,11 @@ Text1 <- switch(linear_or_log,
                 "both vertical" = "Linear (A) and log-linear (B)",
                 "linear" = "Linear", 
                 "log" = "Log-linear",
-                "semi-log" = "Log-linear")
+                "semi-log" = "Log-linear", 
+                "horizontal and vertical" = "Linear (A) and log-linear (B)")
+
+fig_width <- ifelse(linear_or_log == "horizontal and vertical", 5, fig_width)
+fig_height <- ifelse(linear_or_log == "horizontal and vertical", 6, fig_height)
 
 ```
 

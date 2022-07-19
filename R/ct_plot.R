@@ -221,7 +221,20 @@
 #'   will be returned, and graphs are stacked vertically}
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
-#'   returned, and graphs are stacked horizontally}}
+#'   returned, and graphs are side by side horizontally}
+#'
+#'   \item{"horizontal and vertical"}{both the linear and the semi-log graphs
+#'   will be returned, and graphs are side by side horizontally (one graph; file
+#'   name will end in "- horizontal") and stacked vertically (second graph; file
+#'   name will end in "- vertical"). This option, which was designed to create
+#'   the vertically stacked version of a graph for a report and the horizontal,
+#'   side-by-side version for a presentation, is a bit different from the others
+#'   since it will return two separate files. In the RStudio "Plots"
+#'   window, you'll only see the vertically stacked version. Setting
+#'   \code{fig_height} and \code{fig_width} will adjust only the dimensions of
+#'   the horizontal figure; the default values will be used for the vertical
+#'   one. If you request Word output, only the vertical plot will be saved in
+#'   Word format; the horizontal plot will be saved as a png file.}}
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -235,7 +248,7 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder. 
+#'   your Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -315,6 +328,15 @@ ct_plot <- function(ct_dataframe = NA,
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Making most character arguments lower case to avoid case sensitivity
+    figure_type <- tolower(figure_type)
+    mean_type <- tolower(mean_type)
+    legend_position <- tolower(legend_position)
+    linear_or_log <- tolower(linear_or_log)
+    if(str_detect(linear_or_log, "horiz") & str_detect(linear_or_log, "vert")){
+        linear_or_log <- "horizontal and vertical"
     }
     
     if(length(figure_type) != 1 |
@@ -1178,7 +1200,8 @@ ct_plot <- function(ct_dataframe = NA,
                   "log" = B,
                   "both" = AB, 
                   "both vertical" = AB,
-                  "both horizontal" = ABhoriz)
+                  "both horizontal" = ABhoriz, 
+                  "horizontal and vertical" = AB)
     
     if(length(Out) == 1){
         Out <- Out[[1]]
@@ -1200,6 +1223,14 @@ ct_plot <- function(ct_dataframe = NA,
         }
         
         if(Ext == "docx"){
+            
+            if(linear_or_log == "horizontal and vertical"){
+                # Saving the horizontal version as a png file and the vertical
+                # version as a Word file lower down in this section of the
+                # script.
+                ggsave(sub(paste0("\\.", Ext), " - horizontal.png", FileName), 
+                       plot = ABhoriz, height = fig_height, width = fig_width, dpi = 600)
+            }
             
             # This is when they want a Word file as output
             OutPath <- dirname(FileName)
@@ -1275,21 +1306,20 @@ ct_plot <- function(ct_dataframe = NA,
             if(linear_or_log %in% c("both", "both vertical")){
                 ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
                        plot = AB)
-            }
-            
-            if(linear_or_log == "both horizontal"){
+            } else if(linear_or_log == "both horizontal"){
                 ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
                        plot = ABhoriz)
-            }
-            
-            if(linear_or_log == "linear"){
+            } else if(linear_or_log == "linear"){
                 ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
                        plot = A)
-            }
-            
-            if(str_detect(linear_or_log, "log")){
+            } else if(str_detect(linear_or_log, "log")){
                 ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
                        plot = B)
+            } else if(linear_or_log == "horizontal and vertical"){
+                ggsave(sub(paste0("\\.", Ext), paste0(" - vertical.", Ext), FileName), 
+                       plot = AB, height = 6, width = 5, dpi = 600)
+                ggsave(sub(paste0("\\.", Ext), paste0(" - horizontal.", Ext), FileName), 
+                       plot = ABhoriz, height = fig_height, width = fig_width, dpi = 600)
             }
         }
     }
