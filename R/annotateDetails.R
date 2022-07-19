@@ -3,11 +3,12 @@
 #'
 #' \code{annotateDetails} converts output from either
 #' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
-#' a long data.frame and adds to that data.frame columns for a) which compound
-#' the information pertains to (substrate, inhibitor, etc.), b) which section of
-#' the Simcyp Simulator this detail is found in (physchem, absorption,
-#' distribution, etc.), c) notes describing what the detail is, and d) which
-#' sheet in the Excel file the information was pulled from.
+#' a long data.frame and adds to that data.frame columns for
+#' \enumerate{\item{which compound the information pertains to (substrate,
+#' inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
+#' found in (physchem, absorption, distribution, etc.),} \item{notes describing
+#' what the detail is, and} \item{which sheet in the Excel file the information
+#' was pulled from.}}
 #'
 #' @param Deets output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}
@@ -24,6 +25,11 @@
 #'   this to "concatenate", you'll get all the possible compound names together;
 #'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 #'   as the compound.
+#' @param omit_all_missing TRUE or FALSE (default) for whether to omit a detail
+#'   if the values are NA for all files
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+#'   it will still be saved as a csv file.
 #'
 #' @return
 #' @export
@@ -33,11 +39,50 @@
 #' annotateDetails(Deets)
 #' 
 annotateDetails <- function(Deets,
-                            show_compound_col = TRUE){
+                            show_compound_col = TRUE,
+                            omit_all_missing = FALSE, 
+                            save_output = NA){
     
     if(class(Deets)[1] == "list"){
         # This is when the output is the default list from extractExpDetails
         Deets <- as.data.frame(Deets)
+    }
+    
+    PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(Deets))
+    
+    if(PrevAnnotated){
+        
+        CompoundNames <- Deets %>% 
+            select(Compound, CompoundID, matches("xlsx$")) %>% 
+            pivot_longer(cols = -c(Compound, CompoundID),
+                         names_to = "File", values_to = "Value") %>%
+            filter(complete.cases(Value) & complete.cases(Compound)) %>% 
+            select(File, Compound, CompoundID) %>% unique()
+        
+        # This is when Deets has been annotated.
+        # Ironically, need to de-annotate here to make this work well
+        # with the rest of the function.
+        Deets <- Deets %>% 
+            select(-any_of(c("SimulatorSection", "Sheet", "Notes",
+                             "CompoundID", "Compound"))) %>% 
+            pivot_longer(cols = -Detail, 
+                         names_to = "File", values_to = "Value") %>% 
+            # Need to remove NA values here b/c they can otherwise lead to
+            # multiple values for a given detail when one value is for the
+            # correct compound and the other is for compounds that are present
+            # in other files but DO have that particular compound ID. For
+            # example, metabolite 1 might be OH-MDZ for some files and
+            # OH-bupropion for others, and that will have multiple rows. Removed
+            # NA values should mostly come out in the wash, I think, but there
+            # is a risk that we'll lose some NA values that should be included.
+            # I think that's an acceptable risk. - LSh
+            filter(complete.cases(Value)) %>% 
+            pivot_wider(names_from = Detail, values_from = Value)
+        
+        
+        
+    } else if("File" %in% names(Deets) == FALSE){
+        Deets$File <- paste("unknown file", 1:nrow(Deets))
     }
     
     Out <- Deets %>% 
@@ -54,21 +99,23 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
-    CompoundNames <- Out %>%
-        filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
-                             "PrimaryMetabolite2", "SecondaryMetabolite", 
-                             "Inhibitor1", "Inhibitor2", 
-                             "Inhibitor1Metabolite")) %>% 
-        mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
-                                      Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
-                                      Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
-                                      Detail == "SecondaryMetabolite" ~ "secondary metabolite",
-                                      Detail == "Inhibitor1" ~ "inhibitor 1", 
-                                      Detail == "Inhibitor2" ~ "inhibitor 2", 
-                                      Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
-        rename("Compound" = Value) %>% 
-        filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
-        select(-Detail)
+    if(PrevAnnotated == FALSE){
+        CompoundNames <- Out %>%
+            filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
+                                 "PrimaryMetabolite2", "SecondaryMetabolite", 
+                                 "Inhibitor1", "Inhibitor2", 
+                                 "Inhibitor1Metabolite")) %>% 
+            mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
+                                          Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
+                                          Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
+                                          Detail == "SecondaryMetabolite" ~ "secondary metabolite",
+                                          Detail == "Inhibitor1" ~ "inhibitor 1", 
+                                          Detail == "Inhibitor2" ~ "inhibitor 2", 
+                                          Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
+            rename("Compound" = Value) %>% 
+            filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
+            select(-Detail)
+    }
     
     suppressMessages(
         Out <- Out %>% 
@@ -90,9 +137,9 @@ annotateDetails <- function(Deets,
     # adding which sheet they came from and what simulator section they
     # were.
     Out <- Out %>% 
-        mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+        mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal"), 
                               "Input Sheet", Sheet), 
-               SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint"), 
+               SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal"), 
                                          "Elimination", SimulatorSection), 
                Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
                               "Input Sheet", Sheet),
@@ -122,8 +169,32 @@ annotateDetails <- function(Deets,
     
     Out <- Out %>% 
         pivot_wider(names_from = File, 
-                    values_from = Value)
+                    values_from = Value) %>% 
+        mutate(ToOmit = complete.cases(CompoundID) & 
+                   is.na(Compound)) %>% 
+        filter(ToOmit == FALSE) %>% select(-ToOmit)
     
+    # Removing anything that was all NA's if that's what user requested
+    if(omit_all_missing){
+        Out$AllNA <- apply(Out[, names(Out)[str_detect(names(Out), "xlsx$")]], 
+                           MARGIN = 1, FUN = function(.) all(is.na(.)))    
+        
+        Out <- Out %>% filter(AllNA == FALSE) %>% select(-AllNA)
+    }
+    
+    if(complete.cases(save_output)){
+        
+        if(str_detect(save_output, "\\.")){
+            # If they specified a file extension, replace whatever they supplied
+            # with csv b/c that's the only option for file format here.
+            FileName <- sub("\\..*", ".csv", save_output)
+        } else {
+            # If they didn't specify file extension, make it csv.
+            FileName <- paste0(save_output, ".csv")
+        }
+        
+        write.csv(Out, FileName, row.names = F)
+    }
     
     return(Out)
     

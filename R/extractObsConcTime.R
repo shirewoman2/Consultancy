@@ -59,21 +59,30 @@ extractObsConcTime <- function(obs_data_file){
     obs_data_xl <- suppressMessages(
         readxl::read_excel(path = obs_data_file, col_names = FALSE))
     
-    TimeUnits <- tolower(as.character(obs_data_xl[5, 1]))
+    # Checking on whether this was animal data
+    Animal <- str_detect(obs_data_xl[1, 1], "Animal")
     
-    CompoundCode <- c("1" = as.character(obs_data_xl[5, 3]),
-                      "2" = as.character(obs_data_xl[6, 3]),
-                      "3" = as.character(obs_data_xl[7, 3]))
+    # Getting the meta data on this file
+    MetaRowNum <- which(obs_data_xl$...1 == "For all subjects") + 1
+    MetaRow <- as.character(obs_data_xl[MetaRowNum, ])
+    MetaRow <- MetaRow[1:(which(is.na(MetaRow) | MetaRow == "NA")[1]-1)]
     
-    Smoke <- c("0" = as.character(obs_data_xl[5, 7]),
-               "1" = as.character(obs_data_xl[6, 7]),
-               "2" = as.character(obs_data_xl[7, 7]),
-               "3" = as.character(obs_data_xl[8, 7]))
+    TimeUnits <- tolower(as.character(
+        obs_data_xl[MetaRowNum+1, which(MetaRow == "Time Units")]))
+    
+    CompoundCode <- c("1" = as.character(obs_data_xl[MetaRowNum+1, which(MetaRow == "DV")]),
+                      "2" = as.character(obs_data_xl[MetaRowNum+2, which(MetaRow == "DV")]),
+                      "3" = as.character(obs_data_xl[MetaRowNum+3, which(MetaRow == "DV")]))
+    
+    Smoke <- c("0" = as.character(obs_data_xl[MetaRowNum+1, 7]),
+               "1" = as.character(obs_data_xl[MetaRowNum+2, 7]),
+               "2" = as.character(obs_data_xl[MetaRowNum+3, 7]),
+               "3" = as.character(obs_data_xl[MetaRowNum+4, 7]))
     
     # Converting to appropriate ObsConcUnits as necessary
-    ObsConcUnits <- c("1" = as.character(obs_data_xl[5, 4]),
-                      "2" = as.character(obs_data_xl[6, 4]),
-                      "3" = as.character(obs_data_xl[7, 4]))
+    ObsConcUnits <- c("1" = as.character(obs_data_xl[MetaRowNum+1, which(MetaRow == "DV Unit")]),
+                      "2" = as.character(obs_data_xl[MetaRowNum+2, which(MetaRow == "DV Unit")]),
+                      "3" = as.character(obs_data_xl[MetaRowNum+3, which(MetaRow == "DV Unit")]))
     
     # Noting tissue
     Tissue <-
@@ -228,51 +237,67 @@ extractObsConcTime <- function(obs_data_file){
     # 
     # save(ObsDVoptions, file = "data/ObsDVoptions.RData")
     
-    obs_data <- obs_data_xl[12:nrow(obs_data_xl), 1:ncol(obs_data_xl)]
-    MainColNames <- as.character(t(obs_data_xl[11, ]))
+    HeaderRowNum <- which(obs_data_xl$...1 == "Subject ID")
+    MainColNames <- as.character(t(obs_data_xl[HeaderRowNum, ]))
+    LastCol <- which(is.na(MainColNames) | MainColNames == "NA")[1]-1
+    MainColNames <- MainColNames[1:(ifelse(is.na(LastCol), ncol(obs_data_xl), LastCol))]
     
-    if(any(str_detect(MainColNames, "Period"), na.rm = TRUE)){
-        if(any(str_detect(MainColNames, "Placenta"), na.rm = TRUE)){
-            # v21
-            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                                 "InfDuration", "Period", "Age", "Weight_kg",
-                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                 "SmokingStatus", "GestationalAge_wk", 
-                                 "PlacentaVol_L", "FetalWt_kg")
-            
-        } else {
-            # V20
-            if(any(str_detect(MainColNames, "Gestational Age"))){
+    obs_data <- obs_data_xl[(HeaderRowNum+1):nrow(obs_data_xl),
+                            1:length(MainColNames)]
+    
+    if(Animal){
+        names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting", 
+                             "DoseAmount", "InfDuration", "Weight_kg")
+        obs_data$SmokingStatus <- NA
+        obs_data$Species <- tolower(as.character(
+            obs_data_xl[MetaRowNum+1, which(MetaRow == "Species")]))
+        
+    } else {
+        if(any(str_detect(MainColNames, "Period"), na.rm = TRUE)){
+            if(any(str_detect(MainColNames, "Placenta"), na.rm = TRUE)){
+                # v21
                 names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
                                      "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
                                      "InfDuration", "Period", "Age", "Weight_kg",
                                      "Height_cm", "Sex", "SerumCreatinine_umolL",
                                      "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
                                      "SmokingStatus", "GestationalAge_wk", 
-                                     "FetalWt_kg")
+                                     "PlacentaVol_L", "FetalWt_kg")
                 
             } else {
-                
-                # v19
-                names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                     "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                                     "InfDuration", "Period", "Age", "Weight_kg",
-                                     "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                     "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                     "SmokingStatus")
+                # V20
+                if(any(str_detect(MainColNames, "Gestational Age"))){
+                    names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                         "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                         "InfDuration", "Period", "Age", "Weight_kg",
+                                         "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                         "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                         "SmokingStatus", "GestationalAge_wk", 
+                                         "FetalWt_kg")
+                    
+                } else {
+                    
+                    # v19
+                    names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                         "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                         "InfDuration", "Period", "Age", "Weight_kg",
+                                         "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                         "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                         "SmokingStatus")
+                }
             }
+        } else {
+            # pre V19 
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "InfDuration", "Age", "Weight_kg",
+                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus")
+            
         }
-    } else {
-        # pre V19 
-        names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                             "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                             "InfDuration", "Age", "Weight_kg",
-                             "Height_cm", "Sex", "SerumCreatinine_umolL",
-                             "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                             "SmokingStatus")
         
+        obs_data$Species <- "human"
     }
     
     obs_data <- obs_data %>%
@@ -286,6 +311,8 @@ extractObsConcTime <- function(obs_data_file){
                SmokingStatus = Smoke[SmokingStatus],
                Time_units = TimeUnits,
                Conc_units = ObsConcUnits[as.character(DVID)]) %>%
+        # Removing dosing rows b/c that's not conc time data. 
+        filter(is.na(DoseAmount)) %>% 
         select(any_of(c("CompoundID", 
                         # "CompoundID_obsfile",
                         "Individual",
@@ -293,6 +320,7 @@ extractObsConcTime <- function(obs_data_file){
                         "Time", "Time_units", "Conc", "Conc_units", "DVID",
                         "ObsFile", "Weighting",
                         "Period", "Age", "Weight_kg",
+                        "Species",
                         "Height_cm", "Sex", "SerumCreatinine_umolL",
                         "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
                         "SmokingStatus", "GestationalAge_wk", 

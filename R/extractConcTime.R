@@ -143,7 +143,7 @@
 #' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'                 tissue = "lung")
 #'
-#' 
+#'
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
                             adjust_obs_time = FALSE,
@@ -245,6 +245,10 @@ extractConcTime <- function(sim_data_file,
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
+    # Noting whether this was animal data
+    Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
+    Animal <- ifelse(is.na(Animal), FALSE, Animal)
+    
     # Effector present?
     EffectorPresent <- complete.cases(Deets$Inhibitor1)
     if(EffectorPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor")) &
@@ -329,7 +333,7 @@ extractConcTime <- function(sim_data_file,
                                 gsub("Profiles CSys", "Trials Profiles", SheetToDetect),
                                 "|",
                                 paste0(Piece1, Piece2, "\\(Trials\\)\\(",
-                                       Piece4, Piece5, "\\)") )
+                                       Piece4, Piece5, "\\)"), "|^Conc Profiles$")
     } else {
         SheetToDetect <-
             switch(tissue,
@@ -1374,6 +1378,10 @@ extractConcTime <- function(sim_data_file,
                                                # compound for the observed data
                                                # included in a simjlator file.
                                                ObsFile = NA,
+                                               Species = ifelse(is.na(Deets$Species), 
+                                                                "human", 
+                                                                sub("sim-", "", 
+                                                                    tolower(Deets$Species))),
                                                Time_units = SimTimeUnits,
                                                Conc_units = SimConcUnits) %>%
                                         select(-ID, -Indiv_code, -DV)))
@@ -1469,7 +1477,10 @@ extractConcTime <- function(sim_data_file,
     
     if("aggregate" %in% returnAggregateOrIndiv){
         Data[["agg"]] <- bind_rows(sim_data_mean) %>%
-            mutate(Simulated = TRUE) %>%
+            mutate(Simulated = TRUE, 
+                   Species = ifelse(is.na(Deets$Species), 
+                                    "human", 
+                                    tolower(sub("Sim-", "", Deets$Species)))) %>%
             arrange(Trial, Time)
     }
     
@@ -1477,15 +1488,20 @@ extractConcTime <- function(sim_data_file,
         Data[["indiv"]] <- bind_rows(sim_data_ind) %>%
             mutate(Simulated = TRUE,
                    Individual = as.character(Individual),
-                   Trial = as.character(Trial)) %>%
+                   Trial = as.character(Trial), 
+                   Species = ifelse(is.na(Deets$Species), 
+                                    "human", 
+                                    tolower(sub("Sim-", "", Deets$Species)))) %>%
             arrange(Individual, Time)
     }
     
     if(exists("obs_data", inherits = FALSE)){
-        Data[["obs"]] <- obs_data
+        Data[["obs"]] <- obs_data %>% 
+            mutate(Species = tolower(sub("Sim-", "", Species)))
     }
     
-    Data <- bind_rows(Data)
+    Data <- bind_rows(Data) %>% 
+        mutate(Species = ifelse(Species == "beagle", "dog", Species))
     
     if("individual" %in% returnAggregateOrIndiv){
         Data <- Data %>%
@@ -1677,7 +1693,7 @@ extractConcTime <- function(sim_data_file,
         arrange(across(any_of(c("Compound", "Inhibitor", "Simulated",
                                 "Individual", "Trial", "Time")))) %>%
         select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
-                        "Tissue", "Individual", "Trial",
+                        "Species", "Tissue", "Individual", "Trial",
                         "Simulated", "Time", "Conc",
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
                         "DoseInt", "File", "ObsFile")))

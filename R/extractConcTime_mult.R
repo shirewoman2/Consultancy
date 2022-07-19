@@ -357,6 +357,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
         if(overwrite){
             ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% obs_data_files)
             for(f in obs_data_files){
+                message(paste("Extracting data from observed data file =", f))
                 MultObsData[[f]] <- extractObsConcTime(f)
             }
         } else {
@@ -501,7 +502,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
         arrange(across(any_of(c("File", "Compound", "Inhibitor", "Simulated",
                                 "Individual", "Trial", "Time")))) %>%
         select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
-                        "Tissue", "Individual", "Trial",
+                        "Species", "Tissue", "Individual", "Trial",
                         "Simulated", "Time", "Conc",
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
                         "DoseInt", "File", "ObsFile")))
