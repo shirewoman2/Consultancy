@@ -272,13 +272,16 @@ pksummary_mult <- function(sim_data_files = NA,
     if(PKorder == "default"){
         
         MyPKResults <- bind_rows(MyPKResults)
-        MyPKResults <- MyPKResults %>% 
-            select(File, 
-                   any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
-                              left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
-                              filter(complete.cases(SortOrder)) %>% 
-                              arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
-                   everything())
+        
+        suppressMessages(
+            MyPKResults <- MyPKResults %>% 
+                select(File, 
+                       any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
+                                  left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
+                                  filter(complete.cases(SortOrder)) %>% 
+                                  arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
+                       everything())
+        )
         
     } else {
         
