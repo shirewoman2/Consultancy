@@ -169,10 +169,14 @@ annotateDetails <- function(Deets,
     
     Out <- Out %>% 
         pivot_wider(names_from = File, 
-                    values_from = Value) %>% 
-        mutate(ToOmit = complete.cases(CompoundID) & 
-                   is.na(Compound)) %>% 
-        filter(ToOmit == FALSE) %>% select(-ToOmit)
+                    values_from = Value)
+    
+    if("Compound" %in% names(Out)){
+        Out <- Out %>% 
+            mutate(ToOmit = complete.cases(CompoundID) & 
+                                   is.na(Compound)) %>% 
+            filter(ToOmit == FALSE) %>% select(-ToOmit)
+    }
     
     # Removing anything that was all NA's if that's what user requested
     if(omit_all_missing){
