@@ -329,7 +329,13 @@ ct_plot_overlay <- function(ct_dataframe,
     # Error catching ---------------------------------------------------------
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+             call. = FALSE)
+    }
+    
+    if(nrow(ct_dataframe) == 0){
+        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+             call. = FALSE)
     }
     
     # Checking for more than one tissue or ADAM data type b/c there's only one y

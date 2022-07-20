@@ -51,6 +51,14 @@ ct_plot3 <- function(ct_dataframe,
                      fig_width = 5,
                      ...){
     
+    # error catching ---------------------------------------------------
+    
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+             call. = FALSE)
+    }
+    
     if(length(sort(unique(ct_dataframe$DoseNum))) == 1){
         stop("ct_plot3 is only for multiple-dose scenarios, but these data appear to be for only one dose.")
     }
@@ -58,6 +66,14 @@ ct_plot3 <- function(ct_dataframe,
     if(hasArg("time_range")){
         stop("You cannot supply anything for 'time_range' here because ct_plot3 needs to set the time range automatically. Please remove 'time_range' from your arguments.")
     }
+    
+    
+    if(nrow(ct_dataframe) == 0){
+        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+             call. = FALSE)
+    }
+    
+    # main body of function -------------------------------------------
     
     if(overlay){
         
