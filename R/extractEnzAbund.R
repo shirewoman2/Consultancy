@@ -105,12 +105,17 @@ extractEnzAbund <- function(sim_data_file,
     # Getting experimental details 
     Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     
+    # Figuring out which sheet to extract and dealing with case since that
+    # apparently changes between Simulator versions.
     AllSheets <- readxl::excel_sheets(sim_data_file)
-    
-    SheetToExtract <- paste(enzyme, switch(tissue,
-                                           "liver" = "(liver)",
-                                           "gut" = "(gut)",
-                                           "kidney" = "(kidney)"))
+    SheetToExtract <- data.frame(Sheet = AllSheets, 
+                                 SheetLower = tolower(AllSheets)) %>% 
+        filter(SheetLower == paste(tolower(enzyme), 
+                                   switch(tissue,
+                                          "liver" = "(liver)",
+                                          "gut" = "(gut)",
+                                          "kidney" = "(kidney)"))) %>% 
+        pull(Sheet)
     
     # Reading in simulated abundance-time profile data
     sim_data_xl <- suppressMessages(

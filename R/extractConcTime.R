@@ -1334,7 +1334,12 @@ extractConcTime <- function(sim_data_file,
                             
                             # If subject names include special characters s/a
                             # "_", that messes up the regex below. Dealing with
-                            # that here.
+                            # that here. Also, note that we're ignoring any
+                            # numbers associated w/DV b/c simulator output file
+                            # doesn't include any information about that.
+                            # Everything will be assumed to be for the same
+                            # compound and tissue as the simulated data and will
+                            # be assumed to NOT have an inhibitor present.
                             NewNamesObs <- sim_data_xl[StartRow_obs:nrow(sim_data_xl), 1] %>% 
                                 rename("OrigName" = 1) %>% 
                                 mutate(Individual = 
@@ -1342,32 +1347,31 @@ extractConcTime <- function(sim_data_file,
                                                                FUN = function(x) 
                                                                    str_split(x, pattern = "Subject ")[[1]][2])), 
                                        Individual = sub(" : DV [0-9]{1,}", "", Individual),
-                                       DV = str_extract(OrigName, "DV [0-9]{1,}"), 
-                                       DV = as.numeric(sub("DV ", "", DV)),
-                                       TempName = paste0("Subject", 1:nrow(.), 
-                                                         "_DV", DV), 
-                                       TempName = ifelse(str_detect(OrigName, "^Time"), 
-                                                         paste0("REMOVE", 1:nrow(.)),
-                                                         TempName), 
-                                       TempName = ifelse(TempName == "REMOVE1",
-                                                         "Time", TempName), 
-                                       Indiv_code = sub("_DV[0-9]{1,}", "", TempName))
+                                       Indiv_code = paste0("Subject", 1:nrow(.)), 
+                                       Indiv_code = ifelse(str_detect(OrigName, "Time"),
+                                                         NA, Indiv_code)) %>% 
+                                fill(Indiv_code, .direction = "up") %>%  
+                                fill(Individual, .direction = "up") %>% 
+                                mutate(TempName = ifelse(str_detect(OrigName, "Time"), 
+                                                         paste0(Indiv_code, "_Time"), 
+                                                         paste0(Indiv_code, "_Conc")))
                             
                             names(obs_data) <- NewNamesObs$TempName
                             
                             suppressMessages(
                                 suppressWarnings(
                                     obs_data <- obs_data[4:nrow(obs_data), ] %>%
-                                        select(-matches("REMOVE")) %>% 
                                         mutate_all(as.numeric) %>%
                                         mutate(ID = 1:nrow(.)) %>%
-                                        pivot_longer(cols = -c(ID, Time),
+                                        pivot_longer(cols = -c(ID),
                                                      names_to = "Param",
-                                                     values_to = "Conc") %>%
+                                                     values_to = "Val") %>%
                                         separate(col = Param,
-                                                 into = c("Indiv_code", "DV"),
+                                                 into = c("Indiv_code", "TimeConc"),
                                                  sep = "_") %>%
-                                        filter(complete.cases(Time)) %>% 
+                                        filter(complete.cases(Val)) %>% 
+                                        pivot_wider(names_from = TimeConc, 
+                                                    values_from = Val) %>% 
                                         left_join(NewNamesObs %>% select(Indiv_code, Individual)) %>%
                                         mutate(Trial = "obs",
                                                Inhibitor = "none",
@@ -1384,7 +1388,9 @@ extractConcTime <- function(sim_data_file,
                                                                     tolower(Deets$Species))),
                                                Time_units = SimTimeUnits,
                                                Conc_units = SimConcUnits) %>%
-                                        select(-ID, -Indiv_code, -DV)))
+                                        select(-ID, -Indiv_code) %>% 
+                                        unique()
+                                    ))
                         }
                     }
                 }

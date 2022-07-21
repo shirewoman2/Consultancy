@@ -10,7 +10,7 @@ extractExpDetails_mult(
   existing_exp_details = "none",
   overwrite = FALSE,
   annotate_output = TRUE,
-  show_compound_col = "concatenate",
+  show_compound_col = TRUE,
   omit_all_missing = FALSE,
   save_output = NA
 )

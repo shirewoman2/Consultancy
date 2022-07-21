@@ -430,6 +430,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
             MultObsData <- split(MultObsData, 
                                  f = list(MultObsData$CompoundID, 
                                           MultObsData$Inhibitor))
+            # Only include MultObsData if there was >= 1 row
+            MultObsData <- MultObsData[which(sapply(MultObsData, nrow) > 0)]
             
             for(i in intersect(names(SimDoseInfo_list), names(MultObsData))){
                 

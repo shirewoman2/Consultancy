@@ -229,16 +229,29 @@ ct_plot_mult <- function(ct_dataframe,
                          ..., 
                          file_labels = NA){
     
-    # Much easier to deal with things if we've got base file names in
-    # ct_dataframe. Taking care of that here.
-    ct_dataframe <- ct_dataframe %>% 
-        mutate(File_bn = basename(File))
+    # error catching -------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+             call. = FALSE)
+    }
+    
+    if(nrow(ct_dataframe) == 0){
+        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+             call. = FALSE)
+    }
     
     if(complete.cases(file_labels)[1] & is.na(graph_titles)[1]){
         graph_titles <- file_labels
         warning("You have specified values for the argument `file_labels`; this argument will soon be deprecated as we replace it with the (hopefully clearer) argument `graph_titles`. In the future, please use `graph_titles` instead.", 
                 call. = FALSE)
     }
+    
+    # main body of function -----------------------------------------------
+    # Much easier to deal with things if we've got base file names in
+    # ct_dataframe. Taking care of that here.
+    ct_dataframe <- ct_dataframe %>% 
+        mutate(File_bn = basename(File))
     
     if(length(file_labels) > 1 && complete.cases(file_labels[1])){
         
