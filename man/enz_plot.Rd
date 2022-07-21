@@ -9,9 +9,7 @@ enz_plot(
   figure_type = "means only",
   gut_tissue = "colon",
   linear_or_log = "linear",
-  ...,
-  enzyme = "CYP3A4",
-  tissue = "liver"
+  ...
 )
 }
 \arguments{
