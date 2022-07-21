@@ -98,6 +98,11 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     
     if(any(complete.cases(y_axis_limits_lin))){
         Ylim <- y_axis_limits_lin[1:2]
+    } else if(EnzPlot){
+        # If it's an enzyme abundance plot, user will generally want the lower
+        # limit for the y axis to be 0 rather than 100 in the case of induction.
+        # Setting that here, but user can override w/y_axis_limits_lin argument.
+        Ylim[1] <- 0
     }
     
     # Some users are sometimes getting Inf for possible upper limit of data,

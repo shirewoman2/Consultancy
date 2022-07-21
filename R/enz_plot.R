@@ -30,9 +30,7 @@ enz_plot <- function(sim_enz_dataframe,
                      figure_type = "means only",
                      gut_tissue = "colon",
                      linear_or_log = "linear",
-                     ...,
-                     enzyme = "CYP3A4",
-                     tissue = "liver"){
+                     ...){
     
     # Error catching ----------------------------------------------------------
     

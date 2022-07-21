@@ -127,10 +127,13 @@ extractEnzAbund <- function(sim_data_file,
     if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
         
         # If the tissue was gut, there are separate data sets for small
-        # intestine and colon. Checking for that.
+        # intestine and colon or for gut and colon depending on simulator
+        # version or maybe on whether it was an ADAM model (still figuring out
+        # what causes "SI" to be replaced with "Gut" in output). Checking for
+        # that.
         GutParts <- c("colon", "small intestine")[
             c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
-              any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)")))]
+              any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)|\\(gut\\)")))]
         
         if(all(complete.cases(GutParts)) & tissue == "gut"){
             
@@ -148,7 +151,7 @@ extractEnzAbund <- function(sim_data_file,
             NamesToCheck <- tolower(sim_data_xl$...1[TimeRows[1]:(FirstBlank-1)])
             
             # Need to note which rows are for which gut part.
-            SIrows <- which(str_detect(NamesToCheck, "\\(si\\)")) +
+            SIrows <- which(str_detect(NamesToCheck, "\\(si\\)|\\(gut\\)")) +
                 TimeRows[1]-1
             SITimeRow <- TimeRows[TimeRows + 1 == SIrows]
             # Looking for the next blank row after SITimeRow
@@ -166,7 +169,7 @@ extractEnzAbund <- function(sim_data_file,
                             "small intestine" = SITimeRow:SIEndRow)
             
             # Checking for inhibitor
-            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
+            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
             
             rm(NamesToCheck)
             
@@ -178,13 +181,16 @@ extractEnzAbund <- function(sim_data_file,
                 
                 RowsToUse <-
                     c("mean" = which(str_detect(NamesToCheck,
-                                                "enzyme value mean")) +
+                                                "enzyme value.*mean") &
+                                         !str_detect(NamesToCheck, "with inh")) +
                           GutRows[[i]][1]-1,
                       "per5" = which(str_detect(NamesToCheck,
-                                                "enzyme value 5th percentile")) +
+                                                "enzyme.* 5th percentile") &
+                                         !str_detect(NamesToCheck, "with inh")) +
                           GutRows[[i]][1]-1,
                       "per95" = which(str_detect(NamesToCheck,
-                                                 "enzyme value 95th percentile")) +
+                                                 "enzyme.*95th percentile") &
+                                          !str_detect(NamesToCheck, "with inh")) +
                           GutRows[[i]][1]-1)
                 
                 sim_data_mean[[i]] <- sim_data_xl[c(GutRows[[i]][1], RowsToUse), ] %>%
@@ -296,7 +302,7 @@ extractEnzAbund <- function(sim_data_file,
             rm(RowsToUse)
             
             # Checking for inhibitor
-            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
+            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
             if(EffectorPresent){
                 
                 RowsToUse <- c(
@@ -362,7 +368,7 @@ extractEnzAbund <- function(sim_data_file,
         # intestine and colon. Checking for that.
         GutParts <- c("colon", "small intestine")[
             c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
-              any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)")))]
+              any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)|\\(gut\\)")))]
         
         if(length(which(complete.cases(GutParts))) > 0 & tissue == "gut"){
             
@@ -379,7 +385,7 @@ extractEnzAbund <- function(sim_data_file,
             NamesToCheck <- tolower(sim_data_xl$...1[TimeRows[1]:nrow(sim_data_xl)])
             
             # Need to note which rows are for which gut part.
-            SIrows <- which(str_detect(NamesToCheck, "\\(si\\)")) +
+            SIrows <- which(str_detect(NamesToCheck, "\\(si\\)|\\(gut\\)")) +
                 TimeRows[1]-1
             SITimeRow <- intersect(TimeRows+1, SIrows) - 1
             # Looking for the next blank row after SITimeRow
@@ -403,7 +409,7 @@ extractEnzAbund <- function(sim_data_file,
                             "small intestine" = SITimeRow:SIEndRow)
             
             # Checking for inhibitor
-            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
+            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
             
             rm(NamesToCheck)
             
@@ -521,7 +527,7 @@ extractEnzAbund <- function(sim_data_file,
             rm(RowsToUse)
             
             # Checking for inhibitor
-            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"))
+            EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
             
             if(EffectorPresent){
                 
