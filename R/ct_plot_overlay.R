@@ -1097,9 +1097,9 @@ ct_plot_overlay <- function(ct_dataframe,
         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
                           expand = expansion(mult = pad_y_num)) +
             switch(as.character(floating_facet_scale), 
-                   "TRUE" = coord_cartesian(ylim = Ylim_log, 
-                                            xlim = time_range_relative), 
-                   "FALSE" = coord_cartesian(ylim = Ylim_log))
+                   "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                   "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                             xlim = time_range_relative))
     )
     
     if(complete.cases(legend_position)){
