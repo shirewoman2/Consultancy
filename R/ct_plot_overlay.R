@@ -214,6 +214,13 @@
 #'   semi-transparent, which can be helpful when there are numerous
 #'   observations. Acceptable values are 0 (completely transparent) to 1
 #'   (completely opaque).
+#' @param obs_color Optionally specify a single color to make all observed data.
+#'   By default, observed data will be the same color as whatever file they're
+#'   associated with, but, if you have one observed file that you're comparing
+#'   to multiple simulation files, this means that the observed data will show
+#'   up as the color of which ever file was plotted last. In that case, it might
+#'   be clearer to say \code{obs_color = "black"} to make all the observed data
+#'   points black.
 #' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
 #'   linear plot will be automatically selected. This only applies when you have
@@ -305,6 +312,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             legend_label_color = NA,
                             color_set = "default",
                             obs_transparency = NA, 
+                            obs_color = NA,
                             linetype_column, 
                             linetypes = c("solid", "dashed"),
                             line_width = NA,
@@ -800,22 +808,32 @@ ct_plot_overlay <- function(ct_dataframe,
                                               obs_transparency, 1), 
                                show.legend = FALSE)
             } else {
-                A <- A +
-                    geom_point(data = obs_data, inherit.aes = FALSE,
-                               switch(AES, 
-                                      "color-linetype" = aes(x = Time, y = Conc,
-                                                             group = Group,
-                                                             color = colorBy_column), 
-                                      "linetype" = aes(x = Time, y = Conc, 
-                                                       group = Group), 
-                                      "color" = aes(x = Time, y = Conc,
-                                                    group = Group,
-                                                    color = colorBy_column), 
-                                      "none" = aes(x = Time, y = Conc, 
-                                                   group = Group)),
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
-                               show.legend = FALSE)
+                if(is.na(obs_color)){
+                    A <- A +
+                        geom_point(data = obs_data, inherit.aes = FALSE,
+                                   switch(AES, 
+                                          "color-linetype" = aes(x = Time, y = Conc,
+                                                                 group = Group,
+                                                                 color = colorBy_column), 
+                                          "linetype" = aes(x = Time, y = Conc, 
+                                                           group = Group), 
+                                          "color" = aes(x = Time, y = Conc,
+                                                        group = Group,
+                                                        color = colorBy_column), 
+                                          "none" = aes(x = Time, y = Conc, 
+                                                       group = Group)),
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   show.legend = FALSE)
+                } else {
+                    A <- A +
+                        geom_point(data = obs_data, inherit.aes = FALSE,
+                                   aes(x = Time, y = Conc,group = Group),
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   color = obs_color,
+                                   show.legend = FALSE)
+                }
             }
         }
     }
@@ -861,23 +879,34 @@ ct_plot_overlay <- function(ct_dataframe,
                                show.legend = FALSE) 
                 
             } else {
-                A <- A + 
-                    geom_point(data = obs_data, 
-                               switch(AES, 
-                                      "color-linetype" = aes(x = Time, y = Conc,
-                                                             group = Group,
-                                                             color = colorBy_column), 
-                                      "linetype" = aes(x = Time, y = Conc,
-                                                       group = Group),
-                                      "color" = aes(x = Time, y = Conc,
-                                                    group = Group,
-                                                    color = colorBy_column),
-                                      "none" = aes(x = Time, y = Conc,
-                                                   group = Group)),
-                               inherit.aes = FALSE, 
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
-                               show.legend = FALSE) 
+                if(is.na(obs_color)){
+                    A <- A + 
+                        geom_point(data = obs_data, 
+                                   switch(AES, 
+                                          "color-linetype" = aes(x = Time, y = Conc,
+                                                                 group = Group,
+                                                                 color = colorBy_column), 
+                                          "linetype" = aes(x = Time, y = Conc,
+                                                           group = Group),
+                                          "color" = aes(x = Time, y = Conc,
+                                                        group = Group,
+                                                        color = colorBy_column),
+                                          "none" = aes(x = Time, y = Conc,
+                                                       group = Group)),
+                                   inherit.aes = FALSE, 
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   show.legend = FALSE) 
+                } else {
+                    A <- A + 
+                        geom_point(data = obs_data, 
+                                   aes(x = Time, y = Conc, group = Group), 
+                                   inherit.aes = FALSE, 
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   color = obs_color,
+                                   show.legend = FALSE)    
+                }
             }
         }
     }
@@ -959,7 +988,8 @@ ct_plot_overlay <- function(ct_dataframe,
         blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
                                         "dodgerblue3", "royalblue4"))
         
-        NumColorsNeeded <- sim_dataframe %>% pull(AESCols["color"]) %>% 
+        NumColorsNeeded <- bind_rows(sim_dataframe, obs_data) %>%
+            pull(AESCols["color"]) %>% 
             unique() %>% length()
         
         # print(NumColorsNeeded)
@@ -1059,7 +1089,7 @@ ct_plot_overlay <- function(ct_dataframe,
     if(complete.cases(legend_label_linetype) && 
        legend_label_linetype == "none"){
         A <- A + labs(linetype = NULL)
-    } else {
+    } else if(as_label(linetype_column) != "<empty>"){
         A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
                                         "TRUE" = legend_label_linetype,
                                         "FALSE" = as_label(linetype_column)))
@@ -1093,14 +1123,14 @@ ct_plot_overlay <- function(ct_dataframe,
     
     ## Making semi-log graph ------------------------------------------------
     
-    B <- suppressMessages(
+    B <- suppressMessages(suppressWarnings(
         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
                           expand = expansion(mult = pad_y_num)) +
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 
                    "FALSE" = coord_cartesian(ylim = Ylim_log, 
                                              xlim = time_range_relative))
-    )
+    ))
     
     if(complete.cases(legend_position)){
         A <- A + theme(legend.position = legend_position)  
