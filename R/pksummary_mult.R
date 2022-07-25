@@ -275,20 +275,21 @@ pksummary_mult <- function(sim_data_files = NA,
         
         suppressMessages(
             MyPKResults <- MyPKResults %>% 
-                select(File, 
+                select(Statistic, 
                        any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
                                   left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
                                   filter(complete.cases(SortOrder)) %>% 
                                   arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
-                       everything())
+                       everything()) %>% 
+                relocate(File, .after = last_col())
         )
         
     } else {
         
         MyPKResults <- bind_rows(MyPKResults) %>% 
-            select(File, 
-                   any_of(PKparameters), everything())
-        
+            select(Statistic, 
+                   any_of(PKparameters), everything()) %>% 
+            relocate(File, .after = last_col())
     }
     
     OutQC <- bind_rows(OutQC)
