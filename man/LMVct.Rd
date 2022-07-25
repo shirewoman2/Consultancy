@@ -3,8 +3,7 @@
 \docType{data}
 \name{LMVct}
 \alias{LMVct}
-\title{Plasma concentration-time data after 8 days of 60 mg PO QD letermovir. Format
-of the data are the same as the output from \code{\link{extractConcTime}}.}
+\title{Plasma concentration-time data for a simulation of letermovir}
 \format{
 A data.frame with 14 columns "LMVct"
 }

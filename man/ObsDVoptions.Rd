@@ -3,8 +3,7 @@
 \docType{data}
 \name{ObsDVoptions}
 \alias{ObsDVoptions}
-\title{All possible observed dependent variable options in the Excel file template
-for converting observed data to an XML file the Simulator can use}
+\title{Observed data DV options}
 \format{
 A data.frame with the following columns: \describe{
 

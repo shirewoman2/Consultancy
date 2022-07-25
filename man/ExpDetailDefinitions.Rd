@@ -3,35 +3,32 @@
 \docType{data}
 \name{ExpDetailDefinitions}
 \alias{ExpDetailDefinitions}
-\title{All possible experimental details that can be extracted from a simulator
-output file using \code{\link{extractExpDetails}}. For the version that
-includes additional columns only used for coding purposes, see
-\code{\link{AllExpDetails}}.}
+\title{All possible experimental details for \code{\link{extractExpDetails}}}
 \format{
 A data.frame with the following columns: \describe{
 
-  \item{Detail}{the experimental detail name to use with
-  \code{\link{extractExpDetails}} for the argument \code{exp_details}}
+ \item{Detail}{the experimental detail name to use with
+ \code{\link{extractExpDetails}} for the argument \code{exp_details}}
 
-  \item{Compound ID}{the specific compound this experimental detail applies
-  to, e.g., "substrate", "inhibitor 1", etc.}
+ \item{Compound ID}{the specific compound this experimental detail applies
+ to, e.g., "substrate", "inhibitor 1", etc.}
 
-  \item{SimulatorSection}{the part of the simulator that this detail applies
-  to}
+ \item{SimulatorSection}{the part of the simulator that this detail applies
+ to}
 
-  \item{Notes}{an explanation of what the experimental detail is}
+ \item{Notes}{an explanation of what the experimental detail is}
 
-  \item{Sheet}{Which simulator output sheet this detail is extracted from}
+ \item{Sheet}{Which simulator output sheet this detail is extracted from}
 
-  }
+ }
 }
 \usage{
 ExpDetailDefinitions
 }
 \description{
 All possible experimental details that can be extracted from a simulator
-output file using \code{\link{extractExpDetails}}. For the version that
-includes additional columns only used for coding purposes, see
-\code{\link{AllExpDetails}}.
+output file using \code{\link{extractExpDetails}} or
+\code{\link{extractExpDetails_mult}}. For the version that includes additional
+columns only used for coding purposes, see \code{\link{AllExpDetails}}.
 }
 \keyword{datasets}

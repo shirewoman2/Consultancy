@@ -3,10 +3,8 @@
 \docType{data}
 \name{AllPKParameters}
 \alias{AllPKParameters}
-\title{All possible PK parameters that can be extracted from a simulator output file
-using \code{\link{extractPK}}. For the more user-friendly version of this
-data.frame, which omits columns used only for coding purposes, please see
-\code{\link{PKParameterDefinitions}}.}
+\title{All possible PK parameters for \code{\link{extractPK}} (version for coding
+purposes)}
 \format{
 A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
   parameter name to use with \code{\link{extractPK}} for the argument
@@ -15,8 +13,9 @@ A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
   for whether this item only applies when an effector is present in the
-  simulation} \item{SortOrder}{the order to arrange columns for pksummary_table and
-  pksummary_table} \item{Notes}{an explanation of what the parameter is}}
+  simulation} \item{SortOrder}{the order to arrange columns for
+  pksummary_table and pksummary_table} \item{Notes}{an explanation of what
+  the parameter is}}
 }
 \usage{
 AllPKParameters

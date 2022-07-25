@@ -3,10 +3,8 @@
 \docType{data}
 \name{AllExpDetails}
 \alias{AllExpDetails}
-\title{All possible experimental details that can be extracted from a simulator
-output file using \code{\link{extractExpDetails}}. This version includes
-columns used only internally with coding. For the more user-friendly version,
-see \code{\link{ExpDetailDefinitions}}.}
+\title{All possible experimental details for \code{\link{extractExpDetails}}
+(version for coding purposes)}
 \format{
 A data.frame with 10 columns: \describe{
 

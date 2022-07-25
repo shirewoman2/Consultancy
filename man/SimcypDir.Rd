@@ -3,8 +3,7 @@
 \docType{data}
 \name{SimcypDir}
 \alias{SimcypDir}
-\title{Paths for Simcyp's large-file store, SharePoint directory, and the specific
-folder on the large-file store for sharing R-related files}
+\title{Simcyp paths}
 \format{
 A two-item list: \describe{ \item{LgFileDir}{the large-file store}
   \item{SharePtDir}{the SharePoint directory} \item{RDir}{the folder on the
