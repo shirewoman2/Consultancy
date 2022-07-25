@@ -30,7 +30,7 @@
 #'   If some of your Excel files are not regular simulator output, e.g. they are
 #'   sensitivity analyses or a file where you were doing some calculations,
 #'   those files will be skipped.
-#' @param obs_data_files a character vector of the observed data filess, each in
+#' @param obs_data_files a character vector of the observed data files, each in
 #'   quotes and encapsulated with \code{c(...)}, that you'd like to compare,
 #'   e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. The path should be
 #'   included with the file names if they are located somewhere other than your

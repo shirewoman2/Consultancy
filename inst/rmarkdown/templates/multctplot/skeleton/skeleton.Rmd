@@ -25,7 +25,7 @@ Text1 <- switch(linear_or_log,
 ```
 
 
-*Figure XXX: `r Text1` simulated `r unique(ct_dataframe$Tissue)` concentration-time profiles of `r str_comma(unique(ct_dataframe$Compound))`.*
+*Figure XXX. `r Text1` simulated `r unique(ct_dataframe$Tissue)` concentration-time profiles of `r str_comma(unique(ct_dataframe$Compound))`.*
 
 ```{r ctplotmult, fig.width = fig_width, fig.height = fig_height}
 

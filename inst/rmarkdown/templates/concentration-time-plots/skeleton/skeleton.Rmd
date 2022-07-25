@@ -53,7 +53,7 @@ fig_height <- ifelse(linear_or_log == "horizontal and vertical", 6, fig_height)
 
 ```
 
-*Figure XXX: `r Text1` simulated `r MyTissue` concentration-time profiles of `r MyCompound` `r Text2`in healthy subjects / patients with [complaint].*
+*Figure XXX. `r Text1` simulated `r MyTissue` concentration-time profiles of `r MyCompound` `r Text2`in healthy subjects / patients with [complaint].*
 
 ```{r ctplot, fig.width = fig_width, fig.height = fig_height}
 Out

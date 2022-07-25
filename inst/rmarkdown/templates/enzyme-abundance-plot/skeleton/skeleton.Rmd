@@ -12,6 +12,8 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```
 
+*Figure XXX. Simulated hepatic/gut [CYPXXX] levels in the presence and absence of [perpetrator] in healthy subjects / patients with [complaint].*
+
 ```{r enzplot, fig.width = fig_width, fig.height = fig_height}
 
 Out
