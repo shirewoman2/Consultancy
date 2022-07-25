@@ -10,6 +10,7 @@ annotateDetails(
   compoundID = NA,
   compound = NA,
   detail_set = NA,
+  find_matching_details = NA,
   simulator_section = NA,
   show_compound_col = TRUE,
   omit_all_missing = FALSE,
@@ -59,6 +60,21 @@ here, e.g., \code{compound = "midaz|keto"} to find any compound with either
   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
   inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
   "fa_inhib2", "Regimen_sub")}}  Not case sensitive.}}
+
+\item{find_matching_details}{optionally supply a string of text to search for
+  in the column "Detail". Regular expressions are supported here, so use,
+  e.g., \itemize{
+
+  \item{"|" to mean "or",}
+
+  \item{".*" to mean "match any character any number of times",}
+
+  \item{"^" to mean "starts with...", and}
+
+  \item{"$" to mean "ends with...".}} An example: \code{find_matching_details
+  = "^CLint.*CYP3A.*sub$"} to find all details that start with "CLint", then,
+  somewhere in the name, include "CYP3A", and then end with "sub" (for
+  "substrate"). Case sensitive.}
 
 \item{simulator_section}{optionally supply a specific simulator section or
 sections from which to find simulation experimental details and then return
@@ -126,9 +142,9 @@ annotateDetails(Deets = MyDetails, compound = "midaz|keto")
 annotateDetails(Deets = MyDetails, detail_set = "Simcyp inputs")
 
 # Combine multiple options to get just a few specific details:
-annotateDetails(Deets = MyDetails, 
+annotateDetails(Deets = MyDetails,
             simulator_section = "absorption",
-            compound = "midaz|keto", 
+            compound = "midaz|keto",
             compoundID = "substrate")
 
 
