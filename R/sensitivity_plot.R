@@ -22,6 +22,9 @@
 #'   haven't used this function with very many sensitivity-analysis scenarios
 #'   yet, the value will be unchanged. (If you have an independent variable
 #'   you'd like to add to our list, email Laura Shireman!)
+#' @param target_DV optionally specify a target value for the dependent
+#'   variable, which will add a horizontal red dotted line to the graph where
+#'   the target lies.
 #' @param linear_or_log make the y axis "linear" (default) or "log" for plasma
 #'   concentration-time plots (this is ignored for all other plots)
 #' @param title (optional) a title to include on your graph in quotes
@@ -53,6 +56,7 @@
 sensitivity_plot <- function(SA_file, 
                              dependent_variable, 
                              ind_var_label = NA,
+                             target_DV = NA,
                              linear_or_log = "linear",
                              title = NA,
                              save_graph = NA,
@@ -90,7 +94,7 @@ sensitivity_plot <- function(SA_file,
                  "fa" = AllSheets[str_detect(AllSheets, "fa .PKPD")],
                  "clpo" = AllSheets[str_detect(AllSheets, "CLpo.*PKPD")],
                  "cmax" = AllSheets[str_detect(AllSheets, "^Cmax")],
-                 "auc" = AllSheets[str_detect(AllSheets, "^AUC.*\\(")],
+                 "auc" = AllSheets[str_detect(AllSheets, "^AUC.*\\(") & !str_detect(AllSheets, "over")],
                  "tmax" = AllSheets[str_detect(AllSheets, "Tmax")],
                  # "Multiple EI Plot",
                  "plasma concentration" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
@@ -136,23 +140,24 @@ sensitivity_plot <- function(SA_file,
     
     # Graph ----------------------------------------------------------------
     
-    PrettyDV <- list("cl" = expression(CL~"L/h"), 
-                     "dose over auc" = expression(Dose~over~AUC~"(L/h)"),
+    PrettyDV <- list("auc" = expression(AUC~"(ng/mL.h)"), 
                      "auc over dose" = expression("AUC over Dose (h/L)"),
-                     "vss" = expression(V[ss]~"(L/kg)"),
-                     "fg" = expression(F[g]),
-                     "fh" = expression(F[h]),
-                     "fa" = expression(f[a]),
+                     "cl" = expression(CL~"L/h"), 
                      "clpo" = expression(CL[PO]~"(L/h)"), 
                      "cmax" = expression(C[max]~"(ng/mL)"), 
-                     "auc" = expression(AUC~"(ng/mL.h)"), 
-                     "tmax" = expression(t[max]~"(h)"))
+                     "dose over auc" = expression(Dose~over~AUC~"(L/h)"),
+                     "fa" = expression(f[a]),
+                     "fg" = expression(F[g]),
+                     "fh" = expression(F[h]),
+                     "tmax" = expression(t[max]~"(h)"),
+                     "vss" = expression(V[ss]~"(L/kg)"))
     
-    PrettySensParam <- list("Fugut" = expression(f[u[gut]]), 
+    PrettySensParam <- list("Dose .Sub" = "Dose (mg)",
                             "fa" = expression(f[a]),
+                            "Fugut" = expression(f[u[gut]]), 
                             "ka" = expression(k[a]), 
-                            "Vss" = expression(V[ss]~"(L/kg)"),
-                            "Lag Time" = expression("lag time (h)"))
+                            "Lag Time" = expression("lag time (h)"),
+                            "Vss" = expression(V[ss]~"(L/kg)"))
     
     if(is.na(ind_var_label)){
         if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))){
@@ -214,12 +219,22 @@ sensitivity_plot <- function(SA_file,
               legend.key = element_rect(fill = "white"),
               axis.ticks = element_line(color = "black"),
               axis.text = element_text(color = "black"),
-              axis.title = element_text(color = "black", face = "bold"),
+              axis.title = element_text(color = "black"), # Note that this is NOT bold b/c can't make expressions bold and you could thus end up with 1 axis title bold and 1 regular.
               axis.line.x.bottom = element_line(color = "black"),
               axis.line.y.left = element_line(color = "black"))
     
     if(complete.cases(title)){
         G <- G + ggtitle(title)
+    }
+    
+    if(complete.cases(target_DV)){
+        G <- G + 
+            geom_hline(yintercept = target_DV, linetype = "dotted", 
+                            color = "red") +
+            annotate("text", x = -Inf, y = target_DV, 
+                     vjust = -0.5, hjust = -0.5, color = "red", 
+                     fontface = "italic",
+                     label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
     }
     
     if(complete.cases(save_graph)){

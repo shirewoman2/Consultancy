@@ -8,6 +8,7 @@ sensitivity_plot(
   SA_file,
   dependent_variable,
   ind_var_label = NA,
+  target_DV = NA,
   linear_or_log = "linear",
   title = NA,
   save_graph = NA,
@@ -33,6 +34,10 @@ we haven't set things up to prettify that value, which is likely as we
 haven't used this function with very many sensitivity-analysis scenarios
 yet, the value will be unchanged. (If you have an independent variable
 you'd like to add to our list, email Laura Shireman!)}
+
+\item{target_DV}{optionally specify a target value for the dependent
+variable, which will add a horizontal red dotted line to the graph where
+the target lies.}
 
 \item{linear_or_log}{make the y axis "linear" (default) or "log" for plasma
 concentration-time plots (this is ignored for all other plots)}
