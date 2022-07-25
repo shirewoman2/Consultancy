@@ -14,6 +14,7 @@ ct_plot_overlay(
   legend_label_color = NA,
   color_set = "default",
   obs_transparency = NA,
+  obs_color = NA,
   linetype_column,
   linetypes = c("solid", "dashed"),
   line_width = NA,
@@ -133,6 +134,14 @@ label for this legend item, set this to "none".}
 semi-transparent, which can be helpful when there are numerous
 observations. Acceptable values are 0 (completely transparent) to 1
 (completely opaque).}
+
+\item{obs_color}{Optionally specify a single color to make all observed data.
+By default, observed data will be the same color as whatever file they're
+associated with, but, if you have one observed file that you're comparing
+to multiple simulation files, this means that the observed data will show
+up as the color of which ever file was plotted last. In that case, it might
+be clearer to say \code{obs_color = "black"} to make all the observed data
+points black.}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
 for determining the line types. Default is to use the column Inhibitor and
