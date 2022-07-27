@@ -8,7 +8,7 @@
 #'   lists exactly where the data were pulled from the simulator output file.
 #'   Useful for QCing.
 #' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+#'   quotes here, e.g., "My forest graph data.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
 #'
 #' @return
@@ -32,6 +32,7 @@ extractForestData <- function(sim_data_files,
     
     for(i in sim_data_files){
         
+        message(paste("Extracting data from ", i))
         suppressWarnings(
             temp <- extractPK(sim_data_file = i, 
                               PKparameters = PKparameters, 

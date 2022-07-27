@@ -1290,7 +1290,7 @@ extractConcTime <- function(sim_data_file,
         # function and NOT to extractConcTime_mult, which extracts obs conc time
         # separately. 
         
-        # This piece of code ONLY applies to systemic concs. 
+        # This piece of code also ONLY applies to systemic concs. 
         
         # Setting up some names of observed data for use later
         ObsCompounds <-
