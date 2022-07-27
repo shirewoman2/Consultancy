@@ -635,12 +635,12 @@ extractConcTime <- function(sim_data_file,
             subsection_ADAMs <- "regular"
         }
         
-        # aggregate data -------------------------------------------------------
+        ## aggregate data -------------------------------------------------------
         if("aggregate" %in% returnAggregateOrIndiv){
             
             sim_data_mean[[m]] <- list()
             
-            ## m is substrate or substrate metabolite -----------
+            ### m is substrate or substrate metabolite -----------
             if(str_detect(m, "substrate|metabolite") &
                !str_detect(m, "inhibitor")){
                 
@@ -857,7 +857,7 @@ extractConcTime <- function(sim_data_file,
                 
             }
             
-            ## m is an inhibitor or inhibitor metabolite -----------
+            ### m is an inhibitor or inhibitor metabolite -----------
             
             # Inhibitor concentrations are only present on tabs
             # w/substrate info for systemic tissues.
@@ -975,14 +975,14 @@ extractConcTime <- function(sim_data_file,
             }
         }
         
-        # individual data ------------------------------------------------------
+        ## individual data ------------------------------------------------------
         if("individual" %in% returnAggregateOrIndiv){
             
             StartIndiv <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))
             
             sim_data_ind[[m]] <- list()
             
-            ## m is substrate or substrate metabolite -----------
+            ### m is substrate or substrate metabolite -----------
             if(str_detect(m, "substrate|metabolite") &
                !str_detect(m, "inhibitor")){
                 
@@ -1146,7 +1146,7 @@ extractConcTime <- function(sim_data_file,
                 rm(TimeRow)
             }
             
-            ## m is an inhibitor or inhibitor metabolite ----------------------
+            ### m is an inhibitor or inhibitor metabolite ----------------------
             
             # Inhibitor concentrations are only present on tabs
             # w/substrate info for systemic tissues.
@@ -1284,8 +1284,13 @@ extractConcTime <- function(sim_data_file,
             }
         }
         
-        # observed data -------------------------------------------------------
-        # only applies to systemic concs
+        ## observed data -------------------------------------------------------
+        
+        # This section of code ONLY applies to the singular extractConcTime
+        # function and NOT to extractConcTime_mult, which extracts obs conc time
+        # separately. 
+        
+        # This piece of code also ONLY applies to systemic concs. 
         
         # Setting up some names of observed data for use later
         ObsCompounds <-
@@ -1349,7 +1354,7 @@ extractConcTime <- function(sim_data_file,
                                        Individual = sub(" : DV [0-9]{1,}", "", Individual),
                                        Indiv_code = paste0("Subject", 1:nrow(.)), 
                                        Indiv_code = ifelse(str_detect(OrigName, "Time"),
-                                                         NA, Indiv_code)) %>% 
+                                                           NA, Indiv_code)) %>% 
                                 fill(Indiv_code, .direction = "up") %>%  
                                 fill(Individual, .direction = "up") %>% 
                                 mutate(TempName = ifelse(str_detect(OrigName, "Time"), 
@@ -1390,7 +1395,7 @@ extractConcTime <- function(sim_data_file,
                                                Conc_units = SimConcUnits) %>%
                                         select(-ID, -Indiv_code) %>% 
                                         unique()
-                                    ))
+                                ))
                         }
                     }
                 }
@@ -1402,7 +1407,8 @@ extractConcTime <- function(sim_data_file,
                     mutate(Compound = ObsCompounds[CompoundID], 
                            Inhibitor = ifelse(Inhibitor == "inhibitor" &
                                                   complete.cases(AllEffectors_comma),
-                                              AllEffectors_comma, Inhibitor))
+                                              AllEffectors_comma, Inhibitor)) %>% 
+                    filter(CompoundID == m)
                 
                 # If obs_data_file included compounds that were not present in
                 # the simulation, don't include those and give the user a
@@ -1447,10 +1453,6 @@ extractConcTime <- function(sim_data_file,
             if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
                 warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?",
                         call. = FALSE)
-            }
-            
-            if(exists("obs_eff_data", inherits = FALSE)){
-                obs_data <- bind_rows(obs_data, obs_eff_data)
             }
         }
         

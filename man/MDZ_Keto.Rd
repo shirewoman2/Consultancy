@@ -3,9 +3,7 @@
 \docType{data}
 \name{MDZ_Keto}
 \alias{MDZ_Keto}
-\title{Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
-ketoconazole, including data for both substrate and inhibitor. Format of the
-data are the same as the output from \code{\link{extractConcTime_mult}}.}
+\title{Plasma concentration-time data for midazolam and ketoconazole}
 \format{
 A data.frame with 15 columns "MDZ_Keto"
 }

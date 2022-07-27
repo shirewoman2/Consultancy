@@ -252,7 +252,20 @@ c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
   will be returned, and graphs are stacked vertically}
 
   \item{"both horizontal"}{both the linear and the semi-log graphs will be
-  returned, and graphs are stacked horizontally}}}
+  returned, and graphs are side by side horizontally}
+
+  \item{"horizontal and vertical"}{both the linear and the semi-log graphs
+  will be returned, and graphs are side by side horizontally (one graph; file
+  name will end in "- horizontal") and stacked vertically (second graph; file
+  name will end in "- vertical"). This option, which was designed to create
+  the vertically stacked version of a graph for a report and the horizontal,
+  side-by-side version for a presentation, is a bit different from the others
+  since it will return two separate files. In the RStudio "Plots"
+  window, you'll only see the vertically stacked version. Setting
+  \code{fig_height} and \code{fig_width} will adjust only the dimensions of
+  the horizontal figure; the default values will be used for the vertical
+  one. If you request Word output, only the vertical plot will be saved in
+  Word format; the horizontal plot will be saved as a png file.}}}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if only outputting

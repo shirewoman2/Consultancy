@@ -7,6 +7,8 @@
 #' \item{FoldInduction}{Fold induction observed compared to control}}
 "IndData"
 
+#' Plasma concentration-time data for a simulation of letermovir
+#' 
 #' Plasma concentration-time data after 8 days of 60 mg PO QD letermovir. Format
 #' of the data are the same as the output from \code{\link{extractConcTime}}.
 #'
@@ -14,6 +16,8 @@
 "LMVct"
 
 
+#' Plasma concentration-time data for multiple simulations of midazolam
+#' 
 #' Plasma concentration-time data after a single dose of 5 mg MDZ but with
 #' varying fa values, one for each of 4 simulator output files. Format of the
 #' data are the same as the output from \code{\link{extractConcTime_mult}}.
@@ -22,6 +26,8 @@
 "MDZct"
 
 
+#' Plasma concentration-time data for midazolam and ketoconazole 
+#' 
 #' Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
 #' ketoconazole, including data for both substrate and inhibitor. Format of the
 #' data are the same as the output from \code{\link{extractConcTime_mult}}.
@@ -39,6 +45,8 @@
 #' scales::show_col(SimcypColors)
 "SimcypColors"
 
+#' Simcyp paths
+#'
 #' Paths for Simcyp's large-file store, SharePoint directory, and the specific
 #' folder on the large-file store for sharing R-related files
 #'
@@ -54,10 +62,13 @@
 #'   "generateReportInputForm"
 "ReportInputForm"
 
+#' All possible PK parameters for \code{\link{extractPK}} (version for coding
+#' purposes)
+#'
 #' All possible PK parameters that can be extracted from a simulator output file
 #' using \code{\link{extractPK}}. For the more user-friendly version of this
 #' data.frame, which omits columns used only for coding purposes, please see
-#' \code{\link{PKParameterDefinitions}}. 
+#' \code{\link{PKParameterDefinitions}}.
 #'
 #' @format A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
 #'   parameter name to use with \code{\link{extractPK}} for the argument
@@ -66,12 +77,15 @@
 #'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
 #'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
 #'   for whether this item only applies when an effector is present in the
-#'   simulation} \item{SortOrder}{the order to arrange columns for pksummary_table and
-#'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
+#'   simulation} \item{SortOrder}{the order to arrange columns for
+#'   pksummary_table and pksummary_table} \item{Notes}{an explanation of what
+#'   the parameter is}}
 "AllPKParameters"
 
 
 
+#' All possible PK parameters for \code{\link{extractPK}}
+#' 
 #' All possible PK parameters that can be extracted from a simulator
 #' output file using \code{\link{extractPK}}. For the version that
 #' includes additional columns only used for coding purposes, see
@@ -88,6 +102,9 @@
 "PKParameterDefinitions"
 
 
+#' All possible experimental details for \code{\link{extractExpDetails}}
+#' (version for coding purposes)
+#'
 #' All possible experimental details that can be extracted from a simulator
 #' output file using \code{\link{extractExpDetails}}. This version includes
 #' columns used only internally with coding. For the more user-friendly version,
@@ -126,32 +143,44 @@
 #'   }
 "AllExpDetails"
 
+#' All possible experimental details for \code{\link{extractExpDetails}}
+#'
 #' All possible experimental details that can be extracted from a simulator
-#' output file using \code{\link{extractExpDetails}}. For the version that
-#' includes additional columns only used for coding purposes, see
-#' \code{\link{AllExpDetails}}.
+#' output file using \code{\link{extractExpDetails}} or
+#' \code{\link{extractExpDetails_mult}}. For the version that includes additional
+#' columns only used for coding purposes, see \code{\link{AllExpDetails}}.
 #'
-#' @format A data.frame with the following columns: \describe{
+#'@format A data.frame with the following columns: \describe{
 #'
-#'   \item{Detail}{the experimental detail name to use with
-#'   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
+#'  \item{Detail}{the experimental detail name to use with
+#'  \code{\link{extractExpDetails}} for the argument \code{exp_details}}
 #'
-#'   \item{Compound ID}{the specific compound this experimental detail applies
-#'   to, e.g., "substrate", "inhibitor 1", etc.}
+#'  \item{Compound ID}{the specific compound this experimental detail applies
+#'  to, e.g., "substrate", "inhibitor 1", etc.}
 #'
-#'   \item{SimulatorSection}{the part of the simulator that this detail applies
-#'   to}
+#'  \item{SimulatorSection}{the part of the simulator that this detail applies
+#'  to}
 #'
-#'   \item{Notes}{an explanation of what the experimental detail is}
+#'  \item{Notes}{an explanation of what the experimental detail is}
 #'
-#'   \item{Sheet}{Which simulator output sheet this detail is extracted from}
+#'  \item{Sheet}{Which simulator output sheet this detail is extracted from}
 #'
-#'   }
+#'  }
 "ExpDetailDefinitions"
 
 
+#' Example output from \code{extractExpDetails_mult}
+#'
+#' Example output from running \code{extractExpDetails_mult} on some midazolam
+#' simulations
+#'
+#' @format a data.frame with rows for each of 4 simulator files and columns for
+#'   each simulation experimental detail   
+"MDZdetails"
 
 
+#' Observed data DV options
+#' 
 #' All possible observed dependent variable options in the Excel file template
 #' for converting observed data to an XML file the Simulator can use
 #'

@@ -3,10 +3,7 @@
 \docType{data}
 \name{PKParameterDefinitions}
 \alias{PKParameterDefinitions}
-\title{All possible PK parameters that can be extracted from a simulator
-output file using \code{\link{extractPK}}. For the version that
-includes additional columns only used for coding purposes, see
-\code{\link{AllPKParameters}}.}
+\title{All possible PK parameters for \code{\link{extractPK}}}
 \format{
 A data.frame with 6 columns: \describe{ \item{PKparameter}{the PK
   parameter name to use with \code{\link{extractPK}} for the argument

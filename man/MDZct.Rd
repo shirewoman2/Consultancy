@@ -3,9 +3,7 @@
 \docType{data}
 \name{MDZct}
 \alias{MDZct}
-\title{Plasma concentration-time data after a single dose of 5 mg MDZ but with
-varying fa values, one for each of 4 simulator output files. Format of the
-data are the same as the output from \code{\link{extractConcTime_mult}}.}
+\title{Plasma concentration-time data for multiple simulations of midazolam}
 \format{
 A data.frame with 15 columns "MDZct"
 }
