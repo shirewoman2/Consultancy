@@ -307,7 +307,13 @@ pksummary_table <- function(sim_data_file = NA,
         # And second, the scenario where user has only supplied a simulator
         # output file, so there are no observed data for comparisons.
         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
-        GMR_mean_type <- "geometric"
+        GMR_mean_type <- MeanType
+        # NB re. GMR_mean_type: I originally had this set to "geometric" all the
+        # time because that's nearly always what we report. However, the more I
+        # thought about it, the more I realized that people will probably expect
+        # this to be whatever mean type they set for the main mean type and it's
+        # just going to be confusing to change it. If it turns out to be an
+        # issue, revisit this. - LSh
         Deets <- extractExpDetails(sim_data_file = sim_data_file)
         
         # extractExpDetails will check whether the Excel file provided was, in
