@@ -47,14 +47,14 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
         }
     }
     
-    if(complete.cases(line_color[1]) && figure_type == "Freddy" &&
+    if(complete.cases(line_color[1]) && figure_type == "freddy" &&
        length(line_color) == 1){
         line_color <- rep(line_color, 2)
     }
     
     if(length(obs_color) == 1 &&
        (complete.cases(obs_color[1]) & obs_color == "default") |
-       (is.na(obs_color[1]) & figure_type == "Freddy")){
+       (is.na(obs_color[1]) & figure_type == "freddy")){
         obs_color <- "#3030FE"
     }    
     

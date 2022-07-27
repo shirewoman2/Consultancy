@@ -337,7 +337,7 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     # Making most character arguments lower case to avoid case sensitivity
-    figure_type <- tolower(figure_type)
+    figure_type <- tolower(figure_type) # LOWER CASE ONLY FROM HERE DOWN.
     mean_type <- tolower(mean_type)
     legend_position <- tolower(legend_position)
     linear_or_log <- tolower(linear_or_log)
@@ -347,7 +347,7 @@ ct_plot <- function(ct_dataframe = NA,
     
     if(length(figure_type) != 1 |
        figure_type %in% c("trial means", "percentiles", "trial percentiles",
-                          "Freddy", "means only", "overlay", 
+                          "freddy", "means only", "overlay", 
                           "percentile ribbon", "percentile ribbons", 
                           "ribbon") == FALSE){
         stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.",
@@ -470,7 +470,7 @@ ct_plot <- function(ct_dataframe = NA,
     # (this is one of the rare instances where we DO calculate things rather
     # than pulling directly from the simulator output), so issuing an error if
     # that's the case.
-    if(figure_type %in% c("trial means", "Freddy") &
+    if(figure_type %in% c("trial means", "freddy") &
        suppressWarnings(length(sort(as.numeric(
            as.character(unique(Data$Trial)))))) == 0){
         warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.",
@@ -623,7 +623,7 @@ ct_plot <- function(ct_dataframe = NA,
     # Setting Y axis limits for both linear and semi-log plots
     if(figure_type == "trial means") {
         Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if(str_detect(figure_type, "percentiles|Freddy|ribbon")) {
+    } else if(str_detect(figure_type, "percentiles|freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if(figure_type == "means only") {
         Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
@@ -907,7 +907,7 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     ## figure_type: Freddy --------------------------------------------------------------
-    if(figure_type == "Freddy"){
+    if(figure_type == "freddy"){
         
         NumTrials <- length(unique(sim_data_trial$Trial))
         AlphaToUse <- ifelse(complete.cases(line_transparency),
@@ -936,11 +936,11 @@ ct_plot <- function(ct_dataframe = NA,
                 scale_color_manual(values = line_color[1:2])
             
             if(nrow(obs_data) > 0){
-                # When figure_type == "Freddy", I want the default to be
+                # When figure_type == "freddy", I want the default to be
                 # a blue-purple semi-transparent fill. However, I want
                 # people to have the option to override that, so
                 # setting obs_color to "none" will override the
-                # "Freddy" default. -LS
+                # "freddy" default. -LS
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
                     A <- A + geom_point(data = obs_data, size = 2,
                                         fill = NA, stroke = 1)
