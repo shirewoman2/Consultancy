@@ -1,31 +1,89 @@
 #' Extract pertinent data from Simulator output files for creating forest plots
 #'
-#' @param sim_data_files a character vector of simulator output files
-#' @param PKparameters PK parameters to extract from simulator output files.
-#'   Defaults to all possible AUC and Cmax ratios. List them in the order you'd
-#'   like the columns to appear in the output. 
-#' @param checkDataSource TRUE or FALSE: Include in the output a data.frame that
-#'   lists exactly where the data were pulled from the simulator output file.
-#'   Useful for QCing.
+#' \code{extractForestData} automatically extract the data needed for generating
+#' forest plots from Simulator output files and format it for using the forest
+#' plot shiny app. This will take some time to run since it needs to open
+#' multiple Excel files. NB: This has only been set up to work with geometric
+#' means so far.
+#'
+#' @param sim_data_files a character vector of simulator output files; leaving
+#'   this as the default NA will extract forest data from all simulator files in
+#'   the current working directory
+#' @param PKparameters PK parameters to extract from simulator output files;
+#'   default is all possible AUC and Cmax geometric mean ratios for both dose 1
+#'   and the last dose simulated. Input must be among "AUCinf_ratio_dose1",
+#'   "AUCt_ratio_dose1", "Cmax_ratio_dose1", "AUCtau_ratio_last", or
+#'   "Cmax_ratio_last". List them in the order you'd like the columns to appear
+#'   in the output.
+#' @param checkDataSource TRUE (default) or FALSE: Include in the output a
+#'   data.frame that lists exactly where the data were pulled from the simulator
+#'   output file. Useful for QCing.
 #' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My forest graph data.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
+#'   quotes here, e.g., "My forest graph data.csv". If you leave off ".csv", it
+#'   will still be saved as a csv file.
 #'
 #' @return
 #' @export
 #'
 #' @examples
+#'
+#' extractForestData(sim_data_files = NA,
+#'                   save_output = "Forest data.csv")
 #' 
-#' # None yet
-#' 
-extractForestData <- function(sim_data_files, 
+extractForestData <- function(sim_data_files = NA, 
                               PKparameters = c("AUCinf_ratio_dose1", 
                                                "AUCt_ratio_dose1", 
                                                "Cmax_ratio_dose1", 
-                                               "AUCtau_ratio_ss", 
-                                               "Cmax_ratio_ss"), 
+                                               "AUCtau_ratio_last", 
+                                               "Cmax_ratio_last"), 
                               checkDataSource = TRUE, 
                               save_output = NA){
+    
+    # Error catching -----------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+             call. = FALSE)
+    }
+    
+    if(all(PKparameters %in% c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
+                               "Cmax_ratio_dose1", "AUCtau_ratio_last", 
+                               "Cmax_ratio_last")) == FALSE){
+        # The condition above checks whether any parameters supplied are not
+        # among the possible options. The condition in this next line checks
+        # whether ALL of them are not among the possible options. Just noting
+        # that b/c it's easy to miss the specific placement of the parenthesis
+        # after "Cmax_ratio_last". -LSh
+        if(all(PKparameters %in% c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
+                                   "Cmax_ratio_dose1", "AUCtau_ratio_last", 
+                                   "Cmax_ratio_last") == FALSE)){
+            stop("None of the input supplied for PKparameters is among the possible options, which are AUCinf_ratio_dose1, AUCt_ratio_dose1, Cmax_ratio_dose1, AUCtau_ratio_last, and/or Cmax_ratio_last. Please check your input and try again.", 
+                 call. = FALSE)
+        } else {
+            warning(paste0("Not all of the input supplied for PKparameters is among the possible options. Specifically, ",
+                           str_comma(setdiff(PKparameters, c("AUCinf_ratio_dose1",
+                                                             "AUCt_ratio_dose1", 
+                                                             "Cmax_ratio_dose1", 
+                                                             "AUCtau_ratio_last", 
+                                                             "Cmax_ratio_last"))),
+                           " are not possible. These will be ignored.",
+                           call. = FALSE))
+            PKparameters <- PKparameters[PKparameters %in% c("AUCinf_ratio_dose1",
+                                                             "AUCt_ratio_dose1", 
+                                                             "Cmax_ratio_dose1",
+                                                             "AUCtau_ratio_last", 
+                                                             "Cmax_ratio_last")]
+        }
+    }
+    
+    # Main body of function ------------------------------------------------
+    # Getting sim_data_files if not already supplied
+    if(length(sim_data_files) == 1 && is.na(sim_data_files)){
+        # If left as NA, pull all the files in this folder. 
+        sim_data_files <- list.files(pattern = "xlsx")
+        sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+    }
+    
     Forest_l <- list()
     Deets <- list()
     DataCheck <- list()

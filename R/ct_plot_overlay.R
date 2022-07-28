@@ -378,7 +378,7 @@ ct_plot_overlay <- function(ct_dataframe,
                    Inhibitor = prettify_compound_names[Inhibitor])
     }
     
-    # Setting things up for some nonstandard evaluation -------------------------
+    # Setting things up for nonstandard evaluation ----------------------------
     
     facet1_column <- rlang::enquo(facet1_column)
     facet2_column <- rlang::enquo(facet2_column)

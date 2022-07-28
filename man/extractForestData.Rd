@@ -5,36 +5,45 @@
 \title{Extract pertinent data from Simulator output files for creating forest plots}
 \usage{
 extractForestData(
-  sim_data_files,
+  sim_data_files = NA,
   PKparameters = c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", "Cmax_ratio_dose1",
-    "AUCtau_ratio_ss", "Cmax_ratio_ss"),
+    "AUCtau_ratio_last", "Cmax_ratio_last"),
   checkDataSource = TRUE,
   save_output = NA
 )
 }
 \arguments{
-\item{sim_data_files}{a character vector of simulator output files}
+\item{sim_data_files}{a character vector of simulator output files; leaving
+this as the default NA will extract forest data from all simulator files in
+the current working directory}
 
-\item{PKparameters}{PK parameters to extract from simulator output files.
-Defaults to all possible AUC and Cmax ratios. List them in the order you'd
-like the columns to appear in the output.}
+\item{PKparameters}{PK parameters to extract from simulator output files;
+default is all possible AUC and Cmax ratios for both dose 1 and the last
+dose simulated. Input must be among "AUCinf_ratio_dose1",
+"AUCt_ratio_dose1", "Cmax_ratio_dose1", "AUCtau_ratio_last", or
+"Cmax_ratio_last". List them in the order you'd like the columns to appear
+in the output.}
 
-\item{checkDataSource}{TRUE or FALSE: Include in the output a data.frame that
-lists exactly where the data were pulled from the simulator output file.
-Useful for QCing.}
+\item{checkDataSource}{TRUE (default) or FALSE: Include in the output a
+data.frame that lists exactly where the data were pulled from the simulator
+output file. Useful for QCing.}
 
 \item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My forest graph data.csv". If you leave off ".csv",
-it will still be saved as a csv file.}
+quotes here, e.g., "My forest graph data.csv". If you leave off ".csv", it
+will still be saved as a csv file.}
 }
 \value{
 
 }
 \description{
-Extract pertinent data from Simulator output files for creating forest plots
+\code{extractForestData} automatically extract the data needed for generating
+forest plots from Simulator output files and format it for using the forest
+plot shiny app. This will take some time to run since it needs to open
+multiple Excel files.
 }
 \examples{
 
-# None yet
+extractForestData(sim_data_files = NA,
+                  save_output = "Forest data.csv")
 
 }
