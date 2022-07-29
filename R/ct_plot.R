@@ -657,7 +657,9 @@ ct_plot <- function(ct_dataframe = NA,
                              ifelse(NumTrials > 10, 0.05, 0.2))
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+           MyEffector[1] != "none" &
+           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                    "inhibitor 1 metabolite") == FALSE){
             
             warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
                     call. = FALSE)
@@ -743,7 +745,9 @@ ct_plot <- function(ct_dataframe = NA,
                              line_transparency, 0.25)
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+           MyEffector[1] != "none"  &
+           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                    "inhibitor 1 metabolite") == FALSE){
             
             warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
                     call. = FALSE)
@@ -825,7 +829,9 @@ ct_plot <- function(ct_dataframe = NA,
         
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+           MyEffector[1] != "none" &
+           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                    "inhibitor 1 metabolite") == FALSE){
             
             warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
                     call. = FALSE)
@@ -915,7 +921,9 @@ ct_plot <- function(ct_dataframe = NA,
                              ifelse(NumTrials > 10, 0.05, 0.25))
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+           MyEffector[1] != "none"  &
+           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                    "inhibitor 1 metabolite") == FALSE){
             
             warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
                     call. = FALSE)
