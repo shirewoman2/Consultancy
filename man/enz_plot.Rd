@@ -9,6 +9,8 @@ enz_plot(
   figure_type = "means only",
   gut_tissue = "colon",
   linear_or_log = "linear",
+  fig_height = 3,
+  fig_width = 6,
   ...
 )
 }
