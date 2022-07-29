@@ -18,8 +18,8 @@ this as the default NA will extract forest data from all simulator files in
 the current working directory}
 
 \item{PKparameters}{PK parameters to extract from simulator output files;
-default is all possible AUC and Cmax ratios for both dose 1 and the last
-dose simulated. Input must be among "AUCinf_ratio_dose1",
+default is all possible AUC and Cmax geometric mean ratios for both dose 1
+and the last dose simulated. Input must be among "AUCinf_ratio_dose1",
 "AUCt_ratio_dose1", "Cmax_ratio_dose1", "AUCtau_ratio_last", or
 "Cmax_ratio_last". List them in the order you'd like the columns to appear
 in the output.}
@@ -39,7 +39,8 @@ will still be saved as a csv file.}
 \code{extractForestData} automatically extract the data needed for generating
 forest plots from Simulator output files and format it for using the forest
 plot shiny app. This will take some time to run since it needs to open
-multiple Excel files.
+multiple Excel files. NB: This has only been set up to work with geometric
+means so far.
 }
 \examples{
 

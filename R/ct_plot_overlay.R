@@ -673,28 +673,29 @@ ct_plot_overlay <- function(ct_dataframe,
     AES <- str_c(AES[complete.cases(AES)], collapse = "-")
     AES <- ifelse(AES == "" | is.na(AES), "none", AES)
     
-    # If each compound has only 1 compound ID and vice versa, no need to
-    # consider compound in the set of unique aesthetics.
-    if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
-                     summarize(LengthUni = length(unique(CompoundID))), 
-                     ct_dataframe %>% group_by(CompoundID) %>% 
-                     summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
-        
-        MyUniqueData <- ct_dataframe %>% 
-            filter(Trial == MyMeanType) %>% 
-            select(union(UniqueAES, 
-                         c("File", "Tissue", as.character(UniqueAES), "Inhibitor"))) %>% 
-            unique()
-        
-        UniqueGroups1 <- ct_dataframe %>% 
-            summarize(across(.cols = union(UniqueAES, 
-                                           c("File", "Tissue", 
-                                             as.character(UniqueAES), 
-                                             "Inhibitor")),
-                             .fns = function(x) length(unique(x)))) 
-        
-        
-    } else {
+    # # If each compound has only 1 compound ID and vice versa, no need to
+    # # consider compound in the set of unique aesthetics. <--- NOT TRUE. This is not catching instances where there is CT data for a substrate and an inhibitor and also the inhibitor column is +/- inhibitor!
+    
+    # if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
+    #                  summarize(LengthUni = length(unique(CompoundID))), 
+    #                  ct_dataframe %>% group_by(CompoundID) %>% 
+    #                  summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
+    #     
+    #     MyUniqueData <- ct_dataframe %>% 
+    #         filter(Trial == MyMeanType) %>% 
+    #         select(union(UniqueAES, 
+    #                      c("File", "Tissue", as.character(UniqueAES), "Inhibitor"))) %>% 
+    #         unique()
+    #     
+    #     UniqueGroups1 <- ct_dataframe %>% 
+    #         summarize(across(.cols = union(UniqueAES, 
+    #                                        c("File", "Tissue", 
+    #                                          as.character(UniqueAES), 
+    #                                          "Inhibitor")),
+    #                          .fns = function(x) length(unique(x)))) 
+    #     
+    #     
+    # } else {
         
         MyUniqueData <- ct_dataframe %>% 
             filter(Trial == MyMeanType) %>% 
@@ -709,7 +710,7 @@ ct_plot_overlay <- function(ct_dataframe,
                              .fns = function(x) length(unique(x)))) 
         
         
-    }
+    # }
     
     UniqueGroups <- UniqueGroups1 %>% 
         t() %>% as.data.frame() %>% 
@@ -726,15 +727,23 @@ ct_plot_overlay <- function(ct_dataframe,
         color_set <- "Brewer set 1"
     }
     
-    if(length(UniqueGroups) > length(UniqueAES)){
-        warning(paste("You have requested", length(UniqueGroups),
-                      "unique data sets but only", 
-                      length(UniqueAES), 
-                      "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
-                call. = FALSE)
-        message(paste("Unique datasets:", str_comma(UniqueGroups)))
-        message(paste("Unique aesthetics:", str_comma(UniqueAES)))
-    }
+    # NOTE TO SELF: I've been trying to think of a clearer way to indicate to
+    # people when they need to specify more aesthetics and just haven't come up
+    # with a strategy I like. I think the current warning i'm giving is too
+    # cautious, which means that people will ignore it much of the time. For
+    # now, I'm going to just tell them how many aesthetics they've selected
+    # compared to how many unique groups and see whether that's sufficient
+    # warning.
+    
+    # if(length(UniqueGroups) > length(UniqueAES)){
+    #     warning(paste("You have requested", length(UniqueGroups),
+    #                   "unique data sets but only", 
+    #                   length(UniqueAES), 
+    #                   "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
+    #             call. = FALSE)
+    message(paste("Unique datasets:", str_comma(UniqueGroups)))
+    message(paste("Unique aesthetics:", str_comma(UniqueAES)))
+    # }
     
     # If there are multiple values in linetype_column but user has only listed
     # the default "solid" for linetypes, then warn the user that they might want
