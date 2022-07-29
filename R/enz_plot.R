@@ -30,6 +30,8 @@ enz_plot <- function(sim_enz_dataframe,
                      figure_type = "means only",
                      gut_tissue = "colon",
                      linear_or_log = "linear",
+                     fig_height = 3, 
+                     fig_width = 6,
                      ...){
     
     # Error catching ----------------------------------------------------------
@@ -48,6 +50,9 @@ enz_plot <- function(sim_enz_dataframe,
     }
     
     ct_plot(ct_dataframe = Data, figure_type = figure_type,
-            linear_or_log = linear_or_log, ...)
+            linear_or_log = linear_or_log,
+            fig_height = fig_height, 
+            fig_width = fig_width,
+            ...)
 }
 
