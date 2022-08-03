@@ -1,7 +1,8 @@
 #' Plots of enzyme abundance changes over time to match Consultancy template
 #'
-#' Using simulated enzyme-abundance data, make publication-quality graphs that
-#' match the consultancy template formatting instructions.
+#' Using simulated enzyme-abundance data generated from running the function
+#' \code{\link{extractEnzAbund}}, make publication-quality graphs that match the
+#' consultancy template formatting instructions.
 #'
 #' @param sim_enz_dataframe the data.frame of enzyme abundance data obtained
 #'   from running the function \code{\link{extractEnzAbund}}. Not quoted.
@@ -192,7 +193,7 @@
 #' @examples
 #' enz_plot(sim_enz_dataframe = CYP3A4_liver)
 #' enz_plot(sim_enz_dataframe = CYP3A4_gut, legend_position = "right")
-#' enz_plot(sim_enz_dataframe = CYP3A4_gut, 
+#' enz_plot(sim_enz_dataframe = CYP3A4_gut,
 #'          gut_tissue = "small intestine",
 #'          figure_type = "percentile ribbon",
 #'          legend_position = "right")

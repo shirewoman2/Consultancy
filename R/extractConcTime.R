@@ -5,6 +5,9 @@
 #' a single, tidy data.frame. There are some nuances to how it deals with
 #' observed data; please see the details at the bottom of this help file.
 #'
+#' Not all substrate metabolites, inhibitors, or inhibitor metabolites are
+#' available in all tissues. If it's not present in your Excel output, we can't
+#' extract it here. 
 #'
 #' \strong{A note on observed data:} When observed data are included in a
 #' simulator output file, because the simulator output does not explicitly say
@@ -143,7 +146,7 @@
 #' extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
 #'                 tissue = "lung")
 #'
-#'
+#' 
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
                             adjust_obs_time = FALSE,

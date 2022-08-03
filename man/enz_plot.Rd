@@ -232,13 +232,14 @@ Output is a ggplot2 graph or two ggplot2 graphs arranged with
   ggpubr::ggarrange()
 }
 \description{
-Using simulated enzyme-abundance data, make publication-quality graphs that
-match the consultancy template formatting instructions.
+Using simulated enzyme-abundance data generated from running the function
+\code{\link{extractEnzAbund}}, make publication-quality graphs that match the
+consultancy template formatting instructions.
 }
 \examples{
 enz_plot(sim_enz_dataframe = CYP3A4_liver)
 enz_plot(sim_enz_dataframe = CYP3A4_gut, legend_position = "right")
-enz_plot(sim_enz_dataframe = CYP3A4_gut, 
+enz_plot(sim_enz_dataframe = CYP3A4_gut,
          gut_tissue = "small intestine",
          figure_type = "percentile ribbon",
          legend_position = "right")
