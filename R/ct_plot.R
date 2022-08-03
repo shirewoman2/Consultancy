@@ -36,15 +36,15 @@
 #'
 #'   \describe{
 #'
-#'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
-#'   for the mean of each trial of simulated data, and open circles for the
-#'   observed data. If an effector were present, lighter dashed lines indicate
-#'   the mean of each trial of simulated data in the presence of the effector.}
-#'
 #'   \item{"percentiles"}{(default) plots an opaque line for the mean data,
 #'   lighter lines for the 5th and 95th percentiles of the simulated data, and
 #'   open circles for the observed data. If an effecter were present, the
 #'   default is dashed lines for the data in the presence of an effector.}
+#'
+#'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
+#'   for the mean of each trial of simulated data, and open circles for the
+#'   observed data. If an effector were present, lighter dashed lines indicate
+#'   the mean of each trial of simulated data in the presence of the effector.}
 #'
 #'   \item{"percentile ribbon"}{plots an opaque line for the mean data,
 #'   transparent shading for the 5th to 95th percentiles of the simulated data,
@@ -69,10 +69,11 @@
 #'   \emph{sharp}, makes it easy to see the defining characteristics of the
 #'   data, and I recommend checking it out, even just for your own purposes of
 #'   examining your data. If the color is too much for you but you like the
-#'   rest, try setting \code{obs_color = "none"}. -LS}}
+#'   rest, try setting \code{obs_color = "none"}. -LSh}}
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
-#'   "median" for median concentrations
+#'   "median" for median concentrations. If that option was not included in the
+#'   output, you'll get a warning and the graph will include one that was.
 #' @param time_range time range to show relative to the start of the simulation.
 #'   Options: \describe{
 #'
@@ -205,12 +206,12 @@
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 #'   become "midazolam". Set each compound to the name you'd prefer to see in
 #'   your legend and Word output if you would like something different. For
-#'   example, \code{prettify_compound_names = c("inhibitor" = "defartinib",
+#'   example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
 #'   "substrate" = "superstatin")}. Please note that "inhibitor" includes
 #'   \emph{all} the effectors and effector metabolites present, so, if you're
 #'   setting the effector name, you really should use something like this if
 #'   you're including effector metabolites: \code{prettify_compound_names =
-#'   c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
+#'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed}
@@ -229,12 +230,12 @@
 #'   name will end in "- vertical"). This option, which was designed to create
 #'   the vertically stacked version of a graph for a report and the horizontal,
 #'   side-by-side version for a presentation, is a bit different from the others
-#'   since it will return two separate files. In the RStudio "Plots"
-#'   window, you'll only see the vertically stacked version. Setting
-#'   \code{fig_height} and \code{fig_width} will adjust only the dimensions of
-#'   the horizontal figure; the default values will be used for the vertical
-#'   one. If you request Word output, only the vertical plot will be saved in
-#'   Word format; the horizontal plot will be saved as a png file.}}
+#'   since it will return two separate files. In the RStudio "Plots" window,
+#'   you'll only see the vertically stacked version. Setting \code{fig_height}
+#'   and \code{fig_width} will adjust only the dimensions of the horizontal
+#'   figure; the default values will be used for the vertical one. If you
+#'   request Word output, only the vertical plot will be saved in Word format;
+#'   the horizontal plot will be saved as a png file.}}
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -656,13 +657,16 @@ ct_plot <- function(ct_dataframe = NA,
                              line_transparency,
                              ifelse(NumTrials > 10, 0.05, 0.2))
         
-        if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+        if(length(MyEffector) > 0 && 
+           complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                    call. = FALSE)
+            if(EnzPlot == FALSE){
+                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                        call. = FALSE)
+            }
             
             ## linear plot
             A <- ggplot(sim_data_trial,
@@ -744,13 +748,16 @@ ct_plot <- function(ct_dataframe = NA,
         AlphaToUse <- ifelse(complete.cases(line_transparency),
                              line_transparency, 0.25)
         
-        if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+        if(length(MyEffector) > 0 &&
+           complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none"  &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                    call. = FALSE)
+            if(EnzPlot == FALSE){
+                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                        call. = FALSE)
+            }
             
             A <- ggplot(sim_data_mean %>%
                             filter(Trial %in% c("per5", "per95")) %>%
@@ -828,13 +835,16 @@ ct_plot <- function(ct_dataframe = NA,
             rename("mean" = {MyMeanType})
         
         
-        if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+        if(length(MyEffector) > 0 && 
+           complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                    call. = FALSE)
+            if(EnzPlot == FALSE){
+                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                        call. = FALSE)
+            }
             
             A <- ggplot(RibbonDF, aes(x = Time,
                                       y = mean, ymin = per5, ymax = per95, 
@@ -920,13 +930,16 @@ ct_plot <- function(ct_dataframe = NA,
                              line_transparency,
                              ifelse(NumTrials > 10, 0.05, 0.25))
         
-        if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
+        if(length(MyEffector) > 0 && 
+           complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none"  &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
             
-            warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                    call. = FALSE)
+            if(EnzPlot == FALSE){
+                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                        call. = FALSE)
+            }
             
             ## linear plot
             A <- ggplot(data = sim_data_mean %>%
