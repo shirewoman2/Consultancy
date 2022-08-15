@@ -464,7 +464,9 @@ extractExpDetails <- function(sim_data_file,
                         if(as.character(InputTab[i+1, NameCol]) == "Genotype"){
                             Enzyme <- paste0(Enzyme, InputTab[i+1, NameCol + 1])
                             CLrow <- i + 2
-                        } else if(str_detect(Enzyme, "User")){
+                        } else if(str_detect(Enzyme, "User") |
+                                  str_detect(tolower(InputTab[i + 1, NameCol]), 
+                                             "ontogeny")){
                             CLrow <- i + 2
                         } else {
                             CLrow <- i + 1
@@ -1002,6 +1004,23 @@ extractExpDetails <- function(sim_data_file,
         }
         
         MyPopDeets <- intersect(exp_details, PopDeets$Deet)
+        
+        # User can change the name of user-defined cytosolic phenotypes for GI
+        # tract, kidney, and liver. Changing this back to "Cyt1" to work for
+        # regex, though. For now, only extracting data for Cyt1 and not any more
+        # user-defined cytosolic phenotype parameters, so ignoring the others.
+        # If name is changed in one, it's changed in all. Columns are 3, 5, and
+        # 9.
+        if(any(str_detect(PopTab$...3, "Cyt1"), na.rm = T) == FALSE){
+            StartCytRow <- which(str_detect(PopTab$...3, "^User Cyt$"))[1]
+            
+            NewName <- gsub("Abundance : | Population Scalar", "", PopTab[StartCytRow + 1, 3])
+            
+            PopTab$...3 <- sub(NewName, "User Cyt1", PopTab$...3)
+            PopTab$...5 <- sub(NewName, "User Cyt1", PopTab$...5)
+            PopTab$...9 <- sub(NewName, "User Cyt1", PopTab$...9)
+            
+        }
         
         # sub function for finding correct cell
         pullValue <- function(deet){

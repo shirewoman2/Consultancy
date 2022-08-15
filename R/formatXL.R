@@ -90,15 +90,12 @@
 #'   \item{\code{fill}}{A color s/a "red", "blue", "purple" or any of the
 #'   possible named colors available in R.}}
 #'
-#' @details If this will create a new Excel file or if your current Excel file
-#'   has no other sheets but this one, this will generate a message "Workbook
-#'   has no sheets!" that I \emph{cannot} seem to get rid of.
-#'
-#'   \strong{COMMON ERRORS or ERROR MESSAGES} since this is a tad (ok, a LOT)
-#'   glitchy: \code{styles} is meant to accommodate multiple sets of formatting,
-#'   so you have to have \code{styles} be a list but then also each set of cells
-#'   that you're formatting must also be a list. This means that styles should
-#'   probably look like this in your code: \code{styles = list(list(...))}
+#' @details \strong{COMMON ERRORS or ERROR MESSAGES} since this is a tad (ok, a
+#'   LOT) glitchy: \code{styles} is meant to accommodate multiple sets of
+#'   formatting, so you have to have \code{styles} be a list but then also each
+#'   set of cells that you're formatting must also be a list. This means that
+#'   styles should probably look like this in your code: \code{styles =
+#'   list(list(...))}
 #'
 #'   If you set a style for a cell and then set another style for that same
 #'   cell, the final style will be the 2nd one, not a combination of the two.
@@ -142,7 +139,7 @@
 #' @return
 #' @export
 #'
-#'
+#' 
 formatXL <- function(DF, file, sheet = NA,
                      colWidth = list(colNum = NULL,
                                      colName = NULL,
@@ -205,7 +202,7 @@ formatXL <- function(DF, file, sheet = NA,
     }
     
     # Check whether the sheet already exists. If it does, remove it.
-    AnySheets <- xlsx::getSheets(WB)
+    invisible(capture.output(AnySheets <- xlsx::getSheets(WB)))
     if(!is.null(AnySheets)){
         if(sheet %in% names(xlsx::getSheets(WB))){
             xlsx::removeSheet(WB, sheetName = sheet)

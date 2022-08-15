@@ -6,10 +6,10 @@
 \usage{
 pksummary_mult(
   sim_data_files = NA,
-  observed_PK = NA,
   PKparameters = NA,
   PKorder = "default",
   sheet_PKparameters = NA,
+  observed_PK = NA,
   mean_type = NA,
   tissue = "plasma",
   includeCV = TRUE,
@@ -26,55 +26,41 @@ pksummary_mult(
 \arguments{
 \item{sim_data_files}{a character vector of simulator output files, e.g.,
 \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
-want all the Excel files in the current folder, \code{sim_data_files =
-list.files("xlsx")}. If you supply data for \code{observed_PK}, anything
-you enter here will be ignored because the file names will be pulled from
-there instead.}
-
-\item{observed_PK}{(optional) If you have a data.frame or an Excel or csv
-file with observed PK parameters, supply the data.frame or the full file
-name in quotes here, and the simulated-to-observed mean ratios will be
-calculated. The supplied data.frame or file \emph{must} include columns for
-the simulator output Excel file (title this "File") and each of the PK
-parameters you would like to compare, and those column names \emph{must}
-match the PK parameter options listed in
-\code{data(PKParameterDefinitions)}. If you would like the output table to
-include the observed data CV for any of the parameters, add "_CV" to the
-end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the example
-section at the bottom of the help file for example syntax for providing a
-data.frame here.}
+want all the Excel files in the current folder, \code{sim_data_files = NA}.
+If you supply data for \code{observed_PK}, anything you enter here will be
+ignored because the file names will be pulled from there instead.}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
-  vector. Notes: \itemize{
+ vector. \itemize{
 
-  \item{By default, if you have a single-dose simulation, the parameters will
-  include AUC and Cmax for dose 1, and, if you have a multiple-dose
-  simulation, AUC and Cmax for the last dose. Also by default, if you have an
-  effector present, the parameters will include the AUC and Cmax values with
-  and without the effector as well as those ratios.}
+ \item{By default, if you have a single-dose simulation, the parameters will
+ include AUC and Cmax for dose 1, and, if you have a multiple-dose
+ simulation, AUC and Cmax for the last dose. Also by default, if you have an
+ effector present, the parameters will include the AUC and Cmax values with
+ and without the effector as well as those ratios.}
 
-  \item{Alternatively, you can specify a vector of any combination of
-  specific, individual parameters, e.g., \code{c("Cmax_dose1",
-  "AUCtau_last").} Be sure to encapsulate the parameters you want with
-  \code{c(...)}! To see the full set of possible parameters to extract, enter
-  \code{data(PKParameterDefinitions); view(PKParameterDefinitions)} into the
-  console. Not case sensitive. If you use "_first" instead of "_dose1", that
-  will also work.}
+ \item{Alternatively, you can specify a vector of any combination of
+ specific, individual parameters, e.g., \code{c("Cmax_dose1",
+ "AUCtau_last").} Be sure to encapsulate the parameters you want with
+ \code{c(...)}! To see the full set of possible parameters to extract, enter
+ \code{view(PKParameterDefinitions)} into the console.}
 
-  \item{If you supply observed data using either the argument
-  \code{report_input_file} or the argument \code{observed_PK}, the PK
-  parameters included are only those available for the observed data.}
+ \item{If you supply observed data using either the argument
+ \code{report_input_file} or the argument \code{observed_PK}, the only PK
+ parameters that will be included are those available for the observed data.}
 
-  \item{Parameters that don't make sense for your scenario -- such as asking
-  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-  inhibitor or effector -- will not be included.}
+ \item{Parameters that don't make sense for your scenario -- such as asking
+ for \code{AUCinf_dose1_withInhib} when your simulation did not include an
+ inhibitor or effector -- will not be included.}
 
-  \item{tmax will be listed as median, min, and max rather than mean, lower
-  and higher X\% confidence interval or X percentiles. Similarly, if you
-  request trial means, the values for tmax will be the range of medians for
-  the trials rather than the range of means.}} An example of acceptable input
-  here: \code{c("AUCtau_last", "AUCtau_last_withInhib", "Cmax_last",
-  "Cmax_last_withInhib", "AUCtau_ratio_last", "Cmax_ratio_last")}.}
+ \item{tmax will be listed as median, min, and max rather than mean, lower
+ and higher X\% confidence interval or X percentiles. Similarly, if you
+ request trial means, the values for tmax will be the range of medians for
+ the trials rather than the range of means.}}
+
+ An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
+ "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
+ "AUCtau_ratio_last", "Cmax_ratio_last")}.}
 
 \item{PKorder}{Would you like the order of the PK parameters to be the the
 order specified in the Consultancy Report Template (default), or would you
@@ -82,8 +68,22 @@ like the order to match the order you specified with the argument
 \code{PKparameters}? Options are "default" or "user specified".}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
-pulled from a specific tab in the simulator output file, list that tab
-here. Most of the time, this should be left as NA.}
+pulled from a specific tab in the simulator output file, list that tab here.
+Most of the time, this should be left as NA.}
+
+\item{observed_PK}{(optional) If you have a data.frame, a named numeric
+vector, or an Excel or csv file with observed PK parameters, supply the full
+file name in quotes or the data.frame or vector here, and the
+simulated-to-observed mean ratios will be calculated. If you supply an Excel
+file, it should have only one tab. We prefer supplying csv files here since
+they're faster to read in anyway. The supplied data.frame or file
+\emph{must} include columns for the simulator output Excel file (title this
+"File") and each of the PK parameters you would like to compare, and those
+column names \emph{must} be among the PK parameter options listed in
+\code{PKParameterDefinitions}. If you would like the output table to include
+the observed data CV for any of the parameters, add "_CV" to the end of the
+parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
+this help file for examples of how to set this up.}
 
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
 If you supplied a report input form, only specify this if you'd like to
@@ -93,8 +93,8 @@ override the value listed there.}
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
 tested).}
 
-\item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
-in the table}
+\item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV in
+the table}
 
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that
@@ -112,8 +112,8 @@ individual values rather than being pulled directly from the output.}
 
 \item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
-and listed as the lower confidence interval or percentile to the upper CI
-or percentile, e.g., "2400 to 2700". Please note that the current
+and listed as the lower confidence interval or percentile to the upper CI or
+percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
@@ -128,43 +128,33 @@ simulator output file. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.docx" or "My table.csv", depending on whether you'd prefer to have
-the table saved as a Word or csv file. If you supply only the file
-extension, e.g., \code{save_table = "docx"}, the name of the file will be
-"PK summary table" with that extension. If you supply something other than
-just "docx" or just "csv" for the file name but you leave off the file
-extension, we'll assume you want it to be ".csv". All PK info will be
-included in a single Word or csv file, and, if \code{checkDataSource =
-TRUE}, that will be saved in a single csv file. \strong{WARNING:} SAVING TO
-WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue,
-not an R issue. If you try to save on SharePoint, you will get a warning
-that R will save your file instead to your Documents folder.}
+table.docx" or "My table.csv", depending on whether you'd prefer to have the
+table saved as a Word or csv file. If you supply only the file extension,
+e.g., \code{save_table = "docx"}, the name of the file will be "PK summary
+table" with that extension. If you supply something other than just "docx"
+or just "csv" for the file name but you leave off the file extension, we'll
+assume you want it to be ".csv". All PK info will be included in a single
+Word or csv file, and, if \code{checkDataSource = TRUE}, that will be saved
+in a single csv file. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
+SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
+try to save on SharePoint, you will get a warning that R will save your file
+instead to your Documents folder.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple
-  simulator output files
+ simulator output files
 }
 \description{
 Make PK summary tables from multiple simulator output files at once
 }
 \examples{
 
-# Create PK summary tables for all the Simulator output
-# files in your working directory; get the default PK parameters
+# Create PK summary tables for all the Simulator output files
+# in your working directory with the default PK parameters
 pksummary_mult(sim_data_files = NA)
-
-# Include a data.frame of observed data for S/O comparisons
-pksummary_mult(
-    sim_data_files = NA,
-    observed_PK = data.frame(File = c("mdz-5mg-qd-keto-400mg-qd.xlsx",
-                                      "mdz-5mg-qd-rif-600mg-qd.xlsx"),
-                             AUCtau_last = c(55, 55),
-                             Cmax_last = c(20, 20),
-                             AUCtau_last_withInhib = c(800, 20),
-                             Cmax_last_withInhib = c(100, 5)))
 
 # Include a data.frame of observed data for S/O comparisons
 pksummary_mult(

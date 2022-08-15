@@ -131,6 +131,10 @@ a single, tidy data.frame. There are some nuances to how it deals with
 observed data; please see the details at the bottom of this help file.
 }
 \details{
+Not all substrate metabolites, inhibitors, or inhibitor metabolites are
+available in all tissues. If it's not present in your Excel output, we can't
+extract it here. 
+
 \strong{A note on observed data:} When observed data are included in a
 simulator output file, because the simulator output does not explicitly say
 whether those observed data were in the presence of an inhibitor or effector,

@@ -71,8 +71,15 @@ the name of value_column.}
   palette is limited to something like 6 groups, so if you have more than
   that, that's when this palette is most useful.}
 
-  \item{"blue-green"}{a set of blues and greens}
+  \item{"blue-green"}{a set of blues fading into greens. This palette can be
+  especially useful if you are comparing a systematic change in some
+  continuous variable -- for example, increasing dose or predicting how a
+  change in intrinsic solubility will affect concentration-time profiles --
+  because the direction of the trend will be clear.}
 
+  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
 

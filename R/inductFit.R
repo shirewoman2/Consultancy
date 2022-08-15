@@ -70,8 +70,15 @@
 #'   that, that's when this palette is most useful. It's \emph{not} very useful
 #'   when you only need a couple of colors.}
 #'
-#'   \item{"blue-green"}{a set of blues and greens}
+#'   \item{"blue-green"}{a set of blues fading into greens. This palette can be
+#'   especially useful if you are comparing a systematic change in some
+#'   continuous variable -- for example, increasing dose or predicting how a
+#'   change in intrinsic solubility will affect concentration-time profiles --
+#'   because the direction of the trend will be clear.}
 #'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
 #'
@@ -710,13 +717,19 @@ inductFit <- function(DF,
     )
     
     # Adding options for colors -----------------------------------------------
+    # Adding options for colors
     colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
                                      "darkorange", "green3", "seagreen3",
                                      "cadetblue", "dodgerblue3", "royalblue4",
                                      "darkorchid4"))
     
-    blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
-                                    "dodgerblue3", "royalblue4"))
+    blueGreen <- colorRampPalette(c("royalblue4", "dodgerblue3",
+                                    "cadetblue", "seagreen3", "green3"))
+    
+    # "blues" is the 4th through 9th blues from grDevices::blues9, just to give
+    # credit where it's due
+    blues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
+                                "#08519C", "#08306B"))
     
     NumColors <- length(unique(DF$DonorID))
     
