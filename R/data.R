@@ -36,6 +36,26 @@
 "MDZ_Keto"
 
 
+#' CYP3A4 enzyme-abundance data in the liver
+#'
+#' Enzyem-abundance levels for liver CYP3A4 in the presence and absence of
+#' multiple-dose ritonavir. Format of the data are the same as the output from
+#' \code{\link{extractEnzAbund}}.
+#'
+#' @format A data.frame with 16 columns "CYP3A4_liver"
+"CYP3A4_liver"
+
+
+
+#' CYP3A4 enzyme-abundance data in the gut
+#'
+#' Enzyem-abundance levels for CYP3A4 in the colon and in the small intestine in
+#' the presence and absence of multiple-dose ritonavir. Format of the data are
+#' the same as the output from \code{\link{extractEnzAbund}}.
+#'
+#' @format A data.frame with 16 columns "CYP3A4_gut"
+"CYP3A4_gut"
+
 
 
 #' Simcyp colors used in the PowerPoint template
