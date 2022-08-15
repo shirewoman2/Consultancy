@@ -44,6 +44,20 @@
 #'   \emph{only} compounds that match that. Regular expressions are acceptable
 #'   here, e.g., \code{compound = "midaz|keto"} to find any compound with either
 #'   "midaz" or "keto" in the name. Not case sensitive.
+#' @param find_matching_details optionally supply a string of text to search for
+#'   in the column "Detail". Regular expressions are supported here, so use,
+#'   e.g., \itemize{
+#'
+#'   \item{"|" to mean "or",}
+#'
+#'   \item{".*" to mean "match any character any number of times",}
+#'
+#'   \item{"^" to mean "starts with...", and}
+#'
+#'   \item{"$" to mean "ends with...".}} An example: \code{find_matching_details
+#'   = "^CLint.*CYP3A.*sub$"} to find all details that start with "CLint", then,
+#'   somewhere in the name, include "CYP3A", and then end with "sub" (for
+#'   "substrate"). Case sensitive.
 #' @param detail_set optionally supply a set of details to return \emph{only}
 #'   those details. Options are the same as the ones listed as possibilities for
 #'   \code{exp_details} for \code{\link{extractExpDetails}} or
@@ -88,7 +102,7 @@
 #' @examples
 #'
 #' annotateDetails(Deets)
-#' 
+#'
 #' # Get annotated details regarding absorption.
 #' annotateDetails(Deets = MyDetails, simulator_section = "absorption")
 #'
@@ -102,9 +116,9 @@
 #' annotateDetails(Deets = MyDetails, detail_set = "Simcyp inputs")
 #'
 #' # Combine multiple options to get just a few specific details:
-#' annotateDetails(Deets = MyDetails, 
+#' annotateDetails(Deets = MyDetails,
 #'             simulator_section = "absorption",
-#'             compound = "midaz|keto", 
+#'             compound = "midaz|keto",
 #'             compoundID = "substrate")
 #'
 #' 
@@ -112,6 +126,7 @@ annotateDetails <- function(Deets,
                             compoundID = NA, 
                             compound = NA,
                             detail_set = NA, 
+                            find_matching_details = NA,
                             simulator_section = NA, 
                             show_compound_col = TRUE,
                             omit_all_missing = FALSE, 
@@ -419,6 +434,14 @@ annotateDetails <- function(Deets,
         } else if(str_detect(tolower(detail_set), "population")){
             Out <- Out %>% filter(Sheet == "population")
         }
+    }
+    
+    
+    # find_matching_details --------------------------------------------------------
+    
+    if(complete.cases(find_matching_details)){
+        Out <- Out %>% 
+            filter(str_detect(Detail, find_matching_details))
     }
     
     

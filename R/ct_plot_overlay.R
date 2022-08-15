@@ -191,7 +191,15 @@
 #'   that, that's when this palette is most useful. It's \emph{not} very useful
 #'   when you only need a couple of colors.}
 #'
-#'   \item{"blue-green"}{a set of blues and greens}
+#'   \item{"blue-green"}{a set of blues fading into greens. This palette can be
+#'   especially useful if you are comparing a systematic change in some
+#'   continuous variable -- for example, increasing dose or predicting how a
+#'   change in intrinsic solubility will affect concentration-time profiles --
+#'   because the direction of the trend will be clear.}
+#'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
@@ -208,12 +216,22 @@
 #'   which item in \code{colorBy_column} gets which color, you can supply a
 #'   named vector. For example, if you're coloring the lines by the compound ID,
 #'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
-#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}}}
+#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+#'   like help creating a specific gradation of colors, please talk to a member
+#'   of the R Working Group about how to do that using
+#'   \link{grDevices::colorRampPalette}.}}
 #'
 #' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
 #'   observations. Acceptable values are 0 (completely transparent) to 1
 #'   (completely opaque).
+#' @param obs_color Optionally specify a single color to make all observed data.
+#'   By default, observed data will be the same color as whatever file they're
+#'   associated with, but, if you have one observed file that you're comparing
+#'   to multiple simulation files, this means that the observed data will show
+#'   up as the color of which ever file was plotted last. In that case, it might
+#'   be clearer to say \code{obs_color = "black"} to make all the observed data
+#'   points black.
 #' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
 #'   linear plot will be automatically selected. This only applies when you have
@@ -305,6 +323,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             legend_label_color = NA,
                             color_set = "default",
                             obs_transparency = NA, 
+                            obs_color = NA,
                             linetype_column, 
                             linetypes = c("solid", "dashed"),
                             line_width = NA,
@@ -370,7 +389,7 @@ ct_plot_overlay <- function(ct_dataframe,
                    Inhibitor = prettify_compound_names[Inhibitor])
     }
     
-    # Setting things up for some nonstandard evaluation -------------------------
+    # Setting things up for nonstandard evaluation ----------------------------
     
     facet1_column <- rlang::enquo(facet1_column)
     facet2_column <- rlang::enquo(facet2_column)
@@ -665,28 +684,29 @@ ct_plot_overlay <- function(ct_dataframe,
     AES <- str_c(AES[complete.cases(AES)], collapse = "-")
     AES <- ifelse(AES == "" | is.na(AES), "none", AES)
     
-    # If each compound has only 1 compound ID and vice versa, no need to
-    # consider compound in the set of unique aesthetics.
-    if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
-                     summarize(LengthUni = length(unique(CompoundID))), 
-                     ct_dataframe %>% group_by(CompoundID) %>% 
-                     summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
-        
-        MyUniqueData <- ct_dataframe %>% 
-            filter(Trial == MyMeanType) %>% 
-            select(union(UniqueAES, 
-                         c("File", "Tissue", as.character(UniqueAES), "Inhibitor"))) %>% 
-            unique()
-        
-        UniqueGroups1 <- ct_dataframe %>% 
-            summarize(across(.cols = union(UniqueAES, 
-                                           c("File", "Tissue", 
-                                             as.character(UniqueAES), 
-                                             "Inhibitor")),
-                             .fns = function(x) length(unique(x)))) 
-        
-        
-    } else {
+    # # If each compound has only 1 compound ID and vice versa, no need to
+    # # consider compound in the set of unique aesthetics. <--- NOT TRUE. This is not catching instances where there is CT data for a substrate and an inhibitor and also the inhibitor column is +/- inhibitor!
+    
+    # if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
+    #                  summarize(LengthUni = length(unique(CompoundID))), 
+    #                  ct_dataframe %>% group_by(CompoundID) %>% 
+    #                  summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
+    #     
+    #     MyUniqueData <- ct_dataframe %>% 
+    #         filter(Trial == MyMeanType) %>% 
+    #         select(union(UniqueAES, 
+    #                      c("File", "Tissue", as.character(UniqueAES), "Inhibitor"))) %>% 
+    #         unique()
+    #     
+    #     UniqueGroups1 <- ct_dataframe %>% 
+    #         summarize(across(.cols = union(UniqueAES, 
+    #                                        c("File", "Tissue", 
+    #                                          as.character(UniqueAES), 
+    #                                          "Inhibitor")),
+    #                          .fns = function(x) length(unique(x)))) 
+    #     
+    #     
+    # } else {
         
         MyUniqueData <- ct_dataframe %>% 
             filter(Trial == MyMeanType) %>% 
@@ -701,7 +721,7 @@ ct_plot_overlay <- function(ct_dataframe,
                              .fns = function(x) length(unique(x)))) 
         
         
-    }
+    # }
     
     UniqueGroups <- UniqueGroups1 %>% 
         t() %>% as.data.frame() %>% 
@@ -718,15 +738,23 @@ ct_plot_overlay <- function(ct_dataframe,
         color_set <- "Brewer set 1"
     }
     
-    if(length(UniqueGroups) > length(UniqueAES)){
-        warning(paste("You have requested", length(UniqueGroups),
-                      "unique data sets but only", 
-                      length(UniqueAES), 
-                      "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
-                call. = FALSE)
-        message(paste("Unique datasets:", str_comma(UniqueGroups)))
-        message(paste("Unique aesthetics:", str_comma(UniqueAES)))
-    }
+    # NOTE TO SELF: I've been trying to think of a clearer way to indicate to
+    # people when they need to specify more aesthetics and just haven't come up
+    # with a strategy I like. I think the current warning i'm giving is too
+    # cautious, which means that people will ignore it much of the time. For
+    # now, I'm going to just tell them how many aesthetics they've selected
+    # compared to how many unique groups and see whether that's sufficient
+    # warning.
+    
+    # if(length(UniqueGroups) > length(UniqueAES)){
+    #     warning(paste("You have requested", length(UniqueGroups),
+    #                   "unique data sets but only", 
+    #                   length(UniqueAES), 
+    #                   "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
+    #             call. = FALSE)
+    message(paste("Unique datasets:", str_comma(UniqueGroups)))
+    message(paste("Unique aesthetics:", str_comma(UniqueAES)))
+    # }
     
     # If there are multiple values in linetype_column but user has only listed
     # the default "solid" for linetypes, then warn the user that they might want
@@ -800,22 +828,32 @@ ct_plot_overlay <- function(ct_dataframe,
                                               obs_transparency, 1), 
                                show.legend = FALSE)
             } else {
-                A <- A +
-                    geom_point(data = obs_data, inherit.aes = FALSE,
-                               switch(AES, 
-                                      "color-linetype" = aes(x = Time, y = Conc,
-                                                             group = Group,
-                                                             color = colorBy_column), 
-                                      "linetype" = aes(x = Time, y = Conc, 
-                                                       group = Group), 
-                                      "color" = aes(x = Time, y = Conc,
-                                                    group = Group,
-                                                    color = colorBy_column), 
-                                      "none" = aes(x = Time, y = Conc, 
-                                                   group = Group)),
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
-                               show.legend = FALSE)
+                if(is.na(obs_color)){
+                    A <- A +
+                        geom_point(data = obs_data, inherit.aes = FALSE,
+                                   switch(AES, 
+                                          "color-linetype" = aes(x = Time, y = Conc,
+                                                                 group = Group,
+                                                                 color = colorBy_column), 
+                                          "linetype" = aes(x = Time, y = Conc, 
+                                                           group = Group), 
+                                          "color" = aes(x = Time, y = Conc,
+                                                        group = Group,
+                                                        color = colorBy_column), 
+                                          "none" = aes(x = Time, y = Conc, 
+                                                       group = Group)),
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   show.legend = FALSE)
+                } else {
+                    A <- A +
+                        geom_point(data = obs_data, inherit.aes = FALSE,
+                                   aes(x = Time, y = Conc,group = Group),
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   color = obs_color,
+                                   show.legend = FALSE)
+                }
             }
         }
     }
@@ -861,23 +899,34 @@ ct_plot_overlay <- function(ct_dataframe,
                                show.legend = FALSE) 
                 
             } else {
-                A <- A + 
-                    geom_point(data = obs_data, 
-                               switch(AES, 
-                                      "color-linetype" = aes(x = Time, y = Conc,
-                                                             group = Group,
-                                                             color = colorBy_column), 
-                                      "linetype" = aes(x = Time, y = Conc,
-                                                       group = Group),
-                                      "color" = aes(x = Time, y = Conc,
-                                                    group = Group,
-                                                    color = colorBy_column),
-                                      "none" = aes(x = Time, y = Conc,
-                                                   group = Group)),
-                               inherit.aes = FALSE, 
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
-                               show.legend = FALSE) 
+                if(is.na(obs_color)){
+                    A <- A + 
+                        geom_point(data = obs_data, 
+                                   switch(AES, 
+                                          "color-linetype" = aes(x = Time, y = Conc,
+                                                                 group = Group,
+                                                                 color = colorBy_column), 
+                                          "linetype" = aes(x = Time, y = Conc,
+                                                           group = Group),
+                                          "color" = aes(x = Time, y = Conc,
+                                                        group = Group,
+                                                        color = colorBy_column),
+                                          "none" = aes(x = Time, y = Conc,
+                                                       group = Group)),
+                                   inherit.aes = FALSE, 
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   show.legend = FALSE) 
+                } else {
+                    A <- A + 
+                        geom_point(data = obs_data, 
+                                   aes(x = Time, y = Conc, group = Group), 
+                                   inherit.aes = FALSE, 
+                                   alpha = ifelse(complete.cases(obs_transparency), 
+                                                  obs_transparency, 1), 
+                                   color = obs_color,
+                                   show.legend = FALSE)    
+                }
             }
         }
     }
@@ -956,10 +1005,16 @@ ct_plot_overlay <- function(ct_dataframe,
                                          "cadetblue", "dodgerblue3", "royalblue4",
                                          "darkorchid4"))
         
-        blueGreen <- colorRampPalette(c("green3", "seagreen3", "cadetblue", 
-                                        "dodgerblue3", "royalblue4"))
+        blueGreen <- colorRampPalette(c("royalblue4", "dodgerblue3",
+                                        "cadetblue", "seagreen3", "green3"))
         
-        NumColorsNeeded <- sim_dataframe %>% pull(AESCols["color"]) %>% 
+        # "blues" is the 4th through 9th blues from grDevices::blues9, just to
+        # give credit where it's due
+        blues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
+                                    "#08519C", "#08306B"))
+        
+        NumColorsNeeded <- bind_rows(sim_dataframe, obs_data) %>%
+            pull(AESCols["color"]) %>% 
             unique() %>% length()
         
         # print(NumColorsNeeded)
@@ -1004,10 +1059,13 @@ ct_plot_overlay <- function(ct_dataframe,
                 }
                 
                 if(color_set == "blue-green"){
-                    A <- A + scale_color_manual(values = blueGreen(NumColors)) +
-                        scale_fill_manual(values = blueGreen(NumColors))
                     A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
                         scale_fill_manual(values = blueGreen(NumColorsNeeded))
+                }
+                
+                if(color_set == "blues"){
+                    A <- A + scale_color_manual(values = blues(NumColorsNeeded)) +
+                        scale_fill_manual(values = blues(NumColorsNeeded))
                 }
                 
                 if(color_set == "rainbow"){
@@ -1059,7 +1117,7 @@ ct_plot_overlay <- function(ct_dataframe,
     if(complete.cases(legend_label_linetype) && 
        legend_label_linetype == "none"){
         A <- A + labs(linetype = NULL)
-    } else {
+    } else if(as_label(linetype_column) != "<empty>"){
         A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
                                         "TRUE" = legend_label_linetype,
                                         "FALSE" = as_label(linetype_column)))
@@ -1093,14 +1151,14 @@ ct_plot_overlay <- function(ct_dataframe,
     
     ## Making semi-log graph ------------------------------------------------
     
-    B <- suppressMessages(
+    B <- suppressMessages(suppressWarnings(
         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
                           expand = expansion(mult = pad_y_num)) +
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 
                    "FALSE" = coord_cartesian(ylim = Ylim_log, 
                                              xlim = time_range_relative))
-    )
+    ))
     
     if(complete.cases(legend_position)){
         A <- A + theme(legend.position = legend_position)  

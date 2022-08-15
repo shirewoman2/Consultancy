@@ -42,15 +42,15 @@ the function \code{\link{extractConcTime}}. Not quoted.}
 
   \describe{
 
-  \item{"trial means"}{plots an opaque line for the mean data, lighter lines
-  for the mean of each trial of simulated data, and open circles for the
-  observed data. If an effector were present, lighter dashed lines indicate
-  the mean of each trial of simulated data in the presence of the effector.}
-
   \item{"percentiles"}{(default) plots an opaque line for the mean data,
   lighter lines for the 5th and 95th percentiles of the simulated data, and
   open circles for the observed data. If an effecter were present, the
   default is dashed lines for the data in the presence of an effector.}
+
+  \item{"trial means"}{plots an opaque line for the mean data, lighter lines
+  for the mean of each trial of simulated data, and open circles for the
+  observed data. If an effector were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the effector.}
 
   \item{"percentile ribbon"}{plots an opaque line for the mean data,
   transparent shading for the 5th to 95th percentiles of the simulated data,
@@ -75,7 +75,7 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   \emph{sharp}, makes it easy to see the defining characteristics of the
   data, and I recommend checking it out, even just for your own purposes of
   examining your data. If the color is too much for you but you like the
-  rest, try setting \code{obs_color = "none"}. -LS}}}
+  rest, try setting \code{obs_color = "none"}. -LSh}}}
 
 \item{subsection_ADAM}{ADAM model only: For ADAM model output, multiple types
 of data are available. Which of those concentration types do you want to
@@ -86,7 +86,8 @@ show? Options are whatever were available for that tissue, which could be
 compound in lumen" but is ignored when ct_dataframe isn't for ADAM data.}
 
 \item{mean_type}{graph "arithmetic" (default) or "geometric" means or
-"median" for median concentrations}
+"median" for median concentrations. If that option was not included in the
+output, you'll get a warning and the graph will include one that was.}
 
 \item{time_range}{time range to show relative to the start of the simulation.
   Options: \describe{
@@ -235,12 +236,12 @@ name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 become "midazolam". Set each compound to the name you'd prefer to see in
 your legend and Word output if you would like something different. For
-example, \code{prettify_compound_names = c("inhibitor" = "defartinib",
+example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
 "substrate" = "superstatin")}. Please note that "inhibitor" includes
 \emph{all} the effectors and effector metabolites present, so, if you're
 setting the effector name, you really should use something like this if
 you're including effector metabolites: \code{prettify_compound_names =
-c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
+c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
@@ -260,12 +261,12 @@ c("inhibitor" = "defartinib and 1-OH-defartinib", "substrate" =
   name will end in "- vertical"). This option, which was designed to create
   the vertically stacked version of a graph for a report and the horizontal,
   side-by-side version for a presentation, is a bit different from the others
-  since it will return two separate files. In the RStudio "Plots"
-  window, you'll only see the vertically stacked version. Setting
-  \code{fig_height} and \code{fig_width} will adjust only the dimensions of
-  the horizontal figure; the default values will be used for the vertical
-  one. If you request Word output, only the vertical plot will be saved in
-  Word format; the horizontal plot will be saved as a png file.}}}
+  since it will return two separate files. In the RStudio "Plots" window,
+  you'll only see the vertically stacked version. Setting \code{fig_height}
+  and \code{fig_width} will adjust only the dimensions of the horizontal
+  figure; the default values will be used for the vertical one. If you
+  request Word output, only the vertical plot will be saved in Word format;
+  the horizontal plot will be saved as a png file.}}}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if only outputting
@@ -288,39 +289,40 @@ your Documents folder.}
 \item{fig_width}{figure width in inches; default is 5}
 }
 \value{
-Output is a graph.
+Output is a ggplot2 graph or two ggplot2 graphs arranged with
+  ggpubr::ggarrange()
 }
 \description{
-Using observed and simulated concentration-time data, make
-publication-quality graphs that match the consultancy template formatting
-instructions. We've tried to include a fair number of options here for
-flexibility, but many of the function arguments are optional; most of the
-time, you'll get decent-looking graphs while only setting a minimal number of
-arguments. If you want to plot enzyme abundance data, please see
-\code{\link{enz_plot}}. \strong{A few notes:} \enumerate{\item{Not all
-substrate metabolites, inhibitors, or inhibitor metabolites are available in
-all tissues.}\item{When observed data are included in a simulator output
-file, because the simulator output does not explicitly say whether those
-observed data were in the presence of an effector, this function cannot tell
-the difference and will thus assume all observed data included in the
-simulator output were for the substrate in the \emph{absence} of any
-effector. It will further assume that the compound the observed data is for
-is the same as \code{compoundToExtract}. If you want to specify which
-compound the observed data were for and/or whether any effectors were
-present, please supply an observed data file to the argument
+Using observed and simulated concentration-time data generated from the
+function \code{\link{extractConcTime}}, make publication-quality graphs that
+match the consultancy template formatting instructions. We've tried to
+include a fair number of options here for flexibility, but many of the
+function arguments are optional; most of the time, you'll get decent-looking
+graphs while only setting a minimal number of arguments. If you want to plot
+enzyme abundance data, please see \code{\link{enz_plot}}. Please also see
+"Details" at the bottom of this help file for some general notes and advice
+on how to use this function most effectively to get the graph you want.
+}
+\details{
+\strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
+inhibitors, or inhibitor metabolites are available in all tissues. If it's
+not present in your Excel output, we can't graph it here.}\item{When observed
+data are included in a simulator output file, because the simulator output
+does not explicitly say whether those observed data were in the presence of
+an effector, this function cannot tell the difference and will thus assume
+all observed data included in the simulator output were for the substrate in
+the \emph{absence} of any effector. It will further assume that the compound
+the observed data is for is the same as \code{compoundToExtract}. If you want
+to specify which compound the observed data were for and/or whether any
+effectors were present, please supply an observed data file to the argument
 \code{obs_data_file}.} \item{If you attempt to use data generated by
 \code{\link{extractConcTime_mult}} here, you can get weird results if you're
 not careful to only include one tissue and one compound ID. If you see
-something odd, try including the legend to help decipher what might have gone
-awry.}}
+something odd, try including the legend with, e.g., \code{legend_position =
+"right"} to help decipher what might have gone awry.}}
 }
 \examples{
-# # Normal syntax with a fake file:
-# sim_data_file <- "../Example simulator output.xlsx"
-# obs_data_file <- "../fig1-242-06-001-MD - for XML conversion.xlsx"
-
-# However, since we can't load an Excel file as an example, here are
-# some data to play with:
+# Load some concentration-time data to play with:
 data(LMVct)
 
 ct_plot(ct_dataframe = LMVct)
@@ -329,7 +331,7 @@ ct_plot(ct_dataframe = LMVct)
 ct_plot(ct_dataframe = LMVct)
 
 # Perhaps you don't want to show *all* the data but instead want to
-# limit the time interval that is graphed. Use \code{time_range} here:
+# limit the time interval that is graphed. Use `time_range` here:
 ct_plot(ct_dataframe = LMVct, time_range = c(0, 24))
 
 # Or you can let it automatically calculate the time frame
