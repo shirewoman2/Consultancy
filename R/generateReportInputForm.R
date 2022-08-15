@@ -1,26 +1,18 @@
 #' Generate a form for entering data for a report
 #'
 #' Creates an Excel file with forms to fill out about observed data. Those forms
-#' can be fed into \code{\link{pksummary_table}} to automate some of the calculations
-#' for writing a report.
+#' can be fed into \code{\link{pksummary_table}} to automate some of the
+#' calculations for writing a report.
 #'
 #'
-#' \strong{A few notes:} \enumerate{ \item{This generates a warning that we're
-#' just not able to get rid of that says "Workbook has no sheets!" Please
-#' disregard that.} \item{This does not work on the SharePoint drive because R
-#' doesn't have permission to write there. Please set your working directory to
-#' a different location. It \emph{will} work on the Large File Store drive.}}
+#' This does not work on the SharePoint drive because R doesn't have permission
+#' to write there. Please set your working directory to a different location. It
+#' \emph{will} work on the Large File Store drive.
 #'
 #' The tabs in the Excel file this function creates are: \describe{
 #'
 #' \item{how to use this file}{Instructions for how to use the Excel template
 #' form.}
-#'
-#' \item{overall report info}{a form for entering overall data about the project
-#' -- information that will be consistent throughout the whole report such as
-#' the drug name and the complaint it is meant to treat. There should be only
-#' ONE copy of this tab when you're finished. You do \emph{not} need to fill
-#' this out for using the \code{\link{pksummary_table}} function.}
 #'
 #' \item{study info - no DDI}{a form for entering observed PK data about a
 #' clinical study that was \emph{not} a drug-drug interaction study. Make as
@@ -91,7 +83,7 @@ generateReportInputForm <- function(filename){
     
     # data(ReportInputForm)
     HowTo <- ReportInputForm[["how to use this file"]]
-    Overall <- ReportInputForm[["overall report info"]]
+    # Overall <- ReportInputForm[["overall report info"]]
     StudyNoDDI <- ReportInputForm[["study info - no DDI"]]
     StudyDDI <- ReportInputForm[["study info - DDI"]]
     
@@ -106,22 +98,24 @@ generateReportInputForm <- function(filename){
                  list(rows = 19, font = list(color = "red", bold = TRUE))
              ))
     
-    Overall <- Overall[2:nrow(Overall),]
-    formatXL(Overall %>% rename("Overall report information" = X1,
-                                "ignore" = X2, "_" = X3),
-             file = filename,
-             sheet = "overall report info",
-             colWidth = list(colNum = 1:3,
-                             width = c(75, 0, 30)),
-             styles = list(
-                 list(columns = 1, textposition = list(wrapping = TRUE)),
-                 list(rows = 0, font = list(bold = TRUE, size = 16)),
-                 list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
-                 list(rows = 1, font = list(italics = TRUE),
-                      textposition = list(wrapping = TRUE)),
-                 list(rows = 3, font = list(bold = TRUE),
-                      textposition = list(alignment = "middle"))
-             ))
+    ## Not including the "Overall" tab for now.
+    
+    # Overall <- Overall[2:nrow(Overall),]
+    # formatXL(Overall %>% rename("Overall report information" = X1,
+    #                             "ignore" = X2, "_" = X3),
+    #          file = filename,
+    #          sheet = "overall report info",
+    #          colWidth = list(colNum = 1:3,
+    #                          width = c(75, 0, 30)),
+    #          styles = list(
+    #              list(columns = 1, textposition = list(wrapping = TRUE)),
+    #              list(rows = 0, font = list(bold = TRUE, size = 16)),
+    #              list(rows = 0, columns = 3, font = list(color = "#FCFEFE")), # <- Closest I can get to white since, for some reason, "white" doesn't work and neither does the hex specification.
+    #              list(rows = 1, font = list(italics = TRUE),
+    #                   textposition = list(wrapping = TRUE)),
+    #              list(rows = 3, font = list(bold = TRUE),
+    #                   textposition = list(alignment = "middle"))
+    #          ))
     
     
     StudyNoDDI <- StudyNoDDI[2:nrow(StudyNoDDI), ]
@@ -136,7 +130,8 @@ generateReportInputForm <- function(filename){
                  
                  # simulated data section
                  list(rows = 0, font = list(bold = TRUE, size = 18)), 
-                 list(rows = c(1, 8), font = list(bold = TRUE, size = 12)), # "item", "value"
+                 list(rows = c(1, 8), font = list(bold = TRUE, size = 14), # This is actually both simulated and observed headings for "Item" and "Value"
+                      textposition = list(alignment = "middle")), 
                  list(rows = 2, columns = 3, textposition = list(wrapping = TRUE)),
                  
                  # observed data section
@@ -148,16 +143,16 @@ generateReportInputForm <- function(filename){
                  # Dose 1 data
                  list(rows = 13, columns = 1:3, 
                       font = list(bold = TRUE, size = 14), fill = "#DDEBF7"),
-                 list(rows = 14:24, columns = 1:3, fill = "#DDEBF7"),
+                 list(rows = 14:28, columns = 1:3, fill = "#DDEBF7"),
                  
                  # Multiple-dose data
-                 list(rows = 26, columns = 1:3, 
+                 list(rows = 30, columns = 1:3, 
                       font = list(bold = TRUE, size = 14), fill = "#E2EFDA"),
-                 list(rows = 27:37, columns = 1:3, fill = "#E2EFDA")
+                 list(rows = 31:41, columns = 1:3, fill = "#E2EFDA")
              ))
     
     StudyDDI <- StudyDDI[2:nrow(StudyDDI), ]
-    formatXL(StudyDDI %>% rename("Simulated data (DDI)" = X1,
+    formatXL(StudyDDI %>% rename("Simulated data with DDI" = X1,
                                  "ignore" = X2, "_" = X3, "__" = X4,
                                  "ignore2" = X5, "___" = X6),
              file = filename,
@@ -170,7 +165,7 @@ generateReportInputForm <- function(filename){
                  
                  # simulated data section
                  list(rows = 0, font = list(bold = TRUE, size = 18)), 
-                 list(rows = c(1, 8), font = list(bold = TRUE, size = 12), # "item", "value"
+                 list(rows = c(1, 8), font = list(bold = TRUE, size = 14), # This is actually both simulated and observed headings for "Item" and "Value"
                       textposition = list(alignment = "middle")),
                  list(rows = 2, columns = 3, textposition = list(wrapping = TRUE)),
                  
@@ -183,16 +178,16 @@ generateReportInputForm <- function(filename){
                  # Dose 1 data
                  list(rows = 14, columns = 1:6, 
                       font = list(bold = TRUE, size = 14), fill = "#DDEBF7"),
-                 list(rows = c(15, 28), columns = 1:6, 
+                 list(rows = c(15, 32), columns = 1:6, 
                       font = list(bold = TRUE), fill = "#DDEBF7"),
-                 list(rows = c(16:27, 29:34), columns = 1:6, fill = "#DDEBF7"),
+                 list(rows = c(16:31, 33:42), columns = 1:6, fill = "#DDEBF7"),
                  
                  # Multiple-dose data
-                 list(rows = 37, columns = 1:6, 
+                 list(rows = 45, columns = 1:6, 
                       font = list(bold = TRUE, size = 14), fill = "#E2EFDA"),
-                 list(rows = c(38, 51), columns = 1:6, 
+                 list(rows = c(46, 59), columns = 1:6, 
                       font = list(bold = TRUE), fill = "#E2EFDA"),
-                 list(rows = c(39:50, 52:57), columns = 1:6, fill = "#E2EFDA")
+                 list(rows = c(47:58, 60:67), columns = 1:6, fill = "#E2EFDA")
              ))
     
     setwd(CurDir)

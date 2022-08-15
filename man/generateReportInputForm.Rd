@@ -17,26 +17,18 @@ This does not return an R object; it saves an Excel file that serves
 }
 \description{
 Creates an Excel file with forms to fill out about observed data. Those forms
-can be fed into \code{\link{pksummary_table}} to automate some of the calculations
-for writing a report.
+can be fed into \code{\link{pksummary_table}} to automate some of the
+calculations for writing a report.
 }
 \details{
-\strong{A few notes:} \enumerate{ \item{This generates a warning that we're
-just not able to get rid of that says "Workbook has no sheets!" Please
-disregard that.} \item{This does not work on the SharePoint drive because R
-doesn't have permission to write there. Please set your working directory to
-a different location. It \emph{will} work on the Large File Store drive.}}
+This does not work on the SharePoint drive because R doesn't have permission
+to write there. Please set your working directory to a different location. It
+\emph{will} work on the Large File Store drive.
 
 The tabs in the Excel file this function creates are: \describe{
 
 \item{how to use this file}{Instructions for how to use the Excel template
 form.}
-
-\item{overall report info}{a form for entering overall data about the project
--- information that will be consistent throughout the whole report such as
-the drug name and the complaint it is meant to treat. There should be only
-ONE copy of this tab when you're finished. You do \emph{not} need to fill
-this out for using the \code{\link{pksummary_table}} function.}
 
 \item{study info - no DDI}{a form for entering observed PK data about a
 clinical study that was \emph{not} a drug-drug interaction study. Make as
