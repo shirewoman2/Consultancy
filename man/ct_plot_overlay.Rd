@@ -111,7 +111,15 @@ label for this legend item, set this to "none".}
   that, that's when this palette is most useful. It's \emph{not} very useful
   when you only need a couple of colors.}
 
-  \item{"blue-green"}{a set of blues and greens}
+  \item{"blue-green"}{a set of blues fading into greens. This palette can be
+  especially useful if you are comparing a systematic change in some
+  continuous variable -- for example, increasing dose or predicting how a
+  change in intrinsic solubility will affect concentration-time profiles --
+  because the direction of the trend will be clear.}
+
+  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
@@ -128,7 +136,10 @@ label for this legend item, set this to "none".}
   which item in \code{colorBy_column} gets which color, you can supply a
   named vector. For example, if you're coloring the lines by the compound ID,
   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
-  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}}}}
+  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+  like help creating a specific gradation of colors, please talk to a member
+  of the R Working Group about how to do that using
+  \link{grDevices::colorRampPalette}.}}}
 
 \item{obs_transparency}{Optionally make the observed data points
 semi-transparent, which can be helpful when there are numerous
