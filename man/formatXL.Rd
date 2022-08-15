@@ -112,15 +112,12 @@ a better way of doing things. If this isn't working, check that your lists
 are laid out correctly and named correctly.
 }
 \details{
-If this will create a new Excel file or if your current Excel file
-  has no other sheets but this one, this will generate a message "Workbook
-  has no sheets!" that I \emph{cannot} seem to get rid of.
-
-  \strong{COMMON ERRORS or ERROR MESSAGES} since this is a tad (ok, a LOT)
-  glitchy: \code{styles} is meant to accommodate multiple sets of formatting,
-  so you have to have \code{styles} be a list but then also each set of cells
-  that you're formatting must also be a list. This means that styles should
-  probably look like this in your code: \code{styles = list(list(...))}
+\strong{COMMON ERRORS or ERROR MESSAGES} since this is a tad (ok, a
+  LOT) glitchy: \code{styles} is meant to accommodate multiple sets of
+  formatting, so you have to have \code{styles} be a list but then also each
+  set of cells that you're formatting must also be a list. This means that
+  styles should probably look like this in your code: \code{styles =
+  list(list(...))}
 
   If you set a style for a cell and then set another style for that same
   cell, the final style will be the 2nd one, not a combination of the two.
