@@ -179,12 +179,12 @@
 #'  example, "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam"
 #'  will become "midazolam". Set each compound to the name you'd prefer to see
 #'  in your column titles if you would like something different. For example,
-#'  \code{prettify_compound_names = c("inhibitor" = "teeswiftinib", "substrate"
+#'  \code{prettify_compound_names = c("inhibitor" = "teeswiftavir", "substrate"
 #'  = "superstatin")}. Please note that "inhibitor" includes \emph{all} the
 #'  effectors and effector metabolites present, so, if you're setting the
 #'  effector name, you really should use something like this if you're including
 #'  effector metabolites: \code{prettify_compound_names = c("inhibitor" =
-#'  "teeswiftinib and 1-OH-teeswiftinib", "substrate" = "superstatin")}.
+#'  "teeswiftavir and 1-OH-teeswiftavir", "substrate" = "superstatin")}.
 #'@param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'  output a data.frame that lists exactly where the data were pulled from the
 #'  simulator output file. Useful for QCing.
@@ -240,11 +240,11 @@ pksummary_table <- function(sim_data_file = NA,
                             PKparameters = NA,
                             PKorder = "default", 
                             sheet_PKparameters = NA,
-                            mean_type = NA,
-                            tissue = "plasma",
                             observed_PK = NA, 
                             report_input_file = NA,
                             sheet_report = NA,
+                            mean_type = NA,
+                            tissue = "plasma",
                             includeCV = TRUE,
                             includeConfInt = TRUE,
                             includePerc = FALSE,

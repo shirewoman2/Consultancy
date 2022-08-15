@@ -6,10 +6,10 @@
 \usage{
 pksummary_mult(
   sim_data_files = NA,
-  observed_PK = NA,
   PKparameters = NA,
   PKorder = "default",
   sheet_PKparameters = NA,
+  observed_PK = NA,
   mean_type = NA,
   tissue = "plasma",
   includeCV = TRUE,
@@ -29,20 +29,6 @@ pksummary_mult(
 want all the Excel files in the current folder, \code{sim_data_files = NA}.
 If you supply data for \code{observed_PK}, anything you enter here will be
 ignored because the file names will be pulled from there instead.}
-
-\item{observed_PK}{(optional) If you have a data.frame, a named numeric
-vector, or an Excel or csv file with observed PK parameters, supply the full
-file name in quotes or the data.frame or vector here, and the
-simulated-to-observed mean ratios will be calculated. If you supply an Excel
-file, it should have only one tab. We prefer supplying csv files here since
-they're faster to read in anyway. The supplied data.frame or file
-\emph{must} include columns for the simulator output Excel file (title this
-"File") and each of the PK parameters you would like to compare, and those
-column names \emph{must} be among the PK parameter options listed in
-\code{PKParameterDefinitions}. If you would like the output table to include
-the observed data CV for any of the parameters, add "_CV" to the end of the
-parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
-this help file for examples of how to set this up.}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
  vector. \itemize{
@@ -84,6 +70,20 @@ like the order to match the order you specified with the argument
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab here.
 Most of the time, this should be left as NA.}
+
+\item{observed_PK}{(optional) If you have a data.frame, a named numeric
+vector, or an Excel or csv file with observed PK parameters, supply the full
+file name in quotes or the data.frame or vector here, and the
+simulated-to-observed mean ratios will be calculated. If you supply an Excel
+file, it should have only one tab. We prefer supplying csv files here since
+they're faster to read in anyway. The supplied data.frame or file
+\emph{must} include columns for the simulator output Excel file (title this
+"File") and each of the PK parameters you would like to compare, and those
+column names \emph{must} be among the PK parameter options listed in
+\code{PKParameterDefinitions}. If you would like the output table to include
+the observed data CV for any of the parameters, add "_CV" to the end of the
+parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
+this help file for examples of how to set this up.}
 
 \item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.
 If you supplied a report input form, only specify this if you'd like to

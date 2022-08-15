@@ -9,11 +9,11 @@ pksummary_table(
   PKparameters = NA,
   PKorder = "default",
   sheet_PKparameters = NA,
-  mean_type = NA,
-  tissue = "plasma",
   observed_PK = NA,
   report_input_file = NA,
   sheet_report = NA,
+  mean_type = NA,
+  tissue = "plasma",
   includeCV = TRUE,
   includeConfInt = TRUE,
   includePerc = FALSE,
@@ -72,12 +72,6 @@ like the order to match the order you specified with the argument
 pulled from a specific tab in the simulator output file, list that tab here.
 Most of the time, this should be left as NA.}
 
-\item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.}
-
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
-
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
 vector, or an Excel or csv file with observed PK parameters, supply the full
 file name in quotes or the data.frame or vector here, and the
@@ -104,6 +98,12 @@ information about the study, e.g., "study info - DDI" or "study info - no
 DDI" if you haven't renamed the tab. This only applies if you have supplied
 an Excel file name for \code{report_input_file}. If you're supplying a
 simulator output Excel file for \code{sim_data_file}, ignore this.}
+
+\item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.}
+
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" (default) or "blood" (possible but not as thoroughly
+tested).}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV in
 the table}
@@ -143,12 +143,12 @@ will make the name of those compounds something more human readable. For
 example, "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam"
 will become "midazolam". Set each compound to the name you'd prefer to see
 in your column titles if you would like something different. For example,
-\code{prettify_compound_names = c("inhibitor" = "teeswiftinib", "substrate"
+\code{prettify_compound_names = c("inhibitor" = "teeswiftavir", "substrate"
 = "superstatin")}. Please note that "inhibitor" includes \emph{all} the
 effectors and effector metabolites present, so, if you're setting the
 effector name, you really should use something like this if you're including
 effector metabolites: \code{prettify_compound_names = c("inhibitor" =
-"teeswiftinib and 1-OH-teeswiftinib", "substrate" = "superstatin")}.}
+"teeswiftavir and 1-OH-teeswiftavir", "substrate" = "superstatin")}.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the

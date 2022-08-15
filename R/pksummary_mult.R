@@ -126,10 +126,10 @@
 #'
  
 pksummary_mult <- function(sim_data_files = NA, 
-                           observed_PK = NA,
                            PKparameters = NA,
                            PKorder = "default", 
                            sheet_PKparameters = NA, 
+                           observed_PK = NA,
                            mean_type = NA, 
                            tissue = "plasma", 
                            includeCV = TRUE, 
