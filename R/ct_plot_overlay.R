@@ -219,7 +219,7 @@
 #'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
-#'   \link{grDevices::colorRampPalette}.}}
+#'   \link{colorRampPalette}.}}
 #'
 #' @param obs_transparency Optionally make the observed data points
 #'   semi-transparent, which can be helpful when there are numerous
