@@ -52,7 +52,7 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
 
 ```
 
-*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r str_comma(sim_data_files)`* 
+*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r str_comma(basename(sim_data_files))`* 
 
 
 
