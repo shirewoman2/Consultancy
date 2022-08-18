@@ -149,8 +149,8 @@ create_dose_rows <- function(dose_interval = 24,
     
     if(length(SubjIDs) > 0){
         Out <- data.frame(SubjectID = SubjIDs,
-                          Time = rep(DoseTimes, length(SubjIDs)), 
-                          Dose = rep(dose_amount, length(SubjIDs)))
+                          Time = rep(DoseTimes, each = length(SubjIDs)), 
+                          Dose = rep(dose_amount, each = length(SubjIDs)))
     }
     
     
@@ -161,6 +161,15 @@ create_dose_rows <- function(dose_interval = 24,
             # This is when they HAVE specified a file extension. If they
             # specified a file extension that wasn't csv, make that file
             # extension be .csv
+            
+            if(str_detect(save_output, "\\.csv") == FALSE){
+                # Give a warning if they used any file extension other than csv
+                # that their file will be saved as csv.
+                warning(paste0("You supplied a file extension other than csv, but this function only supports csv output. Your file will be saved as `", 
+                              sub("\\..*", ".csv", save_output), "`."), 
+                        call. = FALSE)
+            }
+            
             save_output <- sub("\\..*", ".csv", save_output)
         } else {
             # If they didn't specify a file extension at all, make it .csv. 
