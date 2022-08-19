@@ -14,8 +14,8 @@
 #' having to do with subjects must have that same number of values or must have
 #' only one value, which will be repeated as needed. Any time you need to
 #' specify multiple values, you can  make use of the R function
-#' \code{\link{rep}} here to repeat elements of a vector. (See the R coding tip
-#' for the argument \code{compound_dose_amount} for an example.)
+#' \code{\link{rep}} to repeat elements of a vector. (See the R coding tip for
+#' the argument \code{compound_dose_amount} for an example.)
 #'
 #' @param dose_interval the dosing interval in hours. Default is 24 for a QD
 #'   dosing regimen.
@@ -32,8 +32,9 @@
 #'   "Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
 #'   case sensitive. If you list more than one compound, you must also list more
 #'   than one \code{compound_route}, \code{compound_dose_unit}, and
-#'   \code{compound_dose_amount}.
-#' @param compound_admin_route the route of administration. Options are "Oral"
+#'   \code{compound_dose_amount} or list just one of each with the understanding
+#'   that they will all be the same.
+#' @param compound_route the route of administration. Options are "Oral"
 #'   (default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
 #'   "SC-Mechanistic", or "Auto-detect". Not case sensitive.
 #' @param compound_dose_unit the unit of dosing. Options are "mg" (default),
@@ -224,8 +225,12 @@ create_doses <- function(dose_interval = 24,
     CmpdInfo <- data.frame(Compound_ID = compound_ID, 
                            Compound_route = compound_route,
                            Compound_dose_unit = compound_dose_unit,
-                           Compound_dose_amount = compound_dose_amount) %>% 
-        mutate(Time = DoseTimes)
+                           Compound_dose_amount = compound_dose_amount) 
+    if(nrow(CmpdInfo) == length(DoseTimes)){
+        CmpdInfo <- CmpdInfo %>% mutate(Time = DoseTimes)
+    } else {
+        CmpdInfo <- expand_grid(CmpdInfo, data.frame(Time = DoseTimes))
+    }
     
     # Joining the two data.frames.
     Info <- expand_grid(SubjInfo, CmpdInfo)

@@ -40,19 +40,26 @@ subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 \item{compound_ID}{specify the compound that's being dosed. Options are
 "Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
 case sensitive. If you list more than one compound, you must also list more
-than one \code{compound_route}, \code{compound_dose_unit}, and \code{compound_dose_amount}.}
+than one \code{compound_route}, \code{compound_dose_unit}, and
+\code{compound_dose_amount} or list just one of each with the understanding
+that they will all be the same.}
+
+\item{compound_route}{the route of administration. Options are "Oral"
+(default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
+"SC-Mechanistic", or "Auto-detect". Not case sensitive.}
 
 \item{compound_dose_unit}{the unit of dosing. Options are "mg" (default),
 "mg/m2", or "mg/kg".}
 
 \item{compound_dose_amount}{the amount of the dose. If this amount varies,
 please include one dose amount for each time. For example:
-\code{compound_dose_amount = c(100, 50, 50)} will generate doses of 100 mg for the
-first dose and then 50 mg for the next two doses. \strong{An R coding tip:}
-You don't \emph{have} to list everything multiple times; you can use the
-function \code{\link{rep}} to repeat elements. For example, here's how you
-could specify that the 1st dose should be 100 mg but the next 10 doses
-should be 50: \code{compound_dose_amount = c(100, rep(50, 10))}}
+\code{compound_dose_amount = c(100, 50, 50)} will generate doses of 100 mg
+for the first dose and then 50 mg for the next two doses. \strong{An R
+coding tip:} You don't \emph{have} to list everything multiple times; you
+can use the function \code{\link{rep}} to repeat elements. For example,
+here's how you could specify that the 1st dose should be 100 mg but the
+next 10 doses should be 50: \code{compound_dose_amount = c(100, rep(50,
+10))}}
 
 \item{subj_ID}{optionally specify subject IDs as, e.g., \code{subj_ID =
 c("101-001", "101-002", "101-003")}.}
@@ -68,10 +75,6 @@ c("101-001", "101-002", "101-003")}.}
 \item{save_output}{the file name to use for saving the output as a csv; if
 left as NA, this will generate a data.frame in R but no output will be
 saved.}
-
-\item{compound_admin_route}{the route of administration. Options are "Oral"
-(default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
-"SC-Mechanistic", or "Auto-detect". Not case sensitive.}
 }
 \value{
 
@@ -79,7 +82,7 @@ saved.}
 \description{
 \code{create_doses} generates a data.frame of dosing times and amounts -- one
 for every subject if subject IDs are provided -- based on the dosing regimen
-used. This is meant for generating XML files for use in Phoenix WNL.
+specified. This is meant for generating XML files for use in Phoenix WNL.
 \strong{Special notes for when you have more than one value for some items:}
 If you have multiple values for anything having to do with the compound --
 the compound ID, administration route, dose unit, or dose amount (all have
@@ -91,8 +94,8 @@ height, or sex (all have the prefix "subj_") -- then all the other arguments
 having to do with subjects must have that same number of values or must have
 only one value, which will be repeated as needed. Any time you need to
 specify multiple values, you can  make use of the R function
-\code{\link{rep}} here to repeat elements of a vector. (See the R coding tip
-for the argument \code{compound_dose_amount} for an example.)
+\code{\link{rep}} to repeat elements of a vector. (See the R coding tip for
+the argument \code{compound_dose_amount} for an example.)
 }
 \examples{
 

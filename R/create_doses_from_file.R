@@ -3,9 +3,22 @@
 #'
 #' \code{create_doses_from_file} uses an Excel or csv file with subject
 #' information to generate a data.frame of dosing times and amounts -- one for
-#' every subject if subject IDs are provided -- based on the dosing regimen
-#' used. This is meant for generating XML files for use in Phoenix WNL. 
+#' every subject -- based on the dosing regimen specified. WARNING: This doesn't
+#' work when there are spaces in the column names in the study file! (I'm looking
+#' into whether there's a way around that. -LSh) This is meant for generating
+#' XML files for use in Phoenix WNL.\strong{Special notes for when you have more
+#' than one value for some items:} If you have multiple values for anything
+#' having to do with the compound -- the compound ID, administration route, dose
+#' unit, or dose amount (all have the prefix "compound_") -- then all the other
+#' arguments having to do with compounds must have that same number of values or
+#' must have only one value, which will be repeated as needed. Any time you need
+#' to specify multiple values, you can  make use of the R function
+#' \code{\link{rep}} to repeat elements of a vector. (See the R coding tip for
+#' the argument \code{compound_dose_amount} for an example.)
 #'
+#' @param study_file optionally specify a file containing study information.
+#'   This will be used for determining subject IDs, ages, weights, heights, and
+#'   sexes for the subjects who will be dosed.
 #' @param dose_interval the dosing interval in hours. Default is 24 for a QD
 #'   dosing regimen.
 #' @param num_doses the number of doses to generate. If this is left as NA, then
@@ -17,65 +30,36 @@
 #'   subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 #'   180, 192)}; if this is filled out, values in \code{dose_interval},
 #'   \code{num_doses}, and \code{end_time} will all be ignored.
-#' @param study_file optionally specify a file containing study information.
-#'   This will be used for determining: \itemize{
-#'
-#'   \item{subject IDs,}
-#'
-#'   \item{compound IDs,}
-#'
-#'   \item{routes of administration,}
-#'
-#'   \item{dose units,}
-#'
-#'   \item{dose amounts,}
-#'
-#'   \item{ages,}
-#'
-#'   \item{weights,}
-#'
-#'   \item{heights,}
-#'
-#'   \item{and sexes}} for the subjects who will be dosed. If a study file is
-#'   specified, the values for this information will \emph{only} be taken from
-#'   the file, so you \emph{must} use unquoted column titles for the arguments
-#'   for \code{subj_ID}, \code{compound}, \code{admin_route}, \code{dose_unit},
-#'   \code{dose_amount}, \code{subj_age}, \code{subj_weight},
-#'   \code{subj_height}, and \code{subj_sex}.
-#' @param subj_ID optionally specify subject IDs as a) an unquoted column name
-#'   in \code{study_file} or b) a vector, e.g., \code{subj_ID = c("101-001",
-#'   "101-002", "101-003")}
-#' @param compound optionally specify the compound that's being dosed as a) an
-#'   unquoted column name in \code{study_file} or b) a vector. Options are
-#'   "Substrate" (default if unspecified), "Inhibitor 1", "Inhibitor 2", or
-#'   "Inhibitor 3". Not case sensitive.
-#' @param admin_route optionally specify the route of administration as a) an
-#'   unquoted column name in \code{study_file} or b) a vector. Options are
-#'   "Oral" (default if unspecified), "Intravenous", "Dermal", "Inhaled",
-#'   "SC-First Order", "SC-Mechanistic", or "Auto-detect". Not case sensitive.
-#' @param dose_unit the unit of dosing. Options are "mg" (default), "mg/m2", or
-#'   "mg/kg".
-#' @param dose_amount the amount of the dose (units are not included). If this
-#'   amount varies, please use the \code{custom_dosing_schedule} option and
-#'   include one dose amount for each time. For example:
-#'   \code{custom_dosing_schedule = c(0, 24, 48), dose_amount = c(100, 50, 50)}
-#'   will generate doses of 100 mg at t = 0 and then 50 mg at t = 24 and 48
-#'   hours.
-#' @param subj_age age (years); either list them manually, enclosed in
-#'   \code{c(...)} if there's more than one, or specify the unquoted name of the
-#'   column in \code{study_file} to use. Example of input if you specify this
-#'   manually: \code{subj_age = c(25, 67, 45)}. Example of input if you are
-#'   instead specifying which column in study_file to use: \code{subj_age = Age}
-#' @param subj_weight weight (kg); either specify -- unquoted -- which column in
-#'   \code{study_file} to use or list specific numeric weights, enclosing
-#'   multiple weights with \code{c(...)}. Example of input if you specify this
-#'   manually: \code{subj_weight = c(72, 87, 91)}. Example of input if you are
-#'   instead specifying which column in study_file to use: \code{subj_weight =
-#'   SubjWt}
-#' @param subj_height height (cm)
-#' @param subj_sex sex; options are "F" or "M"
-#' @param subjID_column which column in \code{study_file} contains the subject
-#'   IDs; not quoted. This is the only column that matters in \code{study_file}.
+#' @param compound_ID specify the compound that's being dosed. Options are
+#'   "Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
+#'   case sensitive. If you list more than one compound, you must also list more
+#'   than one \code{compound_route}, \code{compound_dose_unit}, and
+#'   \code{compound_dose_amount} or list just one of each with the understanding
+#'   that they will all be the same.
+#' @param compound_route the route of administration. Options are "Oral"
+#'   (default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
+#'   "SC-Mechanistic", or "Auto-detect". Not case sensitive.
+#' @param compound_dose_unit the unit of dosing. Options are "mg" (default),
+#'   "mg/m2", or "mg/kg".
+#' @param compound_dose_amount the amount of the dose. If this amount varies,
+#'   please include one dose amount for each time. For example:
+#'   \code{compound_dose_amount = c(100, 50, 50)} will generate doses of 100 mg
+#'   for the first dose and then 50 mg for the next two doses. \strong{An R
+#'   coding tip:} You don't \emph{have} to list everything multiple times; you
+#'   can use the function \code{\link{rep}} to repeat elements. For example,
+#'   here's how you could specify that the 1st dose should be 100 mg but the
+#'   next 10 doses should be 50: \code{compound_dose_amount = c(100, rep(50,
+#'   10))}
+#' @param subj_ID_column the name of the column in \code{study_file} that
+#'   contains subject IDs, unquoted
+#' @param subj_age_column the name of the column in \code{study_file} that
+#'   contains the subject age (years), unquoted (optional)
+#' @param subj_weight_column the name of the column in \code{study_file} that
+#'   contains the subject weight (kg), unquoted (optional)
+#' @param subj_height_column the name of the column in \code{study_file} that
+#'   contains the subject height (cm), unquoted (optional)
+#' @param subj_sex_column the name of the column in \code{study_file} that
+#'   contains the subject sex, unquoted; options are "F" or "M" (optional)
 #' @param save_output the file name to use for saving the output as a csv; if
 #'   left as NA, this will generate a data.frame in R but no output will be
 #'   saved.
@@ -86,41 +70,37 @@
 #' @examples
 #'
 #' # QD dosing regimen of 100 mg
-#' create_dose_rows(dose_interval = 24, num_doses = 4)
+#' create_dose_rows(study_file = "My dose info.csv",
+#'                  dose_interval = 24, num_doses = 4,
+#'                  subj_ID_column = Subject)
 #'
-#' # QD dosing regimen of 100 mg for subjects A, B, and C
-#' create_dose_rows(dose_interval = 24, num_doses = 4,
-#'                  subjIDs = c("A", "B", "C"))
-#'
-#' # QD dosing regimen of 100 mg for subjects A, B, and C and save output
-#' create_dose_rows(dose_interval = 24, num_doses = 4,
-#'                  subjIDs = c("A", "B", "C"),
-#'                  save_output = "My doses.csv")
-#'
-#' # Custom dosing regimen for subjects A, B, and C
-#' create_dose_rows(custom_dosing_schedule = c(0, 12, 24, 48, 92, 168),
-#'                  subjIDs = c("A", "B", "C"))
+#' # Please see more examples with the function "create_doses".
 #'
 #'                   
 
-create_dose_rows <- function(dose_interval = 24, 
-                             num_doses = NA,
-                             end_time = NA,
-                             custom_dosing_schedule = NA,
-                             study_file = NA,
-                             subj_ID = NA,
-                             compound = "Substrate",
-                             admin_route = "Oral",
-                             dose_unit = NA,
-                             dose_amount = 100,
-                             subj_age = NA,
-                             subj_weight = NA, 
-                             subj_height = NA,
-                             subj_sex = NA,
-                             subjIDs = NA,
-                             save_output = NA){
+create_doses_from_file <- function(study_file,
+                                   dose_interval = 24, 
+                                   num_doses = NA,
+                                   end_time = NA,
+                                   custom_dosing_schedule = NA,
+                                   compound_ID = "Substrate",
+                                   compound_route = "Oral",
+                                   compound_dose_unit = "mg",
+                                   compound_dose_amount = 100,
+                                   subj_ID_column,
+                                   subj_age_column,
+                                   subj_weight_column, 
+                                   subj_height_column,
+                                   subj_sex_column,
+                                   save_output = NA){
     
     # Error catching ---------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+             call. = FALSE)
+    }
+    
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
@@ -158,99 +138,69 @@ create_dose_rows <- function(dose_interval = 24,
         warning("You have supplied values for both `num_doses` and `end_time`. We will use the number of doses requested and ignore anything specified for the end time of dosing.")
     }
     
-    # Fixing any case issues w/compound argument
-    compound <- str_to_title(compound)
-    
-    if(any(compound %in% c("Substrate", "Inhibitor 1", "Inhibitor 2",
-                           "Inhibitor 3") == FALSE)){
-        stop("The entry for the argument `compound` is incorrect. The only options for compound are `Substrate`, `Inhiitor `, `Inhibitor 2`, or `Inhibitor 3`.", 
-             call. = FALSE)
-    }
-    
-    
     # Main body of function --------------------------------------------------
     
     ## Read in the existing subject data if the user provided a study_file -----
-    if(complete.cases(study_file) && str_detect(study_file, "csv$")){
+    if(str_detect(study_file, "csv$")){
         StudyDF <- read.csv(study_file)
-    } else if(complete.cases(study_file) && str_detect(study_file, "xlsx$")){
+    } else if(str_detect(study_file, "xlsx$")){
         StudyDF <- xlsx::read.xlsx(study_file, sheetIndex = 1)
-    } else if(complete.cases(study_file)){
-        warning("The `study_file` must be a csv or Excel file, which doesn't appear to be the case here. No subject IDs will be added to your dose rows.")
-        StudyDF <- data.frame()
     } else {
-        StudyDF <- data.frame()
+        stop("You must supply a study file that ends in either .csv or .xlsx")
     }
     
-    ## Setting up subjID_column ---------------------------------------------
-    subjID_column <- rlang::enquo(subjID_column)
-    
-    if(as_label(subjID_column) != "<empty>"){
-        StudyDF <- StudyDF %>% mutate(subjID_column = {{subjID_column}})
-        SubjIDs <- unique(StudyDF$subjID_column)
+    ## Setting up subject info ---------------------------------------------
+    subj_ID_column <- rlang::enquo(subj_ID_column)
+    if(as_label(subj_ID_column) != "<empty>"){
+        subj_ID <- StudyDF %>% pull({{subj_ID_column}})
     } else {
-        
-        if(complete.cases(study_file)){
-            warning("You supplied a file for `study_file` but did not specify which column contains the subject IDs. No subject IDs can be supplied in the output.")
-        }
-        
-        if(any(complete.cases(subjIDs))){
-            SubjIDs <- subjIDs
-        } else {
-            SubjIDs <- c()
-        }
+            stop("You supplied a file for `study_file` but did not specify which column contains the subject IDs. No subject IDs can be supplied in the output.", 
+                 call. = FALSE)
     }
     
-    ## Generate new data.frame with dosing rows ----------------------------
-    
-    if(all(is.na(custom_dosing_schedule))){
-        if(complete.cases(num_doses)){
-            DoseTimes <- seq(0, (num_doses - 1) * dose_interval, by = dose_interval)
-        } else {
-            DoseTimes <- seq(0, end_time, by = dose_interval)
-        }
+    subj_age_column <- rlang::enquo(subj_age_column)
+    if(as_label(subj_age_column) != "<empty>"){
+        subj_age <- StudyDF %>% pull({{subj_age_column}})
     } else {
-        DoseTimes <- custom_dosing_schedule
+        subj_age <- NA
     }
     
-    Out <- data.frame(Time = DoseTimes, 
-                      Dose = dose_amount)
-    
-    if(length(SubjIDs) > 0){
-        Out <- data.frame(SubjectID = SubjIDs,
-                          Time = rep(DoseTimes, each = length(SubjIDs)), 
-                          Dose = rep(dose_amount, each = length(SubjIDs)))
+    subj_weight_column <- rlang::enquo(subj_weight_column)
+    if(as_label(subj_weight_column) != "<empty>"){
+        subj_weight <- StudyDF %>% pull({{subj_weight_column}})
+    } else {
+        subj_weight <- NA
     }
     
-    
-    ## Saving & returning output ----------------------------------------------
-    if(complete.cases(save_output)){
-        
-        if(str_detect(basename(save_output), "\\.")){
-            # This is when they HAVE specified a file extension. If they
-            # specified a file extension that wasn't csv, make that file
-            # extension be .csv
-            
-            if(str_detect(save_output, "\\.csv") == FALSE){
-                # Give a warning if they used any file extension other than csv
-                # that their file will be saved as csv.
-                warning(paste0("You supplied a file extension other than csv, but this function only supports csv output. Your file will be saved as `", 
-                               sub("\\..*", ".csv", save_output), "`."), 
-                        call. = FALSE)
-            }
-            
-            save_output <- sub("\\..*", ".csv", save_output)
-        } else {
-            # If they didn't specify a file extension at all, make it .csv. 
-            save_output <- paste0(save_output, ".csv")
-        }
-        
-        write.csv(Out, save_output, row.names = FALSE)
-        
+    subj_height_column <- rlang::enquo(subj_height_column)
+    if(as_label(subj_height_column) != "<empty>"){
+        subj_height <- StudyDF %>% pull({{subj_height_column}})
+    } else {
+        subj_height <- NA
     }
+    
+    subj_sex_column <- rlang::enquo(subj_sex_column)
+    if(as_label(subj_sex_column) != "<empty>"){
+        subj_sex <- StudyDF %>% pull({{subj_sex_column}})
+    } else {
+        subj_sex <- NA
+    }
+    
+    Out <- create_doses(dose_interval = dose_interval,
+                        num_doses = num_doses,
+                        end_time = end_time, 
+                        custom_dosing_schedule = custom_dosing_schedule,
+                        compound_ID = compound_ID,
+                        compound_route = compound_route, 
+                        compound_dose_unit = compound_dose_unit, 
+                        compound_dose_amount = compound_dose_amount,
+                        subj_ID = subj_ID, 
+                        subj_age = subj_age,
+                        subj_weight = subj_weight,
+                        subj_height = subj_height,
+                        subj_sex = subj_sex, 
+                        save_output = save_output)
     
     return(Out)
     
 }
-
-

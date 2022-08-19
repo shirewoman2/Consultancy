@@ -6,25 +6,28 @@
 subject information}
 \usage{
 create_doses_from_file(
+  study_file,
   dose_interval = 24,
   num_doses = NA,
   end_time = NA,
   custom_dosing_schedule = NA,
-  study_file = NA,
-  subj_ID = NA,
-  compound = "Substrate",
-  admin_route = "Oral",
-  dose_unit = NA,
-  dose_amount = 100,
-  subj_age = NA,
-  subj_weight = NA,
-  subj_height = NA,
-  subj_sex = NA,
-  subjIDs = NA,
+  compound_ID = "Substrate",
+  compound_route = "Oral",
+  compound_dose_unit = "mg",
+  compound_dose_amount = 100,
+  subj_ID_column,
+  subj_age_column,
+  subj_weight_column,
+  subj_height_column,
+  subj_sex_column,
   save_output = NA
 )
 }
 \arguments{
+\item{study_file}{optionally specify a file containing study information.
+This will be used for determining subject IDs, ages, weights, heights, and
+sexes for the subjects who will be dosed.}
+
 \item{dose_interval}{the dosing interval in hours. Default is 24 for a QD
 dosing regimen.}
 
@@ -40,79 +43,48 @@ subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 180, 192)}; if this is filled out, values in \code{dose_interval},
 \code{num_doses}, and \code{end_time} will all be ignored.}
 
-\item{study_file}{optionally specify a file containing study information.
-  This will be used for determining: \itemize{
+\item{compound_ID}{specify the compound that's being dosed. Options are
+"Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
+case sensitive. If you list more than one compound, you must also list more
+than one \code{compound_route}, \code{compound_dose_unit}, and
+\code{compound_dose_amount} or list just one of each with the understanding
+that they will all be the same.}
 
-  \item{subject IDs,}
+\item{compound_route}{the route of administration. Options are "Oral"
+(default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
+"SC-Mechanistic", or "Auto-detect". Not case sensitive.}
 
-  \item{compound IDs,}
+\item{compound_dose_unit}{the unit of dosing. Options are "mg" (default),
+"mg/m2", or "mg/kg".}
 
-  \item{routes of administration,}
+\item{compound_dose_amount}{the amount of the dose. If this amount varies,
+please include one dose amount for each time. For example:
+\code{compound_dose_amount = c(100, 50, 50)} will generate doses of 100 mg
+for the first dose and then 50 mg for the next two doses. \strong{An R
+coding tip:} You don't \emph{have} to list everything multiple times; you
+can use the function \code{\link{rep}} to repeat elements. For example,
+here's how you could specify that the 1st dose should be 100 mg but the
+next 10 doses should be 50: \code{compound_dose_amount = c(100, rep(50,
+10))}}
 
-  \item{dose units,}
+\item{subj_ID_column}{the name of the column in \code{study_file} that
+contains subject IDs, unquoted}
 
-  \item{dose amounts,}
+\item{subj_age_column}{the name of the column in \code{study_file} that
+contains the subject age (years), unquoted (optional)}
 
-  \item{ages,}
+\item{subj_weight_column}{the name of the column in \code{study_file} that
+contains the subject weight (kg), unquoted (optional)}
 
-  \item{weights,}
+\item{subj_height_column}{the name of the column in \code{study_file} that
+contains the subject height (cm), unquoted (optional)}
 
-  \item{heights,}
-
-  \item{and sexes}} for the subjects who will be dosed. If a study file is
-  specified, the values for this information will \emph{only} be taken from
-  the file, so you \emph{must} use unquoted column titles for the arguments
-  for \code{subj_ID}, \code{compound}, \code{admin_route}, \code{dose_unit},
-  \code{dose_amount}, \code{subj_age}, \code{subj_weight},
-  \code{subj_height}, and \code{subj_sex}.}
-
-\item{subj_ID}{optionally specify subject IDs as a) an unquoted column name
-in \code{study_file} or b) a vector, e.g., \code{subj_ID = c("101-001",
-"101-002", "101-003")}}
-
-\item{compound}{optionally specify the compound that's being dosed as a) an
-unquoted column name in \code{study_file} or b) a vector. Options are
-"Substrate" (default if unspecified), "Inhibitor 1", "Inhibitor 2", or
-"Inhibitor 3". Not case sensitive.}
-
-\item{admin_route}{optionally specify the route of administration as a) an
-unquoted column name in \code{study_file} or b) a vector. Options are
-"Oral" (default if unspecified), "Intravenous", "Dermal", "Inhaled",
-"SC-First Order", "SC-Mechanistic", or "Auto-detect". Not case sensitive.}
-
-\item{dose_unit}{the unit of dosing. Options are "mg" (default), "mg/m2", or
-"mg/kg".}
-
-\item{dose_amount}{the amount of the dose (units are not included). If this
-amount varies, please use the \code{custom_dosing_schedule} option and
-include one dose amount for each time. For example:
-\code{custom_dosing_schedule = c(0, 24, 48), dose_amount = c(100, 50, 50)}
-will generate doses of 100 mg at t = 0 and then 50 mg at t = 24 and 48
-hours.}
-
-\item{subj_age}{age (years); either list them manually, enclosed in
-\code{c(...)} if there's more than one, or specify the unquoted name of the
-column in \code{study_file} to use. Example of input if you specify this
-manually: \code{subj_age = c(25, 67, 45)}. Example of input if you are
-instead specifying which column in study_file to use: \code{subj_age = Age}}
-
-\item{subj_weight}{weight (kg); either specify -- unquoted -- which column in
-\code{study_file} to use or list specific numeric weights, enclosing
-multiple weights with \code{c(...)}. Example of input if you specify this
-manually: \code{subj_weight = c(72, 87, 91)}. Example of input if you are
-instead specifying which column in study_file to use: \code{subj_weight =
-SubjWt}}
-
-\item{subj_height}{height (cm)}
-
-\item{subj_sex}{sex; options are "F" or "M"}
+\item{subj_sex_column}{the name of the column in \code{study_file} that
+contains the subject sex, unquoted; options are "F" or "M" (optional)}
 
 \item{save_output}{the file name to use for saving the output as a csv; if
 left as NA, this will generate a data.frame in R but no output will be
 saved.}
-
-\item{subjID_column}{which column in \code{study_file} contains the subject
-IDs; not quoted. This is the only column that matters in \code{study_file}.}
 }
 \value{
 
@@ -120,26 +92,25 @@ IDs; not quoted. This is the only column that matters in \code{study_file}.}
 \description{
 \code{create_doses_from_file} uses an Excel or csv file with subject
 information to generate a data.frame of dosing times and amounts -- one for
-every subject if subject IDs are provided -- based on the dosing regimen
-used. This is meant for generating XML files for use in Phoenix WNL.
+every subject -- based on the dosing regimen specified. This is meant for
+generating XML files for use in Phoenix WNL.\strong{Special notes for when
+you have more than one value for some items:} If you have multiple values for
+anything having to do with the compound -- the compound ID, administration
+route, dose unit, or dose amount (all have the prefix "compound_") -- then
+all the other arguments having to do with compounds must have that same
+number of values or must have only one value, which will be repeated as
+needed. Any time you need to specify multiple values, you can  make use of
+the R function \code{\link{rep}} to repeat elements of a vector. (See the R
+coding tip for the argument \code{compound_dose_amount} for an example.)
 }
 \examples{
 
 # QD dosing regimen of 100 mg
-create_dose_rows(dose_interval = 24, num_doses = 4)
+create_dose_rows(study_file = "My dose info.csv",
+                 dose_interval = 24, num_doses = 4,
+                 subj_ID_column = Subject)
 
-# QD dosing regimen of 100 mg for subjects A, B, and C
-create_dose_rows(dose_interval = 24, num_doses = 4,
-                 subjIDs = c("A", "B", "C"))
-
-# QD dosing regimen of 100 mg for subjects A, B, and C and save output
-create_dose_rows(dose_interval = 24, num_doses = 4,
-                 subjIDs = c("A", "B", "C"),
-                 save_output = "My doses.csv")
-
-# Custom dosing regimen for subjects A, B, and C
-create_dose_rows(custom_dosing_schedule = c(0, 12, 24, 48, 92, 168),
-                 subjIDs = c("A", "B", "C"))
+# Please see more examples with the function "create_doses".
 
                   
 }
