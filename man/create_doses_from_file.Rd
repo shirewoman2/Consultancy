@@ -12,9 +12,11 @@ create_doses_from_file(
   end_time = NA,
   custom_dosing_schedule = NA,
   compound_ID = "Substrate",
+  compound_start = 0,
   compound_route = "Oral",
   compound_dose_unit = "mg",
   compound_dose_amount = 100,
+  compound_inf_duration = NA,
   subj_ID_column,
   subj_age_column,
   subj_weight_column,
@@ -50,6 +52,9 @@ than one \code{compound_route}, \code{compound_dose_unit}, and
 \code{compound_dose_amount} or list just one of each with the understanding
 that they will all be the same.}
 
+\item{compound_start}{the start time of compound administration (h); default
+is 0.}
+
 \item{compound_route}{the route of administration. Options are "Oral"
 (default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
 "SC-Mechanistic", or "Auto-detect". Not case sensitive.}
@@ -66,6 +71,8 @@ can use the function \code{\link{rep}} to repeat elements. For example,
 here's how you could specify that the 1st dose should be 100 mg but the
 next 10 doses should be 50: \code{compound_dose_amount = c(100, rep(50,
 10))}}
+
+\item{compound_inf_duration}{the infusion duration (min) (optional)}
 
 \item{subj_ID_column}{the name of the column in \code{study_file} that
 contains subject IDs, unquoted}
@@ -92,23 +99,57 @@ saved.}
 \description{
 \code{create_doses_from_file} uses an Excel or csv file with subject
 information to generate a data.frame of dosing times and amounts -- one for
-every subject -- based on the dosing regimen specified. This is meant for
+every subject -- based on the dosing regimen specified. WARNING: This doesn't
+work when there are spaces in the column names in the study file! (I'm
+looking into whether there's a way around that. -LSh) This is meant for
 generating XML files for use in Phoenix WNL.\strong{Special notes for when
 you have more than one value for some items:} If you have multiple values for
 anything having to do with the compound -- the compound ID, administration
 route, dose unit, or dose amount (all have the prefix "compound_") -- then
 all the other arguments having to do with compounds must have that same
 number of values or must have only one value, which will be repeated as
-needed. Any time you need to specify multiple values, you can  make use of
-the R function \code{\link{rep}} to repeat elements of a vector. (See the R
+needed. Really, this function will just be easier to use if you run it once
+for each compound you want. (See the examples at the bottom of the help
+file.) Any time you need to specify multiple values, you can  make use of the
+R function \code{\link{rep}} to repeat elements of a vector. (See the R
 coding tip for the argument \code{compound_dose_amount} for an example.)
 }
 \examples{
 
 # QD dosing regimen of 100 mg
-create_dose_rows(study_file = "My dose info.csv",
-                 dose_interval = 24, num_doses = 4,
-                 subj_ID_column = Subject)
+create_dose_rows_from_file(study_file = "My dose info.csv",
+                           dose_interval = 24, num_doses = 4,
+                           subj_ID_column = Subject)
+
+
+# If you have multiple compounds -- say you've got a DDI study with both a
+# substrate and an effector -- this will probably be easiest to manage if you
+# run \code{create_doses_from_file} once for each compound. It just gets pretty
+# complicated pretty quickly to have a substrate with one dosing interval,
+# start time, and amount and then an inhibitor with a \emph{different} dosing
+# interval, start time, and amount. Here's an example of how you could do this
+# but still get just one csv file at the end:
+
+# Substrate is dosed one time at 10 mg starting at t = 168 h.
+Doses_sub <- create_doses(study_file = "Subject metadata.csv", 
+                          subj_ID_column = SubjectID,
+                          subj_age_column = Age,
+                          num_doses = 1, compound_ID = "Substrate",
+                          compound_start = 168,
+                          compound_dose_amount = 10)
+
+# Inhibitor is dosed QD at 500 mg for 336 h starting at t = 0 h.
+Doses_inhib <- create_doses(study_file = "Subject metadata.csv", 
+                            subj_ID_column = SubjectID,
+                            subj_age_column = Age,
+                            dose_interval = 24, end_time = 336,
+                            compound_ID = "Inhibitor 1",
+                            compound_start = 0,
+                            compound_dose_amount = 500)
+
+MyDoses <- bind_rows(Doses_sub, Doses_inhib)
+write.csv(MyDoses, file = "Dose rows for sub and inhib.csv",
+          row.names = FALSE)
 
 # Please see more examples with the function "create_doses".
 

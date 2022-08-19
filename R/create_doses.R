@@ -8,14 +8,17 @@
 #' the compound ID, administration route, dose unit, or dose amount (all have
 #' the prefix "compound_") -- then all the other arguments having to do with
 #' compounds must have that same number of values or must have only one value,
-#' which will be repeated as needed. Similarly, if you have multiple values for
+#' which will be repeated as needed. Really, this function will just be easier
+#' to use if you run it once for each compound you want. (See the examples at
+#' the bottom of the help file.) Similarly, if you have multiple values for
 #' anything having to do with the subject -- the subject ID, age, weight,
 #' height, or sex (all have the prefix "subj_") -- then all the other arguments
 #' having to do with subjects must have that same number of values or must have
 #' only one value, which will be repeated as needed. Any time you need to
-#' specify multiple values, you can  make use of the R function
-#' \code{\link{rep}} to repeat elements of a vector. (See the R coding tip for
-#' the argument \code{compound_dose_amount} for an example.)
+#' specify multiple values, you can make use of the R function \code{\link{rep}}
+#' to repeat elements of a vector. (See the R coding tip for the argument
+#' \code{compound_dose_amount} for an example.)
+#'
 #'
 #' @param dose_interval the dosing interval in hours. Default is 24 for a QD
 #'   dosing regimen.
@@ -34,6 +37,8 @@
 #'   than one \code{compound_route}, \code{compound_dose_unit}, and
 #'   \code{compound_dose_amount} or list just one of each with the understanding
 #'   that they will all be the same.
+#' @param compound_start the start time of compound administration (h); default
+#'   is 0.
 #' @param compound_route the route of administration. Options are "Oral"
 #'   (default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
 #'   "SC-Mechanistic", or "Auto-detect". Not case sensitive.
@@ -48,6 +53,7 @@
 #'   here's how you could specify that the 1st dose should be 100 mg but the
 #'   next 10 doses should be 50: \code{compound_dose_amount = c(100, rep(50,
 #'   10))}
+#' @param compound_inf_duration the infusion duration (min) (optional)
 #' @param subj_ID optionally specify subject IDs as, e.g., \code{subj_ID =
 #'   c("101-001", "101-002", "101-003")}.
 #' @param subj_age age (years) (optional)
@@ -72,12 +78,36 @@
 #'
 #' # QD dosing regimen of 100 mg for subjects A, B, and C and save output
 #' create_doses(dose_interval = 24, num_doses = 4,
-#'                  subj_ID = c("A", "B", "C"),
-#'                  save_output = "My doses.csv")
+#'              subj_ID = c("A", "B", "C"),
+#'              save_output = "My doses.csv")
 #'
 #' # Custom dosing regimen for subjects A, B, and C
 #' create_doses(custom_dosing_schedule = c(0, 12, 24, 48, 92, 168),
-#'                  subj_ID = c("A", "B", "C"))
+#'              subj_ID = c("A", "B", "C"))
+#'
+#'
+#' # If you have multiple compounds -- say you've got a DDI study with both a
+#' # substrate and an effector -- this will probably be easiest to manage if you
+#' # run create_doses once for each compound. It just gets pretty
+#' # complicated pretty quickly to have a substrate with one dosing interval,
+#' # start time, and amount and then an inhibitor with a *different* dosing
+#' # interval, start time, and amount. Here's an example of how you could do this
+#' # but still get just one csv file at the end:
+#'
+#' # Substrate is dosed one time at 10 mg starting at t = 168 h.
+#' Doses_sub <- create_doses(num_doses = 1, compound_ID = "Substrate",
+#'                           compound_start = 168,
+#'                           compound_dose_amount = 10)
+#'
+#' # Inhibitor is dosed QD at 500 mg for 336 h starting at t = 0 h.
+#' Doses_inhib <- create_doses(dose_interval = 24, end_time = 336,
+#'                             compound_ID = "Inhibitor 1",
+#'                             compound_start = 0,
+#'                             compound_dose_amount = 500)
+#'
+#' MyDoses <- bind_rows(Doses_sub, Doses_inhib)
+#' write.csv(MyDoses, file = "Dose rows for sub and inhib.csv",
+#'           row.names = FALSE)
 #'
 #'                   
 
@@ -86,9 +116,11 @@ create_doses <- function(dose_interval = 24,
                          end_time = NA,
                          custom_dosing_schedule = NA,
                          compound_ID = "Substrate",
+                         compound_start = 0,
                          compound_route = "Oral",
                          compound_dose_unit = "mg",
                          compound_dose_amount = 100,
+                         compound_inf_duration = NA,
                          subj_ID = NA,
                          subj_age = NA,
                          subj_weight = NA, 
@@ -192,10 +224,6 @@ create_doses <- function(dose_interval = 24,
             DoseTimes <- seq(0, (num_doses - 1) * dose_interval, by = dose_interval)
         } else {
             DoseTimes <- seq(0, end_time, by = dose_interval)
-            if(DoseTimes[length(DoseTimes)] %% dose_interval == 0){
-                # There wouldn't be a dose at the end_time, so removing that 1.
-                DoseTimes <- DoseTimes[1:(length(DoseTimes) - 1)]
-            }
         }
     } else {
         DoseTimes <- custom_dosing_schedule
@@ -225,11 +253,34 @@ create_doses <- function(dose_interval = 24,
     CmpdInfo <- data.frame(Compound_ID = compound_ID, 
                            Compound_route = compound_route,
                            Compound_dose_unit = compound_dose_unit,
-                           Compound_dose_amount = compound_dose_amount) 
+                           Compound_dose_amount = compound_dose_amount, 
+                           Compound_inf_duration = compound_inf_duration) 
     if(nrow(CmpdInfo) == length(DoseTimes)){
         CmpdInfo <- CmpdInfo %>% mutate(Time = DoseTimes)
     } else {
         CmpdInfo <- expand_grid(CmpdInfo, data.frame(Time = DoseTimes))
+    }
+    
+    # Dealing with possibly varying start times
+    MyStartTimes <- data.frame(Compound_ID = compound_ID,
+                               Compound_start = compound_start) %>% 
+        unique()
+    
+    # Checking that input is reasonable for the compound start times. There
+    # should only be one start time for every compound ID.
+    StartTimeCheck <- MyStartTimes %>% group_by(Compound_ID) %>% 
+        summarize(Nrow = n())
+    if(any(StartTimeCheck$Nrow != 1)){
+        warning("You have listed more than one start time for one of the compounds, so we're not sure which one to use. All start times will be 0.",
+                call. = FALSE)
+    }
+    
+    CmpdInfo <- CmpdInfo %>% left_join(MyStartTimes) %>% 
+        mutate(Time = Time + Compound_start) %>% 
+        select(-Compound_start)
+    
+    if(complete.cases(end_time)){
+        CmpdInfo <- CmpdInfo %>% filter(Time <= end_time)
     }
     
     # Joining the two data.frames.
@@ -237,12 +288,13 @@ create_doses <- function(dose_interval = 24,
     
     Out <- Info %>% 
         mutate(DV = "", DVID = "", Weighting = "", 
-               InfDur = "", Period = "", 
+               Period = "", 
                Compound_dose_unit = paste0("(", Compound_dose_unit, ")"), 
                Compound_dose_unit = sub("m2", "m²", Compound_dose_unit)) %>% 
         select(Subj_ID, Time, DV, DVID, Weighting, Compound_ID, Compound_route,
                Compound_dose_unit, Compound_dose_amount, 
-               InfDur, Period, Subj_age, Subj_weight, Subj_height, Subj_sex) %>% 
+               Compound_inf_duration, Period, 
+               Subj_age, Subj_weight, Subj_height, Subj_sex) %>% 
         mutate(across(.cols = everything(), 
                       .fns = function(.) {ifelse(is.na(.), 
                                                  as.character(""),
@@ -250,7 +302,7 @@ create_doses <- function(dose_interval = 24,
         rename("Route of administration" = Compound_route,
                Compound = Compound_ID,
                "DV ID" = DVID,
-               "Infusion Duration (min)" = InfDur,
+               "Infusion Duration (min)" = Compound_inf_duration,
                "Dose Unit" = Compound_dose_unit,
                "Dose Amount" = Compound_dose_amount,
                "Age (year)" = Subj_age,
