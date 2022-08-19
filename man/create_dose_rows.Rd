@@ -10,8 +10,10 @@ create_dose_rows(
   end_time = NA,
   custom_dosing_schedule = NA,
   dose_amount = 100,
+  compound = "Substrate",
   study_file = NA,
   subjID_column,
+  admin_route = "Oral",
   subjIDs = NA,
   save_output = NA
 )
@@ -39,19 +41,54 @@ include one dose amount for each time. For example:
 will generate doses of 100 mg at t = 0 and then 50 mg at t = 24 and 48
 hours.}
 
+\item{compound}{the compound that's being dosed; options are "Substrate"
+(default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not case
+sensitive.}
+
 \item{study_file}{optionally specify a file containing study information.
-This will be used for figuring out the IDs for the subjects who will be
-dosed.}
+This will be used for figuring out: \itemize{\item{subject IDs,}
+\item{compound IDs,}\item{routes of administration,}\item{dose units,}
+\item{dose amounts,}\item{ages,}\item{weights,}\item{and heights}} for
+the subjects who will be dosed. If a study file is specified, the values
+for this information will \emph{only} be taken from the file, so you
+\emph{must} use unquoted column titles for the arguments for
+\code{subj_ID}, \code{subj_age},}
 
 \item{subjID_column}{which column in \code{study_file} contains the subject
 IDs; not quoted. This is the only column that matters in \code{study_file}.}
 
-\item{subjIDs}{optionally specify subject IDs manually if you don't provide a
-file for \code{study_file}}
+\item{admin_route}{optionally specify subject IDs manually if you don't
+provide a file for \code{study_file}}
 
 \item{save_output}{the file name to use for saving the output as a csv; if
 left as NA, this will generate a data.frame in R but no output will be
 saved.}
+
+\item{subj_ID}{optionally specify subject IDs manually if you don't provide a
+file for \code{study_file}}
+
+\item{compound_ID}{optionally specify compound IDs manually if you don't
+provide a file for \code{study_file}}
+
+\item{dose_unit}{the unit of dosing. Options are "mg" (default), "mg/m2", or
+"mg/kg".}
+
+\item{subj_age}{age (years); either list them manually, enclosed in
+\code{c(...)} if there's more than one, or specify the unquoted name of the
+column in \code{study_file} to use. Example of input if you specify this
+manually: \code{subj_age = c(25, 67, 45)}. Example of input if you are
+instead specifying which column in study_file to use: \code{subj_age = Age}}
+
+\item{subj_weight}{weight (kg); either specify -- unquoted -- which column in
+\code{study_file} to use or list specific numeric weights, enclosing
+multiple weights with \code{c(...)}. Example of input if you specify this
+manually: \code{subj_weight = c(72, 87, 91)}. Example of input if you are
+instead specifying which column in study_file to use: \code{subj_weight =
+SubjWt}}
+
+\item{subj_height}{height (cm)}
+
+\item{subj_sex}{sex; options are "F" or "M"}
 }
 \value{
 
@@ -67,12 +104,17 @@ regimen used. This is meant for generating XML files for use in Phoenix WNL.
 create_dose_rows(dose_interval = 24, num_doses = 4)
 
 # QD dosing regimen of 100 mg for subjects A, B, and C
-create_dose_rows(dose_interval = 24, num_doses = 4, 
+create_dose_rows(dose_interval = 24, num_doses = 4,
                  subjIDs = c("A", "B", "C"))
-                 
+
+# QD dosing regimen of 100 mg for subjects A, B, and C and save output
+create_dose_rows(dose_interval = 24, num_doses = 4,
+                 subjIDs = c("A", "B", "C"),
+                 save_output = "My doses.csv")
+
 # Custom dosing regimen for subjects A, B, and C
 create_dose_rows(custom_dosing_schedule = c(0, 12, 24, 48, 92, 168),
                  subjIDs = c("A", "B", "C"))
-                 
+
                   
 }
