@@ -321,8 +321,16 @@ pksummary_mult <- function(sim_data_files = NA,
         }
         
         if(str_detect(save_table, "\\.csv")){
-            # This is when they want a csv file as output
+            # This is when they want a csv file as output. In this scenario,
+            # changing the value "simulated" in the list of stats to include
+            # whether it was arithmetic or geometric b/c that info is included
+            # in the Word file but not in the table itself.
+            MyPKResults <- MyPKResults %>% 
+                mutate(Statistic = sub("Simulated", 
+                                       paste("Simulated", MeanType, "mean"), Statistic))
+            
             write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
+            
         } else {
             # This is when they want a Word file as output
             

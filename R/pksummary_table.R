@@ -262,6 +262,23 @@ pksummary_table <- function(sim_data_file = NA,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
+    # Check for appropriate input for arguments
+    tissue <- tolower(tissue)
+    if(tissue %in% c("plasma", "blood")){
+        stop("You have not supplied a permissible value for tissue. Options are `plasma`, `blood`, or `plasma and blood`. Please check your input and try again.", 
+             call. = FALSE)
+    }
+    
+    PKorder <- tolower(PKorder)
+    if(PKorder %in% c("default", "user specified") == FALSE){
+        warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
+                call. = FALSE)
+    }
+    
+    if(is.na(report_input_file) & is.na(sim_data_file)){
+        stop("You must enter a value for 'report_input_file' or include a specific simulator output file for 'sim_data_file'.", 
+             call. = FALSE)
+    }
     
     # Main body of function --------------------------------------------------
     # If they supplied observed_PK, get the sim_data_file from that. 
@@ -291,11 +308,6 @@ pksummary_table <- function(sim_data_file = NA,
     # If they didn't include ".xlsx" at the end, add that.
     report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
                                 report_input_file, paste0(report_input_file, ".xlsx"))
-    
-    # Error catching
-    if(is.na(report_input_file) & is.na(sim_data_file)){
-        stop("You must enter a value for 'report_input_file' or include a specific simulator output file for 'sim_data_file'.")
-    }
     
     if(complete.cases(report_input_file) & is.na(sim_data_file)){
         
@@ -1100,7 +1112,13 @@ pksummary_table <- function(sim_data_file = NA,
             }
             
         } else {
-            # This is when they want a .csv file as output
+            # This is when they want a .csv file as output. In this scenario,
+            # changing the value "simulated" in the list of stats to include
+            # whether it was arithmetic or geometric b/c that info is included
+            # in the Word file but not in the table itself.
+            MyPKResults <- MyPKResults %>% 
+                mutate(Statistic = sub("Simulated", 
+                                       paste("Simulated", MeanType, "mean"), Statistic))
             write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
         }
     }
