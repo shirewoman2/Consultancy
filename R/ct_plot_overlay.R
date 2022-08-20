@@ -999,20 +999,6 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(AES %in% c("color", "color-linetype")){
         
-        # Adding options for colors
-        colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                         "darkorange", "green3", "seagreen3",
-                                         "cadetblue", "dodgerblue3", "royalblue4",
-                                         "darkorchid4"))
-        
-        blueGreen <- colorRampPalette(c("royalblue4", "dodgerblue3",
-                                        "cadetblue", "seagreen3", "green3"))
-        
-        # "blues" is the 4th through 9th blues from grDevices::blues9, just to
-        # give credit where it's due
-        blues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
-                                    "#08519C", "#08306B"))
-        
         NumColorsNeeded <- bind_rows(sim_dataframe, obs_data) %>%
             pull(AESCols["color"]) %>% 
             unique() %>% length()
@@ -1059,8 +1045,8 @@ ct_plot_overlay <- function(ct_dataframe,
                 }
                 
                 if(color_set == "blue-green"){
-                    A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-                        scale_fill_manual(values = blueGreen(NumColorsNeeded))
+                    A <- A + scale_color_manual(values = blueGreens(NumColorsNeeded)) +
+                        scale_fill_manual(values = blueGreens(NumColorsNeeded))
                 }
                 
                 if(color_set == "blues"){
@@ -1069,8 +1055,8 @@ ct_plot_overlay <- function(ct_dataframe,
                 }
                 
                 if(color_set == "rainbow"){
-                    A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-                        scale_fill_manual(values = colRainbow(NumColorsNeeded))
+                    A <- A + scale_color_manual(values = rainbow(NumColorsNeeded)) +
+                        scale_fill_manual(values = rainbow(NumColorsNeeded))
                 }
                 
                 if(str_detect(tolower(color_set), "brewer.*2|set.*2")){

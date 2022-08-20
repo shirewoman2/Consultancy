@@ -55,6 +55,7 @@
 #'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
+#'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
 #'
@@ -214,19 +215,6 @@ graph_boxplot <- function(DF,
         legend.key = element_rect(color=NA, fill=NA))
     
     # Adding options for colors
-    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                     "darkorange", "green3", "seagreen3",
-                                     "cadetblue", "dodgerblue3", "royalblue4",
-                                     "darkorchid4"))
-    
-    blueGreen <- colorRampPalette(c("royalblue4", "dodgerblue3",
-                                    "cadetblue", "seagreen3", "green3"))
-    
-    # "blues" is the 4th through 9th blues from grDevices::blues9, just to give
-    # credit where it's due
-    blues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
-                                "#08519C", "#08306B"))
-    
     NumColors <- length(unique(DF %>% pull(!!category_column)))
     
     if(color_set == "default"){
@@ -237,13 +225,19 @@ graph_boxplot <- function(DF,
     
     if(color_set == "blue-green"){
         G <- G + 
-            scale_color_manual(values = blueGreen(NumColors)) +
-            scale_fill_manual(values = blueGreen(NumColors))
+            scale_color_manual(values = blueGreens(NumColors)) +
+            scale_fill_manual(values = blueGreens(NumColors))
+    }
+    
+    if(color_set == "blues"){
+        G <- G + 
+            scale_color_manual(values = blues(NumColors)) +
+            scale_fill_manual(values = blues(NumColors))
     }
     
     if(color_set == "rainbow"){
-        G <- G + scale_color_manual(values = colRainbow(NumColors)) +
-            scale_fill_manual(values = colRainbow(NumColors))
+        G <- G + scale_color_manual(values = rainbow(NumColors)) +
+            scale_fill_manual(values = rainbow(NumColors))
     }
     
     if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
