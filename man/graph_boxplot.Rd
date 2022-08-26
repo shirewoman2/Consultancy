@@ -80,6 +80,7 @@ the name of value_column.}
   \item{"blues"}{a set of blues fading light blue to dark blue. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
+
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
 

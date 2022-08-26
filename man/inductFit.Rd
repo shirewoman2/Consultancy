@@ -49,7 +49,7 @@ unquoted.}
   \item{"IndmaxSlope"}{the Indmax model with the addition of a slope n
   \deqn{fold induction = 1 + Indmax * I^n / (IndC50^n + I^n)}}
 
-  \item{"Slope"}{slope only: \deqn{fold induction = I * n}}
+  \item{"slope"}{slope only: \deqn{fold induction = I * n}}
 
   \item{"Sig3Param"}{Sigmoidal 3-parameter model (often used by Xenotech):
   \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))}}
@@ -97,6 +97,7 @@ values or this will fail!}
   \item{"blues"}{a set of blues fading light blue to dark blue. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
+
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
 
@@ -128,8 +129,10 @@ means the file will not be automatically saved to disk.}
 \item{fig_width}{figure width in inches; default is 5.5}
 
 \item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My fitted induction parameters.csv". If you leave off
-".csv", it will still be saved as a csv file.}
+quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
+file will save only the fitted parameters. However, if you would like a
+Word file with a) the equations used, b) the fitted parameters, and c) the
+graphs, end this file name with ".docx" instead.}
 }
 \value{
 Returns a list of \describe{ \item{Fit}{the fitted parameters}
@@ -159,7 +162,7 @@ data(IndData)
 inductFit(IndData, model = "Indmax")$Graph
 inductFit(IndData \%>\% rename(Conc_uM = Concentration_uM),
           conc_column = Conc_uM, model = "IndmaxSlope")$Graph
-inductFit(IndData, model = "Slope")$Graph
+inductFit(IndData, model = "slope")$Graph
 inductFit(IndData, model = "Sig3Param")
 
 inductFit(IndData, model = "IndmaxSlope", measurement = "activity")
