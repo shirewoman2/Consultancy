@@ -15,6 +15,13 @@
 #'   "AUCt_ratio_dose1", "Cmax_ratio_dose1", "AUCtau_ratio_last", or
 #'   "Cmax_ratio_last". List them in the order you'd like the columns to appear
 #'   in the output.
+#' @param sheet optionally specify the name of the sheet where you'd like to
+#'   pull the PK data, in quotes; for example, specify the tab where you have a
+#'   user-defined AUC integration. \emph{Note:} Unless you want a very specific
+#'   Excel sheet that's not what the usual sheet name would be for a first or
+#'   last dose, this function will work best if this is left as NA. Also, since
+#'   we don't know which dose these data were for, you'll see that the output
+#'   parameter names do not include the suffixes "_last" or "_dose1".
 #' @param checkDataSource TRUE (default) or FALSE: Include in the output a
 #'   data.frame that lists exactly where the data were pulled from the simulator
 #'   output file. Useful for QCing.
@@ -36,6 +43,7 @@ extractForestData <- function(sim_data_files = NA,
                                                "Cmax_ratio_dose1", 
                                                "AUCtau_ratio_last", 
                                                "Cmax_ratio_last"), 
+                              sheet = NA, 
                               checkDataSource = TRUE, 
                               save_output = NA){
     
@@ -90,10 +98,11 @@ extractForestData <- function(sim_data_files = NA,
     
     for(i in sim_data_files){
         
-        message(paste("Extracting data from ", i))
+        message(paste("Extracting data from", i))
         suppressWarnings(
             temp <- extractPK(sim_data_file = i, 
                               PKparameters = PKparameters, 
+                              sheet = sheet,
                               includeTrialInfo = FALSE,
                               returnExpDetails = TRUE,
                               returnAggregateOrIndiv = "aggregate", 
@@ -125,6 +134,37 @@ extractForestData <- function(sim_data_files = NA,
             select(File, everything()) %>% arrange(File, PKparam)
     }
     
+    # Need to check for custom dosing regimens or things get mucked up.
+    CustDos_sub <- sapply(Deets, FUN = function(x) class(x$Dose_sub)) == "character"
+    CustDos_inhib <- sapply(Deets, FUN = function(x) class(x$Dose_inhib)) == "character"
+    
+    if(any(CustDos_sub)){
+        
+        warning(paste("A custom dosing regimen was used for the substrate for the files", 
+                      names(Deets)[which(CustDos_sub)], 
+                      "so that dose amount and dose interval will be set to NA in the extracted forest-plot data."), 
+                call. = FALSE)
+        
+        for(i in which(CustDos_sub)){
+            Deets[[i]]$Dose_sub <- as.numeric(NA)
+            Deets[[i]]$DoseInt_sub <- as.numeric(NA)
+            Deets[[i]] <- unique(Deets[[i]])
+        }
+    }
+    
+    if(any(CustDos_inhib)){
+        warning(paste("A custom dosing regimen was used for the effector for the files", 
+                      names(Deets)[which(CustDos_inhib)], 
+                      "so that dose amount and dose interval will be set to NA in the extracted forest-plot data."), 
+                call. = FALSE)
+        
+        for(i in which(CustDos_inhib)){
+            Deets[[i]]$Dose_inhib <- as.numeric(NA)
+            Deets[[i]]$DoseInt_inhib <- as.numeric(NA)
+            Deets[[i]] <- unique(Deets[[i]])
+        }
+    }
+    
     Deets <- bind_rows(Deets) %>% 
         select(File, everything()) %>% arrange(File)
     
@@ -136,6 +176,10 @@ extractForestData <- function(sim_data_files = NA,
         Deets <- Deets %>% filter(complete.cases(Inhibitor1))
         if(checkDataSource){DataCheck <- DataCheck %>% filter(File %in% Deets$File)}
         Forest_l <- Forest_l[names(Forest_l)[names(Forest_l) %in% Deets$File]]
+    }
+    
+    if(complete.cases(sheet)){
+        PKparameters <- sub("_last|_dose1", "", PKparameters)
     }
     
     ColNames <- data.frame(PKparam = PKparameters) %>% 
@@ -183,7 +227,5 @@ extractForestData <- function(sim_data_files = NA,
     return(Out)
     
 }
-
-
 
 
