@@ -39,6 +39,7 @@ prettify_compound_name <- function(CompoundName, case = "lower"){
     CompoundName <- sub("o-", "O-", CompoundName)
     CompoundName <- sub("s-", "S-", CompoundName)
     CompoundName <- sub("r-", "R-", CompoundName)
+    CompoundName <- sub("_fasted soln", "", CompoundName)
     
     return(CompoundName)
 }
