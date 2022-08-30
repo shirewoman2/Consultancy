@@ -3,11 +3,10 @@
 #' Extracts concentration-time data from simulator output Excel files and,
 #' optionally, a separately specified observed data file, and puts all data into
 #' a single, tidy data.frame. There are some nuances to how it deals with
-#' observed data; please see the details at the bottom of this help file.
-#'
-#' Not all substrate metabolites, inhibitors, or inhibitor metabolites are
-#' available in all tissues. If it's not present in your Excel output, we can't
-#' extract it here. 
+#' observed data; please see the details at the bottom of this help file. Not
+#' all substrate metabolites, inhibitors, or inhibitor metabolites are available
+#' in all tissues. If it's not present in your Excel output, we can't extract it
+#' here.
 #'
 #' \strong{A note on observed data:} When observed data are included in a
 #' simulator output file, because the simulator output does not explicitly say
@@ -61,7 +60,9 @@
 #'   1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
 #'   labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
 #'   inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-#'   primary metabolite of inhibitor 1.
+#'   primary metabolite of inhibitor 1. \strong{Note:} If your compound is a
+#'   therapeutic protein, we haven't tested this very thoroughly, so please be
+#'   extra careful to check that you're getting the correct data.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate", "individual", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
@@ -325,7 +326,7 @@ extractConcTime <- function(sim_data_file,
         Piece2 <- ifelse(str_detect(tissue, "portal vein"),
                          "Conc Profiles", Piece2)
         
-        Piece3 <- ifelse(str_detect(tissue, "peripheral"), " CPeriph", " CSys")
+        Piece3 <- ifelse(str_detect(tissue, "peripheral"), " CPeriph", " C[Ss]ys")
         Piece3 <- ifelse(str_detect(tissue, "portal vein"),
                          "", Piece3)
         Piece3 <- ifelse(CompoundType != "substrate",
@@ -339,7 +340,7 @@ extractConcTime <- function(sim_data_file,
         SheetToDetect <- paste0(SheetToDetect, "|",
                                 sub("Profiles", "Trials Profiles", SheetToDetect),
                                 "|",
-                                gsub("Profiles CSys", "Trials Profiles", SheetToDetect),
+                                gsub("Profiles C[Ss]ys", "Trials Profiles", SheetToDetect),
                                 "|",
                                 paste0(Piece1, Piece2, "\\(Trials\\)\\(",
                                        Piece4, Piece5, "\\)"), "|^Conc Profiles$")
@@ -687,7 +688,7 @@ extractConcTime <- function(sim_data_file,
                         }
                         
                     } else {
-                        Include <- which(str_detect(NamesToCheck, "^csys"))
+                        Include <- which(str_detect(NamesToCheck, "^csys|therapeutic protein csys"))
                     }
                     
                     RowsToUse <- c(
@@ -777,7 +778,7 @@ extractConcTime <- function(sim_data_file,
                                                    paste0("^miipv|^miitissue|^mii", tolower(tissue)))))
                             }
                         } else {
-                            Include <- which(str_detect(NamesToCheck, "^csys"))
+                            Include <- which(str_detect(NamesToCheck, "^csys|therapeutic protein csys"))
                         }
                         
                         RowsToUse <- c(

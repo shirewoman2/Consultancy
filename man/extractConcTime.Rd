@@ -58,7 +58,9 @@ metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
 1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
 labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
 inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-primary metabolite of inhibitor 1.}
+primary metabolite of inhibitor 1. \strong{Note:} If your compound is a
+therapeutic protein, we haven't tested this very thoroughly, so please be
+extra careful to check that you're getting the correct data.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are "aggregate", "individual", or "both"
@@ -128,13 +130,12 @@ A data.frame of concentration-time data with the following columns:
 Extracts concentration-time data from simulator output Excel files and,
 optionally, a separately specified observed data file, and puts all data into
 a single, tidy data.frame. There are some nuances to how it deals with
-observed data; please see the details at the bottom of this help file.
+observed data; please see the details at the bottom of this help file. Not
+all substrate metabolites, inhibitors, or inhibitor metabolites are available
+in all tissues. If it's not present in your Excel output, we can't extract it
+here.
 }
 \details{
-Not all substrate metabolites, inhibitors, or inhibitor metabolites are
-available in all tissues. If it's not present in your Excel output, we can't
-extract it here. 
-
 \strong{A note on observed data:} When observed data are included in a
 simulator output file, because the simulator output does not explicitly say
 whether those observed data were in the presence of an inhibitor or effector,
