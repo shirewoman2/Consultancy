@@ -111,10 +111,10 @@
 #'
 #'   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
 #'   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
-#'   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
-#'   in faeces", "dissolved compound", "luminal CLint of compound", "cumulative
-#'   fraction of dissolved X" or "cumulative fraction of absorbed X" (X =
-#'   substrate or inhibitor 1, depending on the options selected). }
+#'   "absorption rate", "unreleased compound in faeces", "dissolved compound",
+#'   "luminal CLint of compound", "cumulative fraction of dissolved X" or
+#'   "cumulative fraction of absorbed X" (X = substrate or inhibitor 1,
+#'   depending on the options selected). }
 #'
 #'   \item{Dose_num}{the dose number}
 #'
@@ -467,6 +467,14 @@ extractConcTime <- function(sim_data_file,
         sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]), "CMax"))])[1]
     SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
     
+    # # ADAM options available (this is for my reference and was copied from ct_plot.R)
+    # ADAMoptions <- c("undissolved compound", "free compound in lumen",
+    #                  "Heff", "absorption rate",
+    #                  "unreleased compound in faeces", 
+    #                  "dissolved compound", "luminal CLint", 
+    #                  "cumulative fraction of compound absorbed", 
+    #                  "cumulative fraction of compound dissolved")
+    
     # ADAM model -- except for gut tissue -- has different units depending on
     # what parameter you want.
     if(ADAM){
@@ -479,18 +487,16 @@ extractConcTime <- function(sim_data_file,
                 OrigVal, 
                 "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed"), 
                 Type = recode(TypeCode, 
-                              "Ms" = "solid compound", 
+                              "Ms" = "undissolved compound", 
                               "C Lumen Free" = "free compound in lumen", 
                               "Heff" = "Heff", 
                               "Absorption Rate" = "absorption rate", 
-                              "Mur" = "unreleased substrate in faeces", 
-                              "Inh Mur" = "unreleased inhibitor in faeces", 
+                              "Mur" = "unreleased compound in faeces", 
+                              "Inh Mur" = "unreleased compound in faeces", 
                               "Md" = "dissolved compound", 
-                              "Luminal CLint" = "luminal CLint of compound", 
-                              "absorbed" = paste("cumulative fraction of absorbed", 
-                                                 compoundToExtract),
-                              "dissolved" = paste("cumulative fraction of dissolved", 
-                                                  compoundToExtract)), 
+                              "Luminal CLint" = "luminal CLint", 
+                              "absorbed" = "cumulative fraction of compound absorbed", 
+                              "dissolved" = "cumulative fraction of compound dissolved"), 
                 ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h|Cumulative fraction"), 
                 # Making "Cumulative" lower case
                 ConcUnit = sub("Cumulative", "cumulative", ConcUnit)) %>% 

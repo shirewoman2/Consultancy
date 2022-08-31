@@ -29,27 +29,74 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     }
     
     if(any(ADAM)){
-        if(subsection_ADAM == "Heff"){
-            ylab <- expression(H[eff])
+        
+        # # ADAM options available (this is for my reference and was copied from ct_plot.R)
+        # ADAMoptions <- c("undissolved compound", "free compound in lumen",
+        #                  "Heff", "absorption rate",
+        #                  "unreleased compound in faeces", 
+        #                  "dissolved compound", "luminal CLint", 
+        #                  "cumulative fraction of compound absorbed", 
+        #                  "cumulative fraction of compound dissolved")
+        
+        CompoundLab <- ifelse(prettify_compound_names, 
+                              prettify_compound_name(unique(Data$Compound)), 
+                              unique(Data$Compound))
+        
+        ylab1 <- 
+            switch(subsection_ADAM, 
+                   "undissolved compound" = 
+                       paste0("Undissolved ", CompoundLab, " in ", unique(Data$Tissue)),
+                   "free compound in lumen" = 
+                       paste0("Free ", CompoundLab, " in lumen"),
+                   "Heff" = expression(H[eff]),
+                   "unreleased compound in faeces" = 
+                       paste("Unreleased", CompoundLab, "in faeces"),
+                   "dissolved compound" = 
+                       paste("Dissolved", CompoundLab, "in", unique(Data$Tissue)),
+                   "luminal CLint" = expression("Luminal"~CL[int]), 
+                   "cumulative fraction of compound absorbed" =
+                       expression(atop("Cumulative fraction",
+                                       "of absorbed"~bquote(.(CompoundLab)))), 
+                   "cumulative fraction of compound dissolved" =
+                       expression(atop("Cumulative fraction",
+                                       "of dissolved"~bquote(.(CompoundLab)))))
+        
+        # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
+        # so do NOT interchange them in the code.
+        PossConcUnits <- list("mg/mL" = "(mg/mL)",
+                              "µg/L" = expression("("*mu*g/L*")"),
+                              "µg/mL" = expression("("*mu*g/mL*")"),
+                              "ng/mL" = "(ng/mL)",
+                              "ng/L" = "(ng/L)",
+                              "µM" = expression("("*mu*M*")"),
+                              "nM" = "(nM)",
+                              "mM" = "(mM)",
+                              "mg" = "(mg)",
+                              "µg" = expression("("*mu*"g)"),
+                              "ng" = "(ng)",
+                              "mg/h" = "(mg/h)",
+                              "mg/L" = expression("("*mu*g/mL*")"),
+                              "mL" = "(mL)", 
+                              "mmol" = "(mmol)", 
+                              "µmol" = expression("("*mu*"mol)"),
+                              "nmol" = "(nmol)")
+        
+        ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
+        
+        if(subsection_ADAM %in% c("Heff", 
+                                  "cumulative fraction of compound absorbed",
+                                  "cumulative fraction of compound dissolved")){
+            ylab <- expr(!!ylab1)
         } else {
-            ylab <- switch(subsection_ADAM, 
-                        "cumulative fraction of dissolved substrate" =
-                            expression(atop("Cumulative fraction",
-                                            "of dissolved substrate")),
-                        "cumulative fraction of dissolved inhibitor 1" =
-                            expression(atop("Cumulative fraction",
-                                            "of dissolved inhibitor 1")),
-                        "cumulative fraction of absorbed substrate" =
-                            expression(atop("Cumulative fraction",
-                                            "of absorbed substrate")),
-                        "cumulative fraction of absorbed inhibitor 1" =
-                            expression(atop("Cumulative fraction",
-                                            "of absorbed inhibitor 1"))
-                           )
+            ylab <- expr(!!ylab1 ~ !!ylab2)
         }
+        
     } else {
         
-        PossConcUnits <- list("µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
+        # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
+        # so do NOT interchange them in the code.
+        PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
+                              "µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
                               "ng/mL" = "Concentration (ng/mL)",
                               "ng/L" = "Concentration (ng/L)",
                               "µM" = expression(Concentration~"("*mu*M*")"),
@@ -254,4 +301,3 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     assign("pad_y_num", pad_y_num, envir = parent.frame())
     assign("pad_y_axis", pad_y_axis, envir = parent.frame())
 }
-    
