@@ -33,10 +33,10 @@
 #'   of data are available, so which of those types do you want to show? Options
 #'   are whatever were available for that tissue, which could be "undissolved
 #'   compound", "free compound in lumen", "Heff", "absorption rate", "unreleased
-#'   compound in faeces", "dissolved compound", "luminal CLint of compound",
-#'   "cumulative fraction of compound absorbed", or "cumulative fraction of
-#'   compound dissolved". Default is "free compound in lumen" but is ignored
-#'   when ct_dataframe doesn't contain ADAM data.
+#'   compound in faeces", "dissolved compound", "luminal CLint", "cumulative
+#'   fraction of compound absorbed", or "cumulative fraction of compound
+#'   dissolved". Default is "free compound in lumen" but is ignored when
+#'   ct_dataframe doesn't contain ADAM data.
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -464,6 +464,16 @@ ct_plot <- function(ct_dataframe = NA,
         }
         
         Data <- Data %>% filter(subsection_ADAM == {{subsection_ADAM}})
+        
+        if(nrow(Data) == 0){
+            stop(paste0("You appear to have ADAM-model data, and you requested `", 
+                        subsection_ADAM, 
+                        "` for the subsection_ADAM argument, but that type is not present in ct_dataframe. The type(s) of ADAM data available in ct_dataframe is/are ", 
+                        str_comma(paste0("`", unique(ct_dataframe$subsection_ADAM), "`")),
+                        ". Please set the argument `subsection_ADAM` to one of these values."),
+                 call. = FALSE)
+        }
+        
     }   
     
     # Error catching now that we've figured out which subsection_ADAM they want

@@ -78,12 +78,13 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   rest, try setting \code{obs_color = "none"}. -LSh}}}
 
 \item{subsection_ADAM}{ADAM model only: For ADAM model output, multiple types
-of data are available. Which of those concentration types do you want to
-show? Options are whatever were available for that tissue, which could be
-"solid compound", "free compound in lumen", "Heff", "absorption rate",
-"unreleased substrate in faeces", "unreleased inhibitor in faeces",
-"dissolved compound", or "luminal CLint of compound". Default is "free
-compound in lumen" but is ignored when ct_dataframe isn't for ADAM data.}
+of data are available, so which of those types do you want to show? Options
+are whatever were available for that tissue, which could be "undissolved
+compound", "free compound in lumen", "Heff", "absorption rate", "unreleased
+compound in faeces", "dissolved compound", "luminal CLint", "cumulative
+fraction of compound absorbed", or "cumulative fraction of compound
+dissolved". Default is "free compound in lumen" but is ignored when
+ct_dataframe doesn't contain ADAM data.}
 
 \item{mean_type}{graph "arithmetic" (default) or "geometric" means or
 "median" for median concentrations. If that option was not included in the
