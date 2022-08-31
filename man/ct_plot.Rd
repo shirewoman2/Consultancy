@@ -195,17 +195,21 @@ possible shapes and what number corresponds to which shape, see
 the middle of that page). If left as NA, substrate alone will be an open
 circle and substrate + inhibitor 1 will be an open triangle.}
 
-\item{obs_fill_trans}{optionally specify the transparency for the fill of the observed
-data points, which can be helpful when you have a lot of points overlapping.
-Acceptable values are from 0 (fully transparent, so no fill at all) to 1
-(completely opaque or black). If left as the default NA, the observed data
-points will be 50% transparent, so the same as if this were set to 0.5.}
+\item{obs_fill_trans}{optionally specify the transparency for the fill of the
+observed data points, which can be helpful when you have a lot of points
+overlapping. This only applies when you have specified a value for
+\code{obs_color} since, for most of the graph types, the observed data is
+depicted as an open circle by default. Acceptable values are from 0 (fully
+transparent, so no fill at all) to 1 (completely opaque or black). If left
+as the default NA, the observed data points will be 50% transparent, so the
+same as if this were set to 0.5.}
 
-\item{obs_line_trans}{optionally specify the transparency for the outline of the observed
-data points, which can be helpful when you have a lot of points overlapping.
-Acceptable values are from 0 (fully transparent, so no line at all) to 1
-(completely opaque or black). If left as the default NA, the observed data
-points will be opaque, so the same as if this were set to 1.}
+\item{obs_line_trans}{optionally specify the transparency for the outline of
+the observed data points, which can be helpful when you have a lot of
+points overlapping. Acceptable values are from 0 (fully transparent, so no
+line at all) to 1 (completely opaque or black). If left as the default NA,
+the observed data points will be opaque, so the same as if this were set to
+1.}
 
 \item{showBLQ}{TRUE or FALSE (default) to display observed concentrations
 that were clearly below the lower limit of quantitation, that is,
