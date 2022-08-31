@@ -11,12 +11,14 @@ ct_plot(
   mean_type = "arithmetic",
   time_range = NA,
   x_axis_interval = NA,
+  x_axis_label = NA,
   pad_x_axis = TRUE,
   pad_y_axis = TRUE,
   adjust_obs_time = FALSE,
   t0 = "simulation start",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_label = NA,
   obs_color = NA,
   obs_shape = NA,
   showBLQ = FALSE,
@@ -126,6 +128,9 @@ Acceptable input: any number or leave as NA to accept default values, which
 are generally reasonable guesses as to aesthetically pleasing and
 PK-relevant intervals.}
 
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
+
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If
 changed to FALSE, the y axis will be placed right at the beginning of your
@@ -167,6 +172,9 @@ limits for the linear plot will be automatically selected.}
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
+
+\item{y_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
 
 \item{obs_color}{If you would like the observed data points to be in color,
 either specify a color here or set this to "default". Points will be
