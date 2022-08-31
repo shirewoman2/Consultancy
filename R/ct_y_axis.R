@@ -64,21 +64,21 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
         # so do NOT interchange them in the code.
         PossConcUnits <- list("mg/mL" = "(mg/mL)",
-                              "µg/L" = expression("("*"\u03bc"*g/L*")"),
-                              "µg/mL" = expression("("*"\u03bc"*g/mL*")"),
+                              "µg/L" = expression(bold("("*"\u03bc"*g*"/"*L*")")),
+                              "µg/mL" = expression(bold("("*"\u03bc"*g*"/"*mL*")")),
                               "ng/mL" = "(ng/mL)",
                               "ng/L" = "(ng/L)",
-                              "µM" = expression("("*"\u03bc"*M*")"),
+                              "µM" = expression(bold("("*"\u03bc"*M*")")),
                               "nM" = "(nM)",
                               "mM" = "(mM)",
                               "mg" = "(mg)",
-                              "µg" = expression("("*"\u03bc"*"g)"),
+                              "µg" = expression(bold("("*"\u03bc"*"g)")),
                               "ng" = "(ng)",
                               "mg/h" = "(mg/h)",
-                              "mg/L" = expression("("*"\u03bc"*g/mL*")"),
+                              "mg/L" = expression(bold("("*"\u03bc"*g*"/"*mL*")")),
                               "mL" = "(mL)", 
                               "mmol" = "(mmol)", 
-                              "µmol" = expression("("*"\u03bc"*"mol)"),
+                              "µmol" = expression(bold("("*"\u03bc"*"mol)")),
                               "nmol" = "(nmol)")
         
         ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
@@ -86,9 +86,9 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         if(subsection_ADAM %in% c("Heff", 
                                   "cumulative fraction of compound absorbed",
                                   "cumulative fraction of compound dissolved")){
-            ylab <- expr(!!ylab1)
+            ylab <- expr(bold(!!ylab1))
         } else {
-            ylab <- expr(!!ylab1 ~ !!ylab2)
+            ylab <- expr(bold(!!ylab1 ~ !!ylab2))
         }
         
     } else {
@@ -96,14 +96,14 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
         # so do NOT interchange them in the code.
         PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
-                              "µg/mL" = expression(Concentration~"("*"\u03bc"*g/mL*")"),
+                              "µg/mL" = expression(bold(Concentration~"("*"\u03bc"*g*"/"*mL*")")),
                               "ng/mL" = "Concentration (ng/mL)",
                               "ng/L" = "Concentration (ng/L)",
-                              "µM" = expression(Concentration~"("*"\u03bc"*M*")"),
+                              "µM" = expression(bold(Concentration~"("*"\u03bc"*M*")")),
                               "nM" = "Concentration (nM)",
                               "mg" = "Amount (mg)",
                               "mg/h" = "Absorption rate (mg/h)",
-                              "mg/L" = expression(Concentration~"("*"\u03bc"*g/mL*")"),
+                              "mg/L" = expression(bold(Concentration~"("*"\u03bc"*g*"/"*mL*")")),
                               "mL" = "Volume (mL)",
                               "PD response" = "PD response",
                               "Relative abundance" = "Relative abundance (%)")
