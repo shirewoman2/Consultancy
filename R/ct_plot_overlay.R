@@ -707,20 +707,20 @@ ct_plot_overlay <- function(ct_dataframe,
     #     
     #     
     # } else {
-        
-        MyUniqueData <- ct_dataframe %>% 
-            filter(Trial == MyMeanType) %>% 
-            select(union(UniqueAES, 
-                         c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
-            unique()
-        
-        UniqueGroups1 <- ct_dataframe %>% 
-            summarize(across(.cols = union(UniqueAES, 
-                                           c("File", "Tissue", "CompoundID",
-                                             "Compound", "Inhibitor")),
-                             .fns = function(x) length(unique(x)))) 
-        
-        
+    
+    MyUniqueData <- ct_dataframe %>% 
+        filter(Trial == MyMeanType) %>% 
+        select(union(UniqueAES, 
+                     c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
+        unique()
+    
+    UniqueGroups1 <- ct_dataframe %>% 
+        summarize(across(.cols = union(UniqueAES, 
+                                       c("File", "Tissue", "CompoundID",
+                                         "Compound", "Inhibitor")),
+                         .fns = function(x) length(unique(x)))) 
+    
+    
     # }
     
     UniqueGroups <- UniqueGroups1 %>% 
@@ -740,11 +740,11 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # NOTE TO SELF: I've been trying to think of a clearer way to indicate to
     # people when they need to specify more aesthetics and just haven't come up
-    # with a strategy I like. I think the current warning i'm giving is too
-    # cautious, which means that people will ignore it much of the time. For
-    # now, I'm going to just tell them how many aesthetics they've selected
-    # compared to how many unique groups and see whether that's sufficient
-    # warning.
+    # with a strategy I like. I think the warning I was giving (now commented
+    # out) is too cautious, which means that people will ignore it much of the
+    # time. For now, I'm going to just tell them how many aesthetics they've
+    # selected compared to how many unique groups and see whether that's
+    # sufficient warning.
     
     # if(length(UniqueGroups) > length(UniqueAES)){
     #     warning(paste("You have requested", length(UniqueGroups),
@@ -753,7 +753,9 @@ ct_plot_overlay <- function(ct_dataframe,
     #                   "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
     #             call. = FALSE)
     message(paste("Unique datasets:", str_comma(UniqueGroups)))
-    message(paste("Unique aesthetics:", str_comma(UniqueAES)))
+    message(paste("Unique aesthetics:", 
+                  str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")"))))
+    
     # }
     
     # If there are multiple values in linetype_column but user has only listed
