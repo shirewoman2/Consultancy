@@ -170,6 +170,16 @@
 #'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 #'   the middle of that page). If left as NA, substrate alone will be an open
 #'   circle and substrate + inhibitor 1 will be an open triangle.
+#' @param obs_fill_trans optionally specify the transparency for the fill of the observed
+#'   data points, which can be helpful when you have a lot of points overlapping.
+#'   Acceptable values are from 0 (fully transparent, so no fill at all) to 1
+#'   (completely opaque or black). If left as the default NA, the observed data
+#'   points will be 50% transparent, so the same as if this were set to 0.5. 
+#' @param obs_line_trans optionally specify the transparency for the outline of the observed
+#'   data points, which can be helpful when you have a lot of points overlapping.
+#'   Acceptable values are from 0 (fully transparent, so no line at all) to 1
+#'   (completely opaque or black). If left as the default NA, the observed data
+#'   points will be opaque, so the same as if this were set to 1. 
 #' @param showBLQ TRUE or FALSE (default) to display observed concentrations
 #'   that were clearly below the lower limit of quantitation, that is,
 #'   concentrations equal to 0 after time 0. The default (FALSE) removes these
@@ -317,6 +327,8 @@ ct_plot <- function(ct_dataframe = NA,
                     y_axis_label = NA,
                     obs_color = NA,
                     obs_shape = NA,
+                    obs_fill_trans = NA,
+                    obs_line_trans = NA,
                     showBLQ = FALSE, 
                     line_type = NA,
                     line_transparency = NA,
@@ -669,6 +681,12 @@ ct_plot <- function(ct_dataframe = NA,
                 obs_shape = obs_shape, obs_color = obs_color, 
                 line_color = line_color)
     
+    obs_fill_trans <- ifelse(is.na(obs_fill_trans), 
+                                   0.5, obs_fill_trans)
+    
+    obs_line_trans <- ifelse(is.na(obs_line_trans), 
+                                   1, obs_line_trans)
+    
     ## figure_type: trial means -----------------------------------------------------------
     if(figure_type == "trial means"){
         
@@ -682,6 +700,9 @@ ct_plot <- function(ct_dataframe = NA,
            MyEffector[1] != "none" &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
+            # This is when there is an effector present and the graph is of the
+            # substrate or a substrate metabolite
+            
             
             if(EnzPlot == FALSE){
                 warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
@@ -705,30 +726,41 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
                     A <-  A + geom_point(data = obs_data, size = 2,
-                                         stroke = 1, fill = NA)
+                                         stroke = 1, fill = NA, 
+                                         alpha = obs_line_trans)
                 } else {
-                    # Glitch when the user has supplied observed data
-                    # with a different number of inhibitors than
-                    # sim_data_trial, e.g., when the obs data came
-                    # with the simulator output file. Addressing that.
+                    # This is when they want both outlines and fill for observed
+                    # data points.
+                    
+                    # Addressing glitch when the user has supplied observed data
+                    # with a different number of inhibitors than sim_data_trial,
+                    # e.g., when the obs data came with the simulator output
+                    # file. Addressing that.
                     if(length(unique(obs_data$Inhibitor)) == 1){
                         obs_color <- obs_color[1]
                     }
                     
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   alpha = 0.5, stroke = 1) +
+                                   alpha = obs_fill_trans, stroke = 0) +
                         scale_fill_manual(values = obs_color) +
                         # have to add geom_point 2x b/c alpha applies to both
                         # color (as in, the outline of the point) AND the fill
-                        # of the point
+                        # of the point and I want to control it for each
+                        # separately.
                         geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1)
+                                   fill = NA, stroke = 1,
+                                   alpha = obs_line_trans)
                 }
             }
             
         } else {
+            
+            # This is when there is no effector present or the graph is of the
+            # effector or an effector metabolite.
             
             ## linear plot
             A <- ggplot(sim_data_trial,
@@ -745,16 +777,27 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
                     A <- A + geom_point(data = obs_data, size = 2,
                                         shape = obs_shape[1], stroke = 1, 
-                                        fill = NA)
+                                        fill = NA, 
+                                        alpha = obs_line_trans)
                 } else {
+                    # This is when they want both outlines and fill for observed
+                    # data points.
                     
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = obs_color[1], alpha = 0.5,
-                                        shape = obs_shape[1], stroke = 1) +
+                                        fill = obs_color[1], 
+                                        alpha = obs_fill_trans,
+                                        shape = obs_shape[1], stroke = 0) +
+                        # have to add geom_point 2x b/c alpha applies to both
+                        # color (as in, the outline of the point) AND the fill
+                        # of the point and I want to control it for each
+                        # separately.
                         geom_point(data = obs_data, size = 2,
-                                   fill = NA, shape = obs_shape[1], stroke = 1)
+                                   fill = NA, shape = obs_shape[1], stroke = 1, 
+                                   alpha = obs_line_trans)
                 }
             }
         }
@@ -773,6 +816,8 @@ ct_plot <- function(ct_dataframe = NA,
            MyEffector[1] != "none"  &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
+            # This is when there is an effector present and the graph is of the
+            # substrate or a substrate metabolite
             
             if(EnzPlot == FALSE){
                 warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
@@ -797,22 +842,31 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        stroke = 1, fill = NA)
+                                        stroke = 1, fill = NA, 
+                                        alpha = obs_line_trans)
                 } else {
+                    # This is when they want both outlines and fill for observed
+                    # data points.
+                    
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   alpha = 0.5, stroke = 1) +
+                                   alpha = obs_fill_trans, stroke = 0) +
                         scale_fill_manual(values = obs_color) +
                         # have to add geom_point 2x b/c alpha applies to both
                         # color (as in, the outline of the point) AND the fill
                         # of the point
                         geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1)
+                                   fill = NA, stroke = 1,
+                                   alpha = obs_line_trans)
                 }
             }
             
         } else {
+            # This is when there is no effector present or the graph is of the
+            # effector or an effector metabolite.
             
             ## linear plot
             A <- ggplot(sim_data_mean %>% filter(Trial != MyMeanType),
@@ -829,14 +883,24 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
+                    
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        stroke = 1, shape = obs_shape[1])
+                                        stroke = 1, fill = NA, 
+                                        alpha = obs_line_trans, 
+                                        shape = obs_shape[1])
                 } else {
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   fill = obs_color[1], alpha = 0.5,
-                                   stroke = 1, shape = obs_shape[1]) +
+                                   fill = obs_color[1], alpha = obs_fill_trans,
+                                   stroke = 0, shape = obs_shape[1]) +
+                        # have to add geom_point 2x b/c alpha applies to both
+                        # color (as in, the outline of the point) AND the fill
+                        # of the point and I want to control it for each
+                        # separately.
                         geom_point(data = obs_data, size = 2,
+                                   alpha = obs_line_trans, 
                                    fill = NA, shape = obs_shape[1], stroke = 1)
                 }
             }
@@ -860,6 +924,8 @@ ct_plot <- function(ct_dataframe = NA,
            MyEffector[1] != "none" &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
+            # This is when there is an effector present and the graph is of the
+            # substrate or a substrate metabolite
             
             if(EnzPlot == FALSE){
                 warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
@@ -879,26 +945,28 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
                     A <- A + 
                         geom_point(data = obs_data, 
                                    aes(x = Time, y = Conc, color = Inhibitor,
-                                       shape = Inhibitor, fill = Inhibitor),
+                                       shape = Inhibitor),
                                    inherit.aes = FALSE, size = 2,
-                                   alpha = 0.5, stroke = 1) + 
-                        geom_point(data = obs_data, 
-                                   aes(x = Time, y = Conc, color = Inhibitor,
-                                       shape = Inhibitor, fill = Inhibitor),
-                                   inherit.aes = FALSE, size = 2,
+                                   alpha = obs_line_trans,
                                    fill = NA, stroke = 1)
                 } else {
+                    # This is when they want both outlines and fill for observed
+                    # data points.
+                    
                     suppressMessages(
                         A <- A +
                             geom_point(data = obs_data, 
                                        aes(x = Time, y = Conc, color = Inhibitor,
                                            shape = Inhibitor, fill = Inhibitor),
                                        inherit.aes = FALSE, size = 2,
-                                       alpha = 0.5, stroke = 1) +
+                                       alpha = obs_fill_trans, stroke = 0) +
                             scale_fill_manual(values = obs_color) +
+                            scale_color_manual(values = obs_color) +
                             # have to add geom_point 2x b/c alpha applies to both
                             # color (as in, the outline of the point) AND the fill
                             # of the point
@@ -906,12 +974,15 @@ ct_plot <- function(ct_dataframe = NA,
                                        aes(x = Time, y = Conc, color = Inhibitor,
                                            shape = Inhibitor, fill = Inhibitor),
                                        inherit.aes = FALSE, size = 2,
+                                       alpha = obs_line_trans,
                                        fill = NA, stroke = 1)
                     )
                 }
             }
             
         } else {
+            # This is when there is no effector present or the graph is of the
+            # effector or an effector metabolite.
             
             ## linear plot
             A <- ggplot(RibbonDF, aes(x = Time, y = mean, ymin = per5, ymax = per95)) +
@@ -923,19 +994,25 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
                     A <- A + 
                         geom_point(data = obs_data, 
                                    aes(x = Time, y = Conc), inherit.aes = FALSE,
-                                   size = 2, stroke = 1, shape = obs_shape[1])
+                                   size = 2, stroke = 1, shape = obs_shape[1], 
+                                   fill = NA, alpha = obs_line_trans)
                 } else {
                     A <- A +
                         geom_point(data = obs_data,
                                    aes(x = Time, y = Conc), inherit.aes = FALSE,
-                                   size = 2, fill = obs_color[1], alpha = 0.5,
-                                   stroke = 1, shape = obs_shape[1]) +
+                                   size = 2, fill = obs_color[1], 
+                                   alpha = obs_fill_trans,
+                                   stroke = 0, shape = obs_shape[1]) +
                         geom_point(data = obs_data, 
                                    aes(x = Time, y = Conc), inherit.aes = FALSE,
                                    size = 2, fill = NA, shape = obs_shape[1], 
+                                   alpha = obs_line_trans,
+                                   color = obs_color[1],
                                    stroke = 1)
                 }
             }
@@ -955,6 +1032,8 @@ ct_plot <- function(ct_dataframe = NA,
            MyEffector[1] != "none"  &
            compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                     "inhibitor 1 metabolite") == FALSE){
+            # This is when there is an effector present and the graph is of the
+            # substrate or a substrate metabolite
             
             if(EnzPlot == FALSE){
                 warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
@@ -984,24 +1063,28 @@ ct_plot <- function(ct_dataframe = NA,
                 # "freddy" default. -LS
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = NA, stroke = 1)
+                                        fill = NA, stroke = 1, 
+                                        alpha = obs_line_trans)
                 } else {
                     # This is the situation when the user has
                     # requested a specific color for the Freddy figure
                     # type.
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   alpha = 0.5, stroke = 1) +
+                                   alpha = obs_fill_trans, stroke = 0) +
                         scale_fill_manual(values = obs_color) +
                         # have to add geom_point 2x b/c alpha applies to both
                         # color (as in, the outline of the point) AND the fill
                         # of the point
                         geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1)
+                                   fill = NA, stroke = 1, 
+                                   alpha = obs_line_trans)
                 }
             }
             
         } else {
+            # This is when there is no effector present or the graph is of the
+            # effector or an effector metabolite.
             
             ## linear plot
             A <- ggplot(sim_data_trial,
@@ -1028,17 +1111,18 @@ ct_plot <- function(ct_dataframe = NA,
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
                     A <- A + geom_point(data = obs_data, size = 2,
                                         fill = NA, stroke = 1,
-                                        shape = obs_shape[1])
+                                        shape = obs_shape[1], 
+                                        alpha = obs_line_trans)
                 } else {
                     # This is the situation when the user has
                     # requested a specific color for the Freddy figure
                     # type.
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   fill = obs_color[1], alpha = 0.5,
-                                   stroke = 1, shape = obs_shape[1]) +
+                                   fill = obs_color[1], alpha = obs_fill_trans,
+                                   stroke = 0, shape = obs_shape[1]) +
                         geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1,
+                                   fill = NA, stroke = 1, alpha = obs_line_trans,
                                    shape = obs_shape[1])
                 }
             }
@@ -1050,6 +1134,8 @@ ct_plot <- function(ct_dataframe = NA,
         
         if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
            MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+            # This is when there is an effector present and the graph is of the
+            # substrate or a substrate metabolite
             
             A <- ggplot(sim_data_mean %>%
                             filter(Trial == MyMeanType) %>%
@@ -1064,9 +1150,16 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
+                    
                     A <-  A + geom_point(data = obs_data, size = 2,
-                                         stroke = 1, fill = NA)
+                                         stroke = 1, fill = NA, 
+                                         alpha = obs_line_trans)
                 } else {
+                    # This is when they want both outlines and fill for observed
+                    # data points.
+                    
                     # Glitch when the user has supplied observed data
                     # with a different number of inhibitors than
                     # sim_data_trial, e.g., when the obs data came
@@ -1077,17 +1170,20 @@ ct_plot <- function(ct_dataframe = NA,
                     
                     A <- A +
                         geom_point(data = obs_data, size = 2,
-                                   alpha = 0.5, stroke = 1) +
+                                   alpha = obs_fill_trans, stroke = 0) +
                         scale_fill_manual(values = obs_color) +
                         # have to add geom_point 2x b/c alpha applies to both
                         # color (as in, the outline of the point) AND the fill
                         # of the point
                         geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1)
+                                   fill = NA, stroke = 1, 
+                                   alpha = obs_line_trans)
                 }
             }
             
         } else {
+            # This is when there is no effector present or the graph is of the
+            # effector or an effector metabolite.
             
             A <- ggplot(sim_data_mean %>%
                             filter(Trial == MyMeanType),
@@ -1098,15 +1194,23 @@ ct_plot <- function(ct_dataframe = NA,
             
             if(nrow(obs_data) > 0){
                 if(all(is.na(obs_color)) | obs_color[1] == "none"){
+                    # This is when they want only outlines and no fill for
+                    # observed data points
+                    
                     A <- A + geom_point(data = obs_data, size = 2,
                                         shape = obs_shape[1], stroke = 1, 
-                                        fill = NA)
+                                        color = obs_color[1],
+                                        fill = NA, 
+                                        alpha = obs_line_trans)
                 } else {
                     
                     A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = obs_color[1], alpha = 0.5,
-                                        shape = obs_shape[1], stroke = 1) +
+                                        fill = obs_color[1], 
+                                        alpha = obs_fill_trans,
+                                        shape = obs_shape[1], stroke = 0) +
                         geom_point(data = obs_data, size = 2,
+                                   alpha = obs_line_trans,
+                                   color = obs_color[1],
                                    fill = NA, shape = obs_shape[1], stroke = 1)
                 }
             }
