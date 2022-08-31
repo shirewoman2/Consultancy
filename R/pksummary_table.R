@@ -264,8 +264,8 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Check for appropriate input for arguments
     tissue <- tolower(tissue)
-    if(tissue %in% c("plasma", "blood")){
-        stop("You have not supplied a permissible value for tissue. Options are `plasma`, `blood`, or `plasma and blood`. Please check your input and try again.", 
+    if(tissue %in% c("plasma", "blood") == FALSE){
+        stop("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. Please check your input and try again.", 
              call. = FALSE)
     }
     
