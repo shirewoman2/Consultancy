@@ -72,11 +72,31 @@
 #'
 #' @examples
 #'
-#' ForestData <- extractForestData(sim_data_files = NA,
-#'                                 save_output = "Forest data.csv")
-#' forest_plot(forest_dataframe = ForestData,
-#'             facet_column = Dose_inhib)
+#' # We'll use some example forest-plot data for the substrate bufuralol
+#' # with various effectors. 
+#' forest_plot(forest_dataframe = ForestData, 
+#'             perp_or_victim = "victim",
+#'             x_axis_limits = c(0.9, 5))
 #'
+#' # If there were multiple dosing levels of bufuralol, it might be
+#' # nice to break up the graph by the substrate dose like this:
+#' forest_plot(forest_dataframe = ForestData, 
+#'             perp_or_victim = "victim",
+#'             facet_column = Dose_sub,
+#'             x_axis_limits = c(0.9, 5))
+#' 
+#' 
+#' # If you want to maybe add some units in the graph to the substrate dose 
+#' # or maybe also say "Dose = X mg MyCompound", you can modify the column
+#' # Dose_sub into a new column, Dose_sub_pretty, and use it like this:
+#' ForestData <- ForestData %>%
+#'                   mutate(Dose_sub_pretty = paste("Dose =", Dose_sub,
+#'                                                  "mg bufuralol"))
+#'                                                  
+#' forest_plot(forest_dataframe = ForestData, 
+#'             perp_or_victim = "victim",
+#'             facet_column = Dose_sub_pretty,
+#'             x_axis_limits = c(0.9, 5))
 #' 
 
 forest_plot <- function(forest_dataframe, 
@@ -123,7 +143,11 @@ forest_plot <- function(forest_dataframe,
                            "victim" = "effector"),
                     " for `",
                     str_comma(Check$Compound[which(Check$N > 1)]),
-                    "`. You *can* do that, but only if you specify something for `y_axis_order` so that it's clear what y axis labels you want to use for those files."),
+                    "`. Did you specify `perp_or_victim` correctly? You *can* have more than one file per ",
+                    switch(perp_or_victim, 
+                           "perpetrator" = "substrate", 
+                           "victim" = "effector"),
+                    " but only if you specify something for `y_axis_order` so that it's clear what y axis labels you want to use for those files."),
              call. = FALSE)
     }
     
