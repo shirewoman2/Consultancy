@@ -220,3 +220,19 @@
 #'   }
 #'   
 "ObsDVoptions"
+
+
+
+#' Example output from \code{extractForestData}
+#'
+#' Example output from running \code{extractForestData} on some simulations with
+#' bufuralol as the substrate and then 4 different effectors.
+#'
+#' @format a data.frame with rows for each of 4 simulator files and the columns
+#'   "File", "Substrate", "Dose_sub", "Inhibitor1", "Dose_inhib",
+#'   "AUCt_ratio_dose1__GMR", "AUCt_ratio_dose1__CI90_lo",
+#'   "AUCt_ratio_dose1__CI90_hi", "Cmax_ratio_dose1__GMR",
+#'   "Cmax_ratio_dose1__CI90_lo", and "Cmax_ratio_dose1__CI90_hi"
+"ForestData"
+
+
