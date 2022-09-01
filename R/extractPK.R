@@ -1331,16 +1331,6 @@ extractPK <- function(sim_data_file,
             fill(everything(), .direction = "downup") %>%
             select(PKparam, File, Tab, Individual, everything()) %>% unique()
         
-        if(returnExpDetails){
-            if(class(Out)[1] == "list"){
-                Out[["ExpDetails"]] <- Deets
-            } else {
-                Out <- list(Out)
-                Out[[2]] <- Deets
-                names(Out) <- c(returnAggregateOrIndiv, "ExpDetails")
-            }
-        }
-        
         if(class(Out)[1] == "list"){
             Out[["QC"]] <- unique(DataCheck)
         } else {
@@ -1349,6 +1339,16 @@ extractPK <- function(sim_data_file,
             # the items in Out accordingly.
             Out <- list(Out, DataCheck)
             names(Out) <- c(returnAggregateOrIndiv, "QC")
+        }
+    }
+    
+    if(returnExpDetails){
+        if(class(Out)[1] == "list"){
+            Out[["ExpDetails"]] <- Deets
+        } else {
+            Out <- list(Out)
+            Out[[2]] <- Deets
+            names(Out) <- c(returnAggregateOrIndiv, "ExpDetails")
         }
     }
     
