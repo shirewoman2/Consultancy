@@ -221,17 +221,35 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
-#' @param obs_transparency Optionally make the observed data points
-#'   semi-transparent, which can be helpful when there are numerous
-#'   observations. Acceptable values are 0 (completely transparent) to 1
-#'   (completely opaque).
-#' @param obs_color Optionally specify a single color to make all observed data.
+#' @param obs_color Optionally specify a color to use for observed data.
 #'   By default, observed data will be the same color as whatever file they're
 #'   associated with, but, if you have one observed file that you're comparing
 #'   to multiple simulation files, this means that the observed data will show
 #'   up as the color of which ever file was plotted last. In that case, it might
 #'   be clearer to say \code{obs_color = "black"} to make all the observed data
 #'   points black.
+#' @param obs_shape optionally specify what shapes are used to depict observed
+#'   data for 1. the substrate drug alone and 2. the substrate drug in the
+#'   presence of an effector. Input should look like this, for example:
+#'   \code{c(1, 2)} to get an open circle and an open triangle. To see all the
+#'   possible shapes and what number corresponds to which shape, see
+#'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
+#'   the middle of that page). If left as NA, substrate alone will be an open
+#'   circle and substrate + inhibitor 1 will be an open triangle.
+#' @param obs_fill_trans optionally specify the transparency for the fill of the
+#'   observed data points, which can be helpful when you have a lot of points
+#'   overlapping. This only applies when you have specified a value for
+#'   \code{obs_color} since, for most of the graph types, the observed data is
+#'   depicted as an open circle by default. Acceptable values are from 0 (fully
+#'   transparent, so no fill at all) to 1 (completely opaque or black). If left
+#'   as the default NA, the observed data points will be 50% transparent, so the
+#'   same as if this were set to 0.5.
+#' @param obs_line_trans optionally specify the transparency for the outline of
+#'   the observed data points, which can be helpful when you have a lot of
+#'   points overlapping. Acceptable values are from 0 (fully transparent, so no
+#'   line at all) to 1 (completely opaque or black). If left as the default NA,
+#'   the observed data points will be opaque, so the same as if this were set to
+#'   1.
 #' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
 #'   linear plot will be automatically selected. This only applies when you have
@@ -322,8 +340,10 @@ ct_plot_overlay <- function(ct_dataframe,
                             color_labels = NA, 
                             legend_label_color = NA,
                             color_set = "default",
-                            obs_transparency = NA, 
+                            obs_shape = NA,
                             obs_color = NA,
+                            obs_fill_trans = NA, 
+                            obs_line_trans = NA, 
                             linetype_column, 
                             linetypes = c("solid", "dashed"),
                             line_width = NA,
@@ -826,8 +846,8 @@ ct_plot_overlay <- function(ct_dataframe,
                 A <- A +
                     geom_point(data = obs_data, inherit.aes = FALSE,
                                aes(x = Time, y = Conc, group = Group), 
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
+                               alpha = ifelse(complete.cases(obs_fill_trans), 
+                                              obs_fill_trans, 1), 
                                show.legend = FALSE)
             } else {
                 if(is.na(obs_color)){
@@ -844,15 +864,15 @@ ct_plot_overlay <- function(ct_dataframe,
                                                         color = colorBy_column), 
                                           "none" = aes(x = Time, y = Conc, 
                                                        group = Group)),
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
+                                   alpha = ifelse(complete.cases(obs_fill_trans), 
+                                                  obs_fill_trans, 1), 
                                    show.legend = FALSE)
                 } else {
                     A <- A +
                         geom_point(data = obs_data, inherit.aes = FALSE,
                                    aes(x = Time, y = Conc,group = Group),
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
+                                   alpha = ifelse(complete.cases(obs_fill_trans), 
+                                                  obs_fill_trans, 1), 
                                    color = obs_color,
                                    show.legend = FALSE)
                 }
@@ -865,7 +885,11 @@ ct_plot_overlay <- function(ct_dataframe,
     if(str_detect(figure_type, "ribbon")){
         
         RibbonDF <-  sim_dataframe %>% 
-            filter(Trial %in% c({MyMeanType}, "per5", "per95")) %>% 
+            filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                       # Ribbons don't work if any of the data are clipped on
+                       # the x axis
+                       Time >= time_range_relative[1] &
+                       Time <= time_range_relative[2]) %>% 
             unique() %>% 
             select(-any_of(c("Group", "Individual"))) %>% 
             pivot_wider(names_from = Trial, values_from = Conc)
@@ -896,8 +920,8 @@ ct_plot_overlay <- function(ct_dataframe,
                     geom_point(data = obs_data, 
                                aes(x = Time, y = Conc, group = Group),
                                inherit.aes = FALSE, 
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
+                               alpha = ifelse(complete.cases(obs_fill_trans), 
+                                              obs_fill_trans, 1), 
                                show.legend = FALSE) 
                 
             } else {
@@ -916,16 +940,16 @@ ct_plot_overlay <- function(ct_dataframe,
                                           "none" = aes(x = Time, y = Conc,
                                                        group = Group)),
                                    inherit.aes = FALSE, 
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
+                                   alpha = ifelse(complete.cases(obs_fill_trans), 
+                                                  obs_fill_trans, 1), 
                                    show.legend = FALSE) 
                 } else {
                     A <- A + 
                         geom_point(data = obs_data, 
                                    aes(x = Time, y = Conc, group = Group), 
                                    inherit.aes = FALSE, 
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
+                                   alpha = ifelse(complete.cases(obs_fill_trans), 
+                                                  obs_fill_trans, 1), 
                                    color = obs_color,
                                    show.legend = FALSE)    
                 }
