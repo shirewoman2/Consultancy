@@ -264,15 +264,16 @@
 #'   at all.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
-#'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
-#'   be saved as a png file, but if you specify a different graphical file
-#'   extension, it will be saved as that file format. Acceptable graphical file
-#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-#'   Leaving this as NA means the file will not be saved to disk.
-#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-#'   Microsoft permissions issue, not an R issue. If you try to save on
-#'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder.
+#'   graph.docx". The nice thing about saving to Word is that the figure title
+#'   and caption text will be filled in automatically. If you leave off ".png"
+#'   or ".docx", the graph will be saved as a png file, but if you specify a
+#'   different graphical file extension, it will be saved as that file format.
+#'   Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
+#'   "tiff", "png", "bmp", or "svg". Leaving this as NA means the file will not
+#'   be saved to disk. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
+#'   SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
+#'   try to save on SharePoint, you will get a warning that R will save your
+#'   file instead to your Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -562,36 +563,36 @@ ct_plot <- function(ct_dataframe = NA,
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(obs_shape)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the symbol shapes should be, but you have not listed enough values (you need 2). The default shapes will be used.",
+        warning("There is an inhibitor or effector present, but you have specified only one shape for the observed data. The same shape will be used for both.",
                 call. = FALSE)
-        obs_shape <- NA
+        obs_shape <- rep(obs_shape, 2)
     }
     
     if(complete.cases(obs_color[1]) && length(MyEffector) > 0 &&
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(obs_color)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the symbol colors should be, but you have not listed enough values (you need 2). The default colors will be used.",
+        warning("There is an inhibitor or effector present, but you have specified only one color for the observed data. The same color will be used for both.",
                 call. = FALSE)
-        obs_color <- NA
+        obs_color <- rep(obs_color, 2)
     }
     
     if(complete.cases(line_color[1]) && length(MyEffector) > 0 &&
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(line_color)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the line colors should be, but you have not listed enough values (you need 2). The default colors will be used.",
+        warning("There is an inhibitor or effector present, but you have specified only one line color. The same line color will be used for both.",
                 call. = FALSE)
-        line_color <- NA
+        line_color <- rep(line_color, 2)
     }
     
     if(complete.cases(line_type[1]) && length(MyEffector) > 0 &&
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
        length(complete.cases(line_type)) < 2){
-        warning("There is an inhibitor or effector present and you have specified what the line types should be, but you have not listed enough values (you need 2). The default line types will be used.",
+        warning("There is an inhibitor or effector present, but you have specified only one line type. The same line type will be used for both.",
                 call. = FALSE)
-        line_type <- NA
+        line_type <- rep(line_type, 2)
     }
     
     # Always want "none" to be the 1st item on the legend, and we need there
