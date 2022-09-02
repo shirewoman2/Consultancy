@@ -484,10 +484,12 @@ extractConcTime <- function(sim_data_file,
             rename(OrigVal = ...1) %>% 
             mutate(TypeCode = str_extract(
                 OrigVal, 
-                "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed"), 
+                "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed|^C Enterocyte"), 
                 Type = recode(TypeCode, 
                               "Ms" = "undissolved compound", 
+                              "Dissolution Rate Solid State" = "dissolution rate of solid state",
                               "C Lumen Free" = "free compound in lumen", 
+                              "C Lumen Total" = "total compound in lumen", 
                               "Heff" = "Heff", 
                               "Absorption Rate" = "absorption rate", 
                               "Mur" = "unreleased compound in faeces", 
@@ -495,10 +497,13 @@ extractConcTime <- function(sim_data_file,
                               "Md" = "dissolved compound", 
                               "Luminal CLint" = "luminal CLint", 
                               "absorbed" = "cumulative fraction of compound absorbed", 
-                              "dissolved" = "cumulative fraction of compound dissolved"), 
+                              "dissolved" = "cumulative fraction of compound dissolved", 
+                              "C Enterocyte" = "enterocyte concentration"), 
                 ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h|Cumulative fraction"), 
                 # Making "Cumulative" lower case
-                ConcUnit = sub("Cumulative", "cumulative", ConcUnit)) %>% 
+                ConcUnit = sub("Cumulative", "cumulative", ConcUnit), 
+                # Heff unit is um but isn't included in the title
+                ConcUnit = ifelse(TypeCode == "Heff", "µm", ConcUnit)) %>% 
             filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique()
     }
     
@@ -988,14 +993,15 @@ extractConcTime <- function(sim_data_file,
                 for(n in subsection_ADAMs){
                     # message(paste("subsection_ADAMs n =", n))
                     if(ADAM){
-                        RowsToUse <- which(
-                            str_detect(tolower(sim_data_xl$...1), 
-                                       paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
-                                                     "", "^"), 
-                                              tolower(SimConcUnits$TypeCode[
-                                                  SimConcUnits$Type == n]))) &
-                                !str_detect(sim_data_xl$...1, 
-                                            "with interaction|Inh C Lumen Free"))
+                        RowsToUse <- 
+                            data.frame(Orig = sim_data_xl$...1) %>% 
+                            mutate(TypeCode = str_extract(Orig,
+                                                          "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed|^C Enterocyte"), 
+                                   TypeCode = ifelse(str_detect(Orig, "with interaction|Inh C Lumen"), 
+                                                     NA, TypeCode)) %>% 
+                            left_join(SimConcUnits, by = "TypeCode")
+                        RowsToUse <- which(RowsToUse$Type == n)
+                        
                     } else {
                         
                         RowsToUse <- which(
@@ -1197,13 +1203,16 @@ extractConcTime <- function(sim_data_file,
                     }
                     
                     if(ADAM){
-                        RowsToUse <- 
+                        RowsToUse <- intersect(
                             which(
-                                str_detect(sim_data_xl$...1, 
+                                str_detect(tolower(sim_data_xl$...1), 
                                            paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                          "", "^"), 
-                                                  SimConcUnits$TypeCode[
-                                                      SimConcUnits$Type == n])))
+                                                  tolower(SimConcUnits$TypeCode[
+                                                      SimConcUnits$Type == n])))), 
+                            which(
+                                str_detect(sim_data_xl$...1, 
+                                           "with interaction|Inh C Lumen")) )
                     } else {
                         RowsToUse <- which(str_detect(
                             sim_data_xl$...1,

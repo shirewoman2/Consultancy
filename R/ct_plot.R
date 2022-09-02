@@ -413,10 +413,13 @@ ct_plot <- function(ct_dataframe = NA,
     # value for subsection_ADAM. In that case, just switch to the subsection
     # that *was* included and make the plot.
     
-    ADAMoptions <- c("undissolved compound", "free compound in lumen",
+    ADAMoptions <- c("dissolved compound", "undissolved compound",
+                     "enterocyte concentration",
+                     "free compound in lumen", "total compound in lumen",
                      "Heff", "absorption rate",
                      "unreleased compound in faeces", 
-                     "dissolved compound", "luminal CLint", 
+                     "luminal CLint", 
+                     "dissolution rate of solid state", 
                      "cumulative fraction of compound absorbed", 
                      "cumulative fraction of compound dissolved")
     
@@ -681,6 +684,7 @@ ct_plot <- function(ct_dataframe = NA,
     ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
               EnzPlot = EnzPlot, time_range_relative = time_range_relative,
               Ylim_data = Ylim_data, 
+              prettify_compound_names = prettify_compound_names,
               pad_y_axis = pad_y_axis,
               y_axis_limits_lin = y_axis_limits_lin, time_range = time_range,
               y_axis_limits_log = y_axis_limits_log)
@@ -1262,11 +1266,13 @@ ct_plot <- function(ct_dataframe = NA,
                                expand = expansion(mult = pad_y_num)) 
     }
     
-    if(class(y_axis_label) == "expression" | class(y_axis_label) == "character"){
+    if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
+       (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
         ylab <- y_axis_label
     }
     
-    if(class(x_axis_label) == "expression" | class(x_axis_label) == "character"){
+    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
+       (class(x_axis_label) == "expression" && length(x_axis_label) > 0)){
         xlab <- x_axis_label
     }
     

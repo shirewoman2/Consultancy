@@ -807,6 +807,7 @@ ct_plot_overlay <- function(ct_dataframe,
     ct_y_axis(Data = bind_rows(sim_dataframe, obs_data), 
               ADAM = ADAM, 
               subsection_ADAM = unique(ct_dataframe$subsection_ADAM), 
+              prettify_compound_names = prettify_compound_names,
               EnzPlot = FALSE, 
               time_range_relative = time_range_relative,
               Ylim_data = bind_rows(sim_dataframe, obs_data) %>%
