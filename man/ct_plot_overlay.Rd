@@ -13,8 +13,10 @@ ct_plot_overlay(
   color_labels = NA,
   legend_label_color = NA,
   color_set = "default",
-  obs_transparency = NA,
+  obs_shape = NA,
   obs_color = NA,
+  obs_fill_trans = NA,
+  obs_line_trans = NA,
   linetype_column,
   linetypes = c("solid", "dashed"),
   line_width = NA,
@@ -141,18 +143,44 @@ label for this legend item, set this to "none".}
   of the R Working Group about how to do that using
   \link{colorRampPalette}.}}}
 
-\item{obs_transparency}{Optionally make the observed data points
-semi-transparent, which can be helpful when there are numerous
-observations. Acceptable values are 0 (completely transparent) to 1
-(completely opaque).}
+\item{obs_shape}{optionally specify what shapes are used to depict observed
+data for a) the substrate drug alone and b) the substrate drug in the
+presence of an effector. Input should look like this, for example:
+\code{c(1, 2)} to get an open circle for the substrate and an open triangle
+for the substrate in the presence of effectors, if there are any. If you
+only specify one value, it will be used for both substrate with and without
+effectors. To see all the possible shapes and what number corresponds to
+which shape, see \url{https://r-graphics.org/recipe-scatter-shapes}
+(there's a graph around the middle of that page). If left as NA, substrate
+alone will be an open circle and substrate + inhibitor 1 will be an open
+triangle.}
 
-\item{obs_color}{Optionally specify a single color to make all observed data.
-By default, observed data will be the same color as whatever file they're
-associated with, but, if you have one observed file that you're comparing
-to multiple simulation files, this means that the observed data will show
-up as the color of which ever file was plotted last. In that case, it might
-be clearer to say \code{obs_color = "black"} to make all the observed data
-points black.}
+\item{obs_color}{optionally specify a color to use for observed data if the
+color isn't already mapped to a specific column. By default, observed data
+will be the same color as whatever else matches those observed data in
+\code{colorBy_column}, so if you have colored by compound ID, for example,
+the observed data will also be colored by compound ID. If you have one
+observed file that you're comparing to multiple simulation files (this is
+what ct_plot_overlay will do if "File" is NA for the observed data), then
+the observed data will all be black by default, or you could set that color
+to be, say, a lovely purple by setting this: \code{obs_color =
+"darkorchid4"}.}
+
+\item{obs_fill_trans}{optionally specify the transparency for the fill of the
+observed data points, which can be helpful when you have a lot of points
+overlapping. This only applies when you have specified a value for
+\code{obs_color} and when \code{obs_shape} is a shape that has a fill
+(example: \code{obs_shape = 21} for a filled circle, which is the default).
+Acceptable values are from 0 (fully transparent, so no fill at all) to 1
+(completely opaque or black). If left as the default NA, the observed data
+points will be 50% transparent, so the same as if this were set to 0.5.}
+
+\item{obs_line_trans}{optionally specify the transparency for the outline of
+the observed data points, which can be helpful when you have a lot of
+points overlapping. Acceptable values are from 0 (fully transparent, so no
+line at all) to 1 (completely opaque or black). If left as the default NA,
+the observed data points will be opaque, so the same as if this were set to
+1.}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
 for determining the line types. Default is to use the column Inhibitor and

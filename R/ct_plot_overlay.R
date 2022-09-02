@@ -221,29 +221,35 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
-#' @param obs_color Optionally specify a color to use for observed data.
-#'   By default, observed data will be the same color as whatever file they're
-#'   associated with, but, if you have one observed file that you're comparing
-#'   to multiple simulation files, this means that the observed data will show
-#'   up as the color of which ever file was plotted last. In that case, it might
-#'   be clearer to say \code{obs_color = "black"} to make all the observed data
-#'   points black.
+#' @param obs_color optionally specify a color to use for observed data if the
+#'   color isn't already mapped to a specific column. By default, observed data
+#'   will be the same color as whatever else matches those observed data in
+#'   \code{colorBy_column}, so if you have colored by compound ID, for example,
+#'   the observed data will also be colored by compound ID. If you have one
+#'   observed file that you're comparing to multiple simulation files (this is
+#'   what ct_plot_overlay will do if "File" is NA for the observed data), then
+#'   the observed data will all be black by default, or you could set that color
+#'   to be, say, a lovely purple by setting this: \code{obs_color =
+#'   "darkorchid4"}. 
 #' @param obs_shape optionally specify what shapes are used to depict observed
-#'   data for 1. the substrate drug alone and 2. the substrate drug in the
+#'   data for a) the substrate drug alone and b) the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
-#'   \code{c(1, 2)} to get an open circle and an open triangle. To see all the
-#'   possible shapes and what number corresponds to which shape, see
-#'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
-#'   the middle of that page). If left as NA, substrate alone will be an open
-#'   circle and substrate + inhibitor 1 will be an open triangle.
+#'   \code{c(1, 2)} to get an open circle for the substrate and an open triangle
+#'   for the substrate in the presence of effectors, if there are any. If you
+#'   only specify one value, it will be used for both substrate with and without
+#'   effectors. To see all the possible shapes and what number corresponds to
+#'   which shape, see \url{https://r-graphics.org/recipe-scatter-shapes}
+#'   (there's a graph around the middle of that page). If left as NA, substrate
+#'   alone will be an open circle and substrate + inhibitor 1 will be an open
+#'   triangle.
 #' @param obs_fill_trans optionally specify the transparency for the fill of the
 #'   observed data points, which can be helpful when you have a lot of points
 #'   overlapping. This only applies when you have specified a value for
-#'   \code{obs_color} since, for most of the graph types, the observed data is
-#'   depicted as an open circle by default. Acceptable values are from 0 (fully
-#'   transparent, so no fill at all) to 1 (completely opaque or black). If left
-#'   as the default NA, the observed data points will be 50% transparent, so the
-#'   same as if this were set to 0.5.
+#'   \code{obs_color} and when \code{obs_shape} is a shape that has a fill
+#'   (example: \code{obs_shape = 21} for a filled circle, which is the default).
+#'   Acceptable values are from 0 (fully transparent, so no fill at all) to 1
+#'   (completely opaque or black). If left as the default NA, the observed data
+#'   points will be 50% transparent, so the same as if this were set to 0.5.
 #' @param obs_line_trans optionally specify the transparency for the outline of
 #'   the observed data points, which can be helpful when you have a lot of
 #'   points overlapping. Acceptable values are from 0 (fully transparent, so no
@@ -557,8 +563,9 @@ ct_plot_overlay <- function(ct_dataframe,
         
         ToAdd <- expand_grid(ObsFile = unique(obs_data$ObsFile), 
                              File = unique(sim_dataframe$File))
-        obs_data <- obs_data %>% select(-File) %>% 
-            left_join(ToAdd)
+        suppressMessages(
+            obs_data <- obs_data %>% select(-File) %>% 
+                left_join(ToAdd))
     } 
     
     # Dealing with the fact that the observed data will list the inhibitor as
@@ -704,30 +711,6 @@ ct_plot_overlay <- function(ct_dataframe,
     AES <- str_c(AES[complete.cases(AES)], collapse = "-")
     AES <- ifelse(AES == "" | is.na(AES), "none", AES)
     
-    # # If each compound has only 1 compound ID and vice versa, no need to
-    # # consider compound in the set of unique aesthetics. <--- NOT TRUE. This is not catching instances where there is CT data for a substrate and an inhibitor and also the inhibitor column is +/- inhibitor!
-    
-    # if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
-    #                  summarize(LengthUni = length(unique(CompoundID))), 
-    #                  ct_dataframe %>% group_by(CompoundID) %>% 
-    #                  summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
-    #     
-    #     MyUniqueData <- ct_dataframe %>% 
-    #         filter(Trial == MyMeanType) %>% 
-    #         select(union(UniqueAES, 
-    #                      c("File", "Tissue", as.character(UniqueAES), "Inhibitor"))) %>% 
-    #         unique()
-    #     
-    #     UniqueGroups1 <- ct_dataframe %>% 
-    #         summarize(across(.cols = union(UniqueAES, 
-    #                                        c("File", "Tissue", 
-    #                                          as.character(UniqueAES), 
-    #                                          "Inhibitor")),
-    #                          .fns = function(x) length(unique(x)))) 
-    #     
-    #     
-    # } else {
-    
     MyUniqueData <- ct_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
         select(union(UniqueAES, 
@@ -739,9 +722,6 @@ ct_plot_overlay <- function(ct_dataframe,
                                        c("File", "Tissue", "CompoundID",
                                          "Compound", "Inhibitor")),
                          .fns = function(x) length(unique(x)))) 
-    
-    
-    # }
     
     UniqueGroups <- UniqueGroups1 %>% 
         t() %>% as.data.frame() %>% 
@@ -773,10 +753,10 @@ ct_plot_overlay <- function(ct_dataframe,
     #                   "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
     #             call. = FALSE)
     message(paste("Unique datasets:", str_comma(UniqueGroups)))
-    message(paste("Unique aesthetics:", 
-                  str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")"))))
-    
-    # }
+    message(paste("Assigned aesthetics:", 
+                  ifelse(length(UniqueAES) == 0, 
+                         "none", 
+                         str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")")))))
     
     # If there are multiple values in linetype_column but user has only listed
     # the default "solid" for linetypes, then warn the user that they might want
@@ -825,6 +805,20 @@ ct_plot_overlay <- function(ct_dataframe,
     
     
     # Setting figure types ---------------------------------------------------
+    
+    MyEffector <- unique(sim_dataframe$Inhibitor)
+    MyEffector <- fct_relevel(MyEffector, before = "none")
+    MyEffector <- sort(MyEffector)
+    
+    set_aesthet(line_type = linetypes, figure_type = figure_type,
+                MyEffector = MyEffector, 
+                compoundToExtract = unique(sim_dataframe$CompoundID),
+                obs_shape = obs_shape, obs_color = obs_color,
+                obs_fill_trans = obs_fill_trans,
+                obs_line_trans = obs_line_trans,
+                # line_color is just a placeholder b/c not using it here.
+                line_color = NA)
+    
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
         A <- ggplot(sim_dataframe,
@@ -844,29 +838,77 @@ ct_plot_overlay <- function(ct_dataframe,
         if(nrow(obs_data) > 0){
             if(InternalAssignFile){
                 A <- A +
+                    # making obs point outlines
                     geom_point(data = obs_data, inherit.aes = FALSE,
                                aes(x = Time, y = Conc, group = Group), 
-                               alpha = ifelse(complete.cases(obs_fill_trans), 
-                                              obs_fill_trans, 1), 
+                               shape = switch(as.character(
+                                   length(unique(obs_data$Inhibitor)) > 1), 
+                                   "TRUE" = obs_shape,
+                                   "FALSE" = obs_shape[1]),
+                               alpha = obs_line_trans, 
+                               color = obs_color,
+                               fill = NA,
+                               show.legend = FALSE) +
+                    # making obs point fill
+                    geom_point(data = obs_data, inherit.aes = FALSE,
+                               aes(x = Time, y = Conc, group = Group), 
+                               shape = switch(as.character(
+                                   length(unique(obs_data$Inhibitor)) > 1), 
+                                   "TRUE" = obs_shape,
+                                   "FALSE" = obs_shape[1]),
+                               fill = obs_color,
+                               alpha = obs_fill_trans, 
                                show.legend = FALSE)
             } else {
                 if(is.na(obs_color)){
-                    A <- A +
-                        geom_point(data = obs_data, inherit.aes = FALSE,
-                                   switch(AES, 
-                                          "color-linetype" = aes(x = Time, y = Conc,
-                                                                 group = Group,
-                                                                 color = colorBy_column), 
-                                          "linetype" = aes(x = Time, y = Conc, 
-                                                           group = Group), 
-                                          "color" = aes(x = Time, y = Conc,
-                                                        group = Group,
-                                                        color = colorBy_column), 
-                                          "none" = aes(x = Time, y = Conc, 
-                                                       group = Group)),
-                                   alpha = ifelse(complete.cases(obs_fill_trans), 
-                                                  obs_fill_trans, 1), 
-                                   show.legend = FALSE)
+                    
+                    if(length(MyEffector[!MyEffector == "none"]) == 1){
+                        
+                        A <- A +
+                            geom_point(
+                                data = obs_data, inherit.aes = FALSE,
+                                switch(AES, 
+                                       "color-linetype" = aes(x = Time, y = Conc,
+                                                              shape = Inhibitor,
+                                                              group = Group,
+                                                              color = colorBy_column), 
+                                       "linetype" = aes(x = Time, y = Conc, 
+                                                        shape = Inhibitor,
+                                                        group = Group), 
+                                       "color" = aes(x = Time, y = Conc,
+                                                     shape = Inhibitor,
+                                                     group = Group,
+                                                     color = colorBy_column), 
+                                       "none" = aes(x = Time, y = Conc, 
+                                                    shape = Inhibitor,
+                                                    group = Group)),
+                                alpha = obs_fill_trans, 
+                                show.legend = FALSE) +
+                            scale_shape_manual(values = obs_shape)
+                        
+                    } else {
+                        
+                        A <- A +
+                            geom_point(data = obs_data, inherit.aes = FALSE,
+                                       switch(AES, 
+                                              "color-linetype" = aes(x = Time, y = Conc,
+                                                                     group = Group,
+                                                                     color = colorBy_column), 
+                                              "linetype" = aes(x = Time, y = Conc, 
+                                                               group = Group), 
+                                              "color" = aes(x = Time, y = Conc,
+                                                            group = Group,
+                                                            color = colorBy_column), 
+                                              "none" = aes(x = Time, y = Conc, 
+                                                           group = Group)),
+                                       shape = switch(as.character(
+                                           length(unique(obs_data$Inhibitor)) > 1), 
+                                           "TRUE" = obs_shape,
+                                           "FALSE" = obs_shape[1]),
+                                       alpha = obs_fill_trans, 
+                                       show.legend = FALSE)
+                    }
+                    
                 } else {
                     A <- A +
                         geom_point(data = obs_data, inherit.aes = FALSE,
@@ -874,6 +916,10 @@ ct_plot_overlay <- function(ct_dataframe,
                                    alpha = ifelse(complete.cases(obs_fill_trans), 
                                                   obs_fill_trans, 1), 
                                    color = obs_color,
+                                   shape = switch(as.character(
+                                       length(unique(obs_data$Inhibitor)) > 1), 
+                                       "TRUE" = obs_shape,
+                                       "FALSE" = obs_shape[1]),
                                    show.legend = FALSE)
                 }
             }
@@ -912,44 +958,99 @@ ct_plot_overlay <- function(ct_dataframe,
                            "none" = aes(x = Time, y = MyMean, 
                                         ymin = per5, ymax = per95))) +
             geom_ribbon(alpha = 0.25, color = NA) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
         
         if(nrow(obs_data) > 0){
             if(InternalAssignFile){
-                A <- A + 
-                    geom_point(data = obs_data, 
-                               aes(x = Time, y = Conc, group = Group),
-                               inherit.aes = FALSE, 
-                               alpha = ifelse(complete.cases(obs_fill_trans), 
-                                              obs_fill_trans, 1), 
-                               show.legend = FALSE) 
                 
+                A <- A + 
+                    # making obs point outlines
+                    geom_point(data = obs_data, inherit.aes = FALSE,
+                               aes(x = Time, y = Conc, group = Group), 
+                               shape = switch(as.character(
+                                   length(unique(obs_data$Inhibitor)) > 1), 
+                                   "TRUE" = obs_shape,
+                                   "FALSE" = obs_shape[1]),
+                               alpha = obs_line_trans, 
+                               color = obs_color,
+                               fill = NA,
+                               show.legend = FALSE) +
+                    # making obs point fill
+                    geom_point(data = obs_data, inherit.aes = FALSE,
+                               aes(x = Time, y = Conc, group = Group), 
+                               shape = switch(as.character(
+                                   length(unique(obs_data$Inhibitor)) > 1), 
+                                   "TRUE" = obs_shape,
+                                   "FALSE" = obs_shape[1]),
+                               fill = obs_color,
+                               alpha = obs_fill_trans, 
+                               show.legend = FALSE)
             } else {
                 if(is.na(obs_color)){
-                    A <- A + 
-                        geom_point(data = obs_data, 
-                                   switch(AES, 
-                                          "color-linetype" = aes(x = Time, y = Conc,
-                                                                 group = Group,
-                                                                 color = colorBy_column), 
-                                          "linetype" = aes(x = Time, y = Conc,
-                                                           group = Group),
-                                          "color" = aes(x = Time, y = Conc,
-                                                        group = Group,
-                                                        color = colorBy_column),
-                                          "none" = aes(x = Time, y = Conc,
-                                                       group = Group)),
-                                   inherit.aes = FALSE, 
-                                   alpha = ifelse(complete.cases(obs_fill_trans), 
-                                                  obs_fill_trans, 1), 
-                                   show.legend = FALSE) 
+                    
+                    if(length(MyEffector[!MyEffector == "none"]) == 1){
+                        
+                        if(complete.cases(obs_shape) &
+                           length(obs_shape) == 1){
+                            obs_shape <- c(obs_shape, obs_shape)
+                        }
+                        
+                        A <- A + 
+                            geom_point(data = obs_data, 
+                                       switch(AES, 
+                                              "color-linetype" = aes(x = Time, y = Conc,
+                                                                     shape = Inhibitor,
+                                                                     group = Group,
+                                                                     color = colorBy_column), 
+                                              "linetype" = aes(x = Time, y = Conc,
+                                                               shape = Inhibitor,
+                                                               group = Group),
+                                              "color" = aes(x = Time, y = Conc,
+                                                            shape = Inhibitor,
+                                                            group = Group,
+                                                            color = colorBy_column),
+                                              "none" = aes(x = Time, y = Conc,
+                                                           shape = Inhibitor,
+                                                           group = Group)),
+                                       inherit.aes = FALSE, 
+                                       alpha = obs_fill_trans,
+                                       show.legend = FALSE) +
+                            scale_shape_manual(values = obs_shape)
+                        
+                    } else {
+                        
+                        A <- A + 
+                            geom_point(data = obs_data, 
+                                       switch(AES, 
+                                              "color-linetype" = aes(x = Time, y = Conc,
+                                                                     group = Group,
+                                                                     color = colorBy_column), 
+                                              "linetype" = aes(x = Time, y = Conc,
+                                                               group = Group),
+                                              "color" = aes(x = Time, y = Conc,
+                                                            group = Group,
+                                                            color = colorBy_column),
+                                              "none" = aes(x = Time, y = Conc,
+                                                           group = Group)),
+                                       inherit.aes = FALSE, 
+                                       alpha = obs_fill_trans,
+                                       shape = switch(as.character(
+                                           length(unique(obs_data$Inhibitor)) > 1), 
+                                           "TRUE" = obs_shape,
+                                           "FALSE" = obs_shape[1]),
+                                       show.legend = FALSE) 
+                    }
+                    
                 } else {
                     A <- A + 
                         geom_point(data = obs_data, 
                                    aes(x = Time, y = Conc, group = Group), 
                                    inherit.aes = FALSE, 
-                                   alpha = ifelse(complete.cases(obs_fill_trans), 
-                                                  obs_fill_trans, 1), 
+                                   alpha = obs_fill_trans, 
+                                   shape = switch(as.character(
+                                       length(unique(obs_data$Inhibitor)) > 1), 
+                                       "TRUE" = obs_shape,
+                                       "FALSE" = obs_shape[1]),
                                    color = obs_color,
                                    show.legend = FALSE)    
                 }
