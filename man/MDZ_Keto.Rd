@@ -12,7 +12,8 @@ MDZ_Keto
 }
 \description{
 Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
-ketoconazole, including data for both substrate and inhibitor. Format of the
-data are the same as the output from \code{\link{extractConcTime_mult}}.
+ketoconazole, including data for both substrate and inhibitor and observed
+data. Format of the data are the same as the output from
+\code{\link{extractConcTime_mult}}.
 }
 \keyword{datasets}

@@ -113,6 +113,12 @@
 #'   designated column name should be unquoted, e.g., \code{facet2_column =
 #'   CompoundID}. If \code{floating_facet_scale} is FALSE, then
 #'   \code{facet2_column} will designate the columns of the output graphs.
+#' @param facet_ncol optionally specify the number of columns of facetted graphs
+#'   you would like to have. This only applies when you have specified a column
+#'   for \code{facet1_column} and/or \code{facet2_column}. 
+#' @param facet_nrow optionally specify the number of rows of facetted graphs
+#'   you would like to have. This only applies when you have specified a column
+#'   for \code{facet1_column} and/or \code{facet2_column}. 
 #' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
 #'   axes for each facet of a multi-facetted graph to scale freely to best fit
 #'   whatever data are present. Default is FALSE, which means that all data will
@@ -356,6 +362,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
+                            facet_ncol = NA, 
+                            facet_nrow = NA,
                             floating_facet_scale = FALSE,
                             facet_spacing = NA,
                             time_range = NA, 
@@ -1099,6 +1107,15 @@ ct_plot_overlay <- function(ct_dataframe,
                  fill = legend_label_color)
     }
     
+    # Error catching
+    if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
+       AESCols["facet1"] == "<empty>" & AESCols["facet2"] == "<empty>"){
+        warning("You have specified the number of columns and/or rows you want in your facetted graph, but you have not specified *how* you want to break up the data. Please set a value for either `facet1_column` or `facet2_column` to do that. For now, the graph will not be facetted.", 
+                call. = FALSE)
+        facet_ncol <- NA
+        facet_nrow <- NA
+    }
+    
     if(floating_facet_scale){
         A <- A + 
             scale_x_continuous(expand = expansion(
@@ -1106,6 +1123,28 @@ ct_plot_overlay <- function(ct_dataframe,
             scale_y_continuous(expand = expansion(mult = pad_y_num)) +
             facet_wrap(vars(!!facet1_column, !!facet2_column), 
                        scales = "free")
+        
+    } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
+        
+        suppressWarnings(
+            A <- A +
+                coord_cartesian(xlim = time_range_relative, 
+                                ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                0, y_axis_limits_lin[1]),
+                                         YmaxRnd)) +
+                scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                   expand = expansion(
+                                       mult = pad_x_num)) +
+                scale_y_continuous(breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) +
+                facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
+                                        AESCols["facet2"] == "<empty>"), 
+                                  "TRUE FALSE" = vars(!!facet2_column),
+                                  "FALSE TRUE" = vars(!!facet1_column),
+                                  "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
+                           ncol = facet_ncol, nrow = facet_nrow)
+        )
         
     } else {
         A <- A +

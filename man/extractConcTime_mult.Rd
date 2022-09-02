@@ -10,7 +10,7 @@ extractConcTime_mult(
   ct_dataframe = ConcTime,
   overwrite = FALSE,
   tissues = "plasma",
-  compoundsToExtract = "substrate",
+  compoundsToExtract = "all",
   conc_units_to_use = "ng/mL",
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
