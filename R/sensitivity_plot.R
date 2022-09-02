@@ -128,12 +128,14 @@ sensitivity_plot <- function(SA_file,
         names(SAdata)[1] <- "Time"
         names(SAdata)[2:ncol(SAdata)] <- paste0("Run", RunInfo$Run)
         
-        SAdata <- SAdata %>% 
-            pivot_longer(cols = matches("Run"), 
-                         names_to = "Run", 
-                         values_to = "Conc") %>% 
-            mutate(Run = as.numeric(sub("Run", "", Run))) %>% 
-            left_join(RunInfo)
+        suppressMessages(
+            SAdata <- SAdata %>% 
+                pivot_longer(cols = matches("Run"), 
+                             names_to = "Run", 
+                             values_to = "Conc") %>% 
+                mutate(Run = as.numeric(sub("Run", "", Run))) %>% 
+                left_join(RunInfo)
+        )
     } else {
         names(SAdata)[1:2] <- c("SensParameter", "DV")
     }
@@ -178,12 +180,12 @@ sensitivity_plot <- function(SA_file,
                       # adding some placeholder values that aren't important for
                       # the SA plot but are required for ct_x_axis.
                       mutate(Time_units = "hours",
-                                           Simulated = TRUE,
-                                           DoseNum = 1, 
-                                           File = SA_file, 
-                                           Compound = "My compound",
-                                           CompoundID = "substrate", 
-                                           Inhibitor = "none"), 
+                             Simulated = TRUE,
+                             DoseNum = 1, 
+                             File = SA_file, 
+                             Compound = "My compound",
+                             CompoundID = "substrate", 
+                             Inhibitor = "none"), 
                   time_range = range(SAdata$Time), 
                   t0 = "simulation start", 
                   x_axis_interval = NA, 
@@ -230,7 +232,7 @@ sensitivity_plot <- function(SA_file,
     if(complete.cases(target_DV)){
         G <- G + 
             geom_hline(yintercept = target_DV, linetype = "dotted", 
-                            color = "red") +
+                       color = "red") +
             annotate("text", x = -Inf, y = target_DV, 
                      vjust = -0.5, hjust = -0.5, color = "red", 
                      fontface = "italic",

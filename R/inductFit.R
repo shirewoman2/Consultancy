@@ -397,38 +397,41 @@ inductFit <- function(DF,
                                                    model = "Sig3Param")})  )
             
             # Making data.frame to hold the predicted values for the graph
-            Curve <- data.frame(Concentration_uM = rep(seq(min(DF$Concentration_uM, na.rm = T),
-                                                           1.2*max(DF$Concentration_uM, na.rm = T),
-                                                           length.out = 300), 4),
-                                model = rep(c("Indmax", "IndmaxSlope", "slope", "Sig3Param"),
-                                            each = 300))  %>%
-                dplyr::mutate(Model_ch = ModelFacet[model])
+            Curve <- data.frame(Concentration_uM = seq(min(DF$Concentration_uM, na.rm = T),
+                                                       1.2*max(DF$Concentration_uM, na.rm = T),
+                                                       length.out = 300))
             
-            Curve <- Curve %>%
-                dplyr::mutate(
-                    FoldInduction = 
-                        switch(model, 
-                               "Indmax" = 
-                                   1 + (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "Indmax"] *
-                                            Concentration_uM) /
-                                   (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "IndC50"] +
-                                        Concentration_uM),
-                               
-                               "IndmaxSlope" = 
-                                   1 + (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "Indmax"] *
-                                            Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]) /
-                                   (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "IndC50"] ^
-                                        IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"] +
-                                        Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]),
-                               
-                               "slope" = 
-                                   1 + Concentration_uM * IndFit[["slope"]]$estimate[IndFit[["slope"]]$term == "slope"],
-                               
-                               "Sig3Param" = 
-                                   IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "Indmax"] /
-                                   (1+exp(-(Concentration_uM-IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "IndC50"]) /
-                                              IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "slope"]))))
+            Curve_Indmax <- Curve %>%
+                mutate(Model = "Indmax",
+                       FoldInduction = 
+                           1 + (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "Indmax"] *
+                                    Concentration_uM) /
+                           (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "IndC50"] +
+                                Concentration_uM))
             
+            Curve_IndmaxSlope <- Curve %>% 
+                mutate(Model = "IndmaxSlope",
+                       FoldInduction = 
+                           1 + (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "Indmax"] *
+                                    Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]) /
+                           (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "IndC50"] ^
+                                IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"] +
+                                Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]))
+            Curve_slope <- Curve %>% 
+                mutate(Model = "Slope", 
+                       FoldInduction = 
+                           1 + Concentration_uM * IndFit[["slope"]]$estimate[IndFit[["slope"]]$term == "slope"])
+            
+            Curve_Sig3Param <- Curve %>% 
+                mutate(Model = "Sig3Param", 
+                       FoldInduction = 
+                           IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "Indmax"] /
+                           (1+exp(-(Concentration_uM-IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "IndC50"]) /
+                                      IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "slope"])))
+            
+            Curve <- bind_rows(Curve_Indmax, Curve_IndmaxSlope, Curve_slope,
+                               Curve_Sig3Param)  %>%
+                mutate(Model_ch = ModelFacet[Model])
             ModelTitle <- NULL
         }
         
@@ -555,7 +558,7 @@ inductFit <- function(DF,
             )
             
             CurveData <- do.call(dplyr::bind_rows, CurveData) %>%
-                dplyr::mutate(Model_ch = ModelFacet[model])
+                dplyr::mutate(Model_ch = ModelFacet[Model])
             
             if(hline_foldinduct1){
                 G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
