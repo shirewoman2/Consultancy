@@ -24,10 +24,10 @@
 #'   \item{"separate files"}{to make one output file per simulator file, or}
 #'
 #'   \item{"numrows x numcols"}{where you replace "numrows" with the number of
-#'   rows of graphs you'd like and "numcols" with the number of column and the
-#'   result is a single, nicely arranged graph. For example, "2 x 4" will make a
-#'   set of graphs with 2 rows and 4 columns. This is the same as the option
-#'   "all together" except with more control.}}
+#'   rows of graphs you'd like and "numcols" with the number of columns. The
+#'   result will be a single, nicely arranged graph. For example, "2 x 4" will
+#'   make a set of graphs with 2 rows and 4 columns. This is the same as the
+#'   option "all together" except with more control.}}
 #'
 #'   If you choose "separate files", each Simulator output file will have its
 #'   own graph file, named to match the Simulator output file name and you don't
