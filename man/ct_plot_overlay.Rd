@@ -23,6 +23,8 @@ ct_plot_overlay(
   legend_label_linetype = NA,
   facet1_column,
   facet2_column,
+  facet_ncol = NA,
+  facet_nrow = NA,
   floating_facet_scale = FALSE,
   facet_spacing = NA,
   time_range = NA,
@@ -212,14 +214,24 @@ this to "none".}
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet1_column =
-Tissue}. If \code{floating_facet_scale} is FALSE, then \code{facet1_column}
-will designate the rows of the output graphs.}
+Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
+\code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
+designate the rows of the output graphs.}
 
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
-CompoundID}. If \code{floating_facet_scale} is FALSE, then
+CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
+specified \code{facet_ncol} or  \code{facet_nrow}, then
 \code{facet2_column} will designate the columns of the output graphs.}
+
+\item{facet_ncol}{optionally specify the number of columns of facetted graphs
+you would like to have. This only applies when you have specified a column
+for \code{facet1_column} and/or \code{facet2_column}.}
+
+\item{facet_nrow}{optionally specify the number of rows of facetted graphs
+you would like to have. This only applies when you have specified a column
+for \code{facet1_column} and/or \code{facet2_column}.}
 
 \item{floating_facet_scale}{TRUE or FALSE (default) for whether to allow the
 axes for each facet of a multi-facetted graph to scale freely to best fit

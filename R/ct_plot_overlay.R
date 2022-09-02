@@ -106,19 +106,21 @@
 #' @param facet1_column optionally break up the graph into small multiples; this
 #'   specifies the first of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet1_column =
-#'   Tissue}. If \code{floating_facet_scale} is FALSE, then \code{facet1_column}
-#'   will designate the rows of the output graphs.
+#'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
+#'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
+#'   designate the rows of the output graphs.
 #' @param facet2_column optionally break up the graph into small multiples; this
 #'   specifies the second of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet2_column =
-#'   CompoundID}. If \code{floating_facet_scale} is FALSE, then
+#'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
+#'   specified \code{facet_ncol} or  \code{facet_nrow}, then
 #'   \code{facet2_column} will designate the columns of the output graphs.
 #' @param facet_ncol optionally specify the number of columns of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
-#'   for \code{facet1_column} and/or \code{facet2_column}. 
+#'   for \code{facet1_column} and/or \code{facet2_column}.
 #' @param facet_nrow optionally specify the number of rows of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
-#'   for \code{facet1_column} and/or \code{facet2_column}. 
+#'   for \code{facet1_column} and/or \code{facet2_column}.
 #' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
 #'   axes for each facet of a multi-facetted graph to scale freely to best fit
 #'   whatever data are present. Default is FALSE, which means that all data will
@@ -236,7 +238,7 @@
 #'   what ct_plot_overlay will do if "File" is NA for the observed data), then
 #'   the observed data will all be black by default, or you could set that color
 #'   to be, say, a lovely purple by setting this: \code{obs_color =
-#'   "darkorchid4"}. 
+#'   "darkorchid4"}.
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for a) the substrate drug alone and b) the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
