@@ -79,21 +79,6 @@
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
-#' @param linetype_column the column in \code{ct_dataframe} that should be used
-#'   for determining the line types. Default is to use the column Inhibitor and
-#'   to have a solid line for no inhibitor present and a dashed line when an
-#'   inhibitor is present.
-#' @param linetypes the line types to use. Default is "solid" for all lines,
-#'   but, if you have an effector present and would like to match the
-#'   Consultancy Template graphs, set this to \code{linetypes = c("solid",
-#'   "dashed")}. You'll need one line type for each possible value in the column
-#'   you specified for \code{linetype_column}. Check what the unique values are
-#'   in that column if you get a graph you didn't expect as far as line types
-#'   go. To see possible line types by name, please enter
-#'   \code{ggpubr::show_line_types()} into the console.
-#' @param line_width optionally specify how thick to make the lines. Acceptable
-#'   input is a number; the default is 1 for most lines and 0.8 for some, to
-#'   give you an idea of where to start.
 #' @param colorBy_column (optional) the column in \code{ct_dataframe} that
 #'   should be used for determining which color lines and/or points will be.
 #'   This should be unquoted, e.g., \code{colorBy_column = Tissue}.
@@ -103,81 +88,13 @@
 #'   2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for an fa of 0.5 and
 #'   "file 2.xlsx" is for an fa of 0.2. The order in the legend will match the
 #'   order designated here.
-#' @param facet1_column optionally break up the graph into small multiples; this
-#'   specifies the first of up to two columns to break up the data by, and the
-#'   designated column name should be unquoted, e.g., \code{facet1_column =
-#'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
-#'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
-#'   designate the rows of the output graphs.
-#' @param facet2_column optionally break up the graph into small multiples; this
-#'   specifies the second of up to two columns to break up the data by, and the
-#'   designated column name should be unquoted, e.g., \code{facet2_column =
-#'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
-#'   specified \code{facet_ncol} or  \code{facet_nrow}, then
-#'   \code{facet2_column} will designate the columns of the output graphs.
-#' @param facet_ncol optionally specify the number of columns of facetted graphs
-#'   you would like to have. This only applies when you have specified a column
-#'   for \code{facet1_column} and/or \code{facet2_column}.
-#' @param facet_nrow optionally specify the number of rows of facetted graphs
-#'   you would like to have. This only applies when you have specified a column
-#'   for \code{facet1_column} and/or \code{facet2_column}.
-#' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
-#'   axes for each facet of a multi-facetted graph to scale freely to best fit
-#'   whatever data are present. Default is FALSE, which means that all data will
-#'   be on the same scale for easy comparison. However, this could mean that
-#'   some graphs have lines that are hard to see, so you can set this to TRUE to
-#'   allow the axes to shrink or expand according to what data are present for
-#'   that facet. Floating axes comes with a trade-off for the looks of the
-#'   graphs, though: Setting this to TRUE does mean that your x axis won't
-#'   automatically have pretty breaks that are sensible for times in hours.
-#' @param time_range time range to display. Options: \describe{
-#'
-#'   \item{NA}{entire time range of data; default}
-#'
-#'   \item{a start time and end time in hours}{only data in that time range,
-#'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
-#'
-#'   \item{"first dose"}{only the time range of the first dose}
-#'
-#'   \item{"last dose"}{only the time range of the last dose}
-#'
-#'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
-#'   which can be useful for BID data where the end of the simulation extended
-#'   past the dosing interval or data when the substrate was dosed BID and the
-#'   effector was dosed QD}
-#'
-#'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
-#'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
-#'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
-#'
-#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
-#'   range will be limited to only times when observed data are present.}
-#'
-#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
-#'   be limited to the start of the last dose until the last observed data
-#'   point.} }
-#'
-#'
-#' @param pad_x_axis optionally add a smidge of padding to the x axis (default
-#'   is TRUE, which includes some generally reasonable padding). If changed to
-#'   FALSE, the y axis will be placed right at the beginning of your time range
-#'   and all data will end \emph{exactly} at the end of the time range
-#'   specified. If you want a \emph{specific} amount of x-axis padding, set this
-#'   to a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space
-#'   to the left side and 4\% more space to the right side of the x axis. If you
-#'   only specify one number, padding is added to the left side.
-#' @param pad_y_axis optionally add a smidge of padding to the y axis (default
-#'   is TRUE, which includes some generally reasonable padding). As with
-#'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
-#'   the bottom of your data, possible cutting a point in half. If you want a
-#'   \emph{specific} amount of y-axis padding, set this to a number; the default
-#'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
-#'   to the top of the y axis. If you only specify one number, padding is added
-#'   to the bottom.
-#' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
-#'   input: any number or leave as NA to accept default values, which are
-#'   generally reasonable guesses as to aesthetically pleasing and PK-relevant
-#'   intervals.
+#' @param legend_label_color optionally indicate on the legend something
+#'   explanatory about what the colors represent. For example, if
+#'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
+#'   with various fa values"}, that will make the label above the file names in
+#'   the legend more explanatory than just "File". The default is to use
+#'   whatever the column name is for \code{colorBy_column}. If you don't want a
+#'   label for this legend item, set this to "none".
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -229,16 +146,6 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
-#' @param obs_color optionally specify a color to use for observed data if the
-#'   color isn't already mapped to a specific column. By default, observed data
-#'   will be the same color as whatever else matches those observed data in
-#'   \code{colorBy_column}, so if you have colored by compound ID, for example,
-#'   the observed data will also be colored by compound ID. If you have one
-#'   observed file that you're comparing to multiple simulation files (this is
-#'   what ct_plot_overlay will do if "File" is NA for the observed data), then
-#'   the observed data will all be black by default, or you could set that color
-#'   to be, say, a lovely purple by setting this: \code{obs_color =
-#'   "darkorchid4"}.
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for a) the substrate drug alone and b) the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
@@ -250,6 +157,16 @@
 #'   (there's a graph around the middle of that page). If left as NA, substrate
 #'   alone will be an open circle and substrate + inhibitor 1 will be an open
 #'   triangle.
+#' @param obs_color optionally specify a color to use for observed data if the
+#'   color isn't already mapped to a specific column. By default, observed data
+#'   will be the same color as whatever else matches those observed data in
+#'   \code{colorBy_column}, so if you have colored by compound ID, for example,
+#'   the observed data will also be colored by compound ID. If you have one
+#'   observed file that you're comparing to multiple simulation files (this is
+#'   what ct_plot_overlay will do if "File" is NA for the observed data), then
+#'   the observed data will all be black by default, or you could set that color
+#'   to be, say, a lovely purple by setting this: \code{obs_color =
+#'   "darkorchid4"}.
 #' @param obs_fill_trans optionally specify the transparency for the fill of the
 #'   observed data points, which can be helpful when you have a lot of points
 #'   overlapping. This only applies when you have specified a value for
@@ -257,35 +174,29 @@
 #'   (example: \code{obs_shape = 21} for a filled circle, which is the default).
 #'   Acceptable values are from 0 (fully transparent, so no fill at all) to 1
 #'   (completely opaque or black). If left as the default NA, the observed data
-#'   points will be 50% transparent, so the same as if this were set to 0.5.
+#'   points will be 50 percent transparent, so the same as if this were set to
+#'   0.5.
 #' @param obs_line_trans optionally specify the transparency for the outline of
 #'   the observed data points, which can be helpful when you have a lot of
 #'   points overlapping. Acceptable values are from 0 (fully transparent, so no
 #'   line at all) to 1 (completely opaque or black). If left as the default NA,
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
-#' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
-#'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
-#'   linear plot will be automatically selected. This only applies when you have
-#'   requested a linear plot with \code{linear_or_log}.
-#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
-#'   etc.) for each of the small graphs. (Not applicable if only outputting
-#'   linear or only semi-log graphs.)
-#' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
-#'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
-#'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
-#'   limits for the semi-log plot will be automatically selected. This only
-#'   applies when you have requested a semi-log plot with \code{linear_or_log}.
-#' @param legend_position Specify where you want the legend to be. Options are
-#'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
-#'   you don't want one at all.
-#' @param legend_label_color optionally indicate on the legend something
-#'   explanatory about what the colors represent. For example, if
-#'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
-#'   with various fa values"}, that will make the label above the file names in
-#'   the legend more explanatory than just "File". The default is to use
-#'   whatever the column name is for \code{colorBy_column}. If you don't want a
-#'   label for this legend item, set this to "none".
+#' @param linetype_column the column in \code{ct_dataframe} that should be used
+#'   for determining the line types. Default is to use the column Inhibitor and
+#'   to have a solid line for no inhibitor present and a dashed line when an
+#'   inhibitor is present.
+#' @param linetypes the line types to use. Default is "solid" for all lines,
+#'   but, if you have an effector present and would like to match the
+#'   Consultancy Template graphs, set this to \code{linetypes = c("solid",
+#'   "dashed")}. You'll need one line type for each possible value in the column
+#'   you specified for \code{linetype_column}. Check what the unique values are
+#'   in that column if you get a graph you didn't expect as far as line types
+#'   go. To see possible line types by name, please enter
+#'   \code{ggpubr::show_line_types()} into the console.
+#' @param line_width optionally specify how thick to make the lines. Acceptable
+#'   input is a number; the default is 1 for most lines and 0.8 for some, to
+#'   give you an idea of where to start.
 #' @param legend_label_linetype optionally indicate on the legend something
 #'   explanatory about what the line types represent. For example, if
 #'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
@@ -294,6 +205,99 @@
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
+#' @param facet1_column optionally break up the graph into small multiples; this
+#'   specifies the first of up to two columns to break up the data by, and the
+#'   designated column name should be unquoted, e.g., \code{facet1_column =
+#'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
+#'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
+#'   designate the rows of the output graphs.
+#' @param facet2_column optionally break up the graph into small multiples; this
+#'   specifies the second of up to two columns to break up the data by, and the
+#'   designated column name should be unquoted, e.g., \code{facet2_column =
+#'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
+#'   specified \code{facet_ncol} or  \code{facet_nrow}, then
+#'   \code{facet2_column} will designate the columns of the output graphs.
+#' @param facet_ncol optionally specify the number of columns of facetted graphs
+#'   you would like to have. This only applies when you have specified a column
+#'   for \code{facet1_column} and/or \code{facet2_column}.
+#' @param facet_nrow optionally specify the number of rows of facetted graphs
+#'   you would like to have. This only applies when you have specified a column
+#'   for \code{facet1_column} and/or \code{facet2_column}.
+#' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
+#'   axes for each facet of a multi-facetted graph to scale freely to best fit
+#'   whatever data are present. Default is FALSE, which means that all data will
+#'   be on the same scale for easy comparison. However, this could mean that
+#'   some graphs have lines that are hard to see, so you can set this to TRUE to
+#'   allow the axes to shrink or expand according to what data are present for
+#'   that facet. Floating axes comes with a trade-off for the looks of the
+#'   graphs, though: Setting this to TRUE does mean that your x axis won't
+#'   automatically have pretty breaks that are sensible for times in hours.
+#' @param facet_spacing Optionally set the spacing between facets. If left as
+#'   NA, a best-guess as to a reasonable amount of space will be used. Units are
+#'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
+#'   should not be in quotes.)
+#' @param time_range time range to display. Options: \describe{
+#'
+#'   \item{NA}{entire time range of data; default}
+#'
+#'   \item{a start time and end time in hours}{only data in that time range,
+#'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
+#'
+#'   \item{"first dose"}{only the time range of the first dose}
+#'
+#'   \item{"last dose"}{only the time range of the last dose}
+#'
+#'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
+#'   which can be useful for BID data where the end of the simulation extended
+#'   past the dosing interval or data when the substrate was dosed BID and the
+#'   effector was dosed QD}
+#'
+#'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
+#'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
+#'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
+#'
+#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
+#'   range will be limited to only times when observed data are present.}
+#'
+#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
+#'   be limited to the start of the last dose until the last observed data
+#'   point.} }
+#'
+#' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
+#'   input: any number or leave as NA to accept default values, which are
+#'   generally reasonable guesses as to aesthetically pleasing and PK-relevant
+#'   intervals.
+#' @param pad_x_axis optionally add a smidge of padding to the x axis (default
+#'   is TRUE, which includes some generally reasonable padding). If changed to
+#'   FALSE, the y axis will be placed right at the beginning of your time range
+#'   and all data will end \emph{exactly} at the end of the time range
+#'   specified. If you want a \emph{specific} amount of x-axis padding, set this
+#'   to a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space
+#'   to the left side and 4\% more space to the right side of the x axis. If you
+#'   only specify one number, padding is added to the left side.
+#' @param pad_y_axis optionally add a smidge of padding to the y axis (default
+#'   is TRUE, which includes some generally reasonable padding). As with
+#'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
+#'   the bottom of your data, possible cutting a point in half. If you want a
+#'   \emph{specific} amount of y-axis padding, set this to a number; the default
+#'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
+#'   to the top of the y axis. If you only specify one number, padding is added
+#'   to the bottom.
+#' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
+#'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
+#'   linear plot will be automatically selected. This only applies when you have
+#'   requested a linear plot with \code{linear_or_log}.
+#' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
+#'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
+#'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
+#'   limits for the semi-log plot will be automatically selected. This only
+#'   applies when you have requested a semi-log plot with \code{linear_or_log}.
+#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
+#'   etc.) for each of the small graphs. (Not applicable if only outputting
+#'   linear or only semi-log graphs.)
+#' @param legend_position Specify where you want the legend to be. Options are
+#'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
+#'   you don't want one at all.
 #' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
 #'   whether to make the compound names in the legend prettier or b) supply a
 #'   named character vector to set it to the exact name you'd prefer to see in
@@ -304,10 +308,6 @@
 #'   guesses about what a prettier compound name should be. An example of
 #'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 #'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
-#' @param facet_spacing Optionally set the spacing between facets. If left as
-#'   NA, a best-guess as to a reasonable amount of space will be used. Units are
-#'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
-#'   should not be in quotes.)
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   The nice thing about saving to Word is that the figure title and caption
@@ -323,7 +323,6 @@
 #'   file instead to your Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
-#'
 #'
 #' @return
 #' @export

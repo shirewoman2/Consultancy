@@ -175,7 +175,8 @@ overlapping. This only applies when you have specified a value for
 (example: \code{obs_shape = 21} for a filled circle, which is the default).
 Acceptable values are from 0 (fully transparent, so no fill at all) to 1
 (completely opaque or black). If left as the default NA, the observed data
-points will be 50% transparent, so the same as if this were set to 0.5.}
+points will be 50 percent transparent, so the same as if this were set to
+0.5.}
 
 \item{obs_line_trans}{optionally specify the transparency for the outline of
 the observed data points, which can be helpful when you have a lot of
