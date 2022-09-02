@@ -360,6 +360,13 @@ ct_plot <- function(ct_dataframe = NA,
              call. = FALSE)
     }
     
+    if(length(sort(unique(ct_dataframe$File))) > 1){
+        stop(paste0("The ct_plot function is for graphing only one simulator file at a time, but you have ",
+                    length(sort(unique(ct_dataframe$File))), 
+                    " simulator files. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+             call. = FALSE)
+    }
+    
     # If user wants feces, use the British spelling even if they entered the
     # American spelling.
     if(str_detect(subsection_ADAM, "feces")){
@@ -683,13 +690,9 @@ ct_plot <- function(ct_dataframe = NA,
     set_aesthet(line_type = line_type, figure_type = figure_type,
                 MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
                 obs_shape = obs_shape, obs_color = obs_color, 
+                obs_fill_trans = obs_fill_trans,
+                obs_line_trans = obs_line_trans,
                 line_color = line_color)
-    
-    obs_fill_trans <- ifelse(is.na(obs_fill_trans), 
-                                   0.5, obs_fill_trans)
-    
-    obs_line_trans <- ifelse(is.na(obs_line_trans), 
-                                   1, obs_line_trans)
     
     ## figure_type: trial means -----------------------------------------------------------
     if(figure_type == "trial means"){

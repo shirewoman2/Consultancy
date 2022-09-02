@@ -5,7 +5,7 @@
 \alias{LMVct}
 \title{Plasma concentration-time data for a simulation of letermovir}
 \format{
-A data.frame with 14 columns "LMVct"
+A data.frame
 }
 \usage{
 LMVct

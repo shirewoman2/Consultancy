@@ -5,7 +5,7 @@
 \alias{CYP3A4_gut}
 \title{CYP3A4 enzyme-abundance data in the gut}
 \format{
-A data.frame with 16 columns "CYP3A4_gut"
+A data.frame
 }
 \usage{
 CYP3A4_gut

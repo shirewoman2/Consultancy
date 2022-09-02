@@ -5,7 +5,7 @@
 \alias{CYP3A4_liver}
 \title{CYP3A4 enzyme-abundance data in the liver}
 \format{
-A data.frame with 16 columns "CYP3A4_liver"
+A data.frame
 }
 \usage{
 CYP3A4_liver

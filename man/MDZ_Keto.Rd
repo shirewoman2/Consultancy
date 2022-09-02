@@ -5,7 +5,7 @@
 \alias{MDZ_Keto}
 \title{Plasma concentration-time data for midazolam and ketoconazole}
 \format{
-A data.frame with 15 columns "MDZ_Keto"
+A data.frame
 }
 \usage{
 MDZ_Keto

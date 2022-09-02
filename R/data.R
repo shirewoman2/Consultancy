@@ -13,7 +13,7 @@
 #' including observed data for the last dose. Format of the data are the same as
 #' the output from \code{\link{extractConcTime}}.
 #'
-#' @format A data.frame with 14 columns "LMVct"
+#' @format A data.frame 
 "LMVct"
 
 
@@ -23,17 +23,18 @@
 #' varying fa values, one for each of 4 simulator output files. Format of the
 #' data are the same as the output from \code{\link{extractConcTime_mult}}.
 #'
-#' @format A data.frame with 15 columns "MDZct"
+#' @format A data.frame 
 "MDZct"
 
 
-#' Plasma concentration-time data for midazolam and ketoconazole 
-#' 
-#' Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
-#' ketoconazole, including data for both substrate and inhibitor. Format of the
-#' data are the same as the output from \code{\link{extractConcTime_mult}}.
+#' Plasma concentration-time data for midazolam and ketoconazole
 #'
-#' @format A data.frame with 15 columns "MDZ_Keto"
+#' Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
+#' ketoconazole, including data for both substrate and inhibitor and observed
+#' data. Format of the data are the same as the output from
+#' \code{\link{extractConcTime_mult}}.
+#'
+#' @format A data.frame
 "MDZ_Keto"
 
 
@@ -43,7 +44,7 @@
 #' multiple-dose ritonavir. Format of the data are the same as the output from
 #' \code{\link{extractEnzAbund}}.
 #'
-#' @format A data.frame with 16 columns "CYP3A4_liver"
+#' @format A data.frame 
 "CYP3A4_liver"
 
 
@@ -54,7 +55,7 @@
 #' the presence and absence of multiple-dose ritonavir. Format of the data are
 #' the same as the output from \code{\link{extractEnzAbund}}.
 #'
-#' @format A data.frame with 16 columns "CYP3A4_gut"
+#' @format A data.frame 
 "CYP3A4_gut"
 
 

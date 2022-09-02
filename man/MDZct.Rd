@@ -5,7 +5,7 @@
 \alias{MDZct}
 \title{Plasma concentration-time data for multiple simulations of midazolam}
 \format{
-A data.frame with 15 columns "MDZct"
+A data.frame
 }
 \usage{
 MDZct
