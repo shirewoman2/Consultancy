@@ -49,13 +49,21 @@ CapText1 <-
                    " and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
                    ""), 
             " plasma concentration-time profiles of ",
-            prettify_compound_name(unique(ct_dataframe$Compound)), 
+            str_comma(prettify_compound_name(
+                unique(ct_dataframe$Compound[!ct_dataframe$Compound %in% MyEffector])), 
+                conjunction = "or"), 
             " following a single oral dose of ", 
-            prettify_compound_name(unique(ct_dataframe$Compound)), 
+            str_comma(prettify_compound_name(
+                unique(ct_dataframe$Compound[!ct_dataframe$Compound %in% MyEffector])), 
+                conjunction = "or"),
             " in the absence of ", 
-            prettify_compound_name(unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+            str_comma(prettify_compound_name(
+                unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+                conjunction = "or"), 
             " (solid line) and on the XXXth day of XXX days of dosing of ", 
-            prettify_compound_name(unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+            str_comma(prettify_compound_name(
+                unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+                conjunction = "or"),
             " (dashed line)"))
 
 CapText2 <- switch(figure_type, 
