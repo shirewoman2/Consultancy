@@ -310,14 +310,17 @@
 #'   should not be in quotes.)
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
-#'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
-#'   you specify a different graphical file extension, it will be saved as that
-#'   file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
-#'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
-#'   will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
-#'   DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an
-#'   R issue. If you try to save on SharePoint, you will get a warning that R
-#'   will save your file instead to your Documents folder.
+#'   The nice thing about saving to Word is that the figure title and caption
+#'   text will be partly filled in automatically, although you should check that
+#'   the text makes sense in light of your exact graph. If you leave off ".png"
+#'   or ".docx", it will be saved as a png file, but if you specify a different
+#'   graphical file extension, it will be saved as that file format. Acceptable
+#'   graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
+#'   "bmp", or "svg". Leaving this as NA means the file will not be
+#'   automatically saved to disk. \strong{WARNING:} SAVING TO WORD DOES NOT WORK
+#'   ON SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If
+#'   you try to save on SharePoint, you will get a warning that R will save your
+#'   file instead to your Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
