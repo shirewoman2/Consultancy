@@ -11,7 +11,9 @@ set_aesthet(
   compoundToExtract,
   obs_shape,
   line_color,
-  obs_color
+  obs_color,
+  obs_line_trans,
+  obs_fill_trans
 )
 }
 \arguments{
