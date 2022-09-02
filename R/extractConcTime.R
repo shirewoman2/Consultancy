@@ -317,7 +317,7 @@ extractConcTime <- function(sim_data_file,
         Piece1 <- ifelse(str_detect(tissue, "portal vein"), "PV ", "")
         
         Piece2 <- switch(CompoundType,
-                         "substrate" = "Conc Profiles",
+                         "substrate" = "Conc Profiles|Conc Trials Profiles",
                          "primary metabolite 1" = "Sub Pri Met1",
                          "primary metabolite 2" = "Sub Pri Met2",
                          "secondary metabolite" = "Sub Sec Met")

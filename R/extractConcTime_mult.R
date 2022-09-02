@@ -108,7 +108,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  ct_dataframe = ConcTime,
                                  overwrite = FALSE,
                                  tissues = "plasma",
-                                 compoundsToExtract = "substrate",
+                                 compoundsToExtract = "all",
                                  conc_units_to_use = "ng/mL",
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate",
@@ -121,6 +121,20 @@ extractConcTime_mult <- function(sim_data_files = NA,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
+    compoundsToExtract <- tolower(compoundsToExtract)
+    
+    PossCmpd <- c("substrate", "inhibitor 1",
+                  "inhibitor 1 metabolite", "inhibitor 2",
+                  "primary metabolite 1", 
+                  "primary metabolite 2", "secondary metabolite")
+    
+    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
+        warning(paste0("The compound(s) ", 
+                       str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
+                       " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                       str_comma(paste0("`", PossCmpd, "`"))), 
+                call. = FALSE)
+    }
     
     # Main body of function -----------------------------------------------
     
