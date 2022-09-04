@@ -125,7 +125,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     PossCmpd <- c("substrate", "inhibitor 1",
                   "inhibitor 1 metabolite", "inhibitor 2",
-                  "primary metabolite 1", 
+                  "primary metabolite 1", "all",
                   "primary metabolite 2", "secondary metabolite")
     
     if(any(compoundsToExtract %in% PossCmpd == FALSE)){
@@ -380,7 +380,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
             }
         }
         
-        # Removing any compounds not included in user request
+        # Removing any compounds not included in user request. If user requested
+        # "all" for compoundsToExtract, need to change that to a character
+        # vector from here on in the function.
+        if(compoundsToExtract[1] == "all"){
+            compoundsToExtract <- c("substrate", "inhibitor 1",
+                                    "inhibitor 2", "inhibitor 1 metabolite",
+                                    "primary metabolite 1",
+                                    "primary metabolite 2",
+                                    "secondary metabolite")
+        } 
         MultObsData <- bind_rows(MultObsData) %>% 
             mutate(Simulated = FALSE) %>% 
             filter(CompoundID %in% compoundsToExtract)

@@ -314,36 +314,67 @@ extractConcTime <- function(sim_data_file,
     }
     
     if(TissueType == "systemic"){
-        Piece1 <- ifelse(str_detect(tissue, "portal vein"), "PV ", "")
         
-        Piece2 <- switch(CompoundType,
-                         "substrate" = "Conc Profiles|Conc Trials Profiles",
-                         "primary metabolite 1" = "Sub Pri Met1",
-                         "primary metabolite 2" = "Sub Pri Met2",
-                         "secondary metabolite" = "Sub Sec Met")
-        # If the tissue is the portal vein, all possible compounds are included, so make Piece2 be "Conc Profiles".
-        Piece2 <- ifelse(str_detect(tissue, "portal vein"),
-                         "Conc Profiles", Piece2)
+        # Only looking for only sheets with conc-time data and not AUC, etc.
+        PossSheets <- SheetNames[
+            !str_detect(tolower(SheetNames), "auc|absorption|summary|ode state|demographic|fm and fe|input|physiology|cl profiles|^cl |^clint|clearance|clinical|cmax|cyp|ugt|population|pk( )?pd parameters|tmax|vss")
+        ]
         
-        Piece3 <- ifelse(str_detect(tissue, "peripheral"), " CPeriph", " C[Ss]ys")
-        Piece3 <- ifelse(str_detect(tissue, "portal vein"),
-                         "", Piece3)
-        Piece3 <- ifelse(CompoundType != "substrate",
-                         "", Piece3)
+        # Searching for correct tissue
+        PossSheets <- PossSheets[
+            str_detect(tolower(PossSheets), 
+                       switch(tissue, 
+                              "plasma" = "cplasma",
+                              "unbound plasma" = "cuplasma",
+                              "peripheral plasma" = "cuplasma",
+                              "peripheral unbound plasma" = "cuplasma",
+                              "portal vein plasma" = "cplasma",
+                              "portal vein unbound plasma" = "cuplasma",
+                              
+                              "blood" = "cblood",
+                              "unbound blood" = "cublood",
+                              "peripheral blood" = "cblood",
+                              "peripheral unbound blood" = "cublood",
+                              "portal vein blood" = "cblood",
+                              "portal vein unbound blood" = "cublood"))]
         
-        Piece4 <- ifelse(str_detect(tissue, "unbound"), "Cu", "C")
+        # add criteria for peripheral, pv when needed
+        if(str_detect(tissue, "peripheral|portal vein")){
+            Cond1 <- str_extract(tissue, "peripheral|portal vein")
+            PossSheets <- PossSheets[
+                str_detect(tolower(PossSheets), 
+                           switch(Cond1,
+                                  "peripheral" = "periph", 
+                                  "portal vein" = "^pv"))]
+        }
         
-        Piece5 <- str_to_title(str_extract(tissue, "blood|plasma"))
+        # Searching for correct compound. Substrate, inhibitor 1, and inhibitor
+        # 2 concentrations will all be on the main concentration-time data tab,
+        # but other compounds will be on separate tabs.
+        if(any(compoundToExtract %in%  c("inhibitor 1 metabolite",
+                                         "primary metabolite 1",
+                                         "primary metabolite 2",
+                                         "secondary metabolite"))){
+            PossSheets <- PossSheets[
+                switch(compoundToExtract[1], 
+                       "primary metabolite 1" = 
+                           str_detect(tolower(PossSheets), "sub met|sub pri met1") & 
+                           !str_detect(tolower(PossSheets), "sub met2"),
+                       "primary metabolite 2" = 
+                           str_detect(tolower(PossSheets), "sub met2|sub pri met2"), 
+                       "secondary metabolite" = 
+                           str_detect(tolower(PossSheets), "sub sm|sub sec met"),
+                       "inhibitor 1 metabolite" = 
+                           str_detect(tolower(PossSheets), "inh1 m")
+                )]
+        }
         
-        SheetToDetect <- paste0(Piece1, Piece2, Piece3, "\\(", Piece4, Piece5, "\\)")
-        SheetToDetect <- paste0(SheetToDetect, "|",
-                                sub("Profiles", "Trials Profiles", SheetToDetect),
-                                "|",
-                                gsub("Profiles C[Ss]ys", "Trials Profiles", SheetToDetect),
-                                "|",
-                                paste0(Piece1, Piece2, "\\(Trials\\)\\(",
-                                       Piece4, Piece5, "\\)"), "|^Conc Profiles$")
+        Sheet <- PossSheets[1]
+        
     } else {
+        
+        # when tissue is not systemic: 
+        
         SheetToDetect <-
             switch(tissue,
                    "gi tissue" = "Gut Tissue Conc",
@@ -377,18 +408,19 @@ extractConcTime <- function(sim_data_file,
                                                             "substrate" = "Sub",
                                                             "inhibitor 1" = "Inhib")) # Need to check this for inhibitor 1 ADAM model data. This is just my guess as to what the sheet name will be!
             )
+        
+        if(tissue == "faeces"){ # NEED TO ADJUST THIS TO DEAL WITH MULT FUNCTION.
+            SheetToDetect <- switch(compoundToExtract, 
+                                    "inhibitor 1" = "Faeces Prof. .Inh 1", 
+                                    # inhibitor 2 does not appear to be available
+                                    "substrate" = "Faeces Prof. .Sub")
+        }
+        
+        Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
+        
     }
     
-    if(tissue == "faeces"){ # NEED TO ADJUST THIS TO DEAL WITH MULT FUNCTION.
-        SheetToDetect <- switch(compoundToExtract, 
-                                "inhibitor 1" = "Faeces Prof. .Inh 1", 
-                                # inhibitor 2 does not appear to be available
-                                "substrate" = "Faeces Prof. .Sub")
-    }
-    
-    Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
-    
-    if((length(Sheet) == 0 | is.na(Sheet))){
+    if(length(Sheet) == 0 | is.na(Sheet)){
         if(fromMultFunction){
             warning(paste0("You requested data for ", str_comma(compoundToExtract),
                            " in ", tissue,
