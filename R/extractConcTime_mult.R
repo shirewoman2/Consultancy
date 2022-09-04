@@ -410,9 +410,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
         SimEffector <- unique(MultData$Inhibitor)
         SimEffector <- SimEffector[!SimEffector == "none"]
         if(length(SimEffector) == 1 &&
-           "inhibitor 1" %in% SimDoseInfo$CompoundID &&
+           "inhibitor 1" %in% MultData$CompoundID &&
            any(c("inhibitor 2", "inhibitor 1 metabolite") %in% 
-               SimDoseInfo$CompoundID) == FALSE){
+               MultData$CompoundID) == FALSE){
             MultObsData$Inhibitor[MultObsData$Inhibitor != "none"] <- SimEffector
         }
         
