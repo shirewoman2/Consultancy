@@ -494,7 +494,7 @@ ct_plot_overlay <- function(ct_dataframe,
         ct_dataframe <- ct_dataframe %>%
             mutate(FC2 = {{facet2_column}})
         
-        if(length(unique(ct_dataframe$FC2)) == 2){
+        if(length(unique(ct_dataframe$FC2)) == 1){
             warning(paste0("You requested the column `", 
                            as_label(facet2_column), 
                            "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
@@ -899,93 +899,7 @@ ct_plot_overlay <- function(ct_dataframe,
                            "none" = aes(x = Time, y = Conc,
                                         group = Group, shape = Inhibitor))) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
-        
-        if(nrow(obs_data) > 0){
-            
-            # Checking whether to show obs data points in the legend. If the
-            # column that is mapped to color or linetype has more than one item,
-            # then show this in the legend. If Inhibitor has more than one item,
-            # since it's the column that's mapped to shape, then also show this
-            # in the legend.
-            LegCheck <- c(AESCols["color"], AESCols["linetype"])
-            LegCheck <- LegCheck[LegCheck != "<empty>"]
-            # Need to add "Inhibitor" here b/c shape is mapped to it.
-            LegCheck <- c(LegCheck, "Inhibitor" = "Inhibitor")
-            # If there's more than one unique value in whatever is in the color
-            # or linetype column or the Inhibitor column, then include it
-            LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
-            
-            if(InternalAssignFile){
-                A <- A +
-                    # making obs point outlines
-                    geom_point(data = obs_data,
-                               alpha = obs_line_trans, 
-                               color = obs_color,
-                               fill = NA, 
-                               show.legend = FALSE) +
-                    # making obs point fill
-                    geom_point(data = obs_data,
-                               fill = obs_color,
-                               alpha = obs_fill_trans, 
-                               show.legend = FALSE) + 
-                    scale_shape_manual(values = obs_shape)
-                
-            } else {
-                if(is.na(obs_color)){
-                    
-                    if(length(MyEffector[!MyEffector == "none"]) == 1){
-                        
-                        A <- A +
-                            # making obs point outlines
-                            geom_point(data = obs_data,
-                                       alpha = obs_line_trans, 
-                                       fill = NA, 
-                                       show.legend = LegCheck) +
-                            # making obs point fill
-                            geom_point(data = obs_data,
-                                       color = NA,
-                                       alpha = obs_fill_trans, 
-                                       show.legend = LegCheck) + 
-                            scale_shape_manual(values = obs_shape)
-                        
-                    } else {
-                        
-                        A <- A +
-                            geom_point(data = obs_data, inherit.aes = FALSE,
-                                       switch(AES, 
-                                              "color-linetype" = aes(x = Time, y = Conc,
-                                                                     group = Group,
-                                                                     color = colorBy_column), 
-                                              "linetype" = aes(x = Time, y = Conc, 
-                                                               group = Group), 
-                                              "color" = aes(x = Time, y = Conc,
-                                                            group = Group,
-                                                            color = colorBy_column), 
-                                              "none" = aes(x = Time, y = Conc, 
-                                                           group = Group)),
-                                       shape = switch(as.character(
-                                           length(unique(obs_data$Inhibitor)) > 1), 
-                                           "TRUE" = obs_shape,
-                                           "FALSE" = obs_shape[1]),
-                                       alpha = obs_fill_trans, 
-                                       show.legend = LegCheck)
-                    }
-                    
-                } else {
-                    A <- A +
-                        geom_point(data = obs_data, 
-                                   alpha = ifelse(complete.cases(obs_fill_trans), 
-                                                  obs_fill_trans, 1), 
-                                   color = obs_color, fill = obs_color, 
-                                   show.legend = LegCheck) +
-                        scale_shape_manual(values = 
-                                               switch(as.character(
-                                                   length(unique(obs_data$Inhibitor)) > 1), 
-                                                   "TRUE" = obs_shape,
-                                                   "FALSE" = obs_shape[1]))
-                }
-            }
-        }
+       
     }
     
     
@@ -1040,112 +954,116 @@ ct_plot_overlay <- function(ct_dataframe,
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
         
-        if(nrow(obs_data) > 0){
+    }
+    
+    # Adding observed data -----------------------------------------------
+    
+    if(str_detect(figure_type, "ribbon")){
+        obs_data <- obs_data %>%
+            mutate(MyMean = Conc, per5 = as.numeric(NA),
+                   per95 = as.numeric(NA))
+    }
+    
+    if(nrow(obs_data) > 0){
+        
+        # Checking whether to show obs data points in the legend. If the
+        # column that is mapped to color or linetype has more than one item,
+        # then show this in the legend. If Inhibitor has more than one item,
+        # since it's the column that's mapped to shape, then also show this
+        # in the legend.
+        LegCheck <- c(AESCols["color"], AESCols["linetype"])
+        LegCheck <- LegCheck[LegCheck != "<empty>"]
+        # Need to add "Inhibitor" here b/c shape is mapped to it.
+        LegCheck <- c(LegCheck, "Inhibitor" = "Inhibitor")
+        # If there's more than one unique value in whatever is in the color
+        # or linetype column or the Inhibitor column, then include it
+        LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
+        
+        if(InternalAssignFile){
+            # This is when there's a single set of observed data to match
+            # multiple files, so the color needs to be uniform and not mapped to
+            # anything.
             
-            # Checking whether to show obs data points in the legend. If the
-            # column that is mapped to color or linetype has more than one item,
-            # then show this in the legend. If Inhibitor has more than one item,
-            # since it's the column that's mapped to shape, then also show this
-            # in the legend.
-            LegCheck <- c(AESCols["color"], AESCols["linetype"])
-            LegCheck <- LegCheck[LegCheck != "<empty>"]
-            # Need to add "Inhibitor" here b/c shape is mapped to it.
-            LegCheck <- c(LegCheck, "Inhibitor" = "Inhibitor")
-            # If there's more than one unique value in whatever is in the color
-            # or linetype column or the Inhibitor column, then include it
-            LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
+            if(is.na(obs_color)){
+                obs_color <- "black"
+            }
             
-            obs_data <- obs_data %>% 
-                mutate(MyMean = Conc, per5 = as.numeric(NA),
-                       per95 = as.numeric(NA))
+            A <- A +
+                # making obs point outlines
+                geom_point(data = obs_data,
+                           alpha = obs_line_trans,
+                           color = obs_color,
+                           fill = NA,
+                           show.legend = FALSE) +
+                # making obs point fill
+                geom_point(data = obs_data,
+                           fill = obs_color,
+                           alpha = obs_fill_trans, 
+                           show.legend = FALSE) + 
+                scale_shape_manual(values = obs_shape)
             
-            if(InternalAssignFile){
+        } else {
+            if(is.na(obs_color)){
+                # This is when there are multiple sets of observed data that are
+                # mapped to color or linetype, etc.
                 
-                A <- A + 
-                    # making obs point outlines
-                    geom_point(data = obs_data,
-                               alpha = obs_line_trans, 
-                               color = obs_color,
-                               fill = NA, 
-                               show.legend = FALSE) +
-                    # making obs point fill
-                    geom_point(data = obs_data,
-                               fill = obs_color,
-                               alpha = obs_fill_trans, 
-                               show.legend = FALSE) +
+                if(length(MyEffector[!MyEffector == "none"]) == 1){
+                    # This is when there is an effector.
+                    A <- A +
+                        # making obs point outlines
+                        geom_point(data = obs_data,
+                                   alpha = obs_line_trans, 
+                                   fill = NA, 
+                                   show.legend = LegCheck) +
+                        # making obs point fill
+                        geom_point(data = obs_data,
+                                   alpha = obs_fill_trans, 
+                                   show.legend = LegCheck) + 
+                        scale_shape_manual(values = obs_shape)
+                    
+                } else {
+                    # This is when there is not an effector or when there are
+                    # multiple effectors in the dataset.
+                    A <- A +
+                        geom_point(data = obs_data, 
+                                   # inherit.aes = FALSE,
+                                   # switch(AES, 
+                                   #        "color-linetype" = aes(x = Time, y = Conc,
+                                   #                               group = Group,
+                                   #                               color = colorBy_column), 
+                                   #        "linetype" = aes(x = Time, y = Conc, 
+                                   #                         group = Group), 
+                                   #        "color" = aes(x = Time, y = Conc,
+                                   #                      group = Group,
+                                   #                      color = colorBy_column), 
+                                   #        "none" = aes(x = Time, y = Conc, 
+                                   #                     group = Group)),
+                                   shape = switch(as.character(
+                                       length(unique(obs_data$Inhibitor)) > 1), 
+                                       "TRUE" = obs_shape,
+                                       "FALSE" = obs_shape[1]),
+                                   alpha = obs_fill_trans, 
+                                   show.legend = LegCheck)
+                }
+                
+            } else {
+                # This is when the user has specified what color they want
+                # the observed data to be.
+                A <- A +
+                    geom_point(data = obs_data, 
+                               alpha = ifelse(complete.cases(obs_fill_trans), 
+                                              obs_fill_trans, 1), 
+                               color = obs_color, fill = obs_color, 
+                               show.legend = LegCheck) +
                     scale_shape_manual(values = 
                                            switch(as.character(
                                                length(unique(obs_data$Inhibitor)) > 1), 
                                                "TRUE" = obs_shape,
                                                "FALSE" = obs_shape[1]))
-            } else {
-                if(is.na(obs_color)){
-                    
-                    if(length(MyEffector[!MyEffector == "none"]) == 1){
-                        
-                        if(length(obs_shape) == 1 &&
-                           complete.cases(obs_shape)){
-                            obs_shape <- c(obs_shape, obs_shape)
-                        }
-                        
-                        A <- A +
-                            # making obs point outlines
-                            geom_point(data = obs_data,
-                                       alpha = obs_line_trans, 
-                                       fill = NA, 
-                                       show.legend = LegCheck) +
-                            # making obs point fill
-                            geom_point(data = obs_data,
-                                       color = NA,
-                                       alpha = obs_fill_trans, 
-                                       show.legend = LegCheck) + 
-                            scale_shape_manual(values = obs_shape)
-                        
-                    } else {
-                        
-                        A <- A + 
-                            geom_point(data = obs_data, 
-                                       # geom_point(data = obs_data, inherit.aes = FALSE,
-                                       #            switch(AES, 
-                                       #                   "color-linetype" = aes(x = Time, y = Conc,
-                                       #                                          group = Group,
-                                       #                                          color = colorBy_column), 
-                                       #                   "linetype" = aes(x = Time, y = Conc, 
-                                       #                                    group = Group), 
-                                       #                   "color" = aes(x = Time, y = Conc,
-                                       #                                 group = Group,
-                                       #                                 color = colorBy_column), 
-                                       #                   "none" = aes(x = Time, y = Conc, 
-                                       #                                group = Group)),
-                                       shape = switch(as.character(
-                                           length(unique(obs_data$Inhibitor)) > 1), 
-                                           "TRUE" = obs_shape,
-                                           "FALSE" = obs_shape[1]),
-                                       alpha = obs_fill_trans, 
-                                       show.legend = LegCheck) +
-                            scale_shape_manual(values = 
-                                                   switch(as.character(
-                                                       length(unique(obs_data$Inhibitor)) > 1), 
-                                                       "TRUE" = obs_shape,
-                                                       "FALSE" = obs_shape[1]))
-                        
-                    }
-                    
-                } else {
-                    A <- A + 
-                        geom_point(data = obs_data,
-                                   alpha = obs_fill_trans, 
-                                   color = obs_color, 
-                                   show.legend = LegCheck) +
-                        scale_shape_manual(values = 
-                                               switch(as.character(
-                                                   length(unique(obs_data$Inhibitor)) > 1), 
-                                                   "TRUE" = obs_shape,
-                                                   "FALSE" = obs_shape[1]))
-                }
             }
         }
     }
+    
     
     # Making linear graph --------------------------------------------------------
     A <-  A +
@@ -1405,7 +1323,7 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
         warning(paste0("Some of your data are less than the lower y axis value of ",
-                       Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this often leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If you see this, please try setting the minimum value for the y axis to less than or equal to ",
+                       Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this sometimes leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If you see this, please try setting the minimum value for the y axis to less than or equal to ",
                        min(LowConc, na.rm = T), 
                        ", the lowest value in your data."),
                 call. = FALSE)
