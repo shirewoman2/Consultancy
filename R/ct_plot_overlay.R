@@ -896,10 +896,10 @@ ct_plot_overlay <- function(ct_dataframe,
                                                   group = Group, shape = Inhibitor),
                            # Only option here will be "none FALSE" b/c "none"
                            # will only be the AES if linetype is unspecified.
-                           "none" = aes(x = Time, y = Conc,
-                                        group = Group, shape = Inhibitor))) +
+                           "none FALSE" = aes(x = Time, y = Conc,
+                                              group = Group, shape = Inhibitor))) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
-       
+        
     }
     
     
@@ -988,19 +988,45 @@ ct_plot_overlay <- function(ct_dataframe,
                 obs_color <- "black"
             }
             
-            A <- A +
-                # making obs point outlines
-                geom_point(data = obs_data,
-                           alpha = obs_line_trans,
-                           color = obs_color,
-                           fill = NA,
-                           show.legend = FALSE) +
-                # making obs point fill
-                geom_point(data = obs_data,
-                           fill = obs_color,
-                           alpha = obs_fill_trans, 
-                           show.legend = FALSE) + 
-                scale_shape_manual(values = obs_shape)
+            if(str_detect(figure_type, "ribbon")){
+                # I think there's a bug in the ggplot2 package. When I try to
+                # add observed data to ribbon plot, if geom_point includes a
+                # call to fill but is NOT mapped, then the order of the fill
+                # colors is exactly the reverse of the order of the line colors.
+                # If the observed data ARE mapped in geom_point but NOT to fill,
+                # then everything is fine. 9/4/22 LSh
+                A <- A +
+                    # making obs point outlines
+                    geom_point(data = obs_data, aes(x = Time, y = MyMean),
+                               inherit.aes = FALSE,
+                               color = obs_color,
+                               fill = NA,
+                               alpha = obs_fill_trans, 
+                               show.legend = FALSE) +
+                    # making obs point fill
+                    geom_point(data = obs_data, aes(x = Time, y = MyMean),
+                               inherit.aes = FALSE,
+                               color = obs_color,
+                               fill = obs_color,
+                               alpha = obs_fill_trans, 
+                               show.legend = FALSE) + 
+                    scale_shape_manual(values = obs_shape)
+            } else {
+                
+                A <- A +
+                    # making obs point outlines
+                    geom_point(data = obs_data,
+                               alpha = obs_line_trans,
+                               color = obs_color,
+                               fill = NA,
+                               show.legend = FALSE) +
+                    # making obs point fill
+                    geom_point(data = obs_data,
+                               fill = obs_color,
+                               alpha = obs_fill_trans, 
+                               show.legend = FALSE) + 
+                    scale_shape_manual(values = obs_shape)
+            }
             
         } else {
             if(is.na(obs_color)){

@@ -22,15 +22,14 @@
 #'   \item{"all"}{Extract all possible parameters}
 #'
 #'   \item{a string of the specific parameters you want, each in quotes and
-#'   encapsulated with \code{c(...)},}{For a complete list, type
-#'   \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
-#'   console. Parameters are reported with a suffix depending on which compound
-#'   they pertain to: "_sub" for the substrate, "_met1" for the primary
-#'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-#'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-#'   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-#'   inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
-#'   "fa_inhib2", "Regimen_sub")}}}
+#'   encapsulated with \code{c(...)},}{For a complete list:
+#'   view(ExpDetailDefinitions)} Parameters are reported with a suffix depending
+#'   on which compound they pertain to: "_sub" for the substrate, "_met1" for
+#'   the primary metabolite, "_met2" for the second primary metabolite,
+#'   "_secmet" for the secondary metabolite, "_inhib" for the 1st inhibitor or
+#'   inducer listed, "_inhib2" for the 2nd inhibitor or inducer listed, or
+#'   "_inh1met" for the inhibitor 1 metabolite. An example of acceptable input:
+#'   \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
 #'   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
 #'   listed on the "Summary" tab. If you want experimental details on a second
@@ -278,27 +277,33 @@ extractExpDetails <- function(sim_data_file,
         
         # Removing details that don't apply, e.g., _inhib parameters when there
         # was no inhibitor.
-        if(is.na(Out$Inhibitor1) & any(str_detect(names(Out), "_inhib$"))){
+        if(length(Out$Inhibitor1) > 0 &&
+           is.na(Out$Inhibitor1) & any(str_detect(names(Out), "_inhib$"))){
             Out <- Out[-which(str_detect(names(Out), "_inhib$"))]
         }
         
-        if(is.na(Out$Inhibitor2) & any(str_detect(names(Out), "_inhib2$"))){
+        if(length(Out$Inhibitor2) > 0 &&
+           is.na(Out$Inhibitor2) & any(str_detect(names(Out), "_inhib2$"))){
             Out <- Out[-which(str_detect(names(Out), "_inhib2$"))]
         }
         
-        if(is.na(Out$Inhibitor1Metabolite) & any(str_detect(names(Out), "_inhib1met$"))){
+        if(length(Out$Inhibitor1Metabolite) > 0 &&
+           is.na(Out$Inhibitor1Metabolite) & any(str_detect(names(Out), "_inhib1met$"))){
             Out <- Out[-which(str_detect(names(Out), "_inhib1met$"))]
         }
         
-        if(is.na(Out$PrimaryMetabolite1) & any(str_detect(names(Out), "_met$"))){
+        if(length(Out$PrimaryMetabolite1) > 0 &&
+           is.na(Out$PrimaryMetabolite1) & any(str_detect(names(Out), "_met$"))){
             Out <- Out[-which(str_detect(names(Out), "_met$"))]
         }
         
-        if(is.na(Out$PrimaryMetabolite2) & any(str_detect(names(Out), "_met2$"))){
+        if(length(Out$PrimaryMetabolite2) > 0 &&
+           is.na(Out$PrimaryMetabolite2) & any(str_detect(names(Out), "_met2$"))){
             Out <- Out[-which(str_detect(names(Out), "_met2$"))]
         }
         
-        if(is.na(Out$SecondaryMetabolite) & any(str_detect(names(Out), "secmet$"))){
+        if(length(Out$SecondaryMetabolite1) > 0 &&
+           is.na(Out$SecondaryMetabolite) & any(str_detect(names(Out), "secmet$"))){
             Out <- Out[-which(str_detect(names(Out), "_secmet$"))]
         }
     }
