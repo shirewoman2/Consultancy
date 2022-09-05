@@ -4,15 +4,17 @@
 #' the function \code{\link{extractForestData}} to generate the input data for
 #' \code{forest_dataframe}. The data will be broken up by the file name on the y
 #' axis and, optionally, whatever you specify for \code{facet_column} in the
-#' horizontal direction.
+#' horizontal direction. WARNING: This is a relatively new function and should
+#' be rigorously QC'ed.
 #'
 #' @param forest_dataframe a data.frame with extracted forest-plot data,
 #'   generated from running \code{\link{extractForestData}} on Simulator output
-#'   files. If this is a forest plot of perpetrator DDIs, the column "Substrate"
-#'   will be what is used to label the y axis. If it is a forest plot of victim
-#'   DDIs, it will be the column "Inhibitor1". If, instead of the compound or
-#'   inhibitor 1 names, you would like some other label to appear on the y axis,
-#'   please see the argument \code{y_axis_labels}.
+#'   files or a csv file with the same data. If this is a forest plot of
+#'   perpetrator DDIs, the column "Substrate" will be what is used to label the
+#'   y axis. If it is a forest plot of victim DDIs, it will be the column
+#'   "Inhibitor1". If, instead of the compound or inhibitor 1 names, you would
+#'   like some other label to appear on the y axis, please see the argument
+#'   \code{y_axis_labels}.
 #' @param PKparameters optionally specify which PK parameters included in
 #'   \code{forest_dataframe} to use as input. If left as NA, all the PK
 #'   parameters you extracted with \code{\link{extractForestData}} will be
@@ -115,6 +117,11 @@ forest_plot <- function(forest_dataframe,
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
              call. = FALSE)
+    }
+    
+    if(class(forest_dataframe) == "character" && 
+       str_detect(forest_dataframe, "csv")){
+        forest_dataframe <- read.csv(forest_dataframe)
     }
     
     if(nrow(forest_dataframe) == 0){

@@ -20,11 +20,12 @@ forest_plot(
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
 generated from running \code{\link{extractForestData}} on Simulator output
-files. If this is a forest plot of perpetrator DDIs, the column "Substrate"
-will be what is used to label the y axis. If it is a forest plot of victim
-DDIs, it will be the column "Inhibitor1". If, instead of the compound or
-inhibitor 1 names, you would like some other label to appear on the y axis,
-please see the argument \code{y_axis_labels}.}
+files or a csv file with the same data. If this is a forest plot of
+perpetrator DDIs, the column "Substrate" will be what is used to label the
+y axis. If it is a forest plot of victim DDIs, it will be the column
+"Inhibitor1". If, instead of the compound or inhibitor 1 names, you would
+like some other label to appear on the y axis, please see the argument
+\code{y_axis_labels}.}
 
 \item{PKparameters}{optionally specify which PK parameters included in
 \code{forest_dataframe} to use as input. If left as NA, all the PK
@@ -95,7 +96,8 @@ Output is a graph.
 the function \code{\link{extractForestData}} to generate the input data for
 \code{forest_dataframe}. The data will be broken up by the file name on the y
 axis and, optionally, whatever you specify for \code{facet_column} in the
-horizontal direction.
+horizontal direction. WARNING: This is a relatively new function and should
+be rigorously QC'ed.
 }
 \examples{
 
