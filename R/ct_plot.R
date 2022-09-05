@@ -981,7 +981,7 @@ ct_plot <- function(ct_dataframe = NA,
             # data points.
             
             # Determining whether to map obs_color to Inhibitor column
-            if(is.na(obs_color_user)){
+            if(is.na(obs_color_user) & figure_type != "freddy"){
                 # Mapping obs color to Inhibitor
                 
                 A <- A +
@@ -1001,18 +1001,19 @@ ct_plot <- function(ct_dataframe = NA,
                 
             } else {
                 # NOT mapping obs color to Inhibitor and using the same color
-                # for all observed points
+                # for all observed points. This is also used for figure type
+                # "Freddy".
                 
                 A <- A +
                     # making obs point outlines
                     geom_point(data = obs_data,
                                alpha = obs_line_trans,
-                               color = obs_color_user,
+                               color = obs_color,
                                fill = NA) +
                     # making obs point fill
                     geom_point(data = obs_data,
-                               fill = obs_color_user,
-                               color = obs_color_user,
+                               fill = obs_color,
+                               color = obs_color,
                                alpha = obs_fill_trans) 
             }
         }
