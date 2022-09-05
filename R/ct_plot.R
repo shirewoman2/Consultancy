@@ -161,7 +161,8 @@
 #'   semi-transparent version of whatever other color you list otherwise.
 #'   Setting this to "none" will make sure that the symbols are black outlines
 #'   only with no fill. Hex color codes are also ok to use. If left as NA, all
-#'   observed data will be in black.
+#'   observed data will be in black or, if you set something for
+#'   \code{line_color}, whatever colors were used for that.
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
@@ -368,6 +369,20 @@ ct_plot <- function(ct_dataframe = NA,
              call. = FALSE)
     }
     
+    if(length(sort(unique(ct_dataframe$Tissue))) > 1){
+        stop(paste0("The ct_plot function is for graphing only one tissue at a time, but you have ",
+                    length(sort(unique(ct_dataframe$Tissue))), 
+                    " tissues. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+             call. = FALSE)
+    }
+    
+    if(length(sort(unique(ct_dataframe$CompoundID))) > 1){
+        stop(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
+                    length(sort(unique(ct_dataframe$CompoundID))), 
+                    " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+             call. = FALSE)
+    }
+    
     # If user wants feces, use the British spelling even if they entered the
     # American spelling.
     if(str_detect(subsection_ADAM, "feces")){
@@ -407,6 +422,10 @@ ct_plot <- function(ct_dataframe = NA,
     # Noting whether this is an enzyme-abundance plot b/c some options change
     # then.
     EnzPlot <- "Enzyme" %in% names(ct_dataframe)
+    
+    # Noting user's original preference for obs_color b/c need to know whether
+    # to map that to Inhibitor.
+    obs_color_user <- obs_color
     
     # If user had already filtered ct_dataframe to include only the ADAM data
     # they wanted, the subsection_ADAM column might not include the default
@@ -571,15 +590,6 @@ ct_plot <- function(ct_dataframe = NA,
         obs_shape <- rep(obs_shape, 2)
     }
     
-    if(complete.cases(obs_color[1]) && length(MyEffector) > 0 &&
-       complete.cases(MyEffector) &&
-       compoundToExtract != "inhibitor 1" &&
-       length(complete.cases(obs_color)) < 2){
-        warning("There is an inhibitor or effector present, but you have specified only one color for the observed data. The same color will be used for both.",
-                call. = FALSE)
-        obs_color <- rep(obs_color, 2)
-    }
-    
     if(complete.cases(line_color[1]) && length(MyEffector) > 0 &&
        complete.cases(MyEffector) &&
        compoundToExtract != "inhibitor 1" &&
@@ -699,6 +709,10 @@ ct_plot <- function(ct_dataframe = NA,
                 obs_line_trans = obs_line_trans,
                 line_color = line_color)
     
+    if(length(obs_color) > 1){
+        obs_color <- obs_color[1]
+    }
+    
     ## figure_type: trial means -----------------------------------------------------------
     if(figure_type == "trial means"){
         
@@ -731,43 +745,7 @@ ct_plot <- function(ct_dataframe = NA,
                           show.legend = FALSE) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == MyMeanType), 
-                          lwd = ifelse(is.na(line_width), 1, line_width)) +
-                scale_shape_manual(values = obs_shape[1:2]) +
-                scale_linetype_manual(values = line_type[1:2]) +
-                scale_color_manual(values = line_color[1:2])
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    A <-  A + geom_point(data = obs_data, size = 2,
-                                         stroke = 1, fill = NA, 
-                                         alpha = obs_line_trans)
-                } else {
-                    # This is when they want both outlines and fill for observed
-                    # data points.
-                    
-                    # Addressing glitch when the user has supplied observed data
-                    # with a different number of inhibitors than sim_data_trial,
-                    # e.g., when the obs data came with the simulator output
-                    # file. Addressing that.
-                    if(length(unique(obs_data$Inhibitor)) == 1){
-                        obs_color <- obs_color[1]
-                    }
-                    
-                    A <- A +
-                        geom_point(data = obs_data, size = 2,
-                                   alpha = obs_fill_trans, stroke = 0) +
-                        scale_fill_manual(values = obs_color) +
-                        # have to add geom_point 2x b/c alpha applies to both
-                        # color (as in, the outline of the point) AND the fill
-                        # of the point and I want to control it for each
-                        # separately.
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1,
-                                   alpha = obs_line_trans)
-                }
-            }
+                          lwd = ifelse(is.na(line_width), 1, line_width))
             
         } else {
             
@@ -786,32 +764,6 @@ ct_plot <- function(ct_dataframe = NA,
                           lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        shape = obs_shape[1], stroke = 1, 
-                                        fill = NA, 
-                                        alpha = obs_line_trans)
-                } else {
-                    # This is when they want both outlines and fill for observed
-                    # data points.
-                    
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = obs_color[1], 
-                                        alpha = obs_fill_trans,
-                                        shape = obs_shape[1], stroke = 0) +
-                        # have to add geom_point 2x b/c alpha applies to both
-                        # color (as in, the outline of the point) AND the fill
-                        # of the point and I want to control it for each
-                        # separately.
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, shape = obs_shape[1], stroke = 1, 
-                                   alpha = obs_line_trans)
-                }
-            }
         }
     }
     
@@ -847,34 +799,7 @@ ct_plot <- function(ct_dataframe = NA,
                           lwd = ifelse(is.na(line_width), 0.8, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width))  +
-                scale_shape_manual(values = obs_shape[1:2]) +
-                scale_linetype_manual(values = line_type[1:2]) +
-                scale_color_manual(values = line_color[1:2])
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        stroke = 1, fill = NA, 
-                                        alpha = obs_line_trans)
-                } else {
-                    # This is when they want both outlines and fill for observed
-                    # data points.
-                    
-                    A <- A +
-                        geom_point(data = obs_data, size = 2,
-                                   alpha = obs_fill_trans, stroke = 0) +
-                        scale_fill_manual(values = obs_color) +
-                        # have to add geom_point 2x b/c alpha applies to both
-                        # color (as in, the outline of the point) AND the fill
-                        # of the point
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1,
-                                   alpha = obs_line_trans)
-                }
-            }
+                          lwd = ifelse(is.na(line_width), 1, line_width))
             
         } else {
             # This is when there is no effector present or the graph is of the
@@ -892,30 +817,6 @@ ct_plot <- function(ct_dataframe = NA,
                           lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        stroke = 1, fill = NA, 
-                                        alpha = obs_line_trans, 
-                                        shape = obs_shape[1])
-                } else {
-                    A <- A +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = obs_color[1], alpha = obs_fill_trans,
-                                   stroke = 0, shape = obs_shape[1]) +
-                        # have to add geom_point 2x b/c alpha applies to both
-                        # color (as in, the outline of the point) AND the fill
-                        # of the point and I want to control it for each
-                        # separately.
-                        geom_point(data = obs_data, size = 2,
-                                   alpha = obs_line_trans, 
-                                   fill = NA, shape = obs_shape[1], stroke = 1)
-                }
-            }
         }
     }
     
@@ -949,48 +850,7 @@ ct_plot <- function(ct_dataframe = NA,
                                       linetype = Inhibitor, shape = Inhibitor,
                                       color = Inhibitor, fill = Inhibitor)) +
                 geom_ribbon(alpha = AlphaToUse, color = NA) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
-                scale_shape_manual(values = obs_shape[1:2]) +
-                scale_linetype_manual(values = line_type[1:2]) +
-                scale_color_manual(values = line_color[1:2]) +
-                scale_fill_manual(values = line_color[1:2])
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    A <- A + 
-                        geom_point(data = obs_data, 
-                                   aes(x = Time, y = Conc, color = Inhibitor,
-                                       shape = Inhibitor),
-                                   inherit.aes = FALSE, size = 2,
-                                   alpha = obs_line_trans,
-                                   fill = NA, stroke = 1)
-                } else {
-                    # This is when they want both outlines and fill for observed
-                    # data points.
-                    
-                    suppressMessages(
-                        A <- A +
-                            geom_point(data = obs_data, 
-                                       aes(x = Time, y = Conc, color = Inhibitor,
-                                           shape = Inhibitor, fill = Inhibitor),
-                                       inherit.aes = FALSE, size = 2,
-                                       alpha = obs_fill_trans, stroke = 0) +
-                            scale_fill_manual(values = obs_color) +
-                            scale_color_manual(values = obs_color) +
-                            # have to add geom_point 2x b/c alpha applies to both
-                            # color (as in, the outline of the point) AND the fill
-                            # of the point
-                            geom_point(data = obs_data, 
-                                       aes(x = Time, y = Conc, color = Inhibitor,
-                                           shape = Inhibitor, fill = Inhibitor),
-                                       inherit.aes = FALSE, size = 2,
-                                       alpha = obs_line_trans,
-                                       fill = NA, stroke = 1)
-                    )
-                }
-            }
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
             
         } else {
             # This is when there is no effector present or the graph is of the
@@ -1004,30 +864,6 @@ ct_plot <- function(ct_dataframe = NA,
                           linetype = line_type[1],
                           color = line_color[1])
             
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    A <- A + 
-                        geom_point(data = obs_data, 
-                                   aes(x = Time, y = Conc), inherit.aes = FALSE,
-                                   size = 2, stroke = 1, shape = obs_shape[1], 
-                                   fill = NA, alpha = obs_line_trans)
-                } else {
-                    A <- A +
-                        geom_point(data = obs_data,
-                                   aes(x = Time, y = Conc), inherit.aes = FALSE,
-                                   size = 2, fill = obs_color[1], 
-                                   alpha = obs_fill_trans,
-                                   stroke = 0, shape = obs_shape[1]) +
-                        geom_point(data = obs_data, 
-                                   aes(x = Time, y = Conc), inherit.aes = FALSE,
-                                   size = 2, fill = NA, shape = obs_shape[1], 
-                                   alpha = obs_line_trans,
-                                   color = obs_color[1],
-                                   stroke = 1)
-                }
-            }
         }
     }
     
@@ -1062,37 +898,7 @@ ct_plot <- function(ct_dataframe = NA,
                 geom_line(data = sim_data_mean %>%
                               filter(Trial %in% c("per5", "per95")),
                           alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 1, line_width)) +
-                scale_shape_manual(values = obs_shape[1:2]) +
-                scale_linetype_manual(values = line_type[1:2]) +
-                scale_color_manual(values = line_color[1:2])
-            
-            if(nrow(obs_data) > 0){
-                # When figure_type == "freddy", I want the default to be
-                # a blue-purple semi-transparent fill. However, I want
-                # people to have the option to override that, so
-                # setting obs_color to "none" will override the
-                # "freddy" default. -LS
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = NA, stroke = 1, 
-                                        alpha = obs_line_trans)
-                } else {
-                    # This is the situation when the user has
-                    # requested a specific color for the Freddy figure
-                    # type.
-                    A <- A +
-                        geom_point(data = obs_data, size = 2,
-                                   alpha = obs_fill_trans, stroke = 0) +
-                        scale_fill_manual(values = obs_color) +
-                        # have to add geom_point 2x b/c alpha applies to both
-                        # color (as in, the outline of the point) AND the fill
-                        # of the point
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1, 
-                                   alpha = obs_line_trans)
-                }
-            }
+                          lwd = ifelse(is.na(line_width), 1, line_width))
             
         } else {
             # This is when there is no effector present or the graph is of the
@@ -1113,31 +919,6 @@ ct_plot <- function(ct_dataframe = NA,
                               filter(Trial %in% c("per5", "per95")),
                           linetype = line_type[2],
                           color = line_color[2])
-            
-            if(nrow(obs_data) > 0){
-                # When figure_type == "Freddy", I want the default to be
-                # a blue-purple semi-transparent fill. However, I want
-                # people to have the option to override that, so
-                # setting obs_color to "none" will override the
-                # "Freddy" default. -LS
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = NA, stroke = 1,
-                                        shape = obs_shape[1], 
-                                        alpha = obs_line_trans)
-                } else {
-                    # This is the situation when the user has
-                    # requested a specific color for the Freddy figure
-                    # type.
-                    A <- A +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = obs_color[1], alpha = obs_fill_trans,
-                                   stroke = 0, shape = obs_shape[1]) +
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1, alpha = obs_line_trans,
-                                   shape = obs_shape[1])
-                }
-            }
         }
     }
     
@@ -1155,43 +936,7 @@ ct_plot <- function(ct_dataframe = NA,
                         aes(x = Time, y = Conc, 
                             linetype = Inhibitor, shape = Inhibitor, 
                             color = Inhibitor, fill = Inhibitor)) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
-                scale_linetype_manual(values = line_type[1:2]) +
-                scale_color_manual(values = line_color[1:2]) +
-                scale_shape_manual(values = obs_shape[1:2])
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    
-                    A <-  A + geom_point(data = obs_data, size = 2,
-                                         stroke = 1, fill = NA, 
-                                         alpha = obs_line_trans)
-                } else {
-                    # This is when they want both outlines and fill for observed
-                    # data points.
-                    
-                    # Glitch when the user has supplied observed data
-                    # with a different number of inhibitors than
-                    # sim_data_trial, e.g., when the obs data came
-                    # with the simulator output file. Addressing that.
-                    if(length(unique(obs_data$Inhibitor)) == 1){
-                        obs_color <- obs_color[1]
-                    }
-                    
-                    A <- A +
-                        geom_point(data = obs_data, size = 2,
-                                   alpha = obs_fill_trans, stroke = 0) +
-                        scale_fill_manual(values = obs_color) +
-                        # have to add geom_point 2x b/c alpha applies to both
-                        # color (as in, the outline of the point) AND the fill
-                        # of the point
-                        geom_point(data = obs_data, size = 2,
-                                   fill = NA, stroke = 1, 
-                                   alpha = obs_line_trans)
-                }
-            }
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
             
         } else {
             # This is when there is no effector present or the graph is of the
@@ -1203,32 +948,75 @@ ct_plot <- function(ct_dataframe = NA,
                 geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
                           color = line_color[1])
-            
-            if(nrow(obs_data) > 0){
-                if(all(is.na(obs_color)) | obs_color[1] == "none"){
-                    # This is when they want only outlines and no fill for
-                    # observed data points
-                    
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        shape = obs_shape[1], stroke = 1, 
-                                        color = obs_color[1],
-                                        fill = NA, 
-                                        alpha = obs_line_trans)
-                } else {
-                    
-                    A <- A + geom_point(data = obs_data, size = 2,
-                                        fill = obs_color[1], 
-                                        alpha = obs_fill_trans,
-                                        shape = obs_shape[1], stroke = 0) +
-                        geom_point(data = obs_data, size = 2,
-                                   alpha = obs_line_trans,
-                                   color = obs_color[1],
-                                   fill = NA, shape = obs_shape[1], stroke = 1)
-                }
-            }
         }
     }
     
+    # Setting colors, linetypes, etc. -------------------------------------
+    
+    # Naming the linetypes, colors, fills, and shapes b/c otherwise having
+    # trouble with order changing between when lines are plotted and when
+    # observed data are added. I think this is a ggplot2 bug.
+    names(line_type) <- levels(Data$Inhibitor)
+    names(line_color) <- levels(Data$Inhibitor)
+    
+    A <- A +
+        scale_linetype_manual(values = line_type[1:2]) +
+        scale_color_manual(values = line_color[1:2]) +
+        scale_fill_manual(values = line_color[1:2]) +
+        scale_shape_manual(values = obs_shape[1:2])
+    
+    
+    # Observed data ---------------------------------------------------------
+    
+    if(nrow(obs_data) > 0){
+        if(complete.cases(obs_color_user) &&
+           obs_color_user == "none"){
+            # This is when they want only outlines and no fill for
+            # observed data points
+            A <-  A + geom_point(data = obs_data, size = 2,
+                                 stroke = 1, fill = NA, 
+                                 alpha = obs_line_trans)
+        } else {
+            # This is when they want both outlines and fill for observed
+            # data points.
+            
+            # Determining whether to map obs_color to Inhibitor column
+            if(is.na(obs_color_user)){
+                # Mapping obs color to Inhibitor
+                
+                A <- A +
+                    # making obs point fill
+                    geom_point(data = obs_data, 
+                               aes(x = Time, y = Conc, shape = Inhibitor, 
+                                   color = Inhibitor, fill = Inhibitor),
+                               alpha = obs_fill_trans,
+                               inherit.aes = FALSE) +
+                    # making obs point outlines
+                    geom_point(data = obs_data, 
+                               aes(x = Time, y = Conc, 
+                                   shape = Inhibitor, color = Inhibitor),
+                               inherit.aes = FALSE, 
+                               alpha = obs_line_trans,
+                               fill = NA) 
+                
+            } else {
+                # NOT mapping obs color to Inhibitor and using the same color
+                # for all observed points
+                
+                A <- A +
+                    # making obs point outlines
+                    geom_point(data = obs_data,
+                               alpha = obs_line_trans,
+                               color = obs_color_user,
+                               fill = NA) +
+                    # making obs point fill
+                    geom_point(data = obs_data,
+                               fill = obs_color_user,
+                               color = obs_color_user,
+                               alpha = obs_fill_trans) 
+            }
+        }
+    }
     
     # Applying aesthetics ------------------------------------------------
     ## Making linear graph -------------------------------------------------
@@ -1308,10 +1096,17 @@ ct_plot <- function(ct_dataframe = NA,
     
     ## Making semi-log graph ------------------------------------------------
     
-    LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
-                                           Time > 0 &
-                                           Conc < Ylim_log[1]) %>% 
-        pull(Conc)
+    if(EnzPlot){
+        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                               Time > 0 &
+                                               Abundance < Ylim_log[1]) %>% 
+            pull(Abundance) 
+    } else {
+        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                               Time > 0 &
+                                               Conc < Ylim_log[1]) %>% 
+            pull(Conc)
+    }
     
     if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
         warning(paste0("Some of your data are less than the lower y axis value of ",
