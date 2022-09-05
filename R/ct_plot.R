@@ -1307,6 +1307,20 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     ## Making semi-log graph ------------------------------------------------
+    
+    LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                           Time > 0 &
+                                           Conc < Ylim_log[1]) %>% 
+        pull(Conc)
+    
+    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
+        warning(paste0("Some of your data are less than the lower y axis value of ",
+                       Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this sometimes leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If you see this, please try setting the minimum value for the y axis to less than or equal to ",
+                       min(LowConc, na.rm = T), 
+                       ", the lowest value in your data."),
+                call. = FALSE)
+    }
+    
     B <- suppressMessages(
         A + scale_y_log10(breaks = YLogBreaks,
                           labels = YLogLabels,
