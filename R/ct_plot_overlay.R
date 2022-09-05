@@ -402,6 +402,15 @@ ct_plot_overlay <- function(ct_dataframe,
              call. = FALSE)
     }
     
+    # Checking for acceptable input
+    if((str_detect(figure_type, "ribbon") | figure_type == "means only") == FALSE){
+        warning(paste0("The value used for `figure_type` was `", 
+                       figure_type,
+                       "``, but only the only acceptable options are `means only` or `percentile ribbon`. The default figure type, `means only`, will be used."),
+                call. = FALSE)
+        figure_type <- "means only"
+    }
+    
     
     # Main body of function -------------------------------------------------
     # Prettifying compound names before doing anything else 
@@ -469,13 +478,28 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     if(as_label(facet1_column) != "<empty>"){
+        
         ct_dataframe <- ct_dataframe %>%
             mutate(FC1 = {{facet1_column}})
+        
+        if(length(unique(ct_dataframe$FC1)) == 1){
+            warning(paste0("You requested the column `", 
+                           as_label(facet1_column), 
+                           "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                    call. = FALSE)
+        }
     }
     
     if(as_label(facet2_column) != "<empty>"){
         ct_dataframe <- ct_dataframe %>%
             mutate(FC2 = {{facet2_column}})
+        
+        if(length(unique(ct_dataframe$FC2)) == 2){
+            warning(paste0("You requested the column `", 
+                           as_label(facet2_column), 
+                           "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                    call. = FALSE)
+        }
     }
     
     # Noting whether the tissue was from an ADAM model
@@ -837,22 +861,41 @@ ct_plot_overlay <- function(ct_dataframe,
                 # line_color is just a placeholder b/c not using it here.
                 line_color = NA)
     
+    # Checking which column is assigned to linetype b/c it affects what the
+    # legend should be for obs data.
+    LTCol <- AESCols["linetype"]
+    
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
+        
         A <- ggplot(sim_dataframe,
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = Conc, 
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column,
+                    switch(paste(AES, LTCol == "Inhibitor"), 
+                           "color-linetype TRUE" = aes(x = Time, y = Conc, 
+                                                       color = colorBy_column, 
+                                                       fill = colorBy_column,
+                                                       linetype = linetype_column, 
+                                                       group = Group, 
+                                                       shape = linetype_column),
+                           "color-linetype FALSE" = aes(x = Time, y = Conc, 
+                                                        color = colorBy_column, 
+                                                        fill = colorBy_column,
+                                                        linetype = linetype_column, 
+                                                        group = Group, 
+                                                        shape = Inhibitor),
+                           # Only option here will be "color FALSE" b/c "color"
+                           # will only be the AES if linetype is unspecified.
+                           "color FALSE" = aes(x = Time, y = Conc, 
+                                               color = colorBy_column, 
+                                               fill = colorBy_column,
+                                               group = Group, shape = Inhibitor), 
+                           "linetype TRUE" = aes(x = Time, y = Conc, 
+                                                 linetype = linetype_column, 
+                                                 group = Group, shape = linetype_column),
+                           "linetype FALSE" = aes(x = Time, y = Conc, 
                                                   linetype = linetype_column, 
                                                   group = Group, shape = Inhibitor),
-                           "color" = aes(x = Time, y = Conc, 
-                                         color = colorBy_column, 
-                                         fill = colorBy_column,
-                                         group = Group, shape = Inhibitor), 
-                           "linetype" = aes(x = Time, y = Conc, 
-                                            linetype = linetype_column, 
-                                            group = Group, shape = Inhibitor),
+                           # Only option here will be "none FALSE" b/c "none"
+                           # will only be the AES if linetype is unspecified.
                            "none" = aes(x = Time, y = Conc,
                                         group = Group, shape = Inhibitor))) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
@@ -866,11 +909,11 @@ ct_plot_overlay <- function(ct_dataframe,
             # in the legend.
             LegCheck <- c(AESCols["color"], AESCols["linetype"])
             LegCheck <- LegCheck[LegCheck != "<empty>"]
-            if(length(LegCheck) > 1){
-                LegCheck <- TRUE
-            } else {
-                LegCheck <- length(unique(obs_data[, LegCheck])) > 1
-            }
+            # Need to add "Inhibitor" here b/c shape is mapped to it.
+            LegCheck <- c(LegCheck, "Inhibitor" = "Inhibitor")
+            # If there's more than one unique value in whatever is in the color
+            # or linetype column or the Inhibitor column, then include it
+            LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
             
             if(InternalAssignFile){
                 A <- A +
@@ -884,7 +927,9 @@ ct_plot_overlay <- function(ct_dataframe,
                     geom_point(data = obs_data,
                                fill = obs_color,
                                alpha = obs_fill_trans, 
-                               show.legend = FALSE)
+                               show.legend = FALSE) + 
+                    scale_shape_manual(values = obs_shape)
+                
             } else {
                 if(is.na(obs_color)){
                     
@@ -959,25 +1004,39 @@ ct_plot_overlay <- function(ct_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, 
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = MyMean, 
+                    switch(paste(AES, LTCol == "Inhibitor"), 
+                           "color-linetype TRUE" = aes(x = Time, y = MyMean, 
+                                                       ymin = per5, ymax = per95, 
+                                                       shape = linetype_column,
+                                                       color = colorBy_column, 
+                                                       fill = colorBy_column, 
+                                                       linetype = linetype_column),
+                           "color-linetype FALSE" = aes(x = Time, y = MyMean, 
+                                                        ymin = per5, ymax = per95, 
+                                                        shape = Inhibitor,
+                                                        color = colorBy_column, 
+                                                        fill = colorBy_column, 
+                                                        linetype = linetype_column),
+                           "linetype TRUE" = aes(x = Time, y = MyMean, 
+                                                 ymin = per5, ymax = per95, 
+                                                 shape = linetype_column,
+                                                 linetype = linetype_column),
+                           "linetype FALSE" = aes(x = Time, y = MyMean, 
                                                   ymin = per5, ymax = per95, 
                                                   shape = Inhibitor,
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column, 
                                                   linetype = linetype_column),
-                           "linetype" = aes(x = Time, y = MyMean, 
-                                            ymin = per5, ymax = per95, 
-                                            shape = Inhibitor,
-                                            linetype = linetype_column),
-                           "color" = aes(x = Time, y = MyMean, 
-                                         ymin = per5, ymax = per95, 
-                                         shape = Inhibitor,
-                                         color = colorBy_column, 
-                                         fill = colorBy_column), 
-                           "none" = aes(x = Time, y = MyMean, 
-                                        shape = Inhibitor,
-                                        ymin = per5, ymax = per95))) +
+                           # Only option here will be "color FALSE" b/c "color"
+                           # will only be the AES if linetype is unspecified.
+                           "color FALSE" = aes(x = Time, y = MyMean, 
+                                               ymin = per5, ymax = per95, 
+                                               shape = Inhibitor,
+                                               color = colorBy_column, 
+                                               fill = colorBy_column), 
+                           # Only option here will be "none FALSE" b/c "none"
+                           # will only be the AES if linetype is unspecified.
+                           "none FALSE" = aes(x = Time, y = MyMean, 
+                                              shape = Inhibitor,
+                                              ymin = per5, ymax = per95))) +
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
         
@@ -990,11 +1049,11 @@ ct_plot_overlay <- function(ct_dataframe,
             # in the legend.
             LegCheck <- c(AESCols["color"], AESCols["linetype"])
             LegCheck <- LegCheck[LegCheck != "<empty>"]
-            if(length(LegCheck) > 1){
-                LegCheck <- TRUE
-            } else {
-                LegCheck <- length(unique(obs_data[, LegCheck])) > 1
-            }
+            # Need to add "Inhibitor" here b/c shape is mapped to it.
+            LegCheck <- c(LegCheck, "Inhibitor" = "Inhibitor")
+            # If there's more than one unique value in whatever is in the color
+            # or linetype column or the Inhibitor column, then include it
+            LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
             
             obs_data <- obs_data %>% 
                 mutate(MyMean = Conc, per5 = as.numeric(NA),
@@ -1029,16 +1088,39 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_shape <- c(obs_shape, obs_shape)
                         }
                         
-                        A <- A + 
-                            geom_point(data = obs_data, 
-                                       alpha = obs_fill_trans, 
+                        A <- A +
+                            # making obs point outlines
+                            geom_point(data = obs_data,
+                                       alpha = obs_line_trans, 
+                                       fill = NA, 
                                        show.legend = LegCheck) +
+                            # making obs point fill
+                            geom_point(data = obs_data,
+                                       color = NA,
+                                       alpha = obs_fill_trans, 
+                                       show.legend = LegCheck) + 
                             scale_shape_manual(values = obs_shape)
                         
                     } else {
                         
                         A <- A + 
                             geom_point(data = obs_data, 
+                                       # geom_point(data = obs_data, inherit.aes = FALSE,
+                                       #            switch(AES, 
+                                       #                   "color-linetype" = aes(x = Time, y = Conc,
+                                       #                                          group = Group,
+                                       #                                          color = colorBy_column), 
+                                       #                   "linetype" = aes(x = Time, y = Conc, 
+                                       #                                    group = Group), 
+                                       #                   "color" = aes(x = Time, y = Conc,
+                                       #                                 group = Group,
+                                       #                                 color = colorBy_column), 
+                                       #                   "none" = aes(x = Time, y = Conc, 
+                                       #                                group = Group)),
+                                       shape = switch(as.character(
+                                           length(unique(obs_data$Inhibitor)) > 1), 
+                                           "TRUE" = obs_shape,
+                                           "FALSE" = obs_shape[1]),
                                        alpha = obs_fill_trans, 
                                        show.legend = LegCheck) +
                             scale_shape_manual(values = 
@@ -1067,8 +1149,10 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Making linear graph --------------------------------------------------------
     A <-  A +
-        xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
-        ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
+        xlab(xlab) +
+        ylab(ylab) +
+        # xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
+        # ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
         theme(panel.background = element_rect(fill = "white", color = NA),
               panel.border = element_rect(color = "black", fill = NA),
               strip.background = element_rect(fill = "white"),
@@ -1078,33 +1162,6 @@ ct_plot_overlay <- function(ct_dataframe,
               axis.title = element_text(color = "black", face = "bold"),
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
-    
-    if(is.na(legend_label_color)){
-        if(complete.cases(color_labels[1])){
-            # If user did not request a label on the legend for color but DID
-            # set any of the color labels, that means that the legend label for
-            # color probably should not be the same as the column title. Do not
-            # include a legend label for color in that scenario.
-            A <- A + labs(color = NULL, fill = NULL)
-        } else if(AES %in% c("color", "color-linetype")){
-            # However, if they did not include anything for legend_label_color
-            # but there is a column that is mapped to color, then they probably
-            # do want the title for colors on the legend to be the same as the
-            # colorBy_column name.
-            A <- A + labs(color = as_label(colorBy_column), 
-                          fill = as_label(colorBy_column))
-        }
-    } else {
-        # Note: If they user set something for legend_label_color but did NOT
-        # set anything for colorBy_column, they'll get an error from ggplot2
-        # here. That's probably fine and likely not a common scenario.
-        A <- A + 
-            labs(x = xlab, y = ylab,
-                 linetype = legend_label_linetype,
-                 shape = legend_label_color,
-                 color = legend_label_color, 
-                 fill = legend_label_color)
-    }
     
     # Error catching
     if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
@@ -1171,7 +1228,8 @@ ct_plot_overlay <- function(ct_dataframe,
         # print(NumColorsNeeded)
         
         if(length(sort(unique(ct_dataframe$colorBy_column))) == 1){
-            A <- A + scale_color_manual(values = "black")
+            A <- A + scale_color_manual(values = "black") +
+                scale_fill_manual(values = "black")
         } else {
             
             if(length(color_set) > 1){
@@ -1213,10 +1271,10 @@ ct_plot_overlay <- function(ct_dataframe,
                 if(str_detect(tolower(color_set), "default|brewer.*2|set.*2")){
                     # Using "Dark2" b/c "Set2" is just really, really light. 
                     suppressWarnings(
-                    A <- A + scale_color_manual(
-                        values = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")) +
-                        scale_fill_manual(
-                            values = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2"))
+                        A <- A + scale_color_manual(
+                            values = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")) +
+                            scale_fill_manual(
+                                values = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2"))
                     )
                 }
                 
@@ -1237,10 +1295,10 @@ ct_plot_overlay <- function(ct_dataframe,
                 
                 if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
                     suppressWarnings(
-                    A <- A + scale_color_manual(
-                        values = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")) +
-                        scale_fill_manual(
-                            values = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1"))
+                        A <- A + scale_color_manual(
+                            values = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")) +
+                            scale_fill_manual(
+                                values = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1"))
                     )
                 }
                 
@@ -1267,16 +1325,35 @@ ct_plot_overlay <- function(ct_dataframe,
     A <- A + scale_linetype_manual(values = linetypes)
     
     # Adding legend label for color and linetype as appropriate
-    if(complete.cases(legend_label_color) &&
-       legend_label_color == "none"){
-        A <- A + labs(color = NULL, fill = NULL)
+    if(complete.cases(legend_label_color)){
+        if(legend_label_color == "none"){    
+            A <- A + labs(color = NULL, fill = NULL)
+        } else {
+            A <- A + labs(color = legend_label_color, 
+                          fill = legend_label_color)
+        }
     } else {
-        A <- A + labs(color = switch(as.character(complete.cases(legend_label_color)), 
-                                     "TRUE" = legend_label_color, 
-                                     "FALSE" = as_label(colorBy_column)), 
-                      fill = switch(as.character(complete.cases(legend_label_color)), 
-                                    "TRUE" = legend_label_color,
-                                    "FALSE" = as_label(colorBy_column)))
+        # This is when no legend_label_color has been specified.
+        if(complete.cases(color_labels[1])){
+            # If user did not request a label on the legend for color but DID
+            # set any of the color labels, that means that the legend label for
+            # color probably should NOT be the same as the column title. Do not
+            # include a legend label for color in that scenario.
+            A <- A + labs(color = NULL, fill = NULL)
+        } else if(AES %in% c("color", "color-linetype")){
+            # However, if they did not include anything for legend_label_color
+            # but there *is* a column that is mapped to color, then they
+            # probably do want the title for colors on the legend to be the same
+            # as the colorBy_column name.
+            A <- A + labs(color = as_label(colorBy_column), 
+                          fill = as_label(colorBy_column))
+        } 
+        
+        # None of these conditions are met when 1) they did NOT set anything for the
+        # legend_label_color, 2) they did not specify any alternative label
+        # for each value in the colorBy_column for the legend, and 3) the
+        # specified aesthetics do NOT include color or linetype.
+        
     }
     
     if(complete.cases(legend_label_linetype) && 
@@ -1285,7 +1362,12 @@ ct_plot_overlay <- function(ct_dataframe,
     } else if(as_label(linetype_column) != "<empty>"){
         A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
                                         "TRUE" = legend_label_linetype,
-                                        "FALSE" = as_label(linetype_column)))
+                                        "FALSE" = as_label(linetype_column)), 
+                      shape = switch(as.character(LTCol == "Inhibitor"), 
+                                     "TRUE" = switch(as.character(complete.cases(legend_label_linetype)), 
+                                                     "TRUE" = legend_label_linetype,
+                                                     "FALSE" = as_label(linetype_column)), 
+                                     "FALSE" = "Inhibitor"))
         
         if(any(linetypes != "solid")){
             # When the linetype is dashed (or possibly some other user-specified
@@ -1311,10 +1393,23 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(AES %in% c("color", "color-linetype") &&
        length(unique(sim_dataframe$colorBy_column)) == 1){
-        A <- A + guides(color = "none")
+        A <- A + guides(color = "none", fill = "none")
     }
     
     ## Making semi-log graph ------------------------------------------------
+    
+    LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                           Time > 0 &
+                                           Conc < Ylim_log[1]) %>% 
+        pull(Conc)
+    
+    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
+        warning(paste0("Some of your data are less than the lower y axis value of ",
+                       Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this often leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If you see this, please try setting the minimum value for the y axis to less than or equal to ",
+                       min(LowConc, na.rm = T), 
+                       ", the lowest value in your data."),
+                call. = FALSE)
+    }
     
     B <- suppressMessages(suppressWarnings(
         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
