@@ -184,7 +184,8 @@ displayed in semi-transparent blue-purple for "default" and the
 semi-transparent version of whatever other color you list otherwise.
 Setting this to "none" will make sure that the symbols are black outlines
 only with no fill. Hex color codes are also ok to use. If left as NA, all
-observed data will be in black.}
+observed data will be in black or, if you set something for
+\code{line_color}, whatever colors were used for that.}
 
 \item{obs_shape}{optionally specify what shapes are used to depict observed
 data for 1. the substrate drug alone and 2. the substrate drug in the
