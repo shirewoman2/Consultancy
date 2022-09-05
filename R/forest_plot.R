@@ -19,10 +19,10 @@
 #'   included. If you try to include a parameter that's not already present in
 #'   forest_dataframe, it will be ignored. Enclose the parameters with
 #'   \code{c(...)}.
-#' @param perp_or_victim specify whether the drug of interest is a "perpetrator"
-#'   (default) or "victim". This will determine the graphs will be labeled on
-#'   the y axis by the substrate name (for perpetrator forest plots) or by the
-#'   effector name (for victim forest plots).
+#' @param perp_or_victim specify whether the drug of interest is a "victim"
+#'   (default) or "perpetrator". This will determine the graphs will be labeled
+#'   on the y axis by the substrate name (for perpetrator forest plots) or by
+#'   the effector name (for victim forest plots).
 #' @param y_axis_order optionally supply a character vector to specify the order
 #'   of the files or compounds on the y axis. If your character vector contains
 #'   "xlsx" in the any of the text, we'll assume you want to sort by the file
@@ -73,27 +73,27 @@
 #' @examples
 #'
 #' # We'll use some example forest-plot data for the substrate bufuralol
-#' # with various effectors. 
-#' forest_plot(forest_dataframe = ForestData, 
+#' # with various effectors.
+#' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             x_axis_limits = c(0.9, 5))
 #'
 #' # If there were multiple dosing levels of bufuralol, it might be
 #' # nice to break up the graph by the substrate dose like this:
-#' forest_plot(forest_dataframe = ForestData, 
+#' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column = Dose_sub,
 #'             x_axis_limits = c(0.9, 5))
-#' 
-#' 
-#' # If you want to maybe add some units in the graph to the substrate dose 
+#'
+#'
+#' # If you want to maybe add some units in the graph to the substrate dose
 #' # or maybe also say "Dose = X mg MyCompound", you can modify the column
 #' # Dose_sub into a new column, Dose_sub_pretty, and use it like this:
 #' ForestData <- ForestData %>%
 #'                   mutate(Dose_sub_pretty = paste("Dose =", Dose_sub,
 #'                                                  "mg bufuralol"))
-#'                                                  
-#' forest_plot(forest_dataframe = ForestData, 
+#'
+#' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column = Dose_sub_pretty,
 #'             x_axis_limits = c(0.9, 5))
@@ -101,7 +101,7 @@
 
 forest_plot <- function(forest_dataframe, 
                         PKparameters = NA, 
-                        perp_or_victim = "perpetrator", 
+                        perp_or_victim = "victim", 
                         y_axis_order = NA, 
                         x_axis_limits = c(0.05, 15), 
                         facet_column, 
