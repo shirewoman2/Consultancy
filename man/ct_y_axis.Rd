@@ -11,6 +11,7 @@ ct_y_axis(
   EnzPlot,
   y_axis_limits_lin,
   time_range,
+  prettify_compound_names = TRUE,
   y_axis_limits_log,
   Ylim_data,
   pad_y_axis,

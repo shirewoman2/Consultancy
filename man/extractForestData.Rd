@@ -8,6 +8,7 @@ extractForestData(
   sim_data_files = NA,
   PKparameters = c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", "Cmax_ratio_dose1",
     "AUCtau_ratio_last", "Cmax_ratio_last"),
+  sheet = NA,
   checkDataSource = TRUE,
   save_output = NA
 )
@@ -23,6 +24,14 @@ and the last dose simulated. Input must be among "AUCinf_ratio_dose1",
 "AUCt_ratio_dose1", "Cmax_ratio_dose1", "AUCtau_ratio_last", or
 "Cmax_ratio_last". List them in the order you'd like the columns to appear
 in the output.}
+
+\item{sheet}{optionally specify the name of the sheet where you'd like to
+pull the PK data, in quotes; for example, specify the tab where you have a
+user-defined AUC integration. \emph{Note:} Unless you want a very specific
+Excel sheet that's not what the usual sheet name would be for a first or
+last dose, this function will work best if this is left as NA. Also, since
+we don't know which dose these data were for, you'll see that the output
+parameter names do not include the suffixes "_last" or "_dose1".}
 
 \item{checkDataSource}{TRUE (default) or FALSE: Include in the output a
 data.frame that lists exactly where the data were pulled from the simulator

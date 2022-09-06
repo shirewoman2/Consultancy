@@ -2,8 +2,7 @@
 % Please edit documentation in R/annotateDetails.R
 \name{annotateDetails}
 \alias{annotateDetails}
-\title{Annotate Simcyp Simulator experimental details and format into a long
-data.frame instead of a wide one}
+\title{Annotate Simcyp Simulator experimental details}
 \usage{
 annotateDetails(
   Deets,

@@ -13,14 +13,18 @@ ct_plot_overlay(
   color_labels = NA,
   legend_label_color = NA,
   color_set = "default",
-  obs_transparency = NA,
+  obs_shape = NA,
   obs_color = NA,
+  obs_fill_trans = NA,
+  obs_line_trans = NA,
   linetype_column,
   linetypes = c("solid", "dashed"),
   line_width = NA,
   legend_label_linetype = NA,
   facet1_column,
   facet2_column,
+  facet_ncol = NA,
+  facet_nrow = NA,
   floating_facet_scale = FALSE,
   facet_spacing = NA,
   time_range = NA,
@@ -141,18 +145,45 @@ label for this legend item, set this to "none".}
   of the R Working Group about how to do that using
   \link{colorRampPalette}.}}}
 
-\item{obs_transparency}{Optionally make the observed data points
-semi-transparent, which can be helpful when there are numerous
-observations. Acceptable values are 0 (completely transparent) to 1
-(completely opaque).}
+\item{obs_shape}{optionally specify what shapes are used to depict observed
+data for a) the substrate drug alone and b) the substrate drug in the
+presence of an effector. Input should look like this, for example:
+\code{c(1, 2)} to get an open circle for the substrate and an open triangle
+for the substrate in the presence of effectors, if there are any. If you
+only specify one value, it will be used for both substrate with and without
+effectors. To see all the possible shapes and what number corresponds to
+which shape, see \url{https://r-graphics.org/recipe-scatter-shapes}
+(there's a graph around the middle of that page). If left as NA, substrate
+alone will be an open circle and substrate + inhibitor 1 will be an open
+triangle.}
 
-\item{obs_color}{Optionally specify a single color to make all observed data.
-By default, observed data will be the same color as whatever file they're
-associated with, but, if you have one observed file that you're comparing
-to multiple simulation files, this means that the observed data will show
-up as the color of which ever file was plotted last. In that case, it might
-be clearer to say \code{obs_color = "black"} to make all the observed data
-points black.}
+\item{obs_color}{optionally specify a color to use for observed data if the
+color isn't already mapped to a specific column. By default, observed data
+will be the same color as whatever else matches those observed data in
+\code{colorBy_column}, so if you have colored by compound ID, for example,
+the observed data will also be colored by compound ID. If you have one
+observed file that you're comparing to multiple simulation files (this is
+what ct_plot_overlay will do if "File" is NA for the observed data), then
+the observed data will all be black by default, or you could set that color
+to be, say, a lovely purple by setting this: \code{obs_color =
+"darkorchid4"}.}
+
+\item{obs_fill_trans}{optionally specify the transparency for the fill of the
+observed data points, which can be helpful when you have a lot of points
+overlapping. This only applies when you have specified a value for
+\code{obs_color} and when \code{obs_shape} is a shape that has a fill
+(example: \code{obs_shape = 21} for a filled circle, which is the default).
+Acceptable values are from 0 (fully transparent, so no fill at all) to 1
+(completely opaque or black). If left as the default NA, the observed data
+points will be 50 percent transparent, so the same as if this were set to
+0.5.}
+
+\item{obs_line_trans}{optionally specify the transparency for the outline of
+the observed data points, which can be helpful when you have a lot of
+points overlapping. Acceptable values are from 0 (fully transparent, so no
+line at all) to 1 (completely opaque or black). If left as the default NA,
+the observed data points will be opaque, so the same as if this were set to
+1.}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
 for determining the line types. Default is to use the column Inhibitor and
@@ -184,14 +215,24 @@ this to "none".}
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet1_column =
-Tissue}. If \code{floating_facet_scale} is FALSE, then \code{facet1_column}
-will designate the rows of the output graphs.}
+Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
+\code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
+designate the rows of the output graphs.}
 
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
-CompoundID}. If \code{floating_facet_scale} is FALSE, then
+CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
+specified \code{facet_ncol} or  \code{facet_nrow}, then
 \code{facet2_column} will designate the columns of the output graphs.}
+
+\item{facet_ncol}{optionally specify the number of columns of facetted graphs
+you would like to have. This only applies when you have specified a column
+for \code{facet1_column} and/or \code{facet2_column}.}
+
+\item{facet_nrow}{optionally specify the number of rows of facetted graphs
+you would like to have. This only applies when you have specified a column
+for \code{facet1_column} and/or \code{facet2_column}.}
 
 \item{floating_facet_scale}{TRUE or FALSE (default) for whether to allow the
 axes for each facet of a multi-facetted graph to scale freely to best fit
@@ -290,14 +331,17 @@ setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
-If you leave off ".png" or ".docx", it will be saved as a png file, but if
-you specify a different graphical file extension, it will be saved as that
-file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
-"jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
-will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
-DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an
-R issue. If you try to save on SharePoint, you will get a warning that R
-will save your file instead to your Documents folder.}
+The nice thing about saving to Word is that the figure title and caption
+text will be partly filled in automatically, although you should check that
+the text makes sense in light of your exact graph. If you leave off ".png"
+or ".docx", it will be saved as a png file, but if you specify a different
+graphical file extension, it will be saved as that file format. Acceptable
+graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
+"bmp", or "svg". Leaving this as NA means the file will not be
+automatically saved to disk. \strong{WARNING:} SAVING TO WORD DOES NOT WORK
+ON SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If
+you try to save on SharePoint, you will get a warning that R will save your
+file instead to your Documents folder.}
 
 \item{fig_height}{figure height in inches; default is 6}
 

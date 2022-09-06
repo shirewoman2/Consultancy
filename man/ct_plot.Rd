@@ -11,14 +11,18 @@ ct_plot(
   mean_type = "arithmetic",
   time_range = NA,
   x_axis_interval = NA,
+  x_axis_label = NA,
   pad_x_axis = TRUE,
   pad_y_axis = TRUE,
   adjust_obs_time = FALSE,
   t0 = "simulation start",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_label = NA,
   obs_color = NA,
   obs_shape = NA,
+  obs_fill_trans = NA,
+  obs_line_trans = NA,
   showBLQ = FALSE,
   line_type = NA,
   line_transparency = NA,
@@ -78,12 +82,13 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   rest, try setting \code{obs_color = "none"}. -LSh}}}
 
 \item{subsection_ADAM}{ADAM model only: For ADAM model output, multiple types
-of data are available. Which of those concentration types do you want to
-show? Options are whatever were available for that tissue, which could be
-"solid compound", "free compound in lumen", "Heff", "absorption rate",
-"unreleased substrate in faeces", "unreleased inhibitor in faeces",
-"dissolved compound", or "luminal CLint of compound". Default is "free
-compound in lumen" but is ignored when ct_dataframe isn't for ADAM data.}
+of data are available, so which of those types do you want to show? Options
+are whatever were available for that tissue, which could be "undissolved
+compound", "free compound in lumen", "Heff", "absorption rate", "unreleased
+compound in faeces", "dissolved compound", "luminal CLint", "cumulative
+fraction of compound absorbed", or "cumulative fraction of compound
+dissolved". Default is "free compound in lumen" but is ignored when
+ct_dataframe doesn't contain ADAM data.}
 
 \item{mean_type}{graph "arithmetic" (default) or "geometric" means or
 "median" for median concentrations. If that option was not included in the
@@ -124,6 +129,9 @@ output, you'll get a warning and the graph will include one that was.}
 Acceptable input: any number or leave as NA to accept default values, which
 are generally reasonable guesses as to aesthetically pleasing and
 PK-relevant intervals.}
+
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
 
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If
@@ -167,13 +175,17 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
 
+\item{y_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
+
 \item{obs_color}{If you would like the observed data points to be in color,
 either specify a color here or set this to "default". Points will be
 displayed in semi-transparent blue-purple for "default" and the
 semi-transparent version of whatever other color you list otherwise.
 Setting this to "none" will make sure that the symbols are black outlines
 only with no fill. Hex color codes are also ok to use. If left as NA, all
-observed data will be in black.}
+observed data will be in black or, if you set something for
+\code{line_color}, whatever colors were used for that.}
 
 \item{obs_shape}{optionally specify what shapes are used to depict observed
 data for 1. the substrate drug alone and 2. the substrate drug in the
@@ -183,6 +195,22 @@ possible shapes and what number corresponds to which shape, see
 \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 the middle of that page). If left as NA, substrate alone will be an open
 circle and substrate + inhibitor 1 will be an open triangle.}
+
+\item{obs_fill_trans}{optionally specify the transparency for the fill of the
+observed data points, which can be helpful when you have a lot of points
+overlapping. This only applies when you have specified a value for
+\code{obs_color} since, for most of the graph types, the observed data is
+depicted as an open circle by default. Acceptable values are from 0 (fully
+transparent, so no fill at all) to 1 (completely opaque or black). If left
+as the default NA, the observed data points will be 50% transparent, so the
+same as if this were set to 0.5.}
+
+\item{obs_line_trans}{optionally specify the transparency for the outline of
+the observed data points, which can be helpful when you have a lot of
+points overlapping. Acceptable values are from 0 (fully transparent, so no
+line at all) to 1 (completely opaque or black). If left as the default NA,
+the observed data points will be opaque, so the same as if this were set to
+1.}
 
 \item{showBLQ}{TRUE or FALSE (default) to display observed concentrations
 that were clearly below the lower limit of quantitation, that is,
@@ -274,15 +302,16 @@ linear or only semi-log graphs.)}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
-graph.docx". If you leave off ".png" or ".docx" from the file name, it will
-be saved as a png file, but if you specify a different graphical file
-extension, it will be saved as that file format. Acceptable graphical file
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be saved to disk.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft permissions issue, not an R issue. If you try to save on
-SharePoint, you will get a warning that R will save your file instead to
-your Documents folder.}
+graph.docx". The nice thing about saving to Word is that the figure title
+and caption text will be filled in automatically. If you leave off ".png"
+or ".docx", the graph will be saved as a png file, but if you specify a
+different graphical file extension, it will be saved as that file format.
+Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
+"tiff", "png", "bmp", or "svg". Leaving this as NA means the file will not
+be saved to disk. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
+SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
+try to save on SharePoint, you will get a warning that R will save your
+file instead to your Documents folder.}
 
 \item{fig_height}{figure height in inches; default is 6}
 
