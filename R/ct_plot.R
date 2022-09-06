@@ -423,8 +423,9 @@ ct_plot <- function(ct_dataframe = NA,
     # then.
     EnzPlot <- "Enzyme" %in% names(ct_dataframe)
     
-    # Noting user's original preference for obs_color b/c need to know whether
-    # to map that to Inhibitor.
+    # Noting user's original preferences for a few things
+    obs_line_trans_user <- obs_line_trans
+    obs_fill_trans_user <- obs_fill_trans
     obs_color_user <- obs_color
     
     # If user had already filtered ct_dataframe to include only the ADAM data
@@ -632,7 +633,8 @@ ct_plot <- function(ct_dataframe = NA,
                                     "arithmetic" = mean(Conc, na.rm = T),
                                     "geometric" = gm_mean(Conc, na.rm = T),
                                     "median" = median(Conc, na.rm = T))) %>%
-            ungroup()
+            ungroup() %>% 
+            mutate(Group = paste(Compound, Inhibitor, Trial))
     )
     
     sim_data_mean <- Data %>%
@@ -642,7 +644,8 @@ ct_plot <- function(ct_dataframe = NA,
     
     # Setting up observed data per user input -------------------------------
     
-    obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels()
+    obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
+        mutate(Group = paste(Compound, Inhibitor, Trial))
     
     if(showBLQ == FALSE){
         obs_data <- obs_data %>% 
@@ -713,6 +716,21 @@ ct_plot <- function(ct_dataframe = NA,
         obs_color <- obs_color[1]
     }
     
+    # Warning for a figure type that's not recommended
+    
+    # Is this a graph showing substate +/- effector?
+    Eff_plusminus <- length(MyEffector) > 0 &&  complete.cases(MyEffector[1]) &&
+        MyEffector[1] != "none" &
+        compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                 "inhibitor 1 metabolite") == FALSE
+    if(Eff_plusminus & EnzPlot == FALSE & figure_type != "means only"){
+        # This is when there is an effector present and the graph is of the
+        # substrate or a substrate metabolite
+        warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+                call. = FALSE)
+    }
+    
+    
     ## figure_type: trial means -----------------------------------------------------------
     if(figure_type == "trial means"){
         
@@ -721,50 +739,15 @@ ct_plot <- function(ct_dataframe = NA,
                              line_transparency,
                              ifelse(NumTrials > 10, 0.05, 0.2))
         
-        if(length(MyEffector) > 0 && 
-           complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" &
-           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                    "inhibitor 1 metabolite") == FALSE){
-            # This is when there is an effector present and the graph is of the
-            # substrate or a substrate metabolite
-            
-            
-            if(EnzPlot == FALSE){
-                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                        call. = FALSE)
-            }
-            
-            ## linear plot
-            A <- ggplot(sim_data_trial,
-                        aes(x = Time, y = Conc, group = Group,
-                            linetype = Inhibitor, shape = Inhibitor,
-                            color = Inhibitor, fill = Inhibitor)) +
-                geom_line(alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 1, line_width), 
-                          show.legend = FALSE) +
-                geom_line(data = sim_data_mean %>%
-                              filter(Trial == MyMeanType), 
-                          lwd = ifelse(is.na(line_width), 1, line_width))
-            
-        } else {
-            
-            # This is when there is no effector present or the graph is of the
-            # effector or an effector metabolite.
-            
-            ## linear plot
-            A <- ggplot(sim_data_trial,
-                        aes(x = Time, y = Conc, group = Trial)) +
-                geom_line(alpha = AlphaToUse,
-                          lwd = ifelse(is.na(line_width), 1, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1]) +
-                geom_line(data = sim_data_mean %>%
-                              filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1])
-        }
+        A <- ggplot(sim_data_trial,
+                    aes(x = Time, y = Conc, group = Group,
+                        linetype = Inhibitor, shape = Inhibitor,
+                        color = Inhibitor, fill = Inhibitor)) +
+            geom_line(alpha = AlphaToUse,
+                      lwd = ifelse(is.na(line_width), 1, line_width)) +
+            geom_line(data = sim_data_mean %>%
+                          filter(Trial == MyMeanType),
+                      lwd = ifelse(is.na(line_width), 1, line_width))
     }
     
     ## figure_type: percentiles ----------------------------------------------------------
@@ -775,49 +758,19 @@ ct_plot <- function(ct_dataframe = NA,
         AlphaToUse <- ifelse(complete.cases(line_transparency),
                              line_transparency, 0.25)
         
-        if(length(MyEffector) > 0 &&
-           complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none"  &
-           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                    "inhibitor 1 metabolite") == FALSE){
-            # This is when there is an effector present and the graph is of the
-            # substrate or a substrate metabolite
-            
-            if(EnzPlot == FALSE){
-                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                        call. = FALSE)
-            }
-            
-            A <- ggplot(sim_data_mean %>%
-                            filter(Trial %in% c("per5", "per95")) %>%
-                            mutate(Group = paste(Group, Trial)),
-                        aes(x = Time, y = Conc,
-                            linetype = Inhibitor, shape = Inhibitor,
-                            color = Inhibitor, fill = Inhibitor, 
-                            group = Group)) +
-                geom_line(alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 0.8, line_width)) +
-                geom_line(data = sim_data_mean %>%
-                              filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width))
-            
-        } else {
-            # This is when there is no effector present or the graph is of the
-            # effector or an effector metabolite.
-            
-            ## linear plot
-            A <- ggplot(sim_data_mean %>% filter(Trial != MyMeanType),
-                        aes(x = Time, y = Conc, group = Trial)) +
-                geom_line(alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 0.8, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1]) +
-                geom_line(data = sim_data_mean %>%
-                              filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1])
-        }
+        A <- ggplot(sim_data_mean %>%
+                        filter(Trial %in% c("per5", "per95")) %>%
+                        mutate(Group = paste(Group, Trial)),
+                    aes(x = Time, y = Conc,
+                        linetype = Inhibitor, shape = Inhibitor,
+                        color = Inhibitor, fill = Inhibitor, 
+                        group = Group)) +
+            geom_line(alpha = AlphaToUse,
+                      lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+            geom_line(data = sim_data_mean %>%
+                          filter(Trial == MyMeanType),
+                      lwd = ifelse(is.na(line_width), 1, line_width))
+        
     }
     
     ## figure_type: percentile ribbon ----------------------------------------------------------
@@ -831,40 +784,13 @@ ct_plot <- function(ct_dataframe = NA,
             pivot_wider(names_from = Trial, values_from = Conc) %>% 
             rename("mean" = {MyMeanType})
         
+        A <- ggplot(RibbonDF, aes(x = Time, y = mean, 
+                                  ymin = per5, ymax = per95, 
+                                  linetype = Inhibitor, shape = Inhibitor,
+                                  color = Inhibitor, fill = Inhibitor)) +
+            geom_ribbon(alpha = AlphaToUse, color = NA) +
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
         
-        if(length(MyEffector) > 0 && 
-           complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" &
-           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                    "inhibitor 1 metabolite") == FALSE){
-            # This is when there is an effector present and the graph is of the
-            # substrate or a substrate metabolite
-            
-            if(EnzPlot == FALSE){
-                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                        call. = FALSE)
-            }
-            
-            A <- ggplot(RibbonDF, aes(x = Time,
-                                      y = mean, ymin = per5, ymax = per95, 
-                                      linetype = Inhibitor, shape = Inhibitor,
-                                      color = Inhibitor, fill = Inhibitor)) +
-                geom_ribbon(alpha = AlphaToUse, color = NA) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
-            
-        } else {
-            # This is when there is no effector present or the graph is of the
-            # effector or an effector metabolite.
-            
-            ## linear plot
-            A <- ggplot(RibbonDF, aes(x = Time, y = mean, ymin = per5, ymax = per95)) +
-                geom_ribbon(alpha = AlphaToUse, color = NA,
-                            fill = line_color[1]) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1])
-            
-        }
     }
     
     ## figure_type: Freddy --------------------------------------------------------------
@@ -875,18 +801,12 @@ ct_plot <- function(ct_dataframe = NA,
                              line_transparency,
                              ifelse(NumTrials > 10, 0.05, 0.25))
         
-        if(length(MyEffector) > 0 && 
-           complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none"  &
-           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                    "inhibitor 1 metabolite") == FALSE){
+        
+        # This figure type does things differently based on whether the graph is
+        # of a compound alone or a compound +/- an effector. 
+        if(Eff_plusminus){
             # This is when there is an effector present and the graph is of the
             # substrate or a substrate metabolite
-            
-            if(EnzPlot == FALSE){
-                warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                        call. = FALSE)
-            }
             
             ## linear plot
             A <- ggplot(data = sim_data_mean %>%
@@ -906,15 +826,14 @@ ct_plot <- function(ct_dataframe = NA,
             
             ## linear plot
             A <- ggplot(sim_data_trial,
-                        aes(x = Time, y = Conc, group = Trial)) +
+                        aes(x = Time, y = Conc, group = Trial,
+                            linetype = Inhibitor, shape = Inhibitor,
+                            color = Inhibitor, fill = Inhibitor)) +
                 geom_line(alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 1, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1]) +
+                          lwd = ifelse(is.na(line_width), 1, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width), linetype = line_type[1],
-                          color = line_color[1]) +
+                          lwd = ifelse(is.na(line_width), 1, line_width)) +
                 geom_line(data = sim_data_mean %>%
                               filter(Trial %in% c("per5", "per95")),
                           linetype = line_type[2],
@@ -925,30 +844,12 @@ ct_plot <- function(ct_dataframe = NA,
     ## figure_type: means only -----------------------------------------------------------
     if(figure_type == "means only"){
         
-        if(length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
-            # This is when there is an effector present and the graph is of the
-            # substrate or a substrate metabolite
-            
-            A <- ggplot(sim_data_mean %>%
-                            filter(Trial == MyMeanType) %>%
-                            mutate(Group = paste(Group, Trial)),
-                        aes(x = Time, y = Conc, 
-                            linetype = Inhibitor, shape = Inhibitor, 
-                            color = Inhibitor, fill = Inhibitor)) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
-            
-        } else {
-            # This is when there is no effector present or the graph is of the
-            # effector or an effector metabolite.
-            
-            A <- ggplot(sim_data_mean %>%
-                            filter(Trial == MyMeanType),
-                        aes(x = Time, y = Conc)) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width),
-                          linetype = line_type[1],
-                          color = line_color[1])
-        }
+        A <- ggplot(sim_data_mean %>%
+                        filter(Trial == MyMeanType),
+                    aes(x = Time, y = Conc,
+                        linetype = Inhibitor, shape = Inhibitor, 
+                        color = Inhibitor, fill = Inhibitor)) +
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
     }
     
     # Setting colors, linetypes, etc. -------------------------------------
@@ -969,6 +870,13 @@ ct_plot <- function(ct_dataframe = NA,
     # Observed data ---------------------------------------------------------
     
     if(nrow(obs_data) > 0){
+        
+        # Dealing with idiosyncracies of ribbon figure type
+        if(str_detect(figure_type, "ribbon")){
+            obs_data <- obs_data %>% 
+                mutate(mean  = Conc, per5 = Conc, per95 = Conc)
+        }
+        
         if(complete.cases(obs_color_user) &&
            obs_color_user == "none"){
             # This is when they want only outlines and no fill for
@@ -1005,16 +913,17 @@ ct_plot <- function(ct_dataframe = NA,
                 # "Freddy".
                 
                 A <- A +
-                    # making obs point outlines
-                    geom_point(data = obs_data,
-                               alpha = obs_line_trans,
-                               color = obs_color,
-                               fill = NA) +
                     # making obs point fill
                     geom_point(data = obs_data,
                                fill = obs_color,
                                color = obs_color,
-                               alpha = obs_fill_trans) 
+                               alpha = obs_fill_trans) +
+                    # making obs point outlines
+                    geom_point(data = obs_data,
+                               alpha = ifelse(is.na(obs_line_trans_user), 
+                                              1, obs_line_trans),
+                               color = "black",
+                               fill = NA)
             }
         }
     }

@@ -399,6 +399,11 @@ Compound if you have observed data. Similarly, if you have an inhibitor and
 you have observed data, the inhibitor will be listed as the generic
 "inhibitor" here rather than, e.g., "ketoconazole" because the observed data
 file doesn't indicate that.
+
+\strong{Other notes:} There's a bug in RStudio (I think) that sometimes
+causes the last shape in a legend to vanish when you're looking at the graph
+in RStudio, but, if you save the graph, the shape \emph{should} be present.
+Let me know if that doesn't happen. -LSh
 }
 \examples{
 data(MDZct)
