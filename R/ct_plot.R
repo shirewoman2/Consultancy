@@ -423,8 +423,9 @@ ct_plot <- function(ct_dataframe = NA,
     # then.
     EnzPlot <- "Enzyme" %in% names(ct_dataframe)
     
-    # Noting user's original preference for obs_color b/c need to know whether
-    # to map that to Inhibitor.
+    # Noting user's original preferences for a few things
+    obs_line_trans_user <- obs_line_trans
+    obs_fill_trans_user <- obs_fill_trans
     obs_color_user <- obs_color
     
     # If user had already filtered ct_dataframe to include only the ADAM data
@@ -735,7 +736,6 @@ ct_plot <- function(ct_dataframe = NA,
                         call. = FALSE)
             }
             
-            ## linear plot
             A <- ggplot(sim_data_trial,
                         aes(x = Time, y = Conc, group = Group,
                             linetype = Inhibitor, shape = Inhibitor,
@@ -752,9 +752,10 @@ ct_plot <- function(ct_dataframe = NA,
             # This is when there is no effector present or the graph is of the
             # effector or an effector metabolite.
             
-            ## linear plot
             A <- ggplot(sim_data_trial,
-                        aes(x = Time, y = Conc, group = Trial)) +
+                        aes(x = Time, y = Conc, group = Trial,
+                            linetype = Inhibitor, shape = Inhibitor,
+                            color = Inhibitor, fill = Inhibitor)) +
                 geom_line(alpha = AlphaToUse,
                           lwd = ifelse(is.na(line_width), 1, line_width),
                           linetype = line_type[1],
@@ -1005,16 +1006,17 @@ ct_plot <- function(ct_dataframe = NA,
                 # "Freddy".
                 
                 A <- A +
-                    # making obs point outlines
-                    geom_point(data = obs_data,
-                               alpha = obs_line_trans,
-                               color = obs_color,
-                               fill = NA) +
                     # making obs point fill
                     geom_point(data = obs_data,
                                fill = obs_color,
                                color = obs_color,
-                               alpha = obs_fill_trans) 
+                               alpha = obs_fill_trans) +
+                    # making obs point outlines
+                    geom_point(data = obs_data,
+                               alpha = ifelse(is.na(obs_line_trans_user), 
+                                              1, obs_line_trans),
+                               color = "black",
+                               fill = NA)
             }
         }
     }
