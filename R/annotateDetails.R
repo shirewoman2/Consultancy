@@ -1,5 +1,4 @@
-#' Annotate Simcyp Simulator experimental details and format into a long
-#' data.frame instead of a wide one
+#' Annotate Simcyp Simulator experimental details
 #'
 #' \code{annotateDetails} converts output from either
 #' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into

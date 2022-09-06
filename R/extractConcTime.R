@@ -3,11 +3,10 @@
 #' Extracts concentration-time data from simulator output Excel files and,
 #' optionally, a separately specified observed data file, and puts all data into
 #' a single, tidy data.frame. There are some nuances to how it deals with
-#' observed data; please see the details at the bottom of this help file.
-#'
-#' Not all substrate metabolites, inhibitors, or inhibitor metabolites are
-#' available in all tissues. If it's not present in your Excel output, we can't
-#' extract it here. 
+#' observed data; please see the details at the bottom of this help file. Not
+#' all substrate metabolites, inhibitors, or inhibitor metabolites are available
+#' in all tissues. If it's not present in your Excel output, we can't extract it
+#' here.
 #'
 #' \strong{A note on observed data:} When observed data are included in a
 #' simulator output file, because the simulator output does not explicitly say
@@ -61,7 +60,9 @@
 #'   1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
 #'   labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
 #'   inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-#'   primary metabolite of inhibitor 1.
+#'   primary metabolite of inhibitor 1. \strong{Note:} If your compound is a
+#'   therapeutic protein, we haven't tested this very thoroughly, so please be
+#'   extra careful to check that you're getting the correct data.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate", "individual", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
@@ -109,11 +110,10 @@
 #'   \item{Conc_units}{units used for concentrations},
 #'
 #'   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
-#'   simulations), e.g., "solid compound", "free compound in lumen", "Heff",
-#'   "absorption rate", "unreleased substrate in faeces", "unreleased inhibitor
-#'   in faeces", "dissolved compound", "luminal CLint of compound", "cumulative
-#'   fraction of dissolved X" or "cumulative fraction of absorbed X" (X =
-#'   substrate or inhibitor 1, depending on the options selected). }
+#'   simulations), e.g., "undissolved compound", "free compound in lumen",
+#'   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
+#'   compound", "luminal CLint", "cumulative fraction of compound dissolved" or
+#'   "cumulative fraction of compound absorbed".}
 #'
 #'   \item{Dose_num}{the dose number}
 #'
@@ -314,36 +314,67 @@ extractConcTime <- function(sim_data_file,
     }
     
     if(TissueType == "systemic"){
-        Piece1 <- ifelse(str_detect(tissue, "portal vein"), "PV ", "")
         
-        Piece2 <- switch(CompoundType,
-                         "substrate" = "Conc Profiles",
-                         "primary metabolite 1" = "Sub Pri Met1",
-                         "primary metabolite 2" = "Sub Pri Met2",
-                         "secondary metabolite" = "Sub Sec Met")
-        # If the tissue is the portal vein, all possible compounds are included, so make Piece2 be "Conc Profiles".
-        Piece2 <- ifelse(str_detect(tissue, "portal vein"),
-                         "Conc Profiles", Piece2)
+        # Only looking for only sheets with conc-time data and not AUC, etc.
+        PossSheets <- SheetNames[
+            !str_detect(tolower(SheetNames), "auc|absorption|summary|ode state|demographic|fm and fe|input|physiology|cl profiles|^cl |^clint|clearance|clinical|cmax|cyp|ugt|population|pk( )?pd parameters|tmax|vss")
+        ]
         
-        Piece3 <- ifelse(str_detect(tissue, "peripheral"), " CPeriph", " CSys")
-        Piece3 <- ifelse(str_detect(tissue, "portal vein"),
-                         "", Piece3)
-        Piece3 <- ifelse(CompoundType != "substrate",
-                         "", Piece3)
+        # Searching for correct tissue
+        PossSheets <- PossSheets[
+            str_detect(tolower(PossSheets), 
+                       switch(tissue, 
+                              "plasma" = "cplasma",
+                              "unbound plasma" = "cuplasma",
+                              "peripheral plasma" = "cuplasma",
+                              "peripheral unbound plasma" = "cuplasma",
+                              "portal vein plasma" = "cplasma",
+                              "portal vein unbound plasma" = "cuplasma",
+                              
+                              "blood" = "cblood",
+                              "unbound blood" = "cublood",
+                              "peripheral blood" = "cblood",
+                              "peripheral unbound blood" = "cublood",
+                              "portal vein blood" = "cblood",
+                              "portal vein unbound blood" = "cublood"))]
         
-        Piece4 <- ifelse(str_detect(tissue, "unbound"), "Cu", "C")
+        # add criteria for peripheral, pv when needed
+        if(str_detect(tissue, "peripheral|portal vein")){
+            Cond1 <- str_extract(tissue, "peripheral|portal vein")
+            PossSheets <- PossSheets[
+                str_detect(tolower(PossSheets), 
+                           switch(Cond1,
+                                  "peripheral" = "periph", 
+                                  "portal vein" = "^pv"))]
+        }
         
-        Piece5 <- str_to_title(str_extract(tissue, "blood|plasma"))
+        # Searching for correct compound. Substrate, inhibitor 1, and inhibitor
+        # 2 concentrations will all be on the main concentration-time data tab,
+        # but other compounds will be on separate tabs.
+        if(any(compoundToExtract %in%  c("inhibitor 1 metabolite",
+                                         "primary metabolite 1",
+                                         "primary metabolite 2",
+                                         "secondary metabolite"))){
+            PossSheets <- PossSheets[
+                switch(compoundToExtract[1], 
+                       "primary metabolite 1" = 
+                           str_detect(tolower(PossSheets), "sub met|sub pri met1") & 
+                           !str_detect(tolower(PossSheets), "sub met2"),
+                       "primary metabolite 2" = 
+                           str_detect(tolower(PossSheets), "sub met2|sub pri met2"), 
+                       "secondary metabolite" = 
+                           str_detect(tolower(PossSheets), "sub sm|sub sec met"),
+                       "inhibitor 1 metabolite" = 
+                           str_detect(tolower(PossSheets), "inh1 m")
+                )]
+        }
         
-        SheetToDetect <- paste0(Piece1, Piece2, Piece3, "\\(", Piece4, Piece5, "\\)")
-        SheetToDetect <- paste0(SheetToDetect, "|",
-                                sub("Profiles", "Trials Profiles", SheetToDetect),
-                                "|",
-                                gsub("Profiles CSys", "Trials Profiles", SheetToDetect),
-                                "|",
-                                paste0(Piece1, Piece2, "\\(Trials\\)\\(",
-                                       Piece4, Piece5, "\\)"), "|^Conc Profiles$")
+        Sheet <- PossSheets[1]
+        
     } else {
+        
+        # when tissue is not systemic: 
+        
         SheetToDetect <-
             switch(tissue,
                    "gi tissue" = "Gut Tissue Conc",
@@ -377,18 +408,19 @@ extractConcTime <- function(sim_data_file,
                                                             "substrate" = "Sub",
                                                             "inhibitor 1" = "Inhib")) # Need to check this for inhibitor 1 ADAM model data. This is just my guess as to what the sheet name will be!
             )
+        
+        if(tissue == "faeces"){ # NEED TO ADJUST THIS TO DEAL WITH MULT FUNCTION.
+            SheetToDetect <- switch(compoundToExtract, 
+                                    "inhibitor 1" = "Faeces Prof. .Inh 1", 
+                                    # inhibitor 2 does not appear to be available
+                                    "substrate" = "Faeces Prof. .Sub")
+        }
+        
+        Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
+        
     }
     
-    if(tissue == "faeces"){ # NEED TO ADJUST THIS TO DEAL WITH MULT FUNCTION.
-        SheetToDetect <- switch(compoundToExtract, 
-                                "inhibitor 1" = "Faeces Prof. .Inh 1", 
-                                # inhibitor 2 does not appear to be available
-                                "substrate" = "Faeces Prof. .Sub")
-    }
-    
-    Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
-    
-    if((length(Sheet) == 0 | is.na(Sheet))){
+    if(length(Sheet) == 0 | is.na(Sheet)){
         if(fromMultFunction){
             warning(paste0("You requested data for ", str_comma(compoundToExtract),
                            " in ", tissue,
@@ -466,6 +498,14 @@ extractConcTime <- function(sim_data_file,
         sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]), "CMax"))])[1]
     SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
     
+    # # ADAM options available (this is for my reference and was copied from ct_plot.R)
+    # ADAMoptions <- c("undissolved compound", "free compound in lumen",
+    #                  "Heff", "absorption rate",
+    #                  "unreleased compound in faeces", 
+    #                  "dissolved compound", "luminal CLint", 
+    #                  "cumulative fraction of compound absorbed", 
+    #                  "cumulative fraction of compound dissolved")
+    
     # ADAM model -- except for gut tissue -- has different units depending on
     # what parameter you want.
     if(ADAM){
@@ -476,23 +516,26 @@ extractConcTime <- function(sim_data_file,
             rename(OrigVal = ...1) %>% 
             mutate(TypeCode = str_extract(
                 OrigVal, 
-                "^Ms|^C Lumen Free|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed"), 
+                "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed|^C Enterocyte"), 
                 Type = recode(TypeCode, 
-                              "Ms" = "solid compound", 
+                              "Ms" = "undissolved compound", 
+                              "Dissolution Rate Solid State" = "dissolution rate of solid state",
                               "C Lumen Free" = "free compound in lumen", 
+                              "C Lumen Total" = "total compound in lumen", 
                               "Heff" = "Heff", 
                               "Absorption Rate" = "absorption rate", 
-                              "Mur" = "unreleased substrate in faeces", 
-                              "Inh Mur" = "unreleased inhibitor in faeces", 
+                              "Mur" = "unreleased compound in faeces", 
+                              "Inh Mur" = "unreleased compound in faeces", 
                               "Md" = "dissolved compound", 
-                              "Luminal CLint" = "luminal CLint of compound", 
-                              "absorbed" = paste("cumulative fraction of absorbed", 
-                                                 compoundToExtract),
-                              "dissolved" = paste("cumulative fraction of dissolved", 
-                                                  compoundToExtract)), 
+                              "Luminal CLint" = "luminal CLint", 
+                              "absorbed" = "cumulative fraction of compound absorbed", 
+                              "dissolved" = "cumulative fraction of compound dissolved", 
+                              "C Enterocyte" = "enterocyte concentration"), 
                 ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h|Cumulative fraction"), 
                 # Making "Cumulative" lower case
-                ConcUnit = sub("Cumulative", "cumulative", ConcUnit)) %>% 
+                ConcUnit = sub("Cumulative", "cumulative", ConcUnit), 
+                # Heff unit is um but isn't included in the title
+                ConcUnit = ifelse(TypeCode == "Heff", "µm", ConcUnit)) %>% 
             filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique()
     }
     
@@ -687,7 +730,7 @@ extractConcTime <- function(sim_data_file,
                         }
                         
                     } else {
-                        Include <- which(str_detect(NamesToCheck, "^csys"))
+                        Include <- which(str_detect(NamesToCheck, "^csys|therapeutic protein csys"))
                     }
                     
                     RowsToUse <- c(
@@ -777,7 +820,7 @@ extractConcTime <- function(sim_data_file,
                                                    paste0("^miipv|^miitissue|^mii", tolower(tissue)))))
                             }
                         } else {
-                            Include <- which(str_detect(NamesToCheck, "^csys"))
+                            Include <- which(str_detect(NamesToCheck, "^csys|therapeutic protein csys"))
                         }
                         
                         RowsToUse <- c(
@@ -982,14 +1025,15 @@ extractConcTime <- function(sim_data_file,
                 for(n in subsection_ADAMs){
                     # message(paste("subsection_ADAMs n =", n))
                     if(ADAM){
-                        RowsToUse <- which(
-                            str_detect(tolower(sim_data_xl$...1), 
-                                       paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
-                                                     "", "^"), 
-                                              tolower(SimConcUnits$TypeCode[
-                                                  SimConcUnits$Type == n]))) &
-                                !str_detect(sim_data_xl$...1, 
-                                            "with interaction|Inh C Lumen Free"))
+                        RowsToUse <- 
+                            data.frame(Orig = sim_data_xl$...1) %>% 
+                            mutate(TypeCode = str_extract(Orig,
+                                                          "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed|^C Enterocyte"), 
+                                   TypeCode = ifelse(str_detect(Orig, "with interaction|Inh C Lumen"), 
+                                                     NA, TypeCode)) %>% 
+                            left_join(SimConcUnits, by = "TypeCode")
+                        RowsToUse <- which(RowsToUse$Type == n)
+                        
                     } else {
                         
                         RowsToUse <- which(
@@ -1191,13 +1235,16 @@ extractConcTime <- function(sim_data_file,
                     }
                     
                     if(ADAM){
-                        RowsToUse <- 
+                        RowsToUse <- intersect(
                             which(
-                                str_detect(sim_data_xl$...1, 
+                                str_detect(tolower(sim_data_xl$...1), 
                                            paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
                                                          "", "^"), 
-                                                  SimConcUnits$TypeCode[
-                                                      SimConcUnits$Type == n])))
+                                                  tolower(SimConcUnits$TypeCode[
+                                                      SimConcUnits$Type == n])))), 
+                            which(
+                                str_detect(sim_data_xl$...1, 
+                                           "with interaction|Inh C Lumen")) )
                     } else {
                         RowsToUse <- which(str_detect(
                             sim_data_xl$...1,

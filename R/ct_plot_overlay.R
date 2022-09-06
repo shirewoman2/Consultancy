@@ -79,21 +79,6 @@
 #'
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
-#' @param linetype_column the column in \code{ct_dataframe} that should be used
-#'   for determining the line types. Default is to use the column Inhibitor and
-#'   to have a solid line for no inhibitor present and a dashed line when an
-#'   inhibitor is present.
-#' @param linetypes the line types to use. Default is "solid" for all lines,
-#'   but, if you have an effector present and would like to match the
-#'   Consultancy Template graphs, set this to \code{linetypes = c("solid",
-#'   "dashed")}. You'll need one line type for each possible value in the column
-#'   you specified for \code{linetype_column}. Check what the unique values are
-#'   in that column if you get a graph you didn't expect as far as line types
-#'   go. To see possible line types by name, please enter
-#'   \code{ggpubr::show_line_types()} into the console.
-#' @param line_width optionally specify how thick to make the lines. Acceptable
-#'   input is a number; the default is 1 for most lines and 0.8 for some, to
-#'   give you an idea of where to start.
 #' @param colorBy_column (optional) the column in \code{ct_dataframe} that
 #'   should be used for determining which color lines and/or points will be.
 #'   This should be unquoted, e.g., \code{colorBy_column = Tissue}.
@@ -103,73 +88,13 @@
 #'   2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for an fa of 0.5 and
 #'   "file 2.xlsx" is for an fa of 0.2. The order in the legend will match the
 #'   order designated here.
-#' @param facet1_column optionally break up the graph into small multiples; this
-#'   specifies the first of up to two columns to break up the data by, and the
-#'   designated column name should be unquoted, e.g., \code{facet1_column =
-#'   Tissue}. If \code{floating_facet_scale} is FALSE, then \code{facet1_column}
-#'   will designate the rows of the output graphs.
-#' @param facet2_column optionally break up the graph into small multiples; this
-#'   specifies the second of up to two columns to break up the data by, and the
-#'   designated column name should be unquoted, e.g., \code{facet2_column =
-#'   CompoundID}. If \code{floating_facet_scale} is FALSE, then
-#'   \code{facet2_column} will designate the columns of the output graphs.
-#' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
-#'   axes for each facet of a multi-facetted graph to scale freely to best fit
-#'   whatever data are present. Default is FALSE, which means that all data will
-#'   be on the same scale for easy comparison. However, this could mean that
-#'   some graphs have lines that are hard to see, so you can set this to TRUE to
-#'   allow the axes to shrink or expand according to what data are present for
-#'   that facet. Floating axes comes with a trade-off for the looks of the
-#'   graphs, though: Setting this to TRUE does mean that your x axis won't
-#'   automatically have pretty breaks that are sensible for times in hours.
-#' @param time_range time range to display. Options: \describe{
-#'
-#'   \item{NA}{entire time range of data; default}
-#'
-#'   \item{a start time and end time in hours}{only data in that time range,
-#'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
-#'
-#'   \item{"first dose"}{only the time range of the first dose}
-#'
-#'   \item{"last dose"}{only the time range of the last dose}
-#'
-#'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
-#'   which can be useful for BID data where the end of the simulation extended
-#'   past the dosing interval or data when the substrate was dosed BID and the
-#'   effector was dosed QD}
-#'
-#'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
-#'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
-#'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
-#'
-#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
-#'   range will be limited to only times when observed data are present.}
-#'
-#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
-#'   be limited to the start of the last dose until the last observed data
-#'   point.} }
-#'
-#'
-#' @param pad_x_axis optionally add a smidge of padding to the x axis (default
-#'   is TRUE, which includes some generally reasonable padding). If changed to
-#'   FALSE, the y axis will be placed right at the beginning of your time range
-#'   and all data will end \emph{exactly} at the end of the time range
-#'   specified. If you want a \emph{specific} amount of x-axis padding, set this
-#'   to a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space
-#'   to the left side and 4\% more space to the right side of the x axis. If you
-#'   only specify one number, padding is added to the left side.
-#' @param pad_y_axis optionally add a smidge of padding to the y axis (default
-#'   is TRUE, which includes some generally reasonable padding). As with
-#'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
-#'   the bottom of your data, possible cutting a point in half. If you want a
-#'   \emph{specific} amount of y-axis padding, set this to a number; the default
-#'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
-#'   to the top of the y axis. If you only specify one number, padding is added
-#'   to the bottom.
-#' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
-#'   input: any number or leave as NA to accept default values, which are
-#'   generally reasonable guesses as to aesthetically pleasing and PK-relevant
-#'   intervals.
+#' @param legend_label_color optionally indicate on the legend something
+#'   explanatory about what the colors represent. For example, if
+#'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
+#'   with various fa values"}, that will make the label above the file names in
+#'   the legend more explanatory than just "File". The default is to use
+#'   whatever the column name is for \code{colorBy_column}. If you don't want a
+#'   label for this legend item, set this to "none".
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -221,39 +146,57 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
-#' @param obs_transparency Optionally make the observed data points
-#'   semi-transparent, which can be helpful when there are numerous
-#'   observations. Acceptable values are 0 (completely transparent) to 1
-#'   (completely opaque).
-#' @param obs_color Optionally specify a single color to make all observed data.
-#'   By default, observed data will be the same color as whatever file they're
-#'   associated with, but, if you have one observed file that you're comparing
-#'   to multiple simulation files, this means that the observed data will show
-#'   up as the color of which ever file was plotted last. In that case, it might
-#'   be clearer to say \code{obs_color = "black"} to make all the observed data
-#'   points black.
-#' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
-#'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
-#'   linear plot will be automatically selected. This only applies when you have
-#'   requested a linear plot with \code{linear_or_log}.
-#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
-#'   etc.) for each of the small graphs. (Not applicable if only outputting
-#'   linear or only semi-log graphs.)
-#' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
-#'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
-#'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
-#'   limits for the semi-log plot will be automatically selected. This only
-#'   applies when you have requested a semi-log plot with \code{linear_or_log}.
-#' @param legend_position Specify where you want the legend to be. Options are
-#'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
-#'   you don't want one at all.
-#' @param legend_label_color optionally indicate on the legend something
-#'   explanatory about what the colors represent. For example, if
-#'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
-#'   with various fa values"}, that will make the label above the file names in
-#'   the legend more explanatory than just "File". The default is to use
-#'   whatever the column name is for \code{colorBy_column}. If you don't want a
-#'   label for this legend item, set this to "none".
+#' @param obs_shape optionally specify what shapes are used to depict observed
+#'   data for a) the substrate drug alone and b) the substrate drug in the
+#'   presence of an effector. Input should look like this, for example:
+#'   \code{c(1, 2)} to get an open circle for the substrate and an open triangle
+#'   for the substrate in the presence of effectors, if there are any. If you
+#'   only specify one value, it will be used for both substrate with and without
+#'   effectors. To see all the possible shapes and what number corresponds to
+#'   which shape, see \url{https://r-graphics.org/recipe-scatter-shapes}
+#'   (there's a graph around the middle of that page). If left as NA, substrate
+#'   alone will be an open circle and substrate + inhibitor 1 will be an open
+#'   triangle.
+#' @param obs_color optionally specify a color to use for observed data if the
+#'   color isn't already mapped to a specific column. By default, observed data
+#'   will be the same color as whatever else matches those observed data in
+#'   \code{colorBy_column}, so if you have colored by compound ID, for example,
+#'   the observed data will also be colored by compound ID. If you have one
+#'   observed file that you're comparing to multiple simulation files (this is
+#'   what ct_plot_overlay will do if "File" is NA for the observed data), then
+#'   the observed data will all be black by default, or you could set that color
+#'   to be, say, a lovely purple by setting this: \code{obs_color =
+#'   "darkorchid4"}.
+#' @param obs_fill_trans optionally specify the transparency for the fill of the
+#'   observed data points, which can be helpful when you have a lot of points
+#'   overlapping. This only applies when you have specified a value for
+#'   \code{obs_color} and when \code{obs_shape} is a shape that has a fill
+#'   (example: \code{obs_shape = 21} for a filled circle, which is the default).
+#'   Acceptable values are from 0 (fully transparent, so no fill at all) to 1
+#'   (completely opaque or black). If left as the default NA, the observed data
+#'   points will be 50 percent transparent, so the same as if this were set to
+#'   0.5.
+#' @param obs_line_trans optionally specify the transparency for the outline of
+#'   the observed data points, which can be helpful when you have a lot of
+#'   points overlapping. Acceptable values are from 0 (fully transparent, so no
+#'   line at all) to 1 (completely opaque or black). If left as the default NA,
+#'   the observed data points will be opaque, so the same as if this were set to
+#'   1.
+#' @param linetype_column the column in \code{ct_dataframe} that should be used
+#'   for determining the line types. Default is to use the column Inhibitor and
+#'   to have a solid line for no inhibitor present and a dashed line when an
+#'   inhibitor is present.
+#' @param linetypes the line types to use. Default is "solid" for all lines,
+#'   but, if you have an effector present and would like to match the
+#'   Consultancy Template graphs, set this to \code{linetypes = c("solid",
+#'   "dashed")}. You'll need one line type for each possible value in the column
+#'   you specified for \code{linetype_column}. Check what the unique values are
+#'   in that column if you get a graph you didn't expect as far as line types
+#'   go. To see possible line types by name, please enter
+#'   \code{ggpubr::show_line_types()} into the console.
+#' @param line_width optionally specify how thick to make the lines. Acceptable
+#'   input is a number; the default is 1 for most lines and 0.8 for some, to
+#'   give you an idea of where to start.
 #' @param legend_label_linetype optionally indicate on the legend something
 #'   explanatory about what the line types represent. For example, if
 #'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
@@ -262,6 +205,99 @@
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
+#' @param facet1_column optionally break up the graph into small multiples; this
+#'   specifies the first of up to two columns to break up the data by, and the
+#'   designated column name should be unquoted, e.g., \code{facet1_column =
+#'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
+#'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
+#'   designate the rows of the output graphs.
+#' @param facet2_column optionally break up the graph into small multiples; this
+#'   specifies the second of up to two columns to break up the data by, and the
+#'   designated column name should be unquoted, e.g., \code{facet2_column =
+#'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
+#'   specified \code{facet_ncol} or  \code{facet_nrow}, then
+#'   \code{facet2_column} will designate the columns of the output graphs.
+#' @param facet_ncol optionally specify the number of columns of facetted graphs
+#'   you would like to have. This only applies when you have specified a column
+#'   for \code{facet1_column} and/or \code{facet2_column}.
+#' @param facet_nrow optionally specify the number of rows of facetted graphs
+#'   you would like to have. This only applies when you have specified a column
+#'   for \code{facet1_column} and/or \code{facet2_column}.
+#' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
+#'   axes for each facet of a multi-facetted graph to scale freely to best fit
+#'   whatever data are present. Default is FALSE, which means that all data will
+#'   be on the same scale for easy comparison. However, this could mean that
+#'   some graphs have lines that are hard to see, so you can set this to TRUE to
+#'   allow the axes to shrink or expand according to what data are present for
+#'   that facet. Floating axes comes with a trade-off for the looks of the
+#'   graphs, though: Setting this to TRUE does mean that your x axis won't
+#'   automatically have pretty breaks that are sensible for times in hours.
+#' @param facet_spacing Optionally set the spacing between facets. If left as
+#'   NA, a best-guess as to a reasonable amount of space will be used. Units are
+#'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
+#'   should not be in quotes.)
+#' @param time_range time range to display. Options: \describe{
+#'
+#'   \item{NA}{entire time range of data; default}
+#'
+#'   \item{a start time and end time in hours}{only data in that time range,
+#'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
+#'
+#'   \item{"first dose"}{only the time range of the first dose}
+#'
+#'   \item{"last dose"}{only the time range of the last dose}
+#'
+#'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
+#'   which can be useful for BID data where the end of the simulation extended
+#'   past the dosing interval or data when the substrate was dosed BID and the
+#'   effector was dosed QD}
+#'
+#'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
+#'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
+#'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
+#'
+#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
+#'   range will be limited to only times when observed data are present.}
+#'
+#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
+#'   be limited to the start of the last dose until the last observed data
+#'   point.} }
+#'
+#' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
+#'   input: any number or leave as NA to accept default values, which are
+#'   generally reasonable guesses as to aesthetically pleasing and PK-relevant
+#'   intervals.
+#' @param pad_x_axis optionally add a smidge of padding to the x axis (default
+#'   is TRUE, which includes some generally reasonable padding). If changed to
+#'   FALSE, the y axis will be placed right at the beginning of your time range
+#'   and all data will end \emph{exactly} at the end of the time range
+#'   specified. If you want a \emph{specific} amount of x-axis padding, set this
+#'   to a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space
+#'   to the left side and 4\% more space to the right side of the x axis. If you
+#'   only specify one number, padding is added to the left side.
+#' @param pad_y_axis optionally add a smidge of padding to the y axis (default
+#'   is TRUE, which includes some generally reasonable padding). As with
+#'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
+#'   the bottom of your data, possible cutting a point in half. If you want a
+#'   \emph{specific} amount of y-axis padding, set this to a number; the default
+#'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
+#'   to the top of the y axis. If you only specify one number, padding is added
+#'   to the bottom.
+#' @param y_axis_limits_lin Optionally set the Y axis limits for the linear
+#'   plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
+#'   linear plot will be automatically selected. This only applies when you have
+#'   requested a linear plot with \code{linear_or_log}.
+#' @param y_axis_limits_log Optionally set the Y axis limits for the semi-log
+#'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
+#'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
+#'   limits for the semi-log plot will be automatically selected. This only
+#'   applies when you have requested a semi-log plot with \code{linear_or_log}.
+#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
+#'   etc.) for each of the small graphs. (Not applicable if only outputting
+#'   linear or only semi-log graphs.)
+#' @param legend_position Specify where you want the legend to be. Options are
+#'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
+#'   you don't want one at all.
 #' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
 #'   whether to make the compound names in the legend prettier or b) supply a
 #'   named character vector to set it to the exact name you'd prefer to see in
@@ -272,23 +308,21 @@
 #'   guesses about what a prettier compound name should be. An example of
 #'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 #'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
-#' @param facet_spacing Optionally set the spacing between facets. If left as
-#'   NA, a best-guess as to a reasonable amount of space will be used. Units are
-#'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
-#'   should not be in quotes.)
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
-#'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
-#'   you specify a different graphical file extension, it will be saved as that
-#'   file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
-#'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
-#'   will not be automatically saved to disk. \strong{WARNING:} SAVING TO WORD
-#'   DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an
-#'   R issue. If you try to save on SharePoint, you will get a warning that R
-#'   will save your file instead to your Documents folder.
+#'   The nice thing about saving to Word is that the figure title and caption
+#'   text will be partly filled in automatically, although you should check that
+#'   the text makes sense in light of your exact graph. If you leave off ".png"
+#'   or ".docx", it will be saved as a png file, but if you specify a different
+#'   graphical file extension, it will be saved as that file format. Acceptable
+#'   graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
+#'   "bmp", or "svg". Leaving this as NA means the file will not be
+#'   automatically saved to disk. \strong{WARNING:} SAVING TO WORD DOES NOT WORK
+#'   ON SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If
+#'   you try to save on SharePoint, you will get a warning that R will save your
+#'   file instead to your Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
-#'
 #'
 #' @return
 #' @export
@@ -322,14 +356,18 @@ ct_plot_overlay <- function(ct_dataframe,
                             color_labels = NA, 
                             legend_label_color = NA,
                             color_set = "default",
-                            obs_transparency = NA, 
+                            obs_shape = NA,
                             obs_color = NA,
+                            obs_fill_trans = NA, 
+                            obs_line_trans = NA, 
                             linetype_column, 
                             linetypes = c("solid", "dashed"),
                             line_width = NA,
                             legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
+                            facet_ncol = NA, 
+                            facet_nrow = NA,
                             floating_facet_scale = FALSE,
                             facet_spacing = NA,
                             time_range = NA, 
@@ -362,6 +400,15 @@ ct_plot_overlay <- function(ct_dataframe,
     if(length(unique(ct_dataframe$Conc_units)) > 1){
         stop("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit.",
              call. = FALSE)
+    }
+    
+    # Checking for acceptable input
+    if((str_detect(figure_type, "ribbon") | figure_type == "means only") == FALSE){
+        warning(paste0("The value used for `figure_type` was `", 
+                       figure_type,
+                       "``, but only the only acceptable options are `means only` or `percentile ribbon`. The default figure type, `means only`, will be used."),
+                call. = FALSE)
+        figure_type <- "means only"
     }
     
     
@@ -431,13 +478,28 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     if(as_label(facet1_column) != "<empty>"){
+        
         ct_dataframe <- ct_dataframe %>%
             mutate(FC1 = {{facet1_column}})
+        
+        if(length(unique(ct_dataframe$FC1)) == 1){
+            warning(paste0("You requested the column `", 
+                           as_label(facet1_column), 
+                           "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                    call. = FALSE)
+        }
     }
     
     if(as_label(facet2_column) != "<empty>"){
         ct_dataframe <- ct_dataframe %>%
             mutate(FC2 = {{facet2_column}})
+        
+        if(length(unique(ct_dataframe$FC2)) == 1){
+            warning(paste0("You requested the column `", 
+                           as_label(facet2_column), 
+                           "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                    call. = FALSE)
+        }
     }
     
     # Noting whether the tissue was from an ADAM model
@@ -537,8 +599,9 @@ ct_plot_overlay <- function(ct_dataframe,
         
         ToAdd <- expand_grid(ObsFile = unique(obs_data$ObsFile), 
                              File = unique(sim_dataframe$File))
-        obs_data <- obs_data %>% select(-File) %>% 
-            left_join(ToAdd)
+        suppressMessages(
+            obs_data <- obs_data %>% select(-File) %>% 
+                left_join(ToAdd))
     } 
     
     # Dealing with the fact that the observed data will list the inhibitor as
@@ -613,8 +676,12 @@ ct_plot_overlay <- function(ct_dataframe,
             if("none" %in% unique(sim_dataframe$linetype_column)){
                 sim_dataframe <- sim_dataframe %>% 
                     mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
+                
+                obs_data <- obs_data %>% 
+                    mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
             } else {
                 sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
+                obs_data$linetype_column <- as.factor(obs_data$linetype_column)
             }
         }
     }
@@ -684,44 +751,17 @@ ct_plot_overlay <- function(ct_dataframe,
     AES <- str_c(AES[complete.cases(AES)], collapse = "-")
     AES <- ifelse(AES == "" | is.na(AES), "none", AES)
     
-    # # If each compound has only 1 compound ID and vice versa, no need to
-    # # consider compound in the set of unique aesthetics. <--- NOT TRUE. This is not catching instances where there is CT data for a substrate and an inhibitor and also the inhibitor column is +/- inhibitor!
+    MyUniqueData <- ct_dataframe %>% 
+        filter(Trial == MyMeanType) %>% 
+        select(union(UniqueAES, 
+                     c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
+        unique()
     
-    # if(all(bind_rows(ct_dataframe %>% group_by(Compound) %>%
-    #                  summarize(LengthUni = length(unique(CompoundID))), 
-    #                  ct_dataframe %>% group_by(CompoundID) %>% 
-    #                  summarize(LengthUni = length(unique(Compound))))$LengthUni == 1)){
-    #     
-    #     MyUniqueData <- ct_dataframe %>% 
-    #         filter(Trial == MyMeanType) %>% 
-    #         select(union(UniqueAES, 
-    #                      c("File", "Tissue", as.character(UniqueAES), "Inhibitor"))) %>% 
-    #         unique()
-    #     
-    #     UniqueGroups1 <- ct_dataframe %>% 
-    #         summarize(across(.cols = union(UniqueAES, 
-    #                                        c("File", "Tissue", 
-    #                                          as.character(UniqueAES), 
-    #                                          "Inhibitor")),
-    #                          .fns = function(x) length(unique(x)))) 
-    #     
-    #     
-    # } else {
-        
-        MyUniqueData <- ct_dataframe %>% 
-            filter(Trial == MyMeanType) %>% 
-            select(union(UniqueAES, 
-                         c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
-            unique()
-        
-        UniqueGroups1 <- ct_dataframe %>% 
-            summarize(across(.cols = union(UniqueAES, 
-                                           c("File", "Tissue", "CompoundID",
-                                             "Compound", "Inhibitor")),
-                             .fns = function(x) length(unique(x)))) 
-        
-        
-    # }
+    UniqueGroups1 <- ct_dataframe %>% 
+        summarize(across(.cols = union(UniqueAES, 
+                                       c("File", "Tissue", "CompoundID",
+                                         "Compound", "Inhibitor")),
+                         .fns = function(x) length(unique(x)))) 
     
     UniqueGroups <- UniqueGroups1 %>% 
         t() %>% as.data.frame() %>% 
@@ -740,11 +780,11 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # NOTE TO SELF: I've been trying to think of a clearer way to indicate to
     # people when they need to specify more aesthetics and just haven't come up
-    # with a strategy I like. I think the current warning i'm giving is too
-    # cautious, which means that people will ignore it much of the time. For
-    # now, I'm going to just tell them how many aesthetics they've selected
-    # compared to how many unique groups and see whether that's sufficient
-    # warning.
+    # with a strategy I like. I think the warning I was giving (now commented
+    # out) is too cautious, which means that people will ignore it much of the
+    # time. For now, I'm going to just tell them how many aesthetics they've
+    # selected compared to how many unique groups and see whether that's
+    # sufficient warning.
     
     # if(length(UniqueGroups) > length(UniqueAES)){
     #     warning(paste("You have requested", length(UniqueGroups),
@@ -753,13 +793,16 @@ ct_plot_overlay <- function(ct_dataframe,
     #                   "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
     #             call. = FALSE)
     message(paste("Unique datasets:", str_comma(UniqueGroups)))
-    message(paste("Unique aesthetics:", str_comma(UniqueAES)))
-    # }
+    message(paste("Assigned aesthetics:", 
+                  ifelse(length(UniqueAES) == 0, 
+                         "none", 
+                         str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")")))))
     
     # If there are multiple values in linetype_column but user has only listed
     # the default "solid" for linetypes, then warn the user that they might want
     # to specify more line types.
-    if(as_label(colorBy_column) != as_label(linetype_column) &&
+    if(as_label(linetype_column) != "<empty>" && 
+       as_label(colorBy_column) != as_label(linetype_column) &&
        length(unique(ct_dataframe$linetype_column)) > 1 & 
        length(unique(linetypes)) == 1){
         warning(paste0("There are ", length(unique(ct_dataframe$linetype_column)),
@@ -792,6 +835,7 @@ ct_plot_overlay <- function(ct_dataframe,
     ct_y_axis(Data = bind_rows(sim_dataframe, obs_data), 
               ADAM = ADAM, 
               subsection_ADAM = unique(ct_dataframe$subsection_ADAM), 
+              prettify_compound_names = prettify_compound_names,
               EnzPlot = FALSE, 
               time_range_relative = time_range_relative,
               Ylim_data = bind_rows(sim_dataframe, obs_data) %>%
@@ -803,59 +847,59 @@ ct_plot_overlay <- function(ct_dataframe,
     
     
     # Setting figure types ---------------------------------------------------
+    
+    MyEffector <- unique(sim_dataframe$Inhibitor)
+    MyEffector <- fct_relevel(MyEffector, before = "none")
+    MyEffector <- sort(MyEffector)
+    
+    set_aesthet(line_type = linetypes, figure_type = figure_type,
+                MyEffector = MyEffector, 
+                compoundToExtract = unique(sim_dataframe$CompoundID),
+                obs_shape = obs_shape, obs_color = obs_color,
+                obs_fill_trans = obs_fill_trans,
+                obs_line_trans = obs_line_trans,
+                # line_color is just a placeholder b/c not using it here.
+                line_color = NA)
+    
+    # Checking which column is assigned to linetype b/c it affects what the
+    # legend should be for obs data.
+    LTCol <- AESCols["linetype"]
+    
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
+        
         A <- ggplot(sim_dataframe,
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = Conc, 
-                                                  color = colorBy_column, 
+                    switch(paste(AES, LTCol == "Inhibitor"), 
+                           "color-linetype TRUE" = aes(x = Time, y = Conc, 
+                                                       color = colorBy_column, 
+                                                       fill = colorBy_column,
+                                                       linetype = linetype_column, 
+                                                       group = Group, 
+                                                       shape = linetype_column),
+                           "color-linetype FALSE" = aes(x = Time, y = Conc, 
+                                                        color = colorBy_column, 
+                                                        fill = colorBy_column,
+                                                        linetype = linetype_column, 
+                                                        group = Group, 
+                                                        shape = Inhibitor),
+                           # Only option here will be "color FALSE" b/c "color"
+                           # will only be the AES if linetype is unspecified.
+                           "color FALSE" = aes(x = Time, y = Conc, 
+                                               color = colorBy_column, 
+                                               fill = colorBy_column,
+                                               group = Group, shape = Inhibitor), 
+                           "linetype TRUE" = aes(x = Time, y = Conc, 
+                                                 linetype = linetype_column, 
+                                                 group = Group, shape = linetype_column),
+                           "linetype FALSE" = aes(x = Time, y = Conc, 
                                                   linetype = linetype_column, 
-                                                  group = Group),
-                           "color" = aes(x = Time, y = Conc, color = colorBy_column, 
-                                         group = Group), 
-                           "linetype" = aes(x = Time, y = Conc, 
-                                            linetype = linetype_column, 
-                                            group = Group),
-                           "none" = aes(x = Time, y = Conc, group = Group))) +
+                                                  group = Group, shape = Inhibitor),
+                           # Only option here will be "none FALSE" b/c "none"
+                           # will only be the AES if linetype is unspecified.
+                           "none FALSE" = aes(x = Time, y = Conc,
+                                              group = Group, shape = Inhibitor))) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
-        if(nrow(obs_data) > 0){
-            if(InternalAssignFile){
-                A <- A +
-                    geom_point(data = obs_data, inherit.aes = FALSE,
-                               aes(x = Time, y = Conc, group = Group), 
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
-                               show.legend = FALSE)
-            } else {
-                if(is.na(obs_color)){
-                    A <- A +
-                        geom_point(data = obs_data, inherit.aes = FALSE,
-                                   switch(AES, 
-                                          "color-linetype" = aes(x = Time, y = Conc,
-                                                                 group = Group,
-                                                                 color = colorBy_column), 
-                                          "linetype" = aes(x = Time, y = Conc, 
-                                                           group = Group), 
-                                          "color" = aes(x = Time, y = Conc,
-                                                        group = Group,
-                                                        color = colorBy_column), 
-                                          "none" = aes(x = Time, y = Conc, 
-                                                       group = Group)),
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
-                                   show.legend = FALSE)
-                } else {
-                    A <- A +
-                        geom_point(data = obs_data, inherit.aes = FALSE,
-                                   aes(x = Time, y = Conc,group = Group),
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
-                                   color = obs_color,
-                                   show.legend = FALSE)
-                }
-            }
-        }
     }
     
     
@@ -863,78 +907,196 @@ ct_plot_overlay <- function(ct_dataframe,
     if(str_detect(figure_type, "ribbon")){
         
         RibbonDF <-  sim_dataframe %>% 
-            filter(Trial %in% c({MyMeanType}, "per5", "per95")) %>% 
+            filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                       # Ribbons don't work if any of the data are clipped on
+                       # the x axis
+                       Time >= time_range_relative[1] &
+                       Time <= time_range_relative[2]) %>% 
             unique() %>% 
             select(-any_of(c("Group", "Individual"))) %>% 
             pivot_wider(names_from = Trial, values_from = Conc)
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, 
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = MyMean, 
+                    switch(paste(AES, LTCol == "Inhibitor"), 
+                           "color-linetype TRUE" = aes(x = Time, y = MyMean, 
+                                                       ymin = per5, ymax = per95, 
+                                                       shape = linetype_column,
+                                                       color = colorBy_column, 
+                                                       fill = colorBy_column, 
+                                                       linetype = linetype_column),
+                           "color-linetype FALSE" = aes(x = Time, y = MyMean, 
+                                                        ymin = per5, ymax = per95, 
+                                                        shape = Inhibitor,
+                                                        color = colorBy_column, 
+                                                        fill = colorBy_column, 
+                                                        linetype = linetype_column),
+                           "linetype TRUE" = aes(x = Time, y = MyMean, 
+                                                 ymin = per5, ymax = per95, 
+                                                 shape = linetype_column,
+                                                 linetype = linetype_column),
+                           "linetype FALSE" = aes(x = Time, y = MyMean, 
                                                   ymin = per5, ymax = per95, 
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column, 
+                                                  shape = Inhibitor,
                                                   linetype = linetype_column),
-                           "linetype" = aes(x = Time, y = MyMean, 
-                                            ymin = per5, ymax = per95, 
-                                            linetype = linetype_column),
-                           "color" = aes(x = Time, y = MyMean, 
-                                         ymin = per5, ymax = per95, 
-                                         color = colorBy_column, 
-                                         fill = colorBy_column), 
-                           "none" = aes(x = Time, y = MyMean, 
-                                        ymin = per5, ymax = per95))) +
+                           # Only option here will be "color FALSE" b/c "color"
+                           # will only be the AES if linetype is unspecified.
+                           "color FALSE" = aes(x = Time, y = MyMean, 
+                                               ymin = per5, ymax = per95, 
+                                               shape = Inhibitor,
+                                               color = colorBy_column, 
+                                               fill = colorBy_column), 
+                           # Only option here will be "none FALSE" b/c "none"
+                           # will only be the AES if linetype is unspecified.
+                           "none FALSE" = aes(x = Time, y = MyMean, 
+                                              shape = Inhibitor,
+                                              ymin = per5, ymax = per95))) +
             geom_ribbon(alpha = 0.25, color = NA) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
         
-        if(nrow(obs_data) > 0){
-            if(InternalAssignFile){
-                A <- A + 
-                    geom_point(data = obs_data, 
-                               aes(x = Time, y = Conc, group = Group),
-                               inherit.aes = FALSE, 
-                               alpha = ifelse(complete.cases(obs_transparency), 
-                                              obs_transparency, 1), 
-                               show.legend = FALSE) 
+    }
+    
+    # Adding observed data -----------------------------------------------
+    
+    if(str_detect(figure_type, "ribbon")){
+        obs_data <- obs_data %>%
+            mutate(MyMean = Conc, per5 = as.numeric(NA),
+                   per95 = as.numeric(NA))
+    }
+    
+    if(nrow(obs_data) > 0){
+        
+        # Checking whether to show obs data points in the legend. If the
+        # column that is mapped to color or linetype has more than one item,
+        # then show this in the legend. If Inhibitor has more than one item,
+        # since it's the column that's mapped to shape, then also show this
+        # in the legend.
+        LegCheck <- c(AESCols["color"], AESCols["linetype"])
+        LegCheck <- LegCheck[LegCheck != "<empty>"]
+        # Need to add "Inhibitor" here b/c shape is mapped to it.
+        LegCheck <- c(LegCheck, "Inhibitor" = "Inhibitor")
+        # If there's more than one unique value in whatever is in the color
+        # or linetype column or the Inhibitor column, then include it
+        LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
+        
+        if(InternalAssignFile){
+            # This is when there's a single set of observed data to match
+            # multiple files, so the color needs to be uniform and not mapped to
+            # anything.
+            
+            if(is.na(obs_color)){
+                obs_color <- "black"
+            }
+            
+            if(str_detect(figure_type, "ribbon")){
+                # I think there's a bug in the ggplot2 package. When I try to
+                # add observed data to ribbon plot, if geom_point includes a
+                # call to fill but is NOT mapped, then the order of the fill
+                # colors is exactly the reverse of the order of the line colors.
+                # If the observed data ARE mapped in geom_point but NOT to fill,
+                # then everything is fine. 9/4/22 LSh
+                A <- A +
+                    # making obs point outlines
+                    geom_point(data = obs_data, aes(x = Time, y = MyMean),
+                               inherit.aes = FALSE,
+                               color = obs_color,
+                               fill = NA,
+                               alpha = obs_fill_trans, 
+                               show.legend = FALSE) +
+                    # making obs point fill
+                    geom_point(data = obs_data, aes(x = Time, y = MyMean),
+                               inherit.aes = FALSE,
+                               color = obs_color,
+                               fill = obs_color,
+                               alpha = obs_fill_trans, 
+                               show.legend = FALSE) + 
+                    scale_shape_manual(values = obs_shape)
+            } else {
+                
+                A <- A +
+                    # making obs point outlines
+                    geom_point(data = obs_data,
+                               alpha = obs_line_trans,
+                               color = obs_color,
+                               fill = NA,
+                               show.legend = FALSE) +
+                    # making obs point fill
+                    geom_point(data = obs_data,
+                               fill = obs_color,
+                               alpha = obs_fill_trans, 
+                               show.legend = FALSE) + 
+                    scale_shape_manual(values = obs_shape)
+            }
+            
+        } else {
+            if(is.na(obs_color)){
+                # This is when there are multiple sets of observed data that are
+                # mapped to color or linetype, etc.
+                
+                if(length(MyEffector[!MyEffector == "none"]) == 1){
+                    # This is when there is an effector.
+                    A <- A +
+                        # making obs point outlines
+                        geom_point(data = obs_data,
+                                   alpha = obs_line_trans, 
+                                   fill = NA, 
+                                   show.legend = LegCheck) +
+                        # making obs point fill
+                        geom_point(data = obs_data,
+                                   alpha = obs_fill_trans, 
+                                   show.legend = LegCheck) + 
+                        scale_shape_manual(values = obs_shape)
+                    
+                } else {
+                    # This is when there is not an effector or when there are
+                    # multiple effectors in the dataset.
+                    A <- A +
+                        geom_point(data = obs_data, 
+                                   # inherit.aes = FALSE,
+                                   # switch(AES, 
+                                   #        "color-linetype" = aes(x = Time, y = Conc,
+                                   #                               group = Group,
+                                   #                               color = colorBy_column), 
+                                   #        "linetype" = aes(x = Time, y = Conc, 
+                                   #                         group = Group), 
+                                   #        "color" = aes(x = Time, y = Conc,
+                                   #                      group = Group,
+                                   #                      color = colorBy_column), 
+                                   #        "none" = aes(x = Time, y = Conc, 
+                                   #                     group = Group)),
+                                   shape = switch(as.character(
+                                       length(unique(obs_data$Inhibitor)) > 1), 
+                                       "TRUE" = obs_shape,
+                                       "FALSE" = obs_shape[1]),
+                                   alpha = obs_fill_trans, 
+                                   show.legend = LegCheck)
+                }
                 
             } else {
-                if(is.na(obs_color)){
-                    A <- A + 
-                        geom_point(data = obs_data, 
-                                   switch(AES, 
-                                          "color-linetype" = aes(x = Time, y = Conc,
-                                                                 group = Group,
-                                                                 color = colorBy_column), 
-                                          "linetype" = aes(x = Time, y = Conc,
-                                                           group = Group),
-                                          "color" = aes(x = Time, y = Conc,
-                                                        group = Group,
-                                                        color = colorBy_column),
-                                          "none" = aes(x = Time, y = Conc,
-                                                       group = Group)),
-                                   inherit.aes = FALSE, 
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
-                                   show.legend = FALSE) 
-                } else {
-                    A <- A + 
-                        geom_point(data = obs_data, 
-                                   aes(x = Time, y = Conc, group = Group), 
-                                   inherit.aes = FALSE, 
-                                   alpha = ifelse(complete.cases(obs_transparency), 
-                                                  obs_transparency, 1), 
-                                   color = obs_color,
-                                   show.legend = FALSE)    
-                }
+                # This is when the user has specified what color they want
+                # the observed data to be.
+                A <- A +
+                    geom_point(data = obs_data, 
+                               alpha = ifelse(complete.cases(obs_fill_trans), 
+                                              obs_fill_trans, 1), 
+                               color = obs_color, fill = obs_color, 
+                               show.legend = LegCheck) +
+                    scale_shape_manual(values = 
+                                           switch(as.character(
+                                               length(unique(obs_data$Inhibitor)) > 1), 
+                                               "TRUE" = obs_shape,
+                                               "FALSE" = obs_shape[1]))
             }
         }
     }
     
+    
     # Making linear graph --------------------------------------------------------
     A <-  A +
-        xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
-        ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
+        xlab(xlab) +
+        ylab(ylab) +
+        # xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
+        # ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
         theme(panel.background = element_rect(fill = "white", color = NA),
               panel.border = element_rect(color = "black", fill = NA),
               strip.background = element_rect(fill = "white"),
@@ -945,31 +1107,13 @@ ct_plot_overlay <- function(ct_dataframe,
               axis.line.y = element_line(color = "black"),
               axis.line.x.bottom = element_line(color = "black"))
     
-    if(is.na(legend_label_color)){
-        if(complete.cases(color_labels[1])){
-            # If user did not request a label on the legend for color but DID
-            # set any of the color labels, that means that the legend label for
-            # color probably should not be the same as the column title. Do not
-            # include a legend label for color in that scenario.
-            A <- A + labs(color = NULL, fill = NULL)
-        } else if(AES %in% c("color", "color-linetype")){
-            # However, if they did not include anything for legend_label_color
-            # but there is a column that is mapped to color, then they probably
-            # do want the title for colors on the legend to be the same as the
-            # colorBy_column name.
-            A <- A + labs(color = as_label(colorBy_column), 
-                          fill = as_label(colorBy_column))
-        }
-    } else {
-        # Note: If they user set something for legend_label_color but did NOT
-        # set anything for colorBy_column, they'll get an error from ggplot2
-        # here. That's probably fine and likely not a common scenario.
-        A <- A + 
-            labs(x = xlab, y = ylab,
-                 linetype = legend_label_linetype,
-                 shape = legend_label_color,
-                 color = legend_label_color, 
-                 fill = legend_label_color)
+    # Error catching
+    if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
+       AESCols["facet1"] == "<empty>" & AESCols["facet2"] == "<empty>"){
+        warning("You have specified the number of columns and/or rows you want in your facetted graph, but you have not specified *how* you want to break up the data. Please set a value for either `facet1_column` or `facet2_column` to do that. For now, the graph will not be facetted.", 
+                call. = FALSE)
+        facet_ncol <- NA
+        facet_nrow <- NA
     }
     
     if(floating_facet_scale){
@@ -979,6 +1123,28 @@ ct_plot_overlay <- function(ct_dataframe,
             scale_y_continuous(expand = expansion(mult = pad_y_num)) +
             facet_wrap(vars(!!facet1_column, !!facet2_column), 
                        scales = "free")
+        
+    } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
+        
+        suppressWarnings(
+            A <- A +
+                coord_cartesian(xlim = time_range_relative, 
+                                ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                0, y_axis_limits_lin[1]),
+                                         YmaxRnd)) +
+                scale_x_continuous(breaks = XBreaks, labels = XLabels,
+                                   expand = expansion(
+                                       mult = pad_x_num)) +
+                scale_y_continuous(breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) +
+                facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
+                                        AESCols["facet2"] == "<empty>"), 
+                                  "TRUE FALSE" = vars(!!facet2_column),
+                                  "FALSE TRUE" = vars(!!facet1_column),
+                                  "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
+                           ncol = facet_ncol, nrow = facet_nrow)
+        )
         
     } else {
         A <- A +
@@ -999,20 +1165,6 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(AES %in% c("color", "color-linetype")){
         
-        # Adding options for colors
-        colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                         "darkorange", "green3", "seagreen3",
-                                         "cadetblue", "dodgerblue3", "royalblue4",
-                                         "darkorchid4"))
-        
-        blueGreen <- colorRampPalette(c("royalblue4", "dodgerblue3",
-                                        "cadetblue", "seagreen3", "green3"))
-        
-        # "blues" is the 4th through 9th blues from grDevices::blues9, just to
-        # give credit where it's due
-        blues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
-                                    "#08519C", "#08306B"))
-        
         NumColorsNeeded <- bind_rows(sim_dataframe, obs_data) %>%
             pull(AESCols["color"]) %>% 
             unique() %>% length()
@@ -1020,7 +1172,8 @@ ct_plot_overlay <- function(ct_dataframe,
         # print(NumColorsNeeded)
         
         if(length(sort(unique(ct_dataframe$colorBy_column))) == 1){
-            A <- A + scale_color_manual(values = "black")
+            A <- A + scale_color_manual(values = "black") +
+                scale_fill_manual(values = "black")
         } else {
             
             if(length(color_set) > 1){
@@ -1052,15 +1205,26 @@ ct_plot_overlay <- function(ct_dataframe,
                     scale_fill_manual(values = color_set)
             } else {
                 
-                if(color_set == "default"){
+                # NOTE: For no reason I can discern, if the user has observed
+                # data that should be all one color but then uses scale_color_X
+                # where x is anything except "manual", the observed points
+                # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
+                # setting the colors needed and then using scale_color_manual
+                # instead of scale_color_x. -LSh
+                
+                if(str_detect(tolower(color_set), "default|brewer.*2|set.*2")){
                     # Using "Dark2" b/c "Set2" is just really, really light. 
-                    A <- A + scale_color_brewer(palette = "Dark2") +
-                        scale_fill_brewer(palette="Dark2")
+                    suppressWarnings(
+                        A <- A + scale_color_manual(
+                            values = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")) +
+                            scale_fill_manual(
+                                values = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2"))
+                    )
                 }
                 
                 if(color_set == "blue-green"){
-                    A <- A + scale_color_manual(values = blueGreen(NumColorsNeeded)) +
-                        scale_fill_manual(values = blueGreen(NumColorsNeeded))
+                    A <- A + scale_color_manual(values = blueGreens(NumColorsNeeded)) +
+                        scale_fill_manual(values = blueGreens(NumColorsNeeded))
                 }
                 
                 if(color_set == "blues"){
@@ -1069,49 +1233,71 @@ ct_plot_overlay <- function(ct_dataframe,
                 }
                 
                 if(color_set == "rainbow"){
-                    A <- A + scale_color_manual(values = colRainbow(NumColorsNeeded)) +
-                        scale_fill_manual(values = colRainbow(NumColorsNeeded))
-                }
-                
-                if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
-                    # Using "Dark2" b/c "Set2" is just really, really light. 
-                    A <- A + scale_fill_brewer(palette = "Dark2") +
-                        scale_color_brewer(palette = "Dark2")
+                    A <- A + scale_color_manual(values = rainbow(NumColorsNeeded)) +
+                        scale_fill_manual(values = rainbow(NumColorsNeeded))
                 }
                 
                 if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
-                    A <- A + scale_fill_brewer(palette = "Set1") +
-                        scale_color_brewer(palette = "Set1")
+                    suppressWarnings(
+                        A <- A + scale_color_manual(
+                            values = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")) +
+                            scale_fill_manual(
+                                values = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1"))
+                    )
                 }
                 
                 if(color_set == "Tableau"){
-                    A <- A + ggthemes::scale_color_tableau() +
-                        ggthemes::scale_fill_tableau()
+                    A <- A + scale_color_manual(
+                        values = ggthemes::tableau_color_pal(
+                            palette = "Tableau 10")(NumColorsNeeded)) +
+                        scale_fill_manual(
+                            values = ggthemes::tableau_color_pal(
+                                palette = "Tableau 10")(NumColorsNeeded))
                 }
                 
                 if(color_set == "viridis"){
-                    A <- A + viridis::scale_color_viridis(discrete = TRUE) +
-                        viridis::scale_fill_viridis(discrete = TRUE)
+                    A <- A + scale_color_manual(
+                        values = viridis::viridis_pal()(NumColorsNeeded)) +
+                        scale_fill_manual(
+                            values = viridis::viridis_pal()(NumColorsNeeded))
                 }
             }
         }
-        
     }
     
     # Specifying linetypes
     A <- A + scale_linetype_manual(values = linetypes)
     
     # Adding legend label for color and linetype as appropriate
-    if(complete.cases(legend_label_color) &&
-       legend_label_color == "none"){
-        A <- A + labs(color = NULL, fill = NULL)
+    if(complete.cases(legend_label_color)){
+        if(legend_label_color == "none"){    
+            A <- A + labs(color = NULL, fill = NULL)
+        } else {
+            A <- A + labs(color = legend_label_color, 
+                          fill = legend_label_color)
+        }
     } else {
-        A <- A + labs(color = switch(as.character(complete.cases(legend_label_color)), 
-                                     "TRUE" = legend_label_color, 
-                                     "FALSE" = as_label(colorBy_column)), 
-                      fill = switch(as.character(complete.cases(legend_label_color)), 
-                                    "TRUE" = legend_label_color,
-                                    "FALSE" = as_label(colorBy_column)))
+        # This is when no legend_label_color has been specified.
+        if(complete.cases(color_labels[1])){
+            # If user did not request a label on the legend for color but DID
+            # set any of the color labels, that means that the legend label for
+            # color probably should NOT be the same as the column title. Do not
+            # include a legend label for color in that scenario.
+            A <- A + labs(color = NULL, fill = NULL)
+        } else if(AES %in% c("color", "color-linetype")){
+            # However, if they did not include anything for legend_label_color
+            # but there *is* a column that is mapped to color, then they
+            # probably do want the title for colors on the legend to be the same
+            # as the colorBy_column name.
+            A <- A + labs(color = as_label(colorBy_column), 
+                          fill = as_label(colorBy_column))
+        } 
+        
+        # None of these conditions are met when 1) they did NOT set anything for the
+        # legend_label_color, 2) they did not specify any alternative label
+        # for each value in the colorBy_column for the legend, and 3) the
+        # specified aesthetics do NOT include color or linetype.
+        
     }
     
     if(complete.cases(legend_label_linetype) && 
@@ -1120,7 +1306,12 @@ ct_plot_overlay <- function(ct_dataframe,
     } else if(as_label(linetype_column) != "<empty>"){
         A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
                                         "TRUE" = legend_label_linetype,
-                                        "FALSE" = as_label(linetype_column)))
+                                        "FALSE" = as_label(linetype_column)), 
+                      shape = switch(as.character(LTCol == "Inhibitor"), 
+                                     "TRUE" = switch(as.character(complete.cases(legend_label_linetype)), 
+                                                     "TRUE" = legend_label_linetype,
+                                                     "FALSE" = as_label(linetype_column)), 
+                                     "FALSE" = "Inhibitor"))
         
         if(any(linetypes != "solid")){
             # When the linetype is dashed (or possibly some other user-specified
@@ -1146,10 +1337,23 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(AES %in% c("color", "color-linetype") &&
        length(unique(sim_dataframe$colorBy_column)) == 1){
-        A <- A + guides(color = "none")
+        A <- A + guides(color = "none", fill = "none")
     }
     
     ## Making semi-log graph ------------------------------------------------
+    
+    LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                           Time > 0 &
+                                           Conc < Ylim_log[1]) %>% 
+        pull(Conc)
+    
+    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
+        warning(paste0("Some of your data are less than the lower y axis value of ",
+                       Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this sometimes leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If you see this, please try setting the minimum value for the y axis to less than or equal to ",
+                       min(LowConc, na.rm = T), 
+                       ", the lowest value in your data."),
+                call. = FALSE)
+    }
     
     B <- suppressMessages(suppressWarnings(
         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,

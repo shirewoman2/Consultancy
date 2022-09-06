@@ -15,14 +15,16 @@
 #' @return
 
 set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract, 
-                        obs_shape, line_color, obs_color){
+                        obs_shape, line_color, obs_color, 
+                        obs_line_trans, obs_fill_trans){
     
     # Setting user specifications for shape, linetype, and color where
     # applicable.
     if(is.na(line_type[1])){
         if(str_detect(figure_type, "ribbon") & 
            length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+           MyEffector[1] != "none" & 
+           ("inhibitor 1" %in% compoundToExtract == FALSE)){
             line_type <- c("solid", "solid")
         } else {
             line_type <- c("solid", "dashed")
@@ -40,7 +42,8 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     if(is.na(line_color[1])){
         if(str_detect(figure_type, "ribbon") & 
            length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & compoundToExtract != "inhibitor 1"){
+           MyEffector[1] != "none" & 
+           ("inhibitor 1" %in% compoundToExtract == FALSE)){
             line_color <- c("#377EB8", "#E41A1C")
         } else {
             line_color <- c("black", "black")
@@ -58,6 +61,12 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
         obs_color <- "#3030FE"
     }    
     
+    obs_fill_trans <- ifelse(is.na(obs_fill_trans), 
+                             0.5, obs_fill_trans)
+    
+    obs_line_trans <- ifelse(is.na(obs_line_trans), 
+                             1, obs_line_trans)
+    
     # Assigning the variables created or changed here to the environment one
     # level up, e.g., probably the environment within the function that's
     # calling on *this* function.
@@ -65,5 +74,7 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     assign("line_color", line_color, envir = parent.frame())
     assign("obs_shape", obs_shape, envir = parent.frame())
     assign("obs_color", obs_color, envir = parent.frame())
+    assign("obs_fill_trans", obs_fill_trans, envir = parent.frame())
+    assign("obs_line_trans", obs_line_trans, envir = parent.frame())
     
 }

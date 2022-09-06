@@ -108,7 +108,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  ct_dataframe = ConcTime,
                                  overwrite = FALSE,
                                  tissues = "plasma",
-                                 compoundsToExtract = "substrate",
+                                 compoundsToExtract = "all",
                                  conc_units_to_use = "ng/mL",
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate",
@@ -121,6 +121,20 @@ extractConcTime_mult <- function(sim_data_files = NA,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
+    compoundsToExtract <- tolower(compoundsToExtract)
+    
+    PossCmpd <- c("substrate", "inhibitor 1",
+                  "inhibitor 1 metabolite", "inhibitor 2",
+                  "primary metabolite 1", "all",
+                  "primary metabolite 2", "secondary metabolite")
+    
+    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
+        warning(paste0("The compound(s) ", 
+                       str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
+                       " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                       str_comma(paste0("`", PossCmpd, "`"))), 
+                call. = FALSE)
+    }
     
     # Main body of function -----------------------------------------------
     
@@ -366,7 +380,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
             }
         }
         
-        # Removing any compounds not included in user request
+        # Removing any compounds not included in user request. If user requested
+        # "all" for compoundsToExtract, need to change that to a character
+        # vector from here on in the function.
+        if(compoundsToExtract[1] == "all"){
+            compoundsToExtract <- c("substrate", "inhibitor 1",
+                                    "inhibitor 2", "inhibitor 1 metabolite",
+                                    "primary metabolite 1",
+                                    "primary metabolite 2",
+                                    "secondary metabolite")
+        } 
         MultObsData <- bind_rows(MultObsData) %>% 
             mutate(Simulated = FALSE) %>% 
             filter(CompoundID %in% compoundsToExtract)
@@ -387,9 +410,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
         SimEffector <- unique(MultData$Inhibitor)
         SimEffector <- SimEffector[!SimEffector == "none"]
         if(length(SimEffector) == 1 &&
-           "inhibitor 1" %in% SimDoseInfo$CompoundID &&
+           "inhibitor 1" %in% MultData$CompoundID &&
            any(c("inhibitor 2", "inhibitor 1 metabolite") %in% 
-               SimDoseInfo$CompoundID) == FALSE){
+               MultData$CompoundID) == FALSE){
             MultObsData$Inhibitor[MultObsData$Inhibitor != "none"] <- SimEffector
         }
         

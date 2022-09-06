@@ -19,6 +19,7 @@
 
 ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
                       y_axis_limits_lin, time_range,
+                      prettify_compound_names = TRUE, 
                       y_axis_limits_log, Ylim_data, pad_y_axis,
                       time_range_relative){
     
@@ -29,34 +30,91 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     }
     
     if(any(ADAM)){
-        if(subsection_ADAM == "Heff"){
-            ylab <- expression(H[eff])
+        
+        # # ADAM options available (this is for my reference and was copied from ct_plot.R)
+        # ADAMoptions <- c("undissolved compound", "enterocyte concentration",
+        #                  "free compound in lumen", "total compound in lumen",
+        #                  "Heff", "absorption rate",
+        #                  "unreleased compound in faeces", 
+        #                  "dissolved compound", "luminal CLint", 
+        #                  "dissolution rate of solid state", 
+        #                  "cumulative fraction of compound absorbed", 
+        #                  "cumulative fraction of compound dissolved")
+        
+        CompoundLab <- ifelse(prettify_compound_names, 
+                              prettify_compound_name(unique(Data$Compound)), 
+                              unique(Data$Compound))
+        
+        ylab1 <- 
+            switch(subsection_ADAM, 
+                   "dissolved compound" = 
+                       paste("Dissolved", CompoundLab, "in", unique(Data$Tissue)),
+                   "undissolved compound" = 
+                       paste0("Undissolved ", CompoundLab, " in ", unique(Data$Tissue)),
+                   "enterocyte concentration" = 
+                       bquote(atop("Enterocyte concentration of"~bquote(.(CompoundLab)))), 
+                   # paste0("Enterocyte concentration of ", CompoundLab, " in ", unique(Data$Tissue)),
+                   "free compound in lumen" = 
+                       paste0("Free ", CompoundLab, " in lumen"),
+                   "total compound in lumen" = 
+                       paste0("Total ", CompoundLab, " in lumen"),
+                   "Heff" = bquote("Particle"~H[eff]),
+                   "absorption rate" = 
+                       paste0("Absorption rate of ", CompoundLab, " in ", unique(Data$Tissue)),
+                   "unreleased compound in faeces" = 
+                       paste("Unreleased", CompoundLab, "in faeces"),
+                   "luminal CLint" = bquote("Luminal"~CL[int]), 
+                   "dissolution rate of solid state" = 
+                       paste0("Dissolution rate of ", CompoundLab, " in ", unique(Data$Tissue)), 
+                   "cumulative fraction of compound absorbed" =
+                       paste0("Cumulative fraction of ", CompoundLab, " absorbed"), 
+                   "cumulative fraction of compound dissolved" =
+                       paste0("Cumulative fraction of ", CompoundLab, " dissolved")) 
+        
+        # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
+        # so do NOT interchange them in the code.
+        PossConcUnits <- list("mg/mL" = "(mg/mL)",
+                              "µg/L" = bquote("("*"\u03bc"*g*"/"*L*")"),
+                              "µg/mL" = bquote("("*"\u03bc"*g*"/"*mL*")"),
+                              "ng/mL" = "(ng/mL)",
+                              "ng/L" = "(ng/L)",
+                              "µM" = bquote("("*"\u03bc"*M*")"),
+                              "µm" = bquote("("*"\u03bc"*m*")"),
+                              "nM" = "(nM)",
+                              "mM" = "(mM)",
+                              "mg" = "(mg)",
+                              "µg" = bquote("("*"\u03bc"*"g)"),
+                              "ng" = "(ng)",
+                              "mg/h" = "(mg/h)",
+                              "mg/L" = bquote("("*"\u03bc"*g*"/"*mL*")"),
+                              "mL" = "(mL)", 
+                              "mmol" = "(mmol)", 
+                              "µmol" = bquote("("*"\u03bc"*"mol)"),
+                              "nmol" = "(nmol)")
+        
+        ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
+        
+        if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
+                                  "cumulative fraction of compound dissolved")){
+            ylab <- bquote(bold(.(ylab1)))
+            
         } else {
-            ylab <- switch(subsection_ADAM, 
-                        "cumulative fraction of dissolved substrate" =
-                            expression(atop("Cumulative fraction",
-                                            "of dissolved substrate")),
-                        "cumulative fraction of dissolved inhibitor 1" =
-                            expression(atop("Cumulative fraction",
-                                            "of dissolved inhibitor 1")),
-                        "cumulative fraction of absorbed substrate" =
-                            expression(atop("Cumulative fraction",
-                                            "of absorbed substrate")),
-                        "cumulative fraction of absorbed inhibitor 1" =
-                            expression(atop("Cumulative fraction",
-                                            "of absorbed inhibitor 1"))
-                           )
+            ylab <- bquote(bold(.(ylab1)) ~ bold(.(ylab2)))
         }
+        
     } else {
         
-        PossConcUnits <- list("µg/mL" = expression(Concentration~"("*mu*g/mL*")"),
+        # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
+        # so do NOT interchange them in the code.
+        PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
+                              "µg/mL" = bquote(bold(Concentration~"("*"\u03bc"*g*"/"*mL*")")),
                               "ng/mL" = "Concentration (ng/mL)",
                               "ng/L" = "Concentration (ng/L)",
-                              "µM" = expression(Concentration~"("*mu*M*")"),
+                              "µM" = bquote(bold(Concentration~"("*"\u03bc"*M*")")),
                               "nM" = "Concentration (nM)",
                               "mg" = "Amount (mg)",
                               "mg/h" = "Absorption rate (mg/h)",
-                              "mg/L" = expression(Concentration~"("*mu*g/mL*")"),
+                              "mg/L" = bquote(bold(Concentration~"("*"\u03bc"*g*"/"*mL*")")),
                               "mL" = "Volume (mL)",
                               "PD response" = "PD response",
                               "Relative abundance" = "Relative abundance (%)")
@@ -254,4 +312,3 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     assign("pad_y_num", pad_y_num, envir = parent.frame())
     assign("pad_y_axis", pad_y_axis, envir = parent.frame())
 }
-    

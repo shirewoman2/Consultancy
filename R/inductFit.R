@@ -37,7 +37,7 @@
 #'   \item{"IndmaxSlope"}{the Indmax model with the addition of a slope n
 #'   \deqn{fold induction = 1 + Indmax * I^n / (IndC50^n + I^n)}}
 #'
-#'   \item{"Slope"}{slope only: \deqn{fold induction = I * n}}
+#'   \item{"slope"}{slope only: \deqn{fold induction = I * n}}
 #'
 #'   \item{"Sig3Param"}{Sigmoidal 3-parameter model (often used by Xenotech):
 #'   \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))}}
@@ -79,6 +79,7 @@
 #'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
+#'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
 #'
@@ -86,7 +87,7 @@
 #'   colors from purple to blue to green to yellow in a manner that is
 #'   "printer-friendly, perceptually uniform and easy to read by those with
 #'   colorblindness", according to the package author}}
-#'   
+#'
 #' @param y_axis_limits optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 #'   If left as NA, the Y axis limits will be automatically selected. (Reminder:
 #'   Numeric data should not be in quotes.)
@@ -104,8 +105,10 @@
 #' @param fig_height figure height in inches; default is 5
 #' @param fig_width figure width in inches; default is 5.5
 #' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My fitted induction parameters.csv". If you leave off
-#'   ".csv", it will still be saved as a csv file.
+#'   quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
+#'   file will save only the fitted parameters. However, if you would like a
+#'   Word file with a) the equations used, b) the fitted parameters, and c) the
+#'   graphs, end this file name with ".docx" instead. 
 #'
 #'
 #' @return Returns a list of \describe{ \item{Fit}{the fitted parameters}
@@ -123,7 +126,7 @@
 #' inductFit(IndData, model = "Indmax")$Graph
 #' inductFit(IndData %>% rename(Conc_uM = Concentration_uM),
 #'           conc_column = Conc_uM, model = "IndmaxSlope")$Graph
-#' inductFit(IndData, model = "Slope")$Graph
+#' inductFit(IndData, model = "slope")$Graph
 #' inductFit(IndData, model = "Sig3Param")
 #'
 #' inductFit(IndData, model = "IndmaxSlope", measurement = "activity")
@@ -204,21 +207,21 @@ inductFit <- function(DF,
     LegendTitle <- rlang::as_label(donor_column)
     
     # initial error catching ------------------------------------------------
-    # Options for model: IndmaxSlope, Indmax, Slope, Sig3Param, all
-    if(tolower(model[1]) %in% tolower(c("Indmax", "IndmaxSlope", "Slope", "Sig3Param", "all")) == FALSE){
-        stop("Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'. Please enter a valid model.",
+    # Options for model: IndmaxSlope, Indmax, slope, Sig3Param, all
+    if(tolower(model[1]) %in% tolower(c("Indmax", "IndmaxSlope", "slope", "Sig3Param", "all")) == FALSE){
+        stop("Model options are 'Indmax', 'IndmaxSlope', 'slope', 'Sig3Param' or 'all'. Please enter a valid model.",
              call. = FALSE)
     }
     
     model <- switch(tolower(model), 
                     "indmax" = "Indmax",
                     "indmaxslope" = "IndmaxSlope", 
-                    "slope" = "Slope", 
+                    "slope" = "slope", 
                     "sig3param" = "Sig3Param", 
                     "all" = "all")
     
     if(length(model) > 1){
-        stop("Please select only one option for the model. Model options are 'Indmax', 'IndmaxSlope', 'Slope', 'Sig3Param' or 'all'.",
+        stop("Please select only one option for the model. Model options are 'Indmax', 'IndmaxSlope', 'slope', 'Sig3Param' or 'all'.",
              call. = FALSE)
     }
     
@@ -240,8 +243,8 @@ inductFit <- function(DF,
     # Making prettier facet labels
     ModelFacet <- c(Indmax = "Indmax model",
                     IndmaxSlope = "Indmax slope model",
-                    Slope = "Slope model",
-                    Sig3Param = "Sigmoidal 3-parameter model")
+                    Slope = "slope model",
+                    Sig3Param = "sigmoidal 3-parameter model")
     
     # Setting better colors for graphs than the weird default
     scale_colour_discrete <- function(...) scale_colour_brewer(..., palette="Set1")
@@ -259,7 +262,7 @@ inductFit <- function(DF,
                                            slope = 1),
                         Indmax = list(Indmax = 4,
                                       IndC50 = 5),
-                        Slope = list(slope = 1),
+                        slope = list(slope = 1),
                         Sig3Param = list(Indmax = 4,
                                          IndC50 = 5,
                                          slope = 1),
@@ -302,7 +305,7 @@ inductFit <- function(DF,
                            error = function(x){data.frame(term = c("Indmax", "IndC50", "slope"),
                                                           estimate = NA)}),
                        
-                       Slope =  tryCatch(
+                       slope =  tryCatch(
                            nls(FoldInduction ~ 1+(Concentration_uM*slope),
                                data = DF, start = StartVals, weights = DF$Weights),
                            error = function(x){data.frame(term = c("slope"),
@@ -333,14 +336,14 @@ inductFit <- function(DF,
                                           Indmax = 1+(Indmax*Curve$Concentration_uM)/(IndC50+Curve$Concentration_uM),
                                           IndmaxSlope = 1+(Indmax*Curve$Concentration_uM^slope) /
                                               (IndC50^slope+Curve$Concentration_uM^slope),
-                                          Slope = 1 + Curve$Concentration_uM * slope,
+                                          slope = 1 + Curve$Concentration_uM * slope,
                                           Sig3Param = Indmax/(1+exp(-(Curve$Concentration_uM-IndC50)/slope)))
             
             ModelTitle <- switch(model,
                                  Indmax = "Indmax model",
                                  IndmaxSlope = "Indmax slope model",
-                                 Slope = "Slope model",
-                                 Sig3Param = "Sigmoidal 3-parameter model")
+                                 slope = "slope model",
+                                 Sig3Param = "sigmoidal 3-parameter model")
             
         } else {
             
@@ -375,11 +378,11 @@ inductFit <- function(DF,
                                                    estimate = NA, 
                                                    model = "IndMaxSlope")}),
                 
-                Slope =  tryCatch(
+                slope =  tryCatch(
                     broom::tidy(
                         nls(FoldInduction ~ 1+(Concentration_uM*slope),
                             data = DF, start = StartVals["slope"], weights = DF$Weights)) %>%
-                        dplyr::mutate(model = "Slope"),
+                        dplyr::mutate(model = "slope"),
                     error = function(x){data.frame(term = c("slope"),
                                                    estimate = NA, 
                                                    model = "Slope")}),
@@ -394,38 +397,41 @@ inductFit <- function(DF,
                                                    model = "Sig3Param")})  )
             
             # Making data.frame to hold the predicted values for the graph
-            Curve <- data.frame(Concentration_uM = rep(seq(min(DF$Concentration_uM, na.rm = T),
-                                                           1.2*max(DF$Concentration_uM, na.rm = T),
-                                                           length.out = 300), 4),
-                                model = rep(c("Indmax", "IndmaxSlope", "Slope", "Sig3Param"),
-                                            each = 300))  %>%
-                dplyr::mutate(Model_ch = ModelFacet[model])
+            Curve <- data.frame(Concentration_uM = seq(min(DF$Concentration_uM, na.rm = T),
+                                                       1.2*max(DF$Concentration_uM, na.rm = T),
+                                                       length.out = 300))
             
-            Curve <- Curve %>%
-                dplyr::mutate(
-                    # Indmax model
-                    FoldInduction = 1 + (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "Indmax"] *
-                                             Concentration_uM) /
-                        (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "IndC50"] +
-                             Concentration_uM),
-                    # IndmaxSlope model
-                    FoldInduction = ifelse(model == "IndmaxSlope",
-                                           1+(IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "Indmax"] *
-                                                  Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]) /
-                                               (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "IndC50"] ^
-                                                    IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"] +
-                                                    Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]),
-                                           FoldInduction),
-                    # Slope model
-                    FoldInduction = ifelse(model == "Slope",
-                                           1 + Concentration_uM * IndFit[["Slope"]]$estimate[IndFit[["Slope"]]$term == "slope"],
-                                           FoldInduction),
-                    # Sig3Param model
-                    FoldInduction = ifelse(model == "Sig3Param",
-                                           IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "Indmax"] /
-                                               (1+exp(-(Concentration_uM-IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "IndC50"]) /
-                                                          IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "slope"])),
-                                           FoldInduction))
+            Curve_Indmax <- Curve %>%
+                mutate(Model = "Indmax",
+                       FoldInduction = 
+                           1 + (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "Indmax"] *
+                                    Concentration_uM) /
+                           (IndFit[["Indmax"]]$estimate[IndFit[["Indmax"]]$term == "IndC50"] +
+                                Concentration_uM))
+            
+            Curve_IndmaxSlope <- Curve %>% 
+                mutate(Model = "IndmaxSlope",
+                       FoldInduction = 
+                           1 + (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "Indmax"] *
+                                    Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]) /
+                           (IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "IndC50"] ^
+                                IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"] +
+                                Concentration_uM^IndFit[["IndmaxSlope"]]$estimate[IndFit[["IndmaxSlope"]]$term == "slope"]))
+            Curve_slope <- Curve %>% 
+                mutate(Model = "Slope", 
+                       FoldInduction = 
+                           1 + Concentration_uM * IndFit[["slope"]]$estimate[IndFit[["slope"]]$term == "slope"])
+            
+            Curve_Sig3Param <- Curve %>% 
+                mutate(Model = "Sig3Param", 
+                       FoldInduction = 
+                           IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "Indmax"] /
+                           (1+exp(-(Concentration_uM-IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "IndC50"]) /
+                                      IndFit[["Sig3Param"]]$estimate[IndFit[["Sig3Param"]]$term == "slope"])))
+            
+            Curve <- bind_rows(Curve_Indmax, Curve_IndmaxSlope, Curve_slope,
+                               Curve_Sig3Param)  %>%
+                mutate(Model_ch = ModelFacet[Model])
             ModelTitle <- NULL
         }
         
@@ -552,7 +558,7 @@ inductFit <- function(DF,
             )
             
             CurveData <- do.call(dplyr::bind_rows, CurveData) %>%
-                dplyr::mutate(Model_ch = ModelFacet[model])
+                dplyr::mutate(Model_ch = ModelFacet[Model])
             
             if(hline_foldinduct1){
                 G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
@@ -717,20 +723,6 @@ inductFit <- function(DF,
     )
     
     # Adding options for colors -----------------------------------------------
-    # Adding options for colors
-    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                     "darkorange", "green3", "seagreen3",
-                                     "cadetblue", "dodgerblue3", "royalblue4",
-                                     "darkorchid4"))
-    
-    blueGreen <- colorRampPalette(c("royalblue4", "dodgerblue3",
-                                    "cadetblue", "seagreen3", "green3"))
-    
-    # "blues" is the 4th through 9th blues from grDevices::blues9, just to give
-    # credit where it's due
-    blues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
-                                "#08519C", "#08306B"))
-    
     NumColors <- length(unique(DF$DonorID))
     
     if(color_set == "default"){
@@ -742,14 +734,20 @@ inductFit <- function(DF,
     
     if(color_set == "blue-green"){
         Out$Graph <- Out$Graph + 
-            scale_color_manual(values = blueGreen(NumColors)) +
-            scale_fill_manual(values = blueGreen(NumColors))
+            scale_color_manual(values = blueGreens(NumColors)) +
+            scale_fill_manual(values = blueGreens(NumColors))
+    }
+    
+    if(color_set == "blues"){
+        Out$Graph <- Out$Graph + 
+            scale_color_manual(values = blues(NumColors)) +
+            scale_fill_manual(values = blues(NumColors))
     }
     
     if(color_set == "rainbow"){
         Out$Graph <- Out$Graph + 
-            scale_color_manual(values = colRainbow(NumColors)) +
-            scale_fill_manual(values = colRainbow(NumColors))
+            scale_color_manual(values = rainbow(NumColors)) +
+            scale_fill_manual(values = rainbow(NumColors))
     }
     
     if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
@@ -804,12 +802,74 @@ inductFit <- function(DF,
     }
     
     if(complete.cases(save_output)){
-        if(str_detect(save_output, "\\.")){
-            FileName <- sub("\\..*", ".csv", save_output)
+        if(str_detect(save_output, "docx")){ 
+            # This is when they want a Word file as output
+            
+            # May need to change the working directory temporarily, so
+            # determining what it is now
+            CurrDir <- getwd()
+            
+            OutPath <- dirname(save_output)
+            if(OutPath == "."){
+                OutPath <- getwd()
+            }
+            
+            # Check for whether they're trying to save on SharePoint, which DOES
+            # NOT WORK. If they're trying to save to SharePoint, instead, save
+            # to their Documents folder.
+            
+            # Side regex note: The myriad \ in the "sub" call are necessary b/c
+            # \ is an escape character, and often the SharePoint and Large File
+            # Store directory paths start with \\\\.
+            if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
+                
+                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
+                                  "/Documents")
+                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
+                               OutPath,
+                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
+                        call. = FALSE)
+            }
+            
+            LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
+            
+            if(LFSPath){
+                # Create a temporary directory in the user's AppData/Local/Temp
+                # folder.
+                TempDir <- tempdir()
+                
+                # Upon exiting this function, delete that temporary directory.
+                on.exit(unlink(TempDir))
+                
+            }
+            
+            FileName <- basename(save_output)
+            
+            rmarkdown::render(system.file("rmarkdown/templates/inductfit/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = switch(as.character(LFSPath), 
+                                                  "TRUE" = TempDir,
+                                                  "FALSE" = OutPath),
+                              output_file = FileName, 
+                              quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
+            
+            if(LFSPath){
+                file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
+            }
+            
         } else {
-            FileName <- paste0(save_output, ".csv")
+            # This is when they want a .csv file as output. 
+            
+            if(str_detect(save_output, "\\.")){
+                FileName <- sub("\\..*", ".csv", save_output)
+            } else {
+                FileName <- paste0(save_output, ".csv")
+            }
+            write.csv(Out$Fit, FileName, row.names = F)
         }
-        write.csv(Out$Fit, FileName, row.names = F)
     }
     
     return(Out)

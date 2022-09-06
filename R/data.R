@@ -8,11 +8,12 @@
 "IndData"
 
 #' Plasma concentration-time data for a simulation of letermovir
-#' 
-#' Plasma concentration-time data after 8 days of 60 mg PO QD letermovir. Format
-#' of the data are the same as the output from \code{\link{extractConcTime}}.
 #'
-#' @format A data.frame with 14 columns "LMVct"
+#' Plasma concentration-time data after 8 days of 60 mg PO QD letermovir,
+#' including observed data for the last dose. Format of the data are the same as
+#' the output from \code{\link{extractConcTime}}.
+#'
+#' @format A data.frame 
 "LMVct"
 
 
@@ -22,17 +23,18 @@
 #' varying fa values, one for each of 4 simulator output files. Format of the
 #' data are the same as the output from \code{\link{extractConcTime_mult}}.
 #'
-#' @format A data.frame with 15 columns "MDZct"
+#' @format A data.frame 
 "MDZct"
 
 
-#' Plasma concentration-time data for midazolam and ketoconazole 
-#' 
-#' Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
-#' ketoconazole, including data for both substrate and inhibitor. Format of the
-#' data are the same as the output from \code{\link{extractConcTime_mult}}.
+#' Plasma concentration-time data for midazolam and ketoconazole
 #'
-#' @format A data.frame with 15 columns "MDZ_Keto"
+#' Plasma concentration-time data of multiple-dose midazolam plus multiple-dose
+#' ketoconazole, including data for both substrate and inhibitor and observed
+#' data. Format of the data are the same as the output from
+#' \code{\link{extractConcTime_mult}}.
+#'
+#' @format A data.frame
 "MDZ_Keto"
 
 
@@ -42,7 +44,7 @@
 #' multiple-dose ritonavir. Format of the data are the same as the output from
 #' \code{\link{extractEnzAbund}}.
 #'
-#' @format A data.frame with 16 columns "CYP3A4_liver"
+#' @format A data.frame 
 "CYP3A4_liver"
 
 
@@ -53,7 +55,7 @@
 #' the presence and absence of multiple-dose ritonavir. Format of the data are
 #' the same as the output from \code{\link{extractEnzAbund}}.
 #'
-#' @format A data.frame with 16 columns "CYP3A4_gut"
+#' @format A data.frame 
 "CYP3A4_gut"
 
 
@@ -219,3 +221,19 @@
 #'   }
 #'   
 "ObsDVoptions"
+
+
+
+#' Example output from \code{extractForestData}
+#'
+#' Example output from running \code{extractForestData} on some simulations with
+#' bufuralol as the substrate and then 4 different effectors.
+#'
+#' @format a data.frame with rows for each of 4 simulator files and the columns
+#'   "File", "Substrate", "Dose_sub", "Inhibitor1", "Dose_inhib",
+#'   "AUCt_ratio_dose1__GMR", "AUCt_ratio_dose1__CI90_lo",
+#'   "AUCt_ratio_dose1__CI90_hi", "Cmax_ratio_dose1__GMR",
+#'   "Cmax_ratio_dose1__CI90_lo", and "Cmax_ratio_dose1__CI90_hi"
+"ForestData"
+
+

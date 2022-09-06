@@ -1,0 +1,71 @@
+---
+title: "Fitted induction data"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupindfit, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+
+# Induction models available 
+
+Here are the equations for each of the four models the inductFit function can use:  
+
+**Ind~max~ model** 
+
+$$ \text{fold induction} = \frac{Ind_{max} \times I}{IndC_{50} + I} $$
+
+**Ind~max~ slope model** 
+
+$$ \text{fold induction} = 1 + Ind_{max} \times \frac{I^n}{IndC_{50}^n + I^n} $$
+
+
+**Slope model** 
+
+$$ \text{fold induction} = I \times n $$
+
+
+**Sigmoidal three-parameter model (often used by Xenotech)** 
+
+$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-[Ind]}{\gamma}}} $$
+
+
+```{r indfit1}
+
+model_label <- switch(model, 
+                      "IndmaxSlope" = "Indmax slope model", 
+                      "Slope" = "slope model", 
+                      "Sig3Param" = "sigmoidal three-parameter model", 
+                      "Indmax" = "Indmax model", 
+                      "all" = "Indmax, Indmax slope, slope, and sigmoidal three-parameter models")
+
+
+```
+
+
+*Figure XXX. A graph of the `r model_label` fit to `r measurement` induction data*
+
+
+```{r indfit2, fig.width = fig_width, fig.height = fig_height}
+
+Out$Graph
+
+```
+
+*Table XXX. Fitted parameters*
+
+```{r indfit3}
+
+Out$Fit %>% formatTable_Simcyp()
+
+
+```
+
+
+

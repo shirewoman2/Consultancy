@@ -5,13 +5,14 @@
 \alias{LMVct}
 \title{Plasma concentration-time data for a simulation of letermovir}
 \format{
-A data.frame with 14 columns "LMVct"
+A data.frame
 }
 \usage{
 LMVct
 }
 \description{
-Plasma concentration-time data after 8 days of 60 mg PO QD letermovir. Format
-of the data are the same as the output from \code{\link{extractConcTime}}.
+Plasma concentration-time data after 8 days of 60 mg PO QD letermovir,
+including observed data for the last dose. Format of the data are the same as
+the output from \code{\link{extractConcTime}}.
 }
 \keyword{datasets}
