@@ -15,13 +15,58 @@ extractExpDetails(
 \item{sim_data_file}{name of the Excel file containing the simulator output,
 in quotes}
 
+\item{exp_details}{Experiment details you want to extract from the simulator
+  output file. Options are \describe{
+
+  \item{"Summary tab"}{Extract details available from the "Summary tab"
+  (default)}
+
+  \item{"Input Sheet"}{Extract details available from the "Input Sheet" tab}
+
+  \item{"population tab"}{Extract details about the population used (data
+  come from the tab with the same name as the population simulated)}
+
+  \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+  on the "Simcyp inputs (and QC)" tab of a compound data sheet}
+
+  \item{"all"}{Extract all possible parameters}
+
+  \item{a string of the specific parameters you want, each in quotes and
+  encapsulated with \code{c(...)}}{For a complete list of options:
+  \code{view(ExpDetailDefinitions)} Parameters are reported with a suffix
+  depending on which compound they pertain to: "_sub" for the substrate,
+  "_met1" for the primary metabolite, "_met2" for the second primary
+  metabolite, "_secmet" for the secondary metabolite, "_inhib" for the 1st
+  inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
+  listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+  acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
+
+  \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
+  listed on the "Summary" tab. If you want experimental details on a second
+  inhibitor or more information on metabolites, try pulling them from the
+  "Input sheet" instead of the "Summary" tab, which doesn't have as much
+  information on those compounds.} \item{There are a few places where
+  requesting one item as input will get you multiple items as output:
+  intrinsic clearance, interaction parameters, and transport parameters. For
+  example, if you request intrinsic clearance values (ex: "CLint_sub"),
+  you'll get all the intrinsic clearance values for that compound, and
+  they'll be named according to which parameter it is, which enzyme it's for,
+  etc. Same thing with requesting interaction parameters (ex:
+  "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
+  and transporter parameters (ex: "Transport_sub").} \item{We have limited
+  experience with extracting these data when a custom dosing regimen was
+  used, so it would be a good idea to carefully check that the data are being
+  pulled correctly in that scenario.}}}
+
 \item{annotate_output}{TRUE or FALSE (default) on whether to transpose the
 rows and columns in the output, making the output table longer instead of
 wider, and adding columns to the output for a) which compound the
 information pertains to (substrate, inhibitor, etc.), b) which section of
 the Simcyp Simulator this detail is found in (physchem, absorption,
 distribution, etc.), c) notes describing what the detail is, and d) which
-sheet in the Excel file the information was pulled from.}
+sheet in the Excel file the information was pulled from. If set to "TRUE",
+annotate_output basically runs the function \code{\link{annotateDetails}}
+behind the scenes.}
 
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My experimental details.csv". If you leave off ".csv",

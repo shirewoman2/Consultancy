@@ -22,14 +22,14 @@
 #'   \item{"all"}{Extract all possible parameters}
 #'
 #'   \item{a string of the specific parameters you want, each in quotes and
-#'   encapsulated with \code{c(...)},}{For a complete list:
-#'   view(ExpDetailDefinitions)} Parameters are reported with a suffix depending
-#'   on which compound they pertain to: "_sub" for the substrate, "_met1" for
-#'   the primary metabolite, "_met2" for the second primary metabolite,
-#'   "_secmet" for the secondary metabolite, "_inhib" for the 1st inhibitor or
-#'   inducer listed, "_inhib2" for the 2nd inhibitor or inducer listed, or
-#'   "_inh1met" for the inhibitor 1 metabolite. An example of acceptable input:
-#'   \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
+#'   encapsulated with \code{c(...)}}{For a complete list of options:
+#'   \code{view(ExpDetailDefinitions)} Parameters are reported with a suffix
+#'   depending on which compound they pertain to: "_sub" for the substrate,
+#'   "_met1" for the primary metabolite, "_met2" for the second primary
+#'   metabolite, "_secmet" for the secondary metabolite, "_inhib" for the 1st
+#'   inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
+#'   listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+#'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
 #'   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
 #'   listed on the "Summary" tab. If you want experimental details on a second
@@ -47,16 +47,18 @@
 #'   experience with extracting these data when a custom dosing regimen was
 #'   used, so it would be a good idea to carefully check that the data are being
 #'   pulled correctly in that scenario.}}
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
 #' @param annotate_output TRUE or FALSE (default) on whether to transpose the
 #'   rows and columns in the output, making the output table longer instead of
 #'   wider, and adding columns to the output for a) which compound the
 #'   information pertains to (substrate, inhibitor, etc.), b) which section of
 #'   the Simcyp Simulator this detail is found in (physchem, absorption,
 #'   distribution, etc.), c) notes describing what the detail is, and d) which
-#'   sheet in the Excel file the information was pulled from.
+#'   sheet in the Excel file the information was pulled from. If set to "TRUE",
+#'   annotate_output basically runs the function \code{\link{annotateDetails}}
+#'   behind the scenes.
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
+#'   it will still be saved as a csv file.
 #'
 #' @return Returns a named list of the experimental details
 #' @import tidyverse
