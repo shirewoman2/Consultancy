@@ -159,8 +159,8 @@
 #'   either specify a color here or set this to "default". Points will be
 #'   displayed in semi-transparent blue-purple for "default" and the
 #'   semi-transparent version of whatever other color you list otherwise.
-#'   Setting this to "none" will make sure that the symbols are black outlines
-#'   only with no fill. Hex color codes are also ok to use. If left as NA, all
+#'   Setting this to "none" will make sure that the symbols are outlines only
+#'   with no fill. Hex color codes are also ok to use. If left as NA, all
 #'   observed data will be in black or, if you set something for
 #'   \code{line_color}, whatever colors were used for that.
 #' @param obs_shape optionally specify what shapes are used to depict observed
@@ -389,6 +389,12 @@ ct_plot <- function(ct_dataframe = NA,
         subsection_ADAM <- sub("feces", "faeces", subsection_ADAM)
     }
     
+    if(length(obs_color) > 1){
+        warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
+                call. = FALSE)
+        obs_color <- obs_color[1]
+    }
+    
     # Making most character arguments lower case to avoid case sensitivity
     figure_type <- tolower(figure_type) # LOWER CASE ONLY FROM HERE DOWN.
     mean_type <- tolower(mean_type)
@@ -419,14 +425,15 @@ ct_plot <- function(ct_dataframe = NA,
     
     # Main body of function --------------------------------------------------
     
-    # Noting whether this is an enzyme-abundance plot b/c some options change
-    # then.
-    EnzPlot <- "Enzyme" %in% names(ct_dataframe)
-    
     # Noting user's original preferences for a few things
     obs_line_trans_user <- obs_line_trans
     obs_fill_trans_user <- obs_fill_trans
     obs_color_user <- obs_color
+    obs_shape_user <- obs_shape
+    
+    # Noting whether this is an enzyme-abundance plot b/c some options change
+    # then.
+    EnzPlot <- "Enzyme" %in% names(ct_dataframe)
     
     # If user had already filtered ct_dataframe to include only the ADAM data
     # they wanted, the subsection_ADAM column might not include the default
@@ -705,6 +712,10 @@ ct_plot <- function(ct_dataframe = NA,
     
     # Figure types ---------------------------------------------------------
     
+    obs_line_trans_user <- obs_line_trans
+    obs_fill_trans_user <- obs_fill_trans
+    obs_color_user <- obs_color_user
+    
     set_aesthet(line_type = line_type, figure_type = figure_type,
                 MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
                 obs_shape = obs_shape, obs_color = obs_color, 
@@ -712,9 +723,9 @@ ct_plot <- function(ct_dataframe = NA,
                 obs_line_trans = obs_line_trans,
                 line_color = line_color)
     
-    if(length(obs_color) > 1){
-        obs_color <- obs_color[1]
-    }
+    # if(length(obs_color) > 1){
+    #     obs_color <- obs_color[1]
+    # }
     
     # Warning for a figure type that's not recommended
     
@@ -782,9 +793,9 @@ ct_plot <- function(ct_dataframe = NA,
         
         RibbonDF <- sim_data_mean %>% select(-Group, -Individual) %>% 
             pivot_wider(names_from = Trial, values_from = Conc) %>% 
-            rename("mean" = {MyMeanType})
+            rename("MyMean" = {MyMeanType})
         
-        A <- ggplot(RibbonDF, aes(x = Time, y = mean, 
+        A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, 
                                   ymin = per5, ymax = per95, 
                                   linetype = Inhibitor, shape = Inhibitor,
                                   color = Inhibitor, fill = Inhibitor)) +
@@ -861,71 +872,85 @@ ct_plot <- function(ct_dataframe = NA,
     names(line_color) <- levels(Data$Inhibitor)
     
     A <- A +
-        scale_linetype_manual(values = line_type[1:2]) +
-        scale_color_manual(values = line_color[1:2]) +
-        scale_fill_manual(values = line_color[1:2]) +
-        scale_shape_manual(values = obs_shape[1:2])
+        scale_linetype_manual(values = line_type) +
+        scale_color_manual(values = line_color) +
+        scale_fill_manual(values = line_color)
     
     
     # Observed data ---------------------------------------------------------
     
     if(nrow(obs_data) > 0){
         
-        # Dealing with idiosyncracies of ribbon figure type
-        if(str_detect(figure_type, "ribbon")){
-            obs_data <- obs_data %>% 
-                mutate(mean  = Conc, per5 = Conc, per95 = Conc)
-        }
+        MapObsData <- is.na(obs_color_user) & figure_type != "freddy"
         
-        if(complete.cases(obs_color_user) &&
-           obs_color_user == "none"){
-            # This is when they want only outlines and no fill for
-            # observed data points
-            A <-  A + geom_point(data = obs_data, size = 2,
-                                 stroke = 1, fill = NA, 
-                                 alpha = obs_line_trans)
-        } else {
-            # This is when they want both outlines and fill for observed
-            # data points.
-            
-            # Determining whether to map obs_color to Inhibitor column
-            if(is.na(obs_color_user) & figure_type != "freddy"){
-                # Mapping obs color to Inhibitor
-                
-                A <- A +
-                    # making obs point fill
-                    geom_point(data = obs_data, 
-                               aes(x = Time, y = Conc, shape = Inhibitor, 
-                                   color = Inhibitor, fill = Inhibitor),
-                               alpha = obs_fill_trans,
-                               inherit.aes = FALSE) +
-                    # making obs point outlines
-                    geom_point(data = obs_data, 
-                               aes(x = Time, y = Conc, 
-                                   shape = Inhibitor, color = Inhibitor),
-                               inherit.aes = FALSE, 
-                               alpha = obs_line_trans,
-                               fill = NA) 
-                
-            } else {
-                # NOT mapping obs color to Inhibitor and using the same color
-                # for all observed points. This is also used for figure type
-                # "Freddy".
-                
-                A <- A +
-                    # making obs point fill
-                    geom_point(data = obs_data,
-                               fill = obs_color,
-                               color = obs_color,
-                               alpha = obs_fill_trans) +
-                    # making obs point outlines
-                    geom_point(data = obs_data,
-                               alpha = ifelse(is.na(obs_line_trans_user), 
-                                              1, obs_line_trans),
-                               color = "black",
-                               fill = NA)
-            }
-        }
+        A <- addObsPoints(obs_data = obs_data, 
+                          A = A, 
+                          obs_shape = obs_shape,
+                          obs_color = obs_color,
+                          obs_color_user = obs_color_user,
+                          obs_line_trans = obs_line_trans,
+                          obs_line_trans_user = obs_line_trans_user,
+                          obs_fill_trans = obs_fill_trans,
+                          obs_fill_trans_user = obs_fill_trans_user,
+                          figure_type = figure_type,
+                          MapObsData = MapObsData, 
+                          LegCheck = TRUE)
+        
+        # # Dealing with idiosyncracies of ribbon figure type
+        # if(str_detect(figure_type, "ribbon")){
+        #     obs_data <- obs_data %>%
+        #         mutate(MyMean  = Conc, per5 = Conc, per95 = Conc)
+        # }
+        
+        # if(complete.cases(obs_color_user) &&
+        #    obs_color_user == "none"){
+        #     # This is when they want only outlines and no fill for
+        #     # observed data points
+        #     A <-  A + geom_point(data = obs_data, size = 2,
+        #                          stroke = 1, fill = NA, 
+        #                          alpha = obs_line_trans)
+        # } else {
+        #     # This is when they want both outlines and fill for observed
+        #     # data points.
+        #     
+        #     # Determining whether to map obs_color to Inhibitor column
+        #     if(is.na(obs_color_user) & figure_type != "freddy"){
+        #         # Mapping obs color to Inhibitor
+        #         
+        #         A <- A +
+        #             # making obs point fill
+        #             geom_point(data = obs_data, 
+        #                        aes(x = Time, y = Conc, shape = Inhibitor, 
+        #                            color = Inhibitor, fill = Inhibitor),
+        #                        alpha = obs_fill_trans,
+        #                        inherit.aes = FALSE) +
+        #             # making obs point outlines
+        #             geom_point(data = obs_data, 
+        #                        aes(x = Time, y = Conc, 
+        #                            shape = Inhibitor, color = Inhibitor),
+        #                        inherit.aes = FALSE, 
+        #                        alpha = obs_line_trans,
+        #                        fill = NA) 
+        #         
+        #     } else {
+        #         # NOT mapping obs color to Inhibitor and using the same color
+        #         # for all observed points. This is also used for figure type
+        #         # "Freddy".
+        #         
+        #         A <- A +
+        #             # making obs point fill
+        #             geom_point(data = obs_data,
+        #                        fill = obs_color,
+        #                        color = obs_color,
+        #                        alpha = obs_fill_trans) +
+        #             # making obs point outlines
+        #             geom_point(data = obs_data,
+        #                        alpha = ifelse(is.na(obs_line_trans_user), 
+        #                                       1, obs_line_trans),
+        #                        color = "black",
+        #                        fill = NA)
+        #     }
+        # }
     }
     
     # Applying aesthetics ------------------------------------------------
