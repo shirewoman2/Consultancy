@@ -9,6 +9,7 @@ addObsPoints(
   A,
   obs_shape,
   obs_shape_user,
+  obs_size,
   obs_color,
   obs_color_user,
   obs_line_trans,

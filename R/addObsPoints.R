@@ -17,6 +17,7 @@ addObsPoints <- function(obs_data,
                          A, 
                          obs_shape,
                          obs_shape_user,
+                         obs_size, 
                          obs_color,
                          obs_color_user,
                          obs_line_trans,
@@ -32,6 +33,8 @@ addObsPoints <- function(obs_data,
         obs_data <- obs_data %>% 
             mutate(MyMean  = Conc, per5 = Conc, per95 = Conc)
     }
+    
+    obs_size <- ifelse(is.na(obs_size), 2, obs_size)
     
     # Need to adjust some code based on whether the obs_shape was solid, outline
     # only, or a mix. 
@@ -93,6 +96,7 @@ addObsPoints <- function(obs_data,
                    "TRUE" = geom_point(data = obs_data,
                                        alpha = obs_line_trans,
                                        fill = NA,
+                                       size = obs_size,
                                        show.legend = LegCheck),
                    # "FALSE" is when the user has specified what
                    # color they want the observed data to be.
@@ -100,16 +104,19 @@ addObsPoints <- function(obs_data,
                                         alpha = obs_line_trans, 
                                         color = "black", 
                                         fill = NA, 
+                                        size = obs_size,
                                         show.legend = LegCheck)) +
             # making obs point fill
             switch(as.character(MapObsData),
                    "TRUE" =  geom_point(data = obs_data,
                                         alpha = obs_fill_trans,
+                                        size = obs_size,
                                         show.legend = LegCheck),
                    "FALSE" = geom_point(data = obs_data, 
                                         alpha = obs_fill_trans, 
                                         color = "black", 
                                         fill = obs_color, 
+                                        size = obs_size,
                                         show.legend = LegCheck)) +
             scale_shape_manual(values = obs_shape) 
         
@@ -127,10 +134,12 @@ addObsPoints <- function(obs_data,
             switch(as.character(MapObsData),
                    "TRUE" = geom_point(data = obs_data,
                                        alpha = obs_line_trans,
+                                       size = obs_size,
                                        show.legend = LegCheck), 
                    "FALSE" = geom_point(data = obs_data,
                                         alpha = obs_line_trans,
                                         color = obs_color,
+                                        size = obs_size,
                                         fill = obs_color,
                                         show.legend = LegCheck)) +
             scale_shape_manual(values = obs_shape) 
@@ -155,10 +164,12 @@ addObsPoints <- function(obs_data,
             switch(as.character(MapObsData),
                    "TRUE" = geom_point(data = obs_data,
                                        alpha = obs_fill_trans,
+                                       size = obs_size,
                                        show.legend = LegCheck),
                    "FALSE" =  geom_point(data = obs_data,
                                          alpha = obs_fill_trans,
                                          color = obs_color,
+                                         size = obs_size,
                                          fill = obs_color,
                                          show.legend = LegCheck)) +
             scale_shape_manual(values = obs_shape) 

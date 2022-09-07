@@ -171,6 +171,8 @@
 #'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 #'   the middle of that page). If left as NA, substrate alone will be an open
 #'   circle and substrate + inhibitor 1 will be an open triangle.
+#' @param obs_size optionally specify the size of the points to use for the
+#'   observed data. If left as NA, the size will be 2.
 #' @param obs_fill_trans optionally specify the transparency for the fill of the
 #'   observed data points, which can be helpful when you have a lot of points
 #'   overlapping. This only applies when you have specified a value for
@@ -333,6 +335,7 @@ ct_plot <- function(ct_dataframe = NA,
                     y_axis_label = NA,
                     obs_color = NA,
                     obs_shape = NA,
+                    obs_size = NA,
                     obs_fill_trans = NA,
                     obs_line_trans = NA,
                     showBLQ = FALSE, 
@@ -893,6 +896,7 @@ ct_plot <- function(ct_dataframe = NA,
                           A = A, 
                           obs_shape = obs_shape,
                           obs_shape_user = obs_shape_user,
+                          obs_size = obs_size, 
                           obs_color = obs_color,
                           obs_color_user = obs_color_user,
                           obs_line_trans = obs_line_trans,

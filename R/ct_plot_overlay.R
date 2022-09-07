@@ -160,6 +160,8 @@
 #'   (there's a graph around the middle of that page). If left as NA, substrate
 #'   alone will be an open circle and substrate + inhibitor 1 will be an open
 #'   triangle.
+#' @param obs_size optionally specify the size of the points to use for the
+#'   observed data. If left as NA, the size will be 2.
 #' @param obs_color optionally specify a color to use for observed data if the
 #'   color isn't already mapped to a specific column. By default, observed data
 #'   will be the same color as whatever else matches those observed data in
@@ -361,6 +363,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             color_set = "default",
                             obs_shape = NA,
                             obs_color = NA,
+                            obs_size = NA,
                             obs_fill_trans = NA, 
                             obs_line_trans = NA, 
                             linetype_column, 
@@ -485,6 +488,11 @@ ct_plot_overlay <- function(ct_dataframe,
     #            FC2 = ifelse(as_label(facet2_column) == "<empty>", NA, {{facet2_column}}))
     
     ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
+    
+    # If user filled in color_labels but not colorBy_column, give a warning.
+    if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
+        warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.")
+    }
     
     if(as_label(colorBy_column) != "<empty>"){
         ct_dataframe <- ct_dataframe %>%
@@ -1024,6 +1032,7 @@ ct_plot_overlay <- function(ct_dataframe,
                           A = A, 
                           obs_shape = obs_shape,
                           obs_shape_user = obs_shape_user,
+                          obs_size = obs_size, 
                           obs_color = obs_color,
                           obs_color_user = obs_color_user,
                           obs_line_trans = obs_line_trans,
