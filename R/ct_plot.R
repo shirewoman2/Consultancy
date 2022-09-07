@@ -74,7 +74,7 @@
 #'   \emph{sharp}, makes it easy to see the defining characteristics of the
 #'   data, and I recommend checking it out, even just for your own purposes of
 #'   examining your data. If the color is too much for you but you like the
-#'   rest, try setting \code{obs_color = "none"}. -LSh}}
+#'   rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}}
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
 #'   "median" for median concentrations. If that option was not included in the
@@ -159,10 +159,10 @@
 #'   either specify a color here or set this to "default". Points will be
 #'   displayed in semi-transparent blue-purple for "default" and the
 #'   semi-transparent version of whatever other color you list otherwise.
-#'   Setting this to "none" will make sure that the symbols are outlines only
-#'   with no fill. Hex color codes are also ok to use. If left as NA, all
-#'   observed data will be in black or, if you set something for
-#'   \code{line_color}, whatever colors were used for that.
+#'   Setting this to "none" will remove observed data from the graph. Hex color
+#'   codes are also ok to use. If left as NA, all observed data will be in black
+#'   or, if you set something for \code{line_color}, whatever colors were used
+#'   for that.
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
@@ -660,7 +660,7 @@ ct_plot <- function(ct_dataframe = NA,
     # If the user set obs_color to "none", then they must not want to include
     # observed data in the graph. Set nrow to 0 in that case.
     if(complete.cases(obs_color) && obs_color == "none"){
-        obs_data <- filter(Trial == "mango") # hack to keep all the column names just in case
+        obs_data <- obs_data %>% filter(Trial == "mango") # hack to keep all the column names just in case
     }
     
     if(showBLQ == FALSE){

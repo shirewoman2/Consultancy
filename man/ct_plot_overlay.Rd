@@ -167,7 +167,8 @@ observed file that you're comparing to multiple simulation files (this is
 what ct_plot_overlay will do if "File" is NA for the observed data), then
 the observed data will all be black by default, or you could set that color
 to be, say, a lovely purple by setting this: \code{obs_color =
-"darkorchid4"}.}
+"darkorchid4"}. Hex color codes are also ok to use, and setting this to
+"none" will remove observed data from the graph.}
 
 \item{obs_size}{optionally specify the size of the points to use for the
 observed data. If left as NA, the size will be 2.}

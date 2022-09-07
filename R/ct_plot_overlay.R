@@ -171,7 +171,8 @@
 #'   what ct_plot_overlay will do if "File" is NA for the observed data), then
 #'   the observed data will all be black by default, or you could set that color
 #'   to be, say, a lovely purple by setting this: \code{obs_color =
-#'   "darkorchid4"}.
+#'   "darkorchid4"}. Hex color codes are also ok to use, and setting this to
+#'   "none" will remove observed data from the graph.
 #' @param obs_fill_trans optionally specify the transparency for the fill of the
 #'   observed data points, which can be helpful when you have a lot of points
 #'   overlapping. This only applies when you have specified a value for
@@ -789,9 +790,12 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Trying to give an indication to user about what data sets are present
     # compared to how many aesthetics have been specified. Basically trying to
-    # get them to notice whether they've adequateyl clarified which dataset is
+    # get them to notice whether they've adequately clarified which dataset is
     # which in the graph.
-    message(paste("Columns that vary in your data:", str_comma(UniqueGroups)))
+    
+    UniqueGroups <- ifelse(length(UniqueGroups) == 0, 
+                           "none other than time and concentration", str_comma(UniqueGroups))
+    message(paste("Columns that vary in your data:", UniqueGroups))
     message(paste("Graphing aesthetics you've assigned:", 
                   ifelse(length(UniqueAES) == 0, 
                          "none", 
