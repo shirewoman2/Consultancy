@@ -654,6 +654,12 @@ ct_plot <- function(ct_dataframe = NA,
     obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
         mutate(Group = paste(Compound, Inhibitor, Trial))
     
+    # If the user set obs_color to "none", then they must not want to include
+    # observed data in the graph. Set nrow to 0 in that case.
+    if(complete.cases(obs_color) && obs_color == "none"){
+        obs_data <- filter(Trial == "mango") # hack to keep all the column names just in case
+    }
+    
     if(showBLQ == FALSE){
         obs_data <- obs_data %>% 
             mutate(Conc = ifelse(Conc <= 0 & Time > 0,
@@ -886,6 +892,7 @@ ct_plot <- function(ct_dataframe = NA,
         A <- addObsPoints(obs_data = obs_data, 
                           A = A, 
                           obs_shape = obs_shape,
+                          obs_shape_user = obs_shape_user,
                           obs_color = obs_color,
                           obs_color_user = obs_color_user,
                           obs_line_trans = obs_line_trans,
@@ -895,62 +902,6 @@ ct_plot <- function(ct_dataframe = NA,
                           figure_type = figure_type,
                           MapObsData = MapObsData, 
                           LegCheck = TRUE)
-        
-        # # Dealing with idiosyncracies of ribbon figure type
-        # if(str_detect(figure_type, "ribbon")){
-        #     obs_data <- obs_data %>%
-        #         mutate(MyMean  = Conc, per5 = Conc, per95 = Conc)
-        # }
-        
-        # if(complete.cases(obs_color_user) &&
-        #    obs_color_user == "none"){
-        #     # This is when they want only outlines and no fill for
-        #     # observed data points
-        #     A <-  A + geom_point(data = obs_data, size = 2,
-        #                          stroke = 1, fill = NA, 
-        #                          alpha = obs_line_trans)
-        # } else {
-        #     # This is when they want both outlines and fill for observed
-        #     # data points.
-        #     
-        #     # Determining whether to map obs_color to Inhibitor column
-        #     if(is.na(obs_color_user) & figure_type != "freddy"){
-        #         # Mapping obs color to Inhibitor
-        #         
-        #         A <- A +
-        #             # making obs point fill
-        #             geom_point(data = obs_data, 
-        #                        aes(x = Time, y = Conc, shape = Inhibitor, 
-        #                            color = Inhibitor, fill = Inhibitor),
-        #                        alpha = obs_fill_trans,
-        #                        inherit.aes = FALSE) +
-        #             # making obs point outlines
-        #             geom_point(data = obs_data, 
-        #                        aes(x = Time, y = Conc, 
-        #                            shape = Inhibitor, color = Inhibitor),
-        #                        inherit.aes = FALSE, 
-        #                        alpha = obs_line_trans,
-        #                        fill = NA) 
-        #         
-        #     } else {
-        #         # NOT mapping obs color to Inhibitor and using the same color
-        #         # for all observed points. This is also used for figure type
-        #         # "Freddy".
-        #         
-        #         A <- A +
-        #             # making obs point fill
-        #             geom_point(data = obs_data,
-        #                        fill = obs_color,
-        #                        color = obs_color,
-        #                        alpha = obs_fill_trans) +
-        #             # making obs point outlines
-        #             geom_point(data = obs_data,
-        #                        alpha = ifelse(is.na(obs_line_trans_user), 
-        #                                       1, obs_line_trans),
-        #                        color = "black",
-        #                        fill = NA)
-        #     }
-        # }
     }
     
     # Applying aesthetics ------------------------------------------------

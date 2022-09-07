@@ -182,8 +182,8 @@ use for the y axis label}
 either specify a color here or set this to "default". Points will be
 displayed in semi-transparent blue-purple for "default" and the
 semi-transparent version of whatever other color you list otherwise.
-Setting this to "none" will make sure that the symbols are black outlines
-only with no fill. Hex color codes are also ok to use. If left as NA, all
+Setting this to "none" will make sure that the symbols are outlines only
+with no fill. Hex color codes are also ok to use. If left as NA, all
 observed data will be in black or, if you set something for
 \code{line_color}, whatever colors were used for that.}
 
