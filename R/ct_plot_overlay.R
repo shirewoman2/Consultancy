@@ -160,6 +160,8 @@
 #'   (there's a graph around the middle of that page). If left as NA, substrate
 #'   alone will be an open circle and substrate + inhibitor 1 will be an open
 #'   triangle.
+#' @param obs_size optionally specify the size of the points to use for the
+#'   observed data. If left as NA, the size will be 2.
 #' @param obs_color optionally specify a color to use for observed data if the
 #'   color isn't already mapped to a specific column. By default, observed data
 #'   will be the same color as whatever else matches those observed data in
@@ -361,6 +363,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             color_set = "default",
                             obs_shape = NA,
                             obs_color = NA,
+                            obs_size = NA,
                             obs_fill_trans = NA, 
                             obs_line_trans = NA, 
                             linetype_column, 
@@ -405,6 +408,12 @@ ct_plot_overlay <- function(ct_dataframe,
              call. = FALSE)
     }
     
+    if(length(obs_color) > 1){
+        warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
+                call. = FALSE)
+        obs_color <- obs_color[1]
+    }
+    
     # Checking for acceptable input
     if((str_detect(figure_type, "ribbon") | figure_type == "means only") == FALSE){
         warning(paste0("The value used for `figure_type` was `", 
@@ -416,6 +425,13 @@ ct_plot_overlay <- function(ct_dataframe,
     
     
     # Main body of function -------------------------------------------------
+    
+    # Noting user's original preferences for a few things
+    obs_line_trans_user <- obs_line_trans
+    obs_fill_trans_user <- obs_fill_trans
+    obs_color_user <- obs_color
+    obs_shape_user <- obs_shape
+    
     # Prettifying compound names before doing anything else 
     if(class(prettify_compound_names) == "logical" && # NB: "prettify_compound_names" is the argument value
        prettify_compound_names){
@@ -472,6 +488,11 @@ ct_plot_overlay <- function(ct_dataframe,
     #            FC2 = ifelse(as_label(facet2_column) == "<empty>", NA, {{facet2_column}}))
     
     ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
+    
+    # If user filled in color_labels but not colorBy_column, give a warning.
+    if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
+        warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.")
+    }
     
     if(as_label(colorBy_column) != "<empty>"){
         ct_dataframe <- ct_dataframe %>%
@@ -603,16 +624,24 @@ ct_plot_overlay <- function(ct_dataframe,
     obs_data <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
         mutate(Trial = {MyMeanType})
     
-    # Making obs data black if File was originally NA for all
-    if(nrow(obs_data) > 0 && "File" == as_label(colorBy_column) & all(is.na(obs_data$File))){
-        InternalAssignFile <- TRUE
-    } else {
-        InternalAssignFile <- FALSE
+    # If the user set obs_color to "none", then they must not want to include
+    # observed data in the graph. Set nrow to 0 in that case.
+    if(complete.cases(obs_color) && obs_color == "none"){
+        obs_data <- filter(Trial == "mango") # hack to keep all the column names just in case
     }
     
+    # Not mapping observed data to a column if File was originally NA for all
+    # and that's what colorBy_column is. Also not mapping if user has specified
+    # obs_color.
+    MapObsData <- ifelse(
+        (nrow(obs_data) > 0 && "File" == as_label(colorBy_column) & 
+             all(is.na(obs_data$File))) | complete.cases(obs_color_user), 
+        FALSE, TRUE)
+    
     # Setting this up so that observed data will be shown for all Files
-    if(nrow(obs_data) > 0 && "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
-                                           as_label(facet2_column)) &&
+    if(nrow(obs_data) > 0 && 
+       "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
+                     as_label(facet2_column)) &&
        all(is.na(obs_data$File))){
         
         ToAdd <- expand_grid(ObsFile = unique(obs_data$ObsFile), 
@@ -758,20 +787,10 @@ ct_plot_overlay <- function(ct_dataframe,
         color_set <- "Brewer set 1"
     }
     
-    # NOTE TO SELF: I've been trying to think of a clearer way to indicate to
-    # people when they need to specify more aesthetics and just haven't come up
-    # with a strategy I like. I think the warning I was giving (now commented
-    # out) is too cautious, which means that people will ignore it much of the
-    # time. For now, I'm going to just tell them how many aesthetics they've
-    # selected compared to how many unique groups and see whether that's
-    # sufficient warning.
-    
-    # if(length(UniqueGroups) > length(UniqueAES)){
-    #     warning(paste("You have requested", length(UniqueGroups),
-    #                   "unique data sets but only", 
-    #                   length(UniqueAES), 
-    #                   "unique aesthetic(s) for denoting those datasets. This is may result in an unclear graph."),
-    #             call. = FALSE)
+    # Trying to give an indication to user about what data sets are present
+    # compared to how many aesthetics have been specified. Basically trying to
+    # get them to notice whether they've adequateyl clarified which dataset is
+    # which in the graph.
     message(paste("Columns that vary in your data:", str_comma(UniqueGroups)))
     message(paste("Graphing aesthetics you've assigned:", 
                   ifelse(length(UniqueAES) == 0, 
@@ -891,9 +910,6 @@ ct_plot_overlay <- function(ct_dataframe,
         obs_shape <- obs_shape[1:NumShapes] 
     }
     
-    obs_line_trans_user <- obs_line_trans
-    obs_fill_trans_user <- obs_fill_trans
-    
     set_aesthet(line_type = linetypes, figure_type = figure_type,
                 MyEffector = MyEffector, 
                 compoundToExtract = unique(sim_dataframe$CompoundID),
@@ -902,13 +918,6 @@ ct_plot_overlay <- function(ct_dataframe,
                 obs_line_trans = obs_line_trans,
                 # line_color is just a placeholder b/c not using it here.
                 line_color = NA)
-    
-    # Need to adjust some code based on whether the obs_shape was solid, outline
-    # only, or a mix. 
-    OutlineOnly <- obs_shape %in% c(0:14)
-    SolidOnly <- obs_shape %in% c(15:20)
-    MixShape <- obs_shape %in% c(0:14) == FALSE & 
-        obs_shape %in% c(15:20) == FALSE
     
     
     ## Figure type: means only ---------------------------------------------
@@ -1002,15 +1011,9 @@ ct_plot_overlay <- function(ct_dataframe,
         
     }
     
-    # Adding observed data -----------------------------------------------
+    # Observed data -----------------------------------------------
     
     if(nrow(obs_data) > 0){
-        
-        if(str_detect(figure_type, "ribbon")){
-            obs_data <- obs_data %>%
-                mutate(MyMean = Conc, per5 = as.numeric(NA),
-                       per95 = as.numeric(NA))
-        }
         
         # Checking whether to show obs data points in the legend. If the
         # column that is mapped to color or linetype has more than one item,
@@ -1025,115 +1028,20 @@ ct_plot_overlay <- function(ct_dataframe,
         # or linetype column or the Inhibitor column, then include it
         LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
         
-        if(InternalAssignFile){
-            # This is when there's a single set of observed data to match
-            # multiple files, so the color needs to be uniform and not mapped to
-            # anything.
-            
-            if(is.na(obs_color)){
-                obs_color <- "black"
-            }
-            
-            A <- A +
-                # making obs point outlines
-                geom_point(data = obs_data,
-                           alpha = obs_line_trans,
-                           color = obs_color,
-                           fill = NA,
-                           show.legend = FALSE) +
-                # making obs point fill
-                geom_point(data = obs_data,
-                           fill = obs_color,
-                           alpha = obs_fill_trans,
-                           show.legend = FALSE) +
-                scale_shape_manual(values = obs_shape)
-            
-        } else {
-            
-            if(all(MixShape)){
-                
-                A <- A +
-                    # making obs point outlines
-                    switch(as.character(is.na(obs_color)),
-                           # "TRUE" is when there are multiple sets of
-                           # observed data that are mapped to color or
-                           # linetype, etc.
-                           "TRUE" = geom_point(data = obs_data,
-                                               alpha = obs_line_trans,
-                                               fill = NA,
-                                               show.legend = LegCheck),
-                           # "FALSE" is when the user has specified what
-                           # color they want the observed data to be.
-                           "FALSE" = geom_point(data = obs_data, 
-                                                alpha = obs_line_trans, 
-                                                color = "black", 
-                                                fill = NA, 
-                                                show.legend = LegCheck)) +
-                    # making obs point fill
-                    switch(as.character(is.na(obs_color)),
-                           "TRUE" =  geom_point(data = obs_data,
-                                                alpha = obs_fill_trans,
-                                                show.legend = LegCheck),
-                           "FALSE" = geom_point(data = obs_data, 
-                                                alpha = obs_fill_trans, 
-                                                color = "black", 
-                                                fill = obs_color, 
-                                                show.legend = LegCheck)) +
-                    scale_shape_manual(values = obs_shape) 
-                
-            } else if(all(OutlineOnly)){
-                
-                # If user specified only obs_fill_trans but they've got an
-                # outline-only shape, then assume that they meant to specify
-                # obs_line_trans instead.
-                if(all(OutlineOnly) & complete.cases(obs_fill_trans_user) & 
-                   is.na(obs_line_trans_user)){
-                    obs_line_trans <- obs_fill_trans
-                }
-                
-                A <- A +
-                    # making obs point outlines
-                    switch(as.character(is.na(obs_color)),
-                           "TRUE" = geom_point(data = obs_data,
-                                               alpha = obs_line_trans,
-                                               show.legend = LegCheck), 
-                           "FALSE" = geom_point(data = obs_data,
-                                                alpha = obs_line_trans,
-                                                color = obs_color,
-                                                fill = obs_color,
-                                                show.legend = LegCheck)) +
-                    scale_shape_manual(values = obs_shape) 
-                
-            } else {
-                # This is when all shapes are solid only OR there is some
-                # mixture of outline-only, solid-only, and mixed shapes. In
-                # the latter circumstance, there isn't a good way to control
-                # alpha for outline and fill separately, so we'll use only
-                # obs_fill_trans to determine alpha.
-                
-                # If user specified only obs_line_trans but they've got an
-                # solid shape, then assume that they meant to specify
-                # obs_fill_trans instead.
-                if(all(SolidOnly) & complete.cases(obs_line_trans_user) & 
-                   is.na(obs_fill_trans_user)){
-                    obs_fill_trans <- obs_line_trans
-                }
-                
-                A <- A +
-                    # making obs point fill
-                    switch(as.character(is.na(obs_color)),
-                           "TRUE" = geom_point(data = obs_data,
-                                               alpha = obs_fill_trans,
-                                               show.legend = LegCheck),
-                           "FALSE" =  geom_point(data = obs_data,
-                                                 alpha = obs_fill_trans,
-                                                 color = obs_color,
-                                                 fill = obs_color,
-                                                 show.legend = LegCheck)) +
-                    scale_shape_manual(values = obs_shape) 
-            } 
-            
-        }   
+        A <- addObsPoints(obs_data = obs_data, 
+                          A = A, 
+                          obs_shape = obs_shape,
+                          obs_shape_user = obs_shape_user,
+                          obs_size = obs_size, 
+                          obs_color = obs_color,
+                          obs_color_user = obs_color_user,
+                          obs_line_trans = obs_line_trans,
+                          obs_line_trans_user = obs_line_trans_user,
+                          obs_fill_trans = obs_fill_trans,
+                          obs_fill_trans_user = obs_fill_trans_user,
+                          figure_type = figure_type,
+                          MapObsData = MapObsData, 
+                          LegCheck = LegCheck)
     }
     
     
@@ -1269,16 +1177,21 @@ ct_plot_overlay <- function(ct_dataframe,
                             color_set,
                             # Using "Dark2" b/c "Set2" is just really,
                             # really light.
-                            "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2"), 
+                            "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
+                                1:NumColorsNeeded], 
                             "blue-green" = blueGreens(NumColorsNeeded),
                             "blues" = blues(NumColorsNeeded),
                             "rainbow" = rainbow(NumColorsNeeded),
-                            "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1"),
+                            "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
+                                1:NumColorsNeeded],
                             "Tableau" = ggthemes::tableau_color_pal(
                                 palette = "Tableau 10")(NumColorsNeeded),
                             "viridis" = viridis::viridis_pal()(NumColorsNeeded))
                 )
-                
+                # NB: For the RColorBrewer palettes, the minimum number of
+                # colors you can get is 3. Since sometimes we might only want 1
+                # or 2 colors, though, we have to add the [1:NumColorsNeeded]
+                # bit.
             }
             
             names(MyColors) <- levels(sim_dataframe$colorBy_column)
@@ -1346,6 +1259,13 @@ ct_plot_overlay <- function(ct_dataframe,
             # lines differ in the legend. Fixing that here.
             A <- A + theme(legend.key.width = unit(2, "lines"))
         }
+    }
+    
+    # Removing any legend entry for observed shape if there was only one value
+    # in the column Inhibitor since that's what column the observed shape is
+    # mapped to.
+    if(length(unique(ct_dataframe$Inhibitor)) == 1){
+        A <- A + guides(shape = "none")
     }
     
     ## Adding spacing between facets if requested

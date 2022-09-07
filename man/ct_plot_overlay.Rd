@@ -15,6 +15,7 @@ ct_plot_overlay(
   color_set = "default",
   obs_shape = NA,
   obs_color = NA,
+  obs_size = NA,
   obs_fill_trans = NA,
   obs_line_trans = NA,
   linetype_column,
@@ -167,6 +168,9 @@ what ct_plot_overlay will do if "File" is NA for the observed data), then
 the observed data will all be black by default, or you could set that color
 to be, say, a lovely purple by setting this: \code{obs_color =
 "darkorchid4"}.}
+
+\item{obs_size}{optionally specify the size of the points to use for the
+observed data. If left as NA, the size will be 2.}
 
 \item{obs_fill_trans}{optionally specify the transparency for the fill of the
 observed data points, which can be helpful when you have a lot of points

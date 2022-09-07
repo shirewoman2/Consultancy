@@ -21,6 +21,7 @@ ct_plot(
   y_axis_label = NA,
   obs_color = NA,
   obs_shape = NA,
+  obs_size = NA,
   obs_fill_trans = NA,
   obs_line_trans = NA,
   showBLQ = FALSE,
@@ -182,8 +183,8 @@ use for the y axis label}
 either specify a color here or set this to "default". Points will be
 displayed in semi-transparent blue-purple for "default" and the
 semi-transparent version of whatever other color you list otherwise.
-Setting this to "none" will make sure that the symbols are black outlines
-only with no fill. Hex color codes are also ok to use. If left as NA, all
+Setting this to "none" will make sure that the symbols are outlines only
+with no fill. Hex color codes are also ok to use. If left as NA, all
 observed data will be in black or, if you set something for
 \code{line_color}, whatever colors were used for that.}
 
@@ -195,6 +196,9 @@ possible shapes and what number corresponds to which shape, see
 \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
 the middle of that page). If left as NA, substrate alone will be an open
 circle and substrate + inhibitor 1 will be an open triangle.}
+
+\item{obs_size}{optionally specify the size of the points to use for the
+observed data. If left as NA, the size will be 2.}
 
 \item{obs_fill_trans}{optionally specify the transparency for the fill of the
 observed data points, which can be helpful when you have a lot of points
