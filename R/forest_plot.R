@@ -15,16 +15,16 @@
 #'   "Inhibitor1". If, instead of the compound or inhibitor 1 names, you would
 #'   like some other label to appear on the y axis, please see the argument
 #'   \code{y_axis_labels}.
+#' @param perp_or_victim specify whether the drug of interest is a "victim" or
+#'   "perpetrator". This will determine the graphs will be labeled on the y axis
+#'   by the substrate name (for perpetrator forest plots) or by the effector
+#'   name (for victim forest plots).
 #' @param PKparameters optionally specify which PK parameters included in
 #'   \code{forest_dataframe} to use as input. If left as NA, all the PK
 #'   parameters you extracted with \code{\link{extractForestData}} will be
 #'   included. If you try to include a parameter that's not already present in
 #'   forest_dataframe, it will be ignored. Enclose the parameters with
 #'   \code{c(...)}.
-#' @param perp_or_victim specify whether the drug of interest is a "victim"
-#'   (default) or "perpetrator". This will determine the graphs will be labeled
-#'   on the y axis by the substrate name (for perpetrator forest plots) or by
-#'   the effector name (for victim forest plots).
 #' @param y_axis_order optionally supply a character vector to specify the order
 #'   of the files or compounds on the y axis. If your character vector contains
 #'   "xlsx" in the any of the text, we'll assume you want to sort by the file
@@ -54,6 +54,9 @@
 #'   those compounds something more human readable. For example,
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 #'   become "midazolam".
+#' @param legend_position specify where you want the legend to be. Options are
+#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
+#'   at all.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -102,12 +105,13 @@
 #' 
 
 forest_plot <- function(forest_dataframe, 
+                        perp_or_victim, 
                         PKparameters = NA, 
-                        perp_or_victim = "victim", 
                         y_axis_order = NA, 
                         x_axis_limits = c(0.05, 15), 
                         facet_column, 
                         prettify_compound_names = TRUE, 
+                        legend_position = "none", 
                         save_graph = NA,
                         fig_height = 6,
                         fig_width = 5){
@@ -131,7 +135,7 @@ forest_plot <- function(forest_dataframe,
     
     if(all(c("File", "Substrate", "Dose_sub", "Dose_inhib", "Inhibitor1") %in%
            names(forest_dataframe)) == FALSE){
-        stop("Please check your input for `forest_dataframe` because it does not appear to be output from running the function `extractForestData`.", 
+        stop("Please check your input for `forest_dataframe` because it does not appear to match the output from running the function `extractForestData`, and it must match that for this function to work.", 
              call. = FALSE)
     }
     
@@ -170,8 +174,18 @@ forest_plot <- function(forest_dataframe,
                            str_comma(setdiff(forest_dataframe$File, 
                                              names(y_axis_order))), 
                            " are not included in `y_axis_order`, so they will be labeled as NA on the y axis unless that's fixed."), 
-                           call. = FALSE)
+                    call. = FALSE)
         }
+    }
+    
+    # Making most character arguments lower case to avoid case sensitivity
+    legend_position <- tolower(legend_position)
+    
+    if(legend_position %in% c("none", "bottom", "left", "right", "top") == FALSE){
+        warning(paste0("You listed `", legend_position, 
+                       "` for the legend position, which is not among the permissible options. The default of no legend (legend_position = `none`) will be used."),
+                call. = FALSE)
+        legend_position <- "none"
     }
     
     # Main body of function -------------------------------------------------
@@ -308,13 +322,23 @@ forest_plot <- function(forest_dataframe,
             mutate(FC = {{facet_column}})
     }
     
+    Rect <- data.frame(Xmin = c(1.25, 2, 5, 0.5, 0.2, 0, 0.8), 
+                       Xmax = c(2, 5, Inf, 0.8, 0.5, 0.2, 1.25), 
+                       Ymin = -Inf, Ymax = Inf, 
+                       IntLevel = c("weak", "moderate", "strong", 
+                                    "weak", "moderate", "strong", "insignificant")) %>% 
+        mutate(IntLevel = factor(IntLevel, 
+                                 levels = c("insignificant", "weak", "moderate", 
+                                            "strong")))
+    
+    FillColor <- c("insignificant" = "white", "weak" = "gray95", 
+                   "moderate" = "gray90", "strong" = "gray75")
+    
     G <- ggplot(forest_dataframe, aes(x = GMR, y = PKParam, xmin = CI90_lo, xmax = CI90_hi)) +
-        geom_rect(aes(xmin = 1.25, xmax = 2, ymin = -Inf, ymax = Inf), fill = "gray95") +  # weak inhibition
-        geom_rect(aes(xmin = 2, xmax = 5, ymin = -Inf, ymax = Inf), fill = "gray90") +     # moderate inhibition
-        geom_rect(aes(xmin = 5, xmax = Inf, ymin = -Inf, ymax = Inf), fill = "gray75") +      # strong inhibition
-        geom_rect(aes(xmin = 0.5, xmax = 0.8, ymin = -Inf, ymax = Inf), fill = "gray95") + # weak induction
-        geom_rect(aes(xmin = 0.2, xmax = 0.5, ymin = -Inf, ymax = Inf), fill = "gray90") + # moderate induction
-        geom_rect(aes(xmin = 0, xmax = 0.2, ymin = -Inf, ymax = Inf), fill = "gray75") +      # strong induction
+        geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, ymin = Ymin, 
+                                   ymax = Ymax, fill = IntLevel), 
+                  inherit.aes = FALSE) +
+        scale_fill_manual(values = FillColor) +
         geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
         geom_point(shape = 21, size = 2.5, fill = "white") +
         geom_errorbar(width = 0.3) +
@@ -323,7 +347,8 @@ forest_plot <- function(forest_dataframe,
                                     expression(AUC[tau]~ratio), 
                                     expression(C[max]~ratio), 
                                     expression(AUC[t]~ratio), 
-                                    expression(AUC[infinity]~ratio)))
+                                    expression(AUC[infinity]~ratio))) +
+        labs(fill = "Interaction level")
     
     if(as_label(facet_column) != "<empty>"){
         G <- G + facet_grid(YCol ~ FC, switch = "y") 
@@ -333,7 +358,7 @@ forest_plot <- function(forest_dataframe,
     
     XBreaks <- c(0.05, 0.1, 0.2, 0.5, 0.8, 1.25, 2, 5, 10)
     XBreaks <- XBreaks[XBreaks >= x_axis_limits[1] & 
-                       XBreaks <= x_axis_limits[2]]
+                           XBreaks <= x_axis_limits[2]]
     
     if(x_axis_limits[1] %in% XBreaks == FALSE){
         XBreaks <- c(XBreaks, x_axis_limits[1])
@@ -342,12 +367,13 @@ forest_plot <- function(forest_dataframe,
     if(x_axis_limits[2] %in% XBreaks == FALSE){
         XBreaks <- c(XBreaks, x_axis_limits[2])
     }
-    
+
     G <- G +
         scale_x_log10(breaks = XBreaks) + 
         coord_cartesian(xlim = x_axis_limits) +
         xlab("Geometric Mean Ratio (90% confidence interval)") + ylab(NULL) +
         theme(
+            legend.position = legend_position,
             panel.background = element_rect(fill = "white", color = NA),
             plot.background = element_rect(fill = "white", color = NA),
             strip.background = element_rect(color=NA, fill="white"),
@@ -377,6 +403,6 @@ forest_plot <- function(forest_dataframe,
     }
     
     return(G)
-    }
+}
 
 

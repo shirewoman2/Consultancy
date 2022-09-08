@@ -6,12 +6,13 @@
 \usage{
 forest_plot(
   forest_dataframe,
+  perp_or_victim,
   PKparameters = NA,
-  perp_or_victim = "victim",
   y_axis_order = NA,
   x_axis_limits = c(0.05, 15),
   facet_column,
   prettify_compound_names = TRUE,
+  legend_position = "none",
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -27,17 +28,17 @@ y axis. If it is a forest plot of victim DDIs, it will be the column
 like some other label to appear on the y axis, please see the argument
 \code{y_axis_labels}.}
 
+\item{perp_or_victim}{specify whether the drug of interest is a "victim" or
+"perpetrator". This will determine the graphs will be labeled on the y axis
+by the substrate name (for perpetrator forest plots) or by the effector
+name (for victim forest plots).}
+
 \item{PKparameters}{optionally specify which PK parameters included in
 \code{forest_dataframe} to use as input. If left as NA, all the PK
 parameters you extracted with \code{\link{extractForestData}} will be
 included. If you try to include a parameter that's not already present in
 forest_dataframe, it will be ignored. Enclose the parameters with
 \code{c(...)}.}
-
-\item{perp_or_victim}{specify whether the drug of interest is a "victim"
-(default) or "perpetrator". This will determine the graphs will be labeled
-on the y axis by the substrate name (for perpetrator forest plots) or by
-the effector name (for victim forest plots).}
 
 \item{y_axis_order}{optionally supply a character vector to specify the order
 of the files or compounds on the y axis. If your character vector contains
@@ -71,6 +72,10 @@ and leaving \code{prettify_compound_names = TRUE} will make the name of
 those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 become "midazolam".}
+
+\item{legend_position}{specify where you want the legend to be. Options are
+"left", "right", "bottom", "top", or "none" (default) if you don't want one
+at all.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
