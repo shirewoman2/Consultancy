@@ -19,6 +19,7 @@ ct_plot_mult(
   legend_position = "none",
   legend_label = NA,
   graph_titles = NA,
+  graph_title_size = 14,
   graph_labels = TRUE,
   save_graph = NA,
   file_suffix = NA,
@@ -176,6 +177,9 @@ specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
 "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
 you didn't think you specified, please double check that you have specified
 the file names \emph{exactly} as they appear in \code{ct_dataframe}.}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14}
 
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C, etc.) for each of the small graphs. This is only slightly different

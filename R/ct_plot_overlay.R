@@ -301,6 +301,10 @@
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
+#' @param graph_title optionally specify a title that will be centered across
+#'   your graph or set of graphs
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
@@ -384,6 +388,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
                             graph_labels = TRUE,
+                            graph_title = NA,
+                            graph_title_size = 14, 
                             legend_position = NA,
                             prettify_compound_names = TRUE,
                             save_graph = NA,
@@ -1340,6 +1346,19 @@ ct_plot_overlay <- function(ct_dataframe,
                           legend = ifelse(is.na(legend_position), 
                                           "bottom", legend_position))
     )
+    
+    if(complete.cases(graph_title)){
+        A <- A + ggtitle(graph_title) +
+            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+        B <- B + ggtitle(graph_title) +
+            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+        AB <- ggpubr::annotate_figure(
+            AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+                                        face = "bold", size = graph_title_size))
+        ABhoriz <- ggpubr::annotate_figure(
+            ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
+                                             face = "bold", size = graph_title_size))
+    }
     
     Out <- switch(linear_or_log, 
                   "linear" = A,

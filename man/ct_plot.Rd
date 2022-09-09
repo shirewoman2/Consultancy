@@ -34,6 +34,8 @@ ct_plot(
   prettify_compound_names = TRUE,
   linear_or_log = "both vertical",
   graph_labels = TRUE,
+  graph_title = NA,
+  graph_title_size = 14,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -303,6 +305,12 @@ c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if only outputting
 linear or only semi-log graphs.)}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time

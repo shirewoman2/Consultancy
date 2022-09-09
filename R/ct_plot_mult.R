@@ -152,6 +152,8 @@
 #'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
 #'   you didn't think you specified, please double check that you have specified
 #'   the file names \emph{exactly} as they appear in \code{ct_dataframe}.
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14
 #' @param file_labels SOON TO BE DEPRECATED. Please use \code{graph_titles}
 #'   instead. optionally specify a label to be used for the file name in the
 #'   graphs and specify the order in which the files are graphed with a named
@@ -221,6 +223,7 @@ ct_plot_mult <- function(ct_dataframe,
                          legend_position = "none",
                          legend_label = NA, 
                          graph_titles = NA,
+                         graph_title_size = 14,
                          graph_labels = TRUE,
                          save_graph = NA,
                          file_suffix = NA,
@@ -253,50 +256,50 @@ ct_plot_mult <- function(ct_dataframe,
     ct_dataframe <- ct_dataframe %>% 
         mutate(File_bn = basename(File))
     
-    if(length(file_labels) > 1 && complete.cases(file_labels[1])){
+    if(length(graph_titles) > 1 && complete.cases(graph_titles[1])){
         
-        # If file_labels isn't named, make the names match the files themselves.
-        if(is.null(names(file_labels))){
-            names(file_labels) <- file_labels
+        # If graph_titles isn't named, make the names match the files themselves.
+        if(is.null(names(graph_titles))){
+            names(graph_titles) <- graph_titles
         }
         
         # If they named some but not all the files, name the missing ones, too. 
-        if(any(is.na(names(file_labels)))){
-            names(file_labels)[is.na(names(file_labels))] <- 
-                file_labels[is.na(names(file_labels))]
+        if(any(is.na(names(graph_titles)))){
+            names(graph_titles)[is.na(names(graph_titles))] <- 
+                graph_titles[is.na(names(graph_titles))]
         }
         
         # Convert labels to file base names (this doesn't do anything to the
         # label if the user specified that. Well, as long as they didn't use
-        # file_labels that were the entire file path, which seems highly
+        # graph_titles that were the entire file path, which seems highly
         # unlikely.)
-        file_label_names <- basename(names(file_labels))
-        file_labels <- basename(file_labels)
-        names(file_labels) <- file_label_names
+        file_label_names <- basename(names(graph_titles))
+        graph_titles <- basename(graph_titles)
+        names(graph_titles) <- file_label_names
         
         # If the user omitted any files that are included in ct_dataframe, grab
-        # those now and tack them onto the end of file_labels. This will allow
+        # those now and tack them onto the end of graph_titles. This will allow
         # them to set the order of the files they DID specify but not omit files
         # that they forgot. The forgotten files just won't have pretty titles.
-        file_labels_all <- unique(c(names(file_labels), 
-                                    sort(unique(as.character(ct_dataframe$File_bn)))))
+        graph_titles_all <- unique(c(names(graph_titles), 
+                                     sort(unique(as.character(ct_dataframe$File_bn)))))
         
-        # Name items in file_labels_all according to file_labels.
-        names(file_labels_all) <- file_labels_all
-        file_labels_all[names(file_labels)] <- as.character(file_labels)
+        # Name items in graph_titles_all according to graph_titles.
+        names(graph_titles_all) <- graph_titles_all
+        graph_titles_all[names(graph_titles)] <- as.character(graph_titles)
         
     } else {
         
         # Even if user didn't specify file order, we need the levels of that
         # factor later. Setting them here. 
-        file_labels_all <- sort(unique(ct_dataframe$File_bn))
-        names(file_labels_all) <- file_labels_all
+        graph_titles_all <- sort(unique(ct_dataframe$File_bn))
+        names(graph_titles_all) <- graph_titles_all
         
     }
     
     # Set the sort order in the data
     ct_dataframe <- ct_dataframe %>% 
-        mutate(File_bn = factor(File_bn, levels = names(file_labels_all)))
+        mutate(File_bn = factor(File_bn, levels = names(graph_titles_all)))
     
     AllGraphs <- list()
     AllData <- ct_dataframe %>% 
@@ -328,7 +331,7 @@ ct_plot_mult <- function(ct_dataframe,
                               as.character(AllData$subsection_ADAM)))
     
     for(i in Order){
-        Title_i <- file_labels_all[as.character(unique(AllData[[i]]$File_bn))]
+        Title_i <- graph_titles_all[as.character(unique(AllData[[i]]$File_bn))]
         
         AllData[[i]] <- AllData[[i]] %>% 
             # need to convert subsection_ADAM back to NA if it was
@@ -338,92 +341,24 @@ ct_plot_mult <- function(ct_dataframe,
         # print(i)
         # print(head(AllData[[i]]))
         
-        if(linear_or_log %in% c("linear", "log", "semi-log") | 
-           is.na(file_labels[1])){
-            # This takes care of all plots where there isn't a title, including
-            # when they want both linear and semi-log, and it works fine for
-            # when user wants only one of linear or log and also wants a title.
-            # If they want both types of graphs AND they want a title, though,
-            # the spacing just doesn't work and we need to generate those graphs
-            # separately.
-            
-            AllGraphs[[i]] <- 
-                ct_plot(ct_dataframe = AllData[[i]], 
-                        figure_type = figure_type,
-                        mean_type = mean_type,
-                        linear_or_log = linear_or_log,
-                        time_range = time_range, 
-                        x_axis_interval = x_axis_interval, 
-                        pad_x_axis = pad_x_axis, 
-                        pad_y_axis = pad_y_axis,
-                        y_axis_limits_lin = y_axis_limits_lin, 
-                        y_axis_limits_log = y_axis_limits_log, 
-                        legend_position = legend_position,
-                        legend_label = legend_label, 
-                        graph_labels = graph_labels, 
-                        ... # comment this when developing
-                )
-            
-            if(complete.cases(file_labels[1])){
-                # This is for when they only want one of linear or log.
-                AllGraphs[[i]] <- AllGraphs[[i]] + ggtitle(Title_i) +
-                    theme(title = element_text(size = 10))
-            }
-            
-        } else {
-            # If the user wanted both linear and log plots AND they want a
-            # title, we really need to just run ct_plot function twice for each
-            # graph. Otherwise, we just don't have enough control over graph
-            # placement and the spacing needed for titles.
-            AllGraphs[[i]] <- 
-                ggpubr::ggarrange(
-                    plotlist = list(
-                        # linear plot on top
-                        ct_plot(ct_dataframe = AllData[[i]], 
-                                include_graph_labels = FALSE,
-                                figure_type = figure_type,
-                                linear_or_log = "linear",
-                                mean_type = mean_type,
-                                time_range = time_range, 
-                                x_axis_interval = x_axis_interval, 
-                                pad_x_axis = pad_x_axis, 
-                                pad_y_axis = pad_y_axis,
-                                y_axis_limits_lin = y_axis_limits_lin, 
-                                y_axis_limits_log = y_axis_limits_log, 
-                                legend_position = legend_position,
-                                legend_label = legend_label, 
-                                graph_labels = graph_labels, 
-                                ... # comment this when developing
-                        ) +
-                            ggtitle(Title_i) + 
-                            theme(title = element_text(size = 10), 
-                                  plot.margin = unit(c(0, 0, 0, 0), "lines")), 
-                        
-                        # semi-log on bottom
-                        ct_plot(ct_dataframe = AllData[[i]], 
-                                graph_labels = FALSE,
-                                include_graph_labels = FALSE,
-                                figure_type = figure_type,
-                                linear_or_log = "semi-log",
-                                mean_type = mean_type,
-                                time_range = time_range, 
-                                x_axis_interval = x_axis_interval, 
-                                pad_x_axis = pad_x_axis, 
-                                pad_y_axis = pad_y_axis,
-                                y_axis_limits_lin = y_axis_limits_lin, 
-                                y_axis_limits_log = y_axis_limits_log, 
-                                legend_position = legend_position,
-                                legend_label = legend_label, 
-                                graph_labels = graph_labels, 
-                                ... # comment this when developing
-                        )),
-                    
-                    align = "hv", 
-                    nrow = ifelse(linear_or_log %in% c("both", "both vertical"), 
-                                  2, 1), 
-                    common.legend = TRUE, 
-                    legend = legend_position)
-        }
+        AllGraphs[[i]] <- 
+            ct_plot(ct_dataframe = AllData[[i]], 
+                    figure_type = figure_type,
+                    mean_type = mean_type,
+                    linear_or_log = linear_or_log,
+                    time_range = time_range, 
+                    x_axis_interval = x_axis_interval, 
+                    pad_x_axis = pad_x_axis, 
+                    pad_y_axis = pad_y_axis,
+                    y_axis_limits_lin = y_axis_limits_lin, 
+                    y_axis_limits_log = y_axis_limits_log, 
+                    legend_position = legend_position,
+                    legend_label = legend_label, 
+                    graph_labels = FALSE, 
+                    graph_title = Title_i,
+                    graph_title_size = graph_title_size,
+                    ... # comment this when developing
+            )
         
         rm(Title_i)
     }
