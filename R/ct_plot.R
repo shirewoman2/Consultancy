@@ -218,6 +218,10 @@
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
+#' @param graph_title optionally specify a title that will be centered across
+#'   your graph or set of graphs
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14
 #' @param legend_label optionally indicate on the legend whether the effector is
 #'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as the
@@ -348,6 +352,8 @@ ct_plot <- function(ct_dataframe = NA,
                     prettify_compound_names = TRUE,
                     linear_or_log = "both vertical",
                     graph_labels = TRUE,
+                    graph_title = NA,
+                    graph_title_size = 14, 
                     save_graph = NA,
                     fig_height = 6,
                     fig_width = 5){
@@ -1064,6 +1070,19 @@ ct_plot <- function(ct_dataframe = NA,
                                   common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
         }
+    }
+    
+    if(complete.cases(graph_title)){
+        A <- A + ggtitle(graph_title) +
+            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+        B <- B + ggtitle(graph_title) +
+            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+        AB <- ggpubr::annotate_figure(
+            AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+                                        face = "bold", size = graph_title_size))
+        ABhoriz <- ggpubr::annotate_figure(
+            ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
+                                             face = "bold", size = graph_title_size))
     }
     
     Out <- switch(linear_or_log, 

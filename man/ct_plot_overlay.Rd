@@ -35,6 +35,8 @@ ct_plot_overlay(
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   graph_labels = TRUE,
+  graph_title = NA,
+  graph_title_size = 14,
   legend_position = NA,
   prettify_compound_names = TRUE,
   save_graph = NA,
@@ -318,6 +320,12 @@ applies when you have requested a semi-log plot with \code{linear_or_log}.}
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if only outputting
 linear or only semi-log graphs.)}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
