@@ -8,6 +8,7 @@ forest_plot(
   forest_dataframe,
   perp_or_victim,
   PKparameters = NA,
+  color_set = "grays",
   y_axis_order = NA,
   x_axis_limits = c(0.05, 15),
   facet_column,
@@ -39,6 +40,15 @@ parameters you extracted with \code{\link{extractForestData}} will be
 included. If you try to include a parameter that's not already present in
 forest_dataframe, it will be ignored. Enclose the parameters with
 \code{c(...)}.}
+
+\item{color_set}{the set of colors to use for shading the areas of the graph
+by whether the interaction is insignificant, weak, moderate or strong.
+Leaving as the default value, "grays", will result in white to light gray
+areas on the graph; "blues" or "reds" will result in increasingly darker
+blues or reds, respectively, as the strength of the DDI increases; and
+"none" will show no shading on the graph. You may specify a character
+vector of 4 color names in order from weakest to strongest interaction if
+you want finer control over the colors.}
 
 \item{y_axis_order}{optionally supply a character vector to specify the order
 of the files or compounds on the y axis. If your character vector contains

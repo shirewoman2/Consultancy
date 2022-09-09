@@ -25,6 +25,14 @@
 #'   included. If you try to include a parameter that's not already present in
 #'   forest_dataframe, it will be ignored. Enclose the parameters with
 #'   \code{c(...)}.
+#' @param color_set the set of colors to use for shading the areas of the graph
+#'   by whether the interaction is insignificant, weak, moderate or strong.
+#'   Leaving as the default value, "grays", will result in white to light gray
+#'   areas on the graph; "blues" or "reds" will result in increasingly darker
+#'   blues or reds, respectively, as the strength of the DDI increases; and
+#'   "none" will show no shading on the graph. You may specify a character
+#'   vector of 4 color names in order from weakest to strongest interaction if
+#'   you want finer control over the colors. 
 #' @param y_axis_order optionally supply a character vector to specify the order
 #'   of the files or compounds on the y axis. If your character vector contains
 #'   "xlsx" in the any of the text, we'll assume you want to sort by the file
@@ -107,6 +115,7 @@
 forest_plot <- function(forest_dataframe, 
                         perp_or_victim, 
                         PKparameters = NA, 
+                        color_set = "grays",
                         y_axis_order = NA, 
                         x_axis_limits = c(0.05, 15), 
                         facet_column, 
@@ -331,14 +340,38 @@ forest_plot <- function(forest_dataframe,
                                  levels = c("insignificant", "weak", "moderate", 
                                             "strong")))
     
-    FillColor <- c("insignificant" = "white", "weak" = "gray95", 
-                   "moderate" = "gray90", "strong" = "gray75")
+    G <- ggplot(forest_dataframe, aes(x = GMR, y = PKParam, xmin = CI90_lo, xmax = CI90_hi))
     
-    G <- ggplot(forest_dataframe, aes(x = GMR, y = PKParam, xmin = CI90_lo, xmax = CI90_hi)) +
-        geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, ymin = Ymin, 
-                                   ymax = Ymax, fill = IntLevel), 
-                  inherit.aes = FALSE) +
-        scale_fill_manual(values = FillColor) +
+    if(color_set[1] != "none"){
+        
+        if(length(color_set) == 1 && color_set %in% c("grays", "blues", "reds")){
+            
+            FillColor <- switch(color_set, 
+                                "grays" = c("white", "gray95", "gray90", "gray75"), 
+                                "blues" = c("white", "#DEEBF7", "#6BAED6", "#4292C6"),
+                                "reds" = c("white", "#F2E2E2", "#Be7171", "#8B0000"))
+        } else if(length(color_set) > 4){
+            warning("You have specified more than 4 colors for the argument `color_set` to use for shading. Only the first 4 will be used.", 
+                    call. = FALSE)
+            FillColor <- color_set[1:4]
+        } else if(length(color_set) < 4){
+            warning("You have specified fewer than 4 colors for the argument `color_set` to use for shading. Some colors will be repeated.", 
+                    call. = FALSE)
+            FillColor <- rep(color_set, 4)[1:4]
+        } else {
+            FillColor <- color_set
+        }
+        
+        names(FillColor) <- c("insignificant", "weak", "moderate", "strong")
+        
+        G <- G +
+            geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, ymin = Ymin, 
+                                       ymax = Ymax, fill = IntLevel), 
+                      inherit.aes = FALSE) +
+            scale_fill_manual(values = FillColor)
+    }
+    
+    G <-  G +
         geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
         geom_point(shape = 21, size = 2.5, fill = "white") +
         geom_errorbar(width = 0.3) +
@@ -367,7 +400,7 @@ forest_plot <- function(forest_dataframe,
     if(x_axis_limits[2] %in% XBreaks == FALSE){
         XBreaks <- c(XBreaks, x_axis_limits[2])
     }
-
+    
     G <- G +
         scale_x_log10(breaks = XBreaks) + 
         coord_cartesian(xlim = x_axis_limits) +
