@@ -160,6 +160,8 @@
 #'  limit)").
 #'@param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
 #'  percentiles
+#'@param includeRange TRUE or FALSE (default) for whether to include the minimum
+#'  and maximum values
 #'@param concatVariability TRUE or FALSE (default) for whether to concatenate
 #'  the variability. If "TRUE", the output will be formatted into a single row
 #'  and listed as the lower confidence interval or percentile to the upper CI or
@@ -213,20 +215,20 @@
 #'@export
 #' @examples
 #' pksummary_table("abc1a-5mg-qd.xlsx")
-#' 
+#'
 #' pksummary_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
 #'          sheet_report = "study info - Clinical study 001A",
 #'          includeTrialMeans = TRUE)
 #'
 #' # An example of how to format observed data as a data.frame:
-#' pksummary_table(sim_data_file = "My simulated data.xlsx", 
+#' pksummary_table(sim_data_file = "My simulated data.xlsx",
 #'                 observed_PK = data.frame(AUCinf_dose1 = 60,
 #'                                          AUCinf_dose1_CV = 0.38,
 #'                                          Cmax_dose1 = 22,
 #'                                          Cmax_dose1_CV = 0.24))
 #'
 #' # Or you can supply a named numeric vector:
-#' pksummary_table(sim_data_file = "My simulated data.xlsx", 
+#' pksummary_table(sim_data_file = "My simulated data.xlsx",
 #'                 observed_PK = c("AUCinf_dose1" = 60,
 #'                                 "AUCinf_dose1_CV" = 0.38,
 #'                                 "Cmax_dose1" = 22,
@@ -249,6 +251,7 @@ pksummary_table <- function(sim_data_file = NA,
                             includeConfInt = TRUE,
                             includePerc = FALSE,
                             includeTrialMeans = FALSE,
+                            includeRange = FALSE,
                             concatVariability = FALSE,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
@@ -460,14 +463,14 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Getting PK parameters. 
     suppressWarnings(
-            MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
-                                         PKparameters = PKToPull,
-                                         tissue = tissue,
-                                         sheet = sheet_PKparameters, 
-                                         returnAggregateOrIndiv =
-                                             switch(as.character(includeTrialMeans),
-                                                    "TRUE" = c("aggregate", "individual"),
-                                                    "FALSE" = "aggregate")))
+        MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
+                                     PKparameters = PKToPull,
+                                     tissue = tissue,
+                                     sheet = sheet_PKparameters, 
+                                     returnAggregateOrIndiv =
+                                         switch(as.character(includeTrialMeans),
+                                                "TRUE" = c("aggregate", "individual"),
+                                                "FALSE" = "aggregate")))
     
     # PKToPull must be changed if user specified a tab b/c then the parameters
     # won't have _last or _dose1 suffixes.
@@ -663,7 +666,9 @@ pksummary_table <- function(sim_data_file = NA,
                     "per5" = includePerc, 
                     "per95" = includePerc, 
                     "MinMean" = includeTrialMeans, 
-                    "MaxMean" = includeTrialMeans)
+                    "MaxMean" = includeTrialMeans, 
+                    "min" = includeRange, 
+                    "max" = includeRange)
     VarOptions <- names(VarOptions)[which(VarOptions)]
     VarOptions <- intersect(VarOptions, MyPKResults$Stat)
     
@@ -704,16 +709,16 @@ pksummary_table <- function(sim_data_file = NA,
             # Making obs PK names match correct PK parameters regardless of case
             suppressMessages(
                 ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
-                mutate(PKparameter_lower = sub("_first", "_dose1",
-                                               tolower(OrigName)), 
-                       PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
-                left_join(AllPKParameters %>% select(PKparameter) %>% 
-                              unique() %>% 
-                              mutate(PKparameter_lower = tolower(PKparameter))) %>% 
-                mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
-                                            paste0(PKparameter, "_CV"), 
-                                            PKparameter), 
-                       PKparameter = ifelse(OrigName == "File", "File", PKparameter))
+                    mutate(PKparameter_lower = sub("_first", "_dose1",
+                                                   tolower(OrigName)), 
+                           PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
+                    left_join(AllPKParameters %>% select(PKparameter) %>% 
+                                  unique() %>% 
+                                  mutate(PKparameter_lower = tolower(PKparameter))) %>% 
+                    mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
+                                                paste0(PKparameter, "_CV"), 
+                                                PKparameter), 
+                           PKparameter = ifelse(OrigName == "File", "File", PKparameter))
             )
             
             MyObsPK <- observed_PK
@@ -804,12 +809,13 @@ pksummary_table <- function(sim_data_file = NA,
                Value = sub("\\.$", "", Value)) %>%
         filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
                            "CI90_low", "CI90_high", "CI95_low", "CI95_high",
-                           "per5", "per95", 
+                           "min", "max", "per5", "per95", 
                            ifelse(MeanType == "geometric", "GCV", "CV"), 
                            "MinMean", "MaxMean", "S_O")) %>%
         pivot_wider(names_from = PKParam, values_from = Value) %>% 
         mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O")), 
                Stat = factor(Stat, levels = c("mean", "geomean", "CV", "GCV",
+                                              "min", "max",
                                               "CI90_low", "CI90_high", "CI95_low", 
                                               "CI95_high", "per5", "per95",
                                               "MinMean", "MaxMean", "S_O"))) %>% 
@@ -848,7 +854,8 @@ pksummary_table <- function(sim_data_file = NA,
         # concatVariability doesn't work. Will need to fix this later.
         VarRows <- list("ConfInt90" = c("CI90_low", "CI90_high"), 
                         "ConfInt95" = c("CI95_low", "CI95_high"),
-                        "Perc" = c("per5", "per95"))
+                        "Perc" = c("per5", "per95"), 
+                        "Range" = c("min", "max"))
         VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
         
         VarRows[["obs"]] <- c("CIL_obs", "CIU_obs")
@@ -863,6 +870,7 @@ pksummary_table <- function(sim_data_file = NA,
                                      "ConfInt90" = "CI90concat",
                                      "ConfInt95" = "CI95concat",
                                      "Perc" = "per95concat",
+                                     "Range" = "Rangeconcat",
                                      "obs" = "CIobsconcat"))
             
             MyPKResults[which(MyPKResults$Stat == VarRows[[j]][1]), ] <-
@@ -886,6 +894,9 @@ pksummary_table <- function(sim_data_file = NA,
                    "per5" = "5th Percentile",
                    "per95" = "95th Percentile",
                    "per95concat" = "5th to 95th Percentile",
+                   "min" = "Minimum", 
+                   "max" = "Maximum",
+                   "Rangeconcat" = "Range",
                    # "geomean_obs" = "Observed",
                    # "CV_obs" = "CV%",
                    # "CIL_obs" = "observed CI - Lower",
@@ -1013,6 +1024,10 @@ pksummary_table <- function(sim_data_file = NA,
         
         if(includePerc){
             ColsToInclude <- c(ColsToInclude, "per5", "per95")
+        }
+        
+        if(includeRange){
+            ColsToInclude <- c(ColsToInclude, "max", "min")
         }
         
         OutQC <- MyPKResults_all$QC %>% 

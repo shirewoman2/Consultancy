@@ -18,6 +18,7 @@ pksummary_table(
   includeConfInt = TRUE,
   includePerc = FALSE,
   includeTrialMeans = FALSE,
+  includeRange = FALSE,
   concatVariability = FALSE,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
@@ -121,6 +122,9 @@ percentiles}
 \item{includeTrialMeans}{TRUE or FALSE (default) for whether to include the
 range of trial means for a given parameter. Note: This is calculated from
 individual values rather than being pulled directly from the output.}
+
+\item{includeRange}{TRUE or FALSE (default) for whether to include the minimum
+and maximum values}
 
 \item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
@@ -266,14 +270,14 @@ pksummary_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a
          includeTrialMeans = TRUE)
 
 # An example of how to format observed data as a data.frame:
-pksummary_table(sim_data_file = "My simulated data.xlsx", 
+pksummary_table(sim_data_file = "My simulated data.xlsx",
                 observed_PK = data.frame(AUCinf_dose1 = 60,
                                          AUCinf_dose1_CV = 0.38,
                                          Cmax_dose1 = 22,
                                          Cmax_dose1_CV = 0.24))
 
 # Or you can supply a named numeric vector:
-pksummary_table(sim_data_file = "My simulated data.xlsx", 
+pksummary_table(sim_data_file = "My simulated data.xlsx",
                 observed_PK = c("AUCinf_dose1" = 60,
                                 "AUCinf_dose1_CV" = 0.38,
                                 "Cmax_dose1" = 22,
