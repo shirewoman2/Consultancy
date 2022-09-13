@@ -73,6 +73,8 @@
 #'  outputs (see an AUC tab and the summary statistics; these values are the
 #'  ones for, e.g., "90\% confidence interval around the geometric mean(lower
 #'  limit)").
+#'@param includeRange TRUE or FALSE (default) for whether to include the minimum
+#'  and maximum values
 #'@param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
 #'  percentiles
 #'@param concatVariability TRUE or FALSE (default) for whether to concatenate
@@ -134,6 +136,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            tissue = "plasma", 
                            includeCV = TRUE, 
                            includeConfInt = TRUE, 
+                           includeRange = FALSE,
                            includePerc = FALSE, 
                            includeTrialMeans = FALSE, 
                            concatVariability = FALSE, 
@@ -188,6 +191,7 @@ pksummary_mult <- function(sim_data_files = NA,
                 mean_type = mean_type,
                 tissue = tissue, 
                 includeCV = includeCV,
+                includeRange = includeRange,
                 includeConfInt = includeConfInt, 
                 includePerc = includePerc, 
                 includeTrialMeans = includeTrialMeans,

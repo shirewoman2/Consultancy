@@ -16,9 +16,9 @@ pksummary_table(
   tissue = "plasma",
   includeCV = TRUE,
   includeConfInt = TRUE,
+  includeRange = FALSE,
   includePerc = FALSE,
   includeTrialMeans = FALSE,
-  includeRange = FALSE,
   concatVariability = FALSE,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
@@ -116,15 +116,15 @@ outputs (see an AUC tab and the summary statistics; these values are the
 ones for, e.g., "90\% confidence interval around the geometric mean(lower
 limit)").}
 
+\item{includeRange}{TRUE or FALSE (default) for whether to include the minimum
+and maximum values}
+
 \item{includePerc}{TRUE or FALSE (default) for whether to include 5th to 95th
 percentiles}
 
 \item{includeTrialMeans}{TRUE or FALSE (default) for whether to include the
 range of trial means for a given parameter. Note: This is calculated from
 individual values rather than being pulled directly from the output.}
-
-\item{includeRange}{TRUE or FALSE (default) for whether to include the minimum
-and maximum values}
 
 \item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
