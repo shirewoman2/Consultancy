@@ -14,6 +14,7 @@ pksummary_mult(
   tissue = "plasma",
   includeCV = TRUE,
   includeConfInt = TRUE,
+  includeRange = FALSE,
   includePerc = FALSE,
   includeTrialMeans = FALSE,
   concatVariability = FALSE,
@@ -102,6 +103,9 @@ the confidence intervals are geometric since that's what the simulator
 outputs (see an AUC tab and the summary statistics; these values are the
 ones for, e.g., "90\% confidence interval around the geometric mean(lower
 limit)").}
+
+\item{includeRange}{TRUE or FALSE (default) for whether to include the minimum
+and maximum values}
 
 \item{includePerc}{TRUE or FALSE (default) for whether to include 5th to 95th
 percentiles}
