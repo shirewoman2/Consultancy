@@ -194,11 +194,6 @@ extractPK <- function(sim_data_file,
         UserAUC <- FALSE
     }
     
-    
-    
-    
-    
-    
     if(tolower(PKparameters_orig[1]) == "auc tab" & 
        "AUC" %in% SheetNames == FALSE & 
        any(c("AUC0(Sub)(CPlasma)") %in% SheetNames)){ # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
@@ -378,6 +373,7 @@ extractPK <- function(sim_data_file,
             # Reading the sheet for AUC tab results
             if(UserAUC){
                 AUC_xl <- XL
+                SheetAUC <- sheet
             } else {
                 AUC_xl <- suppressMessages(
                     readxl::read_excel(path = sim_data_file, 
