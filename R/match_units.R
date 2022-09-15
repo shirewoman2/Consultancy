@@ -43,21 +43,27 @@ match_units <- function(DF_to_adjust, goodunits){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
-    if(is.null(MW)){
+    if(is.null(names(MW))){
         if(length(MW) > 1){
             stop("You have supplied more than one molecular weight but not specified which compound belongs to each. Please supply a named numeric vector that indicates which compound ID belongs to which weight. Please see the help file for an example.", 
                  call. = FALSE)
         } 
         
-        if(any(unique(DF_to_adjust$CompoundID) %in% 
-               c("substrate", "inhibitor 1", "primary metabolite 1", 
-                 "primary metabolite 2", "inhibitor 2", "inhibitor 1 metabolite", 
-                 "secondary metabolite"))){
+        names(MW) <- unique(DF_to_adjust$CompoundID)
+        
+        if(any(names(MW)) %in% 
+           c("substrate", "inhibitor 1", "primary metabolite 1", 
+             "primary metabolite 2", "inhibitor 2", "inhibitor 1 metabolite", 
+             "secondary metabolite") == FALSE){
             stop("The names you have supplied for which molecular weight is which are not among the acceptable options for compound ID. Please see the help file for the acceptable names and an example.", 
                  call. = FALSE)
         }
+        
+        if(all(names(MW) %in% unique(DF_to_adjust$CompoundID)) == FALSE){
+            stop("The names you have supplied for which molecular weight is which are not among the compound IDs present in your data. Please check the names and try again.", 
+                 call. = FALSE)
+        }
     }
-    
     
     
     # Main body of function -------------------------------------------------
@@ -99,7 +105,6 @@ match_units <- function(DF_to_adjust, goodunits){
        unique(DF_to_adjust$Conc_units) %in% MolarUnits){
         
         ConvTable_conc <- data.frame(
-            MW = MW, 
             
             ToAdjustUnits = rep(c("µM", "nM"), 6), 
             
@@ -114,15 +119,18 @@ match_units <- function(DF_to_adjust, goodunits){
                     1/1000,    1/10^6,  # ug/mL
                     1*1000,    1,  # ng/L
                     1,         1/1000  # ng/mL
-                ),
-                Factor = MW * FactorNoMW)
+                )) %>% 
+            left_join(
+                left_join(data.frame(MW = MW, 
+                                     CompoundID = names(MW)),
+                          expand_grid(CompoundID = names(MW), 
+                                      ToAdjustUnits = c("µM", "nM")))) %>% 
+            mutate(Factor = MW * FactorNoMW)
         
     } else if(goodunits$Conc_units %in% MolarUnits &
               unique(DF_to_adjust$Conc_units) %in% MassUnits){
         
         ConvTable_conc <- data.frame(
-            MW = MW, 
-            
             ToAdjustUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
                                 each = 2),
             
@@ -136,8 +144,13 @@ match_units <- function(DF_to_adjust, goodunits){
                     1000,    10^6,  # ug/mL
                     1000,    1,  # ng/L
                     1,       1000  # ng/mL
-                ),
-                Factor = FactorNoMW / MW)
+                )) %>% 
+            left_join(
+                left_join(data.frame(MW = MW, 
+                                     CompoundID = names(MW)),
+                          expand_grid(CompoundID = names(MW), 
+                                      GoodUnits = c("µM", "nM")))) %>% 
+            mutate(Factor = FactorNoMW / MW)
         
     } else {
         
@@ -186,8 +199,8 @@ match_units <- function(DF_to_adjust, goodunits){
             ) )
     }
     
-    if(unique(goodunits$Conc_units) %in% ConvTable_conc$ToAdjustUnits == FALSE |
-       unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$GoodUnits == FALSE){
+    if(unique(goodunits$Conc_units) %in% ConvTable_conc$GoodUnits == FALSE |
+       unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$ToAdjustUnits == FALSE){
         stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
              call. = FALSE)
     }

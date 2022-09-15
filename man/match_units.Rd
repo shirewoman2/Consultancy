@@ -7,6 +7,14 @@
 match_units(DF_to_adjust, goodunits)
 }
 \arguments{
+\item{DF_to_adjust}{the data.frame of concentration-time data with units that
+may need to be adjusted. This must include the columns "Conc",
+"Conc_units", "Time", and "Time_units". (Outputs from
+\code{\link{extractConcTime}}, \code{\link{extractConcTime_mult}}, and
+\code{\link{extractObsConcTime}} work here.) If you want to convert between
+mass per volume and molar concentrations and there are multiple compounds
+present, this must also include the column "CompoundID".}
+
 \item{goodunits}{either a data.frame that has the desired concentration and
 time units OR a named list with the desired units. Example:
 \code{list("Conc_units" = "ng/mL", "Time_units" = "hours")}. Names of the
@@ -15,11 +23,15 @@ one or the other if you only want to convert one of them. Options for
 concentration units are the same as the ones in the Excel form for PE data
 entry, and options for time units are "hours" and "minutes".}
 
-\item{DF}{the data.frame of concentration-time data with units that may need
-to be adjusted. This must include the columns "Conc", "Conc_units", "Time",
-and "Time_units". (Outputs from \code{\link{extractConcTime}},
-\code{\link{extractConcTime_mult}}, and \code{\link{extractObsConcTime}}
-work here.)}
+\item{MW}{optionally supply a molecular weight for the compound of interest
+to enable conversions between mass per volume and molar concentrations. If
+you have more than one compound, list the compoundID and the MW as a named
+character vector, e.g., \code{MW = c("substrate" = 325.8, "inhibitor 1" =
+705.6)} for a DDI simulation of midazolam with itraconazole. If you want to
+make this type of conversion, the data.frame DF_to_adjust must also include
+the column "CompoundID". Acceptable compoundIDs are "substrate", "primary
+metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
+1", "inhibitor 2", or "inhibitor 1 metabolite".}
 }
 \value{
 a data.frame with the corrected units
