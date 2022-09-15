@@ -4,11 +4,13 @@
 #' concentration-time data as necessary to match some desired set of
 #' concentration and time units.
 #'
-#' @param DF the data.frame of concentration-time data with units that may need
-#'   to be adjusted. This must include the columns "Conc", "Conc_units", "Time",
-#'   and "Time_units". (Outputs from \code{\link{extractConcTime}},
-#'   \code{\link{extractConcTime_mult}}, and \code{\link{extractObsConcTime}}
-#'   work here.)
+#' @param DF_to_adjust the data.frame of concentration-time data with units that
+#'   may need to be adjusted. This must include the columns "Conc",
+#'   "Conc_units", "Time", and "Time_units". (Outputs from
+#'   \code{\link{extractConcTime}}, \code{\link{extractConcTime_mult}}, and
+#'   \code{\link{extractObsConcTime}} work here.) If you want to convert between
+#'   mass per volume and molar concentrations and there are multiple compounds
+#'   present, this must also include the column "CompoundID".
 #' @param goodunits either a data.frame that has the desired concentration and
 #'   time units OR a named list with the desired units. Example:
 #'   \code{list("Conc_units" = "ng/mL", "Time_units" = "hours")}. Names of the
@@ -16,6 +18,15 @@
 #'   one or the other if you only want to convert one of them. Options for
 #'   concentration units are the same as the ones in the Excel form for PE data
 #'   entry, and options for time units are "hours" and "minutes".
+#' @param MW optionally supply a molecular weight for the compound of interest
+#'   to enable conversions between mass per volume and molar concentrations. If
+#'   you have more than one compound, list the compoundID and the MW as a named
+#'   character vector, e.g., \code{MW = c("substrate" = 325.8, "inhibitor 1" =
+#'   705.6)} for a DDI simulation of midazolam with itraconazole. If you want to
+#'   make this type of conversion, the data.frame DF_to_adjust must also include
+#'   the column "CompoundID". Acceptable compoundIDs are "substrate", "primary
+#'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
+#'   1", "inhibitor 2", or "inhibitor 1 metabolite".
 #'
 #' @return a data.frame with the corrected units
 #' @export
@@ -31,6 +42,22 @@ match_units <- function(DF_to_adjust, goodunits){
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
+    
+    if(is.null(MW)){
+        if(length(MW) > 1){
+            stop("You have supplied more than one molecular weight but not specified which compound belongs to each. Please supply a named numeric vector that indicates which compound ID belongs to which weight. Please see the help file for an example.", 
+                 call. = FALSE)
+        } 
+        
+        if(any(unique(DF_to_adjust$CompoundID) %in% 
+               c("substrate", "inhibitor 1", "primary metabolite 1", 
+                 "primary metabolite 2", "inhibitor 2", "inhibitor 1 metabolite", 
+                 "secondary metabolite"))){
+            stop("The names you have supplied for which molecular weight is which are not among the acceptable options for compound ID. Please see the help file for the acceptable names and an example.", 
+                 call. = FALSE)
+        }
+    }
+    
     
     
     # Main body of function -------------------------------------------------
@@ -64,49 +91,100 @@ match_units <- function(DF_to_adjust, goodunits){
     }
     
     # Matching concentration units --------------------------------------
-    ConvTable_conc <- data.frame(
-        GoodUnits = c(
-            rep("mg/L", 6),
-            rep("mg/mL", 6),
-            rep("µg/L", 6),
-            rep("µg/mL", 6),
-            rep("ng/L", 6),
-            rep("ng/mL", 6),
-            
-            rep("µM", 2),
-            rep("nM", 2),
-            
-            rep("mg", 2),
-            rep("µg", 2),
-            
-            "mL", "PD response"),
+    
+    MassUnits <- c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL")
+    MolarUnits <- c("µM", "nM")
+    
+    if(goodunits$Conc_units %in% MassUnits &
+       unique(DF_to_adjust$Conc_units) %in% MolarUnits){
         
-        ToAdjustUnits = c(
-            rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
-                  "ng/mL"), 6),
+        ConvTable_conc <- data.frame(
+            MW = MW, 
             
-            rep(c("µM", "nM"), 2),
+            ToAdjustUnits = rep(c("µM", "nM"), 6), 
             
-            rep(c("mg", "µg"), 2),
-            
-            "mL", "PD response"),
+            GoodUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                            each = 2)) %>% 
+            mutate(
+                FactorNoMW = c(
+                    # uM then nM
+                    1/1000,    1/10^6,  # mg/L
+                    1/10^6,    1/10^9,  # mg/mL
+                    1,         1/1000,  # ug/L
+                    1/1000,    1/10^6,  # ug/mL
+                    1*1000,    1,  # ng/L
+                    1,         1/1000  # ng/mL
+                ),
+                Factor = MW * FactorNoMW)
         
-        Factor = c(1,    10^3, 10^-3, 1,     10^6,  10^3, # mg/L
-                   10^3, 1,    10^-6, 10^-3, 10^9,  10^6, # mg/mL
-                   10^3, 10^6, 1,     10^3,  10^-3, 1,    # ug/L
-                   1,    10^3, 10^-3, 1,     10^-6, 10^-3,# ug/mL
-                   10^6, 10^9, 10^3,  10^6,  1,     10^3, # ng/L
-                   10^3, 10^6, 1,     10^3,  10^-3, 1,    # ng/mL
-                   
-                   1,    10^-3, # uM
-                   10^3, 1,     # nM
-                   
-                   1, 10^-3, # mg
-                   1^3, 1,   # ug
-                   
-                   1, # mL
-                   1 # PD response
-        ) )
+    } else if(goodunits$Conc_units %in% MolarUnits &
+              unique(DF_to_adjust$Conc_units) %in% MassUnits){
+        
+        ConvTable_conc <- data.frame(
+            MW = MW, 
+            
+            ToAdjustUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                                each = 2),
+            
+            GoodUnits = rep(c("µM", "nM"), 6)) %>% 
+            mutate(
+                FactorNoMW = c(
+                    # uM then nM
+                    1000,    10^6,  # mg/L
+                    10^6,    10^9,  # mg/mL
+                    1,       1000,  # ug/L
+                    1000,    10^6,  # ug/mL
+                    1000,    1,  # ng/L
+                    1,       1000  # ng/mL
+                ),
+                Factor = FactorNoMW / MW)
+        
+    } else {
+        
+        ConvTable_conc <- data.frame(
+            ToAdjustUnits = c(
+                rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
+                      "ng/mL"), 6),
+                
+                rep(c("µM", "nM"), 2),
+                
+                rep(c("mg", "µg"), 2),
+                
+                "mL", "PD response"),
+            
+            GoodUnits = c(
+                rep("mg/L", 6),
+                rep("mg/mL", 6),
+                rep("µg/L", 6),
+                rep("µg/mL", 6),
+                rep("ng/L", 6),
+                rep("ng/mL", 6),
+                
+                rep("µM", 2),
+                rep("nM", 2),
+                
+                rep("mg", 2),
+                rep("µg", 2),
+                
+                "mL", "PD response"),
+            
+            Factor = c(1,    10^3, 10^-3, 1,     10^6,  10^3, # mg/L
+                       10^3, 1,    10^-6, 10^-3, 10^9,  10^6, # mg/mL
+                       10^3, 10^6, 1,     10^3,  10^-3, 1,    # ug/L
+                       1,    10^3, 10^-3, 1,     10^-6, 10^-3,# ug/mL
+                       10^6, 10^9, 10^3,  10^6,  1,     10^3, # ng/L
+                       10^3, 10^6, 1,     10^3,  10^-3, 1,    # ng/mL
+                       
+                       1,    10^-3, # uM
+                       10^3, 1,     # nM
+                       
+                       1, 10^-3, # mg
+                       1^3, 1,   # ug
+                       
+                       1, # mL
+                       1 # PD response
+            ) )
+    }
     
     if(unique(goodunits$Conc_units) %in% ConvTable_conc$ToAdjustUnits == FALSE |
        unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$GoodUnits == FALSE){
@@ -121,10 +199,10 @@ match_units <- function(DF_to_adjust, goodunits){
     
     if(length(ConvFactor_conc) < 1){
         stop(paste0("You supplied concentration units of ",
-                       str_comma(unique(DF_to_adjust$Conc_units)), 
-                       ", but we were not able to convert them to the desired units of ", 
-                       unique(goodunits$Conc_units), 
-                       ". No adjustment of units was possible and thus no data can be returned here."),
+                    str_comma(unique(DF_to_adjust$Conc_units)), 
+                    ", but we were not able to convert them to the desired units of ", 
+                    unique(goodunits$Conc_units), 
+                    ". No adjustment of units was possible and thus no data can be returned here."),
              call. = FALSE)
     }
     
