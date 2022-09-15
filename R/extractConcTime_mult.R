@@ -337,11 +337,22 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             MultData[[f]][[j]][[k]] %>%
                             mutate(File = f)
                         
+                        MolWts <- c("substrate" = Deets$MW_sub, 
+                                    "primary metabolite 1" = Deets$MW_met1, 
+                                    "primary metabolite 2" = Deets$MW_met2,
+                                    "secondary metabolite" = Deets$MW_secmet,
+                                    "inhibitor 1"= Deets$MW_inhib,
+                                    "inhibitor 2" = Deets$MW_inhib2,
+                                    "inhibitor 1 metabolite" = Deets$MW_inhib1met)
+                        
+                        
                         MultData[[f]][[j]][[k]] <-
                             match_units(DF_to_adjust = MultData[[f]][[j]][[k]],
                                         goodunits = list("Conc_units" = conc_units_to_use,
-                                                         "Time_units" = time_units_to_use))
+                                                         "Time_units" = time_units_to_use), 
+                                        MW = MolWts[complete.cases(MolWts)])
                     }
+                    
                     rm(compoundsToExtract_k)
                 }
                 

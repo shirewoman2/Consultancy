@@ -4,7 +4,7 @@
 \alias{match_units}
 \title{Match concentration and time units as needed}
 \usage{
-match_units(DF_to_adjust, goodunits)
+match_units(DF_to_adjust, goodunits, MW = NA)
 }
 \arguments{
 \item{DF_to_adjust}{the data.frame of concentration-time data with units that

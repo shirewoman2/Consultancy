@@ -35,7 +35,7 @@
 #' DF_to_adjust <- match_units(DF_to_adjust = SimulatedData,
 #'                             goodunits = ObsData)
 #' 
-match_units <- function(DF_to_adjust, goodunits){
+match_units <- function(DF_to_adjust, goodunits, MW = NA){
     
     # Error catching ----------------------------------------------------------
     # Check whether tidyverse is loaded
@@ -104,53 +104,57 @@ match_units <- function(DF_to_adjust, goodunits){
     if(goodunits$Conc_units %in% MassUnits &
        unique(DF_to_adjust$Conc_units) %in% MolarUnits){
         
-        ConvTable_conc <- data.frame(
-            
-            ToAdjustUnits = rep(c("µM", "nM"), 6), 
-            
-            GoodUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
-                            each = 2)) %>% 
-            mutate(
-                FactorNoMW = c(
-                    # uM then nM
-                    1/1000,    1/10^6,  # mg/L
-                    1/10^6,    1/10^9,  # mg/mL
-                    1,         1/1000,  # ug/L
-                    1/1000,    1/10^6,  # ug/mL
-                    1*1000,    1,  # ng/L
-                    1,         1/1000  # ng/mL
-                )) %>% 
-            left_join(
-                left_join(data.frame(MW = MW, 
-                                     CompoundID = names(MW)),
-                          expand_grid(CompoundID = names(MW), 
-                                      ToAdjustUnits = c("µM", "nM")))) %>% 
-            mutate(Factor = MW * FactorNoMW)
+        suppressMessages(
+            ConvTable_conc <- data.frame(
+                
+                ToAdjustUnits = rep(c("µM", "nM"), 6), 
+                
+                GoodUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                                each = 2)) %>% 
+                mutate(
+                    FactorNoMW = c(
+                        # uM then nM
+                        1/1000,    1/10^6,  # mg/L
+                        1/10^6,    1/10^9,  # mg/mL
+                        1,         1/1000,  # ug/L
+                        1/1000,    1/10^6,  # ug/mL
+                        1*1000,    1,  # ng/L
+                        1,         1/1000  # ng/mL
+                    )) %>% 
+                left_join(
+                    left_join(data.frame(MW = MW, 
+                                         CompoundID = names(MW)),
+                              expand_grid(CompoundID = names(MW), 
+                                          ToAdjustUnits = c("µM", "nM")))) %>% 
+                mutate(Factor = MW * FactorNoMW)
+        )
         
     } else if(goodunits$Conc_units %in% MolarUnits &
               unique(DF_to_adjust$Conc_units) %in% MassUnits){
         
-        ConvTable_conc <- data.frame(
-            ToAdjustUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
-                                each = 2),
-            
-            GoodUnits = rep(c("µM", "nM"), 6)) %>% 
-            mutate(
-                FactorNoMW = c(
-                    # uM then nM
-                    1000,    10^6,  # mg/L
-                    10^6,    10^9,  # mg/mL
-                    1,       1000,  # ug/L
-                    1000,    10^6,  # ug/mL
-                    1000,    1,  # ng/L
-                    1,       1000  # ng/mL
-                )) %>% 
-            left_join(
-                left_join(data.frame(MW = MW, 
-                                     CompoundID = names(MW)),
-                          expand_grid(CompoundID = names(MW), 
-                                      GoodUnits = c("µM", "nM")))) %>% 
-            mutate(Factor = FactorNoMW / MW)
+        suppressMessages(
+            ConvTable_conc <- data.frame(
+                ToAdjustUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                                    each = 2),
+                
+                GoodUnits = rep(c("µM", "nM"), 6)) %>% 
+                mutate(
+                    FactorNoMW = c(
+                        # uM then nM
+                        1000,    10^6,  # mg/L
+                        10^6,    10^9,  # mg/mL
+                        1,       1000,  # ug/L
+                        1000,    10^6,  # ug/mL
+                        1000,    1,  # ng/L
+                        1,       1000  # ng/mL
+                    )) %>% 
+                left_join(
+                    left_join(data.frame(MW = MW, 
+                                         CompoundID = names(MW)),
+                              expand_grid(CompoundID = names(MW), 
+                                          GoodUnits = c("µM", "nM")))) %>% 
+                mutate(Factor = FactorNoMW / MW)
+        )
         
     } else {
         
