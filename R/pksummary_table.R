@@ -473,8 +473,11 @@ pksummary_table <- function(sim_data_file = NA,
                                                 "FALSE" = "aggregate")))
     
     # PKToPull must be changed if user specified a tab b/c then the parameters
-    # won't have _last or _dose1 suffixes.
-    if(complete.cases(sheet_PKparameters)){
+    # won't have _last or _dose1 suffixes. HOWEVER, if the sheet matched the AUC
+    # tab in terms of formatting, then we DO know which dose it was, so don't
+    # remove suffixes in that case.
+    if(complete.cases(sheet_PKparameters) &
+       any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
         PKToPull <- sub("_last|_dose1", "", PKToPull)
     }
     
@@ -919,7 +922,8 @@ pksummary_table <- function(sim_data_file = NA,
     
     # PKlevels must be changed if user specified a tab b/c then the parameters
     # won't have _last or _dose1 suffixes.
-    if(complete.cases(sheet_PKparameters)){
+    if(complete.cases(sheet_PKparameters) & 
+       any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
         PKlevels <- unique(sub("_last|_dose1", "", PKlevels))
         # When the suffix is included, then we get an order with 1st dose and
         # then last dose, which is appropriate, but when the user specifies a
@@ -949,7 +953,8 @@ pksummary_table <- function(sim_data_file = NA,
     if(prettify_columns){
         
         # If user specified tab, then need to adjust PK parameters here, too.
-        if(complete.cases(sheet_PKparameters)){
+        if(complete.cases(sheet_PKparameters) & 
+           any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
             AllPKParameters_mod <- 
                 AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
                 mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
@@ -1034,6 +1039,8 @@ pksummary_table <- function(sim_data_file = NA,
             select(PKparam, File, matches(ColsToInclude))
     }
     
+    
+    # Saving --------------------------------------------------------------
     if(complete.cases(save_table)){
         
         # Checking whether they have specified just "docx" or just "csv" for

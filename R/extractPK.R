@@ -121,6 +121,17 @@ extractPK <- function(sim_data_file,
         return(list())
     }
     
+    if(complete.cases(sheet) & sheet %in% SheetNames == FALSE){
+        stop("The sheet requested could not be found in the Excel file.",
+             call. = FALSE)
+    }
+    
+    if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
+       all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
+        stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
+             call. = FALSE)
+    }
+    
     
     # Main body of function ---------------------------------------------------
     
@@ -168,6 +179,26 @@ extractPK <- function(sim_data_file,
         PKparameters <- "all"
     }
     
+    # Checking formatting of the user-defined sheet b/c it's sometimes set up
+    # the same was as the AUC tab and thus requires special fiddling.
+    XL <- suppressMessages(
+        readxl::read_excel(path = sim_data_file, sheet = sheet,
+                           col_names = FALSE))
+    if(which(XL$...1 == "Index")[1] == 3){
+        # This is when the formatting is like the AUC tab. Instead of rewriting
+        # the user-specified sheet section, I'm hacking this to make the
+        # function think that this should be the AUC tab.
+        UserAUC <- TRUE # A handle for checking whether to use XL instead of the regular AUC tab.
+        
+    } else {
+        UserAUC <- FALSE
+    }
+    
+    
+    
+    
+    
+    
     if(tolower(PKparameters_orig[1]) == "auc tab" & 
        "AUC" %in% SheetNames == FALSE & 
        any(c("AUC0(Sub)(CPlasma)") %in% SheetNames)){ # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
@@ -179,18 +210,6 @@ extractPK <- function(sim_data_file,
                 call. = FALSE)
         
         PKparameters <- "AUC0"
-    }
-    
-    # Error catching
-    if(complete.cases(sheet) & sheet %in% SheetNames == FALSE){
-        stop("The sheet requested could not be found in the Excel file.",
-             call. = FALSE)
-    }
-    
-    if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
-       all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
-        stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
-             call. = FALSE)
     }
     
     ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
@@ -301,7 +320,8 @@ extractPK <- function(sim_data_file,
                             EndRow_ind = as.numeric(NA),
                             Note = as.character(NA))
     
-    # Pulling data from "AUC" sheet ------------------------------------------
+    
+    # Pulling data from "AUC" sheet or a user-specified sheet formatted that way ------------------------------------------
     
     # Need to pull these parameters if either a) they requested a set of
     # parameters rather than asking for a set of parameters by sheet name (AUC
@@ -309,14 +329,14 @@ extractPK <- function(sim_data_file,
     # parameters are present on the AUC tab or b) the user requested the "AUC
     # tab" for PK parameters and either "AUC", "AUC_CI", or "AUC_SD" are among
     # the sheets in the file.
-    if(is.na(sheet) && 
-       # a)
-       ((any(PKparameters %in% ParamAUC) & 
-         PKparameters_orig[1] != "Absorption tab") |
-        
-        # b)
-        (PKparameters_orig[1] == "AUC tab" & 
-         any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames)))){
+    if(UserAUC | (is.na(sheet) && 
+                  # a)
+                  ((any(PKparameters %in% ParamAUC) & 
+                    PKparameters_orig[1] != "Absorption tab") |
+                   
+                   # b)
+                   (PKparameters_orig[1] == "AUC tab" & 
+                    any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames))))){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
@@ -356,13 +376,17 @@ extractPK <- function(sim_data_file,
             }
             
             # Reading the sheet for AUC tab results
-            AUC_xl <- suppressMessages(
-                readxl::read_excel(path = sim_data_file, 
-                                   # If the user requested the "AUC" tab for PK
-                                   # parameters, it's ok to use the tab "AUC_CI"
-                                   # if "AUC" is not present.
-                                   sheet = SheetAUC,
-                                   col_names = FALSE))
+            if(UserAUC){
+                AUC_xl <- XL
+            } else {
+                AUC_xl <- suppressMessages(
+                    readxl::read_excel(path = sim_data_file, 
+                                       # If the user requested the "AUC" tab for PK
+                                       # parameters, it's ok to use the tab "AUC_CI"
+                                       # if "AUC" is not present.
+                                       sheet = SheetAUC,
+                                       col_names = FALSE))
+            }
             
             # Finding the last row of the individual data
             EndRow_ind <- which(AUC_xl$...2 == "Statistics")
@@ -1101,7 +1125,7 @@ extractPK <- function(sim_data_file,
     
     
     # Pulling parameters from a user-specified sheet --------------------------
-    if(complete.cases(sheet)){
+    if(complete.cases(sheet) & UserAUC == FALSE){
         
         # WARNING: I have NOT written this to work for aggregate values that
         # are listed anywhere but right below all the individual values.
@@ -1114,9 +1138,11 @@ extractPK <- function(sim_data_file,
                     call. = FALSE)
         }
         
-        XL <- suppressMessages(
-            readxl::read_excel(path = sim_data_file, sheet = sheet,
-                               col_names = FALSE))
+        # Reading in the sheet up higher in the script now, so this is commented
+        # out.
+        # XL <- suppressMessages(
+        #     readxl::read_excel(path = sim_data_file, sheet = sheet,
+        #                        col_names = FALSE))
         
         HeaderRow <- which(XL$...1 == "Index")[1]
         EndRow_ind <- which(is.na(XL$...1))
