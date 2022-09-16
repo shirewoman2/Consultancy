@@ -317,7 +317,8 @@ ct_plot_mult <- function(ct_dataframe,
     
     # Dealing with observed data.
     if(any(ct_dataframe$Simulated == FALSE) & 
-       all(complete.cases(ObsCT$File)) == FALSE){
+       (all(complete.cases(ct_dataframe$File[ct_dataframe$Simulated == TRUE])) == FALSE |
+        is.na(obs_data_assignment[1]))){
         
         ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
         ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
