@@ -43,7 +43,7 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
-    if(is.null(names(MW))){
+    if(complete.cases(MW[1]) && is.null(names(MW))){
         if(length(MW) > 1){
             stop("You have supplied more than one molecular weight but not specified which compound belongs to each. Please supply a named numeric vector that indicates which compound ID belongs to which weight. Please see the help file for an example.", 
                  call. = FALSE)
@@ -101,7 +101,7 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
     MassUnits <- c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL")
     MolarUnits <- c("µM", "nM")
     
-    if(goodunits$Conc_units %in% MassUnits &
+    if(unique(goodunits$Conc_units) %in% MassUnits &
        unique(DF_to_adjust$Conc_units) %in% MolarUnits){
         
         suppressMessages(
@@ -129,7 +129,7 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
                 mutate(Factor = MW * FactorNoMW)
         )
         
-    } else if(goodunits$Conc_units %in% MolarUnits &
+    } else if(unique(goodunits$Conc_units) %in% MolarUnits &
               unique(DF_to_adjust$Conc_units) %in% MassUnits){
         
         suppressMessages(
