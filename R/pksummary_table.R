@@ -714,6 +714,8 @@ pksummary_table <- function(sim_data_file = NA,
                 ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
                     mutate(PKparameter_lower = sub("_first", "_dose1",
                                                    tolower(OrigName)), 
+                           PKparameter_lower = sub("_ss", "_last", 
+                                                   PKparameter_lower),
                            PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
                     left_join(AllPKParameters %>% select(PKparameter) %>% 
                                   unique() %>% 
@@ -721,7 +723,8 @@ pksummary_table <- function(sim_data_file = NA,
                     mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
                                                 paste0(PKparameter, "_CV"), 
                                                 PKparameter), 
-                           PKparameter = ifelse(OrigName == "File", "File", PKparameter))
+                           PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
+                           PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
             )
             
             MyObsPK <- observed_PK

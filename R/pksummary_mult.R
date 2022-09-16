@@ -180,6 +180,13 @@ pksummary_mult <- function(sim_data_files = NA,
         
         for(i in 1:nrow(observed_PKDF)){
             
+            if(observed_PKDF$File[i] %in% sim_data_files == FALSE){
+                warning(paste0("The file ", observed_PKDF$File[i],
+                               " was listed in your observed data but not in `sim_data_files`. It will be skipped."), 
+                        call. = FALSE)
+                next
+            }
+            
             print(paste("Extracting data from", observed_PKDF$File[i]))
             
             temp <- pksummary_table(
