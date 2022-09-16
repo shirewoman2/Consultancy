@@ -34,10 +34,12 @@ ct_plot_mult(
 data}
 
 \item{obs_data_assignment}{optionally specify which observed files go with
-which simulator files. If left as NA, this will assume that \emph{all}
-observed data goes with \emph{all} simulated data. To specify, use a named
-character vector like this: \code{obs_data_assignment = c("obs data 1.xlsx"
-= "mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
+which simulator files. If left as NA and what you supplied for
+\code{ct_dataframe} doesn't already specify which observed data go with
+which simulated file, this will assume that \emph{all} observed data goes
+with \emph{all} simulated data. To specify, use a named character vector
+like this: \code{obs_data_assignment = c("obs data 1.xlsx" =
+"mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
 observed file needs to match more than one simulated file but not
 \emph{all} the simulated files, you can do that by separating the simulated
 files with commas, e.g., \code{obs_data_assignment = c("obs data 1.xlsx" =
@@ -238,8 +240,8 @@ datasets by a) file, b) compound ID, c) tissue, and d) subsection of any
 ADAM-model data. If you have more than one dataset per file, the graph titles
 won't necessarily be clear, so please pay attention to what data you're
 including. If you get unexpected or unclear output, try using
-\code{\link{ct_plot_overlay}} to graph your data to check on what the data
-include.
+\code{\link{ct_plot_overlay}} to graph your data; it might work better for
+what you want to show.
 }
 \details{
 \strong{A note on the order of the graphs:} This function arranges graphs

@@ -9,8 +9,8 @@
 #' ADAM-model data. If you have more than one dataset per file, the graph titles
 #' won't necessarily be clear, so please pay attention to what data you're
 #' including. If you get unexpected or unclear output, try using
-#' \code{\link{ct_plot_overlay}} to graph your data to check on what the data
-#' include.
+#' \code{\link{ct_plot_overlay}} to graph your data; it might work better for
+#' what you want to show.
 #'
 #' \strong{A note on the order of the graphs:} This function arranges graphs
 #' first by file, then by compound ID, and then by tissue, and all sorting is
@@ -26,10 +26,12 @@
 #' @param ct_dataframe the data.frame with multiple sets of concentration-time
 #'   data
 #' @param obs_data_assignment optionally specify which observed files go with
-#'   which simulator files. If left as NA, this will assume that \emph{all}
-#'   observed data goes with \emph{all} simulated data. To specify, use a named
-#'   character vector like this: \code{obs_data_assignment = c("obs data 1.xlsx"
-#'   = "mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
+#'   which simulator files. If left as NA and what you supplied for
+#'   \code{ct_dataframe} doesn't already specify which observed data go with
+#'   which simulated file, this will assume that \emph{all} observed data goes
+#'   with \emph{all} simulated data. To specify, use a named character vector
+#'   like this: \code{obs_data_assignment = c("obs data 1.xlsx" =
+#'   "mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
 #'   observed file needs to match more than one simulated file but not
 #'   \emph{all} the simulated files, you can do that by separating the simulated
 #'   files with commas, e.g., \code{obs_data_assignment = c("obs data 1.xlsx" =
@@ -251,13 +253,13 @@ ct_plot_mult <- function(ct_dataframe,
     
     # Checking for situations where they'll get the same file name for more than
     # one set of data
-    Check <- ct_dataframe %>% select(File, Tissue, CompoundID, subsection_ADAM) %>% 
+    DatasetCheck <- ct_dataframe %>% select(File, Tissue, CompoundID, subsection_ADAM) %>% 
         unique()
     
-    if(any(duplicated(Check$File))){
+    if(any(duplicated(DatasetCheck$File))){
         warning(paste0("You have more than one data set for the file(s) ",
                        str_comma(paste0("`", 
-                                        unique(Check$File[duplicated(Check$File)]),
+                                        unique(DatasetCheck$File[duplicated(DatasetCheck$File)]),
                                         "`")), 
                        ". It may not be clear what data are being shown in some of your graphs."),
                 call. = FALSE)
@@ -314,12 +316,15 @@ ct_plot_mult <- function(ct_dataframe,
     }
     
     # Dealing with observed data.
-    if(any(ct_dataframe$Simulated == FALSE)){
+    if(any(ct_dataframe$Simulated == FALSE) & 
+       all(complete.cases(ObsCT$File)) == FALSE){
         
         ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
         ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
         
         if(is.na(obs_data_assignment[1])){
+            # If there are no values assigned for File, then make all the
+            # observed data go with all the simulated data.
             FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
                                       File = unique(ct_dataframe$File))
             suppressMessages(
@@ -553,9 +558,20 @@ ct_plot_mult <- function(ct_dataframe,
     } else {
         
         for(i in names(AllGraphs)){
-            ggsave(paste0(gsub("\\.xlsx.*", "", basename(i)), 
-                          ifelse(complete.cases(file_suffix),
-                                 paste0(" - ", file_suffix), ""), ".png"), 
+            
+            Filename <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
+                               ifelse(complete.cases(file_suffix),
+                                      paste0(" - ", file_suffix), ""), ".png")
+            
+            if(any(duplicated(DatasetCheck$File))){
+                Split_i <- str_split(i, pattern = "\\.")[[1]]
+                Filename <- paste0(Split_i[3], " ", Split_i[4], " ",
+                                   ifelse(Split_i[5] == "none", "", 
+                                          paste0(" subsection ADAM ", Split_i[5])),
+                                   Filename)
+            } 
+            
+            ggsave(Filename, 
                    height = fig_height, width = fig_width, dpi = 600, 
                    plot = AllGraphs[[i]])
         }
