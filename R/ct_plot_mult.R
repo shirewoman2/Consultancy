@@ -2,21 +2,39 @@
 #'
 #' This function was designed for making nicely arranged concentration-time
 #' graphs from several Simcyp Simulator output files all together \emph{or} for
-#' making multiple files -- one for each Simulator file -- all at once.
+#' making multiple files -- one for each Simulator file -- all at once. Behind
+#' the scenes, it uses the function \code{\link{ct_plot}} to make these graphs,
+#' so it will automatically break up your supplied concentration-time data into
+#' datasets by a) file, b) compound ID, c) tissue, and d) subsection of any
+#' ADAM-model data. If you have more than one dataset per file, the graph titles
+#' won't necessarily be clear, so please pay attention to what data you're
+#' including. If you get unexpected or unclear output, try using
+#' \code{\link{ct_plot_overlay}} to graph your data to check on what the data
+#' include.
 #'
 #' \strong{A note on the order of the graphs:} This function arranges graphs
 #' first by file, then by compound ID, and then by tissue, and all sorting is
 #' alphabetical. However, since sorting alphabetically might not be the optimal
-#' graph arrangement for your scenario, you \emph{can} specify the order of the
-#' graphs using either the \code{file_labels} argument or, if you're comfortable
-#' with setting factors in R, by making any of File, CompoundID, Tissue, and
-#' subsection_ADAM factor rather than character data and setting the levels how
-#' you wish. If you're unfamiliar with setting factor levels in R and setting
-#' \code{file_labels} isn't achieving what you want, please ask a member of the
-#' R Working Group for assistance.
+#' graph arrangement for \emph{your} scenario, you can specify the order of the
+#' graphs using either the \code{graph_titles} argument or, if you're
+#' comfortable with setting factors in R, by making any of File, CompoundID,
+#' Tissue, and subsection_ADAM factor rather than character data and setting the
+#' levels how you wish. If you're unfamiliar with setting factor levels in R and
+#' setting \code{graph_titles} isn't achieving what you want, please ask a
+#' member of the R Working Group for assistance.
 #'
 #' @param ct_dataframe the data.frame with multiple sets of concentration-time
 #'   data
+#' @param obs_data_assignment optionally specify which observed files go with
+#'   which simulator files. If left as NA, this will assume that \emph{all}
+#'   observed data goes with \emph{all} simulated data. To specify, use a named
+#'   character vector like this: \code{obs_data_assignment = c("obs data 1.xlsx"
+#'   = "mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
+#'   observed file needs to match more than one simulated file but not
+#'   \emph{all} the simulated files, you can do that by separating the simulated
+#'   files with commas, e.g., \code{obs_data_assignment = c("obs data 1.xlsx" =
+#'   "mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
+#'   "mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}
 #' @param graph_arrangement set how to arrange the graphs. Options are
 #'   \describe{\item{"all together"}{(default) for all graphs being nicely
 #'   arranged and aligned together,}
@@ -142,33 +160,20 @@
 #'   label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and an effector is present, the label
 #'   in the legend will be "Inhibitor".
-#' @param graph_titles optionally specify titles to be used in place of the file
-#'   name in the graphs and specify the order in which the files are graphed.
-#'   Input should be a named character vector of the files in the order you
-#'   would like. (Not applicable if \code{graph_arrangement = "separate
-#'   files"}.) The file name must \emph{perfectly} match the file name listed in
-#'   ct_dataframe or it won't be used. An example of how this might be
-#'   specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
-#'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
-#'   you didn't think you specified, please double check that you have specified
-#'   the file names \emph{exactly} as they appear in \code{ct_dataframe}.
+#' @param graph_titles optionally specify titles to be used in the graphs and
+#'   specify the order in which the files are graphed. Input should be a named
+#'   character vector of the files in the order you would like and what you want
+#'   to use for the title. The file name must \emph{perfectly} match the file
+#'   name listed in ct_dataframe or it won't be used. An example of how this
+#'   might be specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy
+#'   volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an
+#'   order that you didn't think you specified, please double check that you
+#'   have specified the file names \emph{exactly} as they appear in
+#'   \code{ct_dataframe}.
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14
-#' @param file_labels SOON TO BE DEPRECATED. Please use \code{graph_titles}
-#'   instead. optionally specify a label to be used for the file name in the
-#'   graphs and specify the order in which the files are graphed with a named
-#'   character vector of the files in the order you would like. (Not applicable
-#'   if \code{graph_arrangement = "separate files"}.) The file name must
-#'   \emph{perfectly} match the file name listed in ct_dataframe or it won't be
-#'   used. An example of how this might be specified: \code{file_labels = c("My
-#'   file 1.xlsx" = "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic
-#'   impairment")}  If you get an order that you didn't think you specified,
-#'   please double check that you have specified the file names \emph{exactly}
-#'   as they appear in \code{ct_dataframe}.
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
-#'   B, C, etc.) for each of the small graphs. This is only slightly different
-#'   from \code{file_labels}, so please try out the options to see what we mean.
-#'   Not applicable if \code{graph_arrangement = "separate files"}.
+#'   B, C, etc.) for each of the small graphs.
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
@@ -204,12 +209,13 @@
 #' ct_plot_mult(ct_dataframe = MDZct)
 #'
 #' ct_plot_mult(ct_dataframe = MDZct,
-#'    file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
-#'                    "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
-#'                    "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
-#'                    "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
+#'    graph_titles = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
+#'                     "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
+#'                     "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
+#'                     "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
 #' 
 ct_plot_mult <- function(ct_dataframe, 
+                         obs_data_assignment = NA,
                          graph_arrangement = "all together", 
                          figure_type = "percentiles",
                          mean_type = "arithmetic",
@@ -229,8 +235,7 @@ ct_plot_mult <- function(ct_dataframe,
                          file_suffix = NA,
                          fig_height = 8,
                          fig_width = 8,
-                         ..., 
-                         file_labels = NA){
+                         ...){
     
     # error catching -------------------------------------------------------
     # Check whether tidyverse is loaded
@@ -244,19 +249,27 @@ ct_plot_mult <- function(ct_dataframe,
              call. = FALSE)
     }
     
-    if(complete.cases(file_labels)[1] & is.na(graph_titles)[1]){
-        graph_titles <- file_labels
-        warning("You have specified values for the argument `file_labels`; this argument will soon be deprecated as we replace it with the (hopefully clearer) argument `graph_titles`. In the future, please use `graph_titles` instead.", 
+    # Checking for situations where they'll get the same file name for more than
+    # one set of data
+    Check <- ct_dataframe %>% select(File, Tissue, CompoundID, subsection_ADAM) %>% 
+        unique()
+    
+    if(any(duplicated(Check$File))){
+        warning(paste0("You have more than one data set for the file(s) ",
+                       str_comma(paste0("`", 
+                                        unique(Check$File[duplicated(Check$File)]),
+                                        "`")), 
+                       ". It may not be clear what data are being shown in some of your graphs."),
                 call. = FALSE)
     }
     
     # main body of function -----------------------------------------------
-    # Much easier to deal with things if we've got base file names in
-    # ct_dataframe. Taking care of that here.
-    ct_dataframe <- ct_dataframe %>% 
-        mutate(File_bn = basename(File))
     
     if(length(graph_titles) > 1 && complete.cases(graph_titles[1])){
+        
+        # If they have named some graph_titles but not all, fix that.
+        graph_titles <- c(graph_titles, 
+                          setdiff(sort(unique(ct_dataframe$File)), names(graph_titles)))
         
         # If graph_titles isn't named, make the names match the files themselves.
         if(is.null(names(graph_titles))){
@@ -264,9 +277,12 @@ ct_plot_mult <- function(ct_dataframe,
         }
         
         # If they named some but not all the files, name the missing ones, too. 
-        if(any(is.na(names(graph_titles)))){
+        if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
             names(graph_titles)[is.na(names(graph_titles))] <- 
-                graph_titles[is.na(names(graph_titles))]
+                basename(graph_titles[is.na(names(graph_titles))])
+            
+            names(graph_titles)[names(graph_titles) == ""] <- 
+                basename(graph_titles[names(graph_titles) == ""])
         }
         
         # Convert labels to file base names (this doesn't do anything to the
@@ -282,7 +298,7 @@ ct_plot_mult <- function(ct_dataframe,
         # them to set the order of the files they DID specify but not omit files
         # that they forgot. The forgotten files just won't have pretty titles.
         graph_titles_all <- unique(c(names(graph_titles), 
-                                     sort(unique(as.character(ct_dataframe$File_bn)))))
+                                     basename(sort(unique(as.character(ct_dataframe$File))))))
         
         # Name items in graph_titles_all according to graph_titles.
         names(graph_titles_all) <- graph_titles_all
@@ -292,14 +308,53 @@ ct_plot_mult <- function(ct_dataframe,
         
         # Even if user didn't specify file order, we need the levels of that
         # factor later. Setting them here. 
-        graph_titles_all <- sort(unique(ct_dataframe$File_bn))
+        graph_titles_all <- sort(unique(ct_dataframe$File))
         names(graph_titles_all) <- graph_titles_all
         
     }
     
-    # Set the sort order in the data
+    # Dealing with observed data.
+    if(any(ct_dataframe$Simulated == FALSE)){
+        
+        ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
+        ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
+        
+        if(is.na(obs_data_assignment[1])){
+            FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
+                                      File = unique(ct_dataframe$File))
+            suppressMessages(
+                ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
+            )
+        } else {
+            
+            ObsAssign <- str_split(obs_data_assignment, pattern = ",")
+            
+            if(all(sapply(ObsAssign, length) == 1)){
+                ObsCT <- ObsCT %>% mutate(File = obs_data_assignment[ObsFile])
+            } else {
+                ObsCT <- split(as.data.frame(ObsCT), f = ObsCT$ObsFile)
+                
+                for(j in 1:length(ObsAssign)){
+                    FileAssign <- expand_grid(ObsFile = names(obs_data_assignment)[j], 
+                                              File = ObsAssign[[j]])
+                    suppressMessages(
+                        ObsCT[[j]] <- FileAssign %>% full_join(ObsCT[[j]] %>% select(-File))
+                    )
+                    rm(FileAssign)
+                }
+                ObsCT <- bind_rows(ObsCT)
+            }
+        }
+        
+        ct_dataframe <- ct_dataframe %>% bind_rows(ObsCT)
+    }
+    
+    # Much easier to deal with things if we've got base file names in
+    # ct_dataframe. Taking care of that here.
     ct_dataframe <- ct_dataframe %>% 
-        mutate(File_bn = factor(File_bn, levels = names(graph_titles_all)))
+        mutate(File_bn = basename(File), 
+               # Set the sort order in the data
+               File_bn = factor(File_bn, levels = names(graph_titles_all)))
     
     AllGraphs <- list()
     AllData <- ct_dataframe %>% 
@@ -317,7 +372,7 @@ ct_plot_mult <- function(ct_dataframe,
         return(Out)
     }
     
-    Order <- expand.grid(list("File" = getOrder(AllData$File_bn), 
+    Order <- expand.grid(list("File" = getOrder(AllData$File), 
                               "CompoundID" = getOrder(AllData$CompoundID), 
                               "Tissue" = getOrder(AllData$Tissue), 
                               "subsection_ADAM" = getOrder(AllData$subsection_ADAM))) %>% 
@@ -325,12 +380,16 @@ ct_plot_mult <- function(ct_dataframe,
         pull(Order)
     
     AllData <- split(AllData, 
-                     f = list(as.character(AllData$File_bn),
+                     f = list(as.character(AllData$File),
                               as.character(AllData$CompoundID), 
                               as.character(AllData$Tissue), 
                               as.character(AllData$subsection_ADAM)))
     
     for(i in Order){
+        if(nrow(AllData[[i]]) == 0){
+            next
+        }
+        
         Title_i <- graph_titles_all[as.character(unique(AllData[[i]]$File_bn))]
         
         AllData[[i]] <- AllData[[i]] %>% 
@@ -356,9 +415,8 @@ ct_plot_mult <- function(ct_dataframe,
                     legend_label = legend_label, 
                     graph_labels = FALSE, 
                     graph_title = Title_i,
-                    graph_title_size = graph_title_size,
-                    ... # comment this when developing
-            )
+                    ..., # comment this when developing
+                    graph_title_size = graph_title_size)
         
         rm(Title_i)
     }

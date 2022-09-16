@@ -800,7 +800,7 @@ ct_plot_overlay <- function(ct_dataframe,
     # which in the graph.
     
     UniqueGroups <- ifelse(length(UniqueGroups) == 0, 
-                           "none other than time and concentration", str_comma(UniqueGroups))
+                           "none other than time and concentration", str_comma(sort(UniqueGroups)))
     message(paste("Columns that vary in your data:", UniqueGroups))
     message(paste("Graphing aesthetics you've assigned:", 
                   ifelse(length(UniqueAES) == 0, 
