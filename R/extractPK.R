@@ -177,20 +177,23 @@ extractPK <- function(sim_data_file,
     # since we don't know what dose that would be.
     if(complete.cases(sheet)){
         PKparameters <- "all"
-    }
-    
-    # Checking formatting of the user-defined sheet b/c it's sometimes set up
-    # the same was as the AUC tab and thus requires special fiddling.
-    XL <- suppressMessages(
-        readxl::read_excel(path = sim_data_file, sheet = sheet,
-                           col_names = FALSE))
-    if(which(XL$...1 == "Index")[1] == 3){
-        # This is when the formatting is like the AUC tab. Instead of rewriting
-        # the user-specified sheet section, I'm hacking this to make the
-        # function think that this should be the AUC tab.
-        UserAUC <- TRUE # A handle for checking whether to use XL instead of the regular AUC tab.
+        # Checking formatting of the user-defined sheet b/c it's sometimes set up
+        # the same was as the AUC tab and thus requires special fiddling.
+        XL <- suppressMessages(
+            readxl::read_excel(path = sim_data_file, sheet = sheet,
+                               col_names = FALSE))
+        if(which(XL$...1 == "Index")[1] == 3){
+            # This is when the formatting is like the AUC tab. Instead of rewriting
+            # the user-specified sheet section, I'm hacking this to make the
+            # function think that this should be the AUC tab.
+            UserAUC <- TRUE # A handle for checking whether to use XL instead of the regular AUC tab.
+            
+        } else {
+            UserAUC <- FALSE
+        }
         
     } else {
+        
         UserAUC <- FALSE
     }
     
