@@ -1012,14 +1012,14 @@ ct_plot <- function(ct_dataframe = NA,
                 call. = FALSE)
     }
     
-    B <- suppressMessages(
+    B <- suppressWarnings(suppressMessages(
         A + scale_y_log10(breaks = YLogBreaks,
                           labels = YLogLabels,
                           expand = expansion(mult = pad_y_num)) +
             # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
             coord_cartesian(xlim = time_range_relative, 
                             ylim = Ylim_log)
-    )
+    ))
     
     if(graph_labels){
         labels <- "AUTO"

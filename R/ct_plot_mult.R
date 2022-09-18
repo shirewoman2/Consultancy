@@ -171,7 +171,13 @@
 #'   volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an
 #'   order that you didn't think you specified, please double check that you
 #'   have specified the file names \emph{exactly} as they appear in
-#'   \code{ct_dataframe}.
+#'   \code{ct_dataframe}. \strong{CAVEAT:} If you have more than one dataset per
+#'   file, this is trickier. However, you can specify titles using the name of
+#'   the simulator output file, the compound ID, the tissue, and then the
+#'   ADAM-model subsection (use "none" if that doesn't apply here), each
+#'   separated with a ".". An example: \code{graph_titles = c("my sim
+#'   file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
+#'   1.plasma.none" = "Ketoconazole")} 
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
@@ -215,7 +221,19 @@
 #'                     "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
 #'                     "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
 #'                     "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
+#'                     
+#'                     
+#' # Graph titles when you have the tricky situation of more than one
+#' # data set per file
+#' ct_plot_mult(
+#'     ct_dataframe = MDZ_Keto,
+#'     graph_titles = c("mdz-qd-keto-qd.xlsx.substrate.plasma.none" = "Midazolam in plasma",
+#'                      "mdz-qd-keto-qd.xlsx.substrate.blood.none" = "Midazolam in blood",
+#'                      "mdz-qd-keto-qd.xlsx.inhibitor 1.plasma.none" = "Ketoconazole in plasma",
+#'                      "mdz-qd-keto-qd.xlsx.inhibitor 1.blood.none" = "Ketoconazole in blood"))
 #' 
+
+
 ct_plot_mult <- function(ct_dataframe, 
                          obs_data_assignment = NA,
                          graph_arrangement = "all together", 
@@ -254,37 +272,47 @@ ct_plot_mult <- function(ct_dataframe,
     # Checking for situations where they'll get the same file name for more than
     # one set of data
     DatasetCheck <- ct_dataframe %>% select(File, Tissue, CompoundID, subsection_ADAM) %>% 
-        unique()
-    
-    if(any(duplicated(DatasetCheck$File))){
-        warning(paste0("You have more than one data set for the file(s) ",
-                       str_comma(paste0("`", 
-                                        unique(DatasetCheck$File[duplicated(DatasetCheck$File)]),
-                                        "`")), 
-                       ". It may not be clear what data are being shown in some of your graphs."),
-                call. = FALSE)
-    }
+        unique() %>% 
+        mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM), "none", subsection_ADAM), 
+               GraphLabs = paste(File, CompoundID, Tissue, subsection_ADAM, sep = "."))
+
     
     # main body of function -----------------------------------------------
     
     if(length(graph_titles) > 1 && complete.cases(graph_titles[1])){
         
         # If they have named some graph_titles but not all, fix that.
-        graph_titles <- c(graph_titles, 
-                          setdiff(sort(unique(ct_dataframe$File)), names(graph_titles)))
+        graph_titles <- c(
+            graph_titles, 
+            switch(as.character(any(duplicated(DatasetCheck$File))), 
+                   "TRUE" = setdiff(sort(unique(DatasetCheck$GraphLabs)), 
+                                    names(graph_titles)), 
+                   "FALSE" = setdiff(sort(unique(ct_dataframe$File)),
+                                     names(graph_titles)))
+        )
         
         # If graph_titles isn't named, make the names match the files themselves.
         if(is.null(names(graph_titles))){
             names(graph_titles) <- graph_titles
         }
         
-        # If they named some but not all the files, name the missing ones, too. 
-        if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
-            names(graph_titles)[is.na(names(graph_titles))] <- 
-                basename(graph_titles[is.na(names(graph_titles))])
-            
-            names(graph_titles)[names(graph_titles) == ""] <- 
-                basename(graph_titles[names(graph_titles) == ""])
+        # If they named some but not all the files, name the missing ones, too.
+        if(any(duplicated(DatasetCheck$File))){
+            if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
+                names(graph_titles)[is.na(names(graph_titles))] <-
+                    DatasetCheck$GraphLabs[is.na(names(graph_titles))]
+                
+                names(graph_titles)[names(graph_titles) == ""] <-
+                    DatasetCheck$GraphLabs[names(graph_titles) == ""]
+            }
+        } else {
+            if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
+                names(graph_titles)[is.na(names(graph_titles))] <-
+                    basename(graph_titles[is.na(names(graph_titles))])
+                
+                names(graph_titles)[names(graph_titles) == ""] <-
+                    basename(graph_titles[names(graph_titles) == ""])
+            }
         }
         
         # Convert labels to file base names (this doesn't do anything to the
@@ -299,8 +327,14 @@ ct_plot_mult <- function(ct_dataframe,
         # those now and tack them onto the end of graph_titles. This will allow
         # them to set the order of the files they DID specify but not omit files
         # that they forgot. The forgotten files just won't have pretty titles.
-        graph_titles_all <- unique(c(names(graph_titles), 
-                                     basename(sort(unique(as.character(ct_dataframe$File))))))
+        if(any(duplicated(DatasetCheck$File))){
+            graph_titles_all <- unique(c(names(graph_titles), 
+                                         DatasetCheck$GraphLabs))
+        } else {
+            graph_titles_all <- 
+                unique(c(names(graph_titles), 
+                         basename(sort(unique(as.character(ct_dataframe$File))))))
+        }
         
         # Name items in graph_titles_all according to graph_titles.
         names(graph_titles_all) <- graph_titles_all
@@ -310,9 +344,12 @@ ct_plot_mult <- function(ct_dataframe,
         
         # Even if user didn't specify file order, we need the levels of that
         # factor later. Setting them here. 
-        graph_titles_all <- sort(unique(ct_dataframe$File))
+        if(any(duplicated(DatasetCheck$File))){
+            graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
+        } else {
+            graph_titles_all <- sort(unique(ct_dataframe$File))
+        }
         names(graph_titles_all) <- graph_titles_all
-        
     }
     
     # Dealing with observed data.
@@ -396,7 +433,19 @@ ct_plot_mult <- function(ct_dataframe,
             next
         }
         
-        Title_i <- graph_titles_all[as.character(unique(AllData[[i]]$File_bn))]
+        if(any(duplicated(DatasetCheck$File))){
+            if(any(names(graph_titles_all) != graph_titles_all)){
+                Title_i <- graph_titles_all[i]
+            } else {
+                y <- str_split(i, pattern = "\\.")[[1]]
+                Title_i <- paste(str_trim(
+                    paste(paste(y[1], y[2], sep = "."), 
+                          y[3], y[4], 
+                          ifelse(y[5] == "none", "", y[5]))))
+            }
+        } else {
+            Title_i <- graph_titles_all[as.character(unique(AllData[[i]]$File_bn))]
+        }
         
         AllData[[i]] <- AllData[[i]] %>% 
             # need to convert subsection_ADAM back to NA if it was
@@ -463,18 +512,20 @@ ct_plot_mult <- function(ct_dataframe,
         }
         
         if(legend_position == "none"){
-            Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
-                                     nrow = nrow, 
-                                     ncol = ncol, 
-                                     labels = labels, align = "hv")
+            Out <- suppressWarnings(
+                ggpubr::ggarrange(plotlist = AllGraphs, 
+                                  nrow = nrow, 
+                                  ncol = ncol, 
+                                  labels = labels, align = "hv"))
             
         } else {
-            Out <- ggpubr::ggarrange(plotlist = AllGraphs, 
-                                     nrow = nrow, 
-                                     ncol = ncol, 
-                                     common.legend = TRUE,
-                                     legend = legend_position,
-                                     labels = labels, align = "hv")
+            Out <- suppressWarnings(
+                ggpubr::ggarrange(plotlist = AllGraphs, 
+                                  nrow = nrow, 
+                                  ncol = ncol, 
+                                  common.legend = TRUE,
+                                  legend = legend_position,
+                                  labels = labels, align = "hv"))
         }
         
         if(complete.cases(save_graph)){
