@@ -195,7 +195,8 @@ the simulator output file, the compound ID, the tissue, and then the
 ADAM-model subsection (use "none" if that doesn't apply here), each
 separated with a ".". An example: \code{graph_titles = c("my sim
 file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
-1.plasma.none" = "Ketoconazole")}}
+1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
+example with the dataset MDZ_Keto.}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
 default is 14}
@@ -271,10 +272,10 @@ ct_plot_mult(ct_dataframe = MDZct,
                     "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
                     "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
                     "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
-                    
-                    
+
+
 # Graph titles when you have the tricky situation of more than one
-# data set per file
+# dataset per file
 ct_plot_mult(
     ct_dataframe = MDZ_Keto,
     graph_titles = c("mdz-qd-keto-qd.xlsx.substrate.plasma.none" = "Midazolam in plasma",

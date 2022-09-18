@@ -177,7 +177,8 @@
 #'   ADAM-model subsection (use "none" if that doesn't apply here), each
 #'   separated with a ".". An example: \code{graph_titles = c("my sim
 #'   file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
-#'   1.plasma.none" = "Ketoconazole")} 
+#'   1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
+#'   example with the dataset MDZ_Keto.
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
@@ -221,10 +222,10 @@
 #'                     "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
 #'                     "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
 #'                     "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
-#'                     
-#'                     
+#'
+#'
 #' # Graph titles when you have the tricky situation of more than one
-#' # data set per file
+#' # dataset per file
 #' ct_plot_mult(
 #'     ct_dataframe = MDZ_Keto,
 #'     graph_titles = c("mdz-qd-keto-qd.xlsx.substrate.plasma.none" = "Midazolam in plasma",
@@ -269,50 +270,48 @@ ct_plot_mult <- function(ct_dataframe,
              call. = FALSE)
     }
     
-    # Checking for situations where they'll get the same file name for more than
-    # one set of data
-    DatasetCheck <- ct_dataframe %>% select(File, Tissue, CompoundID, subsection_ADAM) %>% 
-        unique() %>% 
-        mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM), "none", subsection_ADAM), 
-               GraphLabs = paste(File, CompoundID, Tissue, subsection_ADAM, sep = "."))
-
-    
     # main body of function -----------------------------------------------
     
+    # Setting up ct_dataframe
+    ct_dataframe <- ct_dataframe %>% 
+        mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
+                                        "none", subsection_ADAM),
+               GraphLabs = paste(File, CompoundID, Tissue, subsection_ADAM, sep = "."))
+    
+    # Checking for situations where they'll get the same file name for more than
+    # one set of data
+    DatasetCheck <- ct_dataframe %>% filter(Simulated == TRUE) %>% 
+        select(File, Tissue, CompoundID, subsection_ADAM, GraphLabs) %>% 
+        unique()
+    
+    if(any(duplicated(DatasetCheck$File)) == FALSE){
+        ct_dataframe <- ct_dataframe %>% 
+            mutate(GraphLabs = File)
+        DatasetCheck$GraphLabs <- DatasetCheck$File
+    }
+    
+    # Setting up graph titles and order
     if(length(graph_titles) > 1 && complete.cases(graph_titles[1])){
         
         # If they have named some graph_titles but not all, fix that.
         graph_titles <- c(
             graph_titles, 
-            switch(as.character(any(duplicated(DatasetCheck$File))), 
-                   "TRUE" = setdiff(sort(unique(DatasetCheck$GraphLabs)), 
-                                    names(graph_titles)), 
-                   "FALSE" = setdiff(sort(unique(ct_dataframe$File)),
-                                     names(graph_titles)))
-        )
+            setdiff(sort(unique(DatasetCheck$GraphLabs)), 
+                    names(graph_titles)))
         
         # If graph_titles isn't named, make the names match the files themselves.
         if(is.null(names(graph_titles))){
             names(graph_titles) <- graph_titles
         }
         
-        # If they named some but not all the files, name the missing ones, too.
-        if(any(duplicated(DatasetCheck$File))){
-            if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
-                names(graph_titles)[is.na(names(graph_titles))] <-
-                    DatasetCheck$GraphLabs[is.na(names(graph_titles))]
-                
-                names(graph_titles)[names(graph_titles) == ""] <-
-                    DatasetCheck$GraphLabs[names(graph_titles) == ""]
-            }
-        } else {
-            if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
-                names(graph_titles)[is.na(names(graph_titles))] <-
-                    basename(graph_titles[is.na(names(graph_titles))])
-                
-                names(graph_titles)[names(graph_titles) == ""] <-
-                    basename(graph_titles[names(graph_titles) == ""])
-            }
+        # If they named some but not all the values in graph_titles, name the
+        # missing ones, too.
+        if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
+            names(graph_titles)[is.na(names(graph_titles))] <-
+                DatasetCheck$GraphLabs[is.na(names(graph_titles))]
+            
+            names(graph_titles)[names(graph_titles) == ""] <-
+                DatasetCheck$GraphLabs[names(graph_titles) == ""]
         }
         
         # Convert labels to file base names (this doesn't do anything to the
@@ -327,14 +326,8 @@ ct_plot_mult <- function(ct_dataframe,
         # those now and tack them onto the end of graph_titles. This will allow
         # them to set the order of the files they DID specify but not omit files
         # that they forgot. The forgotten files just won't have pretty titles.
-        if(any(duplicated(DatasetCheck$File))){
-            graph_titles_all <- unique(c(names(graph_titles), 
-                                         DatasetCheck$GraphLabs))
-        } else {
-            graph_titles_all <- 
-                unique(c(names(graph_titles), 
-                         basename(sort(unique(as.character(ct_dataframe$File))))))
-        }
+        graph_titles_all <- unique(c(names(graph_titles), 
+                                     DatasetCheck$GraphLabs))
         
         # Name items in graph_titles_all according to graph_titles.
         names(graph_titles_all) <- graph_titles_all
@@ -344,11 +337,7 @@ ct_plot_mult <- function(ct_dataframe,
         
         # Even if user didn't specify file order, we need the levels of that
         # factor later. Setting them here. 
-        if(any(duplicated(DatasetCheck$File))){
-            graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
-        } else {
-            graph_titles_all <- sort(unique(ct_dataframe$File))
-        }
+        graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
         names(graph_titles_all) <- graph_titles_all
     }
     
@@ -397,39 +386,51 @@ ct_plot_mult <- function(ct_dataframe,
     ct_dataframe <- ct_dataframe %>% 
         mutate(File_bn = basename(File), 
                # Set the sort order in the data
-               File_bn = factor(File_bn, levels = names(graph_titles_all)))
+               GraphLabs = factor(GraphLabs, levels = names(graph_titles_all)))
     
     AllGraphs <- list()
-    AllData <- ct_dataframe %>% 
-        mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
-                                        "none", subsection_ADAM))
     
-    # Splitting the data, which we're about to do, messes up the order b/c you
-    # have to split on character data rather than factor. Getting the order of
-    # the factors here.
-    getOrder <- function(x){
-        Out <- levels(x)
-        if(is.null(Out)){
-            Out <- sort(unique(x))
+    if(is.na(graph_titles[1])){
+        
+        # Splitting the data, which we're about to do, messes up the order b/c you
+        # have to split on character data rather than factor. Getting the order of
+        # the factors here.
+        getOrder <- function(x){
+            Out <- levels(x)
+            if(is.null(Out)){
+                Out <- sort(unique(x))
+            }
+            return(Out)
         }
-        return(Out)
+        
+        if(any(duplicated(DatasetCheck$File))){
+            
+            Order <- expand.grid(list("File" = getOrder(ct_dataframe$File), 
+                                      "CompoundID" = getOrder(ct_dataframe$CompoundID), 
+                                      "Tissue" = getOrder(ct_dataframe$Tissue), 
+                                      "subsection_ADAM" = getOrder(ct_dataframe$subsection_ADAM))) %>% 
+                mutate(Order = paste(File, CompoundID, Tissue, subsection_ADAM, sep = ".")) %>% 
+                pull(Order)
+        } else {
+            Order <- getOrder(ct_dataframe$File)
+        }
+        
+    } else {
+        Order <- names(graph_titles_all)
+    }    
+    
+    if(any(duplicated(DatasetCheck$File))){
+        ct_dataframe <- split(ct_dataframe, 
+                              f = list(as.character(ct_dataframe$File),
+                                       as.character(ct_dataframe$CompoundID), 
+                                       as.character(ct_dataframe$Tissue), 
+                                       as.character(ct_dataframe$subsection_ADAM)))
+    } else {
+        ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
     }
     
-    Order <- expand.grid(list("File" = getOrder(AllData$File), 
-                              "CompoundID" = getOrder(AllData$CompoundID), 
-                              "Tissue" = getOrder(AllData$Tissue), 
-                              "subsection_ADAM" = getOrder(AllData$subsection_ADAM))) %>% 
-        mutate(Order = paste(File, CompoundID, Tissue, subsection_ADAM, sep = ".")) %>% 
-        pull(Order)
-    
-    AllData <- split(AllData, 
-                     f = list(as.character(AllData$File),
-                              as.character(AllData$CompoundID), 
-                              as.character(AllData$Tissue), 
-                              as.character(AllData$subsection_ADAM)))
-    
     for(i in Order){
-        if(nrow(AllData[[i]]) == 0){
+        if(nrow(ct_dataframe[[i]]) == 0){
             next
         }
         
@@ -444,19 +445,19 @@ ct_plot_mult <- function(ct_dataframe,
                           ifelse(y[5] == "none", "", y[5]))))
             }
         } else {
-            Title_i <- graph_titles_all[as.character(unique(AllData[[i]]$File_bn))]
+            Title_i <- graph_titles_all[i]
         }
         
-        AllData[[i]] <- AllData[[i]] %>% 
+        ct_dataframe[[i]] <- ct_dataframe[[i]] %>% 
             # need to convert subsection_ADAM back to NA if it was
             # changed above in order for this to work with ct_plot
             mutate(subsection_ADAM = ifelse(subsection_ADAM == "none",
                                             NA, subsection_ADAM))
         # print(i)
-        # print(head(AllData[[i]]))
+        # print(head(ct_dataframe[[i]]))
         
         AllGraphs[[i]] <- 
-            ct_plot(ct_dataframe = AllData[[i]], 
+            ct_plot(ct_dataframe = ct_dataframe[[i]], 
                     figure_type = figure_type,
                     mean_type = mean_type,
                     linear_or_log = linear_or_log,
