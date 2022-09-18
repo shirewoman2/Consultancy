@@ -145,6 +145,20 @@ pksummary_mult <- function(sim_data_files = NA,
                            save_table = NA, 
                            fontsize = 11){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Check for appropriate input for arguments
+    tissue <- tolower(tissue)
+    if(tissue %in% c("plasma", "blood") == FALSE){
+        stop("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. Please check your input and try again.", 
+             call. = FALSE)
+    }
+    
+    # Main body of function --------------------------------------------------
     # Read in the observed_PK data if it's not already a data.frame. Note that
     # the class of observed_PK will be logical if left as NA.
     if(class(observed_PK) == "character"){
@@ -152,6 +166,10 @@ pksummary_mult <- function(sim_data_files = NA,
                                 "csv" = read.csv(observed_PK), 
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                          sheetIndex = 1))
+        if(is.na(sim_data_files[1])){
+            sim_data_files <- observed_PKDF$File
+        }
+        
     } else {
         
         # If user did not supply specific files, then extract all the files in
@@ -180,6 +198,8 @@ pksummary_mult <- function(sim_data_files = NA,
         
         for(i in 1:nrow(observed_PKDF)){
             
+            # This warning only applies if they have both provided values for
+            # sim_data_files AND files in observed_PKDF$File.
             if(observed_PKDF$File[i] %in% sim_data_files == FALSE){
                 warning(paste0("The file ", observed_PKDF$File[i],
                                " was listed in your observed data but not in `sim_data_files`. It will be skipped."), 
