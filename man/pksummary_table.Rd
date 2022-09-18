@@ -28,9 +28,12 @@ pksummary_table(
 )
 }
 \arguments{
-\item{sim_data_file}{a simulator output file. If you supply a filled-out
-report input form to the argument \code{report_input_file}, you can leave
-this blank.}
+\item{sim_data_file}{a simulator output file. If you supplied a file name in a
+data.frame of observed PK or a csv or Excel file of observed PK for
+\code{observed_PK}, that file name will be used preferentially and you can
+leave this blank. Similarly, if you supply a filled-out report input form to
+the argument \code{report_input_file}, the file name you supplied
+\emph{there} will be used preferentially, and you can leave this blank.}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
  vector. \itemize{

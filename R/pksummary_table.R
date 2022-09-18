@@ -78,9 +78,12 @@
 #'file.} }
 #'
 #'
-#'@param sim_data_file a simulator output file. If you supply a filled-out
-#'  report input form to the argument \code{report_input_file}, you can leave
-#'  this blank.
+#'@param sim_data_file a simulator output file. If you supplied a file name in a
+#'  data.frame of observed PK or a csv or Excel file of observed PK for
+#'  \code{observed_PK}, that file name will be used preferentially and you can
+#'  leave this blank. Similarly, if you supply a filled-out report input form to
+#'  the argument \code{report_input_file}, the file name you supplied
+#'  \emph{there} will be used preferentially, and you can leave this blank.
 #'@param report_input_file (optional) This argument is an alternative way to
 #'  specify both what simulator Excel file to use and also what the observed PK
 #'  parameters were. Input is the name of the Excel file created by running
@@ -268,80 +271,134 @@ pksummary_table <- function(sim_data_file = NA,
     # Check for appropriate input for arguments
     tissue <- tolower(tissue)
     if(tissue %in% c("plasma", "blood") == FALSE){
-        stop("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. Please check your input and try again.", 
-             call. = FALSE)
+        warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+                call. = FALSE)
+        tissue <- "plasma"
     }
     
     PKorder <- tolower(PKorder)
     if(PKorder %in% c("default", "user specified") == FALSE){
         warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
                 call. = FALSE)
+        PKorder <- "default"
     }
     
-    if(is.na(report_input_file) & is.na(sim_data_file)){
-        stop("You must enter a value for 'report_input_file' or include a specific simulator output file for 'sim_data_file'.", 
-             call. = FALSE)
+    if(PKorder != "default" & is.na(PKparameters[1])){
+        warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters`. The order will be the default order from the Consultancy Report Template.", 
+                call. = FALSE)
+        PKorder <- "default"
     }
     
     # Main body of function --------------------------------------------------
-    # If they supplied observed_PK, get the sim_data_file from that. 
-    if(complete.cases(observed_PK[1]) && 
-       (class(observed_PK) == "character" | "data.frame" %in% class(observed_PK))){
-        if(class(observed_PK) == "character"){
+    
+    # Reading in all data and tidying ------------------------------------
+    if(complete.cases(report_input_file)){
+        
+        # If they didn't include ".xlsx" at the end of whatever they supplied for
+        # report_input_file, add that.
+        report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
+                                    report_input_file, paste0(report_input_file, ".xlsx"))
+        
+        if(is.na(sheet_report)){
+            stop("You must supply a value for `sheet_report` if you supply a report input file.", 
+                 call. = FALSE)
+        }
+        
+        sectionInfo <- getSectionInfo(report_input_file = report_input_file,
+                                      sheet_report = sheet_report)
+        
+        if(complete.cases(sim_data_file) & sim_data_file != sectionInfo$File){
+            warning(paste0("The value supplied for `sim_data_file` was `", 
+                           sim_data_file, 
+                           "``, but the value you supplied in the report input file `",
+                           report_input_file, "` was `", 
+                           sectionInfo$File,
+                           "`. The file listed in the report input file will be used."), 
+                    call. = FALSE)
+        }
+        
+        sim_data_file <- sectionInfo$sim_data_file
+        # Should we add an error catch here for when user fills out
+        # report_input_file but doesn't include any observed data to compare?
+        # Maybe not. If the user doesn't want to include any obs data there,
+        # just fill out sim_data_file.
+        
+        # If they supplied both a report_input_file and observed_PK, warn the
+        # user that this will preferentially read the report_input_file.
+        if(complete.cases(observed_PK[1])){
+            warning("You have supplied both a report input file and, separately, observed data. The report input file will be used preferentially and the observed data will be ignored.", 
+                    call. = FALSE)
+        }
+        
+        observed_PK <- as.data.frame(sectionInfo$ObsData)
+        
+    } else {
+        
+        # Setting this for use later since it's easiest if sectionInfo is
+        # logical when it doesn't apply. 
+        sectionInfo <- FALSE
+        
+        # If they supplied observed_PK, get sim_data_file from that. 
+        if(complete.cases(observed_PK[1]) && (class(observed_PK) == "character")){
             observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                   "csv" = read.csv(observed_PK), 
                                   "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                            sheetIndex = 1))
+            
+        } else if(class(observed_PK)[1] == "numeric"){ # This is when user has supplied a named numeric vector
+            
+            # Converting named vector to data.frame b/c everything else is set
+            # up as a data.frame.
+            if(class(observed_PK)[1] == "numeric"){
+                observed_PK <- as.data.frame(t(observed_PK))
+            }
         }
-        
-        # At this point, observed_PK should be a data.frame b/c it either was a
-        # data.frame at the outset or it has been created by reading an Excel or
-        # csv file.
+    }
+    
+    # At this point, observed_PK, if it exists, should be a data.frame b/c it
+    # either was a data.frame at the outset, it has been created by reading an
+    # Excel or csv file for observed data, or it came from a report input form.
+    if("data.frame" %in% class(observed_PK)){
         
         # There should be only 1 row in observed_PK, so removing any extras that
         # might have gotten included accidentally.
         observed_PK <- observed_PK[1, ]
         
+        # Also only keeping columns with complete cases for PK values.
+        observed_PK[, sapply(observed_PK, complete.cases)]
+        
+        # If they supplied a file name in the observed PK data, then use that
+        # instead of anything they may have supplied for sim_data_file.
+        if("File" %in% names(observed_PK) && complete.cases(observed_PK$File)){
+            if(complete.cases(sim_data_file) & sim_data_file != observed_PK$File){
+                warning(paste0("The value supplied for `sim_data_file` was `", 
+                               sim_data_file, 
+                               "``, but the value you supplied in the observed PK data was `", 
+                               observed_PK$File,
+                               "`. The file listed with the observed data will be used."), 
+                        call. = FALSE)
+            }
+            
+            sim_data_file <- observed_PK$File
+        }
+    }
+    
+    # At this point, we should have the sim_data_file. 
+    if(is.na(sim_data_file)){
+        stop("You must enter a simulator output file name for `sim_data_file`, include a simulator output file name with observed PK data, or include a simulator output file name within the Excel file you supplied for `report_input_file`. We don't know what file to use for your simulated data.", 
+             call. = FALSE)
     }
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
     
-    # If they didn't include ".xlsx" at the end, add that.
-    report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
-                                report_input_file, paste0(report_input_file, ".xlsx"))
-    
-    if(complete.cases(report_input_file) & is.na(sim_data_file)){
-        
-        sectionInfo <- getSectionInfo(report_input_file = report_input_file,
-                                      sheet_report = sheet_report)
-        # Should we add an error catch here for when user fills out
-        # report_input_file but doesn't include any observed data to
-        # compare? Maybe not. If the user doesn't want to include any obs
-        # data there, just fill out sim_data_file.
-    } else {
-        sectionInfo <- FALSE
-    }
-    
-    if(PKorder %in% c("default", "user specified") == FALSE){
-        stop(paste0("The value '", PKorder, "' is not one of the possibilities for the argument 'PKorder'. Please enter one of 'default' or 'user specified'."))
-    }
-    
-    if(PKorder != "default" & is.na(PKparameters[1])){
-        warning("You have requested 'user specified' for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument 'PKparameters'. The order will be the default order from the Consultancy Report Template.", 
-                call. = FALSE)
-        PKorder <- "default"
-    }
-    
-    
     # Figuring out what kind of means user wants, experimental details, etc.
     
-    # First, the scenarios where there are observed data to compare (sectionInfo
-    # exists)
+    # First, the scenarios where there are observed data to compare from a
+    # filled-out report template (sectionInfo exists)
     if(class(sectionInfo) != "logical"){
         
-        sim_data_file <- sectionInfo$sim_data_file
         MeanType <- ifelse(is.na(mean_type),
                            sectionInfo$ObsData$MeanType,
                            mean_type)
@@ -354,8 +411,8 @@ pksummary_table <- function(sim_data_file = NA,
         
     } else {
         
-        # And second, the scenario where user has only supplied a simulator
-        # output file, so there are no observed data for comparisons.
+        # And second, the scenario where user has not supplied a filled-out
+        # report form.
         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
         GMR_mean_type <- MeanType
         # NB re. GMR_mean_type: I originally had this set to "geometric" all the
@@ -377,7 +434,6 @@ pksummary_table <- function(sim_data_file = NA,
         
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
         DoseRegimen <- Deets$Regimen_sub
-        sim_data_file <- sim_data_file
     }
     
     if(complete.cases(PKparameters[1])){
@@ -387,18 +443,10 @@ pksummary_table <- function(sim_data_file = NA,
     } else {
         
         if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
-            if(complete.cases(observed_PK[1])){
+            if("data.frame" %in% class(observed_PK)){
                 # If user supplies an observed file, then pull the parameters
-                # they want to match.
-                if(class(observed_PK) == "character"){
-                    observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
-                                          "csv" = read.csv(observed_PK), 
-                                          "xlsx" = xlsx::read.xlsx(observed_PK, 
-                                                                   sheetIndex = 1))
-                }
-                
-                # If user specified "_first" instead of "_dose1", make that
-                # work, too. 
+                # they want to match. If user specified "_first" instead of
+                # "_dose1", make that work, too.
                 PKToPull <- sub("_first", "_dose1", tolower(names(observed_PK)))
                 
             } else {
@@ -489,7 +537,9 @@ pksummary_table <- function(sim_data_file = NA,
          any(str_detect(names(MyPKResults_all[[1]]), "AUCinf")) == FALSE) |
         ("data.frame" %in% class(MyPKResults_all[[1]]) == FALSE &
          !str_detect(names(MyPKResults_all)[1], "AUCinf")))){
-        warning("AUCinf included NA values, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate.",
+        warning(paste0("AUCinf included NA values in the file `", 
+                       sim_data_file, 
+                       "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate."),
                 call. = FALSE)
         PKToPull <- sub("AUCinf", "AUCt", PKToPull)
     }
@@ -694,50 +744,45 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     # observed data -----------------------------------------------------
-    if(class(sectionInfo) != "logical" | "data.frame" %in% class(observed_PK) |
-       class(observed_PK)[1] == "numeric"){
-        if(class(sectionInfo) != "logical"){ # this is when the user has supplied a report form.
-            MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
-                as.data.frame() %>% t() %>% as.data.frame() %>%
-                rename("Obs" = V1) %>%
-                mutate(PKParam = row.names(.),
-                       Obs = as.numeric(Obs))
-        }  else { # this is when the user has NOT supplied a report form
-            # Converting named vector to data.frame b/c everything else is set
-            # up as a data.frame.
-            if(class(observed_PK)[1] == "numeric"){
-                observed_PK <- as.data.frame(t(observed_PK))
-            }
-            
-            # Making obs PK names match correct PK parameters regardless of case
-            suppressMessages(
-                ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
-                    mutate(PKparameter_lower = sub("_first", "_dose1",
-                                                   tolower(OrigName)), 
-                           PKparameter_lower = sub("_ss", "_last", 
-                                                   PKparameter_lower),
-                           PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
-                    left_join(AllPKParameters %>% select(PKparameter) %>% 
-                                  unique() %>% 
-                                  mutate(PKparameter_lower = tolower(PKparameter))) %>% 
-                    mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
-                                                paste0(PKparameter, "_CV"), 
-                                                PKparameter), 
-                           PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
-                           PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
-            )
-            
-            MyObsPK <- observed_PK
-            names(MyObsPK) <- ObsNames$PKparameter
-            
-            # Making observed_PK that was supplied as a data.frame or file long
-            # w/column for PKparameter.
-            MyObsPK <- MyObsPK %>% 
-                pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
-                                             paste0(AllPKParameters$PKparameter, "_CV"))), 
-                             names_to = "PKParam", 
-                             values_to = "Obs")
-        }
+    
+    if("data.frame" %in% class(observed_PK)){
+        
+        # if(class(sectionInfo) != "logical"){
+        #     MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
+        #         as.data.frame() %>% t() %>% as.data.frame() %>%
+        #         rename("Obs" = V1) %>%
+        #         mutate(PKParam = row.names(.),
+        #                Obs = as.numeric(Obs))
+        # }
+        
+        # Making obs PK names match correct PK parameters regardless of case
+        suppressMessages(
+            ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
+                mutate(PKparameter_lower = sub("_first", "_dose1",
+                                               tolower(OrigName)), 
+                       PKparameter_lower = sub("_ss", "_last", 
+                                               PKparameter_lower),
+                       PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
+                left_join(AllPKParameters %>% select(PKparameter) %>% 
+                              unique() %>% 
+                              mutate(PKparameter_lower = tolower(PKparameter))) %>% 
+                mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
+                                            paste0(PKparameter, "_CV"), 
+                                            PKparameter), 
+                       PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
+                       PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
+        )
+        
+        MyObsPK <- observed_PK
+        names(MyObsPK) <- ObsNames$PKparameter
+        
+        # Making observed_PK that was supplied as a data.frame or file long
+        # w/column for PKparameter.
+        MyObsPK <- MyObsPK %>% 
+            pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
+                                         paste0(AllPKParameters$PKparameter, "_CV"))), 
+                         names_to = "PKParam", 
+                         values_to = "Obs")
         
         MyObsPK <- MyObsPK %>% 
             mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
