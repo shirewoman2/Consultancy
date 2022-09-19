@@ -348,11 +348,11 @@ extractConcTime <- function(sim_data_file,
                                   "portal vein" = "^pv"))]
         }
         
-        # Searching for correct compound. Substrate, inhibitor 1, and inhibitor
-        # 2 concentrations will all be on the main concentration-time data tab,
-        # but other compounds will be on separate tabs.
-        if(any(compoundToExtract %in%  c("inhibitor 1 metabolite",
-                                         "primary metabolite 1",
+        # Searching for correct compound. Substrate, inhibitor 1, inhibitor 1
+        # metabolite, and inhibitor 2 concentrations will all be on the main
+        # concentration-time data tab, but other compounds will be on separate
+        # tabs. 
+        if(any(compoundToExtract %in%  c("primary metabolite 1",
                                          "primary metabolite 2",
                                          "secondary metabolite"))){
             PossSheets <- PossSheets[
@@ -363,9 +363,7 @@ extractConcTime <- function(sim_data_file,
                        "primary metabolite 2" = 
                            str_detect(tolower(PossSheets), "sub met2|sub pri met2"), 
                        "secondary metabolite" = 
-                           str_detect(tolower(PossSheets), "sub sm|sub sec met"),
-                       "inhibitor 1 metabolite" = 
-                           str_detect(tolower(PossSheets), "inh1 m")
+                           str_detect(tolower(PossSheets), "sub sm|sub sec met")
                 )]
         }
         
