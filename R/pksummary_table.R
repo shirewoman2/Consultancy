@@ -756,8 +756,10 @@ pksummary_table <- function(sim_data_file = NA,
         # }
         
         # Making obs PK names match correct PK parameters regardless of case
+        MyObsPK <- observed_PK
+        
         suppressMessages(
-            ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
+            ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
                 mutate(PKparameter_lower = sub("_first", "_dose1",
                                                tolower(OrigName)), 
                        PKparameter_lower = sub("_ss", "_last", 
@@ -772,9 +774,12 @@ pksummary_table <- function(sim_data_file = NA,
                        PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
                        PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
         )
-        
-        MyObsPK <- observed_PK
         names(MyObsPK) <- ObsNames$PKparameter
+        # Having extra columns messes things up, so removing any extraneous
+        # things the user might have included.
+        MyObsPK <- MyObsPK[, names(MyObsPK)[names(MyObsPK) %in% 
+                                                c(AllPKParameters$PKparameter, 
+                                                  paste0(AllPKParameters$PKparameter, "_CV"))]]
         
         # Making observed_PK that was supplied as a data.frame or file long
         # w/column for PKparameter.
@@ -827,11 +832,13 @@ pksummary_table <- function(sim_data_file = NA,
                 full_join(SOratios)
         )
         
-        # If user supplied obs data and no PK parameters that they specifically
-        # wanted, only keep PK parameters where there are values for the observed
-        # mean data. 
-        PKToPull <- MyObsPK %>% filter(complete.cases(Obs)) %>% 
-            pull(PKParam) %>% unique()
+        # If user supplied obs data and did NOT specify PK parameters that they
+        # wanted, only keep PK parameters where there are values for the
+        # observed mean data.
+        if(is.na(PKparameters[1])){
+            PKToPull <- MyObsPK %>% filter(complete.cases(Obs)) %>% 
+                pull(PKParam) %>% unique()
+        }
         
     } else {
         MyPKResults <- MyPKResults %>% 
@@ -984,7 +991,7 @@ pksummary_table <- function(sim_data_file = NA,
     } 
     
     # If the user wants to specify the order, allowing that here.
-    if(PKorder == "user specified"){
+    if(str_detect(PKorder, "user")){
         PKlevels <- PKparameters
     }
     
