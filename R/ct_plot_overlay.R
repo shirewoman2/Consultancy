@@ -1187,6 +1187,10 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     if(floating_facet_scale){
+        
+        strip.position <- ifelse(facet_ncol == 1 & is.na(facet_nrow), 
+                                 "right", "top")
+        
         A <- A + 
             scale_x_continuous(expand = expansion(
                 mult = pad_x_num)) +
@@ -1198,7 +1202,8 @@ ct_plot_overlay <- function(ct_dataframe,
                                      "FALSE" = facet_ncol),
                        nrow = switch(as.character(is.na(facet_nrow)),
                                      "TRUE" = NULL, 
-                                     "FALSE" = facet_nrow))
+                                     "FALSE" = facet_nrow), 
+                       strip.position = strip.position)
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
