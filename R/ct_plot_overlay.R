@@ -1167,8 +1167,6 @@ ct_plot_overlay <- function(ct_dataframe,
     A <-  A +
         xlab(xlab) +
         ylab(ylab) +
-        # xlab(paste0("Time (", unique(sim_dataframe$Time_units), ")")) +
-        # ylab(paste0("Concentration (", unique(sim_dataframe$Conc_units), ")")) +
         theme(panel.background = element_rect(fill = "white", color = NA),
               panel.border = element_rect(color = "black", fill = NA),
               strip.background = element_rect(fill = "white"),
@@ -1194,7 +1192,13 @@ ct_plot_overlay <- function(ct_dataframe,
                 mult = pad_x_num)) +
             scale_y_continuous(expand = expansion(mult = pad_y_num)) +
             facet_wrap(vars(!!facet1_column, !!facet2_column), 
-                       scales = "free")
+                       scales = "free", 
+                       ncol = switch(as.character(is.na(facet_ncol)),
+                                     "TRUE" = NULL, 
+                                     "FALSE" = facet_ncol),
+                       nrow = switch(as.character(is.na(facet_nrow)),
+                                     "TRUE" = NULL, 
+                                     "FALSE" = facet_nrow))
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
