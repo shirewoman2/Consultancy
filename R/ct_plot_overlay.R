@@ -1188,13 +1188,11 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(floating_facet_scale){
         
-        strip.position <- ifelse(facet_ncol == 1 & is.na(facet_nrow), 
+        strip.position <- ifelse(complete.cases(facet_ncol) && 
+                                     facet_ncol == 1 & is.na(facet_nrow), 
                                  "right", "top")
         
         A <- A + 
-            scale_x_continuous(expand = expansion(
-                mult = pad_x_num)) +
-            scale_y_continuous(expand = expansion(mult = pad_y_num)) +
             facet_wrap(vars(!!facet1_column, !!facet2_column), 
                        scales = "free", 
                        ncol = switch(as.character(is.na(facet_ncol)),
@@ -1203,7 +1201,16 @@ ct_plot_overlay <- function(ct_dataframe,
                        nrow = switch(as.character(is.na(facet_nrow)),
                                      "TRUE" = NULL, 
                                      "FALSE" = facet_nrow), 
-                       strip.position = strip.position)
+                       strip.position = strip.position) +
+            scale_y_continuous(expand = expansion(mult = pad_y_num))
+        
+        if(complete.cases(x_axis_interval)){
+            A <- A + scale_x_continuous(expand = expansion(
+                mult = pad_x_num), breaks = XBreaks, labels = XLabels)
+        } else {
+            A <- A + scale_x_continuous(expand = expansion(
+                mult = pad_x_num))
+        }
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
@@ -1216,8 +1223,7 @@ ct_plot_overlay <- function(ct_dataframe,
                 scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                    expand = expansion(
                                        mult = pad_x_num)) +
-                scale_y_continuous(breaks = YBreaks,
-                                   labels = YLabels,
+                scale_y_continuous(breaks = YBreaks, labels = YLabels,
                                    expand = expansion(mult = pad_y_num)) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
                                         AESCols["facet2"] == "<empty>"), 
