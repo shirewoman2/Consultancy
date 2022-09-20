@@ -75,8 +75,11 @@
 #'   \emph{is} available.
 #' @param figure_type the type of figure to plot. \describe{
 #'
-#'   \item{"means only"}{show only the mean, geometric mean, or median (whatever
-#'   you chose for "mean_type"). This is the default.}
+#'   \item{"means only"}{(default) show only the mean, geometric mean, or median
+#'   (whatever you chose for "mean_type")}
+#'
+#'   \item{"percentiles"}{plots an opaque line for the mean data and lighter
+#'   lines for the 5th and 95th percentiles of the simulated data}
 #'
 #'   \item{"percentile ribbon"}{show an opaque line for the mean data and
 #'   transparent shading for the 5th to 95th percentiles. Note: You may
@@ -434,11 +437,18 @@ ct_plot_overlay <- function(ct_dataframe,
         obs_color <- obs_color[1]
     }
     
+    # Cleaning up figure_type for the whole rest of the function
+    if(str_detect(figure_type, "percentile") & !str_detect(figure_type, "ribbon")){
+        figure_type <- "percentiles"
+    } else if(str_detect(figure_type, "ribbon")){
+        figure_type <- "percentile ribbon"
+    }
+    
     # Checking for acceptable input
-    if((str_detect(figure_type, "ribbon") | figure_type == "means only") == FALSE){
+    if(figure_type %in% c("means only", "percentiles", "percentile ribbon") == FALSE){
         warning(paste0("The value used for `figure_type` was `", 
                        figure_type,
-                       "``, but only the only acceptable options are `means only` or `percentile ribbon`. The default figure type, `means only`, will be used."),
+                       "`, but only the only acceptable options are `means only`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used."),
                 call. = FALSE)
         figure_type <- "means only"
     }
@@ -638,8 +648,8 @@ ct_plot_overlay <- function(ct_dataframe,
                    Trial %in% 
                    switch(figure_type, 
                           "means only" = MyMeanType, 
-                          "percentile ribbon" = c(MyMeanType, "per5", "per95"),
-                          "ribbon" = c(MyMeanType, "per5", "per95")))
+                          "percentiles" = c(MyMeanType, "per5", "per95"),
+                          "percentile ribbon" = c(MyMeanType, "per5", "per95")))
     
     obs_data <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
         mutate(Trial = {MyMeanType})
@@ -980,6 +990,47 @@ ct_plot_overlay <- function(ct_dataframe,
         
     }
     
+    ## Figure type: percentiles ---------------------------------------------
+    
+    if(figure_type == "percentiles"){
+        
+        A <- ggplot(sim_dataframe %>%
+                        filter(Trial %in% c("per5", "per95")) %>%
+                        mutate(Group = paste(Group, Trial)),
+                    switch(paste(AES, LTCol == "Inhibitor"), 
+                           "color-linetype TRUE" = aes(x = Time, y = Conc,
+                                                       color = colorBy_column,
+                                                       fill = colorBy_column,
+                                                       linetype = linetype_column,
+                                                       group = Group,
+                                                       shape = linetype_column),
+                           "color-linetype FALSE" = aes(x = Time, y = Conc,
+                                                        color = colorBy_column,
+                                                        fill = colorBy_column,
+                                                        linetype = linetype_column,
+                                                        group = Group,
+                                                        shape = Inhibitor),
+                           # Only option here will be "color FALSE" b/c "color"
+                           # will only be the AES if linetype is unspecified.
+                           "color FALSE" = aes(x = Time, y = Conc, 
+                                               color = colorBy_column, 
+                                               fill = colorBy_column,
+                                               group = Group, shape = Inhibitor), 
+                           "linetype TRUE" = aes(x = Time, y = Conc,
+                                                 linetype = linetype_column,
+                                                 group = Group, shape = linetype_column),
+                           "linetype FALSE" = aes(x = Time, y = Conc,
+                                                  linetype = linetype_column,
+                                                  group = Group, shape = linetype_column),
+                           # Only option here will be "none FALSE" b/c "none"
+                           # will only be the AES if linetype is unspecified.
+                           "none FALSE" = aes(x = Time, y = Conc,
+                                              group = Group, shape = Inhibitor))) +
+            geom_line(alpha = 0.25,
+                      lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+            geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
+                      lwd = ifelse(is.na(line_width), 1, line_width))
+    }
     
     ## Figure type: ribbon --------------------------------------------------
     if(str_detect(figure_type, "ribbon")){

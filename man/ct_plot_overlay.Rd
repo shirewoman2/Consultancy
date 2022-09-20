@@ -6,6 +6,7 @@
 \usage{
 ct_plot_overlay(
   ct_dataframe,
+  obs_data_assignment = NA,
   mean_type = "arithmetic",
   figure_type = "means only",
   linear_or_log = "semi-log",
@@ -49,6 +50,19 @@ ct_plot_overlay(
 the function \code{\link{extractConcTime_mult}} or
 \code{\link{extractConcTime}}. Not quoted.}
 
+\item{obs_data_assignment}{optionally specify which observed files go with
+which simulator files. If left as NA and what you supplied for
+\code{ct_dataframe} doesn't already specify which observed data go with
+which simulated file, this will assume that \emph{all} observed data goes
+with \emph{all} simulated data. To specify, use a named character vector
+like this: \code{obs_data_assignment = c("obs data 1.xlsx" =
+"mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
+observed file needs to match more than one simulated file but not
+\emph{all} the simulated files, you can do that by separating the simulated
+files with commas, e.g., \code{obs_data_assignment = c("obs data 1.xlsx" =
+"mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
+"mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}}
+
 \item{mean_type}{plot "arithmetic" (default) or "geometric" mean
 concentrations or "median" concentrations as the main (thickest or only)
 line for each data set. If this aggregate measure is not available in the
@@ -57,8 +71,11 @@ simulator output, you'll receive a warning message and we'll plot one that
 
 \item{figure_type}{the type of figure to plot. \describe{
 
-  \item{"means only"}{show only the mean, geometric mean, or median (whatever
-  you chose for "mean_type"). This is the default.}
+  \item{"means only"}{(default) show only the mean, geometric mean, or median
+  (whatever you chose for "mean_type")}
+
+  \item{"percentiles"}{plots an opaque line for the mean data and lighter
+  lines for the 5th and 95th percentiles of the simulated data}
 
   \item{"percentile ribbon"}{show an opaque line for the mean data and
   transparent shading for the 5th to 95th percentiles. Note: You may
