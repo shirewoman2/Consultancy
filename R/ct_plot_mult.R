@@ -341,24 +341,29 @@ ct_plot_mult <- function(ct_dataframe,
         names(graph_titles_all) <- graph_titles_all
     }
     
-    # Dealing with observed data.
+    # Dealing with observed data. This is the scenario when any observed data
+    # exist AND *either* any of the observed data are missing a value for File
+    # *or* there are any values for obs_data_assignment.
     if(any(ct_dataframe$Simulated == FALSE) & 
-       (all(complete.cases(ct_dataframe$File[ct_dataframe$Simulated == TRUE])) == FALSE |
-        is.na(obs_data_assignment[1]))){
+       (any(is.na(ct_dataframe$File[ct_dataframe$Simulated == FALSE])) |
+        any(complete.cases(obs_data_assignment)))){
         
         ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
         ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
         
-        if(is.na(obs_data_assignment[1])){
-            # If there are no values assigned for File, then make all the
+        if(all(is.na(obs_data_assignment))){
+            # If there are no values assigned for File and the user did not
+            # specify anything for obs_data_assignment, then make all the
             # observed data go with all the simulated data.
             FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
-                                      File = unique(ct_dataframe$File))
+                                      File = unique(ct_dataframe$File)) %>% 
+                filter(complete.cases(File))
             suppressMessages(
                 ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
             )
         } else {
-            
+            # If the user *did* specify values for obs_data_assignment, then use
+            # those for File.
             ObsAssign <- str_split(obs_data_assignment, pattern = ",")
             
             if(all(sapply(ObsAssign, length) == 1)){
