@@ -1598,12 +1598,12 @@ extractConcTime <- function(sim_data_file,
                TimeSinceDose1 = Time - StartHr,
                DoseInt = MyIntervals[CompoundID],
                MaxDoseNum = MyMaxDoseNum[CompoundID],
-               DoseNum = Time %/% DoseInt + 1,
+               DoseNum = (Time - StartHr) %/% DoseInt + 1,
                # Taking care of possible artifacts
                DoseNum = ifelse(DoseNum < 0, 0, DoseNum),
                DoseNum = ifelse(DoseNum > MaxDoseNum, MaxDoseNum, DoseNum),
                # If it was a single dose, make everything after StartHr dose
-               # 1 and everything before StartHr dose 0. if it was a single
+               # 1 and everything before StartHr dose 0. If it was a single
                # dose, then DoseInt is NA.
                DoseNum = ifelse(is.na(DoseInt),
                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
