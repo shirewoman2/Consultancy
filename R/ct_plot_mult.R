@@ -163,19 +163,20 @@
 #'   default NA when a legend is included and an effector is present, the label
 #'   in the legend will be "Inhibitor".
 #' @param graph_titles optionally specify titles to be used in the graphs and
-#'   specify the order in which the files are graphed. Input should be a named
-#'   character vector of the files in the order you would like and what you want
-#'   to use for the title. The file name must \emph{perfectly} match the file
-#'   name listed in ct_dataframe or it won't be used. An example of how this
-#'   might be specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy
-#'   volunteers", "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an
-#'   order that you didn't think you specified, please double check that you
-#'   have specified the file names \emph{exactly} as they appear in
-#'   \code{ct_dataframe}. \strong{CAVEAT:} If you have more than one dataset per
-#'   file, this is trickier. However, you can specify titles using the name of
-#'   the simulator output file, the compound ID, the tissue, and then the
-#'   ADAM-model subsection (use "none" if that doesn't apply here), each
-#'   separated with a ".". An example: \code{graph_titles = c("my sim
+#'   specify the order in which the files are graphed or use "none" to have no
+#'   titles on your graphs. Input should be a named character vector of the
+#'   files in the order you would like and what you want to use for the title.
+#'   The file name must \emph{perfectly} match the file name listed in
+#'   ct_dataframe or it won't be used. An example of how this might be
+#'   specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
+#'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
+#'   you didn't think you specified, please double check that you have specified
+#'   the file names \emph{exactly} as they appear in \code{ct_dataframe}.
+#'   \strong{CAVEAT:} If you have more than one dataset per file, this is
+#'   trickier. However, you can specify titles using the name of the simulator
+#'   output file, the compound ID, the tissue, and then the ADAM-model
+#'   subsection (use "none" if that doesn't apply here), each separated with a
+#'   ".". An example: \code{graph_titles = c("my sim
 #'   file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
 #'   1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
 #'   example with the dataset MDZ_Keto.
@@ -291,7 +292,7 @@ ct_plot_mult <- function(ct_dataframe,
     }
     
     # Setting up graph titles and order
-    if(length(graph_titles) > 1 && complete.cases(graph_titles[1])){
+    if(length(graph_titles) > 1 && any(complete.cases(graph_titles))){
         
         # If they have named some graph_titles but not all, fix that.
         graph_titles <- c(
@@ -439,7 +440,9 @@ ct_plot_mult <- function(ct_dataframe,
             next
         }
         
-        if(any(duplicated(DatasetCheck$File))){
+        if(any(complete.cases(graph_titles)) && graph_titles[1] == "none"){
+            Title_i <- NA
+        } else if(any(duplicated(DatasetCheck$File))){
             if(any(names(graph_titles_all) != graph_titles_all)){
                 Title_i <- graph_titles_all[i]
             } else {
