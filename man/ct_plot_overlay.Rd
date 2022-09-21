@@ -31,6 +31,7 @@ ct_plot_overlay(
   facet_spacing = NA,
   time_range = NA,
   x_axis_interval = NA,
+  x_axis_label = NA,
   pad_x_axis = TRUE,
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
@@ -307,6 +308,9 @@ input: any number or leave as NA to accept default values, which are
 generally reasonable guesses as to aesthetically pleasing and PK-relevant
 intervals.}
 
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the x axis label}
+
 \item{pad_x_axis}{optionally add a smidge of padding to the x axis (default
 is TRUE, which includes some generally reasonable padding). If changed to
 FALSE, the y axis will be placed right at the beginning of your time range
@@ -381,9 +385,6 @@ file instead to your Documents folder.}
 \item{fig_height}{figure height in inches; default is 6}
 
 \item{fig_width}{figure width in inches; default is 5}
-
-\item{x_axis_label}{optionally supply a character vector or an expression to
-use for the x axis label}
 }
 \value{
 
