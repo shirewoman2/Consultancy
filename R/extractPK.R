@@ -263,6 +263,14 @@ extractPK <- function(sim_data_file,
     # Checking experimental details to only pull details that apply
     Deets <- extractExpDetails(sim_data_file, exp_details = "Summary tab")
     
+    if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
+                call. = FALSE)
+        return(list())
+    }
+    
     if(is.na(Deets$Inhibitor1)){
         PKparameters <- 
             PKparameters[PKparameters %in% 
@@ -389,6 +397,16 @@ extractPK <- function(sim_data_file,
             
             # Finding the last row of the individual data
             EndRow_ind <- which(AUC_xl$...2 == "Statistics")
+            
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                        call. = FALSE)
+                return(list())
+            } 
+            
             EndRow_ind <- max(which(complete.cases(AUC_xl$...2[1:(EndRow_ind-1)])))
             
             # If tissue is blood, REMOVE the plasma columns entirely. I
@@ -672,6 +690,15 @@ extractPK <- function(sim_data_file,
             # Finding the last row of the individual data
             EndRow_ind <- which(AUC0_xl$...2 == "Statistics") - 3
             
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                        call. = FALSE)
+                return(list())
+            } 
+            
             # Finding the aggregate data rows 
             StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUC0_xl$...2))
@@ -771,6 +798,15 @@ extractPK <- function(sim_data_file,
             
             # Finding the last row of the individual data
             EndRow_ind <- which(AUCX_xl$...2 == "Statistics") - 3
+            
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                        call. = FALSE)
+                return(list())
+            } 
             
             # Finding the aggregate data rows 
             StartRow_agg <- which(AUCX_xl$...2 == "Statistics") + 2
@@ -1161,6 +1197,16 @@ extractPK <- function(sim_data_file,
         
         HeaderRow <- which(XL$...1 == "Index")[1]
         EndRow_ind <- which(is.na(XL$...1))
+        
+        if(length(EndRow_ind) == 0){
+            # Using "warning" instead of "stop" here b/c I want this to be
+            # able to pass through to other functions and just skip any
+            # files that aren't simulator output.
+            warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                    call. = FALSE)
+            return(list())
+        } 
+        
         EndRow_ind <- min(EndRow_ind[EndRow_ind > HeaderRow]) - 1
         
         StartRow_agg <- which(XL$...2 == "Statistics") + 2

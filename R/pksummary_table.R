@@ -436,6 +436,14 @@ pksummary_table <- function(sim_data_file = NA,
         DoseRegimen <- Deets$Regimen_sub
     }
     
+    if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
+                call. = FALSE)
+        return(list())
+    }
+    
     if(complete.cases(PKparameters[1])){
         # If user specified "_first" instead of "_dose1", make that work, too. 
         PKToPull <- sub("_first", "_dose1", PKparameters)

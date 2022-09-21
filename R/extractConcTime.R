@@ -248,6 +248,13 @@ extractConcTime <- function(sim_data_file,
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
+    if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
+                call. = FALSE)
+    }
+    
     # Noting whether this was animal data
     Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
     Animal <- ifelse(is.na(Animal), FALSE, Animal)
