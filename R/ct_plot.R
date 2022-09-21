@@ -145,7 +145,7 @@
 #'   are generally reasonable guesses as to aesthetically pleasing and
 #'   PK-relevant intervals.
 #' @param x_axis_label optionally supply a character vector or an expression to
-#'   use for the y axis label
+#'   use for the x axis label
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected.

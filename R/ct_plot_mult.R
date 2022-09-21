@@ -145,6 +145,8 @@
 #'   Acceptable input: any number or leave as NA to accept default values, which
 #'   are generally reasonable guesses as to aesthetically pleasing and
 #'   PK-relevant intervals.
+#' @param x_axis_label optionally supply a character vector or an expression to
+#'   use for the x axis label
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected.
@@ -152,6 +154,8 @@
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
+#' @param y_axis_label optionally supply a character vector or an expression to
+#'   use for the y axis label
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. If you include the legend but then some graphs do have a legend and
@@ -245,10 +249,12 @@ ct_plot_mult <- function(ct_dataframe,
                          linear_or_log = "semi-log",
                          time_range = NA, 
                          x_axis_interval = NA, 
+                         x_axis_label = NA,
                          pad_x_axis = TRUE, 
                          pad_y_axis = TRUE,
                          y_axis_limits_lin = NA, 
                          y_axis_limits_log = NA, 
+                         y_axis_label = NA,
                          legend_position = "none",
                          legend_label = NA, 
                          graph_titles = NA,
@@ -476,10 +482,12 @@ ct_plot_mult <- function(ct_dataframe,
                     linear_or_log = linear_or_log,
                     time_range = time_range, 
                     x_axis_interval = x_axis_interval, 
+                    x_axis_label = x_axis_label,
                     pad_x_axis = pad_x_axis, 
                     pad_y_axis = pad_y_axis,
                     y_axis_limits_lin = y_axis_limits_lin, 
                     y_axis_limits_log = y_axis_limits_log, 
+                    y_axis_label = y_axis_label,
                     legend_position = legend_position,
                     legend_label = legend_label, 
                     graph_labels = FALSE, 

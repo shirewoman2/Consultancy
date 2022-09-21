@@ -289,6 +289,8 @@
 #'   input: any number or leave as NA to accept default values, which are
 #'   generally reasonable guesses as to aesthetically pleasing and PK-relevant
 #'   intervals.
+#' @param x_axis_label optionally supply a character vector or an expression to
+#'   use for the x axis label
 #' @param pad_x_axis optionally add a smidge of padding to the x axis (default
 #'   is TRUE, which includes some generally reasonable padding). If changed to
 #'   FALSE, the y axis will be placed right at the beginning of your time range
@@ -314,6 +316,8 @@
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected. This only
 #'   applies when you have requested a semi-log plot with \code{linear_or_log}.
+#' @param y_axis_label optionally supply a character vector or an expression to
+#'   use for the y axis label
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
@@ -404,6 +408,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             pad_y_axis = TRUE,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
+                            y_axis_label = NA,
                             graph_labels = TRUE,
                             graph_title = NA,
                             graph_title_size = 14, 
@@ -1169,6 +1174,17 @@ ct_plot_overlay <- function(ct_dataframe,
     
     
     # Making linear graph --------------------------------------------------------
+    
+    if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
+       (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
+        ylab <- y_axis_label
+    }
+    
+    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
+       (class(x_axis_label) == "expression" && length(x_axis_label) > 0)){
+        xlab <- x_axis_label
+    }
+    
     A <-  A +
         xlab(xlab) +
         ylab(ylab) +

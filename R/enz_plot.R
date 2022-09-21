@@ -72,6 +72,8 @@
 #'   Acceptable input: any number or leave as NA to accept default values, which
 #'   are generally reasonable guesses as to aesthetically pleasing and
 #'   PK-relevant intervals.
+#' @param x_axis_label optionally supply a character vector or an expression to
+#'   use for the x axis label
 #' @param pad_x_axis optionally add a smidge of padding to the the x axis
 #'   (default is TRUE, which includes some generally reasonable padding). If
 #'   changed to FALSE, the y axis will be placed right at the beginning of your
@@ -97,6 +99,8 @@
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
+#' @param y_axis_label optionally supply a character vector or an expression to
+#'   use for the y axis label
 #' @param line_transparency optionally specify the transparency for the trial
 #'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
 #'   so no line at all) to 1 (completely opaque or black). If left as the
@@ -124,6 +128,10 @@
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
+#' @param graph_title optionally specify a title that will be centered across
+#'   your graph or set of graphs
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14
 #' @param legend_label optionally indicate on the legend whether the effector is
 #'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as the
@@ -206,10 +214,12 @@ enz_plot <- function(sim_enz_dataframe,
                      linear_or_log = "linear",
                      time_range = NA,
                      x_axis_interval = NA,
+                     x_axis_label = NA,
                      pad_x_axis = TRUE,
                      pad_y_axis = TRUE,
                      y_axis_limits_lin = NA,
                      y_axis_limits_log = NA,
+                     y_axis_label = NA,
                      line_type = NA,
                      line_transparency = NA,
                      line_color = NA,
@@ -218,6 +228,8 @@ enz_plot <- function(sim_enz_dataframe,
                      legend_label = NA,
                      prettify_compound_names = TRUE,
                      graph_labels = TRUE,
+                     graph_title = NA,
+                     graph_title_size = 14, 
                      save_graph = NA,
                      fig_height = 4, 
                      fig_width = 6){
@@ -225,9 +237,9 @@ enz_plot <- function(sim_enz_dataframe,
     # Error catching ----------------------------------------------------------
     
     # Check whether tidyverse is loaded
-	if("package:tidyverse" %in% search() == FALSE){
-	    stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-	}
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
     
     # Observed data are not included for enzyme-abundance plots, so remove that
     # regular option for time_range.
@@ -247,18 +259,18 @@ enz_plot <- function(sim_enz_dataframe,
     
     
     # main body of function -----------------------------------------------
-
-	Data <- sim_enz_dataframe
+    
+    Data <- sim_enz_dataframe
     
     if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
         Data <- Data %>% filter(Tissue == gut_tissue)
     }
     
-	# Tell the user what they're plotting.
-	message(paste0("Graphing enzyme abundance levels for ", 
-	               unique(Data$Enzyme), " in ",
-	               unique(Data$Tissue), "."))
-	
+    # Tell the user what they're plotting.
+    message(paste0("Graphing enzyme abundance levels for ", 
+                   unique(Data$Enzyme), " in ",
+                   unique(Data$Tissue), "."))
+    
     ct_plot(ct_dataframe = Data, 
             figure_type = figure_type,
             mean_type = mean_type, 
@@ -269,6 +281,7 @@ enz_plot <- function(sim_enz_dataframe,
             adjust_obs_time = adjust_obs_time,
             y_axis_limits_lin = y_axis_limits_lin,
             y_axis_limits_log = y_axis_limits_log,
+            y_axis_label = y_axis_label,
             line_type = line_type,
             line_transparency = line_transparency,
             line_color = line_color,
@@ -278,6 +291,8 @@ enz_plot <- function(sim_enz_dataframe,
             prettify_compound_names = prettify_compound_names,
             linear_or_log = linear_or_log,
             graph_labels = graph_labels,
+            graph_title = graph_title, 
+            graph_title_size = graph_title_size, 
             save_graph = save_graph, 
             fig_height = fig_height, 
             fig_width = fig_width,

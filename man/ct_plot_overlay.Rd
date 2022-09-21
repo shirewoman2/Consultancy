@@ -35,6 +35,7 @@ ct_plot_overlay(
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_label = NA,
   graph_labels = TRUE,
   graph_title = NA,
   graph_title_size = 14,
@@ -335,6 +336,9 @@ respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected. This only
 applies when you have requested a semi-log plot with \code{linear_or_log}.}
 
+\item{y_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
+
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if only outputting
 linear or only semi-log graphs.)}
@@ -377,6 +381,9 @@ file instead to your Documents folder.}
 \item{fig_height}{figure height in inches; default is 6}
 
 \item{fig_width}{figure width in inches; default is 5}
+
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the x axis label}
 }
 \value{
 
