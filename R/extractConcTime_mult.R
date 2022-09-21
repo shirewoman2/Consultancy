@@ -30,15 +30,26 @@
 #'   If some of your Excel files are not regular simulator output, e.g. they are
 #'   sensitivity analyses or a file where you were doing some calculations,
 #'   those files will be skipped.
-#' @param obs_data_files a character vector of the observed data files, each in
-#'   quotes and encapsulated with \code{c(...)}, that you'd like to compare,
-#'   e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. The path should be
+#' @param obs_to_sim_assignment a character vector of the observed data files,
+#'   each in quotes and encapsulated with \code{c(...)}, that you'd like to
+#'   compare to the simulated data. If all the observed data can be compared to
+#'   all the simulated data, then an example of acceptable input would be:
+#'   \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. However, if you would like to
+#'   specify which observed file goes with which simulated file, you can do this
+#'   with a named character vector, e.g., \code{c("obsdata1.xlsx" =
+#'   "simfileA.xlsx", "obsdata2.xlsx" = "simfileB.xlsx")}. If one observed file
+#'   needs to match more than one simulated file but not \emph{all} the
+#'   simulated files, you can do that by separating the simulated files with
+#'   commas, e.g., \code{obs_to_sim_assignment = c("obs data 1.xlsx" =
+#'   "mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
+#'   "mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}. Pay close
+#'   attention to the position of commas and quotes there! The paths should be
 #'   included with the file names if they are located somewhere other than your
-#'   working directory. This is the file that it is ready to be converted to an
-#'   XML file, not the file that contains only the digitized time and
-#'   concentration data. This function assumes that the dosing intervals for the
-#'   observed data match those in the simulated data. See "Details" for more
-#'   info.
+#'   working directory. The observed data files should be for the file that it
+#'   is ready to be converted to an XML file, not the file that contains only
+#'   the digitized time and concentration data. This function assumes that the
+#'   dosing intervals for the observed data match those in the simulated data.
+#'   See "Details" for more info.
 #' @param ct_dataframe (optional) a data.frame that contains previously
 #'   extracted concentration-time data. This should NOT be in quotes. Because we
 #'   can see scenarios where you might want to extract some concentration-time
@@ -88,6 +99,9 @@
 #'   concentration-time data? Options are "aggregate" (default), "individual",
 #'   or "both". Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "Population Statistics".
+#' @param obs_data_files TO BE DEPRECATED. This is the same argument as
+#'   obs_to_sim_assignment; we just renamed it to try to be clearer about what
+#'   the argument does and in what order you should list the files.
 #'
 #' @return Returns a large data.frame with multiple sets of concentration-time
 #'   data, formatted the same way as output from the function
@@ -104,7 +118,7 @@
 #' 
 
 extractConcTime_mult <- function(sim_data_files = NA,
-                                 obs_data_files = NA,
+                                 obs_to_sim_assignment = NA,
                                  ct_dataframe = ConcTime,
                                  overwrite = FALSE,
                                  tissues = "plasma",
@@ -112,7 +126,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  conc_units_to_use = "ng/mL",
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate",
-                                 ...){
+                                 ..., 
+                                 obs_data_files = NA){
     
     # Error catching -------------------------------------------------------
     
@@ -134,6 +149,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
                        " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
                        str_comma(paste0("`", PossCmpd, "`"))), 
                 call. = FALSE)
+    }
+    
+    if(any(complete.cases(obs_data_files))){
+        if(any(complete.cases(obs_to_sim_assignment))){
+            warning("You specified values for both the `obs_to_sim_assignment` argument and for the soon-to-be-deprecated `obs_data_files` argument. Only the value for `obs_to_sim_assignment` will be used.", 
+                    call. = FALSE)
+        } else {
+            warning("You used the soon-to-be-deprecated argument `obs_data_files` to indicate which observed files to use. Please use the argument `obs_to_sim_assignment` in the future. Please see the help file for more information.", 
+                    call. = FALSE) 
+            obs_to_sim_assignment <- obs_data_files
+        }
     }
     
     # Main body of function -----------------------------------------------
@@ -185,14 +211,48 @@ extractConcTime_mult <- function(sim_data_files = NA,
         return(ct_dataframe)
     }
     
+    # Separating obs_to_sim_assignment so that it will work well with each
+    # simulator file. I wanted this to be obs 1st and then sim 2nd b/c it
+    # will often be the case that you would want to compare multiple sim
+    # files to the same obs data, so I wanted the value (sim file) to be
+    # able to be something convoluted with commas I could separate. For
+    # *here*, though, inside the actual function, it works better if things
+    # are named by the sim file. Splitting up the character vector to get
+    # things separated by sim file.
+    
+    # Making sure that the split pattern will work in case the user omitted
+    # spaces.
+    obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
+    if(length(names(obs_to_sim_assignment)) > 0){
+        ObsAssign <- as.data.frame(str_split(obs_to_sim_assignment, pattern = ", ", 
+                                             simplify = TRUE)) %>% 
+            mutate(ObsFile = names(obs_to_sim_assignment)) %>% 
+            pivot_longer(cols = -ObsFile, names_to = "V", values_to = "File") %>% 
+            select(File, ObsFile) %>% unique() %>% 
+            filter(File != "")
+        
+        if(any(duplicated(ObsAssign$File))){ 
+            Dups <- ObsAssign$File[duplicated(ObsAssign$File)]
+            warning(paste0("You have more than one observed data file assigned to the simulator files ",
+                           str_comma(paste0("`", Dups, "`")),
+                           ". This function can only handle one observed file per simulator file, so only the first observed file listed will be used."),
+                    call. = FALSE)
+            ObsAssign <- ObsAssign[!duplicated(ObsAssign$File), ]
+        }
+        
+        ObsAssign <- split(ObsAssign, f = ObsAssign$File)
+    } else {
+        ObsAssign <- list()
+    }
+    
     MultData <- list()
     
-    for(f in sim_data_files_topull){
-        message(paste("Extracting data from file =", f))
-        MultData[[f]] <- list()
+    for(ff in sim_data_files_topull){
+        message(paste("Extracting data from file =", ff))
+        MultData[[ff]] <- list()
         
         # Getting summary data for the simulation(s)
-        Deets <- extractExpDetails(f, exp_details = "Input Sheet")
+        Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
         
         # Names of compounds requested for checking whether the data exist
         CompoundCheck <- c("substrate" = Deets$Substrate,
@@ -214,7 +274,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
         
         if(compoundsToExtract[1] != "all" &&
            all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
-            warning(paste0("For the file ", f, ", the compound(s) ",
+            warning(paste0("For the file ", ff, ", the compound(s) ",
                            str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
                            " was/were not available."),
                     call. = FALSE)
@@ -234,15 +294,23 @@ extractConcTime_mult <- function(sim_data_files = NA,
             TissueType <- ifelse(str_detect(j, "plasma|blood|portal|peripheral"),
                                  "systemic", "tissue")
             
+            # Checking whether an observed file can be included for this
+            # iteration
+            if(is.null(ObsAssign[[ff]])){
+                MyObsFile <- NA
+            } else {
+                MyObsFile <- ObsAssign[[ff]]$ObsFile
+            }
+            
             if(TissueType == "tissue"){
                 # If the tissue type is a solid tissue, then any
                 # compound concentrations available will be on that
                 # sheet and that requires only one iteration of the
                 # loop.
                 
-                MultData[[f]][[j]] <- extractConcTime(
-                    sim_data_file = f,
-                    obs_data_file = NA,
+                MultData[[ff]][[j]] <- extractConcTime(
+                    sim_data_file = ff,
+                    obs_data_file = MyObsFile,
                     compoundToExtract = compoundsToExtract_n,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
@@ -254,21 +322,21 @@ extractConcTime_mult <- function(sim_data_files = NA,
                 # data.frame, which we don't want to be included in the final
                 # data. Not adding info for File in that scenario b/c it would
                 # add a row to what would have been an empty data.frame.
-                if(nrow(MultData[[f]][[j]]) > 0){
-                    MultData[[f]][[j]] <-
-                        MultData[[f]][[j]] %>%
-                        mutate(File = f)
+                if(nrow(MultData[[ff]][[j]]) > 0){
+                    MultData[[ff]][[j]] <-
+                        MultData[[ff]][[j]] %>%
+                        mutate(File = ff)
                     
                     # Need to handle ADAM data specially
                     ADAMtissue <- c("stomach", "duodenum", "jejunum i",
                                     "jejunum ii", "ileum i", "ileum ii",
                                     "ileum iii", "ileum iv", "colon", "faeces")
-                    if(any(MultData[[f]][[j]]$Tissue %in% ADAMtissue)){
-                        CT_adam <- MultData[[f]][[j]] %>% 
+                    if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue)){
+                        CT_adam <- MultData[[ff]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue)
                         
                         
-                        CT_nonadam <- MultData[[f]][[j]] %>% 
+                        CT_nonadam <- MultData[[ff]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue == FALSE)
                         
                         if(nrow(CT_nonadam) > 0){
@@ -278,12 +346,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                                              "Time_units" = time_units_to_use))
                         }
                         
-                        MultData[[f]][[j]] <- bind_rows(CT_adam, CT_nonadam)
+                        MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)
                         
                     } else {
                         
-                        MultData[[f]][[j]] <-
-                            match_units(DF_to_adjust = MultData[[f]][[j]],
+                        MultData[[ff]][[j]] <-
+                            match_units(DF_to_adjust = MultData[[ff]][[j]],
                                         goodunits = list("Conc_units" = conc_units_to_use,
                                                          "Time_units" = time_units_to_use))
                     }
@@ -306,7 +374,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                          "substrate", PossCompounds)) %>%
                     filter(PossCompounds %in% compoundsToExtract_n)
                 
-                MultData[[f]][[j]] <- list()
+                MultData[[ff]][[j]] <- list()
                 
                 for(k in unique(CompoundTypes$Type)){
                     
@@ -315,10 +383,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         CompoundTypes %>% filter(Type == k) %>%
                         pull(PossCompounds)
                     
-                    MultData[[f]][[j]][[k]] <-
+                    MultData[[ff]][[j]][[k]] <-
                         extractConcTime(
-                            sim_data_file = f,
-                            obs_data_file = NA,
+                            sim_data_file = ff,
+                            obs_data_file = MyObsFile,
                             compoundToExtract = compoundsToExtract_k,
                             tissue = j,
                             returnAggregateOrIndiv = returnAggregateOrIndiv, 
@@ -332,10 +400,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     # data. Not adding info for File in that scenario
                     # b/c it would add a row to what would have been
                     # an empty data.frame.
-                    if(nrow(MultData[[f]][[j]][[k]]) > 0){
-                        MultData[[f]][[j]][[k]] <-
-                            MultData[[f]][[j]][[k]] %>%
-                            mutate(File = f)
+                    if(nrow(MultData[[ff]][[j]][[k]]) > 0){
+                        MultData[[ff]][[j]][[k]] <-
+                            MultData[[ff]][[j]][[k]] %>%
+                            mutate(File = ff)
                         
                         MolWts <- c("substrate" = Deets$MW_sub, 
                                     "primary metabolite 1" = Deets$MW_met1, 
@@ -346,8 +414,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                     "inhibitor 1 metabolite" = Deets$MW_inhib1met)
                         
                         
-                        MultData[[f]][[j]][[k]] <-
-                            match_units(DF_to_adjust = MultData[[f]][[j]][[k]],
+                        MultData[[ff]][[j]][[k]] <-
+                            match_units(DF_to_adjust = MultData[[ff]][[j]][[k]],
                                         goodunits = list("Conc_units" = conc_units_to_use,
                                                          "Time_units" = time_units_to_use), 
                                         MW = MolWts[complete.cases(MolWts)])
@@ -356,38 +424,40 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     rm(compoundsToExtract_k)
                 }
                 
-                MultData[[f]][[j]] <- bind_rows(MultData[[f]][[j]])
+                MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
             }
         }
         
-        MultData[[f]] <- bind_rows(MultData[[f]])
+        MultData[[ff]] <- bind_rows(MultData[[ff]])
         
         # MUST remove Deets or you can get the wrong info for each file!!!
-        rm(Deets, CompoundCheck, compoundsToExtract_n) 
+        rm(Deets, CompoundCheck, compoundsToExtract_n, MyObsFile) 
         
     }
     
     MultData <- bind_rows(MultData)
-    if(nrow(MultData) > 0 & complete.cases(obs_data_files[1])){
-        # If they specified observed data files, it's better to use those than
-        # to use the data included with the simulation. There's more information
-        # that way.
-        MultData <- MultData %>% filter(Simulated == TRUE)
-    }
+    # if(nrow(MultData) > 0 & complete.cases(obs_to_sim_assignment[1])){
+    #     # If they specified observed data files, it's better to use those than
+    #     # to use the data included with the simulation. There's more information
+    #     # that way.
+    #     MultData <- MultData %>% filter(Simulated == TRUE)
+    # }
     
     # Observed data ------------------------------------------------------
-    if(length(setdiff(obs_data_files, unique(ct_dataframe$ObsFile))) > 0 &&
-       any(complete.cases(obs_data_files))){
+    if((any(complete.cases(obs_to_sim_assignment)) & length(ObsAssign) == 0) |   # <--- scenario when one obs file should be used for all sim files
+       ("ObsFile" %in% names(MultData) &&                                        # <--- scenario when some obs files were already extracted but some were not b/c they weren't assigned to a sim file
+        length(setdiff(names(obs_to_sim_assignment), unique(MultData$ObsFile))) > 0 &&
+        any(complete.cases(obs_to_sim_assignment)))){
         MultObsData <- list()
         if(overwrite){
-            ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% obs_data_files)
-            for(f in obs_data_files){
-                message(paste("Extracting data from observed data file =", f))
-                MultObsData[[f]] <- extractObsConcTime(f)
+            ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% obs_to_sim_assignment)
+            for(ff in obs_to_sim_assignment){
+                message(paste("Extracting data from observed data file =", ff))
+                MultObsData[[ff]] <- extractObsConcTime(ff)
             }
         } else {
-            for(f in setdiff(obs_data_files, unique(ct_dataframe$ObsFile))){
-                MultObsData[[f]] <- extractObsConcTime(f)
+            for(ff in setdiff(obs_to_sim_assignment, unique(ct_dataframe$ObsFile))){
+                MultObsData[[ff]] <- extractObsConcTime(ff)
             }
         }
         

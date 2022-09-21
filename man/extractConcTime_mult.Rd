@@ -6,7 +6,7 @@
 \usage{
 extractConcTime_mult(
   sim_data_files = NA,
-  obs_data_files = NA,
+  obs_to_sim_assignment = NA,
   ct_dataframe = ConcTime,
   overwrite = FALSE,
   tissues = "plasma",
@@ -14,7 +14,8 @@ extractConcTime_mult(
   conc_units_to_use = "ng/mL",
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
-  ...
+  ...,
+  obs_data_files = NA
 )
 }
 \arguments{
@@ -27,15 +28,26 @@ If some of your Excel files are not regular simulator output, e.g. they are
 sensitivity analyses or a file where you were doing some calculations,
 those files will be skipped.}
 
-\item{obs_data_files}{a character vector of the observed data files, each in
-quotes and encapsulated with \code{c(...)}, that you'd like to compare,
-e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. The path should be
+\item{obs_to_sim_assignment}{a character vector of the observed data files,
+each in quotes and encapsulated with \code{c(...)}, that you'd like to
+compare to the simulated data. If all the observed data can be compared to
+all the simulated data, then an example of acceptable input would be:
+\code{c("obsdata1.xlsx", "obsdata2.xlsx")}. However, if you would like to
+specify which observed file goes with which simulated file, you can do this
+with a named character vector, e.g., \code{c("obsdata1.xlsx" =
+"simfileA.xlsx", "obsdata2.xlsx" = "simfileB.xlsx")}. If one observed file
+needs to match more than one simulated file but not \emph{all} the
+simulated files, you can do that by separating the simulated files with
+commas, e.g., \code{obs_to_sim_assignment = c("obs data 1.xlsx" =
+"mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
+"mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}. Pay close
+attention to the position of commas and quotes there! The paths should be
 included with the file names if they are located somewhere other than your
-working directory. This is the file that it is ready to be converted to an
-XML file, not the file that contains only the digitized time and
-concentration data. This function assumes that the dosing intervals for the
-observed data match those in the simulated data. See "Details" for more
-info.}
+working directory. The observed data files should be for the file that it
+is ready to be converted to an XML file, not the file that contains only
+the digitized time and concentration data. This function assumes that the
+dosing intervals for the observed data match those in the simulated data.
+See "Details" for more info.}
 
 \item{ct_dataframe}{(optional) a data.frame that contains previously
 extracted concentration-time data. This should NOT be in quotes. Because we
@@ -93,6 +105,10 @@ simulator output rows labeled as "Population Statistics".}
 
 \item{...}{other arguments passed to the function
 \code{\link{extractConcTime}}}
+
+\item{obs_data_files}{TO BE DEPRECATED. This is the same argument as
+obs_to_sim_assignment; we just renamed it to try to be clearer about what
+the argument does and in what order you should list the files.}
 }
 \value{
 Returns a large data.frame with multiple sets of concentration-time

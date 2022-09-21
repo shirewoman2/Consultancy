@@ -1309,11 +1309,8 @@ extractConcTime <- function(sim_data_file,
         
         ## observed data -------------------------------------------------------
         
-        # This section of code ONLY applies to the singular extractConcTime
-        # function and NOT to extractConcTime_mult, which extracts obs conc time
-        # separately. 
-        
-        # This piece of code also ONLY applies to systemic concs. 
+        # This section of code ONLY applies when obs concs are NOT extracted
+        # separately. This piece of code also ONLY applies to systemic concs. 
         
         # Setting up some names of observed data for use later
         ObsCompounds <-
@@ -1328,7 +1325,11 @@ extractConcTime <- function(sim_data_file,
         AllEffectors_comma <- ifelse(length(AllEffectors) == 0,
                                      NA, str_comma(AllEffectors))
         
-        if(TissueType == "systemic" & fromMultFunction == FALSE){
+        # Use the supplied obs file here if a) tissue is systemic and b) the
+        # function was NOT called from the mult function OR the function WAS
+        # called from the mult function but the user supplied an obs data file.
+        if(TissueType == "systemic" &
+           (fromMultFunction == FALSE | (fromMultFunction & complete.cases(obs_data_file)))){
             
             # If the user did not specify a file to use for observed data, use
             # the observed data that they included for the simulation. Note that
@@ -1433,35 +1434,40 @@ extractConcTime <- function(sim_data_file,
                                               AllEffectors_comma, Inhibitor)) %>% 
                     filter(CompoundID == m)
                 
-                # If obs_data_file included compounds that were not present in
-                # the simulation, don't include those and give the user a
-                # warning.
-                Missing <- setdiff(unique(obs_data$CompoundID), 
-                                   names(ObsCompounds[complete.cases(ObsCompounds)])) 
-                
-                if(length(Missing) > 0){
-                    warning(paste0("The observed data file includes ",
-                                   str_comma(Missing), 
-                                   ", which is/are not present in the simulated data. Observed data for ", 
-                                   str_comma(Missing), 
-                                   " will not be included in the output."),
-                            call. = FALSE)
-                    obs_data <- obs_data %>% 
-                        filter(!CompoundID %in% Missing)
-                }
-                
-                # As necessary, convert simulated data units to match the
-                # observed data
-                if("individual" %in% returnAggregateOrIndiv){
-                    sim_data_ind[[m]] <-
-                        match_units(DF_to_adjust = sim_data_ind[[m]],
-                                    goodunits = obs_data)
-                }
-                
-                if("aggregate" %in% returnAggregateOrIndiv){
-                    sim_data_mean[[m]] <-
-                        match_units(DF_to_adjust = sim_data_mean[[m]],
-                                    goodunits = obs_data)
+                if(nrow(obs_data) == 0){
+                    rm(obs_data)
+                } else {
+                    
+                    # If obs_data_file included compounds that were not present in
+                    # the simulation, don't include those and give the user a
+                    # warning.
+                    Missing <- setdiff(unique(obs_data$CompoundID), 
+                                       names(ObsCompounds[complete.cases(ObsCompounds)])) 
+                    
+                    if(length(Missing) > 0){
+                        warning(paste0("The observed data file includes ",
+                                       str_comma(Missing), 
+                                       ", which is/are not present in the simulated data. Observed data for ", 
+                                       str_comma(Missing), 
+                                       " will not be included in the output."),
+                                call. = FALSE)
+                        obs_data <- obs_data %>% 
+                            filter(!CompoundID %in% Missing)
+                    }
+                    
+                    # As necessary, convert simulated data units to match the
+                    # observed data
+                    if("individual" %in% returnAggregateOrIndiv){
+                        sim_data_ind[[m]] <-
+                            match_units(DF_to_adjust = sim_data_ind[[m]],
+                                        goodunits = obs_data)
+                    }
+                    
+                    if("aggregate" %in% returnAggregateOrIndiv){
+                        sim_data_mean[[m]] <-
+                            match_units(DF_to_adjust = sim_data_mean[[m]],
+                                        goodunits = obs_data)
+                    }
                 }
             }
         }

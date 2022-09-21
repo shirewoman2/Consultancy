@@ -6,7 +6,7 @@
 \usage{
 ct_plot_mult(
   ct_dataframe,
-  obs_data_assignment = NA,
+  obs_to_sim_assignment = NA,
   graph_arrangement = "all together",
   figure_type = "percentiles",
   mean_type = "arithmetic",
@@ -33,18 +33,19 @@ ct_plot_mult(
 \item{ct_dataframe}{the data.frame with multiple sets of concentration-time
 data}
 
-\item{obs_data_assignment}{optionally specify which observed files go with
-which simulator files. If left as NA and what you supplied for
-\code{ct_dataframe} doesn't already specify which observed data go with
+\item{obs_to_sim_assignment}{optionally specify which observed files should
+be compared to which simulator files. If left as NA and what you supplied
+for \code{ct_dataframe} doesn't already specify which observed data go with
 which simulated file, this will assume that \emph{all} observed data goes
 with \emph{all} simulated data. To specify, use a named character vector
-like this: \code{obs_data_assignment = c("obs data 1.xlsx" =
+like this: \code{obs_to_sim_assignment = c("obs data 1.xlsx" =
 "mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
 observed file needs to match more than one simulated file but not
 \emph{all} the simulated files, you can do that by separating the simulated
-files with commas, e.g., \code{obs_data_assignment = c("obs data 1.xlsx" =
-"mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
-"mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}}
+files with commas, e.g., \code{obs_to_sim_assignment = c("obs data 1.xlsx"
+= "mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
+"mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}. Pay close
+attention to the position of commas and quotes there!}
 
 \item{graph_arrangement}{set how to arrange the graphs. Options are
   \describe{\item{"all together"}{(default) for all graphs being nicely

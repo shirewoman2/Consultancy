@@ -25,18 +25,19 @@
 #'
 #' @param ct_dataframe the data.frame with multiple sets of concentration-time
 #'   data
-#' @param obs_data_assignment optionally specify which observed files go with
-#'   which simulator files. If left as NA and what you supplied for
-#'   \code{ct_dataframe} doesn't already specify which observed data go with
+#' @param obs_to_sim_assignment optionally specify which observed files should
+#'   be compared to which simulator files. If left as NA and what you supplied
+#'   for \code{ct_dataframe} doesn't already specify which observed data go with
 #'   which simulated file, this will assume that \emph{all} observed data goes
 #'   with \emph{all} simulated data. To specify, use a named character vector
-#'   like this: \code{obs_data_assignment = c("obs data 1.xlsx" =
+#'   like this: \code{obs_to_sim_assignment = c("obs data 1.xlsx" =
 #'   "mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
 #'   observed file needs to match more than one simulated file but not
 #'   \emph{all} the simulated files, you can do that by separating the simulated
-#'   files with commas, e.g., \code{obs_data_assignment = c("obs data 1.xlsx" =
-#'   "mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
-#'   "mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}
+#'   files with commas, e.g., \code{obs_to_sim_assignment = c("obs data 1.xlsx"
+#'   = "mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
+#'   "mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}. Pay close
+#'   attention to the position of commas and quotes there!
 #' @param graph_arrangement set how to arrange the graphs. Options are
 #'   \describe{\item{"all together"}{(default) for all graphs being nicely
 #'   arranged and aligned together,}
@@ -237,7 +238,7 @@
 
 
 ct_plot_mult <- function(ct_dataframe, 
-                         obs_data_assignment = NA,
+                         obs_to_sim_assignment = NA,
                          graph_arrangement = "all together", 
                          figure_type = "percentiles",
                          mean_type = "arithmetic",
@@ -344,17 +345,17 @@ ct_plot_mult <- function(ct_dataframe,
     
     # Dealing with observed data. This is the scenario when any observed data
     # exist AND *either* any of the observed data are missing a value for File
-    # *or* there are any values for obs_data_assignment.
+    # *or* there are any values for obs_to_sim_assignment.
     if(any(ct_dataframe$Simulated == FALSE) & 
        (any(is.na(ct_dataframe$File[ct_dataframe$Simulated == FALSE])) |
-        any(complete.cases(obs_data_assignment)))){
+        any(complete.cases(obs_to_sim_assignment)))){
         
         ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
         ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
         
-        if(all(is.na(obs_data_assignment))){
+        if(all(is.na(obs_to_sim_assignment))){
             # If there are no values assigned for File and the user did not
-            # specify anything for obs_data_assignment, then make all the
+            # specify anything for obs_to_sim_assignment, then make all the
             # observed data go with all the simulated data.
             FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
                                       File = unique(ct_dataframe$File)) %>% 
@@ -363,17 +364,21 @@ ct_plot_mult <- function(ct_dataframe,
                 ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
             )
         } else {
-            # If the user *did* specify values for obs_data_assignment, then use
+            # If the user *did* specify values for obs_to_sim_assignment, then use
             # those for File.
-            ObsAssign <- str_split(obs_data_assignment, pattern = ",")
+            
+            # Making sure that the split pattern will work in case the user omitted
+            # spaces.
+            obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
+            ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
             
             if(all(sapply(ObsAssign, length) == 1)){
-                ObsCT <- ObsCT %>% mutate(File = obs_data_assignment[ObsFile])
+                ObsCT <- ObsCT %>% mutate(File = obs_to_sim_assignment[ObsFile])
             } else {
                 ObsCT <- split(as.data.frame(ObsCT), f = ObsCT$ObsFile)
                 
                 for(j in 1:length(ObsAssign)){
-                    FileAssign <- expand_grid(ObsFile = names(obs_data_assignment)[j], 
+                    FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
                                               File = ObsAssign[[j]])
                     suppressMessages(
                         ObsCT[[j]] <- FileAssign %>% full_join(ObsCT[[j]] %>% select(-File))
