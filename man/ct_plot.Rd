@@ -134,7 +134,7 @@ are generally reasonable guesses as to aesthetically pleasing and
 PK-relevant intervals.}
 
 \item{x_axis_label}{optionally supply a character vector or an expression to
-use for the y axis label}
+use for the x axis label}
 
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If

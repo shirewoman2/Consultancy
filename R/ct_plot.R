@@ -145,7 +145,7 @@
 #'   are generally reasonable guesses as to aesthetically pleasing and
 #'   PK-relevant intervals.
 #' @param x_axis_label optionally supply a character vector or an expression to
-#'   use for the y axis label
+#'   use for the x axis label
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected.
@@ -883,8 +883,13 @@ ct_plot <- function(ct_dataframe = NA,
     # Naming the linetypes, colors, fills, and shapes b/c otherwise having
     # trouble with order changing between when lines are plotted and when
     # observed data are added. I think this is a ggplot2 bug.
-    names(line_type) <- levels(Data$Inhibitor)
-    names(line_color) <- levels(Data$Inhibitor)
+    if(length(unique(Data$Inhibitor)) > 1){
+        names(line_type) <- levels(Data$Inhibitor)
+        names(line_color) <- levels(Data$Inhibitor)
+    } else {
+        names(line_type) <- unique(Data$Inhibitor)
+        names(line_color) <- unique(Data$Inhibitor)
+    }
     
     A <- A +
         scale_linetype_manual(values = line_type) +
@@ -1012,14 +1017,14 @@ ct_plot <- function(ct_dataframe = NA,
                 call. = FALSE)
     }
     
-    B <- suppressMessages(
+    B <- suppressWarnings(suppressMessages(
         A + scale_y_log10(breaks = YLogBreaks,
                           labels = YLogLabels,
                           expand = expansion(mult = pad_y_num)) +
             # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
             coord_cartesian(xlim = time_range_relative, 
                             ylim = Ylim_log)
-    )
+    ))
     
     if(graph_labels){
         labels <- "AUTO"

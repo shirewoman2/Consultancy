@@ -12,10 +12,12 @@ enz_plot(
   linear_or_log = "linear",
   time_range = NA,
   x_axis_interval = NA,
+  x_axis_label = NA,
   pad_x_axis = TRUE,
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_label = NA,
   line_type = NA,
   line_transparency = NA,
   line_color = NA,
@@ -24,6 +26,8 @@ enz_plot(
   legend_label = NA,
   prettify_compound_names = TRUE,
   graph_labels = TRUE,
+  graph_title = NA,
+  graph_title_size = 14,
   save_graph = NA,
   fig_height = 4,
   fig_width = 6
@@ -124,6 +128,9 @@ Acceptable input: any number or leave as NA to accept default values, which
 are generally reasonable guesses as to aesthetically pleasing and
 PK-relevant intervals.}
 
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the x axis label}
+
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If
 changed to FALSE, the y axis will be placed right at the beginning of your
@@ -151,6 +158,9 @@ limits for the linear plot will be automatically selected.}
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
+
+\item{y_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
 
 \item{line_type}{Optionally specify what types of lines are used to depict
 \enumerate{\item{the substrate drug alone and} \item{the substrate drug in
@@ -210,6 +220,12 @@ c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if only outputting
 linear or only semi-log graphs.)}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
