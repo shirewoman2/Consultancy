@@ -117,6 +117,18 @@ extractEnzAbund <- function(sim_data_file,
                                           "kidney" = "(kidney)"))) %>% 
         pull(Sheet)
     
+    if(length(SheetToExtract) == 0){
+        warning(paste0("The simulator output file provided, ", 
+                    sim_data_file, ", does not appear to have the sheet we need for the enzyme abundances requested. We were looking for a sheet titled `",
+                    paste(toupper(enzyme), switch(tissue,
+                                                 "liver" = "(liver)",
+                                                 "gut" = "(gut)",
+                                                 "kidney" = "(kidney)")), 
+                    "`` and could not find it. Please check your simulator output and try again."), 
+             call. = FALSE)
+        return(list())
+    }
+    
     # Reading in simulated abundance-time profile data
     sim_data_xl <- suppressMessages(
         readxl::read_excel(path = sim_data_file,

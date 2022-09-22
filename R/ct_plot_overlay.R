@@ -431,9 +431,12 @@ ct_plot_overlay <- function(ct_dataframe,
              call. = FALSE)
     }
     
+    # Checking whether this is an enzyme abundance plot
+    EnzPlot  <- "Enzyme" %in% names(ct_dataframe)
+    
     # Checking for more than one tissue or ADAM data type b/c there's only one y
     # axis and it should have only one concentration type.
-    if(length(unique(ct_dataframe$Conc_units)) > 1){
+    if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
         stop("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit.",
              call. = FALSE)
     }
@@ -460,6 +463,16 @@ ct_plot_overlay <- function(ct_dataframe,
         figure_type <- "means only"
     }
     
+    if(class(prettify_compound_names) != "logical" && 
+       any(tolower(names(prettify_compound_names)) %in% 
+           c("substrate", "inhibitor", "inhibitor 1", "primary metabolite 1", 
+             "primary metabolite 2", "secondary metabolite", "inhibitor 2", 
+             "inhibitor 1 metabolite"))){
+        warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_effector_names` to TRUE but will not be able to use the specific names you provided.",
+                call. = FALSE)
+        prettify_compound_names <- TRUE
+    }
+    
     
     # Main body of function -------------------------------------------------
     
@@ -470,26 +483,46 @@ ct_plot_overlay <- function(ct_dataframe,
     obs_shape_user <- obs_shape
     
     # Prettifying compound names before doing anything else 
-    if(class(prettify_compound_names) == "logical" && # NB: "prettify_compound_names" is the argument value
-       prettify_compound_names){
-        ct_dataframe <- ct_dataframe %>% 
-            mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
-                   Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+    if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
+        if(prettify_compound_names){
+            if(EnzPlot){ 
+                ct_dataframe <- ct_dataframe %>% 
+                    mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+            } else {
+                ct_dataframe <- ct_dataframe %>% 
+                    mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
+                           Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
+            }
+        } 
+        # If prettify_compound_names is FALSE, then don't do anything.
+        
     } else {
-        
-        # Any compounds that the user omitted from prettify_compound_names
-        # should be added to that and kept as their original values.
-        MissingNames <- setdiff(unique(c(ct_dataframe$Compound,
-                                         ct_dataframe$Inhibitor)), 
-                                names(prettify_compound_names))
-        OrigPrettyNames <- prettify_compound_names
-        prettify_compound_names <- c(prettify_compound_names, MissingNames)
-        names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-            MissingNames
-        
-        ct_dataframe <- ct_dataframe %>% 
-            mutate(Compound = prettify_compound_names[Compound], 
-                   Inhibitor = prettify_compound_names[Inhibitor])
+        # This is when the user has requested specific value for prettifying. 
+        if(EnzPlot){ 
+            # Any compounds that the user omitted from prettify_compound_names
+            # should be added to that and kept as their original values.
+            MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
+                                    names(prettify_compound_names))
+            OrigPrettyNames <- prettify_compound_names
+            prettify_compound_names <- c(prettify_compound_names, MissingNames)
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                MissingNames
+            
+            ct_dataframe <- ct_dataframe %>% 
+                mutate(Inhibitor = prettify_compound_names[Inhibitor])
+        } else {
+            MissingNames <- setdiff(unique(c(ct_dataframe$Compound,
+                                             ct_dataframe$Inhibitor)), 
+                                    names(prettify_compound_names))
+            OrigPrettyNames <- prettify_compound_names
+            prettify_compound_names <- c(prettify_compound_names, MissingNames)
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                MissingNames
+            
+            ct_dataframe <- ct_dataframe %>% 
+                mutate(Compound = prettify_compound_names[Compound], 
+                       Inhibitor = prettify_compound_names[Inhibitor])
+        }
     }
     
     # Unless the user specifically set the levels for the Inhibitor column, we
@@ -583,7 +616,8 @@ ct_plot_overlay <- function(ct_dataframe,
                                                    "jejunum II", "ileum I", "ileum II",
                                                    "ileum III", "ileum IV", "colon", 
                                                    "faeces", "cumulative absorption", 
-                                                   "cumulative dissolution"))
+                                                   "cumulative dissolution")) &
+        EnzPlot == FALSE
     
     if(length(time_range) == 1 && complete.cases(time_range[1]) &&
        !str_detect(time_range, "dose|last obs|all obs")){
@@ -639,27 +673,37 @@ ct_plot_overlay <- function(ct_dataframe,
         
     }
     
-    ct_dataframe <- ct_dataframe %>%
-        # If it's dose number 0, remove those rows so that we'll show only the
-        # parts we want when facetting and user wants scales to float freely.
-        filter(DoseNum != 0 | Simulated == FALSE) %>% 
-        mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
-               CompoundID = factor(CompoundID,
-                                   levels = c("substrate", "primary metabolite 1",
-                                              "primary metabolite 2", "secondary metabolite",
-                                              "inhibitor 1", "inhibitor 1 metabolite", 
-                                              "inhibitor 2"))) 
-    
-    sim_dataframe <- ct_dataframe %>%
-        filter(Simulated == TRUE &
-                   Trial %in% 
-                   switch(figure_type, 
-                          "means only" = MyMeanType, 
-                          "percentiles" = c(MyMeanType, "per5", "per95"),
-                          "percentile ribbon" = c(MyMeanType, "per5", "per95")))
-    
-    obs_data <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
-        mutate(Trial = {MyMeanType})
+    if(EnzPlot){ 
+        # for enzyme abundance data
+        ct_dataframe <- ct_dataframe %>%
+            mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor)) 
+        
+        sim_dataframe <- ct_dataframe
+        
+        obs_data <- data.frame()
+    } else {
+        # for conc-time data
+        ct_dataframe <- ct_dataframe %>%
+            # If it's dose number 0, remove those rows so that we'll show only the
+            # parts we want when facetting and user wants scales to float freely.
+            filter(DoseNum != 0 | Simulated == FALSE) %>% 
+            mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
+                   CompoundID = factor(CompoundID,
+                                       levels = c("substrate", "primary metabolite 1",
+                                                  "primary metabolite 2", "secondary metabolite",
+                                                  "inhibitor 1", "inhibitor 1 metabolite", 
+                                                  "inhibitor 2"))) 
+        sim_dataframe <- ct_dataframe %>%
+            filter(Simulated == TRUE &
+                       Trial %in% 
+                       switch(figure_type, 
+                              "means only" = MyMeanType, 
+                              "percentiles" = c(MyMeanType, "per5", "per95"),
+                              "percentile ribbon" = c(MyMeanType, "per5", "per95")))
+        
+        obs_data <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
+            mutate(Trial = {MyMeanType})
+    }
     
     # If the user set obs_color to "none", then they must not want to include
     # observed data in the graph. Set nrow to 0 in that case.
@@ -799,14 +843,14 @@ ct_plot_overlay <- function(ct_dataframe,
     
     MyUniqueData <- ct_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
-        select(union(UniqueAES, 
-                     c("File", "Tissue", "CompoundID", "Compound", "Inhibitor"))) %>% 
+        select(any_of(union(UniqueAES, 
+                            c("File", "Tissue", "CompoundID", "Compound", "Enzyme", "Inhibitor")))) %>% 
         unique()
     
     UniqueGroups1 <- ct_dataframe %>% 
-        summarize(across(.cols = union(UniqueAES, 
-                                       c("File", "Tissue", "CompoundID",
-                                         "Compound", "Inhibitor")),
+        summarize(across(.cols = any_of(union(UniqueAES, 
+                                              c("File", "Tissue", "CompoundID",
+                                                "Compound", "Inhibitor"))),
                          .fns = function(x) length(unique(x)))) 
     
     UniqueGroups <- UniqueGroups1 %>% 
@@ -857,10 +901,14 @@ ct_plot_overlay <- function(ct_dataframe,
     # compound that the user is plotting. Using whatever is the compoundID that
     # has the base level for the factor. <--- This may not be necessary, now
     # that I think about it further...
-    AnchorCompound <- ct_dataframe %>% select(CompoundID) %>% unique() %>% 
-        mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
-        filter(CompoundLevel == min(CompoundLevel)) %>% 
-        pull(CompoundID) %>% as.character()
+    if(EnzPlot){
+        AnchorCompound <- "substrate"
+    } else {
+        AnchorCompound <- ct_dataframe %>% select(CompoundID) %>% unique() %>% 
+            mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
+            filter(CompoundLevel == min(CompoundLevel)) %>% 
+            pull(CompoundID) %>% as.character()
+    }
     
     # Setting up the x axis using the subfunction ct_x_axis
     ct_x_axis(Data = ct_dataframe,
@@ -868,14 +916,17 @@ ct_plot_overlay <- function(ct_dataframe,
               t0 = "simulation start",
               x_axis_interval = x_axis_interval,
               pad_x_axis = pad_x_axis,
-              compoundToExtract = AnchorCompound, EnzPlot = FALSE)
+              compoundToExtract = AnchorCompound, 
+              EnzPlot = EnzPlot)
     
     # Setting up the y axis using the subfunction ct_y_axis
     ct_y_axis(Data = bind_rows(sim_dataframe, obs_data), 
               ADAM = ADAM, 
-              subsection_ADAM = unique(ct_dataframe$subsection_ADAM), 
+              subsection_ADAM = switch(as.character(EnzPlot), 
+                                       "TRUE" = NA, 
+                                       "FALSE" = unique(ct_dataframe$subsection_ADAM)), 
               prettify_compound_names = prettify_compound_names,
-              EnzPlot = FALSE, 
+              EnzPlot = EnzPlot, 
               time_range_relative = time_range_relative,
               Ylim_data = bind_rows(sim_dataframe, obs_data) %>%
                   mutate(Time_orig = Time), 
@@ -952,7 +1003,9 @@ ct_plot_overlay <- function(ct_dataframe,
     
     set_aesthet(line_type = linetypes, figure_type = figure_type,
                 MyEffector = MyEffector, 
-                compoundToExtract = unique(sim_dataframe$CompoundID),
+                compoundToExtract = switch(as.character(EnzPlot),
+                                           "TRUE" = "substrate", 
+                                           "FALSE" = unique(sim_dataframe$CompoundID)),
                 obs_shape = obs_shape, obs_color = obs_color,
                 obs_fill_trans = obs_fill_trans,
                 obs_line_trans = obs_line_trans,
@@ -962,96 +1015,184 @@ ct_plot_overlay <- function(ct_dataframe,
     
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
-        
-        A <- ggplot(sim_dataframe,
-                    switch(paste(AES, LTCol == "Inhibitor"), 
-                           "color-linetype TRUE" = aes(x = Time, y = Conc, 
-                                                       color = colorBy_column, 
-                                                       fill = colorBy_column,
-                                                       linetype = linetype_column, 
-                                                       group = Group, 
-                                                       shape = linetype_column),
-                           "color-linetype FALSE" = aes(x = Time, y = Conc, 
-                                                        color = colorBy_column, 
-                                                        fill = colorBy_column,
-                                                        linetype = linetype_column, 
-                                                        group = Group, 
-                                                        shape = Inhibitor),
-                           # Only option here will be "color FALSE" b/c "color"
-                           # will only be the AES if linetype is unspecified.
-                           "color FALSE" = aes(x = Time, y = Conc, 
-                                               color = colorBy_column, 
-                                               fill = colorBy_column,
-                                               group = Group, shape = Inhibitor), 
-                           "linetype TRUE" = aes(x = Time, y = Conc, 
-                                                 linetype = linetype_column, 
-                                                 group = Group, shape = linetype_column),
-                           "linetype FALSE" = aes(x = Time, y = Conc, 
-                                                  linetype = linetype_column, 
-                                                  group = Group, shape = linetype_column),
-                           # Only option here will be "none FALSE" b/c "none"
-                           # will only be the AES if linetype is unspecified.
-                           "none FALSE" = aes(x = Time, y = Conc,
-                                              group = Group, shape = Inhibitor))) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
-        
+        if(EnzPlot){
+            A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
+                        switch(paste(AES, LTCol == "Inhibitor"), 
+                               "color-linetype TRUE" = aes(x = Time, y = Abundance, 
+                                                           color = colorBy_column, 
+                                                           fill = colorBy_column,
+                                                           linetype = linetype_column, 
+                                                           group = Group, 
+                                                           shape = linetype_column),
+                               "color-linetype FALSE" = aes(x = Time, y = Abundance, 
+                                                            color = colorBy_column, 
+                                                            fill = colorBy_column,
+                                                            linetype = linetype_column, 
+                                                            group = Group, 
+                                                            shape = Inhibitor),
+                               # Only option here will be "color FALSE" b/c "color"
+                               # will only be the AES if linetype is unspecified.
+                               "color FALSE" = aes(x = Time, y = Abundance, 
+                                                   color = colorBy_column, 
+                                                   fill = colorBy_column,
+                                                   group = Group, shape = Inhibitor), 
+                               "linetype TRUE" = aes(x = Time, y = Abundance, 
+                                                     linetype = linetype_column, 
+                                                     group = Group, shape = linetype_column),
+                               "linetype FALSE" = aes(x = Time, y = Abundance, 
+                                                      linetype = linetype_column, 
+                                                      group = Group, shape = linetype_column),
+                               # Only option here will be "none FALSE" b/c "none"
+                               # will only be the AES if linetype is unspecified.
+                               "none FALSE" = aes(x = Time, y = Abundance,
+                                                  group = Group, shape = Inhibitor))) +
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+        } else {
+            
+            A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
+                        switch(paste(AES, LTCol == "Inhibitor"), 
+                               "color-linetype TRUE" = aes(x = Time, y = Conc, 
+                                                           color = colorBy_column, 
+                                                           fill = colorBy_column,
+                                                           linetype = linetype_column, 
+                                                           group = Group, 
+                                                           shape = linetype_column),
+                               "color-linetype FALSE" = aes(x = Time, y = Conc, 
+                                                            color = colorBy_column, 
+                                                            fill = colorBy_column,
+                                                            linetype = linetype_column, 
+                                                            group = Group, 
+                                                            shape = Inhibitor),
+                               # Only option here will be "color FALSE" b/c "color"
+                               # will only be the AES if linetype is unspecified.
+                               "color FALSE" = aes(x = Time, y = Conc, 
+                                                   color = colorBy_column, 
+                                                   fill = colorBy_column,
+                                                   group = Group, shape = Inhibitor), 
+                               "linetype TRUE" = aes(x = Time, y = Conc, 
+                                                     linetype = linetype_column, 
+                                                     group = Group, shape = linetype_column),
+                               "linetype FALSE" = aes(x = Time, y = Conc, 
+                                                      linetype = linetype_column, 
+                                                      group = Group, shape = linetype_column),
+                               # Only option here will be "none FALSE" b/c "none"
+                               # will only be the AES if linetype is unspecified.
+                               "none FALSE" = aes(x = Time, y = Conc,
+                                                  group = Group, shape = Inhibitor))) +
+                geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+        }
     }
     
     ## Figure type: percentiles ---------------------------------------------
     
     if(figure_type == "percentiles"){
         
-        A <- ggplot(sim_dataframe %>%
-                        filter(Trial %in% c("per5", "per95")) %>%
-                        mutate(Group = paste(Group, Trial)),
-                    switch(paste(AES, LTCol == "Inhibitor"), 
-                           "color-linetype TRUE" = aes(x = Time, y = Conc,
-                                                       color = colorBy_column,
-                                                       fill = colorBy_column,
-                                                       linetype = linetype_column,
-                                                       group = Group,
-                                                       shape = linetype_column),
-                           "color-linetype FALSE" = aes(x = Time, y = Conc,
-                                                        color = colorBy_column,
-                                                        fill = colorBy_column,
-                                                        linetype = linetype_column,
-                                                        group = Group,
-                                                        shape = Inhibitor),
-                           # Only option here will be "color FALSE" b/c "color"
-                           # will only be the AES if linetype is unspecified.
-                           "color FALSE" = aes(x = Time, y = Conc, 
-                                               color = colorBy_column, 
-                                               fill = colorBy_column,
-                                               group = Group, shape = Inhibitor), 
-                           "linetype TRUE" = aes(x = Time, y = Conc,
-                                                 linetype = linetype_column,
-                                                 group = Group, shape = linetype_column),
-                           "linetype FALSE" = aes(x = Time, y = Conc,
-                                                  linetype = linetype_column,
-                                                  group = Group, shape = linetype_column),
-                           # Only option here will be "none FALSE" b/c "none"
-                           # will only be the AES if linetype is unspecified.
-                           "none FALSE" = aes(x = Time, y = Conc,
-                                              group = Group, shape = Inhibitor))) +
-            geom_line(alpha = 0.25,
-                      lwd = ifelse(is.na(line_width), 0.8, line_width)) +
-            geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
-                      lwd = ifelse(is.na(line_width), 1, line_width))
+        if(EnzPlot){
+            A <- ggplot(sim_dataframe %>%
+                            filter(Trial %in% c("per5", "per95")) %>%
+                            mutate(Group = paste(Group, Trial)),
+                        switch(paste(AES, LTCol == "Inhibitor"), 
+                               "color-linetype TRUE" = aes(x = Time, y = Abundance,
+                                                           color = colorBy_column,
+                                                           fill = colorBy_column,
+                                                           linetype = linetype_column,
+                                                           group = Group,
+                                                           shape = linetype_column),
+                               "color-linetype FALSE" = aes(x = Time, y = Abundance,
+                                                            color = colorBy_column,
+                                                            fill = colorBy_column,
+                                                            linetype = linetype_column,
+                                                            group = Group,
+                                                            shape = Inhibitor),
+                               # Only option here will be "color FALSE" b/c "color"
+                               # will only be the AES if linetype is unspecified.
+                               "color FALSE" = aes(x = Time, y = Abundance, 
+                                                   color = colorBy_column, 
+                                                   fill = colorBy_column,
+                                                   group = Group, shape = Inhibitor), 
+                               "linetype TRUE" = aes(x = Time, y = Abundance,
+                                                     linetype = linetype_column,
+                                                     group = Group, shape = linetype_column),
+                               "linetype FALSE" = aes(x = Time, y = Abundance,
+                                                      linetype = linetype_column,
+                                                      group = Group, shape = linetype_column),
+                               # Only option here will be "none FALSE" b/c "none"
+                               # will only be the AES if linetype is unspecified.
+                               "none FALSE" = aes(x = Time, y = Abundance,
+                                                  group = Group, shape = Inhibitor))) +
+                geom_line(alpha = 0.25,
+                          lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+                geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
+                          lwd = ifelse(is.na(line_width), 1, line_width))
+        } else {
+            
+            A <- ggplot(sim_dataframe %>%
+                            filter(Trial %in% c("per5", "per95")) %>%
+                            mutate(Group = paste(Group, Trial)),
+                        switch(paste(AES, LTCol == "Inhibitor"), 
+                               "color-linetype TRUE" = aes(x = Time, y = Conc,
+                                                           color = colorBy_column,
+                                                           fill = colorBy_column,
+                                                           linetype = linetype_column,
+                                                           group = Group,
+                                                           shape = linetype_column),
+                               "color-linetype FALSE" = aes(x = Time, y = Conc,
+                                                            color = colorBy_column,
+                                                            fill = colorBy_column,
+                                                            linetype = linetype_column,
+                                                            group = Group,
+                                                            shape = Inhibitor),
+                               # Only option here will be "color FALSE" b/c "color"
+                               # will only be the AES if linetype is unspecified.
+                               "color FALSE" = aes(x = Time, y = Conc, 
+                                                   color = colorBy_column, 
+                                                   fill = colorBy_column,
+                                                   group = Group, shape = Inhibitor), 
+                               "linetype TRUE" = aes(x = Time, y = Conc,
+                                                     linetype = linetype_column,
+                                                     group = Group, shape = linetype_column),
+                               "linetype FALSE" = aes(x = Time, y = Conc,
+                                                      linetype = linetype_column,
+                                                      group = Group, shape = linetype_column),
+                               # Only option here will be "none FALSE" b/c "none"
+                               # will only be the AES if linetype is unspecified.
+                               "none FALSE" = aes(x = Time, y = Conc,
+                                                  group = Group, shape = Inhibitor))) +
+                geom_line(alpha = 0.25,
+                          lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+                geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
+                          lwd = ifelse(is.na(line_width), 1, line_width))
+        }
     }
     
     ## Figure type: ribbon --------------------------------------------------
     if(str_detect(figure_type, "ribbon")){
         
-        RibbonDF <-  sim_dataframe %>% 
-            filter(Trial %in% c({MyMeanType}, "per5", "per95") &
-                       # Ribbons don't work if any of the data are clipped on
-                       # the x axis
-                       Time >= time_range_relative[1] &
-                       Time <= time_range_relative[2]) %>% 
-            unique() %>% 
-            select(-any_of(c("Group", "Individual"))) %>% 
-            pivot_wider(names_from = Trial, values_from = Conc)
-        names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+        if(EnzPlot){
+            RibbonDF <-  sim_dataframe %>% 
+                filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                           # Ribbons don't work if any of the data are clipped on
+                           # the x axis
+                           Time >= time_range_relative[1] &
+                           Time <= time_range_relative[2]) %>% 
+                unique() %>% 
+                select(-any_of(c("Group", "Individual"))) %>% 
+                pivot_wider(names_from = Trial, values_from = Abundance)
+            names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+            
+        } else {
+            
+            RibbonDF <-  sim_dataframe %>% 
+                filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                           # Ribbons don't work if any of the data are clipped on
+                           # the x axis
+                           Time >= time_range_relative[1] &
+                           Time <= time_range_relative[2]) %>% 
+                unique() %>% 
+                select(-any_of(c("Group", "Individual"))) %>% 
+                pivot_wider(names_from = Trial, values_from = Conc)
+            names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+        }
         
         A <- ggplot(RibbonDF, 
                     switch(paste(AES, LTCol == "Inhibitor"), 
@@ -1443,10 +1584,18 @@ ct_plot_overlay <- function(ct_dataframe,
     
     ## Making semi-log graph ------------------------------------------------
     
-    LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
-                                           Time > 0 &
-                                           Conc < Ylim_log[1]) %>% 
-        pull(Conc)
+    if(EnzPlot){
+        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                               Time > 0 &
+                                               Abundance < Ylim_log[1]) %>% 
+            pull(Abundance)    
+    } else {
+        
+        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                               Time > 0 &
+                                               Conc < Ylim_log[1]) %>% 
+            pull(Conc)
+    }
     
     if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
         warning(paste0("Some of your data are less than the lower y axis value of ",

@@ -55,14 +55,24 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     TimeUnits <- sort(unique(Data$Time_units))
     
     # A little more error catching
-    if(all(complete.cases(time_range) & class(time_range) == "numeric") &
-       (any(time_range < min(Data$Time[Data$Simulated == TRUE])) |
-        any(time_range > max(Data$Time[Data$Simulated == TRUE])))){
-        stop(paste0(
-            "Both the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
-            min(Data$Time[Data$Simulated == TRUE]), " to ",
-            max(Data$Time[Data$Simulated == TRUE]), " ", TimeUnits, "."),
-            call. = FALSE)
+    if(all(complete.cases(time_range))){
+        if(class(time_range) == "numeric" &&
+           any(time_range < switch(as.character(EnzPlot), 
+                                   "TRUE" = min(Data$Time), 
+                                   "FALSE" = min(Data$Time[Data$Simulated == TRUE]))) |
+           any(time_range > switch(as.character(EnzPlot), 
+                                   "TRUE" = max(Data$Time), 
+                                   "FALSE" = max(Data$Time[Data$Simulated == TRUE])))){
+            stop(paste0(
+                "Both the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
+                switch(as.character(EnzPlot), 
+                       "TRUE" = min(Data$Time), 
+                       "FALSE" = min(Data$Time[Data$Simulated == TRUE])), " to ",
+                switch(as.character(EnzPlot), 
+                       "TRUE" = max(Data$Time), 
+                       "FALSE" = max(Data$Time[Data$Simulated == TRUE])), " ", TimeUnits, "."),
+                call. = FALSE)
+        }
     }
     
     # Adjusting graph labels as appropriate for the observed data
@@ -239,7 +249,7 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                         call. = FALSE)
             }
         }
-
+        
         if(all(complete.cases(time_range_input)) &&
            str_detect(time_range_input, "all obs")){
             suppressWarnings(
@@ -256,7 +266,9 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     
     # Setting the time range if it's not already set 
     if(is.na(time_range_input[1])){
-        time_range <- round(range(Data$Time[complete.cases(Data$Conc)], na.rm = T))
+        time_range <- round(switch(as.character(EnzPlot), 
+                                   "TRUE" = range(Data$Time, na.rm = T),
+                                   "FALSE" = range(Data$Time[complete.cases(Data$Conc)], na.rm = T)))
     }
     
     # Setting the x axis intervals using tlast doesn't work well if the time
@@ -267,7 +279,9 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         LastDoseTime <- time_range[1]
         
     } else {
-        LastDoseTime <- round(min(Data$Time[complete.cases(Data$Conc)]))
+        LastDoseTime <- round(switch(as.character(EnzPlot), 
+                                     "TRUE" = min(Data$Time),
+                                     "FALSE" = min(Data$Time[complete.cases(Data$Conc)])))
     }
     
     # If tlast is just a smidge over one of the possible breaks I've set, it
