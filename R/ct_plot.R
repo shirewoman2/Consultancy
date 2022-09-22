@@ -883,8 +883,13 @@ ct_plot <- function(ct_dataframe = NA,
     # Naming the linetypes, colors, fills, and shapes b/c otherwise having
     # trouble with order changing between when lines are plotted and when
     # observed data are added. I think this is a ggplot2 bug.
-    names(line_type) <- levels(Data$Inhibitor)
-    names(line_color) <- levels(Data$Inhibitor)
+    if(length(unique(Data$Inhibitor)) > 1){
+        names(line_type) <- levels(Data$Inhibitor)
+        names(line_color) <- levels(Data$Inhibitor)
+    } else {
+        names(line_type) <- unique(Data$Inhibitor)
+        names(line_color) <- unique(Data$Inhibitor)
+    }
     
     A <- A +
         scale_linetype_manual(values = line_type) +
