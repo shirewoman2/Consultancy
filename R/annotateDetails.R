@@ -184,12 +184,15 @@ annotateDetails <- function(Deets,
     
     if(PrevAnnotated){
         
+        FileOrder <- names(Deets)[str_detect(names(Deets), "xlsx")]
+        
         CompoundNames <- Deets %>% 
             select(Compound, CompoundID, matches("xlsx$")) %>% 
             pivot_longer(cols = -c(Compound, CompoundID),
                          names_to = "File", values_to = "Value") %>%
             filter(complete.cases(Value) & complete.cases(Compound)) %>% 
-            select(File, Compound, CompoundID) %>% unique()
+            select(File, Compound, CompoundID) %>% unique() %>% 
+            mutate(File = factor(File, levels = FileOrder))
         
         # This is when Deets has been annotated.
         # Ironically, need to de-annotate here to make this work well
@@ -209,12 +212,14 @@ annotateDetails <- function(Deets,
             # is a risk that we'll lose some NA values that should be included.
             # I think that's an acceptable risk. - LSh
             filter(complete.cases(Value)) %>% 
-            pivot_wider(names_from = Detail, values_from = Value)
-        
-        
+            pivot_wider(names_from = Detail, values_from = Value) %>% 
+            mutate(File = factor(File, levels = FileOrder))
         
     } else if("File" %in% names(Deets) == FALSE){
         Deets$File <- paste("unknown file", 1:nrow(Deets))
+        FileOrder <- Deets$File
+        Deets <- Deets %>% 
+            mutate(File = factor(File, levels = FileOrder))
     }
     
     Out <- Deets %>% 
@@ -251,6 +256,7 @@ annotateDetails <- function(Deets,
     
     suppressMessages(
         Out <- Out %>% 
+            arrange(File) %>% 
             left_join(ExpDetailDefinitions, by = c("Detail", "CompoundID")) %>% 
             # Finding some artifacts from row binding output from both of
             # extractExpDetails and extractExpDetails_mult. I think this should

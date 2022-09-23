@@ -54,8 +54,7 @@ FigText3 <- ifelse(any(complete.cases(MyEffector)),
 ```{r makeTablePKSummaryOutput}
 
 if("File" %in% names(MyPKResults)){
-    MyPKResults <- MyPKResults %>% 
-        select(!matches("File"), File)
+    MyPKResults <- MyPKResults %>% relocate(File, .after = last_col())
 }
 
 formatTable_Simcyp(MyPKResults, fontsize = fontsize)
