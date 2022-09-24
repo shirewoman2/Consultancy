@@ -162,10 +162,13 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             if(overwrite == FALSE){
                 sim_data_files_topull <- setdiff(sim_data_files, 
                                                  existing_exp_details$File)
+                FileOrder <- unique(sim_data_files, existing_exp_details$File)
+                
             } else {
                 sim_data_files_topull <- sim_data_files
                 existing_exp_details <- existing_exp_details %>%
                     filter(!File %in% existing_exp_details$File)
+                FileOrder <- unique(sim_data_files, existing_exp_details$File)
             }
             
             FileOrder <- unique(c(FileOrder, sim_data_files_topull))
