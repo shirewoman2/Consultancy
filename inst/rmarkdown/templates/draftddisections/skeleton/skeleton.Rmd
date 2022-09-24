@@ -95,7 +95,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # METHODS
 
-### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r exp_detail_data$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(exp_detail_data$Population)$PopulationCap` 
+#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r exp_detail_data$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(exp_detail_data$Population)$PopulationCap` 
 
 `r ifelse(exp_detail_data$NumTrials %in% 1:20, Numbers[exp_detail_data$NumTrials], exp_detail_data$NumTrials)` virtual trials of `r exp_detail_data$NumSubjTrial` `r tidyPop(exp_detail_data$Population)$Population` (`r exp_detail_data$PercFemale*100`% female) aged `r exp_detail_data$Age_min` to `r exp_detail_data$Age_max` years receiving `r SDMD_sub_txt` of `r exp_detail_data$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", "with", paste("on the", DoseDay, "day of"))` `r exp_detail_data$SimDuration/24` days of dosing of `r MyEffector` (`r exp_detail_data$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyEffector, MySubstrate)` model is provided in Appendix B – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
 
@@ -154,41 +154,46 @@ MyPKResults <- PKsum$Table
 
 ```{r makeRow1}
 
-data.frame(Col1 = "", 
+data.frame(Col1 = "Statistic", 
            Col2 = str_to_title(MySubstrate), Col3 = str_to_title(MySubstrate),
            Col4 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)),
            Col5 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)),
-           Col6 = "GMR", Col7 = "GMR") %>% 
+           Col6 = "GMR",
+           Col7 = "GMR") %>% 
     flextable::flextable() %>% 
     
-    flextable::width(j = 1, width = 1.15) %>% 
-    
-    # Make the header bold
-    flextable::bold(part = "all") %>%
-    
-    # center the header row
-    flextable::align(align = "center", part = "all") %>% 
+    # Make the header white and small since I can't remove it and still keep the
+    # lines correct -- yes, I tried about a million things and it just DOES NOT
+    # WORK to remove the header and avoid general bugginess.
+    flextable::color(part = "header", color = "white") %>% 
+    flextable::fontsize(part = "header", size = 1) %>% 
+    flextable::height(part = "header", height = 0.1) %>%
+    flextable::color(part = "body", j = 1, i = 1, color = "white") %>% 
     
     # Set the font size
-    flextable::fontsize(part = "all", size = fontsize) %>% 
+    flextable::fontsize(part = "body", size = fontsize) %>% 
     
-    # Set the font name
-    flextable::font(part = "all", fontname = "Arial") %>% 
+    # Make the text bold
+    flextable::bold(part = "body") %>%
     
-    # setting up which borderlines to show
-    # flextable::border_remove() %>% 
-    flextable::border_inner_v(part = "all", 
-                              border = officer::fp_border(width = 0.5)) %>% 
-    
-    # making the width autofitted to contents
+    # center text
+    flextable::align(align = "center", part = "body") %>% 
+        
+    # making the width work
     flextable::set_table_properties(layout = "fixed") %>% 
-    flextable::delete_part(part = "header") %>% 
+    flextable::width(j = 1, width = 1.15) %>% 
     
     # merging cells
-    flextable::merge_h(i = 1) %>% 
+    flextable::merge_h(i = 1) %>%
     
-    # Adding back the border now that header is gone
-    flextable::border_outer(border = officer::fp_border(width = 0.5))
+    # Setting up which borderlines to show
+    flextable::border_remove() %>% 
+    flextable::vline(border = officer::fp_border(width = 0.5), part = "body") %>% 
+    flextable::hline_bottom(j = 2:7, border = officer::fp_border(width = 0.5)) %>%
+    flextable::hline_top(border = officer::fp_border(width = 0.5)) %>%
+    flextable::vline_left(part = "body", i = 1, border = officer::fp_border(width = 0.5)) %>%
+    flextable::vline_right(part = "body", border = officer::fp_border(width = 0.5))
+
 
 ```
 ```{r makeTablePKSummaryOutput}
@@ -198,8 +203,16 @@ if("File" %in% names(MyPKResults)){
 }
 
 formatTable_Simcyp(MyPKResults, fontsize = fontsize) %>% 
+    flextable::color(part = "header", j = 1, color = "white") %>% 
     flextable::set_table_properties(layout = "fixed") %>% 
-    flextable::width(j = 1, width = 1.15)
+    flextable::width(j = 1, width = 1.15) %>% 
+    flextable::border_remove() %>% 
+    flextable::border_inner_v(border = officer::fp_border(width = 0.5)) %>% 
+    flextable::hline_top(border = officer::fp_border(width = 0.5)) %>% 
+    flextable::hline_bottom(border = officer::fp_border(width = 0.5)) %>% 
+    flextable::vline_left(border = officer::fp_border(width = 0.5)) %>% 
+    flextable::vline_right(border = officer::fp_border(width = 0.5))
+
 
 
 ```

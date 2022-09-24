@@ -390,5 +390,4 @@ draft_DDI_section <- function(sim_data_file,
         file.copy(file.path(TempDir, word_file_name), OutPath, overwrite = TRUE)
         
     }
-    
 }
