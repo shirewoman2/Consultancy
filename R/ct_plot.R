@@ -1103,6 +1103,10 @@ ct_plot <- function(ct_dataframe = NA,
         Out <- Out[[1]]
     }
     
+    
+    
+    # Saving -----------------------------------------------------------------
+    
     if(complete.cases(save_graph)){
         FileName <- save_graph
         if(str_detect(FileName, "\\.")){

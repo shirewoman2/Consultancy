@@ -17,7 +17,7 @@
 #'  \code{PKParameterDefinitions}. If you would like the output table to include
 #'  the observed data CV for any of the parameters, add "_CV" to the end of the
 #'  parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
-#'  this help file for examples of how to set this up. 
+#'  this help file for examples of how to set this up.
 #'@param PKparameters (optional) the PK parameters to include as a character
 #'  vector. \itemize{
 #'
@@ -59,9 +59,10 @@
 #'@param tissue For which tissue would you like the PK parameters to be pulled?
 #'  Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'  tested).
-#'@param mean_type return "arithmetic" or "geometric" (default) means and CVs.
-#'  If you supplied a report input form, only specify this if you'd like to
-#'  override the value listed there.
+#'@param mean_type What kind of means and CVs do you want listed in the output
+#'  table? Options are "arithmetic" or "geometric" (default). If you supplied a
+#'  report input form, only specify this if you'd like to override the value
+#'  listed there.
 #'@param includeTrialMeans TRUE or FALSE (default) for whether to include the
 #'  range of trial means for a given parameter. Note: This is calculated from
 #'  individual values rather than being pulled directly from the output.

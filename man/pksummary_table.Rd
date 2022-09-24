@@ -103,7 +103,10 @@ DDI" if you haven't renamed the tab. This only applies if you have supplied
 an Excel file name for \code{report_input_file}. If you're supplying a
 simulator output Excel file for \code{sim_data_file}, ignore this.}
 
-\item{mean_type}{return "arithmetic" or "geometric" (default) means and CVs.}
+\item{mean_type}{What kind of means and CVs do you want listed in the output
+table? Options are "arithmetic" or "geometric" (default). If you supplied a
+report input form, only specify this if you'd like to override the value
+listed there.}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
