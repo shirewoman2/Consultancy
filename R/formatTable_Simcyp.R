@@ -40,9 +40,6 @@ formatTable_Simcyp <- function(DF, fontsize = 11){
         # Set the font size
         flextable::fontsize(part = "all", size = fontsize) %>% 
         
-        # Set the font name
-        flextable::font(part = "all", fontname = "Calibri") %>% 
-        
         # setting up which borderlines to show
         flextable::border_remove() %>% 
         flextable::border_inner_v(part = "all", 
