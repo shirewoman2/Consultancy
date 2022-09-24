@@ -95,7 +95,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # METHODS
 
-#### Simulation of `r str_to_title(SDMD_sub_txt)` of `r exp_details$Dose_sub` mg `r str_to_title(MySubstrate)` Administered with `r MyEffector` in `r tidyPop(exp_details$Population)$PopulationCap` 
+#### Simulation of `r str_to_title(SDMD_sub_txt)` of `r exp_details$Dose_sub` mg `r str_to_title(MySubstrate)` Administered with `r str_to_title(MyEffector)` in `r tidyPop(exp_details$Population)$PopulationCap` 
 
 `r ifelse(exp_details$NumTrials %in% 1:20, Numbers[exp_details$NumTrials], exp_details$NumTrials)` virtual trials of `r exp_details$NumSubjTrial` `r tidyPop(exp_details$Population)$Population` (`r exp_details$PercFemale*100`% female) aged `r exp_details$Age_min` to `r exp_details$Age_max` years receiving `r SDMD_sub_txt` of `r exp_details$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and on the `r DoseDay` day of `r exp_details$SimDuration/24` days of dosing of `r MyEffector` (`r exp_details$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyEffector, MySubstrate)` model is provided in Appendix B – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
 
@@ -103,7 +103,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # RESULTS
 
-#### Simulation of `r str_to_title(SDMD_sub_txt)` of `r exp_details$Dose_sub` mg `r str_to_title(MySubstrate)` Administered with `r MyEffector` in `r tidyPop(exp_details$Population)$PopulationCap` 
+#### Simulation of `r str_to_title(SDMD_sub_txt)` of `r exp_details$Dose_sub` mg `r str_to_title(MySubstrate)` Administered with `r str_to_title(MyEffector)` in `r tidyPop(exp_details$Population)$PopulationCap` 
 
 Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r exp_details$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and on the `r DoseDay` day of `r exp_details$SimDuration/24` days of dosing of `r MyEffector` (`r exp_details$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyEffector` are depicted in Figure XXX. The simulated geometric mean AUC~tau~ and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyEffector` are listed in Table XXX.
 
