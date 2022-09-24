@@ -1058,6 +1058,9 @@ pksummary_table <- function(sim_data_file = NA,
             }
             
             if(class(prettify_compound_names) == "character"){
+                names(prettify_compound_names)[
+                    str_detect(tolower(names(prettify_compound_names)), 
+                               "inhibitor")][1] <- "inhibitor"
                 MyEffector <- prettify_compound_names["inhibitor"]
             }
             
