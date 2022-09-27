@@ -146,7 +146,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                 # This is when existing_exp_details has been annotated.
                 # Ironically, need to de-annotate here to make this work well
                 # with the rest of the function.
-                FileOrder <- names(existing_exp_details)[str_detect(names(existing_exp_details), "xlsx")]
                 existing_exp_details <- existing_exp_details %>% 
                     select(-any_of(c("SimulatorSection", "Sheet", "Notes",
                                      "CompoundID", "Compound"))) %>% 
@@ -156,27 +155,20 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                 
             } else if("File" %in% names(existing_exp_details) == FALSE){
                 existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
-                FileOrder <- existing_exp_details$File
             }
             
             if(overwrite == FALSE){
                 sim_data_files_topull <- setdiff(sim_data_files, 
                                                  existing_exp_details$File)
-                FileOrder <- unique(sim_data_files, existing_exp_details$File)
-                
             } else {
                 sim_data_files_topull <- sim_data_files
                 existing_exp_details <- existing_exp_details %>%
                     filter(!File %in% existing_exp_details$File)
-                FileOrder <- unique(sim_data_files, existing_exp_details$File)
             }
-            
-            FileOrder <- unique(c(FileOrder, sim_data_files_topull))
         }
         
     } else {
         sim_data_files_topull <- sim_data_files
-        FileOrder <- sim_data_files
     }
     
     MyDeets <- list()
@@ -218,9 +210,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         }
     }
     
-    Out <- bind_rows(MyDeets) %>% 
-        mutate(File = factor(File, levels = FileOrder)) %>% 
-        arrange(File)
+    Out <- bind_rows(MyDeets)
     
     if(AnyExistingDeets){
         if(annotate_output | all(sapply(existing_exp_details, class) == "character")){
