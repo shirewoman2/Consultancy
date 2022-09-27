@@ -6,8 +6,8 @@
 UNDER CONSTRUCTION}
 \usage{
 calc_PK_ratios(
-  sim_data_file1,
-  sim_data_file2,
+  sim_data_file_numerator,
+  sim_data_file_denominator,
   PKparameters = "AUC tab",
   tissue = "plasma",
   mean_type = "geometric",
@@ -20,11 +20,11 @@ calc_PK_ratios(
 )
 }
 \arguments{
-\item{sim_data_file1}{a simulator output Excel file that will provide the
-numerator for the calculated ratios.}
+\item{sim_data_file_numerator}{a simulator output Excel file that will
+provide the numerator for the calculated ratios.}
 
-\item{sim_data_file2}{a simulator output Excel file that will provide the
-denominator for the calculated ratios}
+\item{sim_data_file_denominator}{a simulator output Excel file that will
+provide the denominator for the calculated ratios}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
   output file. Options are: \describe{
@@ -43,7 +43,19 @@ denominator for the calculated ratios}
   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
   parameters to extract, enter \code{view(PKParameterDefinitions)} into the
   console. Not case sensitive. If you use "_first" instead of "_dose1", that
-  will also work.}}
+  will also work.}
+
+  \item{a vector of individual parameters with one parameter for the
+  numerator and whatever parameter you want from the other file for the
+  denominator, separated by "/"}{The previous options are all for when you
+  want to take the ratio of the \emph{same} parameter for file 1 / file 2.
+  However, if you want to compare one PK parameter from file 1 with a
+  \emph{different} parameter for file 2, you can do that with this option.
+  Here's an example of how to input the parameters so that you can calculate
+  the dose 1 AUCinf with an inhibitor present for file 1 divided by the
+  AUCinf for dose 1 with no inhibitor (baseline) for file 2:
+  \code{PKparameters = c("AUCinf_dose1_withInhib / AUCinf_dose1")} Please
+  note that the quotes are around \emph{both} of the two parameters!}}
 
   Currently, the PK data are only for the substrate unless noted, although
   you can sometimes hack around this by supplying a specific sheet to extract
@@ -62,7 +74,10 @@ listed in the output table? Options are "arithmetic" or "geometric"
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-\code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+\code{\link{extractPK}}, e.g., "AUCinf_dose1". \emph{Note:} This does not
+currently do anything if the supplied PK parameters are ratios of one
+parameter for the numerator file and a different parameter for the
+denominator file; we haven't figured out how best to set that up yet.}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in the prettified column titles and in any Word

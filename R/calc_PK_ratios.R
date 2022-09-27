@@ -6,10 +6,10 @@
 #' individual. It then calculates either the geometric or arithmetic mean and
 #' desired confidence interval for those data.
 #'
-#' @param sim_data_file1 a simulator output Excel file that will provide the
-#'   numerator for the calculated ratios.
-#' @param sim_data_file2 a simulator output Excel file that will provide the
-#'   denominator for the calculated ratios
+#' @param sim_data_file_numerator a simulator output Excel file that will
+#'   provide the numerator for the calculated ratios.
+#' @param sim_data_file_denominator a simulator output Excel file that will
+#'   provide the denominator for the calculated ratios
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \describe{
 #'
@@ -27,7 +27,19 @@
 #'   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
 #'   parameters to extract, enter \code{view(PKParameterDefinitions)} into the
 #'   console. Not case sensitive. If you use "_first" instead of "_dose1", that
-#'   will also work.}}
+#'   will also work.}
+#'
+#'   \item{a vector of individual parameters with one parameter for the
+#'   numerator and whatever parameter you want from the other file for the
+#'   denominator, separated by "/"}{The previous options are all for when you
+#'   want to take the ratio of the \emph{same} parameter for file 1 / file 2.
+#'   However, if you want to compare one PK parameter from file 1 with a
+#'   \emph{different} parameter for file 2, you can do that with this option.
+#'   Here's an example of how to input the parameters so that you can calculate
+#'   the dose 1 AUCinf with an inhibitor present for file 1 divided by the
+#'   AUCinf for dose 1 with no inhibitor (baseline) for file 2:
+#'   \code{PKparameters = c("AUCinf_dose1_withInhib / AUCinf_dose1")} Please
+#'   note that the quotes are around \emph{both} of the two parameters!}}
 #'
 #'   Currently, the PK data are only for the substrate unless noted, although
 #'   you can sometimes hack around this by supplying a specific sheet to extract
@@ -43,7 +55,10 @@
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1". \emph{Note:} This does not
+#'   currently do anything if the supplied PK parameters are ratios of one
+#'   parameter for the numerator file and a different parameter for the
+#'   denominator file; we haven't figured out how best to set that up yet.
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
@@ -88,8 +103,8 @@
 #' @examples
 #' # No examples yet.
 #' 
-calc_PK_ratios <- function(sim_data_file1,
-                           sim_data_file2, 
+calc_PK_ratios <- function(sim_data_file_numerator,
+                           sim_data_file_denominator, 
                            PKparameters = "AUC tab", 
                            tissue = "plasma",
                            mean_type = "geometric", 
@@ -100,8 +115,39 @@ calc_PK_ratios <- function(sim_data_file1,
                            save_table = NA, 
                            fontsize = 11){
     
-    PK1 <- extractPK(sim_data_file = sim_data_file1, 
-                     PKparameters = PKparameters, 
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Check for appropriate input for arguments
+    tissue <- tolower(tissue)
+    if(tissue %in% c("plasma", "blood") == FALSE){
+        warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+                call. = FALSE)
+        tissue <- "plasma"
+    }
+    
+    # Main body of function -------------------------------------------------
+    
+    # Checking whether the user wants to have different PK parameters for
+    # numerator than for denominator.
+    if(any(str_detect(PKparameters, "/"))){
+        PKparam_split <- as.data.frame(str_split_fixed(
+            PKparameters, pattern = "( )?/( )?", n = 2)) %>% 
+            mutate(V2 = ifelse(V2 == "", V1, V2))
+        
+        PKnumerator <- PKparam_split$V1
+        PKdenominator <- PKparam_split$V2
+    } else {
+        PKnumerator <- PKparameters
+        PKdenominator <- PKparameters
+    }
+    
+    
+    PK1 <- extractPK(sim_data_file = sim_data_file_numerator, 
+                     PKparameters = PKnumerator, 
                      tissue = tissue,
                      returnAggregateOrIndiv = "individual", 
                      returnExpDetails = TRUE)
@@ -109,10 +155,20 @@ calc_PK_ratios <- function(sim_data_file1,
     # for file 1. Later, we could add code to check and compare them for file 2
     # to make absolutely sure they match.
     
-    PK2 <- extractPK(sim_data_file = sim_data_file2, 
-                     PKparameters = PKparameters, 
+    PK2 <- extractPK(sim_data_file = sim_data_file_denominator, 
+                     PKparameters = PKdenominator, 
                      tissue = tissue,
                      returnAggregateOrIndiv = "individual")
+    
+    # Making the order of columns match the order set by the user so that we can
+    # match the appropriate things between files.
+    PK1$individual <- PK1$individual[, c("Individual", "Trial", PKnumerator)]
+    PK2$individual <- PK2$individual[, c("Individual", "Trial", PKdenominator)]
+    
+    # Because we need to match parameters when joining, renaming PK parameters
+    # in PK2 to match the names in PK1 even though they're not *really* the same
+    # PK parameters. We'll deal with that difference later.
+    names(PK2$individual) <- names(PK1$individual)
     
     suppressMessages(
         MyPK <- PK1$individual %>% 
@@ -167,58 +223,70 @@ calc_PK_ratios <- function(sim_data_file1,
     MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
     MyEffector <- ifelse(MyEffector == "", NA, MyEffector)
     
-    if(prettify_columns){
-        suppressMessages(
-            PrettyCol <- data.frame(PKparameter = names(MyPKResults)[
-                !names(MyPKResults) == "Statistic"]) %>% 
-                left_join(AllPKParameters %>% 
-                              select(PKparameter, PrettifiedNames)) %>% 
-                unique()
-        )
+    if(any(complete.cases(MyEffector))){
         
-        if(any(duplicated(PrettyCol$PrettifiedNames))){
-            # This happens when CLt and CLinf are included.
-            PrettyCol <- PrettyCol %>% 
-                mutate(PrettifiedNames = 
-                           ifelse(str_detect(PKparameter, "CLt"),
-                                  sub("h\\)",
-                                      "h, calculated using interval to time t)",
-                                      PrettifiedNames), 
-                                  PrettifiedNames))
+        if(class(prettify_compound_names) == "logical" &&
+           prettify_compound_names){
+            MyEffector <- prettify_compound_name(MyEffector)
         }
         
-        PrettyCol <- PrettyCol %>% pull(PrettifiedNames)
+        if(class(prettify_compound_names) == "character"){
+            names(prettify_compound_names)[
+                str_detect(tolower(names(prettify_compound_names)), 
+                           "inhibitor")][1] <- "inhibitor"
+            MyEffector <- prettify_compound_names["inhibitor"]
+        }
+    }
+    
+    if(all(PKnumerator == PKdenominator)){
         
-        # Adjusting units as needed.
-        PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
-        PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
-        PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
-        PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
-        
-        # Prettifying effector names as necessary
-        if(any(complete.cases(MyEffector))){
+        if(prettify_columns){
+            suppressMessages(
+                PrettyCol <- data.frame(PKparameter = names(MyPKResults)[
+                    !names(MyPKResults) == "Statistic"]) %>% 
+                    left_join(AllPKParameters %>% 
+                                  select(PKparameter, PrettifiedNames)) %>% 
+                    unique()
+            )
             
-            if(class(prettify_compound_names) == "logical" &&
-               prettify_compound_names){
-                MyEffector <- prettify_compound_name(MyEffector)
+            if(any(duplicated(PrettyCol$PrettifiedNames))){
+                # This happens when CLt and CLinf are included.
+                PrettyCol <- PrettyCol %>% 
+                    mutate(PrettifiedNames = 
+                               ifelse(str_detect(PKparameter, "CLt"),
+                                      sub("h\\)",
+                                          "h, calculated using interval to time t)",
+                                          PrettifiedNames), 
+                                      PrettifiedNames))
             }
             
-            if(class(prettify_compound_names) == "character"){
-                names(prettify_compound_names)[
-                    str_detect(tolower(names(prettify_compound_names)), 
-                               "inhibitor")][1] <- "inhibitor"
-                MyEffector <- prettify_compound_names["inhibitor"]
+            PrettyCol <- PrettyCol %>% pull(PrettifiedNames)
+            
+            # Adjusting units as needed.
+            PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
+            PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
+            PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
+            PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
+            
+            # Prettifying effector names as necessary
+            if(any(complete.cases(MyEffector))){
+                PrettyCol <- sub("effector", MyEffector, PrettyCol)
             }
             
-            PrettyCol <- sub("effector", MyEffector, PrettyCol)
+            # Just making absolutely sure that the order of columns matches
+            MyPKResults <- MyPKResults[, c("Statistic", names(MyPKResults)[
+                !names(MyPKResults) == "Statistic"])]
+            
+            # Setting prettified names.
+            names(MyPKResults) <- c("Statistic", PrettyCol)
+            
         }
         
-        # Just making absolutely sure that the order of columns matches
-        MyPKResults <- MyPKResults[, c("Statistic", names(MyPKResults)[
-            !names(MyPKResults) == "Statistic"])]
-        
-        # Setting prettified names.
-        names(MyPKResults) <- c("Statistic", PrettyCol)
+    } else {
+        # This is when column names must include some info about which PK
+        # parameters were used. I'm not sure this can be easily prettified, so
+        # not even trying for now.
+        names(MyPKResults) <- c("Statistic", PKparameters)
         
     }
     
@@ -303,7 +371,7 @@ calc_PK_ratios <- function(sim_data_file1,
             # Storing some objects so they'll work with the markdown file
             PKToPull <- PKparameters
             MeanType <- mean_type
-            sim_data_file <- str_comma(c(sim_data_file1, sim_data_file2))
+            sim_data_file <- str_comma(c(sim_data_file_numerator, sim_data_file_denominator))
             
             rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
