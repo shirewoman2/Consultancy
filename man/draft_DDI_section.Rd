@@ -7,9 +7,8 @@ CONSTRUCTION}
 \usage{
 draft_DDI_section(
   sim_data_file,
-  exp_detail_data,
-  ct_dataframe,
-  word_file_name,
+  exp_detail_data = NA,
+  ct_dataframe = NA,
   victim_sim = FALSE,
   PKparameters = NA,
   observed_PK = NA,
@@ -32,7 +31,8 @@ draft_DDI_section(
   x_axis_interval_inhib = NA,
   y_axis_label_inhib = NA,
   y_axis_limits_log_inhib = NA,
-  linear_or_log_inhib = "linear"
+  linear_or_log_inhib = "linear",
+  save_draft = NA
 )
 }
 \arguments{
@@ -50,55 +50,54 @@ else, this will still work but some values will be blank.) Not quoted.}
 either is fine as long as it contains \code{sim_data_file} and the tissue
 you want. Not quoted.}
 
-\item{word_file_name}{the name of the Word file to use for saving the output}
-
 \item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
 simulation}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
- vector. \itemize{
+  vector. \itemize{
 
- \item{By default, if you have a single-dose simulation, the parameters will
- include AUC and Cmax for dose 1, and, if you have a multiple-dose
- simulation, AUC and Cmax for the last dose. Also by default, if you have an
- effector present, the parameters will include the AUC and Cmax values with
- and without the effector as well as those ratios.}
+  \item{By default, if you have a single-dose simulation, the parameters will
+  include AUC and Cmax for dose 1, and, if you have a multiple-dose
+  simulation, AUC and Cmax for the last dose. Also by default, if you have an
+  effector present, the parameters will include the AUC and Cmax values with
+  and without the effector as well as those ratios.}
 
- \item{Alternatively, you can specify a vector of any combination of
- specific, individual parameters, e.g., \code{c("Cmax_dose1",
- "AUCtau_last").} Be sure to encapsulate the parameters you want with
- \code{c(...)}! To see the full set of possible parameters to extract, enter
- \code{view(PKParameterDefinitions)} into the console.}
+  \item{Alternatively, you can specify a vector of any combination of
+  specific, individual parameters, e.g., \code{c("Cmax_dose1",
+  "AUCtau_last").} Be sure to encapsulate the parameters you want with
+  \code{c(...)}! To see the full set of possible parameters to extract, enter
+  \code{view(PKParameterDefinitions)} into the console.}
 
- \item{If you supply observed data using either the argument
- \code{report_input_file} or the argument \code{observed_PK}, the only PK
- parameters that will be included are those available for the observed data.}
+  \item{If you supply observed data using either the argument
+  \code{report_input_file} or the argument \code{observed_PK}, the only PK
+  parameters that will be included are those available for the observed
+  data.}
 
- \item{Parameters that don't make sense for your scenario -- such as asking
- for \code{AUCinf_dose1_withInhib} when your simulation did not include an
- inhibitor or effector -- will not be included.}
+  \item{Parameters that don't make sense for your scenario -- such as asking
+  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
+  inhibitor or effector -- will not be included.}
 
- \item{tmax will be listed as median, min, and max rather than mean, lower
- and higher X\% confidence interval or X percentiles. Similarly, if you
- request trial means, the values for tmax will be the range of medians for
- the trials rather than the range of means.}}
+  \item{tmax will be listed as median, min, and max rather than mean, lower
+  and higher X\% confidence interval or X percentiles. Similarly, if you
+  request trial means, the values for tmax will be the range of medians for
+  the trials rather than the range of means.}}
 
- An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
- "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
- "AUCtau_ratio_last", "Cmax_ratio_last")}.}
+  An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
+  "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
+  "AUCtau_ratio_last", "Cmax_ratio_last")}.}
 
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
-vector, or an Excel or csv file with observed PK parameters, supply the full
-file name in quotes or the data.frame or vector here, and the
-simulated-to-observed mean ratios will be calculated. If you supply an Excel
-file, it should have only one tab. We prefer supplying csv files here since
-they're faster to read in anyway. The supplied data.frame or file must
-include columns for each of the PK parameters you would like to compare, and
-those column names \emph{must} be among the PK parameter options listed in
-\code{PKParameterDefinitions}. If you would like the output table to include
-the observed data CV for any of the parameters, add "_CV" to the end of the
-parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
-this help file for examples of how to set this up.}
+vector, or an Excel or csv file with observed PK parameters, supply the
+full file name in quotes or the data.frame or vector here, and the
+simulated-to-observed mean ratios will be calculated. If you supply an
+Excel file, it should have only one tab. We prefer supplying csv files here
+since they're faster to read in anyway. The supplied data.frame or file
+must include columns for each of the PK parameters you would like to
+compare, and those column names \emph{must} be among the PK parameter
+options listed in \code{PKParameterDefinitions}. If you would like the
+output table to include the observed data CV for any of the parameters, add
+"_CV" to the end of the parameter name, e.g., "AUCinf_dose1_CV". Please see
+the "Example" section of this help file for examples of how to set this up.}
 
 \item{tissue}{the tissue to use for extracting PK data and for graphing.
 Options are "plasma" (default) or "blood".}
@@ -118,20 +117,21 @@ this only shows up in the text describing the table and graph. Any quoted
 value is fine here.}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
-compound names prettier in legend entries and in any Word output files. This
-was designed for simulations where the substrate and any metabolites,
+compound names prettier in legend entries and in any Word output files.
+This was designed for simulations where the substrate and any metabolites,
 effectors, or effector metabolites are among the standard options for the
 simulator, and leaving \code{prettify_compound_names = TRUE} will make the
 name of those compounds something more human readable. For example,
-"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will become
-"midazolam". Set each compound to the name you'd prefer to see in your
-legend and Word output if you would like something different. For example,
-\code{prettify_compound_names = c("inhibitor" = "teeswiftavir", "substrate"
-= "superstatin")}. Please note that "inhibitor" includes \emph{all} the
-effectors and effector metabolites present, so, if you're setting the
-effector name, you really should use something like this if you're including
-effector metabolites: \code{prettify_compound_names = c("inhibitor" =
-"teeswiftavir and 1-OH-teeswiftavir", "substrate" = "superstatin")}.}
+"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
+become "midazolam". Set each compound to the name you'd prefer to see in
+your legend and Word output if you would like something different. For
+example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
+"substrate" = "superstatin")}. Please note that "inhibitor" includes
+\emph{all} the effectors and effector metabolites present, so, if you're
+setting the effector name, you really should use something like this if
+you're including effector metabolites: \code{prettify_compound_names =
+c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+"superstatin")}.}
 
 \item{default_cmpd_file}{Was one of the default compound files used for the
 substrate (if this was a perpetrator simulation) or the effector (if this
@@ -139,73 +139,73 @@ was a victim simulation)? TRUE (default) or FALSE.}
 
 \item{figure_type_sub}{type of figure to plot for the substrate. Options are:
 
- \describe{
+  \describe{
 
- \item{"percentiles"}{(default) plots an opaque line for the mean data,
- lighter lines for the 5th and 95th percentiles of the simulated data, and
- open circles for the observed data. If an effecter were present, the default
- is dashed lines for the data in the presence of an effector.}
+  \item{"percentiles"}{(default) plots an opaque line for the mean data,
+  lighter lines for the 5th and 95th percentiles of the simulated data, and
+  open circles for the observed data. If an effecter were present, the
+  default is dashed lines for the data in the presence of an effector.}
 
- \item{"trial means"}{plots an opaque line for the mean data, lighter lines
- for the mean of each trial of simulated data, and open circles for the
- observed data. If an effector were present, lighter dashed lines indicate
- the mean of each trial of simulated data in the presence of the effector.}
+  \item{"trial means"}{plots an opaque line for the mean data, lighter lines
+  for the mean of each trial of simulated data, and open circles for the
+  observed data. If an effector were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the effector.}
 
- \item{"percentile ribbon"}{plots an opaque line for the mean data,
- transparent shading for the 5th to 95th percentiles of the simulated data,
- and open circles for the observed data. If an effector were present, the
- default is to show the data without the effector in blue and the data in the
- presence of the effector in red. Note: You may sometimes see some artifacts
- -- especially for semi-log plots -- where the ribbon gets partly cut off.
- For arcane reasons we don't want to bore you with here, we can't easily
- prevent this. However, a possible fix is to set your y axis limits for the
- semi-log plot to be wider using \code{y_axis_limits_log}.}
+  \item{"percentile ribbon"}{plots an opaque line for the mean data,
+  transparent shading for the 5th to 95th percentiles of the simulated data,
+  and open circles for the observed data. If an effector were present, the
+  default is to show the data without the effector in blue and the data in
+  the presence of the effector in red. Note: You may sometimes see some
+  artifacts -- especially for semi-log plots -- where the ribbon gets partly
+  cut off. For arcane reasons we don't want to bore you with here, we can't
+  easily prevent this. However, a possible fix is to set your y axis limits
+  for the semi-log plot to be wider using \code{y_axis_limits_log}.}
 
- \item{"means only"}{plots a black line for the mean data and, if an effector
- was modeled, a dashed line for the concentration-time data with Inhibitor
- 1.}
+  \item{"means only"}{plots a black line for the mean data and, if an
+  effector was modeled, a dashed line for the concentration-time data with
+  Inhibitor 1.}
 
- \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
- gray, the overall mean in thicker black, the 5th and 95th percentiles in
- dashed lines, and the observed data in semi-transparent purple-blue. Graphs
- with an effector present lose the trial means, and the percentiles switch to
- solid, gray lines. \strong{An editorial comment:} While this does not align
- with the officially sanctioned template at this time, this looks
- \emph{sharp}, makes it easy to see the defining characteristics of the data,
- and I recommend checking it out, even just for your own purposes of
- examining your data. If the color is too much for you but you like the rest,
- try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}}}
+  \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
+  gray, the overall mean in thicker black, the 5th and 95th percentiles in
+  dashed lines, and the observed data in semi-transparent purple-blue. Graphs
+  with an effector present lose the trial means, and the percentiles switch
+  to solid, gray lines. \strong{An editorial comment:} While this does not
+  align with the officially sanctioned template at this time, this looks
+  \emph{sharp}, makes it easy to see the defining characteristics of the
+  data, and I recommend checking it out, even just for your own purposes of
+  examining your data. If the color is too much for you but you like the
+  rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}}}
 
 \item{time_range_sub}{time range to show relative to the start of the
- simulation for the graph of the substrate. Options: \describe{
+  simulation for the graph of the substrate. Options: \describe{
 
- \item{NA}{(default) entire time range of data}
+  \item{NA}{(default) entire time range of data}
 
- \item{a start time and end time in hours}{only data in that time range, e.g.
- \code{c(24, 48)}. Note that there are no quotes around numeric data.}
+  \item{a start time and end time in hours}{only data in that time range,
+  e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
 
- \item{"first dose"}{only the time range of the first dose}
+  \item{"first dose"}{only the time range of the first dose}
 
- \item{"last dose"}{only the time range of the last dose}
+  \item{"last dose"}{only the time range of the last dose}
 
- \item{"penultimate dose"}{only the time range of the 2nd-to-last dose, which
- can be useful for BID data where the end of the simulation extended past the
- dosing interval or data when the substrate was dosed BID and the effector
- was dosed QD}
+  \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
+  which can be useful for BID data where the end of the simulation extended
+  past the dosing interval or data when the substrate was dosed BID and the
+  effector was dosed QD}
 
- \item{a specific dose number with "dose" or "doses" as the prefix}{the time
- range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
- for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
+  \item{a specific dose number with "dose" or "doses" as the prefix}{the time
+  range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
+  for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
 
- \item{"all obs" or "all observed" if you feel like spelling it out}{Time
- range will be limited to only times when observed data are present.}
+  \item{"all obs" or "all observed" if you feel like spelling it out}{Time
+  range will be limited to only times when observed data are present.}
 
- \item{"last dose to last observed" or "last obs" for short}{Time range will
- be limited to the start of the last dose until the last observed data
- point.}
+  \item{"last dose to last observed" or "last obs" for short}{Time range will
+  be limited to the start of the last dose until the last observed data
+  point.}
 
 
- }}
+  }}
 
 \item{x_axis_interval_sub}{optionally set the x-axis major tick-mark interval
 for the graph of the substrate. Acceptable input: any number or leave as NA
@@ -215,44 +215,44 @@ aesthetically pleasing and PK-relevant intervals.}
 \item{y_axis_label_sub}{optionally supply a character vector or an expression
 to use for the y axis label for the graph of the substrate}
 
-\item{y_axis_limits_log_sub}{optionally set the Y axis limits for the semi-log
-plot for the graph of the substrate, e.g., \code{c(10, 1000)}. Values will
-be rounded down and up, respectively, to a round number. If left as the
-default NA, the Y axis limits for the semi-log plot will be automatically
-selected.}
+\item{y_axis_limits_log_sub}{optionally set the Y axis limits for the
+semi-log plot for the graph of the substrate, e.g., \code{c(10, 1000)}.
+Values will be rounded down and up, respectively, to a round number. If
+left as the default NA, the Y axis limits for the semi-log plot will be
+automatically selected.}
 
 \item{legend_label_sub}{optionally indicate on the legend of the graph of the
 substrate whether the effector is an inhibitor, inducer, activator, or
-suppressor. Input will be used as the label in the legend for the line style
-and the shape. If left as the default NA when a legend is included and an
-effector is present, the label in the legend will be "Inhibitor".}
+suppressor. Input will be used as the label in the legend for the line
+style and the shape. If left as the default NA when a legend is included
+and an effector is present, the label in the legend will be "Inhibitor".}
 
-\item{linear_or_log_sub}{the type of graph to be returned. Options: \describe{
- \item{"semi-log"}{y axis is log transformed}
+\item{linear_or_log_sub}{the type of graph to be returned. Options:
+  \describe{ \item{"semi-log"}{y axis is log transformed}
 
- \item{"linear"}{no axis transformation}
+  \item{"linear"}{no axis transformation}
 
- \item{"both vertical"}{(default) both the linear and the semi-log graphs
- will be returned, and graphs are stacked vertically}
+  \item{"both vertical"}{(default) both the linear and the semi-log graphs
+  will be returned, and graphs are stacked vertically}
 
- \item{"both horizontal"}{both the linear and the semi-log graphs will be
- returned, and graphs are side by side horizontally}
+  \item{"both horizontal"}{both the linear and the semi-log graphs will be
+  returned, and graphs are side by side horizontally}
 
- \item{"horizontal and vertical"}{both the linear and the semi-log graphs
- will be returned, and graphs are side by side horizontally (one graph; file
- name will end in "- horizontal") and stacked vertically (second graph; file
- name will end in "- vertical"). This option, which was designed to create
- the vertically stacked version of a graph for a report and the horizontal,
- side-by-side version for a presentation, is a bit different from the others
- since it will return two separate files. In the RStudio "Plots" window,
- you'll only see the vertically stacked version. Setting \code{fig_height}
- and \code{fig_width} will adjust only the dimensions of the horizontal
- figure; the default values will be used for the vertical one. If you request
- Word output, only the vertical plot will be saved in Word format; the
- horizontal plot will be saved as a png file.}}}
+  \item{"horizontal and vertical"}{both the linear and the semi-log graphs
+  will be returned, and graphs are side by side horizontally (one graph; file
+  name will end in "- horizontal") and stacked vertically (second graph; file
+  name will end in "- vertical"). This option, which was designed to create
+  the vertically stacked version of a graph for a report and the horizontal,
+  side-by-side version for a presentation, is a bit different from the others
+  since it will return two separate files. In the RStudio "Plots" window,
+  you'll only see the vertically stacked version. Setting \code{fig_height}
+  and \code{fig_width} will adjust only the dimensions of the horizontal
+  figure; the default values will be used for the vertical one. If you
+  request Word output, only the vertical plot will be saved in Word format;
+  the horizontal plot will be saved as a png file.}}}
 
-\item{figure_type_inhib}{type of figure to plot for the substrate. Options are
-the same as for the substrate.}
+\item{figure_type_inhib}{type of figure to plot for the substrate. Options
+are the same as for the substrate.}
 
 \item{time_range_inhib}{time range to show relative to the start of the
 simulation for the graph of the inhibitor. Options are the same as for the
@@ -260,20 +260,24 @@ substrate.}
 
 \item{x_axis_interval_inhib}{optionally set the x-axis major tick-mark
 interval for the graph of the inhibitor. Acceptable input: any number or
-leave as NA to accept default values, which are generally reasonable guesses
-as to aesthetically pleasing and PK-relevant intervals.}
+leave as NA to accept default values, which are generally reasonable
+guesses as to aesthetically pleasing and PK-relevant intervals.}
 
 \item{y_axis_label_inhib}{optionally supply a character vector or an
 expression to use for the y axis label for the graph of the inhibitor}
 
 \item{y_axis_limits_log_inhib}{optionally set the Y axis limits for the
 semi-log plot for the graph of the inhibitor, e.g., \code{c(10, 1000)}.
-Values will be rounded down and up, respectively, to a round number. If left
-as the default NA, the Y axis limits for the semi-log plot will be
+Values will be rounded down and up, respectively, to a round number. If
+left as the default NA, the Y axis limits for the semi-log plot will be
 automatically selected.}
 
 \item{linear_or_log_inhib}{the type of graph to be returned. Options are the
 same as for the substrate plot.}
+
+\item{save_draft}{the name of the Word file to use for saving the output. If
+left as NA, this will be set to "Draft DDI report section for XXXX.docx"
+where "XXXX" is the name of the simulator output Excel file.}
 }
 \value{
 

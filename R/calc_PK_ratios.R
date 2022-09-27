@@ -371,7 +371,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             # Storing some objects so they'll work with the markdown file
             PKToPull <- PKparameters
             MeanType <- mean_type
-            sim_data_file <- str_comma(c(sim_data_file_numerator, sim_data_file_denominator))
+            sim_data_file <- str_comma(c(basename(sim_data_file_numerator),
+                                         basename(sim_data_file_denominator)))
             
             rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
