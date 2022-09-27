@@ -142,7 +142,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         }
         
         if("data.frame" %in% class(existing_exp_details)){
-            if(all(c("SimulatorSection", "Sheet") %in% names(Deets))){
+            if(all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))){
                 # This is when existing_exp_details has been annotated.
                 # Ironically, need to de-annotate here to make this work well
                 # with the rest of the function.
@@ -225,6 +225,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     if(AnyExistingDeets){
         if(annotate_output | all(sapply(existing_exp_details, class) == "character")){
             Out <- Out %>% mutate(across(.fns = as.character))
+            existing_exp_details <- existing_exp_details %>% 
+                mutate(across(.fns = as.character))
         } 
         
         Out <- bind_rows(Out, existing_exp_details)
