@@ -79,6 +79,6 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
 
 ```
 
-*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r basename(sim_data_file)`* 
+*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r sim_data_file`* 
 
 

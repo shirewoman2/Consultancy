@@ -34,9 +34,9 @@ in quotes}
   \item{a vector of any combination of specific, individual parameters, each
   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
-  parameters to extract, enter \code{data(PKParameterDefinitions);
-  view(PKParameterDefinitions)} into the console. Not case sensitive. If you
-  use "_first" instead of "_dose1", that will also work.}}
+  parameters to extract, enter \code{view(PKParameterDefinitions)} into the
+  console. Not case sensitive. If you use "_first" instead of "_dose1", that
+  will also work.}}
 
   Currently, the PK data are only for the substrate unless noted, although
   you can sometimes hack around this by supplying a specific sheet to extract
