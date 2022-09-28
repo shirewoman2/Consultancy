@@ -105,7 +105,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 ### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r exp_detail_data$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(exp_detail_data$Population)$PopulationCap` 
 
-Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r exp_detail_data$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", "with", paste("on the", DoseDay, "day of"))` `r exp_detail_data$SimDuration/24` days of dosing of `r MyEffector` (`r exp_detail_data$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyEffector` are depicted in Figure XXX. The simulated geometric mean AUC~tau~ and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyEffector` are listed in Table XXX.
+Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r exp_detail_data$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", "with", paste("on the", DoseDay, "day of"))` `r exp_detail_data$NumDoses_inhib*exp_detail_data$DoseInt_inhib/24` days of dosing of `r MyEffector` (`r exp_detail_data$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyEffector` are depicted in Figure XXX. The simulated geometric mean AUC~tau~ and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyEffector` are listed in Table XXX.
 
 
 ```{r pullPK}
