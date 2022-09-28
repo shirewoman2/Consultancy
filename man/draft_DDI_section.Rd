@@ -9,7 +9,6 @@ draft_DDI_section(
   sim_data_file,
   exp_detail_data = NA,
   ct_dataframe = NA,
-  victim_sim = FALSE,
   PKparameters = NA,
   observed_PK = NA,
   tissue = "plasma",
@@ -18,6 +17,7 @@ draft_DDI_section(
   mean_type_graph = "arithmetic",
   clin_study_name = "XXX",
   prettify_compound_names = TRUE,
+  victim_sim = FALSE,
   default_cmpd_file = TRUE,
   figure_type_sub = "means only",
   time_range_sub = NA,
@@ -49,9 +49,6 @@ else, this will still work but some values will be blank.) Not quoted.}
 \code{\link{extractConcTime}} or \code{\link{extractConcTime_mult}} --
 either is fine as long as it contains \code{sim_data_file} and the tissue
 you want. Not quoted.}
-
-\item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
-simulation}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{
@@ -133,9 +130,20 @@ you're including effector metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
+\item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
+simulation, so "TRUE" means that the client's drug was the victim. The only
+thing this affects is the sentence in the template report text "Performance
+verification of the XXX model is provided in Appendix B – Performance
+Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
+victim DDI simulation, then this sentence will replace "XXX" with the name
+of the effector. If not, it will replace "XXX" with the name of the
+substrate.}
+
 \item{default_cmpd_file}{Was one of the default compound files used for the
 substrate (if this was a perpetrator simulation) or the effector (if this
-was a victim simulation)? TRUE (default) or FALSE.}
+was a victim simulation)? TRUE (default) or FALSE. The only thing this
+affects is the sentence in the template report text, "The default compound
+library file for XXX was used."}
 
 \item{figure_type_sub}{type of figure to plot for the substrate. Options are:
 

@@ -17,7 +17,18 @@
 #'   either is fine as long as it contains \code{sim_data_file} and the tissue
 #'   you want. Not quoted.
 #' @param victim_sim TRUE (default) or FALSE for whether this was a victim DDI
-#'   simulation
+#'   simulation, so "TRUE" means that the client's drug was the victim. The only
+#'   thing this affects is the sentence in the template report text "Performance
+#'   verification of the XXX model is provided in Appendix B – Performance
+#'   Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
+#'   victim DDI simulation, then this sentence will replace "XXX" with the name
+#'   of the effector. If not, it will replace "XXX" with the name of the
+#'   substrate.
+#' @param default_cmpd_file Was one of the default compound files used for the
+#'   substrate (if this was a perpetrator simulation) or the effector (if this
+#'   was a victim simulation)? TRUE (default) or FALSE. The only thing this
+#'   affects is the sentence in the template report text, "The default compound
+#'   library file for XXX was used."
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. \itemize{
 #'
@@ -217,9 +228,6 @@
 #'   you're including effector metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
-#' @param default_cmpd_file Was one of the default compound files used for the
-#'   substrate (if this was a perpetrator simulation) or the effector (if this
-#'   was a victim simulation)? TRUE (default) or FALSE.
 #' @param save_draft the name of the Word file to use for saving the output. If
 #'   left as NA, this will be set to "Draft DDI report section for XXXX.docx"
 #'   where "XXXX" is the name of the simulator output Excel file.
@@ -234,7 +242,6 @@
 draft_DDI_section <- function(sim_data_file,
                               exp_detail_data = NA, 
                               ct_dataframe = NA, 
-                              victim_sim = FALSE, 
                               PKparameters = NA,
                               observed_PK = NA,
                               tissue = "plasma",
@@ -244,6 +251,7 @@ draft_DDI_section <- function(sim_data_file,
                               
                               clin_study_name = "XXX",
                               prettify_compound_names = TRUE,
+                              victim_sim = FALSE, 
                               default_cmpd_file = TRUE,
                               
                               figure_type_sub = "means only",
