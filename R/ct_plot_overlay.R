@@ -676,7 +676,8 @@ ct_plot_overlay <- function(ct_dataframe,
     if(EnzPlot){ 
         # for enzyme abundance data
         ct_dataframe <- ct_dataframe %>%
-            mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor)) 
+            mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor)) %>% 
+            rename(Conc = Abundance)
         
         sim_dataframe <- ct_dataframe
         
@@ -1015,184 +1016,97 @@ ct_plot_overlay <- function(ct_dataframe,
     
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
-        if(EnzPlot){
-            A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-                        switch(paste(AES, LTCol == "Inhibitor"), 
-                               "color-linetype TRUE" = aes(x = Time, y = Abundance, 
-                                                           color = colorBy_column, 
-                                                           fill = colorBy_column,
-                                                           linetype = linetype_column, 
-                                                           group = Group, 
-                                                           shape = linetype_column),
-                               "color-linetype FALSE" = aes(x = Time, y = Abundance, 
-                                                            color = colorBy_column, 
-                                                            fill = colorBy_column,
-                                                            linetype = linetype_column, 
-                                                            group = Group, 
-                                                            shape = Inhibitor),
-                               # Only option here will be "color FALSE" b/c "color"
-                               # will only be the AES if linetype is unspecified.
-                               "color FALSE" = aes(x = Time, y = Abundance, 
-                                                   color = colorBy_column, 
-                                                   fill = colorBy_column,
-                                                   group = Group, shape = Inhibitor), 
-                               "linetype TRUE" = aes(x = Time, y = Abundance, 
-                                                     linetype = linetype_column, 
-                                                     group = Group, shape = linetype_column),
-                               "linetype FALSE" = aes(x = Time, y = Abundance, 
-                                                      linetype = linetype_column, 
-                                                      group = Group, shape = linetype_column),
-                               # Only option here will be "none FALSE" b/c "none"
-                               # will only be the AES if linetype is unspecified.
-                               "none FALSE" = aes(x = Time, y = Abundance,
-                                                  group = Group, shape = Inhibitor))) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
-        } else {
-            
-            A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-                        switch(paste(AES, LTCol == "Inhibitor"), 
-                               "color-linetype TRUE" = aes(x = Time, y = Conc, 
-                                                           color = colorBy_column, 
-                                                           fill = colorBy_column,
-                                                           linetype = linetype_column, 
-                                                           group = Group, 
-                                                           shape = linetype_column),
-                               "color-linetype FALSE" = aes(x = Time, y = Conc, 
-                                                            color = colorBy_column, 
-                                                            fill = colorBy_column,
-                                                            linetype = linetype_column, 
-                                                            group = Group, 
-                                                            shape = Inhibitor),
-                               # Only option here will be "color FALSE" b/c "color"
-                               # will only be the AES if linetype is unspecified.
-                               "color FALSE" = aes(x = Time, y = Conc, 
-                                                   color = colorBy_column, 
-                                                   fill = colorBy_column,
-                                                   group = Group, shape = Inhibitor), 
-                               "linetype TRUE" = aes(x = Time, y = Conc, 
-                                                     linetype = linetype_column, 
-                                                     group = Group, shape = linetype_column),
-                               "linetype FALSE" = aes(x = Time, y = Conc, 
-                                                      linetype = linetype_column, 
-                                                      group = Group, shape = linetype_column),
-                               # Only option here will be "none FALSE" b/c "none"
-                               # will only be the AES if linetype is unspecified.
-                               "none FALSE" = aes(x = Time, y = Conc,
-                                                  group = Group, shape = Inhibitor))) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
-        }
+        
+        A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
+                    switch(paste(AES, LTCol == "Inhibitor"), 
+                           "color-linetype TRUE" = aes(x = Time, y = Conc, 
+                                                       color = colorBy_column, 
+                                                       fill = colorBy_column,
+                                                       linetype = linetype_column, 
+                                                       group = Group, 
+                                                       shape = linetype_column),
+                           "color-linetype FALSE" = aes(x = Time, y = Conc, 
+                                                        color = colorBy_column, 
+                                                        fill = colorBy_column,
+                                                        linetype = linetype_column, 
+                                                        group = Group, 
+                                                        shape = Inhibitor),
+                           # Only option here will be "color FALSE" b/c "color"
+                           # will only be the AES if linetype is unspecified.
+                           "color FALSE" = aes(x = Time, y = Conc, 
+                                               color = colorBy_column, 
+                                               fill = colorBy_column,
+                                               group = Group, shape = Inhibitor), 
+                           "linetype TRUE" = aes(x = Time, y = Conc, 
+                                                 linetype = linetype_column, 
+                                                 group = Group, shape = linetype_column),
+                           "linetype FALSE" = aes(x = Time, y = Conc, 
+                                                  linetype = linetype_column, 
+                                                  group = Group, shape = linetype_column),
+                           # Only option here will be "none FALSE" b/c "none"
+                           # will only be the AES if linetype is unspecified.
+                           "none FALSE" = aes(x = Time, y = Conc,
+                                              group = Group, shape = Inhibitor))) +
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+        
     }
     
     ## Figure type: percentiles ---------------------------------------------
     
     if(figure_type == "percentiles"){
         
-        if(EnzPlot){
-            A <- ggplot(sim_dataframe %>%
-                            filter(Trial %in% c("per5", "per95")) %>%
-                            mutate(Group = paste(Group, Trial)),
-                        switch(paste(AES, LTCol == "Inhibitor"), 
-                               "color-linetype TRUE" = aes(x = Time, y = Abundance,
-                                                           color = colorBy_column,
-                                                           fill = colorBy_column,
-                                                           linetype = linetype_column,
-                                                           group = Group,
-                                                           shape = linetype_column),
-                               "color-linetype FALSE" = aes(x = Time, y = Abundance,
-                                                            color = colorBy_column,
-                                                            fill = colorBy_column,
-                                                            linetype = linetype_column,
-                                                            group = Group,
-                                                            shape = Inhibitor),
-                               # Only option here will be "color FALSE" b/c "color"
-                               # will only be the AES if linetype is unspecified.
-                               "color FALSE" = aes(x = Time, y = Abundance, 
-                                                   color = colorBy_column, 
-                                                   fill = colorBy_column,
-                                                   group = Group, shape = Inhibitor), 
-                               "linetype TRUE" = aes(x = Time, y = Abundance,
-                                                     linetype = linetype_column,
-                                                     group = Group, shape = linetype_column),
-                               "linetype FALSE" = aes(x = Time, y = Abundance,
-                                                      linetype = linetype_column,
-                                                      group = Group, shape = linetype_column),
-                               # Only option here will be "none FALSE" b/c "none"
-                               # will only be the AES if linetype is unspecified.
-                               "none FALSE" = aes(x = Time, y = Abundance,
-                                                  group = Group, shape = Inhibitor))) +
-                geom_line(alpha = 0.25,
-                          lwd = ifelse(is.na(line_width), 0.8, line_width)) +
-                geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width))
-        } else {
-            
-            A <- ggplot(sim_dataframe %>%
-                            filter(Trial %in% c("per5", "per95")) %>%
-                            mutate(Group = paste(Group, Trial)),
-                        switch(paste(AES, LTCol == "Inhibitor"), 
-                               "color-linetype TRUE" = aes(x = Time, y = Conc,
-                                                           color = colorBy_column,
-                                                           fill = colorBy_column,
-                                                           linetype = linetype_column,
-                                                           group = Group,
-                                                           shape = linetype_column),
-                               "color-linetype FALSE" = aes(x = Time, y = Conc,
-                                                            color = colorBy_column,
-                                                            fill = colorBy_column,
-                                                            linetype = linetype_column,
-                                                            group = Group,
-                                                            shape = Inhibitor),
-                               # Only option here will be "color FALSE" b/c "color"
-                               # will only be the AES if linetype is unspecified.
-                               "color FALSE" = aes(x = Time, y = Conc, 
-                                                   color = colorBy_column, 
-                                                   fill = colorBy_column,
-                                                   group = Group, shape = Inhibitor), 
-                               "linetype TRUE" = aes(x = Time, y = Conc,
-                                                     linetype = linetype_column,
-                                                     group = Group, shape = linetype_column),
-                               "linetype FALSE" = aes(x = Time, y = Conc,
-                                                      linetype = linetype_column,
-                                                      group = Group, shape = linetype_column),
-                               # Only option here will be "none FALSE" b/c "none"
-                               # will only be the AES if linetype is unspecified.
-                               "none FALSE" = aes(x = Time, y = Conc,
-                                                  group = Group, shape = Inhibitor))) +
-                geom_line(alpha = 0.25,
-                          lwd = ifelse(is.na(line_width), 0.8, line_width)) +
-                geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width))
-        }
+        A <- ggplot(sim_dataframe %>%
+                        filter(Trial %in% c("per5", "per95")) %>%
+                        mutate(Group = paste(Group, Trial)),
+                    switch(paste(AES, LTCol == "Inhibitor"), 
+                           "color-linetype TRUE" = aes(x = Time, y = Conc,
+                                                       color = colorBy_column,
+                                                       fill = colorBy_column,
+                                                       linetype = linetype_column,
+                                                       group = Group,
+                                                       shape = linetype_column),
+                           "color-linetype FALSE" = aes(x = Time, y = Conc,
+                                                        color = colorBy_column,
+                                                        fill = colorBy_column,
+                                                        linetype = linetype_column,
+                                                        group = Group,
+                                                        shape = Inhibitor),
+                           # Only option here will be "color FALSE" b/c "color"
+                           # will only be the AES if linetype is unspecified.
+                           "color FALSE" = aes(x = Time, y = Conc, 
+                                               color = colorBy_column, 
+                                               fill = colorBy_column,
+                                               group = Group, shape = Inhibitor), 
+                           "linetype TRUE" = aes(x = Time, y = Conc,
+                                                 linetype = linetype_column,
+                                                 group = Group, shape = linetype_column),
+                           "linetype FALSE" = aes(x = Time, y = Conc,
+                                                  linetype = linetype_column,
+                                                  group = Group, shape = linetype_column),
+                           # Only option here will be "none FALSE" b/c "none"
+                           # will only be the AES if linetype is unspecified.
+                           "none FALSE" = aes(x = Time, y = Conc,
+                                              group = Group, shape = Inhibitor))) +
+            geom_line(alpha = 0.25,
+                      lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+            geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
+                      lwd = ifelse(is.na(line_width), 1, line_width))
     }
     
     ## Figure type: ribbon --------------------------------------------------
     if(str_detect(figure_type, "ribbon")){
         
-        if(EnzPlot){
-            RibbonDF <-  sim_dataframe %>% 
-                filter(Trial %in% c({MyMeanType}, "per5", "per95") &
-                           # Ribbons don't work if any of the data are clipped on
-                           # the x axis
-                           Time >= time_range_relative[1] &
-                           Time <= time_range_relative[2]) %>% 
-                unique() %>% 
-                select(-any_of(c("Group", "Individual"))) %>% 
-                pivot_wider(names_from = Trial, values_from = Abundance)
-            names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
-            
-        } else {
-            
-            RibbonDF <-  sim_dataframe %>% 
-                filter(Trial %in% c({MyMeanType}, "per5", "per95") &
-                           # Ribbons don't work if any of the data are clipped on
-                           # the x axis
-                           Time >= time_range_relative[1] &
-                           Time <= time_range_relative[2]) %>% 
-                unique() %>% 
-                select(-any_of(c("Group", "Individual"))) %>% 
-                pivot_wider(names_from = Trial, values_from = Conc)
-            names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
-        }
+        
+        RibbonDF <-  sim_dataframe %>% 
+            filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                       # Ribbons don't work if any of the data are clipped on
+                       # the x axis
+                       Time >= time_range_relative[1] &
+                       Time <= time_range_relative[2]) %>% 
+            unique() %>% 
+            select(-any_of(c("Group", "Individual"))) %>% 
+            pivot_wider(names_from = Trial, values_from = Conc)
+        names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, 
                     switch(paste(AES, LTCol == "Inhibitor"), 
@@ -1584,18 +1498,10 @@ ct_plot_overlay <- function(ct_dataframe,
     
     ## Making semi-log graph ------------------------------------------------
     
-    if(EnzPlot){
-        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
-                                               Time > 0 &
-                                               Abundance < Ylim_log[1]) %>% 
-            pull(Abundance)    
-    } else {
-        
-        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
-                                               Time > 0 &
-                                               Conc < Ylim_log[1]) %>% 
-            pull(Conc)
-    }
+    LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                           Time > 0 &
+                                           Conc < Ylim_log[1]) %>% 
+        pull(Conc)
     
     if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
         warning(paste0("Some of your data are less than the lower y axis value of ",
