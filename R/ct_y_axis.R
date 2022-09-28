@@ -117,7 +117,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                               "mg/L" = bquote(bold(Concentration~"("*"\u03bc"*g*"/"*mL*")")),
                               "mL" = "Volume (mL)",
                               "PD response" = "PD response",
-                              "Relative abundance" = "Relative abundance (%)")
+                              "Relative abundance" = "Relative abundance")
         
         ylab <- PossConcUnits[[ObsConcUnits]]
         

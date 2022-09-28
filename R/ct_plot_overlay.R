@@ -676,7 +676,8 @@ ct_plot_overlay <- function(ct_dataframe,
     if(EnzPlot){ 
         # for enzyme abundance data
         ct_dataframe <- ct_dataframe %>%
-            mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor)) %>% 
+            mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor), 
+                   Abundance = Abundance / 100) %>% 
             rename(Conc = Abundance)
         
         sim_dataframe <- ct_dataframe
@@ -1278,8 +1279,16 @@ ct_plot_overlay <- function(ct_dataframe,
                        nrow = switch(as.character(is.na(facet_nrow)),
                                      "TRUE" = NULL, 
                                      "FALSE" = facet_nrow), 
-                       strip.position = strip.position) +
-            scale_y_continuous(expand = expansion(mult = pad_y_num))
+                       strip.position = strip.position)
+        
+        if(EnzPlot){
+            A <- A +
+                scale_y_continuous(expand = expansion(mult = pad_y_num),
+                                   labels = scales::percent)
+        } else {
+            A <- A +
+                scale_y_continuous(expand = expansion(mult = pad_y_num))
+        }
         
         if(complete.cases(x_axis_interval)){
             A <- A + scale_x_continuous(expand = expansion(
@@ -1300,8 +1309,6 @@ ct_plot_overlay <- function(ct_dataframe,
                 scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                    expand = expansion(
                                        mult = pad_x_num)) +
-                scale_y_continuous(breaks = YBreaks, labels = YLabels,
-                                   expand = expansion(mult = pad_y_num)) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
                                         AESCols["facet2"] == "<empty>"), 
                                   "TRUE FALSE" = vars(!!facet2_column),
@@ -1309,6 +1316,18 @@ ct_plot_overlay <- function(ct_dataframe,
                                   "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
                            ncol = facet_ncol, nrow = facet_nrow)
         )
+        
+        if(EnzPlot){
+            A <- suppressWarnings(suppressMessages(
+                A + scale_y_continuous(labels = scales::percent,
+                                       expand = expansion(mult = pad_y_num)) 
+            ))
+        } else {
+            A <- suppressWarnings(suppressMessages(
+                A + scale_y_continuous(breaks = YBreaks, labels = YLabels,
+                                       expand = expansion(mult = pad_y_num)) 
+            ))
+        }
         
     } else {
         A <- A +
@@ -1319,10 +1338,20 @@ ct_plot_overlay <- function(ct_dataframe,
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
                                    mult = pad_x_num)) +
-            scale_y_continuous(breaks = YBreaks,
-                               labels = YLabels,
-                               expand = expansion(mult = pad_y_num)) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
+        
+        if(EnzPlot){
+            A <- suppressWarnings(suppressMessages(
+                A + scale_y_continuous(labels = scales::percent,
+                                       expand = expansion(mult = pad_y_num))
+            ))
+        } else {
+            A <- suppressWarnings(suppressMessages(
+                A + scale_y_continuous(breaks = YBreaks,
+                                       labels = YLabels,
+                                       expand = expansion(mult = pad_y_num))
+            ))
+        }
     }
     
     # Colors, linetypes, & legends -------------------------------------------
@@ -1511,14 +1540,25 @@ ct_plot_overlay <- function(ct_dataframe,
                 call. = FALSE)
     }
     
-    B <- suppressMessages(suppressWarnings(
-        A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
-                          expand = expansion(mult = pad_y_num)) +
-            switch(as.character(floating_facet_scale), 
-                   "TRUE" = coord_cartesian(ylim = Ylim_log), 
-                   "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                             xlim = time_range_relative))
-    ))
+    if(EnzPlot){
+        B <- suppressMessages(suppressWarnings(
+            A + scale_y_log10(labels = scales::percent, 
+                              expand = expansion(mult = pad_y_num)) +
+                switch(as.character(floating_facet_scale), 
+                       "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                       "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                                 xlim = time_range_relative))
+        ))
+    } else {
+        B <- suppressMessages(suppressWarnings(
+            A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
+                              expand = expansion(mult = pad_y_num)) +
+                switch(as.character(floating_facet_scale), 
+                       "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                       "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                                 xlim = time_range_relative))
+        ))
+    }
     
     if(complete.cases(legend_position)){
         A <- A + theme(legend.position = legend_position)  

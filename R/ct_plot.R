@@ -503,7 +503,8 @@ ct_plot <- function(ct_dataframe = NA,
         Data <- Data %>% mutate(CompoundID = Enzyme) %>%
             rename(Conc = Abundance) %>%
             mutate(Simulated = TRUE,
-                   Compound = Enzyme)
+                   Compound = Enzyme, 
+                   Conc = Conc / 100) # putting this into decimal format
     }
     
     # Noting whether the tissue was from an ADAM model
@@ -933,13 +934,24 @@ ct_plot <- function(ct_dataframe = NA,
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                limits = time_range_relative,
                                expand = expansion(
-                                   mult = pad_x_num)) +
-            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                 0, y_axis_limits_lin[1]),
-                                          YmaxRnd), 
-                               breaks = YBreaks,
-                               labels = YLabels,
-                               expand = expansion(mult = pad_y_num)) 
+                                   mult = pad_x_num))
+        
+        if(EnzPlot){
+            A <- A +
+                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                     0, y_axis_limits_lin[1]),
+                                              YmaxRnd), 
+                                   labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))    
+        } else {
+            A <- A +
+                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                     0, y_axis_limits_lin[1]),
+                                              YmaxRnd), 
+                                   breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) 
+        }
         
     } else {
         A <- A +
@@ -949,10 +961,18 @@ ct_plot <- function(ct_dataframe = NA,
                                      YmaxRnd)) +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
-                                   mult = pad_x_num)) +
-            scale_y_continuous(breaks = YBreaks,
-                               labels = YLabels,
-                               expand = expansion(mult = pad_y_num)) 
+                                   mult = pad_x_num))
+        
+        if(EnzPlot){
+            A <- A +
+                scale_y_continuous(labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))    
+        } else {
+            A <- A +
+                scale_y_continuous(breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) 
+        }
     }
     
     if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
@@ -1018,13 +1038,19 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     B <- suppressWarnings(suppressMessages(
-        A + scale_y_log10(breaks = YLogBreaks,
-                          labels = YLogLabels,
-                          expand = expansion(mult = pad_y_num)) +
-            # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
-            coord_cartesian(xlim = time_range_relative, 
-                            ylim = Ylim_log)
-    ))
+        A + coord_cartesian(xlim = time_range_relative, 
+                            ylim = Ylim_log)))
+    
+    if(EnzPlot){
+        B <- suppressWarnings(suppressMessages(
+            B + scale_y_log10(labels = scales::percent,
+                              expand = expansion(mult = pad_y_num))))
+    } else {
+        B <- suppressWarnings(suppressMessages(
+            B + scale_y_log10(breaks = YLogBreaks,
+                              labels = YLogLabels,
+                              expand = expansion(mult = pad_y_num))))
+    }
     
     if(graph_labels){
         labels <- "AUTO"
