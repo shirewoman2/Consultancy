@@ -152,69 +152,79 @@ MyPKResults <- PKsum$Table
 
 *Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanTypePK` mean `r tissue` PK parameters for `r MySubstrate` after `r FigText2` of `r paste(exp_detail_data$Dose_sub, "mg", MySubstrate)` `r FigText3`in `r tidyPop(exp_detail_data$Population)$Population`.*
 
-```{r makeRow1}
+```{r makeTablePKSummaryOutput}
 
-data.frame(Col1 = "Statistic", 
-           Col2 = str_to_title(MySubstrate), Col3 = str_to_title(MySubstrate),
-           Col4 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)),
-           Col5 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)),
-           Col6 = "GMR",
-           Col7 = "GMR") %>% 
-    flextable::flextable() %>% 
+TableSubHead <- as.data.frame(t(names(MyPKResults)))
+names(MyPKResults) <- paste0("V", 1:ncol(MyPKResults))
+
+FT <- flextable::flextable(MyPKResults) %>% 
+    flextable::delete_part(part = "header") %>% 
+    flextable::add_header(V1 = "", 
+                          V2 = str_to_title(MySubstrate), 
+                          V3 = str_to_title(MySubstrate),
+                          V4 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)), 
+                          V5 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)), 
+                          V6 = "GMR", 
+                          V7 = "GMR") %>% 
+    flextable::merge_h(part = "header") %>% 
+    flextable::add_body(values = TableSubHead) %>% 
     
-    # Make the header white and small since I can't remove it and still keep the
-    # lines correct -- yes, I tried about a million things and it just DOES NOT
-    # WORK to remove the header and avoid general bugginess.
-    flextable::color(part = "header", color = "white") %>% 
-    flextable::fontsize(part = "header", size = 1) %>% 
-    flextable::height(part = "header", height = 0.1) %>%
-    flextable::color(part = "body", j = 1, i = 1, color = "white") %>% 
+    # center text
+    flextable::align(align = "center", part = "all") %>% 
+    
+    # making the width work
+    flextable::set_table_properties(layout = "fixed") %>% 
+    flextable::width(j = 1, width = 1.15) %>% 
     
     # Set the font size
     flextable::fontsize(part = "body", size = fontsize) %>% 
     
     # Make the text bold
-    flextable::bold(part = "body") %>%
+    flextable::bold(part = "body", i = 1) %>%
+    flextable::bold(part = "body", j = 1) %>%
+    flextable::bold(part = "header") %>%
     
-    # center text
-    flextable::align(align = "center", part = "body") %>% 
-        
-    # making the width work
-    flextable::set_table_properties(layout = "fixed") %>% 
-    flextable::width(j = 1, width = 1.15) %>% 
-    
-    # merging cells
-    flextable::merge_h(i = 1) %>%
-    
-    # Setting up which borderlines to show
+    # borders
     flextable::border_remove() %>% 
-    flextable::vline(border = officer::fp_border(width = 0.5), part = "body") %>% 
-    flextable::hline_bottom(j = 2:7, border = officer::fp_border(width = 0.5)) %>%
-    flextable::hline_top(border = officer::fp_border(width = 0.5)) %>%
-    flextable::vline_left(part = "body", i = 1, border = officer::fp_border(width = 0.5)) %>%
-    flextable::vline_right(part = "body", border = officer::fp_border(width = 0.5))
+    flextable::vline(border = officer::fp_border(width = 0.5), part = "all") %>% 
+    flextable::hline_bottom(border = officer::fp_border(width = 0.5)) %>%
+    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "header") %>%
+    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "body", 
+                         j = 2:7) %>% 
+    flextable::vline_left(part = "all", border = officer::fp_border(width = 0.5)) %>%
+    flextable::hline(border = officer::fp_border(width = 0.5),
+                     part = "body", i = 1) 
 
 
-```
-```{r makeTablePKSummaryOutput}
+# Dealing with subscripts
+NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag"
 
-if("File" %in% names(MyPKResults)){
-    MyPKResults <- MyPKResults %>% relocate(File, .after = last_col())
+ColNames <- data.frame(OrigName = as.character(TableSubHead)) %>% 
+    mutate(Part1 = sapply(OrigName, 
+                          FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][1]}), 
+           Part2 = sub("inf|tau|max|min|a|g|h|lag", "", str_trim(str_extract(OrigName, NamePattern))), 
+           Part2 = sub("AUCt", "AUC", Part2),
+           Subscript = sub(" AUC| C| t| f| k", "", str_extract(OrigName, NamePattern)), 
+           Part3 = sapply(OrigName, 
+                          FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][2]})) 
+
+for(i in 1:nrow(ColNames)){
+    
+    if(complete.cases(ColNames$Subscript[i])){
+        FT <- FT %>% 
+            flextable::compose(part = "body", i = 1,
+                               j = which(TableSubHead == ColNames$OrigName[i]),
+                               value = flextable::as_paragraph(ColNames$Part1[i], " ",
+                                                               ColNames$Part2[i],
+                                                               flextable::as_sub(ColNames$Subscript[i]), 
+                                                               ColNames$Part3[i]))
+    }
 }
 
-formatTable_Simcyp(MyPKResults, fontsize = fontsize) %>% 
-    flextable::color(part = "header", j = 1, color = "white") %>% 
-    flextable::set_table_properties(layout = "fixed") %>% 
-    flextable::width(j = 1, width = 1.15) %>% 
-    flextable::border_remove() %>% 
-    flextable::border_inner_v(border = officer::fp_border(width = 0.5)) %>% 
-    flextable::hline_top(border = officer::fp_border(width = 0.5)) %>% 
-    flextable::hline_bottom(border = officer::fp_border(width = 0.5)) %>% 
-    flextable::vline_left(border = officer::fp_border(width = 0.5)) %>% 
-    flextable::vline_right(border = officer::fp_border(width = 0.5))
+FT
 
-
-
+names(MyPKResults) <- as.character(TableSubHead)
+    
 ```
 
 ```{r captionPKSummary}
@@ -268,7 +278,7 @@ ct_plot(ct_dataframe %>% filter(File == sim_data_file & Tissue == tissue,
         y_axis_label = y_axis_label_sub,
         x_axis_interval = x_axis_interval_sub, 
         y_axis_limits_log = y_axis_limits_log_sub, 
-        legend_position = "bottom", 
+        legend_position = "none", 
         legend_label = legend_label_sub,
         prettify_compound_names = c("substrate" = MySubstrate, 
                                     "inhibitor" = MyEffector),
