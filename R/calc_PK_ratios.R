@@ -200,14 +200,14 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     
     StatNames_geo <- c(
         "Ratio_mean" = "Geometric Mean Ratio", 
-        "Ratio_CI_l" = "90% confidence interval around the geometric mean ratio (lower limit)", 
-        "Ratio_CI_u" = "90% confidence interval around the geometric mean ratio (lower limit)")
+        "Ratio_CI_l" = "90% CI - Lower", 
+        "Ratio_CI_u" = "90% CI - Upper")
     names(StatNames_geo) <- sub("90", round(conf_int*100), names(StatNames_geo))
     
     StatNames_arith <- c(
         "Ratio_mean" = "Arithmetic Mean Ratio", 
-        "Ratio_CI_l" = "90% confidence interval around the arithmetic mean ratio (lower limit)", 
-        "Ratio_CI_u" = "90% confidence interval around the arithmetic mean ratio (lower limit)")
+        "Ratio_CI_l" = "90% CI - Lower", 
+        "Ratio_CI_u" = "90% CI - Upper")
     names(StatNames_arith) <- sub("90", round(conf_int*100), names(StatNames_arith))
     
     if(mean_type == "geometric"){
