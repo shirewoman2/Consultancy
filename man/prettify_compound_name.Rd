@@ -8,9 +8,8 @@ prettify_compound_name(CompoundName, case = "lower")
 }
 \arguments{
 \item{CompoundName}{a compound name or vector of names to be prettified such
-as "Sim-Midazolam" or "Sim-Ketoconazole-400 mg QD", which would become
-"midazolam" and "ketoconazole". This works fine with tidyverse syntax such
-as "mutate". .}
+as "Sim-Midazolam" or "Sim-Ketoconazole-400 mg QD", which will become
+"midazolam" and "ketoconazole".}
 
 \item{case}{set the case to be "lower" (default), "title" (only the first
 letter in each word is capitalized), or "original" (nothing about the case
