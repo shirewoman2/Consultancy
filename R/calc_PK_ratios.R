@@ -136,7 +136,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     if(any(str_detect(PKparameters, "/"))){
         PKparam_split <- as.data.frame(str_split_fixed(
             PKparameters, pattern = "( )?/( )?", n = 2)) %>% 
-            mutate(V2 = ifelse(V2 == "", V1, V2))
+            mutate(V2 = ifelse(V2 == "", V1, V2), 
+                   OrigPK = PKparameters)
         
         PKnumerator <- PKparam_split$V1
         PKdenominator <- PKparam_split$V2
@@ -286,7 +287,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         # This is when column names must include some info about which PK
         # parameters were used. I'm not sure this can be easily prettified, so
         # not even trying for now.
-        names(MyPKResults) <- c("Statistic", PKparameters)
+        MyPKResults[, c("Statistic", PKparam_split$V1)]
+        names(MyPKResults) <- c("Statistic", PKparam_split$OrigPK)
         
     }
     
