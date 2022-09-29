@@ -16,9 +16,9 @@
 #'   like some other label to appear on the y axis, please see the argument
 #'   \code{y_axis_labels}.
 #' @param perp_or_victim specify whether the drug of interest is a "victim" or
-#'   "perpetrator". This will determine the graphs will be labeled on the y axis
-#'   by the substrate name (for perpetrator forest plots) or by the effector
-#'   name (for victim forest plots).
+#'   "perpetrator". This will determine whether the graphs will be labeled on
+#'   the y axis by the substrate name (for perpetrator forest plots) or by the
+#'   effector name (for victim forest plots).
 #' @param PKparameters optionally specify which PK parameters included in
 #'   \code{forest_dataframe} to use as input. If left as NA, all the PK
 #'   parameters you extracted with \code{\link{extractForestData}} will be
@@ -28,7 +28,8 @@
 #' @param y_axis_order optionally supply a character vector to specify the order
 #'   of the files or compounds on the y axis. If your character vector contains
 #'   "xlsx" in the any of the text, we'll assume you want to sort by the file
-#'   names; otherwise, we'll assume you want to sort by the compound names. If
+#'   names; otherwise, we'll assume you want to sort by the compound names -- by
+#'   substrate if it's a perpetrator or by inhibitor 1 if it's a victim. If
 #'   \code{y_axis_order} is unspecified, the y axis will be sorted according to
 #'   the geometric mean AUC ratio with inhibitors on top and inducers on the
 #'   bottom. If there's more than one row for a substrate or inhibitor (say
@@ -108,7 +109,7 @@ forest_plot <- function(forest_dataframe,
                         perp_or_victim, 
                         PKparameters = NA, 
                         y_axis_order = NA, 
-                        x_axis_limits = c(0.05, 15), 
+                        x_axis_limits = NA, 
                         facet_column, 
                         prettify_compound_names = TRUE, 
                         legend_position = "none", 
@@ -356,7 +357,15 @@ forest_plot <- function(forest_dataframe,
         G <- G + facet_grid(YCol ~ ., switch = "y") 
     }
     
-    XBreaks <- c(0.05, 0.1, 0.2, 0.5, 0.8, 1.25, 2, 5, 10)
+    if(is.na(x_axis_limits[1])){
+        x_axis_limits <- c(
+            round_down(x = min(forest_dataframe$CI90_lo)), 
+            round_up(x = max(forest_dataframe$CI90_hi)))
+        
+    }
+    
+    XBreaks <- c(0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 1.25, 2, 5, 10, 
+                 50, 100, 500, 1000)
     XBreaks <- XBreaks[XBreaks >= x_axis_limits[1] & 
                            XBreaks <= x_axis_limits[2]]
     
@@ -367,21 +376,22 @@ forest_plot <- function(forest_dataframe,
     if(x_axis_limits[2] %in% XBreaks == FALSE){
         XBreaks <- c(XBreaks, x_axis_limits[2])
     }
-
-    G <- G +
-        scale_x_log10(breaks = XBreaks) + 
-        coord_cartesian(xlim = x_axis_limits) +
-        xlab("Geometric Mean Ratio (90% confidence interval)") + ylab(NULL) +
-        theme(
-            legend.position = legend_position,
-            panel.background = element_rect(fill = "white", color = NA),
-            plot.background = element_rect(fill = "white", color = NA),
-            strip.background = element_rect(color=NA, fill="white"),
-            strip.text.y.left = element_text(angle = 0),
-            strip.placement = "outside",
-            panel.border = element_rect(colour = "grey70", fill = NA),
-            panel.spacing.y = unit(0, "cm"),
-            panel.spacing.x = unit(0.5, "cm"))
+    
+    G <- suppressWarnings(
+        G +
+            scale_x_log10(breaks = XBreaks) + 
+            coord_cartesian(xlim = x_axis_limits) +
+            xlab("Geometric Mean Ratio (90% confidence interval)") + ylab(NULL) +
+            theme(
+                legend.position = legend_position,
+                panel.background = element_rect(fill = "white", color = NA),
+                plot.background = element_rect(fill = "white", color = NA),
+                strip.background = element_rect(color=NA, fill="white"),
+                strip.text.y.left = element_text(angle = 0),
+                strip.placement = "outside",
+                panel.border = element_rect(colour = "grey70", fill = NA),
+                panel.spacing.y = unit(0, "cm"),
+                panel.spacing.x = unit(0.5, "cm")))
     
     if(complete.cases(save_graph)){
         FileName <- save_graph
@@ -398,8 +408,10 @@ forest_plot <- function(forest_dataframe,
             Ext <- "png"
         }
         
-        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-               plot = G)
+        suppressWarnings(
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                   plot = G)
+        )
     }
     
     return(G)

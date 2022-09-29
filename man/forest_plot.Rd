@@ -9,7 +9,7 @@ forest_plot(
   perp_or_victim,
   PKparameters = NA,
   y_axis_order = NA,
-  x_axis_limits = c(0.05, 15),
+  x_axis_limits = NA,
   facet_column,
   prettify_compound_names = TRUE,
   legend_position = "none",
@@ -29,9 +29,9 @@ like some other label to appear on the y axis, please see the argument
 \code{y_axis_labels}.}
 
 \item{perp_or_victim}{specify whether the drug of interest is a "victim" or
-"perpetrator". This will determine the graphs will be labeled on the y axis
-by the substrate name (for perpetrator forest plots) or by the effector
-name (for victim forest plots).}
+"perpetrator". This will determine whether the graphs will be labeled on
+the y axis by the substrate name (for perpetrator forest plots) or by the
+effector name (for victim forest plots).}
 
 \item{PKparameters}{optionally specify which PK parameters included in
 \code{forest_dataframe} to use as input. If left as NA, all the PK
@@ -43,7 +43,8 @@ forest_dataframe, it will be ignored. Enclose the parameters with
 \item{y_axis_order}{optionally supply a character vector to specify the order
 of the files or compounds on the y axis. If your character vector contains
 "xlsx" in the any of the text, we'll assume you want to sort by the file
-names; otherwise, we'll assume you want to sort by the compound names. If
+names; otherwise, we'll assume you want to sort by the compound names -- by
+substrate if it's a perpetrator or by inhibitor 1 if it's a victim. If
 \code{y_axis_order} is unspecified, the y axis will be sorted according to
 the geometric mean AUC ratio with inhibitors on top and inducers on the
 bottom. If there's more than one row for a substrate or inhibitor (say
