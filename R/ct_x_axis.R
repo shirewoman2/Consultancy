@@ -57,12 +57,12 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     # A little more error catching
     if(all(complete.cases(time_range))){
         if(class(time_range) == "numeric" &&
-           any(time_range < switch(as.character(EnzPlot), 
+           (any(time_range < switch(as.character(EnzPlot), 
                                    "TRUE" = min(Data$Time), 
                                    "FALSE" = min(Data$Time[Data$Simulated == TRUE]))) |
            any(time_range > switch(as.character(EnzPlot), 
                                    "TRUE" = max(Data$Time), 
-                                   "FALSE" = max(Data$Time[Data$Simulated == TRUE])))){
+                                   "FALSE" = max(Data$Time[Data$Simulated == TRUE]))))){
             stop(paste0(
                 "Both the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
                 switch(as.character(EnzPlot), 
