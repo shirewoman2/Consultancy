@@ -9,9 +9,13 @@ calc_PK_ratios(
   sim_data_file_numerator,
   sim_data_file_denominator,
   PKparameters = "AUC tab",
+  sheet_PKparameters_num = NA,
+  sheet_PKparameters_denom = NA,
   tissue = "plasma",
   mean_type = "geometric",
   conf_int = 0.9,
+  includeCV = TRUE,
+  includeConfInt = TRUE,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   checkDataSource = TRUE,
@@ -63,6 +67,16 @@ provide the denominator for the calculated ratios}
   This has NOT been as well tested, though, so be sure to check that you're
   getting what you expected!}
 
+\item{sheet_PKparameters_num}{(optional) If you want the PK parameters for
+the numerator to be pulled from a specific tab in
+\code{sim_data_file_numerator}, list that tab here. Most of the time, this
+should be left as NA.}
+
+\item{sheet_PKparameters_denom}{(optional) If you want the PK parameters for
+the numerator to be pulled from a specific tab in
+\code{sim_data_file_denominator}, list that tab here. Most of the time, this
+should be left as NA.}
+
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
 tested).}
@@ -70,6 +84,16 @@ tested).}
 \item{mean_type}{What kind of means and confidence intervals do you want
 listed in the output table? Options are "arithmetic" or "geometric"
 (default).}
+
+\item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV in
+the table}
+
+\item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
+confidence intervals were included in the simulator output file. Note that
+the confidence intervals are geometric since that's what the simulator
+outputs (see an AUC tab and the summary statistics; these values are the
+ones for, e.g., "90\% confidence interval around the geometric mean(lower
+limit)").}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf

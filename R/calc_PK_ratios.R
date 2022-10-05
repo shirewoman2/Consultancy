@@ -46,12 +46,28 @@
 #'   for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
 #'   This has NOT been as well tested, though, so be sure to check that you're
 #'   getting what you expected!
+#' @param sheet_PKparameters_num (optional) If you want the PK parameters for
+#'   the numerator to be pulled from a specific tab in
+#'   \code{sim_data_file_numerator}, list that tab here. Most of the time, this
+#'   should be left as NA.
+#' @param sheet_PKparameters_denom (optional) If you want the PK parameters for
+#'   the numerator to be pulled from a specific tab in
+#'   \code{sim_data_file_denominator}, list that tab here. Most of the time, this
+#'   should be left as NA.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'   tested).
 #' @param mean_type What kind of means and confidence intervals do you want
 #'   listed in the output table? Options are "arithmetic" or "geometric"
 #'   (default).
+#' @param includeCV TRUE (default) or FALSE for whether to include rows for CV in
+#'  the table
+#' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
+#'  confidence intervals were included in the simulator output file. Note that
+#'  the confidence intervals are geometric since that's what the simulator
+#'  outputs (see an AUC tab and the summary statistics; these values are the
+#'  ones for, e.g., "90\% confidence interval around the geometric mean(lower
+#'  limit)").
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -106,9 +122,13 @@
 calc_PK_ratios <- function(sim_data_file_numerator,
                            sim_data_file_denominator, 
                            PKparameters = "AUC tab", 
+                           sheet_PKparameters_num = NA,
+                           sheet_PKparameters_denom = NA,
                            tissue = "plasma",
                            mean_type = "geometric", 
                            conf_int = 0.9, 
+                           includeCV = TRUE, 
+                           includeConfInt = TRUE,
                            prettify_columns = TRUE,
                            prettify_compound_names = TRUE,
                            checkDataSource = TRUE, 
@@ -149,6 +169,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     
     PK1 <- extractPK(sim_data_file = sim_data_file_numerator, 
                      PKparameters = PKnumerator, 
+                     sheet = sheet_PKparameters_num,
                      tissue = tissue,
                      returnAggregateOrIndiv = "individual", 
                      returnExpDetails = TRUE)
@@ -158,6 +179,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     
     PK2 <- extractPK(sim_data_file = sim_data_file_denominator, 
                      PKparameters = PKdenominator, 
+                     sheet = sheet_PKparameters_denom,
                      tissue = tissue,
                      returnAggregateOrIndiv = "individual")
     
@@ -187,6 +209,10 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         summarize(Ratio_mean = switch(mean_type, 
                                       "geometric" = round_consult(gm_mean(Ratio)), 
                                       "arithmetic" = round_consult(mean(Ratio, na.rm = T))), 
+                  Ratio_CV = switch(mean_type, 
+                                    "geometric" = as.character(round(100*gm_CV(Ratio))),
+                                    "arithmetic" = as.character(round(100*sd(Ratio, na.rm = T) /
+                                                                          mean(Ratio, na.rm = T)))),
                   Ratio_CI_l = switch(mean_type, 
                                       "geometric" = round_consult(gm_conf(Ratio, CI = conf_int)[1]),
                                       "arithmetic" = round_consult(confInt(Ratio, CI = conf_int)[1])), 
@@ -201,12 +227,14 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     
     StatNames_geo <- c(
         "Ratio_mean" = "Geometric Mean Ratio", 
+        "Ratio_CV" = "Geometric CV",
         "Ratio_CI_l" = "90% CI - Lower", 
         "Ratio_CI_u" = "90% CI - Upper")
     names(StatNames_geo) <- sub("90", round(conf_int*100), names(StatNames_geo))
     
     StatNames_arith <- c(
         "Ratio_mean" = "Arithmetic Mean Ratio", 
+        "Ratio_CV" = "CV",
         "Ratio_CI_l" = "90% CI - Lower", 
         "Ratio_CI_u" = "90% CI - Upper")
     names(StatNames_arith) <- sub("90", round(conf_int*100), names(StatNames_arith))
@@ -215,6 +243,17 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         MyPKResults$Statistic <- StatNames_geo[MyPKResults$Statistic]
     } else {
         MyPKResults$Statistic <- StatNames_arith[MyPKResults$Statistic]
+    }
+    
+    # Only including the variability measurements user requested
+    if(includeCV == FALSE){
+        MyPKResults <- MyPKResults %>% 
+            filter(!Statistic %in% c("Geometric CV", "CV"))
+    }
+    
+    if(includeConfInt == FALSE){
+        MyPKResults <- MyPKResults %>% 
+            filter(!Statistic %in% c("90% CI - Lower", "90% CI - Upper"))
     }
     
     # Checking on possible effectors to prettify
