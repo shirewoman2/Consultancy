@@ -134,7 +134,7 @@ forest_plot <- function(forest_dataframe,
              call. = FALSE)
     }
     
-    if(all(c("File", "Substrate", "Dose_sub", "Dose_inhib", "Inhibitor1") %in%
+    if(all(c("File", "Substrate", "Inhibitor1") %in%
            names(forest_dataframe)) == FALSE){
         stop("Please check your input for `forest_dataframe` because it does not appear to match the output from running the function `extractForestData`, and it must match that for this function to work.", 
              call. = FALSE)
