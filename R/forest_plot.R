@@ -165,12 +165,14 @@ forest_plot <- function(forest_dataframe,
     
     if(complete.cases(y_axis_order[1])){
         if(anyDuplicated(unique(names(y_axis_order))) > 0 |
-           length(unique(names(y_axis_order))) != length(unique(y_axis_order))){
+           (is.null(names(y_axis_order)) == FALSE &&
+           length(unique(names(y_axis_order))) != length(unique(y_axis_order)))){
             stop("One of your files is duplicated in `y_axis_order`. Please list each file only once and try again.",
                  call. = FALSE)
         }
         
-        if(any(forest_dataframe$File %in% names(y_axis_order) == FALSE)){
+        if(is.null(names(y_axis_order)) == FALSE && 
+           any(forest_dataframe$File %in% names(y_axis_order) == FALSE)){
             warning(paste0("The file(s) ", 
                            str_comma(setdiff(forest_dataframe$File, 
                                              names(y_axis_order))), 
