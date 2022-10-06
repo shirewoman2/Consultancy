@@ -167,7 +167,7 @@ forest_plot <- function(forest_dataframe,
         if(anyDuplicated(unique(names(y_axis_order))) > 0 |
            (is.null(names(y_axis_order)) == FALSE &&
            length(unique(names(y_axis_order))) != length(unique(y_axis_order)))){
-            stop("One of your files is duplicated in `y_axis_order`. Please list each file only once and try again.",
+            stop("One of your files or file labels is duplicated in `y_axis_order`. Please list each file and each label only once and try again.",
                  call. = FALSE)
         }
         
