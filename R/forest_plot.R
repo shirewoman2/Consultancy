@@ -202,7 +202,7 @@ forest_plot <- function(forest_dataframe,
     
     # Reshaping the data to make the data.frame long format instead of wide.
     forest_dataframe <- forest_dataframe %>% 
-        pivot_longer(cols = matches("^AUC|Cmax"), 
+        pivot_longer(cols = matches("^AUC.*ratio|Cmax.*ratio"), 
                      names_to = "PKParam", values_to = "Value") %>% 
         separate(PKParam, into = c("PKParam", "Statistic"), sep = "__") %>% 
         pivot_wider(names_from = "Statistic", values_from = "Value")
