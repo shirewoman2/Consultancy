@@ -3,7 +3,7 @@
 #' \code{forest_plot} creates forest plots of AUC and Cmax ratios. Please use
 #' the function \code{\link{extractForestData}} to generate the input data for
 #' \code{forest_dataframe}. The data will be broken up by the file name on the y
-#' axis and, optionally, whatever you specify for \code{facet_column} in the
+#' axis and, optionally, whatever you specify for \code{facet_column_x} in the
 #' horizontal direction. WARNING: This is a relatively new function and should
 #' be rigorously QC'ed.
 #'
@@ -45,9 +45,17 @@
 #'   Indmax")} Please see the example section at the bottom of this help file
 #'   for more examples.
 #' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
-#' @param facet_column optionally break up the graph into small multiples. The
-#'   designated column name should be unquoted, e.g., \code{facet_column =
-#'   Dose_sub}
+#' @param facet_column_x optionally break up the graph horizontally into small
+#'   multiples. The designated column name should be unquoted, e.g.,
+#'   \code{facet_column_x = Dose_sub}
+#' @param facet_column_extra_y optionally break up the graphs along the y axis
+#'   by an additional column other than substrate (for perpetrator graphs) or
+#'   inhibitor 1 (for victim graphs). For example, say your drug of interest is
+#'   a perpetrator and you've administered each of the substrates on different
+#'   days. This will break up the graphs by substrate and, if you specify, e.g.,
+#'   \code{facet_column_extra_y = DoseDay} where "DoseDay" is a column in
+#'   forest_dataframe listing what day the substrate was dosed, it will also
+#'   break up the graphs by what day the substrate was administered.
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier. This was designed for simulations where the
 #'   substrates or effectors are among the standard options for the simulator,
@@ -57,7 +65,11 @@
 #'   become "midazolam".
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
-#'   at all.
+#'   at all. \emph{Note:} We're still working on the legend position when
+#'   there's something specified for \code{facet_column_extra_y}; choosing that
+#'   option requires us to lay out the graphs differently, and when we do that,
+#'   the legend position doesn't work well for anything other than "none" or
+#'   "right".
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -88,7 +100,7 @@
 #' # nice to break up the graph by the substrate dose like this:
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
-#'             facet_column = Dose_sub,
+#'             facet_column_x = Dose_sub,
 #'             x_axis_limits = c(0.9, 5))
 #'
 #'
@@ -101,7 +113,7 @@
 #'
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
-#'             facet_column = Dose_sub_pretty,
+#'             facet_column_x = Dose_sub_pretty,
 #'             x_axis_limits = c(0.9, 5))
 #' 
 
@@ -110,7 +122,8 @@ forest_plot <- function(forest_dataframe,
                         PKparameters = NA, 
                         y_axis_order = NA, 
                         x_axis_limits = NA, 
-                        facet_column, 
+                        facet_column_x, 
+                        facet_column_extra_y,
                         prettify_compound_names = TRUE, 
                         legend_position = "none", 
                         save_graph = NA,
@@ -140,6 +153,10 @@ forest_plot <- function(forest_dataframe,
              call. = FALSE)
     }
     
+    # Cleaning up inputs
+    perp_or_victim <- ifelse(str_detect(perp_or_victim, "perp"), 
+                             "perpetrator", "victim")
+    
     # Checking for when there might be multiple files for the same substrate or
     # inhibitor names
     Check <- forest_dataframe %>% 
@@ -164,12 +181,13 @@ forest_plot <- function(forest_dataframe,
     }
     
     if(complete.cases(y_axis_order[1])){
-        if(anyDuplicated(unique(names(y_axis_order))) > 0 |
-           (is.null(names(y_axis_order)) == FALSE &&
-           length(unique(names(y_axis_order))) != length(unique(y_axis_order)))){
-            stop("One of your files or file labels is duplicated in `y_axis_order`. Please list each file and each label only once and try again.",
-                 call. = FALSE)
-        }
+        # RETURN TO THIS. Will need to uncomment this once I've written the extra facetting bit.    
+        #     if(anyDuplicated(unique(names(y_axis_order))) > 0 |
+        #        (is.null(names(y_axis_order)) == FALSE &&
+        #        length(unique(names(y_axis_order))) != length(unique(y_axis_order)))){
+        #         stop("One of your files or file labels is duplicated in `y_axis_order`. Please list each file and each label only once and try again.",
+        #              call. = FALSE)
+        #     }
         
         if(is.null(names(y_axis_order)) == FALSE && 
            any(forest_dataframe$File %in% names(y_axis_order) == FALSE)){
@@ -232,6 +250,13 @@ forest_plot <- function(forest_dataframe,
         group_by(PKParam) %>% 
         summarize(GMR = all(complete.cases(GMR))) %>% 
         filter(GMR == TRUE) %>% pull(PKParam) %>% as.character()
+    
+    if(complete.cases(PKparameters) && 
+       all(PKparameters %in% ParamToUse == FALSE)){
+        warning(paste0("Not all of your supplied PK parameters had complete values, and only parameters with all complete values can be included here. The PK parameters with missing values, which will not be included in the graph, were: ", 
+                       str_comma(setdiff(PKparameters, ParamToUse))), 
+                call. = FALSE)
+    }
     
     # Determining order of compounds if unspecified
     if(is.na(y_axis_order[1])){
@@ -318,11 +343,12 @@ forest_plot <- function(forest_dataframe,
     }
     
     # Setting things up for nonstandard evaluation 
-    facet_column <- rlang::enquo(facet_column)
+    facet_column_x <- rlang::enquo(facet_column_x)
+    facet_column_extra_y <- rlang::enquo(facet_column_extra_y)
     
-    if(as_label(facet_column) != "<empty>"){
+    if(as_label(facet_column_x) != "<empty>"){
         forest_dataframe <- forest_dataframe %>%
-            mutate(FC = {{facet_column}})
+            mutate(FC = {{facet_column_x}})
     }
     
     Rect <- data.frame(Xmin = c(1.25, 2, 5, 0.5, 0.2, 0, 0.8), 
@@ -336,28 +362,6 @@ forest_plot <- function(forest_dataframe,
     
     FillColor <- c("insignificant" = "white", "weak" = "gray95", 
                    "moderate" = "gray90", "strong" = "gray75")
-    
-    G <- ggplot(forest_dataframe, aes(x = GMR, y = PKParam, xmin = CI90_lo, xmax = CI90_hi)) +
-        geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, ymin = Ymin, 
-                                   ymax = Ymax, fill = IntLevel), 
-                  inherit.aes = FALSE) +
-        scale_fill_manual(values = FillColor) +
-        geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
-        geom_point(shape = 21, size = 2.5, fill = "white") +
-        geom_errorbar(width = 0.3) +
-        scale_y_discrete(breaks = levels(forest_dataframe$PKParam),
-                         labels = c(expression(C[max]~ratio), 
-                                    expression(AUC[tau]~ratio), 
-                                    expression(C[max]~ratio), 
-                                    expression(AUC[t]~ratio), 
-                                    expression(AUC[infinity]~ratio))) +
-        labs(fill = "Interaction level")
-    
-    if(as_label(facet_column) != "<empty>"){
-        G <- G + facet_grid(YCol ~ FC, switch = "y") 
-    } else {
-        G <- G + facet_grid(YCol ~ ., switch = "y") 
-    }
     
     if(is.na(x_axis_limits[1])){
         x_axis_limits <- c(
@@ -379,21 +383,114 @@ forest_plot <- function(forest_dataframe,
         XBreaks <- c(XBreaks, x_axis_limits[2])
     }
     
-    G <- suppressWarnings(
-        G +
-            scale_x_log10(breaks = XBreaks) + 
-            coord_cartesian(xlim = x_axis_limits) +
-            xlab("Geometric Mean Ratio (90% confidence interval)") + ylab(NULL) +
-            theme(
-                legend.position = legend_position,
-                panel.background = element_rect(fill = "white", color = NA),
-                plot.background = element_rect(fill = "white", color = NA),
-                strip.background = element_rect(color=NA, fill="white"),
-                strip.text.y.left = element_text(angle = 0),
-                strip.placement = "outside",
-                panel.border = element_rect(colour = "grey70", fill = NA),
-                panel.spacing.y = unit(0, "cm"),
-                panel.spacing.x = unit(0.5, "cm")))
+    if(as_label(facet_column_extra_y) != "<empty>"){
+        # This is when the user wants to have an additional y axis grouping s/a
+        # day of dosing or prandial state or something like that.
+        
+        forest_dataframe <- forest_dataframe %>%
+            mutate(FCY = {{facet_column_extra_y}})
+        
+        G <- list()
+        
+        for(g in unique(forest_dataframe$YCol)){
+            
+            Forest_subset <- forest_dataframe %>% filter(YCol == g)
+            
+            G[[g]] <- suppressWarnings(
+                ggplot(Forest_subset, aes(x = GMR, y = PKParam, 
+                                          xmin = CI90_lo, xmax = CI90_hi)) +
+                    geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, ymin = Ymin, 
+                                               ymax = Ymax, fill = IntLevel), 
+                              inherit.aes = FALSE) +
+                    scale_fill_manual(values = FillColor) +
+                    geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
+                    geom_point(shape = 21, size = 2.5, fill = "white") +
+                    geom_errorbar(width = 0.3) +
+                    scale_y_discrete(breaks = levels(forest_dataframe$PKParam),
+                                     labels = c(expression(C[max]~ratio), 
+                                                expression(AUC[tau]~ratio), 
+                                                expression(C[max]~ratio), 
+                                                expression(AUC[t]~ratio), 
+                                                expression(AUC[infinity]~ratio))) +
+                    labs(fill = "Interaction level") +
+                    scale_x_log10(breaks = XBreaks) + 
+                    coord_cartesian(xlim = x_axis_limits) +
+                    xlab("Geometric Mean Ratio (90% confidence interval)") + 
+                    ylab(g) +
+                    theme(plot.margin = margin(0, 1, 1, 1),
+                          legend.position = legend_position,
+                          panel.background = element_rect(fill = "white", color = NA),
+                          plot.background = element_rect(fill = "white", color = NA),
+                          strip.background = element_rect(color=NA, fill="white"),
+                          strip.text.y.left = element_text(angle = 0),
+                          strip.placement = "outside",
+                          panel.border = element_rect(colour = "grey70", fill = NA),
+                          panel.spacing.y = unit(0, "cm"),
+                          panel.spacing.x = unit(0.5, "cm"))
+            )
+            
+            if(g != unique(forest_dataframe$YCol)[
+                length(unique(forest_dataframe$YCol))]){
+                
+                G[[g]] <- G[[g]] +
+                    theme(axis.text.x = element_blank(), 
+                          axis.title.x = element_blank(),
+                          axis.ticks.x = element_blank())
+            }
+            
+            if(as_label(facet_column_x) != "<empty>"){
+                G[[g]] <- G[[g]] + facet_grid(FCY ~ FC, switch = "y") 
+            } else {
+                G[[g]] <- G[[g]] + facet_grid(FCY ~ ., switch = "y") 
+            }
+            
+            rm(Forest_subset)
+        }
+        
+        G <- patchwork::wrap_plots(G, ncol = 1, guides = "collect")
+        
+        
+    } else {
+        
+        G <- ggplot(forest_dataframe, aes(x = GMR, y = PKParam, xmin = CI90_lo, xmax = CI90_hi)) +
+            geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, ymin = Ymin, 
+                                       ymax = Ymax, fill = IntLevel), 
+                      inherit.aes = FALSE) +
+            scale_fill_manual(values = FillColor) +
+            geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
+            geom_point(shape = 21, size = 2.5, fill = "white") +
+            geom_errorbar(width = 0.3) +
+            scale_y_discrete(breaks = levels(forest_dataframe$PKParam),
+                             labels = c(expression(C[max]~ratio), 
+                                        expression(AUC[tau]~ratio), 
+                                        expression(C[max]~ratio), 
+                                        expression(AUC[t]~ratio), 
+                                        expression(AUC[infinity]~ratio))) +
+            labs(fill = "Interaction level")
+        
+        if(as_label(facet_column_x) != "<empty>"){
+            G <- G + facet_grid(YCol ~ FC, switch = "y") 
+        } else {
+            G <- G + facet_grid(YCol ~ ., switch = "y") 
+        }
+        
+        G <- suppressWarnings(
+            G +
+                scale_x_log10(breaks = XBreaks) + 
+                coord_cartesian(xlim = x_axis_limits) +
+                xlab("Geometric Mean Ratio (90% confidence interval)") + ylab(NULL) +
+                theme(
+                    legend.position = legend_position,
+                    panel.background = element_rect(fill = "white", color = NA),
+                    plot.background = element_rect(fill = "white", color = NA),
+                    strip.background = element_rect(color=NA, fill="white"),
+                    strip.text.y.left = element_text(angle = 0),
+                    strip.placement = "outside",
+                    panel.border = element_rect(colour = "grey70", fill = NA),
+                    panel.spacing.y = unit(0, "cm"),
+                    panel.spacing.x = unit(0.5, "cm")))
+        
+    }
     
     if(complete.cases(save_graph)){
         FileName <- save_graph
