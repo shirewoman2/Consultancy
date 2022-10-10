@@ -1,10 +1,10 @@
 #' Add observed data points to a concentration-time plot
 #'
-#' \code{addObsPoints} addes observed data to \code{\link{ct_plot}} or
+#' \code{addObsPoints} adds observed data to \code{\link{ct_plot}} or
 #' \code{\link{ct_plot_overlay}} and sets the color and shape of those points
 #' appropriately. This is NOT meant to be used as a stand-alone function.
 #'
-#' @param obs_data observed data as a data.frame 
+#' @param obs_data observed data as a data.frame
 #' @param A the existing ggplot2 graph to which the observed data will be added
 #' @param MapObsData TRUE or FALSE for whether to map the observed data to
 #'   specific columns. Originally from ct_plot_overlay.
@@ -15,6 +15,7 @@
 
 addObsPoints <- function(obs_data, 
                          A, 
+                         AES,
                          obs_shape,
                          obs_shape_user,
                          obs_size, 
@@ -81,44 +82,85 @@ addObsPoints <- function(obs_data,
                           "25" = 6)
         obs_shape <- as.numeric(MixToOutline[as.character(obs_shape)])
         OutlineOnly <- TRUE
+        MixShape <- FALSE
         obs_color <- "black"
         
     }
     
     if(MixShape){
         
-        A <- A +
-            # making obs point outlines
-            switch(as.character(MapObsData),
-                   # "TRUE" is when there are multiple sets of
-                   # observed data that are mapped to color or
-                   # linetype, etc.
-                   "TRUE" = geom_point(data = obs_data,
-                                       alpha = obs_line_trans,
-                                       fill = NA,
-                                       size = obs_size,
-                                       show.legend = LegCheck),
-                   # "FALSE" is when the user has specified what
-                   # color they want the observed data to be.
-                   "FALSE" = geom_point(data = obs_data, 
-                                        alpha = obs_line_trans, 
-                                        color = "black", 
-                                        fill = NA, 
-                                        size = obs_size,
-                                        show.legend = LegCheck)) +
-            # making obs point fill
-            switch(as.character(MapObsData),
-                   "TRUE" =  geom_point(data = obs_data,
-                                        alpha = obs_fill_trans,
-                                        size = obs_size,
-                                        show.legend = LegCheck),
-                   "FALSE" = geom_point(data = obs_data, 
-                                        alpha = obs_fill_trans, 
-                                        color = "black", 
-                                        fill = obs_color, 
-                                        size = obs_size,
-                                        show.legend = LegCheck)) +
-            scale_shape_manual(values = obs_shape) 
+        if(str_detect(AES, "linetype")){
+            A <- A +
+                # making obs point outlines
+                switch(as.character(MapObsData),
+                       # "TRUE" is when there are multiple sets of
+                       # observed data that are mapped to color or
+                       # linetype, etc.
+                       "TRUE" = geom_point(data = obs_data,
+                                           alpha = obs_line_trans,
+                                           fill = NA,
+                                           size = obs_size,
+                                           show.legend = LegCheck),
+                       # "FALSE" is when the user has specified what
+                       # color they want the observed data to be.
+                       "FALSE" = geom_point(data = obs_data, 
+                                            alpha = obs_line_trans, 
+                                            color = "black", 
+                                            fill = NA, 
+                                            size = obs_size,
+                                            show.legend = LegCheck)) +
+                # making obs point fill
+                switch(as.character(MapObsData),
+                       "TRUE" =  geom_point(data = obs_data,
+                                            alpha = obs_fill_trans,
+                                            size = obs_size,
+                                            show.legend = LegCheck),
+                       "FALSE" = geom_point(data = obs_data, 
+                                            alpha = obs_fill_trans, 
+                                            color = "black", 
+                                            fill = obs_color, 
+                                            size = obs_size,
+                                            show.legend = LegCheck)) +
+                scale_shape_manual(values = obs_shape) 
+            
+        } else {
+         
+            A <- A +
+                # making obs point outlines
+                switch(as.character(MapObsData),
+                       # "TRUE" is when there are multiple sets of
+                       # observed data that are mapped to color or
+                       # linetype, etc.
+                       "TRUE" = geom_point(data = obs_data,
+                                           alpha = obs_line_trans,
+                                           fill = NA,
+                                           size = obs_size,
+                                           show.legend = LegCheck, 
+                                           shape = obs_shape[1]),
+                       # "FALSE" is when the user has specified what
+                       # color they want the observed data to be.
+                       "FALSE" = geom_point(data = obs_data, 
+                                            alpha = obs_line_trans, 
+                                            color = "black", 
+                                            fill = NA, 
+                                            size = obs_size,
+                                            show.legend = LegCheck, 
+                                            shape = obs_shape[1])) +
+                # making obs point fill
+                switch(as.character(MapObsData),
+                       "TRUE" =  geom_point(data = obs_data,
+                                            alpha = obs_fill_trans,
+                                            size = obs_size,
+                                            show.legend = LegCheck, 
+                                            shape = obs_shape[1]),
+                       "FALSE" = geom_point(data = obs_data, 
+                                            alpha = obs_fill_trans, 
+                                            color = "black", 
+                                            fill = obs_color, 
+                                            size = obs_size,
+                                            show.legend = LegCheck, 
+                                            shape = obs_shape[1]))   
+        }
         
     } else if(OutlineOnly){
         
@@ -129,20 +171,38 @@ addObsPoints <- function(obs_data,
             obs_line_trans <- obs_fill_trans
         }
         
-        A <- A +
-            # making obs point outlines
-            switch(as.character(MapObsData),
-                   "TRUE" = geom_point(data = obs_data,
-                                       alpha = obs_line_trans,
-                                       size = obs_size,
-                                       show.legend = LegCheck), 
-                   "FALSE" = geom_point(data = obs_data,
-                                        alpha = obs_line_trans,
-                                        color = obs_color,
-                                        size = obs_size,
-                                        fill = obs_color,
-                                        show.legend = LegCheck)) +
-            scale_shape_manual(values = obs_shape) 
+        if(str_detect(AES, "linetype")){
+            A <- A +
+                # making obs point outlines
+                switch(as.character(MapObsData),
+                       "TRUE" = geom_point(data = obs_data,
+                                           alpha = obs_line_trans,
+                                           size = obs_size,
+                                           show.legend = LegCheck), 
+                       "FALSE" = geom_point(data = obs_data,
+                                            alpha = obs_line_trans,
+                                            color = obs_color,
+                                            size = obs_size,
+                                            fill = obs_color,
+                                            show.legend = LegCheck)) +
+                scale_shape_manual(values = obs_shape) 
+        } else {
+            A <- A +
+                # making obs point outlines
+                switch(as.character(MapObsData),
+                       "TRUE" = geom_point(data = obs_data,
+                                           alpha = obs_line_trans,
+                                           size = obs_size,
+                                           show.legend = LegCheck, 
+                                           shape = obs_shape[1]), 
+                       "FALSE" = geom_point(data = obs_data,
+                                            alpha = obs_line_trans,
+                                            color = obs_color,
+                                            size = obs_size,
+                                            fill = obs_color,
+                                            show.legend = LegCheck, 
+                                            shape = obs_shape[1])) 
+        }
         
     } else {
         # This is when all shapes are solid only OR there is some
@@ -159,21 +219,39 @@ addObsPoints <- function(obs_data,
             obs_fill_trans <- obs_line_trans
         }
         
-        A <- A +
-            # making obs point fill
-            switch(as.character(MapObsData),
-                   "TRUE" = geom_point(data = obs_data,
-                                       alpha = obs_fill_trans,
-                                       size = obs_size,
-                                       show.legend = LegCheck),
-                   "FALSE" =  geom_point(data = obs_data,
-                                         alpha = obs_fill_trans,
-                                         color = obs_color,
-                                         size = obs_size,
-                                         fill = obs_color,
-                                         show.legend = LegCheck)) +
-            scale_shape_manual(values = obs_shape) 
-    } 
+        if(str_detect(AES, "linetype")){
+            A <- A +
+                # making obs point fill
+                switch(as.character(MapObsData),
+                       "TRUE" = geom_point(data = obs_data,
+                                           alpha = obs_fill_trans,
+                                           size = obs_size,
+                                           show.legend = LegCheck),
+                       "FALSE" =  geom_point(data = obs_data,
+                                             alpha = obs_fill_trans,
+                                             color = obs_color,
+                                             size = obs_size,
+                                             fill = obs_color,
+                                             show.legend = LegCheck)) +
+                scale_shape_manual(values = obs_shape) 
+        } else {
+            A <- A +
+                # making obs point fill
+                switch(as.character(MapObsData),
+                       "TRUE" = geom_point(data = obs_data,
+                                           alpha = obs_fill_trans,
+                                           size = obs_size,
+                                           show.legend = LegCheck, 
+                                           shape = obs_shape[1]),
+                       "FALSE" =  geom_point(data = obs_data,
+                                             alpha = obs_fill_trans,
+                                             color = obs_color,
+                                             size = obs_size,
+                                             fill = obs_color,
+                                             show.legend = LegCheck, 
+                                             shape = obs_shape[1]))
+        }
+    }
     
     return(A)
     

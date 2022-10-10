@@ -32,13 +32,8 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     }
     
     if(is.na(obs_shape[1])){
-        obs_shape <- c(21, 24)
+        obs_shape <- c(1, 2)
     }
-    
-    # # May be able to delete this
-    # if(complete.cases(line_color[1]) & is.na(obs_color[1])){
-    #     obs_color <- line_color
-    # }
     
     if(is.na(line_color[1])){
         if(str_detect(figure_type, "ribbon") & 

@@ -172,10 +172,9 @@
 #'   for the substrate in the presence of effectors, if there are any. If you
 #'   only specify one value, it will be used for both substrate with and without
 #'   effectors. To see all the possible shapes and what number corresponds to
-#'   which shape, see \url{https://r-graphics.org/recipe-scatter-shapes}
-#'   (there's a graph around the middle of that page). If left as NA, substrate
-#'   alone will be an open circle and substrate + inhibitor 1 will be an open
-#'   triangle.
+#'   which shape, type \code{ggpubr::show_point_shapes()} into the console. If
+#'   left as NA, substrate alone will be an open circle and substrate +
+#'   inhibitor 1 will be an open triangle.
 #' @param obs_size optionally specify the size of the points to use for the
 #'   observed data. If left as NA, the size will be 2.
 #' @param obs_color optionally specify a color to use for observed data if the
@@ -205,16 +204,22 @@
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
-#'   for determining the line types. Default is to use the column Inhibitor and
-#'   to have a solid line for no inhibitor present and a dashed line when an
-#'   inhibitor is present.
-#' @param linetypes the line types to use. Default is "solid" for all lines,
-#'   but, if you have an effector present and would like to match the
-#'   Consultancy Template graphs, set this to \code{linetypes = c("solid",
-#'   "dashed")}. You'll need one line type for each possible value in the column
-#'   you specified for \code{linetype_column}. Check what the unique values are
-#'   in that column if you get a graph you didn't expect as far as line types
-#'   go. To see possible line types by name, please enter
+#'   for determining the line types and also the shapes of the points for
+#'   depicting any observed data. For example, if \code{linetype_column} is set
+#'   to \code{Inhibitor}, then the default is to show a solid line (simulated
+#'   data) and an open circle (observed data) for no inhibitor being present and
+#'   then a dashed line (simulated data) and an open triangle (observed data)
+#'   when the inhibitor \emph{is} present. You can set which types of lines to
+#'   use with the argument \code{linetypes} and you can set which shapes of
+#'   points you want with the argument \code{obs_shape}.
+#' @param linetypes the line types to use. Default is "solid" for all lines.
+#'   You'll need one line type for each possible value in the column you
+#'   specified for \code{linetype_column}. If you get a graph you didn't expect
+#'   as far as line types go, try checking what all the possible values are for
+#'   the column you specified for \code{linetype_column}. You can do this by
+#'   checking, e.g., \code{unique(CT$Inhibitor)} if your ct_dataframe was named
+#'   "CT" and the column you set for \code{linetype_column} was "Inhibitor". To
+#'   see possible line types by name, please enter
 #'   \code{ggpubr::show_line_types()} into the console.
 #' @param line_width optionally specify how thick to make the lines. Acceptable
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
@@ -843,6 +848,15 @@ ct_plot_overlay <- function(ct_dataframe,
     AES <- str_c(AES[complete.cases(AES)], collapse = "-")
     AES <- ifelse(AES == "" | is.na(AES), "none", AES)
     
+    # If user didn't map linetype column but did specify more than one obs
+    # shape, give them a warning that we'll only use the 1st shape specified b/c
+    # we don't know what column to use to determine the shapes of the points.
+    if(str_detect(AES, "linetype") == FALSE && complete.cases(obs_shape[1]) &&
+       length(obs_shape) > 1){
+        warning("You have specified multiple shapes to use for the observed data, but you have not said which column should determine what the shapes of the observed data should be. Since the shape is set by the same column that sets the line types, you can set this with the `linetype_column` argument. For now, only the 1st shape you specified will be used.", 
+                call. = FALSE)
+    }
+    
     MyUniqueData <- ct_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
         select(any_of(union(UniqueAES, 
@@ -946,7 +960,7 @@ ct_plot_overlay <- function(ct_dataframe,
     
     # Taking care of linetypes and, along with that, obs_shape as needed
     if(as_label(linetype_column) != "<empty>"){
-        NumLT <- length(unique(sim_dataframe$linetype_column))
+        NumLT <- length(sort(unique(sim_dataframe$linetype_column)))
     } else {
         NumLT <- 1
     }
@@ -987,20 +1001,11 @@ ct_plot_overlay <- function(ct_dataframe,
     # legend should be for obs data.
     LTCol <- AESCols["linetype"]
     
-    if(paste(AES, LTCol == "Inhibitor") %in% c("color FALSE", "none FALSE")){
-        NumShapes <- length(unique(c(sim_dataframe$Inhibitor, 
-                                     obs_data$Inhibitor)))
+    if(str_detect(AES, "linetype")){
+        NumShapes <- length(sort(unique(c(sim_dataframe$linetype_column,
+                                          obs_data$linetype_column))))
     } else {
-        NumShapes <- length(unique(c(sim_dataframe$linetype_column,
-                                     obs_data$linetype_column)))
-    }
-    
-    if(length(obs_shape) < NumShapes){
-        # This odd syntax will work both when obs_shape is a single value
-        # and when it is multiple values.
-        obs_shape <- rep(obs_shape, NumShapes)[1:NumShapes] 
-    } else if(length(obs_shape) < NumShapes){
-        obs_shape <- obs_shape[1:NumShapes] 
+        NumShapes <- 1
     }
     
     set_aesthet(line_type = linetypes, figure_type = figure_type,
@@ -1014,6 +1019,13 @@ ct_plot_overlay <- function(ct_dataframe,
                 # line_color is just a placeholder b/c not using it here.
                 line_color = NA)
     
+    if(length(obs_shape) < NumShapes){
+        # This odd syntax will work both when obs_shape is a single value
+        # and when it is multiple values.
+        obs_shape <- rep(obs_shape, NumShapes)[1:NumShapes] 
+    } else if(length(obs_shape) < NumShapes){
+        obs_shape <- obs_shape[1:NumShapes] 
+    }
     
     ## Figure type: means only ---------------------------------------------
     if(figure_type == "means only"){
@@ -1030,14 +1042,13 @@ ct_plot_overlay <- function(ct_dataframe,
                                                         color = colorBy_column, 
                                                         fill = colorBy_column,
                                                         linetype = linetype_column, 
-                                                        group = Group, 
-                                                        shape = Inhibitor),
+                                                        group = Group),
                            # Only option here will be "color FALSE" b/c "color"
                            # will only be the AES if linetype is unspecified.
                            "color FALSE" = aes(x = Time, y = Conc, 
                                                color = colorBy_column, 
                                                fill = colorBy_column,
-                                               group = Group, shape = Inhibitor), 
+                                               group = Group), 
                            "linetype TRUE" = aes(x = Time, y = Conc, 
                                                  linetype = linetype_column, 
                                                  group = Group, shape = linetype_column),
@@ -1047,7 +1058,7 @@ ct_plot_overlay <- function(ct_dataframe,
                            # Only option here will be "none FALSE" b/c "none"
                            # will only be the AES if linetype is unspecified.
                            "none FALSE" = aes(x = Time, y = Conc,
-                                              group = Group, shape = Inhibitor))) +
+                                              group = Group))) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
     }
@@ -1070,14 +1081,13 @@ ct_plot_overlay <- function(ct_dataframe,
                                                         color = colorBy_column,
                                                         fill = colorBy_column,
                                                         linetype = linetype_column,
-                                                        group = Group,
-                                                        shape = Inhibitor),
+                                                        group = Group),
                            # Only option here will be "color FALSE" b/c "color"
                            # will only be the AES if linetype is unspecified.
                            "color FALSE" = aes(x = Time, y = Conc, 
                                                color = colorBy_column, 
                                                fill = colorBy_column,
-                                               group = Group, shape = Inhibitor), 
+                                               group = Group), 
                            "linetype TRUE" = aes(x = Time, y = Conc,
                                                  linetype = linetype_column,
                                                  group = Group, shape = linetype_column),
@@ -1087,7 +1097,7 @@ ct_plot_overlay <- function(ct_dataframe,
                            # Only option here will be "none FALSE" b/c "none"
                            # will only be the AES if linetype is unspecified.
                            "none FALSE" = aes(x = Time, y = Conc,
-                                              group = Group, shape = Inhibitor))) +
+                                              group = Group))) +
             geom_line(alpha = 0.25,
                       lwd = ifelse(is.na(line_width), 0.8, line_width)) +
             geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
@@ -1119,7 +1129,6 @@ ct_plot_overlay <- function(ct_dataframe,
                                                        linetype = linetype_column),
                            "color-linetype FALSE" = aes(x = Time, y = MyMean, 
                                                         ymin = per5, ymax = per95, 
-                                                        shape = Inhibitor,
                                                         color = colorBy_column, 
                                                         fill = colorBy_column, 
                                                         linetype = linetype_column),
@@ -1129,19 +1138,16 @@ ct_plot_overlay <- function(ct_dataframe,
                                                  linetype = linetype_column),
                            "linetype FALSE" = aes(x = Time, y = MyMean, 
                                                   ymin = per5, ymax = per95, 
-                                                  shape = Inhibitor,
                                                   linetype = linetype_column),
                            # Only option here will be "color FALSE" b/c "color"
                            # will only be the AES if linetype is unspecified.
                            "color FALSE" = aes(x = Time, y = MyMean, 
                                                ymin = per5, ymax = per95, 
-                                               shape = Inhibitor,
                                                color = colorBy_column, 
                                                fill = colorBy_column), 
                            # Only option here will be "none FALSE" b/c "none"
                            # will only be the AES if linetype is unspecified.
                            "none FALSE" = aes(x = Time, y = MyMean, 
-                                              shape = Inhibitor,
                                               ymin = per5, ymax = per95))) +
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
@@ -1202,6 +1208,16 @@ ct_plot_overlay <- function(ct_dataframe,
                     obs_data <- bind_rows(obs_data)
                 }
             }
+            
+            # Also need to check whether lintype column was File b/c then we
+            # also need to set linetype column in obs data. Otherwise, it will
+            # be NA for all obs data and we'll get no points on the graph.
+            if("linetype" %in% AES &&
+               AESCols["linetype"] == "File"){
+                obs_data <- obs_data %>% 
+                    mutate(linetype_column = File)
+            }
+            
         } else {
             # If there are some assignments for File but some missing, just warn
             # the user about that b/c it's not clear how to assign the ones that
@@ -1215,6 +1231,7 @@ ct_plot_overlay <- function(ct_dataframe,
         
         A <- addObsPoints(obs_data = obs_data, 
                           A = A, 
+                          AES = AES,
                           obs_shape = obs_shape,
                           obs_shape_user = obs_shape_user,
                           obs_size = obs_size, 

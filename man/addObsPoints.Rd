@@ -7,6 +7,7 @@
 addObsPoints(
   obs_data,
   A,
+  AES,
   obs_shape,
   obs_shape_user,
   obs_size,
@@ -36,7 +37,7 @@ ct_plot_overlay originally and should always be TRUE for ct_plot.}
 
 }
 \description{
-\code{addObsPoints} addes observed data to \code{\link{ct_plot}} or
+\code{addObsPoints} adds observed data to \code{\link{ct_plot}} or
 \code{\link{ct_plot_overlay}} and sets the color and shape of those points
 appropriately. This is NOT meant to be used as a stand-alone function.
 }

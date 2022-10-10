@@ -175,10 +175,9 @@ presence of an effector. Input should look like this, for example:
 for the substrate in the presence of effectors, if there are any. If you
 only specify one value, it will be used for both substrate with and without
 effectors. To see all the possible shapes and what number corresponds to
-which shape, see \url{https://r-graphics.org/recipe-scatter-shapes}
-(there's a graph around the middle of that page). If left as NA, substrate
-alone will be an open circle and substrate + inhibitor 1 will be an open
-triangle.}
+which shape, type \code{ggpubr::show_point_shapes()} into the console. If
+left as NA, substrate alone will be an open circle and substrate +
+inhibitor 1 will be an open triangle.}
 
 \item{obs_color}{optionally specify a color to use for observed data if the
 color isn't already mapped to a specific column. By default, observed data
@@ -213,17 +212,23 @@ the observed data points will be opaque, so the same as if this were set to
 1.}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
-for determining the line types. Default is to use the column Inhibitor and
-to have a solid line for no inhibitor present and a dashed line when an
-inhibitor is present.}
+for determining the line types and also the shapes of the points for
+depicting any observed data. For example, if \code{linetype_column} is set
+to \code{Inhibitor}, then the default is to show a solid line (simulated
+data) and an open circle (observed data) for no inhibitor being present and
+then a dashed line (simulated data) and an open triangle (observed data)
+when the inhibitor \emph{is} present. You can set which types of lines to
+use with the argument \code{linetypes} and you can set which shapes of
+points you want with the argument \code{obs_shape}.}
 
-\item{linetypes}{the line types to use. Default is "solid" for all lines,
-but, if you have an effector present and would like to match the
-Consultancy Template graphs, set this to \code{linetypes = c("solid",
-"dashed")}. You'll need one line type for each possible value in the column
-you specified for \code{linetype_column}. Check what the unique values are
-in that column if you get a graph you didn't expect as far as line types
-go. To see possible line types by name, please enter
+\item{linetypes}{the line types to use. Default is "solid" for all lines.
+You'll need one line type for each possible value in the column you
+specified for \code{linetype_column}. If you get a graph you didn't expect
+as far as line types go, try checking what all the possible values are for
+the column you specified for \code{linetype_column}. You can do this by
+checking, e.g., \code{unique(CT$Inhibitor)} if your ct_dataframe was named
+"CT" and the column you set for \code{linetype_column} was "Inhibitor". To
+see possible line types by name, please enter
 \code{ggpubr::show_line_types()} into the console.}
 
 \item{line_width}{optionally specify how thick to make the lines. Acceptable
