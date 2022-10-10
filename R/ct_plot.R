@@ -167,10 +167,10 @@
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
 #'   \code{c(1, 2)} to get an open circle and an open triangle. To see all the
-#'   possible shapes and what number corresponds to which shape, see
-#'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
-#'   the middle of that page). If left as NA, substrate alone will be an open
-#'   circle and substrate + inhibitor 1 will be an open triangle.
+#'   possible shapes and what number corresponds to which shape, type
+#'   \code{ggpubr::show_point_shapes()} into the console. If left as NA,
+#'   substrate alone will be an open circle and substrate + inhibitor 1 will be
+#'   an open triangle.
 #' @param obs_size optionally specify the size of the points to use for the
 #'   observed data. If left as NA, the size will be 2.
 #' @param obs_fill_trans optionally specify the transparency for the fill of the
