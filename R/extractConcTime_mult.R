@@ -240,9 +240,29 @@ extractConcTime_mult <- function(sim_data_files = NA,
             ObsAssign <- ObsAssign[!duplicated(ObsAssign$File), ]
         }
         
+        MissingFiles <- setdiff(ObsAssign$File, sim_data_files)
+        if(length(MissingFiles) > 0){
+            warning(paste0("When you assigned observed data files to simulator files with the argument `obs_to_sim_assignment`, you included simulator files that are *not* included in `sim_data_files`. We cannot include these observed data files in the output data because we don't know which simulator files they belong with. The problem simulator files is/are: ", 
+                           str_comma(MissingFiles), ", which is/are set to match the following observed files ",
+                           str_comma(names(obs_to_sim_assignment[
+                               which(obs_to_sim_assignment %in% sim_data_files == FALSE)])), 
+                           "."), 
+                    call. = FALSE)
+            
+            ObsAssign <- ObsAssign %>% filter(File %in% sim_data_files)
+            obs_to_sim_assignment <- obs_to_sim_assignment[
+                !str_detect(obs_to_sim_assignment, 
+                            str_c(MissingFiles, "|"))
+            ]
+            
+        }
+        
         ObsAssign <- split(ObsAssign, f = ObsAssign$File)
+        
     } else {
+        
         ObsAssign <- list()
+        
     }
     
     MultData <- list()
@@ -444,6 +464,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
     # }
     
     # Observed data ------------------------------------------------------
+    
     if((any(complete.cases(obs_to_sim_assignment)) & length(ObsAssign) == 0) |   # <--- scenario when one obs file should be used for all sim files
        ("ObsFile" %in% names(MultData) &&                                        # <--- scenario when some obs files were already extracted but some were not b/c they weren't assigned to a sim file
         length(setdiff(names(obs_to_sim_assignment), unique(MultData$ObsFile))) > 0 &&
