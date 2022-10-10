@@ -975,6 +975,27 @@ ct_plot_overlay <- function(ct_dataframe,
     MyEffector <- fct_relevel(MyEffector, before = "none")
     MyEffector <- sort(MyEffector)
     
+    # Making linetype_column and colorBy_column character data. This will
+    # prevent errors w/mapping to color b/c ggplot expects only categorical data
+    # for scale_color_manual, and, if the user supplies something that looks
+    # like a number for the colorBy_column (e.g., a numerical SubjectID), it
+    # will give the error message that a continuous value was supplied to a
+    # discrete scale.
+    if(as_label(linetype_column) != "<empty>" &&
+       class(ct_dataframe$linetype_column) != "character"){
+        
+        sim_dataframe$linetype_column <- as.character(sim_dataframe$linetype_column)
+        obs_data$linetype_column <- as.character(obs_data$linetype_column)
+    }
+    
+    if(as_label(colorBy_column) != "<empty>" &&
+       class(ct_dataframe$colorBy_column) != "character"){
+        
+        sim_dataframe$colorBy_column <- as.character(sim_dataframe$colorBy_column)
+        obs_data$colorBy_column <- as.character(obs_data$colorBy_column)
+    }
+
+        
     # Taking care of linetypes and, along with that, obs_shape as needed
     if(as_label(linetype_column) != "<empty>"){
         NumLT <- length(sort(unique(sim_dataframe$linetype_column)))
@@ -1142,7 +1163,11 @@ ct_plot_overlay <- function(ct_dataframe,
         LegCheck <- LegCheck[LegCheck != "<empty>"]
         # If there's more than one unique value in whatever is in the color
         # or linetype column or the Inhibitor column, then include it
-        LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
+        if(length(LegCheck) > 0){
+            LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
+        } else {
+            LegCheck <- FALSE
+        }
         
         if(all(is.na(obs_data$File))){
             if(all(is.na(obs_to_sim_assignment))){
@@ -1339,9 +1364,8 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(AES %in% c("color", "color-linetype")){
         
-        NumColorsNeeded <- bind_rows(sim_dataframe, obs_data) %>%
-            pull(AESCols["color"]) %>% 
-            unique() %>% length()
+        NumColorsNeeded <- bind_rows(sim_dataframe, obs_data) %>% 
+            pull(colorBy_column) %>% unique() %>% length()
         
         # print(NumColorsNeeded)
         
@@ -1412,9 +1436,18 @@ ct_plot_overlay <- function(ct_dataframe,
                 # colors you can get is 3. Since sometimes we might only want 1
                 # or 2 colors, though, we have to add the [1:NumColorsNeeded]
                 # bit.
+                
+                if(any(is.na(MyColors))){
+                    warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.", 
+                            call. = FALSE)
+                    
+                    MyColors <- rainbow(NumColorsNeeded)
+                }
             }
             
-            names(MyColors) <- levels(sim_dataframe$colorBy_column)
+            names(MyColors) <- unique(bind_rows(sim_dataframe, obs_data) %>% 
+                                          arrange(colorBy_column) %>% 
+                                          pull(colorBy_column))
             
             suppressWarnings(
                 A <-  A + scale_color_manual(values = MyColors) +
@@ -1479,13 +1512,6 @@ ct_plot_overlay <- function(ct_dataframe,
         }
     }
     
-    # Removing any legend entry for observed shape if there was only one value
-    # in the column Inhibitor since that's what column the observed shape is
-    # mapped to.
-    if(length(unique(ct_dataframe$Inhibitor)) == 1){
-        A <- A + guides(shape = "none")
-    }
-    
     ## Adding spacing between facets if requested
     if(complete.cases(facet_spacing)){
         A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
@@ -1500,7 +1526,8 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     if(AES %in% c("color", "color-linetype") &&
-       length(unique(sim_dataframe$colorBy_column)) == 1){
+       length(unique(bind_rows(sim_dataframe, obs_data) %>% 
+                     pull(colorBy_column))) == 1){
         A <- A + guides(color = "none", fill = "none")
     }
     
