@@ -240,16 +240,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
             ObsAssign <- ObsAssign[!duplicated(ObsAssign$File), ]
         }
         
-        MissingFiles <- setdiff(ObsAssign$File, sim_data_files)
+        MissingFiles <- setdiff(ObsAssign$File,
+                                unique(c(sim_data_files, ct_dataframe$File)))
         if(length(MissingFiles) > 0){
             warning(paste0("When you assigned observed data files to simulator files with the argument `obs_to_sim_assignment`, you included simulator files that are *not* included in `sim_data_files`. We cannot include these observed data files in the output data because we don't know which simulator files they belong with. The problem simulator files is/are: ", 
                            str_comma(MissingFiles), ", which is/are set to match the following observed files ",
                            str_comma(names(obs_to_sim_assignment[
-                               which(obs_to_sim_assignment %in% sim_data_files == FALSE)])), 
+                               which(obs_to_sim_assignment %in%
+                                         unique(c(sim_data_files, ct_dataframe$File)) == FALSE)])), 
                            "."), 
                     call. = FALSE)
             
-            ObsAssign <- ObsAssign %>% filter(File %in% sim_data_files)
+            ObsAssign <- ObsAssign %>% filter(File %in% unique(c(sim_data_files, ct_dataframe$File)))
             obs_to_sim_assignment <- obs_to_sim_assignment[
                 !str_detect(obs_to_sim_assignment, 
                             str_c(MissingFiles, "|"))
