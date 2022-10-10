@@ -906,6 +906,9 @@ ct_plot <- function(ct_dataframe = NA,
         
         A <- addObsPoints(obs_data = obs_data, 
                           A = A, 
+                          # Needed the argument AES for ct_plot_overlay, but
+                          # it's only ever going to be "linetype" for ct_plot.
+                          AES = "linetype", 
                           obs_shape = obs_shape,
                           obs_shape_user = obs_shape_user,
                           obs_size = obs_size, 

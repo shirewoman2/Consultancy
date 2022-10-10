@@ -719,24 +719,26 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     # Not mapping observed data to a column if File was originally NA for all
-    # and that's what colorBy_column is. Also not mapping if user has specified
-    # obs_color.
+    # and that's what colorBy_column is or that's what linetype_column is. Also
+    # not mapping if user has specified obs_color.
     MapObsData <- ifelse(
-        (nrow(obs_data) > 0 && "File" == as_label(colorBy_column) & 
+        (nrow(obs_data) > 0 && 
+             "File" %in% c(as_label(colorBy_column), as_label(linetype_column)) & 
              all(is.na(obs_data$File))) | complete.cases(obs_color_user), 
         FALSE, TRUE)
     
     # Setting this up so that observed data will be shown for all Files
     if(nrow(obs_data) > 0 && 
        "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
-                     as_label(facet2_column)) &&
+                     as_label(facet2_column), as_label(linetype_column)) &&
        all(is.na(obs_data$File))){
         
         ToAdd <- expand_grid(ObsFile = unique(obs_data$ObsFile), 
                              File = unique(sim_dataframe$File))
         suppressMessages(
             obs_data <- obs_data %>% select(-File) %>% 
-                left_join(ToAdd))
+                left_join(ToAdd) %>% 
+                mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor)))
     } 
     
     # Dealing with the fact that the observed data will list the inhibitor as
@@ -855,6 +857,21 @@ ct_plot_overlay <- function(ct_dataframe,
        length(obs_shape) > 1){
         warning("You have specified multiple shapes to use for the observed data, but you have not said which column should determine what the shapes of the observed data should be. Since the shape is set by the same column that sets the line types, you can set this with the `linetype_column` argument. For now, only the 1st shape you specified will be used.", 
                 call. = FALSE)
+    }
+    
+    # Need to check whether linetype or colorBy column was File b/c then we also
+    # need to set linetype or colorBy column in obs data. Otherwise, it will be
+    # NA for all obs data and we'll get no points on the graph.
+    if(str_detect(AES, "linetype") &&
+       AESCols["linetype"] == "File"){
+        obs_data <- obs_data %>% 
+            mutate(linetype_column = File)
+    }
+    
+    if(str_detect(AES, "color") &&
+       AESCols["color"] == "File"){
+        obs_data <- obs_data %>% 
+            mutate(colorBy_column = File)
     }
     
     MyUniqueData <- ct_dataframe %>% 
@@ -980,9 +997,9 @@ ct_plot_overlay <- function(ct_dataframe,
     
     if(as_label(linetype_column) != "<empty>"){
         
-        # If the original data.frame included levels for linetype_column, then use
-        # those levels. Otherwise, make "none" the base level since most of the
-        # time, this will be used for the column "Inhibitor".
+        # If the original data.frame included levels for linetype_column, then
+        # use those levels. Otherwise, make "none" the base level since most of
+        # the time, this will be used for the column "Inhibitor".
         if(class(sim_dataframe$linetype_column) != "factor"){
             if("none" %in% unique(sim_dataframe$linetype_column)){
                 sim_dataframe <- sim_dataframe %>% 
@@ -996,10 +1013,6 @@ ct_plot_overlay <- function(ct_dataframe,
             }
         }
     }
-    
-    # Checking which column is assigned to linetype b/c it affects what the
-    # legend should be for obs data.
-    LTCol <- AESCols["linetype"]
     
     if(str_detect(AES, "linetype")){
         NumShapes <- length(sort(unique(c(sim_dataframe$linetype_column,
@@ -1031,34 +1044,22 @@ ct_plot_overlay <- function(ct_dataframe,
     if(figure_type == "means only"){
         
         A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-                    switch(paste(AES, LTCol == "Inhibitor"), 
-                           "color-linetype TRUE" = aes(x = Time, y = Conc, 
-                                                       color = colorBy_column, 
-                                                       fill = colorBy_column,
-                                                       linetype = linetype_column, 
-                                                       group = Group, 
-                                                       shape = linetype_column),
-                           "color-linetype FALSE" = aes(x = Time, y = Conc, 
-                                                        color = colorBy_column, 
-                                                        fill = colorBy_column,
-                                                        linetype = linetype_column, 
-                                                        group = Group),
-                           # Only option here will be "color FALSE" b/c "color"
-                           # will only be the AES if linetype is unspecified.
-                           "color FALSE" = aes(x = Time, y = Conc, 
-                                               color = colorBy_column, 
-                                               fill = colorBy_column,
-                                               group = Group), 
-                           "linetype TRUE" = aes(x = Time, y = Conc, 
-                                                 linetype = linetype_column, 
-                                                 group = Group, shape = linetype_column),
-                           "linetype FALSE" = aes(x = Time, y = Conc, 
+                    switch(AES, 
+                           "color-linetype" = aes(x = Time, y = Conc, 
+                                                  color = colorBy_column, 
+                                                  fill = colorBy_column,
                                                   linetype = linetype_column, 
-                                                  group = Group, shape = linetype_column),
-                           # Only option here will be "none FALSE" b/c "none"
-                           # will only be the AES if linetype is unspecified.
-                           "none FALSE" = aes(x = Time, y = Conc,
-                                              group = Group))) +
+                                                  group = Group, 
+                                                  shape = linetype_column),
+                           "color" = aes(x = Time, y = Conc, 
+                                         color = colorBy_column, 
+                                         fill = colorBy_column,
+                                         group = Group), 
+                           "linetype" = aes(x = Time, y = Conc, 
+                                            linetype = linetype_column, 
+                                            group = Group, shape = linetype_column),
+                           "none" = aes(x = Time, y = Conc,
+                                        group = Group))) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
         
     }
@@ -1070,34 +1071,23 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- ggplot(sim_dataframe %>%
                         filter(Trial %in% c("per5", "per95")) %>%
                         mutate(Group = paste(Group, Trial)),
-                    switch(paste(AES, LTCol == "Inhibitor"), 
-                           "color-linetype TRUE" = aes(x = Time, y = Conc,
-                                                       color = colorBy_column,
-                                                       fill = colorBy_column,
-                                                       linetype = linetype_column,
-                                                       group = Group,
-                                                       shape = linetype_column),
-                           "color-linetype FALSE" = aes(x = Time, y = Conc,
-                                                        color = colorBy_column,
-                                                        fill = colorBy_column,
-                                                        linetype = linetype_column,
-                                                        group = Group),
-                           # Only option here will be "color FALSE" b/c "color"
-                           # will only be the AES if linetype is unspecified.
-                           "color FALSE" = aes(x = Time, y = Conc, 
-                                               color = colorBy_column, 
-                                               fill = colorBy_column,
-                                               group = Group), 
-                           "linetype TRUE" = aes(x = Time, y = Conc,
-                                                 linetype = linetype_column,
-                                                 group = Group, shape = linetype_column),
-                           "linetype FALSE" = aes(x = Time, y = Conc,
+                    switch(AES, 
+                           "color-linetype" = aes(x = Time, y = Conc,
+                                                  color = colorBy_column,
+                                                  fill = colorBy_column,
                                                   linetype = linetype_column,
-                                                  group = Group, shape = linetype_column),
-                           # Only option here will be "none FALSE" b/c "none"
-                           # will only be the AES if linetype is unspecified.
-                           "none FALSE" = aes(x = Time, y = Conc,
-                                              group = Group))) +
+                                                  group = Group,
+                                                  shape = linetype_column),
+                           "color" = aes(x = Time, y = Conc, 
+                                         color = colorBy_column, 
+                                         fill = colorBy_column,
+                                         group = Group), 
+                           "linetype" = aes(x = Time, y = Conc,
+                                            linetype = linetype_column,
+                                            group = Group, 
+                                            shape = linetype_column),
+                           "none" = aes(x = Time, y = Conc,
+                                        group = Group))) +
             geom_line(alpha = 0.25,
                       lwd = ifelse(is.na(line_width), 0.8, line_width)) +
             geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
@@ -1120,35 +1110,22 @@ ct_plot_overlay <- function(ct_dataframe,
         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
         
         A <- ggplot(RibbonDF, 
-                    switch(paste(AES, LTCol == "Inhibitor"), 
-                           "color-linetype TRUE" = aes(x = Time, y = MyMean, 
-                                                       ymin = per5, ymax = per95, 
-                                                       shape = linetype_column,
-                                                       color = colorBy_column, 
-                                                       fill = colorBy_column, 
-                                                       linetype = linetype_column),
-                           "color-linetype FALSE" = aes(x = Time, y = MyMean, 
-                                                        ymin = per5, ymax = per95, 
-                                                        color = colorBy_column, 
-                                                        fill = colorBy_column, 
-                                                        linetype = linetype_column),
-                           "linetype TRUE" = aes(x = Time, y = MyMean, 
-                                                 ymin = per5, ymax = per95, 
-                                                 shape = linetype_column,
-                                                 linetype = linetype_column),
-                           "linetype FALSE" = aes(x = Time, y = MyMean, 
+                    switch(AES, 
+                           "color-linetype" = aes(x = Time, y = MyMean, 
                                                   ymin = per5, ymax = per95, 
+                                                  shape = linetype_column,
+                                                  color = colorBy_column, 
+                                                  fill = colorBy_column, 
                                                   linetype = linetype_column),
-                           # Only option here will be "color FALSE" b/c "color"
-                           # will only be the AES if linetype is unspecified.
-                           "color FALSE" = aes(x = Time, y = MyMean, 
-                                               ymin = per5, ymax = per95, 
-                                               color = colorBy_column, 
-                                               fill = colorBy_column), 
-                           # Only option here will be "none FALSE" b/c "none"
-                           # will only be the AES if linetype is unspecified.
-                           "none FALSE" = aes(x = Time, y = MyMean, 
-                                              ymin = per5, ymax = per95))) +
+                           "linetype" = aes(x = Time, y = MyMean, 
+                                            ymin = per5, ymax = per95, 
+                                            linetype = linetype_column),
+                           "color" = aes(x = Time, y = MyMean, 
+                                         ymin = per5, ymax = per95, 
+                                         color = colorBy_column, 
+                                         fill = colorBy_column), 
+                           "none" = aes(x = Time, y = MyMean, 
+                                        ymin = per5, ymax = per95))) +
             geom_ribbon(alpha = 0.25, color = NA) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
         
@@ -1160,13 +1137,9 @@ ct_plot_overlay <- function(ct_dataframe,
         
         # Checking whether to show obs data points in the legend. If the
         # column that is mapped to color or linetype has more than one item,
-        # then show this in the legend. If Inhibitor has more than one item,
-        # since it's the column that's mapped to shape, then also show this
-        # in the legend.
+        # then show this in the legend. 
         LegCheck <- c(AESCols["color"], AESCols["linetype"])
         LegCheck <- LegCheck[LegCheck != "<empty>"]
-        # Need to add "Inhibitor" here b/c shape is mapped to it.
-        LegCheck <- c(LegCheck, "Inhibitor" = "Inhibitor")
         # If there's more than one unique value in whatever is in the color
         # or linetype column or the Inhibitor column, then include it
         LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
@@ -1207,15 +1180,6 @@ ct_plot_overlay <- function(ct_dataframe,
                     }
                     obs_data <- bind_rows(obs_data)
                 }
-            }
-            
-            # Also need to check whether lintype column was File b/c then we
-            # also need to set linetype column in obs data. Otherwise, it will
-            # be NA for all obs data and we'll get no points on the graph.
-            if("linetype" %in% AES &&
-               AESCols["linetype"] == "File"){
-                obs_data <- obs_data %>% 
-                    mutate(linetype_column = File)
             }
             
         } else {
@@ -1502,11 +1466,9 @@ ct_plot_overlay <- function(ct_dataframe,
         A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
                                         "TRUE" = legend_label_linetype,
                                         "FALSE" = as_label(linetype_column)), 
-                      shape = switch(as.character(LTCol == "Inhibitor"), 
-                                     "TRUE" = switch(as.character(complete.cases(legend_label_linetype)), 
-                                                     "TRUE" = legend_label_linetype,
-                                                     "FALSE" = as_label(linetype_column)), 
-                                     "FALSE" = "Inhibitor"))
+                      shape = switch(as.character(complete.cases(legend_label_linetype)), 
+                                     "TRUE" = legend_label_linetype,
+                                     "FALSE" = as_label(linetype_column)))
         
         if(any(linetypes != "solid")){
             # When the linetype is dashed (or possibly some other user-specified
