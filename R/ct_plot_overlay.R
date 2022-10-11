@@ -2,11 +2,10 @@
 #'
 #' \code{ct_plot_overlay} is meant to be used in conjunction with
 #' \code{\link{extractConcTime_mult}} to create single graphs with overlaid
-#' concentration-time data of multiple tissues, compounds, or Simcyp Simulator
+#' concentration-time data for multiple tissues, compounds, or Simcyp Simulator
 #' output files for easy comparisons. \emph{Note:} There are some nuances to
 #' overlaying observed data. Please see the "Details" section at the bottom of
-#' this help file. Also, this hasn't really been developed or tested with
-#' enzyme-abundance data yet and only a little bit tested with ADAM-model data.
+#' this help file. 
 #'
 #' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include
@@ -745,7 +744,7 @@ ct_plot_overlay <- function(ct_dataframe,
     # "inhibitor" unless the user changes it, but that sim data will list its
     # name
     if(nrow(obs_data) > 0 & any(obs_data$Inhibitor == "inhibitor")){
-        ct_dataframe <- ct_dataframe %>% 
+        sim_dataframe <- sim_dataframe %>% 
             mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitor"))
     }
     
@@ -874,13 +873,54 @@ ct_plot_overlay <- function(ct_dataframe,
             mutate(colorBy_column = File)
     }
     
-    MyUniqueData <- ct_dataframe %>% 
+    # Checking whether small intestine and colon abundances are identical. 
+    if(EnzPlot){
+        Check <- sim_dataframe %>% 
+            pivot_wider(names_from = Tissue, values_from = Conc)
+        
+        if(all(c("colon", "small intestine") %in% names(Check)) &&
+           all(Check$colon == Check$`small intestine`, na.rm = TRUE)){
+            warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
+                    "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
+                    MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
+                    ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)
+Replace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.",
+call. = FALSE)
+            
+            sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
+                mutate(Tissue = ifelse(Tissue == "small intestine", 
+                                       "colon and small intestine", Tissue))
+            
+            if("color" %in% names(AESCols)[AESCols == "Tissue"]){
+                sim_dataframe <- sim_dataframe %>% 
+                    mutate(colorBy_column = Tissue)
+            }
+            
+            if("linetype" %in% names(AESCols)[AESCols == "Tissue"]){
+                sim_dataframe <- sim_dataframe %>% 
+                    mutate(linetype_column = Tissue)
+            }
+            
+            if("facet1" %in% names(AESCols)[AESCols == "Tissue"]){
+                sim_dataframe <- sim_dataframe %>% 
+                    mutate(FC1 = Tissue)
+            }
+            
+            if("facet2" %in% names(AESCols)[AESCols == "Tissue"]){
+                sim_dataframe <- sim_dataframe %>% 
+                    mutate(FC2 = Tissue)
+            }
+            
+        }
+    }
+    
+    MyUniqueData <- sim_dataframe %>% 
         filter(Trial == MyMeanType) %>% 
         select(any_of(union(UniqueAES, 
                             c("File", "Tissue", "CompoundID", "Compound", "Enzyme", "Inhibitor")))) %>% 
         unique()
     
-    UniqueGroups1 <- ct_dataframe %>% 
+    UniqueGroups1 <- sim_dataframe %>% 
         summarize(across(.cols = any_of(union(UniqueAES, 
                                               c("File", "Tissue", "CompoundID",
                                                 "Compound", "Inhibitor"))),
@@ -919,9 +959,9 @@ ct_plot_overlay <- function(ct_dataframe,
     # to specify more line types.
     if(as_label(linetype_column) != "<empty>" && 
        as_label(colorBy_column) != as_label(linetype_column) &&
-       length(unique(ct_dataframe$linetype_column)) > 1 & 
+       length(unique(sim_dataframe$linetype_column)) > 1 & 
        length(unique(linetypes)) == 1){
-        warning(paste0("There are ", length(unique(ct_dataframe$linetype_column)),
+        warning(paste0("There are ", length(unique(sim_dataframe$linetype_column)),
                        " unique values in the column ", as_label(linetype_column),
                        ", but you have only requested ", 
                        length(unique(linetypes)), " linetype(s): ", 
@@ -937,14 +977,14 @@ ct_plot_overlay <- function(ct_dataframe,
     if(EnzPlot){
         AnchorCompound <- "substrate"
     } else {
-        AnchorCompound <- ct_dataframe %>% select(CompoundID) %>% unique() %>% 
+        AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
             mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
             filter(CompoundLevel == min(CompoundLevel)) %>% 
             pull(CompoundID) %>% as.character()
     }
     
     # Setting up the x axis using the subfunction ct_x_axis
-    ct_x_axis(Data = ct_dataframe,
+    ct_x_axis(Data = bind_rows(sim_dataframe, obs_data),
               time_range = time_range, 
               t0 = "simulation start",
               x_axis_interval = x_axis_interval,
@@ -957,7 +997,7 @@ ct_plot_overlay <- function(ct_dataframe,
               ADAM = ADAM, 
               subsection_ADAM = switch(as.character(EnzPlot), 
                                        "TRUE" = NA, 
-                                       "FALSE" = unique(ct_dataframe$subsection_ADAM)), 
+                                       "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
               prettify_compound_names = prettify_compound_names,
               EnzPlot = EnzPlot, 
               time_range_relative = time_range_relative,
@@ -982,20 +1022,20 @@ ct_plot_overlay <- function(ct_dataframe,
     # will give the error message that a continuous value was supplied to a
     # discrete scale.
     if(as_label(linetype_column) != "<empty>" &&
-       class(ct_dataframe$linetype_column) != "character"){
+       class(sim_dataframe$linetype_column) != "character"){
         
         sim_dataframe$linetype_column <- as.character(sim_dataframe$linetype_column)
         obs_data$linetype_column <- as.character(obs_data$linetype_column)
     }
     
     if(as_label(colorBy_column) != "<empty>" &&
-       class(ct_dataframe$colorBy_column) != "character"){
+       class(sim_dataframe$colorBy_column) != "character"){
         
         sim_dataframe$colorBy_column <- as.character(sim_dataframe$colorBy_column)
         obs_data$colorBy_column <- as.character(obs_data$colorBy_column)
     }
-
-        
+    
+    
     # Taking care of linetypes and, along with that, obs_shape as needed
     if(as_label(linetype_column) != "<empty>"){
         NumLT <- length(sort(unique(sim_dataframe$linetype_column)))
@@ -1027,7 +1067,10 @@ ct_plot_overlay <- function(ct_dataframe,
                     mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
                 
                 obs_data <- obs_data %>% 
-                    mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
+                    mutate(linetype_column = factor(linetype_column, 
+                                                    levels = c(levels(sim_dataframe$linetype_column), 
+                                                               setdiff(obs_data$linetype_column, 
+                                                                       sim_dataframe$linetype_column))))
             } else {
                 sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
                 obs_data$linetype_column <- as.factor(obs_data$linetype_column)
@@ -1175,7 +1218,7 @@ ct_plot_overlay <- function(ct_dataframe,
                 # specify anything for obs_to_sim_assignment, then make all the
                 # observed data go with all the simulated data.
                 FileAssign <- expand_grid(ObsFile = obs_data %>% pull(ObsFile) %>% unique(), 
-                                          File = unique(ct_dataframe$File)) %>% 
+                                          File = unique(sim_dataframe$File)) %>% 
                     filter(complete.cases(File))
                 
                 suppressMessages(
@@ -1369,7 +1412,7 @@ ct_plot_overlay <- function(ct_dataframe,
         
         # print(NumColorsNeeded)
         
-        if(length(sort(unique(ct_dataframe$colorBy_column))) == 1){
+        if(length(sort(unique(sim_dataframe$colorBy_column))) == 1){
             A <- A + scale_color_manual(values = "black") +
                 scale_fill_manual(values = "black")
         } else {
@@ -1379,7 +1422,7 @@ ct_plot_overlay <- function(ct_dataframe,
                 # If they supply a named character vector whose values are not
                 # present in the data, convert it to an unnamed character vector.
                 if(is.null(names(color_set)) == FALSE && 
-                   all(unique(ct_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+                   all(unique(sim_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
                     warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
                                    as_label(colorBy_column),
                                    " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
@@ -1533,9 +1576,10 @@ ct_plot_overlay <- function(ct_dataframe,
     
     ## Making semi-log graph ------------------------------------------------
     
-    LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
-                                           Time > 0 &
-                                           Conc < Ylim_log[1]) %>% 
+    LowConc <- bind_rows(sim_dataframe, obs_data) %>%
+        filter(Trial %in% c("mean", "per5", "per95") &
+                   Time > 0 &
+                   Conc < Ylim_log[1]) %>% 
         pull(Conc)
     
     if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){

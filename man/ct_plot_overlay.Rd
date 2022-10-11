@@ -397,11 +397,10 @@ file instead to your Documents folder.}
 \description{
 \code{ct_plot_overlay} is meant to be used in conjunction with
 \code{\link{extractConcTime_mult}} to create single graphs with overlaid
-concentration-time data of multiple tissues, compounds, or Simcyp Simulator
+concentration-time data for multiple tissues, compounds, or Simcyp Simulator
 output files for easy comparisons. \emph{Note:} There are some nuances to
 overlaying observed data. Please see the "Details" section at the bottom of
-this help file. Also, this hasn't really been developed or tested with
-enzyme-abundance data yet and only a little bit tested with ADAM-model data.
+this help file.
 }
 \details{
 \strong{Notes on including observed data:} We recently added the option of
