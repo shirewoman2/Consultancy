@@ -311,14 +311,14 @@ CapText2 <- switch(
               mean_type_graph, 
               "mean data"), 
     "percentiles" = 
-        paste("The grey lines represent the 5th and 95th percentiles and the solid black line the",
+        paste("The lighter lines represent the 5th and 95th percentiles and the darker lines the",
               mean_type_graph, 
               "mean data"), 
     "percentile ribbon" = 
-        paste("The shaded regions represent the 5th to the 95th percentiles and the solid black line the",
+        paste("The shaded regions represent the 5th to the 95th percentiles and the lines the",
               mean_type_graph, "mean data"), 
     "means only" = 
-        paste("The solid black line represents the", 
+        paste("The lines represent the", 
               mean_type_graph, "mean data"), 
     "Freddy" = 
         paste("The grey lines represent", 
