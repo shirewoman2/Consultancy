@@ -23,10 +23,10 @@
 #'   to \code{category_column} and open circles for the jittered points}}
 #' @param include_errorbars TRUE or FALSE (default) on whether to include
 #'   horizontal error bars on the whiskers
-#' @param xlabel the label to  use for the x axis, in quotes; default will use
-#'   the name of category_column.
-#' @param ylabel the label to use for the y axis, in quotes; default will use
-#'   the name of value_column.
+#' @param x_axis_label optionally supply a character vector or an expression to
+#'   use for the x axis label
+#' @param y_axis_label optionally supply a character vector or an expression to
+#'   use for the y axis label
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -125,8 +125,8 @@ graph_boxplot <- function(DF,
                           facet2_column,
                           graph_type = "boxplot",
                           include_errorbars = FALSE,
-                          xlabel = NA,
-                          ylabel = NA,
+                          x_axis_label = NA,
+                          y_axis_label = NA,
                           color_set = "default",
                           save_graph = NA,
                           fig_width = 6, fig_height = 4){
@@ -187,14 +187,14 @@ graph_boxplot <- function(DF,
                    cols = vars(!!facet2_column), 
                    scales = "free")
     
-    if(complete.cases(xlabel)){
-        G <- G + xlab(xlabel)
+    if(complete.cases(x_axis_label)){
+        G <- G + xlab(x_axis_label)
     } else {
         G <- G + xlab(rlang::as_label(category_column))
     }
     
-    if(complete.cases(ylabel)){
-        G <- G + ylab(ylabel)
+    if(complete.cases(y_axis_label)){
+        G <- G + ylab(y_axis_label)
     } else {
         G <- G + ylab(rlang::as_label(value_column))
     }
