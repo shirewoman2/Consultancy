@@ -385,7 +385,11 @@ ct_plot <- function(ct_dataframe = NA,
              call. = FALSE)
     }
     
-    if(length(sort(unique(ct_dataframe$CompoundID))) > 1){
+    # Noting whether this is an enzyme-abundance plot b/c some options change
+    # then.
+    EnzPlot <- "Enzyme" %in% names(ct_dataframe)
+    
+    if(EnzPlot == FALSE && length(sort(unique(ct_dataframe$CompoundID))) > 1){
         stop(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
                     length(sort(unique(ct_dataframe$CompoundID))), 
                     " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
@@ -439,10 +443,6 @@ ct_plot <- function(ct_dataframe = NA,
     obs_fill_trans_user <- obs_fill_trans
     obs_color_user <- obs_color
     obs_shape_user <- obs_shape
-    
-    # Noting whether this is an enzyme-abundance plot b/c some options change
-    # then.
-    EnzPlot <- "Enzyme" %in% names(ct_dataframe)
     
     # If user had already filtered ct_dataframe to include only the ADAM data
     # they wanted, the subsection_ADAM column might not include the default
