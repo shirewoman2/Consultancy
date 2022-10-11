@@ -207,10 +207,19 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     
     # Adding padding if user requests it
     if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
-        if(pad_y_axis){
-            pad_y_num <-  c(0.02, 0)
+        if(EnzPlot){
+            if(pad_y_axis){
+                pad_y_num <-  c(0.02, 0.1)
+            } else {
+                pad_y_num <- c(0, 0)
+            }
+            
         } else {
-            pad_y_num <- c(0, 0)
+            if(pad_y_axis){
+                pad_y_num <-  c(0.02, 0)
+            } else {
+                pad_y_num <- c(0, 0)
+            }
         }
     } else {
         pad_y_num <- pad_y_axis
