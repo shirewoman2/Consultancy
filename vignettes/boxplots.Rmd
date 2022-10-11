@@ -1,0 +1,74 @@
+---
+title: "Make boxplots to compare data distributions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{boxplots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, echo = FALSE, message=FALSE}
+library(tidyverse)
+library(SimcypConsultancy)
+```
+
+Say you'd like to compare the distribution of AUCs for different age groups. Box-and-whisker plots, a.k.a. boxplots, will do this nicely. We'll make up some dummy data for this example. (You'll probably load data you want to graph for real from a separate Excel or csv file; please talk to a member of the R Working Group if you're uncertain how to do this.)
+
+
+```{r}
+set.seed(206)
+AUCs <- data.frame(AgeGroup = rep(LETTERS[1:5], each = 10),
+                   AUC = c(rnorm(n = 10, mean = 10000, sd = 5000),
+                           rnorm(n = 10, mean = 15000, sd = 5000),
+                           rnorm(n = 10, mean = 20000, sd = 5000),
+                           rnorm(n = 10, mean = 30000, sd = 5000),
+                           rnorm(n = 10, mean = 33000, sd = 5000)))
+```
+
+Let's graph. 
+
+```{r, fig.height = 3}
+graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC)
+```
+
+Since the name of our age group column is R friendly but not *reader* friendly, let's set that with xlabel. Let's also change the colors with color_set and overlay jittered points for the individual observations. 
+
+```{r, fig.height = 3}
+graph_boxplot(AUCs, category_column = AgeGroup,
+              value_column = AUC,
+              xlabel = "Age group category",
+              color_set = "blue-green", 
+              graph_type =  "jittered points")
+```
+
+Perhaps you would like to break up your graph by sex and by metabolizer phenotype. Let's add those columns and then use the "facet" options for graph_boxplot. Let's also show horizontal error bar tops and bottoms. 
+
+```{r, fig.height = 5, fig.width = 5}
+AUCs$Sex <- c("M", "F")
+AUCs$Metabolizer <- sample(c("poor", "extensive"), 10, replace = TRUE)
+
+graph_boxplot(AUCs,
+              category_column = AgeGroup, 
+              value_column = AUC,
+              facet1_column = Sex, 
+              facet2_column = Metabolizer, 
+              xlabel = "Age group category",
+              graph_type = "jittered points, filled boxes",
+              color_set = "rainbow", 
+              include_errorbars = TRUE)
+
+```
+
+If you'd like to save the graph to disk, use the argument "save_graph" to set the file name and the arguments "fig_height" and "fig_width" to set the output graphic file height and width. For example: 
+
+> graph_boxplot(AUCs, category_column = AgeGroup, value_column = AUC, save_graph = "test boxplot.png", fig_height = 5, fig_width = 5 
+
+
+
