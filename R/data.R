@@ -124,6 +124,21 @@
 "PKParameterDefinitions"
 
 
+#' Useful, preformatted PK parameter labels for using on graphs
+#'
+#' PK expressions with special characters or subscripting for labeling graphs.
+#' For example, if you want the y axis of your graph to be "Cmax (ng/mL)" but
+#' have the "max" be a subscript, use, e.g., \code{MyGraph +
+#' ylab(PKexpressions[["Cmax"]])}. Make sure to use the double brackets when
+#' referring to these. Also, there are myriad options for units, so if you'd
+#' like, say, mg/mL instead of ng/mL, you can always call on PKexpressions to
+#' just give you an example of how you might set things up. Run
+#' \code{PKexpressions[["Cmax"]]} and see where you can swap out the "ng/mL".
+#' @format A list of named expressions
+"PKexpressions"
+
+
+
 #' All possible experimental details for \code{\link{extractExpDetails}}
 #' (version for coding purposes)
 #'
