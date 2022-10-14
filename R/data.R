@@ -124,16 +124,20 @@
 "PKParameterDefinitions"
 
 
-#' Useful, preformatted PK parameter labels for using on graphs
+#' Formatted PK parameter labels for use with graphs
 #'
-#' PK expressions with special characters or subscripting for labeling graphs.
-#' For example, if you want the y axis of your graph to be "Cmax (ng/mL)" but
-#' have the "max" be a subscript, use, e.g., \code{MyGraph +
+#' A list of named PK expressions with special characters or subscripting for
+#' labeling graphs. For example, if you want the y axis of your graph to be
+#' "Cmax (ng/mL)" but have the "max" be a subscript, use, e.g., \code{MyGraph +
 #' ylab(PKexpressions[["Cmax"]])}. Make sure to use the double brackets when
 #' referring to these. Also, there are myriad options for units, so if you'd
 #' like, say, mg/mL instead of ng/mL, you can always call on PKexpressions to
 #' just give you an example of how you might set things up. Run
-#' \code{PKexpressions[["Cmax"]]} and see where you can swap out the "ng/mL".
+#' \code{PKexpressions[["Cmax"]]} and see where you can swap out the "ng/mL". A
+#' few tips: \itemize{\item{You can put things in quotes to make them be just
+#' normal text.} \item{Subscript with brackets. Superscript with ^.}
+#' \item{Indicate Greek characters by spelling them out.} \item{Indicate a space
+#' with "~".} \item{See examples with \code{demo(plotmath)}} }
 #' @format A list of named expressions
 "PKexpressions"
 

@@ -44,18 +44,20 @@
 #'   induction", "abc-1a-mdz-10x.xlsx" = "Midazolam with 10-fold higher
 #'   Indmax")} Please see the example section at the bottom of this help file
 #'   for more examples.
-#' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
-#' @param facet_column_x optionally break up the graph horizontally into small
-#'   multiples. The designated column name should be unquoted, e.g.,
-#'   \code{facet_column_x = Dose_sub}
-#' @param facet_column_extra_y optionally break up the graphs along the y axis
+#' @param y_axis_order_secondary optionally break up the graphs along the y axis
 #'   by an additional column other than substrate (for perpetrator graphs) or
 #'   inhibitor 1 (for victim graphs). For example, say your drug of interest is
 #'   a perpetrator and you've administered each of the substrates on different
 #'   days. This will break up the graphs by substrate and, if you specify, e.g.,
-#'   \code{facet_column_extra_y = DoseDay} where "DoseDay" is a column in
+#'   \code{y_axis_order_secondary = DoseDay} where "DoseDay" is a column in
 #'   forest_dataframe listing what day the substrate was dosed, it will also
 #'   break up the graphs by what day the substrate was administered.
+#' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
+#' @param x_axis_label optionally supply a character vector or an expression to
+#'   use for the x axis label
+#' @param facet_column_x optionally break up the graph horizontally into small
+#'   multiples. The designated column name should be unquoted, e.g.,
+#'   \code{facet_column_x = Dose_sub}
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier. This was designed for simulations where the
 #'   substrates or effectors are among the standard options for the simulator,
@@ -66,10 +68,10 @@
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. \emph{Note:} We're still working on the legend position when
-#'   there's something specified for \code{facet_column_extra_y}; choosing that
-#'   option requires us to lay out the graphs differently, and when we do that,
-#'   the legend position doesn't work well for anything other than "none" or
-#'   "right".
+#'   there's something specified for \code{y_axis_order_secondary}; choosing
+#'   that option requires us to lay out the graphs differently, and when we do
+#'   that, the legend position doesn't work well for anything other than "none"
+#'   or "right".
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -121,9 +123,10 @@ forest_plot <- function(forest_dataframe,
                         perp_or_victim, 
                         PKparameters = NA, 
                         y_axis_order = NA, 
+                        y_axis_order_secondary,
                         x_axis_limits = NA, 
+                        x_axis_label = NA,
                         facet_column_x, 
-                        facet_column_extra_y,
                         prettify_compound_names = TRUE, 
                         legend_position = "none", 
                         save_graph = NA,
@@ -344,7 +347,7 @@ forest_plot <- function(forest_dataframe,
     
     # Setting things up for nonstandard evaluation 
     facet_column_x <- rlang::enquo(facet_column_x)
-    facet_column_extra_y <- rlang::enquo(facet_column_extra_y)
+    y_axis_order_secondary <- rlang::enquo(y_axis_order_secondary)
     
     if(as_label(facet_column_x) != "<empty>"){
         forest_dataframe <- forest_dataframe %>%
@@ -383,12 +386,12 @@ forest_plot <- function(forest_dataframe,
         XBreaks <- c(XBreaks, x_axis_limits[2])
     }
     
-    if(as_label(facet_column_extra_y) != "<empty>"){
+    if(as_label(y_axis_order_secondary) != "<empty>"){
         # This is when the user wants to have an additional y axis grouping s/a
         # day of dosing or prandial state or something like that.
         
         forest_dataframe <- forest_dataframe %>%
-            mutate(FCY = {{facet_column_extra_y}})
+            mutate(FCY = {{y_axis_order_secondary}})
         
         G <- list()
         
@@ -415,7 +418,9 @@ forest_plot <- function(forest_dataframe,
                     labs(fill = "Interaction level") +
                     scale_x_log10(breaks = XBreaks) + 
                     coord_cartesian(xlim = x_axis_limits) +
-                    xlab("Geometric Mean Ratio (90% confidence interval)") + 
+                    xlab(ifelse(is.na(x_axis_label), 
+                                "Geometric Mean Ratio (90% confidence interval)", 
+                                x_axis_label)) + 
                     ylab(g) +
                     theme(plot.margin = margin(0, 1, 1, 1),
                           legend.position = legend_position,
@@ -478,7 +483,10 @@ forest_plot <- function(forest_dataframe,
             G +
                 scale_x_log10(breaks = XBreaks) + 
                 coord_cartesian(xlim = x_axis_limits) +
-                xlab("Geometric Mean Ratio (90% confidence interval)") + ylab(NULL) +
+                xlab(ifelse(is.na(x_axis_label), 
+                            "Geometric Mean Ratio (90% confidence interval)", 
+                            x_axis_label)) + 
+                ylab(NULL) +
                 theme(
                     legend.position = legend_position,
                     panel.background = element_rect(fill = "white", color = NA),

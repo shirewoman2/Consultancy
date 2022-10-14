@@ -9,9 +9,10 @@ forest_plot(
   perp_or_victim,
   PKparameters = NA,
   y_axis_order = NA,
+  y_axis_order_secondary,
   x_axis_limits = NA,
+  x_axis_label = NA,
   facet_column_x,
-  facet_column_extra_y,
   prettify_compound_names = TRUE,
   legend_position = "none",
   save_graph = NA,
@@ -61,20 +62,23 @@ induction", "abc-1a-mdz-10x.xlsx" = "Midazolam with 10-fold higher
 Indmax")} Please see the example section at the bottom of this help file
 for more examples.}
 
-\item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
-
-\item{facet_column_x}{optionally break up the graph horizontally into small
-multiples. The designated column name should be unquoted, e.g.,
-\code{facet_column_x = Dose_sub}}
-
-\item{facet_column_extra_y}{optionally break up the graphs along the y axis
+\item{y_axis_order_secondary}{optionally break up the graphs along the y axis
 by an additional column other than substrate (for perpetrator graphs) or
 inhibitor 1 (for victim graphs). For example, say your drug of interest is
 a perpetrator and you've administered each of the substrates on different
 days. This will break up the graphs by substrate and, if you specify, e.g.,
-\code{facet_column_extra_y = DoseDay} where "DoseDay" is a column in
+\code{y_axis_order_secondary = DoseDay} where "DoseDay" is a column in
 forest_dataframe listing what day the substrate was dosed, it will also
 break up the graphs by what day the substrate was administered.}
+
+\item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
+
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the x axis label}
+
+\item{facet_column_x}{optionally break up the graph horizontally into small
+multiples. The designated column name should be unquoted, e.g.,
+\code{facet_column_x = Dose_sub}}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier. This was designed for simulations where the
@@ -87,10 +91,10 @@ become "midazolam".}
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all. \emph{Note:} We're still working on the legend position when
-there's something specified for \code{facet_column_extra_y}; choosing that
-option requires us to lay out the graphs differently, and when we do that,
-the legend position doesn't work well for anything other than "none" or
-"right".}
+there's something specified for \code{y_axis_order_secondary}; choosing
+that option requires us to lay out the graphs differently, and when we do
+that, the legend position doesn't work well for anything other than "none"
+or "right".}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
