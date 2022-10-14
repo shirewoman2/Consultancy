@@ -720,11 +720,14 @@ ct_plot_overlay <- function(ct_dataframe,
     # Not mapping observed data to a column if File was originally NA for all
     # and that's what colorBy_column is or that's what linetype_column is. Also
     # not mapping if user has specified obs_color.
-    MapObsData <- ifelse(
-        (nrow(obs_data) > 0 && 
-             "File" %in% c(as_label(colorBy_column), as_label(linetype_column)) & 
-             all(is.na(obs_data$File))) | complete.cases(obs_color_user), 
-        FALSE, TRUE)
+    MapObsFile_color <- nrow(obs_data) > 0 && 
+        as_label(colorBy_column) == "File" & all(is.na(obs_data$File)) == FALSE
+    MapObsFile_line <- nrow(obs_data) > 0 && 
+        as_label(linetype_column) == "File" & all(is.na(obs_data$File)) == FALSE
+    MapObsData <- ifelse(nrow(obs_data) > 0 &&
+         ("File" %in% c(as_label(colorBy_column), as_label(linetype_column)) &
+              all(is.na(obs_data$File))) | complete.cases(obs_color_user),
+         FALSE, TRUE)
     
     # Setting this up so that observed data will be shown for all Files
     if(nrow(obs_data) > 0 && 
@@ -737,7 +740,18 @@ ct_plot_overlay <- function(ct_dataframe,
         suppressMessages(
             obs_data <- obs_data %>% select(-File) %>% 
                 left_join(ToAdd) %>% 
-                mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor)))
+                mutate(Group = paste(File, Trial, Tissue, CompoundID,
+                                     Compound, Inhibitor)))
+        
+        if(as_label(colorBy_column) == "File"){
+            obs_data <- obs_data %>% 
+                mutate(colorBy_column = File)
+        }
+        
+        if(as_label(linetype_column) == "File"){
+            obs_data <- obs_data %>% 
+                mutate(linetype_column = File)
+        }
     } 
     
     # Dealing with the fact that the observed data will list the inhibitor as
@@ -858,20 +872,23 @@ ct_plot_overlay <- function(ct_dataframe,
                 call. = FALSE)
     }
     
-    # Need to check whether linetype or colorBy column was File b/c then we also
-    # need to set linetype or colorBy column in obs data. Otherwise, it will be
-    # NA for all obs data and we'll get no points on the graph.
-    if(str_detect(AES, "linetype") &&
-       AESCols["linetype"] == "File"){
-        obs_data <- obs_data %>% 
-            mutate(linetype_column = File)
-    }
     
-    if(str_detect(AES, "color") &&
-       AESCols["color"] == "File"){
-        obs_data <- obs_data %>% 
-            mutate(colorBy_column = File)
-    }
+    # RETURN TO THIS
+    # # Need to check whether linetype or colorBy column was File b/c then we also
+    # # need to set linetype or colorBy column in obs data. However, if there was
+    # # only one observed data file for all the simulated data, then we do NOT
+    # # want to change things b/c they're already set up correctly at this point.
+    # if(str_detect(AES, "linetype") &&
+    #    AESCols["linetype"] == "File" & MapObsFile_line == FALSE){
+    #     obs_data <- obs_data %>% 
+    #         mutate(linetype_column = File)
+    # }
+    # 
+    # if(str_detect(AES, "color") &&
+    #    AESCols["color"] == "File" & MapObsFile_color == FALSE){
+    #     obs_data <- obs_data %>% 
+    #         mutate(colorBy_column = File)
+    # }
     
     # Checking whether small intestine and colon abundances are identical. 
     if(EnzPlot){
@@ -1034,7 +1051,6 @@ call. = FALSE)
         sim_dataframe$colorBy_column <- as.character(sim_dataframe$colorBy_column)
         obs_data$colorBy_column <- as.character(obs_data$colorBy_column)
     }
-    
     
     # Taking care of linetypes and, along with that, obs_shape as needed
     if(as_label(linetype_column) != "<empty>"){
@@ -1212,19 +1228,11 @@ call. = FALSE)
             LegCheck <- FALSE
         }
         
+        # Need to assign File to correct obs data. At this point, obs_data WILL
+        # have values for File if the user wanted the observed data to be
+        # assigned to ALL the sim files. 
         if(all(is.na(obs_data$File))){
-            if(all(is.na(obs_to_sim_assignment))){
-                # If there are no values assigned for File and the user did not
-                # specify anything for obs_to_sim_assignment, then make all the
-                # observed data go with all the simulated data.
-                FileAssign <- expand_grid(ObsFile = obs_data %>% pull(ObsFile) %>% unique(), 
-                                          File = unique(sim_dataframe$File)) %>% 
-                    filter(complete.cases(File))
-                
-                suppressMessages(
-                    obs_data <- FileAssign %>% full_join(obs_data %>% select(-File))
-                )
-            } else {
+            if(any(complete.cases(obs_to_sim_assignment))){
                 # If the user *did* specify values for obs_data_assignment, then use
                 # those for File.
                 
@@ -1407,8 +1415,13 @@ call. = FALSE)
     
     if(AES %in% c("color", "color-linetype")){
         
-        NumColorsNeeded <- bind_rows(sim_dataframe, obs_data) %>% 
-            pull(colorBy_column) %>% unique() %>% length()
+        NumColorsNeeded <-
+            ifelse(MapObsFile_color,
+                   bind_rows(sim_dataframe, obs_data) %>% 
+                       pull(colorBy_column) %>% unique() %>% length(),
+                   sim_dataframe %>% 
+                       pull(colorBy_column) %>% unique() %>% length())
+        
         
         # print(NumColorsNeeded)
         
@@ -1488,9 +1501,15 @@ call. = FALSE)
                 }
             }
             
-            names(MyColors) <- unique(bind_rows(sim_dataframe, obs_data) %>% 
-                                          arrange(colorBy_column) %>% 
-                                          pull(colorBy_column))
+            if(MapObsFile_color){
+                names(MyColors) <- unique(bind_rows(sim_dataframe, obs_data) %>% 
+                                              arrange(colorBy_column) %>% 
+                                              pull(colorBy_column))
+            } else {
+                names(MyColors) <- unique(sim_dataframe %>% 
+                                              arrange(colorBy_column) %>% 
+                                              pull(colorBy_column))
+            }
             
             suppressWarnings(
                 A <-  A + scale_color_manual(values = MyColors) +
