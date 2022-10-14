@@ -1505,7 +1505,11 @@ call. = FALSE)
                 names(MyColors) <- unique(bind_rows(sim_dataframe, obs_data) %>% 
                                               arrange(colorBy_column) %>% 
                                               pull(colorBy_column))
-            } else {
+            } else if(length(color_set) == 1){
+                
+                # This is when the colors are NOT set by the observed file AND
+                # ALSO the user hasn't supplied a named character vector for how
+                # to assign the colors. 
                 names(MyColors) <- unique(sim_dataframe %>% 
                                               arrange(colorBy_column) %>% 
                                               pull(colorBy_column))
