@@ -326,7 +326,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         # This is when column names must include some info about which PK
         # parameters were used. I'm not sure this can be easily prettified, so
         # not even trying for now.
-        MyPKResults[, c("Statistic", PKparam_split$V1)]
+        MyPKResults <- MyPKResults[, c("Statistic", PKparam_split$V1)]
         names(MyPKResults) <- c("Statistic", PKparam_split$OrigPK)
         
     }
