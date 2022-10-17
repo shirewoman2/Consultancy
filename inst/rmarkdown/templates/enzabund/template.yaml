@@ -1,0 +1,4 @@
+name: EnzAbund
+description: >
+   Optional enzyme-abundance graph
+create_dir: FALSE

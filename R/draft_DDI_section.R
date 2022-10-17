@@ -217,6 +217,10 @@
 #' @param clin_study_name the name of the clinical study for any observed data;
 #'   this only shows up in the text describing the table and graph. Any quoted
 #'   value is fine here.
+#' @param include_enz_plot TRUE or FALSE (default) for whether to include a
+#'   graph of enzyme abundance data
+#' @param enzyme the enzyme whose abundance should be shown in an
+#'   enzyme-abundance plot, if one is included
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in legend entries and in any Word output files.
 #'   This was designed for simulations where the substrate and any metabolites,
@@ -253,6 +257,9 @@ draft_DDI_section <- function(sim_data_file,
                               fontsize = 11,
                               mean_type_PK = "geometric",
                               mean_type_graph = "arithmetic",
+                              include_enz_plot = FALSE,
+                              sim_enz_dataframe = NA,
+                              enzyme = "CYP3A4",
                               
                               clin_study_name = "XXX",
                               prettify_compound_names = TRUE,
@@ -296,7 +303,7 @@ draft_DDI_section <- function(sim_data_file,
         
     if(class(ct_dataframe) != "logical" && 
        nrow(ct_dataframe %>% filter(CompoundID == "inhibitor 1")) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows with inhibitor 1 data.", 
+        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows with inhibitor 1 concentration-time data, and we'll need that.", 
              call. = FALSE)
     }
     
@@ -306,6 +313,7 @@ draft_DDI_section <- function(sim_data_file,
     
     # main body of function -----------------------------------------------
     
+    ## exp details -----------------------------------------------------
     # If the user did not supply experimental details, extract them.
     if(class(exp_detail_data) == "logical"){
         exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all")
@@ -343,7 +351,7 @@ draft_DDI_section <- function(sim_data_file,
     # Checking for parameters we'll need in exp_detail_data
     if(all(c("DoseRoute_sub", "Age_min", "Regimen_sub") %in%
            names(exp_detail_data)) == FALSE){
-        stop("It appears that, when you generated `exp_detail_data`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. Please re-extract the simulation experimental details with extractExpDetails or extractExpDetails_mult with `exp_details = 'all'` and try again.", 
+        stop("It appears that, when you generated `exp_detail_data`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. Please re-extract the simulation experimental details using extractExpDetails or extractExpDetails_mult and set `exp_details = 'all'` and then try running draft_DDI_section again.", 
              call. = FALSE)
     }
     
@@ -352,6 +360,8 @@ draft_DDI_section <- function(sim_data_file,
              call. = FALSE)
     }
     
+    
+    ## conc time -----------------------------------------------------------
     # If user did not provide extracted conc time data, extract them.
     if(class(ct_dataframe) == "logical"){
         ct_dataframe <- extractConcTime_mult(sim_data_files = sim_data_file, 
@@ -363,7 +373,14 @@ draft_DDI_section <- function(sim_data_file,
     ct_dataframe <- ct_dataframe %>%
         filter(File == sim_data_file & Tissue == tissue)
     
-    ## Saving ----------------------------------------------------------
+    ## enz abund -----------------------------------------------------------
+    if(include_enz_plot & class(sim_enz_dataframe)[1] == "logical"){
+        sim_enz_dataframe <- extractEnzAbund(sim_data_file = sim_data_file,
+                                             enzyme = enzyme, 
+                                             tissue = "liver")
+    }
+    
+    ## knitting ----------------------------------------------------------
     if(is.na(save_draft)){
         save_draft <- paste0("Draft DDI report section for ",
                              sub("xlsx", "docx", basename(sim_data_file)))
@@ -412,7 +429,6 @@ draft_DDI_section <- function(sim_data_file,
     }
     
     save_draft <- basename(save_draft)
-    
     
     rmarkdown::render(system.file("rmarkdown/templates/draftddisections/skeleton/skeleton.Rmd",
                                   package="SimcypConsultancy"), 

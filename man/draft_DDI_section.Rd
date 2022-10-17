@@ -15,6 +15,9 @@ draft_DDI_section(
   fontsize = 11,
   mean_type_PK = "geometric",
   mean_type_graph = "arithmetic",
+  include_enz_plot = FALSE,
+  sim_enz_dataframe = NA,
+  enzyme = "CYP3A4",
   clin_study_name = "XXX",
   prettify_compound_names = TRUE,
   victim_sim = FALSE,
@@ -113,6 +116,12 @@ output PK summary table? Options are "arithmetic" or "geometric" (default).}
 "median" for median concentrations in the concentration-time graph. If that
 option was not included in the output, you'll get a warning and the graph
 will include one that was.}
+
+\item{include_enz_plot}{TRUE or FALSE (default) for whether to include a
+graph of enzyme abundance data}
+
+\item{enzyme}{the enzyme whose abundance should be shown in an
+enzyme-abundance plot, if one is included}
 
 \item{clin_study_name}{the name of the clinical study for any observed data;
 this only shows up in the text describing the table and graph. Any quoted
