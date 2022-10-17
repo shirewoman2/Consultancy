@@ -2,8 +2,12 @@ Figure XXX. Simulated hepatic `r enzyme` levels during the dosing of `r MySubstr
 
 ```{r EnzymeAbundancePlot, fig.width = 5, fig.height = 3, echo=FALSE}
 
-suppressMessages(enz_plot(sim_enz_dataframe = sim_enz_dataframe))
-
+suppressMessages(enz_plot(sim_enz_dataframe = sim_enz_dataframe, 
+                          figure_type = figure_type_enz,
+                          time_range = time_range_enz,
+                          x_axis_interval = x_axis_interval_enz,
+                          y_axis_label = y_axis_label_enz,
+                          linear_or_log = linear_or_log_enz))
 
 ```
 

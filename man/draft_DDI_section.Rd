@@ -11,13 +11,13 @@ draft_DDI_section(
   ct_dataframe = NA,
   PKparameters = NA,
   observed_PK = NA,
+  includeCV = FALSE,
+  includeConfInt = TRUE,
+  includeTrialMeans = FALSE,
   tissue = "plasma",
   fontsize = 11,
   mean_type_PK = "geometric",
   mean_type_graph = "arithmetic",
-  include_enz_plot = FALSE,
-  sim_enz_dataframe = NA,
-  enzyme = "CYP3A4",
   clin_study_name = "XXX",
   prettify_compound_names = TRUE,
   victim_sim = FALSE,
@@ -35,6 +35,15 @@ draft_DDI_section(
   y_axis_label_inhib = NA,
   y_axis_limits_log_inhib = NA,
   linear_or_log_inhib = "linear",
+  include_enz_plot = FALSE,
+  sim_enz_dataframe = NA,
+  enzyme = "CYP3A4",
+  figure_type_enz = "means only",
+  time_range_enz = NA,
+  x_axis_interval_enz = NA,
+  y_axis_label_enz = NA,
+  legend_label_enz = NA,
+  linear_or_log_enz = "linear",
   save_draft = NA
 )
 }
@@ -104,6 +113,20 @@ output table to include the observed data CV for any of the parameters, add
 "_CV" to the end of the parameter name, e.g., "AUCinf_dose1_CV". Please see
 the "Example" section of this help file for examples of how to set this up.}
 
+\item{includeCV}{TRUE or FALSE (default) for whether to include rows for CV
+in the table}
+
+\item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
+confidence intervals were included in the simulator output file. Note that
+the confidence intervals are geometric since that's what the simulator
+outputs (see an AUC tab and the summary statistics; these values are the
+ones for, e.g., "90\% confidence interval around the geometric mean(lower
+limit)").}
+
+\item{includeTrialMeans}{TRUE or FALSE (default) for whether to include the
+range of trial means for a given parameter. Note: This is calculated from
+individual values rather than being pulled directly from the output.}
+
 \item{tissue}{the tissue to use for extracting PK data and for graphing.
 Options are "plasma" (default) or "blood".}
 
@@ -116,12 +139,6 @@ output PK summary table? Options are "arithmetic" or "geometric" (default).}
 "median" for median concentrations in the concentration-time graph. If that
 option was not included in the output, you'll get a warning and the graph
 will include one that was.}
-
-\item{include_enz_plot}{TRUE or FALSE (default) for whether to include a
-graph of enzyme abundance data}
-
-\item{enzyme}{the enzyme whose abundance should be shown in an
-enzyme-abundance plot, if one is included}
 
 \item{clin_study_name}{the name of the clinical study for any observed data;
 this only shows up in the text describing the table and graph. Any quoted
@@ -296,6 +313,39 @@ automatically selected.}
 
 \item{linear_or_log_inhib}{the type of graph to be returned. Options are the
 same as for the substrate plot.}
+
+\item{include_enz_plot}{TRUE or FALSE (default) for whether to include a
+graph of enzyme abundance data}
+
+\item{sim_enz_dataframe}{the data.frame of enzyme abundance data obtained
+from running the function \code{\link{extractEnzAbund}}. Not quoted.}
+
+\item{enzyme}{the enzyme whose abundance should be shown in an
+enzyme-abundance plot, if one is included}
+
+\item{figure_type_enz}{type of figure to plot for the enzyme-abundance graph.
+Options are the same as for the substrate.}
+
+\item{time_range_enz}{time range to show relative to the start of the
+simulation for the graph of the enzyme abundance. Options are the same as
+for the substrate.}
+
+\item{x_axis_interval_enz}{optionally set the x-axis major tick-mark interval
+for the graph of the enzyme abundance Acceptable input: any number or leave
+as NA to accept default values, which are generally reasonable guesses as
+to aesthetically pleasing and PK-relevant intervals.}
+
+\item{y_axis_label_enz}{optionally supply a character vector or an expression
+to use for the y axis label for the graph of the enzyme abundance}
+
+\item{legend_label_enz}{optionally indicate on the legend of the graph of the
+enzyme abundance whether the effector is an inhibitor, inducer, activator,
+or suppressor. Input will be used as the label in the legend for the line
+style and the shape. If left as the default NA when a legend is included
+and an effector is present, the label in the legend will be "Inhibitor".}
+
+\item{linear_or_log_enz}{the type of enzyme-abundance graph to be returned.
+Options are the same as for the substrate plot.}
 
 \item{save_draft}{the name of the Word file to use for saving the output. If
 left as NA, this will be set to "Draft DDI report section for XXXX.docx"
