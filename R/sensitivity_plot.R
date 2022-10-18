@@ -217,14 +217,9 @@ sensitivity_plot <- function(SA_file,
     }
     
     G <- G + 
-        theme(panel.background = element_rect(fill="white", color=NA),
-              legend.key = element_rect(fill = "white"),
-              axis.ticks = element_line(color = "black"),
-              axis.text = element_text(color = "black"),
-              axis.title = element_text(color = "black"), # Note that this is NOT bold b/c can't make expressions bold and you could thus end up with 1 axis title bold and 1 regular.
-              axis.line.x.bottom = element_line(color = "black"),
-              axis.line.y.left = element_line(color = "black"))
-    
+        theme_consultancy() +
+        theme(axis.title = element_text(color = "black")) # Note that this is NOT bold b/c can't make expressions bold and you could thus end up with 1 axis title bold and 1 regular.
+              
     if(complete.cases(title)){
         G <- G + ggtitle(title)
     }

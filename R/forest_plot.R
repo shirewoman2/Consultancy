@@ -487,11 +487,11 @@ forest_plot <- function(forest_dataframe,
                             "Geometric Mean Ratio (90% confidence interval)", 
                             x_axis_label)) + 
                 ylab(NULL) +
+                theme_consultancy() +
                 theme(
-                    legend.position = legend_position,
-                    panel.background = element_rect(fill = "white", color = NA),
-                    plot.background = element_rect(fill = "white", color = NA),
-                    strip.background = element_rect(color=NA, fill="white"),
+                    axis.line.x.bottom = element_blank(), 
+                    axis.line.y.left = element_blank(),
+                    legend.position = legend_position, ### KEEP THIS
                     strip.text.y.left = element_text(angle = 0),
                     strip.placement = "outside",
                     panel.border = element_rect(colour = "grey70", fill = NA),

@@ -1302,15 +1302,8 @@ call. = FALSE)
     A <-  A +
         xlab(xlab) +
         ylab(ylab) +
-        theme(panel.background = element_rect(fill = "white", color = NA),
-              panel.border = element_rect(color = "black", fill = NA),
-              strip.background = element_rect(fill = "white"),
-              legend.key = element_rect(fill = "white"),
-              axis.ticks = element_line(color = "black"),
-              axis.text = element_text(color = "black"),
-              axis.title = element_text(color = "black", face = "bold"),
-              axis.line.y = element_line(color = "black"),
-              axis.line.x.bottom = element_line(color = "black"))
+        theme_consultancy() +
+        theme(panel.border = element_rect(color = "black", fill = NA)) # KEEP THIS
     
     # Error catching
     if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 

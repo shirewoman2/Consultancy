@@ -998,13 +998,7 @@ ct_plot <- function(ct_dataframe = NA,
                             legend_label, "Inhibitor"),
              fill = ifelse(complete.cases(legend_label), 
                            legend_label, "Inhibitor")) +
-        theme(panel.background = element_rect(fill="white", color=NA),
-              legend.key = element_rect(fill = "white"),
-              axis.ticks = element_line(color = "black"),
-              axis.text = element_text(color = "black"),
-              axis.title = element_text(color = "black", face = "bold"),
-              axis.line.x.bottom = element_line(color = "black"),
-              axis.line.y.left = element_line(color = "black"))
+        theme_consultancy()
     
     
     # If the user didn't want the legend or if the graph is of an effector,

@@ -200,19 +200,13 @@ graph_boxplot <- function(DF,
     }
     
     # Adding some aesthetic preferences ------------------------------------
-    G <- G + theme(
-        panel.background = element_rect(fill="white", color=NA),
-        panel.grid.minor.y = element_line(color = NA),
-        panel.grid.minor.x = element_line(color = NA),
-        panel.grid.major = element_line(colour = NA),
-        plot.background = element_rect(fill="white", colour=NA),
-        panel.border = element_rect(color="black", fill=NA),
-        strip.background = element_rect(color=NA, fill="white"),
-        axis.text = element_text(color = "black", size = 12),
-        axis.title = element_text(color = "black",
-                                  face = "bold", size = 14),
-        legend.background = element_rect(color=NA, fill=NA),
-        legend.key = element_rect(color=NA, fill=NA))
+    G <- G +
+        theme_consultancy() +
+        theme(
+            panel.grid.minor.y = element_line(color = NA),
+            panel.grid.minor.x = element_line(color = NA),
+            panel.grid.major = element_line(colour = NA),
+            panel.border = element_rect(color="black", fill=NA))
     
     # Adding options for colors
     NumColors <- length(unique(DF %>% pull(!!category_column)))
