@@ -389,6 +389,22 @@ ct_plot <- function(ct_dataframe = NA,
     # then.
     EnzPlot <- "Enzyme" %in% names(ct_dataframe)
     
+    # Checking whether user tried to include obs data directly from simulator
+    # output for a simulation that included anything other than substrate in
+    # plasma.
+    if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
+        return(
+            ggplot(data.frame(Problem = 1, DataFail = 1), 
+                   aes(y = Problem, x = DataFail)) +
+                xlab("Please check the help file for extractConcTime") +
+                theme(axis.title.x = element_text(size = 14, color = "red", 
+                                                  face = "italic")) +
+                annotate(geom = "text", x = 1, y = 1, size = 8,
+                         color = "red", 
+                         label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+        )
+    }
+    
     if(EnzPlot == FALSE && length(sort(unique(ct_dataframe$CompoundID))) > 1){
         stop(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
                     length(sort(unique(ct_dataframe$CompoundID))), 
