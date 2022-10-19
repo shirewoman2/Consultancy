@@ -15,18 +15,26 @@
 #'   ones you requested when you ran the sensitivity analysis. Not case
 #'   sensitive.
 #' @param ind_var_label optionally specify what text use for labeling the
-#'   independent variable. If left as NA, R will find the value listed next to
-#'   "Run Number" on the "ASA Summary" tab, which may be something not terribly
-#'   pretty like "Fugut Value (Sub) (No Units)", and attempt to prettify it. If
-#'   we haven't set things up to prettify that value, which is likely as we
-#'   haven't used this function with very many sensitivity-analysis scenarios
-#'   yet, the value will be unchanged. (If you have an independent variable
-#'   you'd like to add to our list, email Laura Shireman!)
+#'   independent variable (the x axis). If left as NA, R will find the value
+#'   listed next to "Run Number" on the "ASA Summary" tab, which may be
+#'   something not terribly pretty like "Fugut Value (Sub) (No Units)", and
+#'   attempt to prettify it. If we haven't set things up to prettify that value,
+#'   which is likely as we haven't used this function with very many
+#'   sensitivity-analysis scenarios yet, the value will be unchanged. (If you
+#'   have an independent variable you'd like to add to our list, email Laura
+#'   Shireman!)
 #' @param target_DV optionally specify a target value for the dependent
 #'   variable, which will add a horizontal red dotted line to the graph where
 #'   the target lies.
 #' @param linear_or_log make the y axis "linear" (default) or "log" for plasma
 #'   concentration-time plots (this is ignored for all other plots)
+#' @param y_axis_limits_lin optionally set the Y axis limits for the linear
+#'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
+#'   limits for the linear plot will be automatically selected.
+#' @param y_axis_limits_log optionally set the Y axis limits for the semi-log
+#'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
+#'   respectively, to a round number. If left as the default NA, the Y axis
+#'   limits for the semi-log plot will be automatically selected.
 #' @param title (optional) a title to include on your graph in quotes
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -58,6 +66,8 @@ sensitivity_plot <- function(SA_file,
                              ind_var_label = NA,
                              target_DV = NA,
                              linear_or_log = "linear",
+                             y_axis_limits_lin = NA,
+                             y_axis_limits_log = NA,
                              title = NA,
                              save_graph = NA,
                              fig_height = 4,
@@ -203,8 +213,15 @@ sensitivity_plot <- function(SA_file,
             ylab("Concentration (ng/mL)")
         
         if(linear_or_log != "linear"){
-            G <- G + 
-                scale_y_log10()
+            if(all(complete.cases(y_axis_limits_log))){
+                G <- G + scale_y_log10(limits = y_axis_limits_log)
+            } else {
+                G <- G + scale_y_log10()
+            }
+        } else {
+            if(all(complete.cases(y_axis_limits_lin))){
+                G <- G + scale_y_continuous(limits = y_axis_limits_lin)
+            }
         }
         
         
@@ -214,12 +231,16 @@ sensitivity_plot <- function(SA_file,
             geom_point() + geom_line() + 
             ylab(PrettyDV[[dependent_variable]]) +
             xlab(ind_var_label)
+        
+        if(all(complete.cases(y_axis_limits_lin))){
+            G <- G + scale_y_continuous(limits = y_axis_limits_lin)
+        }
     }
     
     G <- G + 
         theme_consultancy() +
         theme(axis.title = element_text(color = "black")) # Note that this is NOT bold b/c can't make expressions bold and you could thus end up with 1 axis title bold and 1 regular.
-              
+    
     if(complete.cases(title)){
         G <- G + ggtitle(title)
     }
