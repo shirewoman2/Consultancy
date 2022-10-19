@@ -208,6 +208,12 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                                "DoseInt_sub", "DoseInt_inhib")), 
                               .fns = as.character))
         }
+        
+        # Also then need to make these character for existing_exp_details, too. 
+        existing_exp_details <- existing_exp_details %>% 
+            mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
+                                           "DoseInt_sub", "DoseInt_inhib")), 
+                          .fns = as.character))
     }
     
     Out <- bind_rows(MyDeets)
