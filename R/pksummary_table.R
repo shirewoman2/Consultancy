@@ -1213,6 +1213,11 @@ pksummary_table <- function(sim_data_file = NA,
             MyPKResults <- MyPKResults %>% 
                 mutate(Statistic = sub("Simulated", 
                                        paste("Simulated", MeanType, "mean"), Statistic))
+            WarningDF <- data.frame(Col1 = "WARNING:",
+                                    Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")
+            names(WarningDF) <- names(MyPKResults)[1:2]
+            
+            MyPKResults <- bind_rows(MyPKResults, WarningDF)
             write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
         }
     }
