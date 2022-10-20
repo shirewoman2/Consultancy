@@ -408,8 +408,6 @@ annotateDetails <- function(Deets,
                 filter(Detail %in%
                            c("Substrate", "PrimaryMetabolite1", 
                              "PrimaryMetabolite2", "SecondaryMetabolite", 
-                             "Inhibitor1", "Inhibitor2", 
-                             "Inhibitor1Metabolite",
                              AllExpDetails %>% filter(complete.cases(CDSInputMatch)) %>%
                                  pull(Detail)) | SimulatorSection %in%
                            c("Elimination", "Interaction", "Transporters")) %>%
@@ -435,8 +433,8 @@ annotateDetails <- function(Deets,
                 # correct order; I'm not sure of a more concise way to do this
                 # that will still accomplish what I want. -LSh
                 arrange(CompoundID, Detail) %>% 
-                mutate(Detail = factor(Detail, levels = unique(Detail)))
-            filter(complete.cases(Value))
+                mutate(Detail = factor(Detail, levels = unique(Detail))) %>% 
+                filter(complete.cases(Value))
             
         } else if(str_detect(tolower(detail_set), "summary")){
             Out <- Out %>% filter(Sheet == "Summary")
