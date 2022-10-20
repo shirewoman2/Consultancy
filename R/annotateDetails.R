@@ -184,12 +184,15 @@ annotateDetails <- function(Deets,
     
     if(PrevAnnotated){
         
+        FileOrder <- names(Deets)[str_detect(names(Deets), "xlsx")]
+        
         CompoundNames <- Deets %>% 
             select(Compound, CompoundID, matches("xlsx$")) %>% 
             pivot_longer(cols = -c(Compound, CompoundID),
                          names_to = "File", values_to = "Value") %>%
             filter(complete.cases(Value) & complete.cases(Compound)) %>% 
-            select(File, Compound, CompoundID) %>% unique()
+            select(File, Compound, CompoundID) %>% unique() %>% 
+            mutate(File = factor(File, levels = FileOrder))
         
         # This is when Deets has been annotated.
         # Ironically, need to de-annotate here to make this work well
@@ -209,12 +212,14 @@ annotateDetails <- function(Deets,
             # is a risk that we'll lose some NA values that should be included.
             # I think that's an acceptable risk. - LSh
             filter(complete.cases(Value)) %>% 
-            pivot_wider(names_from = Detail, values_from = Value)
-        
-        
+            pivot_wider(names_from = Detail, values_from = Value) %>% 
+            mutate(File = factor(File, levels = FileOrder))
         
     } else if("File" %in% names(Deets) == FALSE){
         Deets$File <- paste("unknown file", 1:nrow(Deets))
+        FileOrder <- Deets$File
+        Deets <- Deets %>% 
+            mutate(File = factor(File, levels = FileOrder))
     }
     
     Out <- Deets %>% 
@@ -251,6 +256,7 @@ annotateDetails <- function(Deets,
     
     suppressMessages(
         Out <- Out %>% 
+            arrange(File) %>% 
             left_join(ExpDetailDefinitions, by = c("Detail", "CompoundID")) %>% 
             # Finding some artifacts from row binding output from both of
             # extractExpDetails and extractExpDetails_mult. I think this should
@@ -390,48 +396,86 @@ annotateDetails <- function(Deets,
         
         if(tolower(detail_set) == "simcyp inputs"){
             
+            CDSdetails <- c("MW", "logP", "CompoundType", "pKa1", "pKa2",
+                            "BPratio", "fu", "BindingProtein", "Abs_model",
+                            "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
+                            "Qgut", "fu_gut", "ka", "fa", "tlag",
+                            "ModelType", "VssPredMeth", "Vss_input",
+                            "kp_scalar", "kin_sac", "kout_sac",
+                            "Vsac", "CLint", "CLrenal")
+            
             Out <- Out %>%
                 filter(Detail %in%
-                           c("Substrate",
-                             paste0(c("MW", "logP", "CompoundType", "pKa1", "pKa2",
-                                      "BPratio", "fu", "Abs_model",
-                                      "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
-                                      "Qgut", "fu_gut", "ka", "fa", "tlag",
-                                      "ModelType", "VssPredMeth", "Vss_input",
-                                      "kp_scalar", "kin_sac", "kout_sac",
-                                      "Vsac", "CLint", "CLrenal"),
-                                    "_sub")) |
-                           SimulatorSection %in% c("Elimination", "Interaction", "Transporters")) %>%
-                mutate(Detail = factor(Detail,
-                                       levels = unique(c("Substrate",
-                                                         paste0(c("MW", "logP", "CompoundType", "pKa1", "pKa2",
-                                                                  "BPratio", "fu", "Abs_model",
-                                                                  "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
-                                                                  "Qgut", "fu_gut", "ka", "fa", "tlag",
-                                                                  "ModelType", "VssPredMeth", "Vss_input",
-                                                                  "kp_scalar", "kin_sac", "kout_sac",
-                                                                  "Vsac", "CLint", "CLrenal"),
-                                                                "_sub"),
-                                                         unique(Out$Detail))))) %>%
-                arrange(Detail) %>% 
+                           c("Substrate", "PrimaryMetabolite1", 
+                             "PrimaryMetabolite2", "SecondaryMetabolite", 
+                             AllExpDetails %>% filter(complete.cases(CDSInputMatch)) %>%
+                                 pull(Detail)) | SimulatorSection %in%
+                           c("Elimination", "Interaction", "Transporters")) %>%
+                mutate(CompoundID = factor(CompoundID, 
+                                           levels = c("Substrate", "PrimaryMetabolite1", 
+                                                      "PrimaryMetabolite2", "SecondaryMetabolite", 
+                                                      "Inhibitor1", "Inhibitor2", 
+                                                      "Inhibitor1Metabolite"))) %>% 
+                arrange(CompoundID) %>% 
+                mutate(Detail = factor(
+                    Detail,
+                    levels = unique(c("Substrate", "PrimaryMetabolite1", 
+                                      "PrimaryMetabolite2", "SecondaryMetabolite", 
+                                      "Inhibitor1", "Inhibitor2", 
+                                      "Inhibitor1Metabolite", 
+                                      paste0(rep(CDSdetails, 7), 
+                                             rep(c("_sub", "_met1", "_met2", 
+                                                   "_secmet", "_inhib", 
+                                                   "_inhib2", "_inhib1met"), 
+                                                 each = length(CDSdetails))),
+                                      unique(Out$Detail))))) %>%
+                # Yes, this is taking multiple steps to get the factors in the
+                # correct order; I'm not sure of a more concise way to do this
+                # that will still accomplish what I want. -LSh
+                arrange(CompoundID, Detail) %>% 
+                mutate(Detail = factor(Detail, levels = unique(Detail))) %>% 
                 filter(complete.cases(Value))
             
-            # Removing unnecessary compounds.
-            if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib2")) %>%
-                         pull(Value)))){
-                Out <- Out %>% filter(!str_detect(Detail, "_inhib2|Inhibitor2"))
-            }
-            
-            if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib1")) %>%
-                         pull(Value)))){
-                Out <- Out %>% filter(!str_detect(Detail, "_inhib1|Inhibitor1"))
-            }
         } else if(str_detect(tolower(detail_set), "summary")){
             Out <- Out %>% filter(Sheet == "Summary")
+            
         } else if(str_detect(tolower(detail_set), "input")){
             Out <- Out %>% filter(Sheet == "Input Sheet")
+            
         } else if(str_detect(tolower(detail_set), "population")){
             Out <- Out %>% filter(Sheet == "population")
+            
+        }
+        
+        # Removing unnecessary compounds.
+        if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib$")) %>%
+                     pull(Value)))){
+            Out <- Out %>% filter(!str_detect(Detail, "_inhib$|Inhibitor1$"))
+        }
+        
+        if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib2")) %>%
+                     pull(Value)))){
+            Out <- Out %>% filter(!str_detect(Detail, "_inhib2|Inhibitor2"))
+        }
+        
+        if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib1met")) %>%
+                     pull(Value)))){
+            Out <- Out %>% filter(!str_detect(Detail, "_inhib1met|Inhibitor1Metabolite"))
+        }
+        
+        if(all(is.na(Out %>% filter(str_detect(Detail, "_met1")) %>%
+                     pull(Value)))){
+            Out <- Out %>% filter(!str_detect(Detail, "_met1|PrimaryMetabolite1"))
+        }
+        
+        if(all(is.na(Out %>% filter(str_detect(Detail, "_met2")) %>%
+                     pull(Value)))){
+            Out <- Out %>% filter(!str_detect(Detail, "_met2|PrimaryMetabolite2"))
+        }
+        
+        if(all(is.na(Out %>% filter(str_detect(Detail, "_secmet")) %>%
+                     pull(Value)))){
+            Out <- Out %>% filter(!str_detect(Detail, "_secmet|SecondaryMetabolite"))
         }
     }
     

@@ -33,9 +33,9 @@
 #'   \item{a vector of any combination of specific, individual parameters, each
 #'   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
 #'   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
-#'   parameters to extract, enter \code{data(PKParameterDefinitions);
-#'   view(PKParameterDefinitions)} into the console. Not case sensitive. If you
-#'   use "_first" instead of "_dose1", that will also work.}}
+#'   parameters to extract, enter \code{view(PKParameterDefinitions)} into the
+#'   console. Not case sensitive. If you use "_first" instead of "_dose1", that
+#'   will also work.}}
 #'
 #'   Currently, the PK data are only for the substrate unless noted, although
 #'   you can sometimes hack around this by supplying a specific sheet to extract
@@ -121,6 +121,19 @@ extractPK <- function(sim_data_file,
         return(list())
     }
     
+    if(complete.cases(sheet) & sheet %in% SheetNames == FALSE){
+        warning(paste0("The sheet requested could not be found in the Excel file ",
+                       sim_data_file, "."),
+                call. = FALSE)
+        return(list())
+    }
+    
+    if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
+       all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
+        stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
+             call. = FALSE)
+    }
+    
     
     # Main body of function ---------------------------------------------------
     
@@ -166,6 +179,24 @@ extractPK <- function(sim_data_file,
     # since we don't know what dose that would be.
     if(complete.cases(sheet)){
         PKparameters <- "all"
+        # Checking formatting of the user-defined sheet b/c it's sometimes set up
+        # the same was as the AUC tab and thus requires special fiddling.
+        XL <- suppressMessages(
+            readxl::read_excel(path = sim_data_file, sheet = sheet,
+                               col_names = FALSE))
+        if(which(XL$...1 == "Index")[1] == 3){
+            # This is when the formatting is like the AUC tab. Instead of rewriting
+            # the user-specified sheet section, I'm hacking this to make the
+            # function think that this should be the AUC tab.
+            UserAUC <- TRUE # A handle for checking whether to use XL instead of the regular AUC tab.
+            
+        } else {
+            UserAUC <- FALSE
+        }
+        
+    } else {
+        
+        UserAUC <- FALSE
     }
     
     if(tolower(PKparameters_orig[1]) == "auc tab" & 
@@ -179,18 +210,6 @@ extractPK <- function(sim_data_file,
                 call. = FALSE)
         
         PKparameters <- "AUC0"
-    }
-    
-    # Error catching
-    if(complete.cases(sheet) & sheet %in% SheetNames == FALSE){
-        stop("The sheet requested could not be found in the Excel file.",
-             call. = FALSE)
-    }
-    
-    if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
-       all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
-        stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
-             call. = FALSE)
     }
     
     ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
@@ -245,6 +264,14 @@ extractPK <- function(sim_data_file,
     
     # Checking experimental details to only pull details that apply
     Deets <- extractExpDetails(sim_data_file, exp_details = "Summary tab")
+    
+    if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
+                call. = FALSE)
+        return(list())
+    }
     
     if(is.na(Deets$Inhibitor1)){
         PKparameters <- 
@@ -301,7 +328,8 @@ extractPK <- function(sim_data_file,
                             EndRow_ind = as.numeric(NA),
                             Note = as.character(NA))
     
-    # Pulling data from "AUC" sheet ------------------------------------------
+    
+    # Pulling data from "AUC" sheet or a user-specified sheet formatted that way ------------------------------------------
     
     # Need to pull these parameters if either a) they requested a set of
     # parameters rather than asking for a set of parameters by sheet name (AUC
@@ -309,14 +337,14 @@ extractPK <- function(sim_data_file,
     # parameters are present on the AUC tab or b) the user requested the "AUC
     # tab" for PK parameters and either "AUC", "AUC_CI", or "AUC_SD" are among
     # the sheets in the file.
-    if(is.na(sheet) && 
-       # a)
-       ((any(PKparameters %in% ParamAUC) & 
-         PKparameters_orig[1] != "Absorption tab") |
-        
-        # b)
-        (PKparameters_orig[1] == "AUC tab" & 
-         any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames)))){
+    if(UserAUC | (is.na(sheet) && 
+                  # a)
+                  ((any(PKparameters %in% ParamAUC) & 
+                    PKparameters_orig[1] != "Absorption tab") |
+                   
+                   # b)
+                   (PKparameters_orig[1] == "AUC tab" & 
+                    any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames))))){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
@@ -328,17 +356,21 @@ extractPK <- function(sim_data_file,
                 
                 if(all(PKparameters %in% c(ParamAbsorption, ParamAUC0,
                                            ParamAUCX, ParamCLTSS) == FALSE)){
-                    stop(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
+                                   sim_data_file, " to extract the PK parameters ",
                                 sub("and", "or", 
                                     str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
                                 ". None of these parameters can be extracted."),
                          call. = FALSE)
+                    return(list())
                 } else {
-                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
+                                   sim_data_file, " to extract the PK parameters ",
                                    sub("and", "or", 
                                        str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
                                    ". None of these parameters can be extracted."),
                             call. = FALSE)
+                    return(list())
                 }
             }
             
@@ -356,16 +388,32 @@ extractPK <- function(sim_data_file,
             }
             
             # Reading the sheet for AUC tab results
-            AUC_xl <- suppressMessages(
-                readxl::read_excel(path = sim_data_file, 
-                                   # If the user requested the "AUC" tab for PK
-                                   # parameters, it's ok to use the tab "AUC_CI"
-                                   # if "AUC" is not present.
-                                   sheet = SheetAUC,
-                                   col_names = FALSE))
+            if(UserAUC){
+                AUC_xl <- XL
+                SheetAUC <- sheet
+            } else {
+                AUC_xl <- suppressMessages(
+                    readxl::read_excel(path = sim_data_file, 
+                                       # If the user requested the "AUC" tab for PK
+                                       # parameters, it's ok to use the tab "AUC_CI"
+                                       # if "AUC" is not present.
+                                       sheet = SheetAUC,
+                                       col_names = FALSE))
+            }
             
             # Finding the last row of the individual data
             EndRow_ind <- which(AUC_xl$...2 == "Statistics")
+            
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
+                        call. = FALSE)
+                return(list())
+            } 
+            
             EndRow_ind <- max(which(complete.cases(AUC_xl$...2[1:(EndRow_ind-1)])))
             
             # If tissue is blood, REMOVE the plasma columns entirely. I
@@ -446,8 +494,10 @@ extractPK <- function(sim_data_file,
                 }
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    message(paste("The column with information for", i,
-                                  "on the tab 'AUC' cannot be found."))
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab 'AUC' cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
                     suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                     next
@@ -538,8 +588,10 @@ extractPK <- function(sim_data_file,
                     }
                     
                     if(length(ColNum) == 0 | is.na(ColNum)){
-                        message(paste("The column with information for", i,
-                                      "on the tab 'AUC' cannot be found."))
+                        warning(paste0("The column with information for ", i,
+                                       " on the tab 'AUC' cannot be found in the file ", 
+                                       sim_data_file, "."), 
+                                call. = FALSE)
                         suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                         PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                         next
@@ -645,6 +697,16 @@ extractPK <- function(sim_data_file,
             # Finding the last row of the individual data
             EndRow_ind <- which(AUC0_xl$...2 == "Statistics") - 3
             
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
+                        call. = FALSE)
+                return(list())
+            } 
+            
             # Finding the aggregate data rows 
             StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUC0_xl$...2))
@@ -667,8 +729,10 @@ extractPK <- function(sim_data_file,
                                            ToDetect$SearchText))
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    message(paste("The column with information for", i,
-                                  "on the tab for the 1st dose AUC cannot be found."))
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab for the dose 1 AUC cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
                     suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_AUC0 <- setdiff(PKparameters_AUC0, i)
                     next
@@ -743,6 +807,15 @@ extractPK <- function(sim_data_file,
             # Finding the last row of the individual data
             EndRow_ind <- which(AUCX_xl$...2 == "Statistics") - 3
             
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                        call. = FALSE)
+                return(list())
+            } 
+            
             # Finding the aggregate data rows 
             StartRow_agg <- which(AUCX_xl$...2 == "Statistics") + 2
             EndRow_agg <- which(is.na(AUCX_xl$...2))
@@ -765,8 +838,10 @@ extractPK <- function(sim_data_file,
                                            ToDetect$SearchText))
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    message(paste("The column with information for", i,
-                                  "on the tab for the last dose cannot be found."))
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab for the last dose cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
                     suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_AUCX <- setdiff(PKparameters_AUCX, i)
                     next
@@ -864,8 +939,10 @@ extractPK <- function(sim_data_file,
                     ToDetect$SearchText)) + StartCol - 1
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    message(paste("The column with information for", i,
-                                  "on the 'Absorption' tab cannot be found."))
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab 'Absorption' cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
                     suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_Abs <- setdiff(PKparameters_Abs, i)
                     next
@@ -934,8 +1011,10 @@ extractPK <- function(sim_data_file,
                     ToDetect$SearchText))]
                 
                 if(length(ColNum) == 0){
-                    message(paste("The column with information for", i,
-                                  "on the 'Absorption' tab cannot be found."))
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab 'Absorption' cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
                     suppressWarnings(rm(ColNum, SearchText))
                     next
                 }
@@ -1005,8 +1084,10 @@ extractPK <- function(sim_data_file,
                                            ToDetect$SearchText))
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    message(paste("The column with information for", i,
-                                  "on the 'Clearance Trials SS' tab cannot be found."))
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab 'Clearance Trials SS' cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
                     suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
@@ -1065,8 +1146,10 @@ extractPK <- function(sim_data_file,
                                             ToDetect$SearchText))
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    message(paste("The column with information for", i,
-                                  "on the 'Clearance Trials SS' tab cannot be found."))
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab 'Clearance Trials SS' cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
                     suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
@@ -1101,7 +1184,7 @@ extractPK <- function(sim_data_file,
     
     
     # Pulling parameters from a user-specified sheet --------------------------
-    if(complete.cases(sheet)){
+    if(complete.cases(sheet) & UserAUC == FALSE){
         
         # WARNING: I have NOT written this to work for aggregate values that
         # are listed anywhere but right below all the individual values.
@@ -1114,12 +1197,24 @@ extractPK <- function(sim_data_file,
                     call. = FALSE)
         }
         
-        XL <- suppressMessages(
-            readxl::read_excel(path = sim_data_file, sheet = sheet,
-                               col_names = FALSE))
+        # Reading in the sheet up higher in the script now, so this is commented
+        # out.
+        # XL <- suppressMessages(
+        #     readxl::read_excel(path = sim_data_file, sheet = sheet,
+        #                        col_names = FALSE))
         
         HeaderRow <- which(XL$...1 == "Index")[1]
         EndRow_ind <- which(is.na(XL$...1))
+        
+        if(length(EndRow_ind) == 0){
+            # Using "warning" instead of "stop" here b/c I want this to be
+            # able to pass through to other functions and just skip any
+            # files that aren't simulator output.
+            warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                    call. = FALSE)
+            return(list())
+        } 
+        
         EndRow_ind <- min(EndRow_ind[EndRow_ind > HeaderRow]) - 1
         
         StartRow_agg <- which(XL$...2 == "Statistics") + 2
@@ -1157,8 +1252,10 @@ extractPK <- function(sim_data_file,
                                        ToDetect$SearchText))
             
             if(length(ColNum) == 0 || is.na(ColNum)){
-                message(paste("The column with information for", i,
-                              "on the tab", sheet, "cannot be found."))
+                warning(paste0("The column with information for ", i,
+                               " on the tab ", sheet, " cannot be found in the file ", 
+                               sim_data_file, "."), 
+                        call. = FALSE)
                 suppressMessages(rm(ToDetect, ColNum))
                 PKparameters <- setdiff(PKparameters, i)
                 next
@@ -1240,12 +1337,18 @@ extractPK <- function(sim_data_file,
     
     if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
        length(Out_agg) == 0){
-        stop("No PK parameters were found. Did you include PK info as part of your simulation output?")
+        warning(paste0("For the file ", sim_data_file, 
+                       ", no PK parameters were found. Did you include PK info as part of your simulation output?"), 
+                call. = FALSE)
+        return(list())
     }
     
     if(any(c("individual", "both") %in% returnAggregateOrIndiv) &
        length(Out_ind) == 0){
-        stop("No PK parameters were found. Did you include PK info as part of your simulation output?")
+        warning(paste0("For the file ", sim_data_file, 
+                       ", no PK parameters were found. Did you include PK info as part of your simulation output?"), 
+                call. = FALSE)
+        return(list())
     }
     
     if("aggregate" %in% returnAggregateOrIndiv &
@@ -1353,5 +1456,5 @@ extractPK <- function(sim_data_file,
     }
     
     return(Out)
-}
+    }
 
