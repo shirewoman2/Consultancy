@@ -276,6 +276,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
         # Getting summary data for the simulation(s)
         Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
         
+        if(length(Deets) == 0){
+            # Using "warning" instead of "stop" here b/c I want this to be able to
+            # pass through to other functions and just skip any files that
+            # aren't simulator output.
+            warning(paste("The file", ff,
+                          "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                    call. = FALSE)
+            next()
+        }
+        
         # Names of compounds requested for checking whether the data exist
         CompoundCheck <- c("substrate" = Deets$Substrate,
                            "inhibitor 1" = Deets$Inhibitor1,
