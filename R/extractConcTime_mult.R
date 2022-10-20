@@ -179,7 +179,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                              File = sim_data_files)
     
     if(exists(substitute(ct_dataframe)) && 
-       "data.frame" %in% class(ct_dataframe) & 
+       "data.frame" %in% class(ct_dataframe) && 
        nrow(ct_dataframe) > 0){
         if("File" %in% names(ct_dataframe) == FALSE){
             ct_dataframe$File <- "unknown file"
