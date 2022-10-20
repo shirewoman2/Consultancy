@@ -292,6 +292,12 @@ pksummary_mult <- function(sim_data_files = NA,
         }
     }
     
+    if(length(MyPKResults) == 0){
+        warning("No PK values could be found in the supplied files.", 
+                call. = FALSE)
+        return(list())
+    }
+    
     if(PKorder == "default"){
         
         MyPKResults <- bind_rows(MyPKResults)

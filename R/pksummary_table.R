@@ -306,8 +306,9 @@ pksummary_table <- function(sim_data_file = NA,
                                     report_input_file, paste0(report_input_file, ".xlsx"))
         
         if(is.na(sheet_report)){
-            stop("You must supply a value for `sheet_report` if you supply a report input file.", 
+            warning("You must supply a value for `sheet_report` if you supply a report input file.", 
                  call. = FALSE)
+            return(list())
         }
         
         sectionInfo <- getSectionInfo(report_input_file = report_input_file,
@@ -391,8 +392,9 @@ pksummary_table <- function(sim_data_file = NA,
     
     # At this point, we should have the sim_data_file. 
     if(is.na(sim_data_file)){
-        stop("You must enter a simulator output file name for `sim_data_file`, include a simulator output file name with observed PK data, or include a simulator output file name within the Excel file you supplied for `report_input_file`. We don't know what file to use for your simulated data.", 
+        warning("You must enter a simulator output file name for `sim_data_file`, include a simulator output file name with observed PK data, or include a simulator output file name within the Excel file you supplied for `report_input_file`. We don't know what file to use for your simulated data.", 
              call. = FALSE)
+        return(list())
     }
     
     # If they didn't include ".xlsx" at the end, add that.
@@ -520,7 +522,10 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Give a useful message if there are no parameters to pull
     if(length(PKToPull) == 0){
-        stop("None of the parameters you requested are available from the supplied simulator output file. Please check that the parameters requested make sense for the simulation. For example, did you request multiple-dose parameters for a single-dose regimen?")
+        warning(paste0("None of the parameters you requested are available from the supplied simulator output file `",
+                       sim_data_file, "`. Please check that the parameters requested make sense for the simulation. For example, did you request multiple-dose parameters for a single-dose regimen?"),
+                call. = FALSE)
+        return(list())
     }
     
     # Getting PK parameters. 
@@ -533,6 +538,12 @@ pksummary_table <- function(sim_data_file = NA,
                                          switch(as.character(includeTrialMeans),
                                                 "TRUE" = c("aggregate", "individual"),
                                                 "FALSE" = "aggregate")))
+    
+    # If there were no PK parameters to be pulled, MyPKResults_all will have
+    # length 0 and we can't proceed.
+    if(length(MyPKResults_all) == 0){
+        return()
+    }
     
     # PKToPull must be changed if user specified a tab b/c then the parameters
     # won't have _last or _dose1 suffixes. HOWEVER, if the sheet matched the AUC

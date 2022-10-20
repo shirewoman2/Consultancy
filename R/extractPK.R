@@ -122,8 +122,10 @@ extractPK <- function(sim_data_file,
     }
     
     if(complete.cases(sheet) & sheet %in% SheetNames == FALSE){
-        stop("The sheet requested could not be found in the Excel file.",
-             call. = FALSE)
+        warning(paste0("The sheet requested could not be found in the Excel file ",
+                       sim_data_file, "."),
+                call. = FALSE)
+        return(list())
     }
     
     if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
@@ -354,17 +356,21 @@ extractPK <- function(sim_data_file,
                 
                 if(all(PKparameters %in% c(ParamAbsorption, ParamAUC0,
                                            ParamAUCX, ParamCLTSS) == FALSE)){
-                    stop(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
+                                   sim_data_file, " to extract the PK parameters ",
                                 sub("and", "or", 
                                     str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
                                 ". None of these parameters can be extracted."),
                          call. = FALSE)
+                    return(list())
                 } else {
-                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file to extract the PK parameters ",
+                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
+                                   sim_data_file, " to extract the PK parameters ",
                                    sub("and", "or", 
                                        str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
                                    ". None of these parameters can be extracted."),
                             call. = FALSE)
+                    return(list())
                 }
             }
             
@@ -402,7 +408,8 @@ extractPK <- function(sim_data_file,
                 # Using "warning" instead of "stop" here b/c I want this to be
                 # able to pass through to other functions and just skip any
                 # files that aren't simulator output.
-                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
                         call. = FALSE)
                 return(list())
             } 
@@ -694,7 +701,8 @@ extractPK <- function(sim_data_file,
                 # Using "warning" instead of "stop" here b/c I want this to be
                 # able to pass through to other functions and just skip any
                 # files that aren't simulator output.
-                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
+                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
                         call. = FALSE)
                 return(list())
             } 
@@ -1329,12 +1337,18 @@ extractPK <- function(sim_data_file,
     
     if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
        length(Out_agg) == 0){
-        stop("No PK parameters were found. Did you include PK info as part of your simulation output?")
+        warning(paste0("For the file ", sim_data_file, 
+                       ", no PK parameters were found. Did you include PK info as part of your simulation output?"), 
+                call. = FALSE)
+        return(list())
     }
     
     if(any(c("individual", "both") %in% returnAggregateOrIndiv) &
        length(Out_ind) == 0){
-        stop("No PK parameters were found. Did you include PK info as part of your simulation output?")
+        warning(paste0("For the file ", sim_data_file, 
+                       ", no PK parameters were found. Did you include PK info as part of your simulation output?"), 
+                call. = FALSE)
+        return(list())
     }
     
     if("aggregate" %in% returnAggregateOrIndiv &
@@ -1442,5 +1456,5 @@ extractPK <- function(sim_data_file,
     }
     
     return(Out)
-}
+    }
 
