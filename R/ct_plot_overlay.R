@@ -702,7 +702,7 @@ ct_plot_overlay <- function(ct_dataframe,
         
         sim_dataframe <- ct_dataframe
         
-        obs_data <- data.frame()
+        obs_dataframe <- data.frame()
     } else {
         # for conc-time data
         ct_dataframe <- ct_dataframe %>%
@@ -723,49 +723,49 @@ ct_plot_overlay <- function(ct_dataframe,
                               "percentiles" = c(MyMeanType, "per5", "per95"),
                               "percentile ribbon" = c(MyMeanType, "per5", "per95")))
         
-        obs_data <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
+        obs_dataframe <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
             mutate(Trial = {MyMeanType})
     }
     
     # If the user set obs_color to "none", then they must not want to include
     # observed data in the graph. Set nrow to 0 in that case.
     if(complete.cases(obs_color) && obs_color == "none"){
-        obs_data <- filter(Trial == "mango") # hack to keep all the column names just in case
+        obs_dataframe <- filter(Trial == "mango") # hack to keep all the column names just in case
     }
     
     # Not mapping observed data to a column if File was originally NA for all
     # and that's what colorBy_column is or that's what linetype_column is. Also
     # not mapping if user has specified obs_color.
-    MapObsFile_color <- nrow(obs_data) > 0 && 
-        as_label(colorBy_column) == "File" & all(is.na(obs_data$File)) == FALSE
-    MapObsFile_line <- nrow(obs_data) > 0 && 
-        as_label(linetype_column) == "File" & all(is.na(obs_data$File)) == FALSE
-    MapObsData <- ifelse(nrow(obs_data) > 0 &&
-         ("File" %in% c(as_label(colorBy_column), as_label(linetype_column)) &
-              all(is.na(obs_data$File))) | complete.cases(obs_color_user),
-         FALSE, TRUE)
+    MapObsFile_color <- nrow(obs_dataframe) > 0 && 
+        as_label(colorBy_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
+    MapObsFile_line <- nrow(obs_dataframe) > 0 && 
+        as_label(linetype_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
+    MapObsData <- ifelse(nrow(obs_dataframe) > 0 &&
+                             ("File" %in% c(as_label(colorBy_column), as_label(linetype_column)) &
+                                  all(is.na(obs_dataframe$File))) | complete.cases(obs_color_user),
+                         FALSE, TRUE)
     
     # Setting this up so that observed data will be shown for all Files
-    if(nrow(obs_data) > 0 && 
+    if(nrow(obs_dataframe) > 0 && 
        "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
                      as_label(facet2_column), as_label(linetype_column)) &&
-       all(is.na(obs_data$File))){
+       all(is.na(obs_dataframe$File))){
         
-        ToAdd <- expand_grid(ObsFile = unique(obs_data$ObsFile), 
+        ToAdd <- expand_grid(ObsFile = unique(obs_dataframe$ObsFile), 
                              File = unique(sim_dataframe$File))
         suppressMessages(
-            obs_data <- obs_data %>% select(-File) %>% 
+            obs_dataframe <- obs_dataframe %>% select(-File) %>% 
                 left_join(ToAdd) %>% 
                 mutate(Group = paste(File, Trial, Tissue, CompoundID,
                                      Compound, Inhibitor)))
         
         if(as_label(colorBy_column) == "File"){
-            obs_data <- obs_data %>% 
+            obs_dataframe <- obs_dataframe %>% 
                 mutate(colorBy_column = File)
         }
         
         if(as_label(linetype_column) == "File"){
-            obs_data <- obs_data %>% 
+            obs_dataframe <- obs_dataframe %>% 
                 mutate(linetype_column = File)
         }
     } 
@@ -773,9 +773,12 @@ ct_plot_overlay <- function(ct_dataframe,
     # Dealing with the fact that the observed data will list the inhibitor as
     # "inhibitor" unless the user changes it, but that sim data will list its
     # name
-    if(nrow(obs_data) > 0 & any(obs_data$Inhibitor == "inhibitor")){
+    if(nrow(obs_dataframe) > 0 & any(obs_dataframe$Inhibitor == "inhibitor")){
         sim_dataframe <- sim_dataframe %>% 
-            mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitor"))
+            mutate(Inhibitor = as.character(Inhibitor),
+                   Inhibitor = ifelse(Inhibitor == "none",
+                                      Inhibitor, "inhibitor"),
+                   Inhibitor = factor(Inhibitor, levels = c("none", "inhibitor")))
     }
     
     # Now that all columns in both sim and obs data are filled in whenever they
@@ -784,7 +787,7 @@ ct_plot_overlay <- function(ct_dataframe,
         simcheck <- sim_dataframe %>% 
             filter(colorBy_column %in% names(color_labels)) %>% 
             select(colorBy_column) %>% unique() %>% pull()
-        obscheck <- obs_data %>% 
+        obscheck <- obs_dataframe %>% 
             filter(colorBy_column %in% names(color_labels)) %>% 
             select(colorBy_column) %>% unique() %>% pull()
         
@@ -807,7 +810,7 @@ ct_plot_overlay <- function(ct_dataframe,
                     mutate(colorBy_column = color_labels[colorBy_column], 
                            colorBy_column = factor(colorBy_column, levels = color_labels))
                 
-                obs_data <- obs_data %>% 
+                obs_dataframe <- obs_dataframe %>% 
                     mutate(colorBy_column = color_labels[colorBy_column], 
                            colorBy_column = factor(colorBy_column, levels = color_labels))
             }
@@ -821,7 +824,7 @@ ct_plot_overlay <- function(ct_dataframe,
     #     simcheck <- sim_dataframe %>% 
     #         filter(FC1 %in% names(facet1_labels)) %>% 
     #         select(FC1) %>% unique() %>% pull()
-    #     obscheck <- obs_data %>% 
+    #     obscheck <- obs_dataframe %>% 
     #         filter(FC1 %in% names(facet1_labels)) %>% 
     #         select(FC1) %>% unique() %>% pull()
     #     
@@ -846,7 +849,7 @@ ct_plot_overlay <- function(ct_dataframe,
     #     simcheck <- sim_dataframe %>% 
     #         filter(FC2 %in% names(facet2_labels)) %>% 
     #         select(FC2) %>% unique() %>% pull()
-    #     obscheck <- obs_data %>% 
+    #     obscheck <- obs_dataframe %>% 
     #         filter(FC2 %in% names(facet2_labels)) %>% 
     #         select(FC2) %>% unique() %>% pull()
     #     
@@ -896,13 +899,13 @@ ct_plot_overlay <- function(ct_dataframe,
     # # want to change things b/c they're already set up correctly at this point.
     # if(str_detect(AES, "linetype") &&
     #    AESCols["linetype"] == "File" & MapObsFile_line == FALSE){
-    #     obs_data <- obs_data %>% 
+    #     obs_dataframe <- obs_dataframe %>% 
     #         mutate(linetype_column = File)
     # }
     # 
     # if(str_detect(AES, "color") &&
     #    AESCols["color"] == "File" & MapObsFile_color == FALSE){
-    #     obs_data <- obs_data %>% 
+    #     obs_dataframe <- obs_dataframe %>% 
     #         mutate(colorBy_column = File)
     # }
     
@@ -1017,7 +1020,7 @@ call. = FALSE)
     }
     
     # Setting up the x axis using the subfunction ct_x_axis
-    ct_x_axis(Data = bind_rows(sim_dataframe, obs_data),
+    ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
               time_range = time_range, 
               t0 = "simulation start",
               x_axis_interval = x_axis_interval,
@@ -1026,7 +1029,7 @@ call. = FALSE)
               EnzPlot = EnzPlot)
     
     # Setting up the y axis using the subfunction ct_y_axis
-    ct_y_axis(Data = bind_rows(sim_dataframe, obs_data), 
+    ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
               ADAM = ADAM, 
               subsection_ADAM = switch(as.character(EnzPlot), 
                                        "TRUE" = NA, 
@@ -1034,7 +1037,7 @@ call. = FALSE)
               prettify_compound_names = prettify_compound_names,
               EnzPlot = EnzPlot, 
               time_range_relative = time_range_relative,
-              Ylim_data = bind_rows(sim_dataframe, obs_data) %>%
+              Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
                   mutate(Time_orig = Time), 
               pad_y_axis = pad_y_axis,
               y_axis_limits_lin = y_axis_limits_lin, 
@@ -1048,24 +1051,24 @@ call. = FALSE)
     MyEffector <- fct_relevel(MyEffector, before = "none")
     MyEffector <- sort(MyEffector)
     
-    # Making linetype_column and colorBy_column character data. This will
+    # Making linetype_column and colorBy_column factor data. This will
     # prevent errors w/mapping to color b/c ggplot expects only categorical data
     # for scale_color_manual, and, if the user supplies something that looks
     # like a number for the colorBy_column (e.g., a numerical SubjectID), it
     # will give the error message that a continuous value was supplied to a
     # discrete scale.
     if(as_label(linetype_column) != "<empty>" &&
-       class(sim_dataframe$linetype_column) != "character"){
+       class(sim_dataframe$linetype_column) != "factor"){
         
-        sim_dataframe$linetype_column <- as.character(sim_dataframe$linetype_column)
-        obs_data$linetype_column <- as.character(obs_data$linetype_column)
+        sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
+        obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
     }
     
     if(as_label(colorBy_column) != "<empty>" &&
-       class(sim_dataframe$colorBy_column) != "character"){
+       class(sim_dataframe$colorBy_column) != "factor"){
         
-        sim_dataframe$colorBy_column <- as.character(sim_dataframe$colorBy_column)
-        obs_data$colorBy_column <- as.character(obs_data$colorBy_column)
+        sim_dataframe$colorBy_column <- as.factor(sim_dataframe$colorBy_column)
+        obs_dataframe$colorBy_column <- as.factor(obs_dataframe$colorBy_column)
     }
     
     # Taking care of linetypes and, along with that, obs_shape as needed
@@ -1098,21 +1101,21 @@ call. = FALSE)
                 sim_dataframe <- sim_dataframe %>% 
                     mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
                 
-                obs_data <- obs_data %>% 
+                obs_dataframe <- obs_dataframe %>% 
                     mutate(linetype_column = factor(linetype_column, 
                                                     levels = c(levels(sim_dataframe$linetype_column), 
-                                                               setdiff(obs_data$linetype_column, 
+                                                               setdiff(obs_dataframe$linetype_column, 
                                                                        sim_dataframe$linetype_column))))
             } else {
                 sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
-                obs_data$linetype_column <- as.factor(obs_data$linetype_column)
+                obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
             }
         }
     }
     
     if(str_detect(AES, "linetype")){
         NumShapes <- length(sort(unique(c(sim_dataframe$linetype_column,
-                                          obs_data$linetype_column))))
+                                          obs_dataframe$linetype_column))))
     } else {
         NumShapes <- 1
     }
@@ -1229,7 +1232,7 @@ call. = FALSE)
     
     # Observed data -----------------------------------------------
     
-    if(nrow(obs_data) > 0){
+    if(nrow(obs_dataframe) > 0){
         
         # Checking whether to show obs data points in the legend. If the
         # column that is mapped to color or linetype has more than one item,
@@ -1238,16 +1241,18 @@ call. = FALSE)
         LegCheck <- LegCheck[LegCheck != "<empty>"]
         # If there's more than one unique value in whatever is in the color
         # or linetype column or the Inhibitor column, then include it
-        if(length(LegCheck) > 0){
-            LegCheck <- any(sapply(unique(obs_data[, LegCheck]), length) > 1)
+        if(length(LegCheck) == 0){
+            LegCheck <- FALSE 
+        } else if(length(LegCheck == 1)){
+            LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
         } else {
-            LegCheck <- FALSE
+            LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
         }
         
-        # Need to assign File to correct obs data. At this point, obs_data WILL
+        # Need to assign File to correct obs data. At this point, obs_dataframe WILL
         # have values for File if the user wanted the observed data to be
         # assigned to ALL the sim files. 
-        if(all(is.na(obs_data$File))){
+        if(all(is.na(obs_dataframe$File))){
             if(any(complete.cases(obs_to_sim_assignment))){
                 # If the user *did* specify values for obs_data_assignment, then use
                 # those for File.
@@ -1258,19 +1263,19 @@ call. = FALSE)
                 ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
                 
                 if(all(sapply(ObsAssign, length) == 1)){
-                    obs_data <- obs_data %>% mutate(File = obs_to_sim_assignment[ObsFile])
+                    obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
                 } else {
-                    obs_data <- split(as.data.frame(obs_data), f = obs_data$ObsFile)
+                    obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
                     
                     for(j in 1:length(ObsAssign)){
                         FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
                                                   File = ObsAssign[[j]])
                         suppressMessages(
-                            obs_data[[j]] <- FileAssign %>% full_join(obs_data[[j]] %>% select(-File))
+                            obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
                         )
                         rm(FileAssign)
                     }
-                    obs_data <- bind_rows(obs_data)
+                    obs_dataframe <- bind_rows(obs_dataframe)
                 }
             }
             
@@ -1278,14 +1283,14 @@ call. = FALSE)
             # If there are some assignments for File but some missing, just warn
             # the user about that b/c it's not clear how to assign the ones that
             # are missing.
-            if(any(is.na(obs_data$File)) & any(complete.cases(obs_data$File))){
+            if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
                 warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
                         call. = FALSE)
-                obs_data <- obs_data %>% filter(complete.cases(File))
+                obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
             }
         }
         
-        A <- addObsPoints(obs_data = obs_data, 
+        A <- addObsPoints(obs_data = obs_dataframe, 
                           A = A, 
                           AES = AES,
                           obs_shape = obs_shape,
@@ -1425,16 +1430,14 @@ call. = FALSE)
     if(AES %in% c("color", "color-linetype")){
         
         NumColorsNeeded <-
-            ifelse(MapObsFile_color,
-                   bind_rows(sim_dataframe, obs_data) %>% 
+            ifelse(MapObsData,
+                   bind_rows(sim_dataframe, obs_dataframe) %>% 
                        pull(colorBy_column) %>% unique() %>% length(),
                    sim_dataframe %>% 
                        pull(colorBy_column) %>% unique() %>% length())
         
-        
-        # print(NumColorsNeeded)
-        
-        if(length(sort(unique(sim_dataframe$colorBy_column))) == 1){
+        if(length(sort(unique(sim_dataframe$colorBy_column, 
+                              obs_dataframe$colorBy_column))) == 1){
             A <- A + scale_color_manual(values = "black") +
                 scale_fill_manual(values = "black")
         } else {
@@ -1511,7 +1514,7 @@ call. = FALSE)
             }
             
             if(MapObsFile_color){
-                names(MyColors) <- unique(bind_rows(sim_dataframe, obs_data) %>% 
+                names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
                                               arrange(colorBy_column) %>% 
                                               pull(colorBy_column))
             } else if(length(color_set) == 1){
@@ -1519,9 +1522,15 @@ call. = FALSE)
                 # This is when the colors are NOT set by the observed file AND
                 # ALSO the user hasn't supplied a named character vector for how
                 # to assign the colors. 
-                names(MyColors) <- unique(sim_dataframe %>% 
-                                              arrange(colorBy_column) %>% 
-                                              pull(colorBy_column))
+                
+                
+                # if(class(sim_dataframe$colorBy_column) == "character"){ <--- I think I don't need this b/c colorBy_column should be factor by now.
+                #     names(MyColors) <- unique(sim_dataframe %>% 
+                #                                   arrange(colorBy_column) %>% 
+                #                                   pull(colorBy_column))
+                # } else {
+                    names(MyColors) <- levels(sim_dataframe$colorBy_column)
+                # }
             }
             
             suppressWarnings(
@@ -1601,14 +1610,14 @@ call. = FALSE)
     }
     
     if(AES %in% c("color", "color-linetype") &&
-       length(unique(bind_rows(sim_dataframe, obs_data) %>% 
+       length(unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
                      pull(colorBy_column))) == 1){
         A <- A + guides(color = "none", fill = "none")
     }
     
     ## Making semi-log graph ------------------------------------------------
     
-    LowConc <- bind_rows(sim_dataframe, obs_data) %>%
+    LowConc <- bind_rows(sim_dataframe, obs_dataframe) %>%
         filter(Trial %in% c("mean", "per5", "per95") &
                    Time > 0 &
                    Conc < Ylim_log[1]) %>% 
