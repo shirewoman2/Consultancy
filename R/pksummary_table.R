@@ -307,7 +307,7 @@ pksummary_table <- function(sim_data_file = NA,
         
         if(is.na(sheet_report)){
             warning("You must supply a value for `sheet_report` if you supply a report input file.", 
-                 call. = FALSE)
+                    call. = FALSE)
             return(list())
         }
         
@@ -393,7 +393,7 @@ pksummary_table <- function(sim_data_file = NA,
     # At this point, we should have the sim_data_file. 
     if(is.na(sim_data_file)){
         warning("You must enter a simulator output file name for `sim_data_file`, include a simulator output file name with observed PK data, or include a simulator output file name within the Excel file you supplied for `report_input_file`. We don't know what file to use for your simulated data.", 
-             call. = FALSE)
+                call. = FALSE)
         return(list())
     }
     
@@ -878,20 +878,9 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Formatting and selecting only rows where there are data
     MyPKResults <- MyPKResults %>%
-        mutate(Value = if_else(str_detect(Stat, "CV"),
-                               as.character(round(Value * 100, 0)),
-                               # Per Christiane: 3 sig figs for everything
-                               # or full number when > 100
-                               if_else(Value > 100,
-                                       as.character(round(Value, 0)), 
-                                       # This next convoluted bit will
-                                       # retain trailing zeroes since
-                                       # "signif" alone will not
-                                       formatC(signif(Value,digits=3), 
-                                               digits=3,format="fg", 
-                                               flag="#"))),
-               # Removing any trailing decimal points with nothing after them
-               Value = sub("\\.$", "", Value)) %>%
+        mutate(Value = if_else(str_detect(Stat, "CV"), 
+                               round_consult(100*Value),
+                               round_consult(Value))) %>%
         filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
                            "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                            "min", "max", "per5", "per95", 
