@@ -436,7 +436,7 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     # Checking whether this is an enzyme abundance plot
-    EnzPlot  <- "Enzyme" %in% names(ct_dataframe)
+    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
     
     # Checking for more than one tissue or ADAM data type b/c there's only one y
     # axis and it should have only one concentration type.
