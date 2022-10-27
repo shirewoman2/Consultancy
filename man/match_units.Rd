@@ -21,7 +21,7 @@ time units OR a named list with the desired units. Example:
 list must be "Conc_units" and "Time_units", although you can provide only
 one or the other if you only want to convert one of them. Options for
 concentration units are the same as the ones in the Excel form for PE data
-entry, and options for time units are "hours" and "minutes".}
+entry, and options for time units are "hours", "days", and "minutes".}
 
 \item{MW}{optionally supply a molecular weight for the compound of interest
 to enable conversions between mass per volume and molar concentrations. If

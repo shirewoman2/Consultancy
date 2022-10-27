@@ -78,7 +78,8 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     # Adjusting graph labels as appropriate for the observed data
     xlab <- switch(TimeUnits,
                    "hours" = "Time (h)",
-                   "minutes" = "Time (min)")
+                   "minutes" = "Time (min)", 
+                   "days" = "Time (days)")
     
     # Setting the breaks for the x axis
     tlast <- ifelse(all(complete.cases(time_range)) &
@@ -285,11 +286,13 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     }
     
     # If tlast is just a smidge over one of the possible breaks I've set, it
-    # goes to the next one and doesn't look as nice on the graph. Rounding
-    # tlast down to the nearest 4 for hours and nearest 15 for minutes.
-    tlast <- ifelse(TimeUnits == "hours",
-                    round_down_unit(tlast, 4),
-                    round_down_unit(tlast, 15))
+    # goes to the next one and doesn't look as nice on the graph. Rounding tlast
+    # down to the nearest 4 for hours, nearest 15 for minutes, and nearest 2 for
+    # days.
+    tlast <- switch(TimeUnits, 
+                    "hours" = round_down_unit(tlast, 4),
+                    "minutes" = round_down_unit(tlast, 15), 
+                    "days" = round_down_unit(tlast, 2))
     
     if(TimeUnits == "hours"){
         
@@ -323,9 +326,7 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                           "UserDefined" = seq(0, max(Data$Time, na.rm = T),
                                               x_axis_interval/2))
         
-    }
-    
-    if(TimeUnits == "minutes"){
+    } else if(TimeUnits == "minutes"){
         PossBreaks <- data.frame(Tlast = c(60, 240, 480, 720, 1440, Inf),
                                  BreaksToUse = c("1hr", "4hr",
                                                  "8hr", "12hr",
@@ -347,7 +348,35 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                                                          length.out = 12)),
                           "UserDefined" = seq(0, max(Data$Time, na.rm = T),
                                               x_axis_interval/2))
+    } else if(TimeUnits == "days"){
+        PossBreaks <- data.frame(
+            Tlast = c(7, 14, 21, 28, 35, 42, 49, 70, 105, 140, Inf),
+            BreaksToUse = c("1wk", "2wk", "3wk", "4wk", "5wk", "6wk",
+                            "7wk", "10wk", "15wk", "20wk", "20wkplus"))
+        
+        BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
+            slice(which.min(Tlast)) %>% pull(BreaksToUse)
+        
+        BreaksToUse <- ifelse(complete.cases(x_axis_interval),
+                              "UserDefined", BreaksToUse)
+        
+        XBreaks <- switch(BreaksToUse,
+                          "1wk" = seq(0, 7, 1),
+                          "2wk" = seq(0, 14, 2),
+                          "3wk" = seq(0, 21, 3), 
+                          "4wk" = seq(0, 28, 4), 
+                          "5wk" = seq(0, 35, 5),
+                          "6wk" = seq(0, 42, 6), 
+                          "7wk" = seq(0, 49, 7), 
+                          "10wk" = seq(0, 70, 7), 
+                          "15wk" = seq(0, 105, 7),
+                          "20wk" = seq(0, 140, 14),
+                          "20wkplus" = round_up_nice(seq(0, tlast,
+                                                        length.out = 12)),
+                          "UserDefined" = seq(0, max(Data$Time, na.rm = T),
+                                              x_axis_interval/2))
     }
+    
     
     # If t0 isn't "simulation start", need to adjust x axis.
     if(t0 != "simulation start"){

@@ -17,7 +17,7 @@
 #'   list must be "Conc_units" and "Time_units", although you can provide only
 #'   one or the other if you only want to convert one of them. Options for
 #'   concentration units are the same as the ones in the Excel form for PE data
-#'   entry, and options for time units are "hours" and "minutes".
+#'   entry, and options for time units are "hours", "days", and "minutes".
 #' @param MW optionally supply a molecular weight for the compound of interest
 #'   to enable conversions between mass per volume and molar concentrations. If
 #'   you have more than one compound, list the compoundID and the MW as a named
@@ -40,7 +40,13 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
     # Error catching ----------------------------------------------------------
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+             call. = FALSE)
+    }
+    
+    if(all(names(goodunits) %in% c("Time_units", "Conc_units")) == FALSE){
+        stop("You have supplied units you want but not labeled them in a way this function can understand. Please name the items in the list supplied to `goodunits` as `Time_units` and/or `Conc_units`.", 
+             call. = FALSE)
     }
     
     if(complete.cases(MW[1]) && is.null(names(MW))){
@@ -229,9 +235,9 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
     # Matching time units -------------------------------------------------
     
     ConvTable_time <- data.frame(
-        GoodUnits = c("hours", "minutes"),
-        ToAdjustUnits = rep(c("hours", "minutes"), each = 2),
-        Factor = c(1, 60, 1/60, 1))
+        ToAdjustUnits = rep(c("hours", "minutes", "days"), 3),
+        GoodUnits = rep(c("hours", "minutes", "days"), each = 3),
+        Factor = c(1, 1/60, 24, 60, 1, 24*60, 1/24, 1/(24*60), 1))
     
     if(unique(goodunits$Time_units) %in% ConvTable_time$ToAdjustUnits == FALSE |
        unique(DF_to_adjust$Time_units) %in% ConvTable_time$GoodUnits == FALSE){
