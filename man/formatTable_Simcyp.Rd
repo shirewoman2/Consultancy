@@ -4,13 +4,23 @@
 \alias{formatTable_Simcyp}
 \title{Format tables according to Simcyp Consultancy Team specfications}
 \usage{
-formatTable_Simcyp(DF, fontsize = 11)
+formatTable_Simcyp(DF, fontsize = 11, shading_column)
 }
 \arguments{
 \item{DF}{a data.frame, usually output from \code{\link{pksummary_table}} or
 \code{\link{pksummary_mult}}}
 
 \item{fontsize}{the numeric font size for the output. Default is 11 point.}
+
+\item{shading_column}{If you would like to alternate the shading of the rows
+in the output data.frame, supply here the unquoted name of the column to
+check for when to change the shading; everytime that column's value
+changes, the shading will alternate between white and light gray. For
+example, if you have a table with PK values for multiple files and you have
+more than one row per file (an example of this would be the output from the
+function \code{\link{pksummary_mult}}), if you set \code{shading_column =
+File}, the shading of the rows will alternate between white and light gray
+whenever the file changes.}
 }
 \value{
 
@@ -24,8 +34,8 @@ the second through the last columns are centered. Column headings with, e.g.,
 table will automatically expand to fit the contents.
 }
 \examples{
-
-pksummary_table(sim_data_file = "My simulation.xlsx")$Table \%>\% 
-    formatTable_Simcyp()
+MyData <- data.frame(ColA = rep(LETTERS[1:3], each = 2),
+                     ColB = 1:6)
+formatTable_Simcyp(MyData)
 
 }
