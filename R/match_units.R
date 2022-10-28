@@ -44,8 +44,9 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
              call. = FALSE)
     }
     
-    if(all(names(goodunits) %in% c("Time_units", "Conc_units")) == FALSE){
-        stop("You have supplied units you want but not labeled them in a way this function can understand. Please name the items in the list supplied to `goodunits` as `Time_units` and/or `Conc_units`.", 
+    if("data.frame" %in% class(goodunits) == FALSE &&
+       all(names(goodunits) %in% c("Time_units", "Conc_units")) == FALSE){
+        stop("You have supplied units you want but not labeled them in a way the function `match_units` can understand. Please name the items in the list supplied to `goodunits` as `Time_units` and/or `Conc_units`.", 
              call. = FALSE)
     }
     
