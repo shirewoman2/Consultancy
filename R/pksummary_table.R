@@ -772,19 +772,16 @@ pksummary_table <- function(sim_data_file = NA,
     
     # observed data -----------------------------------------------------
     
-    if("data.frame" %in% class(observed_PK)){
+    if(any(c("data.frame", "numeric") %in% class(observed_PK))){
         
-        # if(class(sectionInfo) != "logical"){
-        #     MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
-        #         as.data.frame() %>% t() %>% as.data.frame() %>%
-        #         rename("Obs" = V1) %>%
-        #         mutate(PKParam = row.names(.),
-        #                Obs = as.numeric(Obs))
-        # }
+        if(class(observed_PK) == "numeric"){
+            MyObsPK <- as.data.frame(observed_PK)
+            names(MyObsPK) <- names(observed_PK)
+        } else {
+            MyObsPK <- observed_PK
+        }
         
         # Making obs PK names match correct PK parameters regardless of case
-        MyObsPK <- observed_PK
-        
         suppressMessages(
             ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
                 mutate(PKparameter_lower = sub("_first", "_dose1",
@@ -802,11 +799,16 @@ pksummary_table <- function(sim_data_file = NA,
                        PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
         )
         names(MyObsPK) <- ObsNames$PKparameter
+        
         # Having extra columns messes things up, so removing any extraneous
         # things the user might have included.
-        MyObsPK <- MyObsPK[, names(MyObsPK)[names(MyObsPK) %in% 
-                                                c(AllPKParameters$PKparameter, 
-                                                  paste0(AllPKParameters$PKparameter, "_CV"))]]
+        
+        # Getting the names w/out "File"
+        NewObsNames <- names(MyObsPK)[names(MyObsPK) %in% 
+                                          c(AllPKParameters$PKparameter, 
+                                            paste0(AllPKParameters$PKparameter, "_CV"))]
+        MyObsPK <- as.data.frame(MyObsPK[, NewObsNames])
+        names(MyObsPK) <- NewObsNames
         
         # Making observed_PK that was supplied as a data.frame or file long
         # w/column for PKparameter.
@@ -826,7 +828,7 @@ pksummary_table <- function(sim_data_file = NA,
                    # "mean" (for arithmetic means) rather than "geomean" so that
                    # it will be easier to return only the correct mean types. I
                    # know that's confusing, but I couldn't come up with a better
-                   # way to do that, so my apologies! -LS
+                   # way to do that, so my apologies! -LSh
                    Stat = ifelse({{MeanType}} == "arithmetic" &
                                      {{GMR_mean_type}} == "geometric" &
                                      str_detect(PKParam, "ratio") &
@@ -895,14 +897,7 @@ pksummary_table <- function(sim_data_file = NA,
                                               "MinMean", "MaxMean", "S_O"))) %>% 
         arrange(SorO, Stat) %>% 
         filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
-        mutate(across(.cols = everything(), .fns = as.character)
-               # ,
-               # across(.cols = -c(Stat, SorO),
-               #        .fns = function(x) ifelse(str_detect(Stat, "CV"),
-               #                                  paste0(x, "%"), x)),
-               # across(.cols = everything(),
-               #        .fns = function(x) ifelse(x == "NA%", NA, x))
-        ) 
+        mutate(across(.cols = everything(), .fns = as.character)) 
     # If this throws an error for you, try running "tidyverse_update()", copy
     # whatever it says is out of date, restart your R session (Ctrl Shift
     # F10), and then paste the output (something like
