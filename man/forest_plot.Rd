@@ -8,11 +8,14 @@ forest_plot(
   forest_dataframe,
   perp_or_victim,
   PKparameters = NA,
-  y_axis_order = NA,
-  y_axis_order_secondary,
+  y_order_column = File,
+  y_order = NA,
+  y_order_secondary_column,
+  y_order_secondary = NA,
   x_axis_limits = NA,
   x_axis_label = NA,
   facet_column_x,
+  dose_units = "mg",
   prettify_compound_names = TRUE,
   legend_position = "none",
   save_graph = NA,
@@ -42,34 +45,38 @@ included. If you try to include a parameter that's not already present in
 forest_dataframe, it will be ignored. Enclose the parameters with
 \code{c(...)}.}
 
-\item{y_axis_order}{optionally supply a character vector to specify the order
-of the files or compounds on the y axis. If your character vector contains
-"xlsx" in the any of the text, we'll assume you want to sort by the file
-names; otherwise, we'll assume you want to sort by the compound names -- by
-substrate if it's a perpetrator or by inhibitor 1 if it's a victim. If
-\code{y_axis_order} is unspecified, the y axis will be sorted according to
-the geometric mean AUC ratio with inhibitors on top and inducers on the
-bottom. If there's more than one row for a substrate or inhibitor (say
-you're including scenarios where you've reduced the Ki or the IndC50, for
-example), this may not give you the order you want and you might be better
-off specifying manually. If you supply a named character vector of file
-names, in addition to using that for setting the y axis order, we'll use
-those values for the y axis labels instead of the compound names. This can
-be useful when you want to add notes about changes in parameters such as
-when you're including sensitivity analyses. An example of the syntax to
-use: \code{y_axis_labels = c("abc1a-mdz.xlsx" = "Midazolam with in vitro
-induction", "abc-1a-mdz-10x.xlsx" = "Midazolam with 10-fold higher
-Indmax")} Please see the example section at the bottom of this help file
-for more examples.}
+\item{y_order_column}{the column by which you would like to break up the y
+axis, e.g., \code{y_order_column = File} (default). You must specify
+something here; it cannot be left blank. If you use File as the column to
+break up the data, this will assume that what you want to show on the y
+axis is the substrate if the drug of interest is a perpetrator or the
+inhibitor if it's a victim.}
 
-\item{y_axis_order_secondary}{optionally break up the graphs along the y axis
-by an additional column other than substrate (for perpetrator graphs) or
-inhibitor 1 (for victim graphs). For example, say your drug of interest is
-a perpetrator and you've administered each of the substrates on different
-days. This will break up the graphs by substrate and, if you specify, e.g.,
-\code{y_axis_order_secondary = DoseDay} where "DoseDay" is a column in
-forest_dataframe listing what day the substrate was dosed, it will also
-break up the graphs by what day the substrate was administered.}
+\item{y_order}{optionally supply a character vector to specify the order of
+the items on the y axis. If you'd like to change the name of the item as on
+the y axis -- for example, change your file names to something more
+readable than things like "abc-25mg-qd.xlsx" -- you can do that here with a
+named character vector like this: \code{y_order = c("abc1a-mdz.xlsx" =
+"Midazolam with in vitro induction", "abc1a-mdz-10x.xlsx" = "Midazolam with
+10-fold higher Indmax")} If \code{y_order} is left as NA, the y axis will
+be sorted according to the geometric mean AUC ratio with inhibitors on top
+and inducers on the bottom. Please see the example section at the bottom of
+this help file for more examples.}
+
+\item{y_order_secondary_column}{optionally break up the graphs along the y
+axis by an additional column. For example, say your drug of interest is a
+perpetrator and you've administered each of the substrates on different
+days. Here's how you could approach that: \enumerate{\item{Make a column
+"DoseDay" in your data.frame that specifies which day the substrate was
+administered. Let's say you have values in that column of "Day 1", "Day 5",
+and "Day 14".} \item{Set \code{y_order_column = DoseDay}} \item{Set the
+order of the dose days: \code{y_order = c("Day 1", "Day 5", "Day 14")}.
+Please note that these must perfectly match the actual values in that
+DoseDay column.} \item{Set \code{y_order_secondary_column = Substrate}}
+\item{Last, set \code{y_order_secondary = c("buprenorphine", "repaglinide",
+"midazolam")}, where those are the substrates simulated in the order you
+want.}} This will break up the graphs first by the dose day and next by the
+substrate and do so in the order you specified.}
 
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
@@ -79,6 +86,15 @@ use for the x axis label}
 \item{facet_column_x}{optionally break up the graph horizontally into small
 multiples. The designated column name should be unquoted, e.g.,
 \code{facet_column_x = Dose_sub}}
+
+\item{dose_units}{the units used in dosing. If you set \code{facet_column_x},
+\code{y_order_column}, or \code{y_order_secondary_column} to Dose_sub or
+Dose_inhib, setting the dose units here will automatically add those units
+to the appropriate graph labels. This way, the graph label will be, e.g.,
+"50 mg" and "100 mg" instead of just "50" and "100". This just helps make
+it clearer what the numbers represent. If you specify anything other than
+Dose_sub or Dose_inhib for \code{facet_column_x}, \code{y_order_column}, or
+\code{y_order_secondary_column}, this will be ignored.}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier. This was designed for simulations where the
@@ -91,7 +107,7 @@ become "midazolam".}
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all. \emph{Note:} We're still working on the legend position when
-there's something specified for \code{y_axis_order_secondary}; choosing
+there's something specified for \code{y_order_secondary_column}; choosing
 that option requires us to lay out the graphs differently, and when we do
 that, the legend position doesn't work well for anything other than "none"
 or "right".}
@@ -126,29 +142,20 @@ be rigorously QC'ed.
 \examples{
 
 # We'll use some example forest-plot data for the substrate bufuralol
-# with various effectors.
-forest_plot(forest_dataframe = ForestData,
+# with various effectors. To start, we'll just look at one dose level.
+Buf_lowdose <- ForestData \%>\% filter(Dose_sub == 20)
+forest_plot(forest_dataframe = Buf_lowdose,
             perp_or_victim = "victim",
             x_axis_limits = c(0.9, 5))
 
-# If there were multiple dosing levels of bufuralol, it might be
+# If there were multiple dosing levels of your drug, though, it might be
 # nice to break up the graph by the substrate dose like this:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             facet_column_x = Dose_sub,
             x_axis_limits = c(0.9, 5))
 
-
-# If you want to maybe add some units in the graph to the substrate dose
-# or maybe also say "Dose = X mg MyCompound", you can modify the column
-# Dose_sub into a new column, Dose_sub_pretty, and use it like this:
-ForestData <- ForestData \%>\%
-                  mutate(Dose_sub_pretty = paste("Dose =", Dose_sub,
-                                                 "mg bufuralol"))
-
-forest_plot(forest_dataframe = ForestData,
-            perp_or_victim = "victim",
-            facet_column_x = Dose_sub_pretty,
-            x_axis_limits = c(0.9, 5))
-
+# Maybe you want just one longer graph  with all the low-dose simulations
+# on the top and the high-dose simulations on the bottom. Here's one
+# way to do that: 
 }
