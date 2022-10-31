@@ -1429,19 +1429,35 @@ call. = FALSE)
     
     if(AES %in% c("color", "color-linetype")){
         
-        NumColorsNeeded <-
-            ifelse(MapObsData,
-                   bind_rows(sim_dataframe, obs_dataframe) %>% 
-                       pull(colorBy_column) %>% unique() %>% length(),
-                   sim_dataframe %>% 
-                       pull(colorBy_column) %>% unique() %>% length())
+        # Calculating the number of colors needed
         
+        # If the user requests the column Individual for colorBy_column, they
+        # most likely want each observed individual to be a different color but
+        # the aggregate simulated data to be the usual colors (black or gray).
+        # NumColorsNeeded should only include the obs data in that scenario.
+        if(AESCols["color"] == "Individual"){
+            NumColorsNeeded <- obs_dataframe %>% 
+                pull(colorBy_column) %>% unique() %>% length()
+        } else {
+            NumColorsNeeded <-
+                ifelse(MapObsData,
+                       bind_rows(sim_dataframe, obs_dataframe) %>% 
+                           pull(colorBy_column) %>% unique() %>% length(),
+                       sim_dataframe %>% 
+                           pull(colorBy_column) %>% unique() %>% length())
+            
+        }
+        
+        # If there's only one unique value in the colorBy_column, then make that
+        # item black.
         if(length(sort(unique(sim_dataframe$colorBy_column, 
                               obs_dataframe$colorBy_column))) == 1){
             A <- A + scale_color_manual(values = "black") +
                 scale_fill_manual(values = "black")
         } else {
             
+            # This is when the user wants specific user-specified colors rather
+            # that one of the pre-made sets.
             if(length(color_set) > 1){
                 
                 # If they supply a named character vector whose values are not
@@ -1483,6 +1499,7 @@ call. = FALSE)
                                                "brewer.*1|set.*1"), 
                                     "set1", color_set)
                 
+                
                 suppressWarnings(
                     MyColors <- 
                         switch(
@@ -1518,26 +1535,34 @@ call. = FALSE)
                                               arrange(colorBy_column) %>% 
                                               pull(colorBy_column))
             } else if(length(color_set) == 1){
-                
-                # This is when the colors are NOT set by the observed file AND
-                # ALSO the user hasn't supplied a named character vector for how
-                # to assign the colors. 
-                
-                
-                # if(class(sim_dataframe$colorBy_column) == "character"){ <--- I think I don't need this b/c colorBy_column should be factor by now.
-                #     names(MyColors) <- unique(sim_dataframe %>% 
-                #                                   arrange(colorBy_column) %>% 
-                #                                   pull(colorBy_column))
-                # } else {
+                if(AESCols["color"] == "Individual"){
+                    # Figuring out all the colorBy_column values
+                    AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                               pull(colorBy_column))
+                    
+                    MyColors <- c(MyColors,
+                                  rep("black", length(setdiff(levels(sim_dataframe$colorBy_column), 
+                                                         levels(obs_dataframe$colorBy_column)))))
+                    
+                    names(MyColors)[1:length(levels(obs_dataframe$colorBy_column))] <- 
+                        levels(obs_dataframe$colorBy_column)
+                    names(MyColors)[(length(levels(obs_dataframe$colorBy_column)) + 1):
+                                        length(MyColors)] <- 
+                        levels(sim_dataframe$colorBy_column)
+                    
+                } else {
+                    # This is when the colors are NOT set by the observed file
+                    # AND the user hasn't supplied a named character vector for
+                    # how to assign the colors AND the colors are not assigned
+                    # to the individual subject.
                     names(MyColors) <- levels(sim_dataframe$colorBy_column)
-                # }
+                }
             }
             
             suppressWarnings(
                 A <-  A + scale_color_manual(values = MyColors) +
                     scale_fill_manual(values = MyColors)
             )
-            
         }
     }
     
