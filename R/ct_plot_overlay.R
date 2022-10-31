@@ -560,6 +560,19 @@ ct_plot_overlay <- function(ct_dataframe,
             mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
     }
     
+    # Things will be more consistent and easier to code if Individual is a
+    # factor and is not NA. Adjusting that as needed.
+    if(any(is.na(ct_dataframe$Individual))){
+        ct_dataframe <- ct_dataframe %>%
+            mutate(Individual = ifelse(is.na(Individual), 
+                                       Trial, Individual))
+    }
+    
+    if(class(ct_dataframe$Individual) != "factor"){
+        ct_dataframe <- ct_dataframe %>% 
+            mutate(Individual = as.factor(Individual))
+    }
+    
     # Setting things up for nonstandard evaluation ----------------------------
     
     facet1_column <- rlang::enquo(facet1_column)
@@ -892,6 +905,35 @@ ct_plot_overlay <- function(ct_dataframe,
     }
     
     
+    if(AESCols["color"] == "Individual"){
+        # For ease of coding below, need to drop levels from obs data for
+        # Individual here and then tweak them a few lines down.
+        obs_dataframe <-
+            obs_dataframe %>% mutate(Individual = droplevels(Individual))
+        
+        # If the user wants to color by Individual, presumably they want the
+        # observed data to be colored by individual but still want the simulated
+        # data to be black or gray. To deal with this, need to make a separate
+        # column for individual observed data and will have to set the levels to the
+        # obs individuals plus "simulated" to get things to be colored correctly and
+        # show up in the legend correctly.
+        ct_dataframe <- ct_dataframe %>% 
+            mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+                   SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
+                                                            "simulated")),
+                   colorBy_column = SubjectID)
+        sim_dataframe <- sim_dataframe %>% 
+            mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+                   SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
+                                                            "simulated")),
+                   colorBy_column = SubjectID)
+        obs_dataframe <- obs_dataframe %>% 
+            mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+                   SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
+                                                            "simulated")),
+                   colorBy_column = SubjectID)
+    }
+    
     # RETURN TO THIS
     # # Need to check whether linetype or colorBy column was File b/c then we also
     # # need to set linetype or colorBy column in obs data. However, if there was
@@ -1159,7 +1201,8 @@ call. = FALSE)
                                             group = Group, shape = linetype_column),
                            "none" = aes(x = Time, y = Conc,
                                         group = Group))) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
+                      show.legend = AESCols["color"] != "Individual")
         
     }
     
@@ -1188,9 +1231,11 @@ call. = FALSE)
                            "none" = aes(x = Time, y = Conc,
                                         group = Group))) +
             geom_line(alpha = 0.25,
-                      lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+                      lwd = ifelse(is.na(line_width), 0.8, line_width), 
+                      show.legend = AESCols["color"] != "Individual") +
             geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
-                      lwd = ifelse(is.na(line_width), 1, line_width))
+                      lwd = ifelse(is.na(line_width), 1, line_width), 
+                      show.legend = AESCols["color"] != "Individual")
     }
     
     ## Figure type: ribbon --------------------------------------------------
@@ -1225,8 +1270,10 @@ call. = FALSE)
                                          fill = colorBy_column), 
                            "none" = aes(x = Time, y = MyMean, 
                                         ymin = per5, ymax = per95))) +
-            geom_ribbon(alpha = 0.25, color = NA) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
+            geom_ribbon(alpha = 0.25, color = NA, 
+                        show.legend = AESCols["color"] != "Individual") +
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
+                      show.legend = AESCols["color"] != "Individual") 
         
     }
     
@@ -1450,8 +1497,8 @@ call. = FALSE)
         
         # If there's only one unique value in the colorBy_column, then make that
         # item black.
-        if(length(sort(unique(sim_dataframe$colorBy_column, 
-                              obs_dataframe$colorBy_column))) == 1){
+        if(length(sort(unique(c(sim_dataframe$colorBy_column, 
+                                obs_dataframe$colorBy_column)))) == 1){
             A <- A + scale_color_manual(values = "black") +
                 scale_fill_manual(values = "black")
         } else {
@@ -1538,17 +1585,10 @@ call. = FALSE)
                 if(AESCols["color"] == "Individual"){
                     # Figuring out all the colorBy_column values
                     AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                               pull(colorBy_column))
+                                         pull(colorBy_column))
                     
-                    MyColors <- c(MyColors,
-                                  rep("black", length(setdiff(levels(sim_dataframe$colorBy_column), 
-                                                         levels(obs_dataframe$colorBy_column)))))
-                    
-                    names(MyColors)[1:length(levels(obs_dataframe$colorBy_column))] <- 
-                        levels(obs_dataframe$colorBy_column)
-                    names(MyColors)[(length(levels(obs_dataframe$colorBy_column)) + 1):
-                                        length(MyColors)] <- 
-                        levels(sim_dataframe$colorBy_column)
+                    MyColors <- c(MyColors, "black")
+                    names(MyColors) <- levels(ct_dataframe$colorBy_column)
                     
                 } else {
                     # This is when the colors are NOT set by the observed file
