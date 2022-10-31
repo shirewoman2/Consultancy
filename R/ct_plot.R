@@ -387,7 +387,7 @@ ct_plot <- function(ct_dataframe = NA,
     
     # Noting whether this is an enzyme-abundance plot b/c some options change
     # then.
-    EnzPlot <- "Enzyme" %in% names(ct_dataframe)
+    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
     
     # Checking whether user tried to include obs data directly from simulator
     # output for a simulation that included anything other than substrate in
