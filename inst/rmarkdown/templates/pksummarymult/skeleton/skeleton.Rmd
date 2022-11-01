@@ -30,7 +30,8 @@ if("File" %in% names(MyPKResults)){
         select(!matches("File"), File)
 }
 
-formatTable_Simcyp(MyPKResults, fontsize = fontsize)
+formatTable_Simcyp(MyPKResults, fontsize = fontsize, 
+                   shading_column = File)
 
 ```
 
