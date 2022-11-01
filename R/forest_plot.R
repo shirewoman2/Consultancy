@@ -102,6 +102,14 @@
 #'   that option requires us to lay out the graphs differently, and when we do
 #'   that, the legend position doesn't work well for anything other than "none"
 #'   or "right".
+#' @param color_set the set of colors to use for shading the graph background to
+#'   indicate the level of interaction depicted. Options are "grays" (default),
+#'   "yellow to red" (makes graphs like Figure 1 of
+#'   \href{https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12864}{Chen
+#'   Jones 2022 CPT, doi 10.1002/psp4.12864}), "none" for no shading at all, or
+#'   a named character vector of the colors you want for each interaction level,
+#'   e.g., \code{color_set = c("insignificant" = "white", "weak" = "gray90",
+#'   "moderate" = "gray75", strong = "gray50")}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -132,64 +140,63 @@
 #' # nice to break up the graph by the substrate dose like this:
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
-#'             facet_column_x = Dose_sub,
-#'             x_axis_limits = c(0.9, 5))
+#'             facet_column_x = Dose_sub)
 #'
 #' # Maybe you want just one longer graph  with all the low-dose simulations
 #' # on the top and the high-dose simulations on the bottom. Here's one
-#' # way to do that: 
+#' # way to do that:
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File)
-#'             
+#'
 #' # Or you could break things up first by the file and then by the dose:
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = File,
 #'             y_axis_column_secondary = Dose_sub)
-#'             
+#'
 #' # Here's one way you could change the order in which the compounds appear:
-#' forest_plot(forest_dataframe = ForestData,
-#'             perp_or_victim = "victim",
-#'             y_axis_column = Dose_sub, 
-#'             y_axis_column_secondary = File, 
-#'             y_order_secondary = c("itraconazole", "fluvoxamine", 
-#'                                   "ticlopidine", "quinidine"))
-#' 
-#' # Perhaps it would be less opaque to just list the full file names
-#' # in the order you want: 
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File,
-#'             y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx", 
-#'                                   "buf-20mg-sd-itra-200mg-qd.xlsx", 
+#'             y_order_secondary = c("itraconazole", "fluvoxamine",
+#'                                   "ticlopidine", "quinidine"))
+#'
+#' # Perhaps it would be less opaque to just list the full file names
+#' # in the order you want:
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             y_axis_column = Dose_sub,
+#'             y_axis_column_secondary = File,
+#'             y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx",
+#'                                   "buf-20mg-sd-itra-200mg-qd.xlsx",
 #'                                   "buf-20mg-sd-quin-200mg-qd.xlsx",
-#'                                   "buf-20mg-sd-tic-219mg-bid.xlsx", 
-#'                                   "buf-50mg-sd-fluv-36mg-qd.xlsx", 
-#'                                   "buf-50mg-sd-itra-200mg-qd.xlsx", 
+#'                                   "buf-20mg-sd-tic-219mg-bid.xlsx",
+#'                                   "buf-50mg-sd-fluv-36mg-qd.xlsx",
+#'                                   "buf-50mg-sd-itra-200mg-qd.xlsx",
 #'                                   "buf-50mg-sd-quin-200mg-qd.xlsx",
 #'                                   "buf-50mg-sd-tic-219mg-bid.xlsx"))
-#'                                    
+#'
 #' # You could also change the way the compound names appear when
 #' # you list the file names as a named character vector like this:
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File,
-#'             y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)", 
-#'                                   "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)", 
+#'             y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)",
+#'                                   "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)",
 #'                                   "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(CYP2D6 inhibitor)",
-#'                                   "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine", 
-#'                                   "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate", 
-#'                                   "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate", 
+#'                                   "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine",
+#'                                   "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate",
+#'                                   "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate",
 #'                                   "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
 #'                                   "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
 #' # (The "\n" means "new line".)
-#'                                   
+#'
 #' # As long as there are unique values for each of the files in that named
-#' # character vector, you don't need to break up your data in any other way. 
+#' # character vector, you don't need to break up your data in any other way.
 #' # Here's basically the same function call as above but without
 #' # y_axis_column_secondary.
 #' forest_plot(forest_dataframe = ForestData,
@@ -204,6 +211,48 @@
 #'                         "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
 #'                         "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
 #'             
+#' # Here are some options for modifying the aesthetics of your graph:
+#' # -- Adjust the x axis limits with x_axis_limits
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             facet_column_x = Dose_sub,
+#'             x_axis_limits = c(0.9, 5))
+#' 
+#' # -- Include a legend for the shading
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             facet_column_x = Dose_sub,
+#'             legend_position = "bottom")
+#' 
+#' # -- Change the shading to be like in Chen Jones 2022 CPT
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             facet_column_x = Dose_sub,
+#'             legend_position = "bottom", 
+#'             color_set = "yellow to red")
+#'
+#' # -- Or make the shading disappear
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             facet_column_x = Dose_sub,
+#'             legend_position = "bottom", 
+#'             color_set = "none")
+#' 
+#' # -- Or specify exactly which colors you want for which interaction level
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             facet_column_x = Dose_sub,
+#'             legend_position = "bottom", 
+#'             color_set = c("insignificant" = "white", "weak" = "gray90",
+#'                           "moderate" = "gray75", strong = "gray50"))
+#'                           
+#' # -- Make the compound names match *exactly* what was in the simulator file
+#' # rather than being automatically prettified
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             facet_column_x = Dose_sub,
+#'             prettify_compound_names = FALSE)
+
 
 forest_plot <- function(forest_dataframe, 
                         perp_or_victim, 
@@ -218,6 +267,7 @@ forest_plot <- function(forest_dataframe,
                         dose_units = "mg",
                         prettify_compound_names = TRUE, 
                         legend_position = "none", 
+                        color_set = "grays",
                         save_graph = NA,
                         fig_height = 6,
                         fig_width = 5){
@@ -334,6 +384,20 @@ forest_plot <- function(forest_dataframe,
     
     # Making legend argument lower case to avoid case sensitivity
     legend_position <- tolower(legend_position)
+    
+    # If color_set is "none", then remove the legend.
+    if(length(color_set) == 1 && color_set == "none"){
+        legend_position <- "none"
+    }
+    
+    if((length(color_set) == 1 &&
+        color_set %in% c("none", "grays", "yellow to red") == FALSE) |
+       (length(color_set) > 1 && length(color_set) != 4)){
+        warning("Acceptable input for `color_set` is `grays`, `yellow to red`, `none`, or a named character vector of the colors you want for each interaction level (see examples in help file), and your input was not among those options. We'll use the default, `grays`, for now.", 
+                call. = FALSE)
+        
+        color_set <- "grays"
+    }
     
     if(legend_position %in% c("none", "bottom", "left", "right", "top") == FALSE){
         warning(paste0("You listed `", legend_position, 
@@ -550,9 +614,30 @@ forest_plot <- function(forest_dataframe,
         mutate(IntLevel = factor(IntLevel, 
                                  levels = c("insignificant", "weak", "moderate", 
                                             "strong")))
-    
-    FillColor <- c("insignificant" = "white", "weak" = "gray95", 
-                   "moderate" = "gray90", "strong" = "gray75")
+    if(length(color_set) == 1){
+        FillColor <- switch(color_set, 
+                            "grays" = c("insignificant" = "white",
+                                        "weak" = "gray95", 
+                                        "moderate" = "gray90",
+                                        "strong" = "gray75"), 
+                            "yellow to red" = c("insignificant" = "white", 
+                                                "weak" = "#FFFF95",
+                                                "moderate" = "#FFDA95",
+                                                "strong" = "#FF9595"), 
+                            "none" = c("insignificant" = "white", 
+                                       "weak" = "white",
+                                       "moderate" = "white",
+                                       "strong" = "white"))
+    } else {
+        FillColor <- color_set
+        
+        # If the user did not properly name the vector, fix that.
+        if(any(names(color_set) != c("insignificant", "weak", "moderate", 
+                                     "strong"))){
+            names(color_set) <- c("insignificant", "weak", "moderate", 
+                                  "strong")
+        }
+    }
     
     if(is.na(x_axis_limits[1])){
         x_axis_limits <- c(

@@ -18,6 +18,7 @@ forest_plot(
   dose_units = "mg",
   prettify_compound_names = TRUE,
   legend_position = "none",
+  color_set = "grays",
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -129,6 +130,15 @@ that option requires us to lay out the graphs differently, and when we do
 that, the legend position doesn't work well for anything other than "none"
 or "right".}
 
+\item{color_set}{the set of colors to use for shading the graph background to
+indicate the level of interaction depicted. Options are "grays" (default),
+"yellow to red" (makes graphs like Figure 1 of
+\href{https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12864}{Chen
+Jones 2022 CPT, doi 10.1002/psp4.12864}), "none" for no shading at all, or
+a named character vector of the colors you want for each interaction level,
+e.g., \code{color_set = c("insignificant" = "white", "weak" = "gray90",
+"moderate" = "gray75", strong = "gray50")}}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -171,64 +181,63 @@ forest_plot(forest_dataframe = Buf_lowdose,
 # nice to break up the graph by the substrate dose like this:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
-            facet_column_x = Dose_sub,
-            x_axis_limits = c(0.9, 5))
+            facet_column_x = Dose_sub)
 
 # Maybe you want just one longer graph  with all the low-dose simulations
 # on the top and the high-dose simulations on the bottom. Here's one
-# way to do that: 
+# way to do that:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             y_axis_column = Dose_sub,
             y_axis_column_secondary = File)
-            
+
 # Or you could break things up first by the file and then by the dose:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             y_axis_column = File,
             y_axis_column_secondary = Dose_sub)
-            
-# Here's one way you could change the order in which the compounds appear:
-forest_plot(forest_dataframe = ForestData,
-            perp_or_victim = "victim",
-            y_axis_column = Dose_sub, 
-            y_axis_column_secondary = File, 
-            y_order_secondary = c("itraconazole", "fluvoxamine", 
-                                  "ticlopidine", "quinidine"))
 
-# Perhaps it would be less opaque to just list the full file names
-# in the order you want: 
+# Here's one way you could change the order in which the compounds appear:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             y_axis_column = Dose_sub,
             y_axis_column_secondary = File,
-            y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx", 
-                                  "buf-20mg-sd-itra-200mg-qd.xlsx", 
+            y_order_secondary = c("itraconazole", "fluvoxamine",
+                                  "ticlopidine", "quinidine"))
+
+# Perhaps it would be less opaque to just list the full file names
+# in the order you want:
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            y_axis_column = Dose_sub,
+            y_axis_column_secondary = File,
+            y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx",
+                                  "buf-20mg-sd-itra-200mg-qd.xlsx",
                                   "buf-20mg-sd-quin-200mg-qd.xlsx",
-                                  "buf-20mg-sd-tic-219mg-bid.xlsx", 
-                                  "buf-50mg-sd-fluv-36mg-qd.xlsx", 
-                                  "buf-50mg-sd-itra-200mg-qd.xlsx", 
+                                  "buf-20mg-sd-tic-219mg-bid.xlsx",
+                                  "buf-50mg-sd-fluv-36mg-qd.xlsx",
+                                  "buf-50mg-sd-itra-200mg-qd.xlsx",
                                   "buf-50mg-sd-quin-200mg-qd.xlsx",
                                   "buf-50mg-sd-tic-219mg-bid.xlsx"))
-                                   
+
 # You could also change the way the compound names appear when
 # you list the file names as a named character vector like this:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             y_axis_column = Dose_sub,
             y_axis_column_secondary = File,
-            y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)", 
-                                  "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)", 
+            y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)",
+                                  "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)",
                                   "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(CYP2D6 inhibitor)",
-                                  "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine", 
-                                  "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate", 
-                                  "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate", 
+                                  "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine",
+                                  "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate",
+                                  "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate",
                                   "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
                                   "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
 # (The "\n" means "new line".)
-                                  
+
 # As long as there are unique values for each of the files in that named
-# character vector, you don't need to break up your data in any other way. 
+# character vector, you don't need to break up your data in any other way.
 # Here's basically the same function call as above but without
 # y_axis_column_secondary.
 forest_plot(forest_dataframe = ForestData,
@@ -243,4 +252,45 @@ forest_plot(forest_dataframe = ForestData,
                         "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
                         "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
             
+# Here are some options for modifying the aesthetics of your graph:
+# -- Adjust the x axis limits with x_axis_limits
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            x_axis_limits = c(0.9, 5))
+
+# -- Include a legend for the shading
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom")
+
+# -- Change the shading to be like in Chen Jones 2022 CPT
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom", 
+            color_set = "yellow to red")
+
+# -- Or make the shading disappear
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom", 
+            color_set = "none")
+
+# -- Or specify exactly which colors you want for which interaction level
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom", 
+            color_set = c("insignificant" = "white", "weak" = "gray90",
+                          "moderate" = "gray75", strong = "gray50"))
+                          
+# -- Make the compound names match *exactly* what was in the simulator file
+# rather than being automatically prettified
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            prettify_compound_names = FALSE)
 }
