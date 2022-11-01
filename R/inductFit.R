@@ -766,7 +766,8 @@ inductFit <- function(DF,
     }
     
     if(color_set == "viridis"){
-        G <- G + viridis::scale_color_viridis(discrete = TRUE) +
+        Out$Graph <- Out$Graph + 
+            viridis::scale_color_viridis(discrete = TRUE) +
             viridis::scale_fill_viridis(discrete = TRUE)
     }
     
