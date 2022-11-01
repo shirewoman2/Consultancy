@@ -371,9 +371,8 @@ pksummary_mult <- function(sim_data_files = NA,
                                     Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")
             names(WarningDF) <- names(MyPKResults)[1:2]
             
-            MyPKResults <- bind_rows(MyPKResults, WarningDF)
-            
-            write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
+            write.csv(bind_rows(MyPKResults, WarningDF),
+                      paste0(OutPath, "/", save_table), row.names = F)
             
         } else {
             # This is when they want a Word file as output
