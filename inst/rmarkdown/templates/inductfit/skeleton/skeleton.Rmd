@@ -39,11 +39,11 @@ $$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-[Ind]}{\gamm
 ```{r indfit1}
 
 model_label <- switch(model, 
-                      "IndmaxSlope" = "Indmax slope model", 
+                      "IndmaxSlope" = "Ind~max~ slope model", 
                       "Slope" = "slope model", 
                       "Sig3Param" = "sigmoidal three-parameter model", 
-                      "Indmax" = "Indmax model", 
-                      "all" = "Indmax, Indmax slope, slope, and sigmoidal three-parameter models")
+                      "Indmax" = "Ind~max~ model", 
+                      "all" = "Ind~max~, Ind~max~ slope, slope, and sigmoidal three-parameter models")
 
 
 ```
@@ -58,7 +58,7 @@ Out$Graph
 
 ```
 
-*Table XXX. Fitted parameters*
+*Table XXX. Fitted parameters for the `r model_label` fit to `r measurement` induction data*
 
 ```{r indfit3}
 
