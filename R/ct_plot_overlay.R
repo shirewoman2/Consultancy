@@ -568,7 +568,8 @@ ct_plot_overlay <- function(ct_dataframe,
                                        Trial, Individual))
     }
     
-    if(class(ct_dataframe$Individual) != "factor"){
+    if("Individual" %in% names(ct_dataframe) &&
+       class(ct_dataframe$Individual) != "factor"){
         ct_dataframe <- ct_dataframe %>% 
             mutate(Individual = as.factor(Individual))
     }
