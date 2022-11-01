@@ -1,218 +1,227 @@
-#'Make summary PK tables for reports
+#' Make summary PK tables for reports
 #'
-#'\code{pksummary_table} creates tables of PK parameters for reports and
-#'presentations, including reporting means, CVs, and confidence intervals or
-#'percentiles and, optionally, comparisons to observed data. This function
-#'automatically finds the correct tab and the correct cells in a Simulator
-#'output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
-#'see the notes at the bottom of this help file for how to supply observed data
-#'in a standardized fashion that this function can read.} \item{If you would
-#'like to make a single PK table for multiple files at once, please see the
-#'function \code{\link{pksummary_mult}}.} \item{Nearly all parameters are for
-#'the \emph{substrate}. We're still validating this for extracting PK for an
-#'effector. \strong{A request for assistance:} If you extract PK data for an
-#'effector by specifying an Excel sheet for that compound, please check the
-#'values and tell Laura Shireman how well it works!} \item{ If the simulator
-#'output Excel file lives on SharePoint, you'll need to close it or this
-#'function will just keep running and not generate any output while it waits for
-#'access to the file.}}
+#' \code{pksummary_table} creates tables of PK parameters for reports and
+#' presentations, including reporting means, CVs, and confidence intervals or
+#' percentiles and, optionally, comparisons to observed data. This function
+#' automatically finds the correct tab and the correct cells in a Simulator
+#' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+#' see the notes at the bottom of this help file for how to supply observed data
+#' in a standardized fashion that this function can read.} \item{If you would
+#' like to make a single PK table for multiple files at once, please see the
+#' function \code{\link{pksummary_mult}}.} \item{Nearly all parameters are for
+#' the \emph{substrate}. We're still validating this for extracting PK for an
+#' effector. \strong{A request for assistance:} If you extract PK data for an
+#' effector by specifying an Excel sheet for that compound, please check the
+#' values and tell Laura Shireman how well it works!} \item{ If the simulator
+#' output Excel file lives on SharePoint, you'll need to close it or this
+#' function will just keep running and not generate any output while it waits
+#' for access to the file.}}
 #'
-#'Because we need to have a standardized way to input observed data, setting up
-#'the input for this function requires creating a data.frame or named vector of
-#'the observed PK data, supplying a csv or Excel file with observed PK data, or
-#'filling out an Excel form.
+#' Because we need to have a standardized way to input observed data, setting up
+#' the input for this function requires creating a data.frame or named vector of
+#' the observed PK data, supplying a csv or Excel file with observed PK data, or
+#' filling out an Excel form.
 #'
-#'\strong{OPTION A: Supply a data.frame or a named vector.} If you supply a
-#'data.frame, the column names will indicate which PK parameter you want, and if
-#'you supply a named numeric vector, the names of the vector will perform the
-#'same function. If you have CV values for any observed data that you'd like to
-#'include in the table, make the name be the PK parameter with a suffix of
-#'"_CV".
+#' \strong{OPTION A: Supply a data.frame or a named vector.} If you supply a
+#' data.frame, the column names will indicate which PK parameter you want, and
+#' if you supply a named numeric vector, the names of the vector will perform
+#' the same function. If you have CV values for any observed data that you'd
+#' like to include in the table, make the name be the PK parameter with a suffix
+#' of "_CV".
 #'
-#'An example of specifying a data.frame: \code{observed_PK =
-#'data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22,
-#'Cmax_dose1_CV = 0.24)}
+#' An example of specifying a data.frame: \code{observed_PK =
+#' data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22,
+#' Cmax_dose1_CV = 0.24)}
 #'
-#'An example of specifying a named vector: \code{observed_PK = c("AUCinf_dose1"
-#'= 60, "AUCinf_dose1_CV" = 0.38, "Cmax_dose1" = 22, "Cmax_dose1_CV" = 0.24)}.
+#' An example of specifying a named vector: \code{observed_PK = c("AUCinf_dose1"
+#' = 60, "AUCinf_dose1_CV" = 0.38, "Cmax_dose1" = 22, "Cmax_dose1_CV" = 0.24)}.
 #'
-#'\strong{OPTION B: Use an Excel or csv file of oserved PK data.} In Excel,
-#'create a single-tab Excel file or a csv file where the 1st row lists the names
-#'of the PK parameters and the 2nd row lists the values. Just as with Option A,
-#'you can include observed CV values by adding "_CV" to the parameter name. To
-#'see an example of how this should look, run this in the console and then open
-#'the csv file:
+#' \strong{OPTION B: Use an Excel or csv file of oserved PK data.} In Excel,
+#' create a single-tab Excel file or a csv file where the 1st row lists the
+#' names of the PK parameters and the 2nd row lists the values. Just as with
+#' Option A, you can include observed CV values by adding "_CV" to the parameter
+#' name. To see an example of how this should look, run this in the console and
+#' then open the csv file:
 #'
-#'\code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
-#'Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
-#'values.csv", row.names = FALSE)}
+#' \code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
+#' Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
+#' values.csv", row.names = FALSE)}
 #'
-#'When you call on \code{pksummary_table}, use the following syntax,
-#'substituting your file name for the example: \code{observed_PK = "Example
-#'observed PK values.csv"}
+#' When you call on \code{pksummary_table}, use the following syntax,
+#' substituting your file name for the example: \code{observed_PK = "Example
+#' observed PK values.csv"}
 #'
-#'\strong{OPTION C: Fill out an Excel form.} Here are the steps to take for this
-#'option: \enumerate{
+#' \strong{OPTION C: Fill out an Excel form.} Here are the steps to take for
+#' this option: \enumerate{
 #'
-#'\item{Use the function \code{\link{generateReportInputForm}} to create an
-#'Excel file where you can enter information about your project. Example:
-#'\code{generateReportInputForm("My report input form.xlsx")}}
+#' \item{Use the function \code{\link{generateReportInputForm}} to create an
+#' Excel file where you can enter information about your project. Example:
+#' \code{generateReportInputForm("My report input form.xlsx")}}
 #'
-#'\item{Go to the tab "study info - DDI" or "study info - no DDI", whichever is
-#'appropriate for your situation. Under the heading "Simulated data", enter the
-#'name of the specific simulator output Excel file you want to compare.}
+#' \item{Go to the tab "study info - DDI" or "study info - no DDI", whichever is
+#' appropriate for your situation. Under the heading "Simulated data", enter the
+#' name of the specific simulator output Excel file you want to compare.}
 #'
-#'\item{Under the heading "Observed data" on that same tab, enter details about
-#'your observed data. It's ok if you don't have all the information; anything
-#'that's missing won't be included in the final S/O table. It's also ok to
-#'rename this tab or make copies of it within the same Excel file for making
-#'other S/O tables.}
+#' \item{Under the heading "Observed data" on that same tab, enter details about
+#' your observed data. It's ok if you don't have all the information; anything
+#' that's missing won't be included in the final S/O table. It's also ok to
+#' rename this tab or make copies of it within the same Excel file for making
+#' other S/O tables.}
 #'
-#'\item{Save the report input form.}
+#' \item{Save the report input form.}
 #'
-#'\item{Back in RStudio, run this function using the file name of that Excel
-#'report form as input for \code{report_input_file} and the name of the "study
-#'info - DDI/no DDI" tab as the input for \code{sheet_report}. Note: If the
-#'Excel file lives on SharePoint, you'll need to close it or this function will
-#'just keep running and not generate any output while it waits for access to the
-#'file.} }
+#' \item{Back in RStudio, run this function using the file name of that Excel
+#' report form as input for \code{report_input_file} and the name of the "study
+#' info - DDI/no DDI" tab as the input for \code{sheet_report}. Note: If the
+#' Excel file lives on SharePoint, you'll need to close it or this function will
+#' just keep running and not generate any output while it waits for access to
+#' the file.} }
 #'
 #'
-#'@param sim_data_file a simulator output file. If you supply a filled-out
-#'  report input form to the argument \code{report_input_file}, you can leave
-#'  this blank.
-#'@param report_input_file (optional) This argument is an alternative way to
-#'  specify both what simulator Excel file to use and also what the observed PK
-#'  parameters were. Input is the name of the Excel file created by running
-#'  \code{\link{generateReportInputForm}}, which you have now filled out,
-#'  including the path if it's in any other directory than the current one.
-#'  Please see the "Details" section at the bottom for more information on this
-#'  option.
-#'@param sheet_report the sheet in the Excel report file that contains
-#'  information about the study, e.g., "study info - DDI" or "study info - no
-#'  DDI" if you haven't renamed the tab. This only applies if you have supplied
-#'  an Excel file name for \code{report_input_file}. If you're supplying a
-#'  simulator output Excel file for \code{sim_data_file}, ignore this.
-#'@param PKparameters (optional) the PK parameters to include as a character
-#'  vector. \itemize{
+#' @param sim_data_file a simulator output file. If you supplied a file name in
+#'   a data.frame of observed PK or a csv or Excel file of observed PK for
+#'   \code{observed_PK}, that file name will be used preferentially and you can
+#'   leave this blank. Similarly, if you supply a filled-out report input form
+#'   to the argument \code{report_input_file}, the file name you supplied
+#'   \emph{there} will be used preferentially, and you can leave this blank.
+#' @param report_input_file (optional) This argument is an alternative way to
+#'   specify both what simulator Excel file to use and also what the observed PK
+#'   parameters were. Input is the name of the Excel file created by running
+#'   \code{\link{generateReportInputForm}}, which you have now filled out,
+#'   including the path if it's in any other directory than the current one.
+#'   Please see the "Details" section at the bottom for more information on this
+#'   option.
+#' @param sheet_report the sheet in the Excel report file that contains
+#'   information about the study, e.g., "study info - DDI" or "study info - no
+#'   DDI" if you haven't renamed the tab. This only applies if you have supplied
+#'   an Excel file name for \code{report_input_file}. If you're supplying a
+#'   simulator output Excel file for \code{sim_data_file}, ignore this.
+#' @param PKparameters (optional) the PK parameters to include as a character
+#'   vector. \itemize{
 #'
-#'  \item{By default, if you have a single-dose simulation, the parameters will
-#'  include AUC and Cmax for dose 1, and, if you have a multiple-dose
-#'  simulation, AUC and Cmax for the last dose. Also by default, if you have an
-#'  effector present, the parameters will include the AUC and Cmax values with
-#'  and without the effector as well as those ratios.}
+#'   \item{By default, if you have a single-dose simulation, the parameters will
+#'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
+#'   simulation, AUC and Cmax for the last dose. Also by default, if you have an
+#'   effector present, the parameters will include the AUC and Cmax values with
+#'   and without the effector as well as those ratios.}
 #'
-#'  \item{Alternatively, you can specify a vector of any combination of
-#'  specific, individual parameters, e.g., \code{c("Cmax_dose1",
-#'  "AUCtau_last").} Be sure to encapsulate the parameters you want with
-#'  \code{c(...)}! To see the full set of possible parameters to extract, enter
-#'  \code{view(PKParameterDefinitions)} into the console.}
+#'   \item{Alternatively, you can specify a vector of any combination of
+#'   specific, individual parameters, e.g., \code{c("Cmax_dose1",
+#'   "AUCtau_last").} Be sure to encapsulate the parameters you want with
+#'   \code{c(...)}! To see the full set of possible parameters to extract, enter
+#'   \code{view(PKParameterDefinitions)} into the console.}
 #'
-#'  \item{If you supply observed data using either the argument
-#'  \code{report_input_file} or the argument \code{observed_PK}, the only PK
-#'  parameters that will be included are those available for the observed data.}
+#'   \item{If you supply observed data using either the argument
+#'   \code{report_input_file} or the argument \code{observed_PK}, the only PK
+#'   parameters that will be included are those available for the observed
+#'   data.}
 #'
-#'  \item{Parameters that don't make sense for your scenario -- such as asking
-#'  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-#'  inhibitor or effector -- will not be included.}
+#'   \item{Parameters that don't make sense for your scenario -- such as asking
+#'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
+#'   inhibitor or effector -- will not be included.}
 #'
-#'  \item{tmax will be listed as median, min, and max rather than mean, lower
-#'  and higher X\% confidence interval or X percentiles. Similarly, if you
-#'  request trial means, the values for tmax will be the range of medians for
-#'  the trials rather than the range of means.}}
+#'   \item{tmax will be listed as median, min, and max rather than mean, lower
+#'   and higher X\% confidence interval or X percentiles. Similarly, if you
+#'   request trial means, the values for tmax will be the range of medians for
+#'   the trials rather than the range of means.}}
 #'
-#'  An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
-#'  "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
-#'  "AUCtau_ratio_last", "Cmax_ratio_last")}.
-#'@param PKorder Would you like the order of the PK parameters to be the the
-#'  order specified in the Consultancy Report Template (default), or would you
-#'  like the order to match the order you specified with the argument
-#'  \code{PKparameters}? Options are "default" or "user specified".
-#'@param sheet_PKparameters (optional) If you want the PK parameters to be
-#'  pulled from a specific tab in the simulator output file, list that tab here.
-#'  Most of the time, this should be left as NA.
-#'@param tissue For which tissue would you like the PK parameters to be pulled?
-#'  Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'  tested).
-#'@param observed_PK (optional) If you have a data.frame, a named numeric
-#'  vector, or an Excel or csv file with observed PK parameters, supply the full
-#'  file name in quotes or the data.frame or vector here, and the
-#'  simulated-to-observed mean ratios will be calculated. If you supply an Excel
-#'  file, it should have only one tab. We prefer supplying csv files here since
-#'  they're faster to read in anyway. The supplied data.frame or file must
-#'  include columns for each of the PK parameters you would like to compare, and
-#'  those column names \emph{must} be among the PK parameter options listed in
-#'  \code{PKParameterDefinitions}. If you would like the output table to include
-#'  the observed data CV for any of the parameters, add "_CV" to the end of the
-#'  parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
-#'  this help file for examples of how to set this up.
-#'@param mean_type return "arithmetic" or "geometric" (default) means and CVs.
-#'@param includeTrialMeans TRUE or FALSE (default) for whether to include the
-#'  range of trial means for a given parameter. Note: This is calculated from
-#'  individual values rather than being pulled directly from the output.
-#'@param includeCV TRUE (default) or FALSE for whether to include rows for CV in
-#'  the table
-#'@param includeConfInt TRUE (default) or FALSE for whether to include whatever
-#'  confidence intervals were included in the simulator output file. Note that
-#'  the confidence intervals are geometric since that's what the simulator
-#'  outputs (see an AUC tab and the summary statistics; these values are the
-#'  ones for, e.g., "90\% confidence interval around the geometric mean(lower
-#'  limit)").
-#'@param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
-#'  percentiles
-#'@param includeRange TRUE or FALSE (default) for whether to include the minimum
-#'  and maximum values
-#'@param concatVariability TRUE or FALSE (default) for whether to concatenate
-#'  the variability. If "TRUE", the output will be formatted into a single row
-#'  and listed as the lower confidence interval or percentile to the upper CI or
-#'  percentile, e.g., "2400 to 2700". Please note that the current
-#'  SimcypConsultancy template lists one row for each of the upper and lower
-#'  values, so this should be set to FALSE for official reports.
-#'@param prettify_columns TRUE (default) or FALSE for whether to make easily
-#'  human-readable column names. TRUE makes pretty column names such as "AUCinf
-#'  (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-#'  \code{\link{extractPK}}, e.g., "AUCinf_dose1".
-#'@param prettify_compound_names TRUE (default) or FALSE on whether to make
-#'  compound names prettier in the prettified column titles and in any Word
-#'  output files. This was designed for simulations where the substrate and any
-#'  metabolites, effectors, or effector metabolites are among the standard
-#'  options for the simulator, and leaving \code{prettify_compound_names = TRUE}
-#'  will make the name of those compounds something more human readable. For
-#'  example, "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam"
-#'  will become "midazolam". Set each compound to the name you'd prefer to see
-#'  in your column titles if you would like something different. For example,
-#'  \code{prettify_compound_names = c("inhibitor" = "teeswiftavir", "substrate"
-#'  = "superstatin")}. Please note that "inhibitor" includes \emph{all} the
-#'  effectors and effector metabolites present, so, if you're setting the
-#'  effector name, you really should use something like this if you're including
-#'  effector metabolites: \code{prettify_compound_names = c("inhibitor" =
-#'  "teeswiftavir and 1-OH-teeswiftavir", "substrate" = "superstatin")}.
-#'@param checkDataSource TRUE (default) or FALSE for whether to include in the
-#'  output a data.frame that lists exactly where the data were pulled from the
-#'  simulator output file. Useful for QCing.
-#'@param save_table optionally save the output table and, if requested, the QC
-#'  info, by supplying a file name in quotes here, e.g., "My nicely formatted
-#'  table.docx" or "My table.csv", depending on whether you'd prefer to have the
-#'  main PK table saved as a Word or csv file. If you supply only the file
-#'  extension, e.g., \code{save_table = "docx"}, the name of the file will be
-#'  the file name plus "PK summary table" with that extension and output will be
-#'  located in the same folder as \code{sim_data_file}. If you supply something
-#'  other than just "docx" or just "csv" for the file name but you leave off the
-#'  file extension, we'll assume you want it to be ".csv". While the main PK
-#'  table data will be in whatever file format you requested, if you set
-#'  \code{checkDataSource = TRUE}, the QC data will be in a csv file on its own
-#'  and will have "- QC" added to the end of the file name. \strong{WARNING:}
-#'  SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions
-#'  issue, not an R issue. If you try to save on SharePoint, you will get a
-#'  warning that R will save your file to your Documents folder instead.
-#'@param fontsize the numeric font size for Word output. Default is 11 point.
-#'  This only applies when you save the table as a Word file.
+#'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
+#'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
+#'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
+#' @param PKorder Would you like the order of the PK parameters to be the the
+#'   order specified in the Consultancy Report Template (default), or would you
+#'   like the order to match the order you specified with the argument
+#'   \code{PKparameters}? Options are "default" or "user specified".
+#' @param sheet_PKparameters (optional) If you want the PK parameters to be
+#'   pulled from a specific tab in the simulator output file, list that tab
+#'   here. Most of the time, this should be left as NA.
+#' @param tissue For which tissue would you like the PK parameters to be pulled?
+#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
+#'   tested).
+#' @param observed_PK (optional) If you have a data.frame, a named numeric
+#'   vector, or an Excel or csv file with observed PK parameters, supply the
+#'   full file name in quotes or the data.frame or vector here, and the
+#'   simulated-to-observed mean ratios will be calculated. If you supply an
+#'   Excel file, it should have only one tab. We prefer supplying csv files here
+#'   since they're faster to read in anyway. The supplied data.frame or file
+#'   must include columns for each of the PK parameters you would like to
+#'   compare, and those column names \emph{must} be among the PK parameter
+#'   options listed in \code{PKParameterDefinitions}. If you would like the
+#'   output table to include the observed data CV for any of the parameters, add
+#'   "_CV" to the end of the parameter name, e.g., "AUCinf_dose1_CV". Please see
+#'   the "Example" section of this help file for examples of how to set this up.
+#' @param mean_type What kind of means and CVs do you want listed in the output
+#'   table? Options are "arithmetic" or "geometric" (default). If you supplied a
+#'   report input form, only specify this if you'd like to override the value
+#'   listed there.
+#' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
+#'   range of trial means for a given parameter. Note: This is calculated from
+#'   individual values rather than being pulled directly from the output.
+#' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
+#'   in the table
+#' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
+#'   confidence intervals were included in the simulator output file. Note that
+#'   the confidence intervals are geometric since that's what the simulator
+#'   outputs (see an AUC tab and the summary statistics; these values are the
+#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
+#'   limit)").
+#' @param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
+#'   percentiles
+#' @param includeRange TRUE or FALSE (default) for whether to include the
+#'   minimum and maximum values
+#' @param concatVariability TRUE or FALSE (default) for whether to concatenate
+#'   the variability. If "TRUE", the output will be formatted into a single row
+#'   and listed as the lower confidence interval or percentile to the upper CI
+#'   or percentile, e.g., "2400 to 2700". Please note that the current
+#'   SimcypConsultancy template lists one row for each of the upper and lower
+#'   values, so this should be set to FALSE for official reports.
+#' @param prettify_columns TRUE (default) or FALSE for whether to make easily
+#'   human-readable column names. TRUE makes pretty column names such as "AUCinf
+#'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#'   compound names prettier in the prettified column titles and in any Word
+#'   output files. This was designed for simulations where the substrate and any
+#'   metabolites, effectors, or effector metabolites are among the standard
+#'   options for the simulator, and leaving \code{prettify_compound_names =
+#'   TRUE} will make the name of those compounds something more human readable.
+#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
+#'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
+#'   you'd prefer to see in your column titles if you would like something
+#'   different. For example, \code{prettify_compound_names = c("inhibitor" =
+#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "inhibitor"
+#'   includes \emph{all} the effectors and effector metabolites present, so, if
+#'   you're setting the effector name, you really should use something like this
+#'   if you're including effector metabolites: \code{prettify_compound_names =
+#'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   "superstatin")}.
+#' @param checkDataSource TRUE (default) or FALSE for whether to include in the
+#'   output a data.frame that lists exactly where the data were pulled from the
+#'   simulator output file. Useful for QCing.
+#' @param save_table optionally save the output table and, if requested, the QC
+#'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
+#'   table.docx" or "My table.csv", depending on whether you'd prefer to have
+#'   the main PK table saved as a Word or csv file. If you supply only the file
+#'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
+#'   the file name plus "PK summary table" with that extension and output will
+#'   be located in the same folder as \code{sim_data_file}. If you supply
+#'   something other than just "docx" or just "csv" for the file name but you
+#'   leave off the file extension, we'll assume you want it to be ".csv". While
+#'   the main PK table data will be in whatever file format you requested, if
+#'   you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
+#'   its own and will have "- QC" added to the end of the file name.
+#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+#'   Microsoft permissions issue, not an R issue. If you try to save on
+#'   SharePoint, you will get a warning that R will save your file to your
+#'   Documents folder instead.
+#' @param fontsize the numeric font size for Word output. Default is 11 point.
+#'   This only applies when you save the table as a Word file.
 #'
-#'@return Returns a data.frame of PK summary data and, if observed data were
-#'  provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
-#'  output will instead be a list of that data.frame (named "Table") and
-#'  information on where the values came from for QCing (named "QC").
-#'@export
+#' @return Returns a data.frame of PK summary data and, if observed data were
+#'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
+#'   output will instead be a list of that data.frame (named "Table") and
+#'   information on where the values came from for QCing (named "QC").
+#' @export
 #' @examples
 #' pksummary_table("abc1a-5mg-qd.xlsx")
 #'
@@ -268,80 +277,136 @@ pksummary_table <- function(sim_data_file = NA,
     # Check for appropriate input for arguments
     tissue <- tolower(tissue)
     if(tissue %in% c("plasma", "blood") == FALSE){
-        stop("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. Please check your input and try again.", 
-             call. = FALSE)
+        warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+                call. = FALSE)
+        tissue <- "plasma"
     }
     
     PKorder <- tolower(PKorder)
     if(PKorder %in% c("default", "user specified") == FALSE){
         warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
                 call. = FALSE)
+        PKorder <- "default"
     }
     
-    if(is.na(report_input_file) & is.na(sim_data_file)){
-        stop("You must enter a value for 'report_input_file' or include a specific simulator output file for 'sim_data_file'.", 
-             call. = FALSE)
+    if(PKorder != "default" & is.na(PKparameters[1])){
+        warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters`. The order will be the default order from the Consultancy Report Template.", 
+                call. = FALSE)
+        PKorder <- "default"
     }
     
     # Main body of function --------------------------------------------------
-    # If they supplied observed_PK, get the sim_data_file from that. 
-    if(complete.cases(observed_PK[1]) && 
-       (class(observed_PK) == "character" | "data.frame" %in% class(observed_PK))){
-        if(class(observed_PK) == "character"){
+    
+    # Reading in all data and tidying ------------------------------------
+    if(complete.cases(report_input_file)){
+        
+        # If they didn't include ".xlsx" at the end of whatever they supplied for
+        # report_input_file, add that.
+        report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
+                                    report_input_file, paste0(report_input_file, ".xlsx"))
+        
+        if(is.na(sheet_report)){
+            warning("You must supply a value for `sheet_report` if you supply a report input file.", 
+                    call. = FALSE)
+            return(list())
+        }
+        
+        sectionInfo <- getSectionInfo(report_input_file = report_input_file,
+                                      sheet_report = sheet_report)
+        
+        if(complete.cases(sim_data_file) & sim_data_file != sectionInfo$File){
+            warning(paste0("The value supplied for `sim_data_file` was `", 
+                           sim_data_file, 
+                           "``, but the value you supplied in the report input file `",
+                           report_input_file, "` was `", 
+                           sectionInfo$File,
+                           "`. The file listed in the report input file will be used."), 
+                    call. = FALSE)
+        }
+        
+        sim_data_file <- sectionInfo$sim_data_file
+        # Should we add an error catch here for when user fills out
+        # report_input_file but doesn't include any observed data to compare?
+        # Maybe not. If the user doesn't want to include any obs data there,
+        # just fill out sim_data_file.
+        
+        # If they supplied both a report_input_file and observed_PK, warn the
+        # user that this will preferentially read the report_input_file.
+        if(complete.cases(observed_PK[1])){
+            warning("You have supplied both a report input file and, separately, observed data. The report input file will be used preferentially and the observed data will be ignored.", 
+                    call. = FALSE)
+        }
+        
+        observed_PK <- as.data.frame(sectionInfo$ObsData)
+        
+    } else {
+        
+        # Setting this for use later since it's easiest if sectionInfo is
+        # logical when it doesn't apply. 
+        sectionInfo <- FALSE
+        
+        # If they supplied observed_PK, get sim_data_file from that. 
+        if(complete.cases(observed_PK[1]) && (class(observed_PK) == "character")){
             observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                   "csv" = read.csv(observed_PK), 
                                   "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                            sheetIndex = 1))
+            
+        } else if(class(observed_PK)[1] == "numeric"){ # This is when user has supplied a named numeric vector
+            
+            # Converting named vector to data.frame b/c everything else is set
+            # up as a data.frame.
+            if(class(observed_PK)[1] == "numeric"){
+                observed_PK <- as.data.frame(t(observed_PK))
+            }
         }
-        
-        # At this point, observed_PK should be a data.frame b/c it either was a
-        # data.frame at the outset or it has been created by reading an Excel or
-        # csv file.
+    }
+    
+    # At this point, observed_PK, if it exists, should be a data.frame b/c it
+    # either was a data.frame at the outset, it has been created by reading an
+    # Excel or csv file for observed data, or it came from a report input form.
+    if("data.frame" %in% class(observed_PK)){
         
         # There should be only 1 row in observed_PK, so removing any extras that
         # might have gotten included accidentally.
         observed_PK <- observed_PK[1, ]
         
+        # Also only keeping columns with complete cases for PK values.
+        observed_PK[, sapply(observed_PK, complete.cases)]
+        
+        # If they supplied a file name in the observed PK data, then use that
+        # instead of anything they may have supplied for sim_data_file.
+        if("File" %in% names(observed_PK) && complete.cases(observed_PK$File)){
+            if(complete.cases(sim_data_file) & sim_data_file != observed_PK$File){
+                warning(paste0("The value supplied for `sim_data_file` was `", 
+                               sim_data_file, 
+                               "``, but the value you supplied in the observed PK data was `", 
+                               observed_PK$File,
+                               "`. The file listed with the observed data will be used."), 
+                        call. = FALSE)
+            }
+            
+            sim_data_file <- observed_PK$File
+        }
+    }
+    
+    # At this point, we should have the sim_data_file. 
+    if(is.na(sim_data_file)){
+        warning("You must enter a simulator output file name for `sim_data_file`, include a simulator output file name with observed PK data, or include a simulator output file name within the Excel file you supplied for `report_input_file`. We don't know what file to use for your simulated data.", 
+                call. = FALSE)
+        return(list())
     }
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                             sim_data_file, paste0(sim_data_file, ".xlsx"))
     
-    # If they didn't include ".xlsx" at the end, add that.
-    report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
-                                report_input_file, paste0(report_input_file, ".xlsx"))
-    
-    if(complete.cases(report_input_file) & is.na(sim_data_file)){
-        
-        sectionInfo <- getSectionInfo(report_input_file = report_input_file,
-                                      sheet_report = sheet_report)
-        # Should we add an error catch here for when user fills out
-        # report_input_file but doesn't include any observed data to
-        # compare? Maybe not. If the user doesn't want to include any obs
-        # data there, just fill out sim_data_file.
-    } else {
-        sectionInfo <- FALSE
-    }
-    
-    if(PKorder %in% c("default", "user specified") == FALSE){
-        stop(paste0("The value '", PKorder, "' is not one of the possibilities for the argument 'PKorder'. Please enter one of 'default' or 'user specified'."))
-    }
-    
-    if(PKorder != "default" & is.na(PKparameters[1])){
-        warning("You have requested 'user specified' for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument 'PKparameters'. The order will be the default order from the Consultancy Report Template.", 
-                call. = FALSE)
-        PKorder <- "default"
-    }
-    
-    
     # Figuring out what kind of means user wants, experimental details, etc.
     
-    # First, the scenarios where there are observed data to compare (sectionInfo
-    # exists)
+    # First, the scenarios where there are observed data to compare from a
+    # filled-out report template (sectionInfo exists)
     if(class(sectionInfo) != "logical"){
         
-        sim_data_file <- sectionInfo$sim_data_file
         MeanType <- ifelse(is.na(mean_type),
                            sectionInfo$ObsData$MeanType,
                            mean_type)
@@ -354,8 +419,8 @@ pksummary_table <- function(sim_data_file = NA,
         
     } else {
         
-        # And second, the scenario where user has only supplied a simulator
-        # output file, so there are no observed data for comparisons.
+        # And second, the scenario where user has not supplied a filled-out
+        # report form.
         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
         GMR_mean_type <- MeanType
         # NB re. GMR_mean_type: I originally had this set to "geometric" all the
@@ -377,7 +442,14 @@ pksummary_table <- function(sim_data_file = NA,
         
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
         DoseRegimen <- Deets$Regimen_sub
-        sim_data_file <- sim_data_file
+    }
+    
+    if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
+                call. = FALSE)
+        return(list())
     }
     
     if(complete.cases(PKparameters[1])){
@@ -387,18 +459,10 @@ pksummary_table <- function(sim_data_file = NA,
     } else {
         
         if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
-            if(complete.cases(observed_PK[1])){
+            if("data.frame" %in% class(observed_PK)){
                 # If user supplies an observed file, then pull the parameters
-                # they want to match.
-                if(class(observed_PK) == "character"){
-                    observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
-                                          "csv" = read.csv(observed_PK), 
-                                          "xlsx" = xlsx::read.xlsx(observed_PK, 
-                                                                   sheetIndex = 1))
-                }
-                
-                # If user specified "_first" instead of "_dose1", make that
-                # work, too. 
+                # they want to match. If user specified "_first" instead of
+                # "_dose1", make that work, too.
                 PKToPull <- sub("_first", "_dose1", tolower(names(observed_PK)))
                 
             } else {
@@ -458,7 +522,10 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Give a useful message if there are no parameters to pull
     if(length(PKToPull) == 0){
-        stop("None of the parameters you requested are available from the supplied simulator output file. Please check that the parameters requested make sense for the simulation. For example, did you request multiple-dose parameters for a single-dose regimen?")
+        warning(paste0("None of the parameters you requested are available from the supplied simulator output file `",
+                       sim_data_file, "`. Please check that the parameters requested make sense for the simulation. For example, did you request multiple-dose parameters for a single-dose regimen?"),
+                call. = FALSE)
+        return(list())
     }
     
     # Getting PK parameters. 
@@ -472,9 +539,20 @@ pksummary_table <- function(sim_data_file = NA,
                                                 "TRUE" = c("aggregate", "individual"),
                                                 "FALSE" = "aggregate")))
     
+    # If there were no PK parameters to be pulled, MyPKResults_all will have
+    # length 0 and we can't proceed.
+    if(length(MyPKResults_all) == 0){
+        warning("No PK results were found. Does your simulator output file include any sheets with names such as 'AUC', 'AUC_CI' or 'AUC_SD'? Something like that must be present for most of the typical PK parameters to get extracted.", 
+                call. = FALSE)
+        return()
+    }
+    
     # PKToPull must be changed if user specified a tab b/c then the parameters
-    # won't have _last or _dose1 suffixes.
-    if(complete.cases(sheet_PKparameters)){
+    # won't have _last or _dose1 suffixes. HOWEVER, if the sheet matched the AUC
+    # tab in terms of formatting, then we DO know which dose it was, so don't
+    # remove suffixes in that case.
+    if(complete.cases(sheet_PKparameters) &
+       any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
         PKToPull <- sub("_last|_dose1", "", PKToPull)
     }
     
@@ -486,7 +564,9 @@ pksummary_table <- function(sim_data_file = NA,
          any(str_detect(names(MyPKResults_all[[1]]), "AUCinf")) == FALSE) |
         ("data.frame" %in% class(MyPKResults_all[[1]]) == FALSE &
          !str_detect(names(MyPKResults_all)[1], "AUCinf")))){
-        warning("AUCinf included NA values, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate.",
+        warning(paste0("AUCinf included NA values in the file `", 
+                       sim_data_file, 
+                       "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate."),
                 call. = FALSE)
         PKToPull <- sub("AUCinf", "AUCt", PKToPull)
     }
@@ -691,47 +771,52 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     # observed data -----------------------------------------------------
-    if(class(sectionInfo) != "logical" | "data.frame" %in% class(observed_PK) |
-       class(observed_PK)[1] == "numeric"){
-        if(class(sectionInfo) != "logical"){ # this is when the user has supplied a report form.
-            MyObsPK <- sectionInfo$ObsData[names(sectionInfo$ObsData) %in% MyObsPKParam] %>%
-                as.data.frame() %>% t() %>% as.data.frame() %>%
-                rename("Obs" = V1) %>%
-                mutate(PKParam = row.names(.),
-                       Obs = as.numeric(Obs))
-        }  else { # this is when the user has NOT supplied a report form
-            # Converting named vector to data.frame b/c everything else is set
-            # up as a data.frame.
-            if(class(observed_PK)[1] == "numeric"){
-                observed_PK <- as.data.frame(t(observed_PK))
-            }
-            
-            # Making obs PK names match correct PK parameters regardless of case
-            suppressMessages(
-                ObsNames <- data.frame(OrigName = names(observed_PK)) %>% 
-                    mutate(PKparameter_lower = sub("_first", "_dose1",
-                                                   tolower(OrigName)), 
-                           PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
-                    left_join(AllPKParameters %>% select(PKparameter) %>% 
-                                  unique() %>% 
-                                  mutate(PKparameter_lower = tolower(PKparameter))) %>% 
-                    mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
-                                                paste0(PKparameter, "_CV"), 
-                                                PKparameter), 
-                           PKparameter = ifelse(OrigName == "File", "File", PKparameter))
-            )
-            
+    
+    if(any(c("data.frame", "numeric") %in% class(observed_PK))){
+        
+        if(class(observed_PK) == "numeric"){
+            MyObsPK <- as.data.frame(observed_PK)
+            names(MyObsPK) <- names(observed_PK)
+        } else {
             MyObsPK <- observed_PK
-            names(MyObsPK) <- ObsNames$PKparameter
-            
-            # Making observed_PK that was supplied as a data.frame or file long
-            # w/column for PKparameter.
-            MyObsPK <- MyObsPK %>% 
-                pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
-                                             paste0(AllPKParameters$PKparameter, "_CV"))), 
-                             names_to = "PKParam", 
-                             values_to = "Obs")
         }
+        
+        # Making obs PK names match correct PK parameters regardless of case
+        suppressMessages(
+            ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
+                mutate(PKparameter_lower = sub("_first", "_dose1",
+                                               tolower(OrigName)), 
+                       PKparameter_lower = sub("_ss", "_last", 
+                                               PKparameter_lower),
+                       PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
+                left_join(AllPKParameters %>% select(PKparameter) %>% 
+                              unique() %>% 
+                              mutate(PKparameter_lower = tolower(PKparameter))) %>% 
+                mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
+                                            paste0(PKparameter, "_CV"), 
+                                            PKparameter), 
+                       PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
+                       PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
+        )
+        names(MyObsPK) <- ObsNames$PKparameter
+        
+        # Having extra columns messes things up, so removing any extraneous
+        # things the user might have included.
+        
+        # Getting the names w/out "File"
+        NewObsNames <- names(MyObsPK)[names(MyObsPK) %in% 
+                                          c(AllPKParameters$PKparameter, 
+                                            paste0(AllPKParameters$PKparameter, "_CV"))]
+        MyObsPK <- as.data.frame(MyObsPK[, NewObsNames])
+        names(MyObsPK) <- NewObsNames
+        
+        # Making observed_PK that was supplied as a data.frame or file long
+        # w/column for PKparameter.
+        MyObsPK <- MyObsPK %>% 
+            pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
+                                         paste0(AllPKParameters$PKparameter, "_CV"))), 
+                         names_to = "PKParam", 
+                         values_to = "Obs")
         
         MyObsPK <- MyObsPK %>% 
             mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
@@ -743,7 +828,7 @@ pksummary_table <- function(sim_data_file = NA,
                    # "mean" (for arithmetic means) rather than "geomean" so that
                    # it will be easier to return only the correct mean types. I
                    # know that's confusing, but I couldn't come up with a better
-                   # way to do that, so my apologies! -LS
+                   # way to do that, so my apologies! -LSh
                    Stat = ifelse({{MeanType}} == "arithmetic" &
                                      {{GMR_mean_type}} == "geometric" &
                                      str_detect(PKParam, "ratio") &
@@ -776,11 +861,13 @@ pksummary_table <- function(sim_data_file = NA,
                 full_join(SOratios)
         )
         
-        # If user supplied obs data and no PK parameters that they specifically
-        # wanted, only keep PK parameters where there are values for the observed
-        # mean data. 
-        PKToPull <- MyObsPK %>% filter(complete.cases(Obs)) %>% 
-            pull(PKParam) %>% unique()
+        # If user supplied obs data and did NOT specify PK parameters that they
+        # wanted, only keep PK parameters where there are values for the
+        # observed mean data.
+        if(is.na(PKparameters[1])){
+            PKToPull <- MyObsPK %>% filter(complete.cases(Obs)) %>% 
+                pull(PKParam) %>% unique()
+        }
         
     } else {
         MyPKResults <- MyPKResults %>% 
@@ -793,20 +880,9 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Formatting and selecting only rows where there are data
     MyPKResults <- MyPKResults %>%
-        mutate(Value = if_else(str_detect(Stat, "CV"),
-                               as.character(round(Value * 100, 0)),
-                               # Per Christiane: 3 sig figs for everything
-                               # or full number when > 100
-                               if_else(Value > 100,
-                                       as.character(round(Value, 0)), 
-                                       # This next convoluted bit will
-                                       # retain trailing zeroes since
-                                       # "signif" alone will not
-                                       formatC(signif(Value,digits=3), 
-                                               digits=3,format="fg", 
-                                               flag="#"))),
-               # Removing any trailing decimal points with nothing after them
-               Value = sub("\\.$", "", Value)) %>%
+        mutate(Value = if_else(str_detect(Stat, "CV"), 
+                               round_consult(100*Value),
+                               round_consult(Value))) %>%
         filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
                            "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                            "min", "max", "per5", "per95", 
@@ -821,14 +897,7 @@ pksummary_table <- function(sim_data_file = NA,
                                               "MinMean", "MaxMean", "S_O"))) %>% 
         arrange(SorO, Stat) %>% 
         filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
-        mutate(across(.cols = everything(), .fns = as.character)
-               # ,
-               # across(.cols = -c(Stat, SorO),
-               #        .fns = function(x) ifelse(str_detect(Stat, "CV"),
-               #                                  paste0(x, "%"), x)),
-               # across(.cols = everything(),
-               #        .fns = function(x) ifelse(x == "NA%", NA, x))
-        ) 
+        mutate(across(.cols = everything(), .fns = as.character)) 
     # If this throws an error for you, try running "tidyverse_update()", copy
     # whatever it says is out of date, restart your R session (Ctrl Shift
     # F10), and then paste the output (something like
@@ -919,7 +988,8 @@ pksummary_table <- function(sim_data_file = NA,
     
     # PKlevels must be changed if user specified a tab b/c then the parameters
     # won't have _last or _dose1 suffixes.
-    if(complete.cases(sheet_PKparameters)){
+    if(complete.cases(sheet_PKparameters) & 
+       any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
         PKlevels <- unique(sub("_last|_dose1", "", PKlevels))
         # When the suffix is included, then we get an order with 1st dose and
         # then last dose, which is appropriate, but when the user specifies a
@@ -932,7 +1002,7 @@ pksummary_table <- function(sim_data_file = NA,
     } 
     
     # If the user wants to specify the order, allowing that here.
-    if(PKorder == "user specified"){
+    if(str_detect(PKorder, "user")){
         PKlevels <- PKparameters
     }
     
@@ -949,7 +1019,8 @@ pksummary_table <- function(sim_data_file = NA,
     if(prettify_columns){
         
         # If user specified tab, then need to adjust PK parameters here, too.
-        if(complete.cases(sheet_PKparameters)){
+        if(complete.cases(sheet_PKparameters) & 
+           any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
             AllPKParameters_mod <- 
                 AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
                 mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
@@ -990,6 +1061,9 @@ pksummary_table <- function(sim_data_file = NA,
             }
             
             if(class(prettify_compound_names) == "character"){
+                names(prettify_compound_names)[
+                    str_detect(tolower(names(prettify_compound_names)), 
+                               "inhibitor")][1] <- "inhibitor"
                 MyEffector <- prettify_compound_names["inhibitor"]
             }
             
@@ -1034,6 +1108,8 @@ pksummary_table <- function(sim_data_file = NA,
             select(PKparam, File, matches(ColsToInclude))
     }
     
+    
+    # Saving --------------------------------------------------------------
     if(complete.cases(save_table)){
         
         # Checking whether they have specified just "docx" or just "csv" for
@@ -1134,7 +1210,12 @@ pksummary_table <- function(sim_data_file = NA,
             MyPKResults <- MyPKResults %>% 
                 mutate(Statistic = sub("Simulated", 
                                        paste("Simulated", MeanType, "mean"), Statistic))
-            write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
+            WarningDF <- data.frame(Col1 = "WARNING:",
+                                    Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")
+            names(WarningDF) <- names(MyPKResults)[1:2]
+            
+            write.csv(bind_rows(MyPKResults, WarningDF),
+                      paste0(OutPath, "/", save_table), row.names = F)
         }
     }
     
