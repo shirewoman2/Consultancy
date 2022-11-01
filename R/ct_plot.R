@@ -221,7 +221,7 @@
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14
+#'   default is 14. This also determines the font size of the graph labels. 
 #' @param legend_label optionally indicate on the legend whether the effector is
 #'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as the
@@ -1076,13 +1076,15 @@ ct_plot <- function(ct_dataframe = NA,
                                 "inhibitor 1 metabolite")){
         AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, 
-                              labels = labels,
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
                               align = "v")
         )
         
         ABhoriz <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 2, 
-                              labels = labels,
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
                               align = "hv")
         )
         
@@ -1094,23 +1096,27 @@ ct_plot <- function(ct_dataframe = NA,
                                     "inhibitor 1 metabolite")){
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1, 
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   legend = "none", align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   legend = "none", align = "hv"))
         } else {
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1,  
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
         }

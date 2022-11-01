@@ -310,7 +310,7 @@ linear or only semi-log graphs.)}
 your graph or set of graphs}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
-default is 14}
+default is 14. This also determines the font size of the graph labels.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time

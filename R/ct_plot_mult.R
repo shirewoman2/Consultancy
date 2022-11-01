@@ -186,7 +186,7 @@
 #'   1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
 #'   example with the dataset MDZ_Keto.
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14
+#'   default is 14. This also determines the font size of the graph labels. 
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
@@ -538,7 +538,9 @@ ct_plot_mult <- function(ct_dataframe,
                 ggpubr::ggarrange(plotlist = AllGraphs, 
                                   nrow = nrow, 
                                   ncol = ncol, 
-                                  labels = labels, align = "hv"))
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
+                                  align = "hv"))
             
         } else {
             Out <- suppressWarnings(
@@ -547,7 +549,9 @@ ct_plot_mult <- function(ct_dataframe,
                                   ncol = ncol, 
                                   common.legend = TRUE,
                                   legend = legend_position,
-                                  labels = labels, align = "hv"))
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
+                                  align = "hv"))
         }
         
         if(complete.cases(save_graph)){

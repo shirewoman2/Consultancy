@@ -328,7 +328,7 @@
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14
+#'   default is 14. This also determines the font size of the graph labels. 
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
@@ -1729,7 +1729,9 @@ call. = FALSE)
     
     # both plots together, aligned vertically
     AB <- suppressWarnings(
-        ggpubr::ggarrange(A, B, ncol = 1, labels = labels,
+        ggpubr::ggarrange(A, B, ncol = 1, 
+                          labels = labels, 
+                          font.label = list(size = graph_title_size),
                           common.legend = TRUE, align = "hv", 
                           legend = ifelse(is.na(legend_position), 
                                           "right", legend_position))
@@ -1737,7 +1739,9 @@ call. = FALSE)
     
     # both plots together, aligned horizontally
     ABhoriz <- suppressWarnings(
-        ggpubr::ggarrange(A, B, ncol = 2, labels = labels,
+        ggpubr::ggarrange(A, B, ncol = 2, 
+                          labels = labels, 
+                          font.label = list(size = graph_title_size),
                           common.legend = TRUE, align = "hv", 
                           legend = ifelse(is.na(legend_position), 
                                           "bottom", legend_position))

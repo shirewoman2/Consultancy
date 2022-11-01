@@ -209,7 +209,7 @@ file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
 example with the dataset MDZ_Keto.}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
-default is 14}
+default is 14. This also determines the font size of the graph labels.}
 
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C, etc.) for each of the small graphs.}
