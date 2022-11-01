@@ -2,10 +2,13 @@
 #'
 #' \code{forest_plot} creates forest plots of AUC and Cmax ratios. Please use
 #' the function \code{\link{extractForestData}} to generate the input data for
-#' \code{forest_dataframe}. The data will be broken up by the file name on the y
-#' axis and, optionally, whatever you specify for \code{facet_column_x} in the
-#' horizontal direction. WARNING: This is a relatively new function and should
-#' be rigorously QC'ed.
+#' \code{forest_dataframe}. The data will be broken up by: 1) the file name on
+#' either the main y axis or, if you would like, a secondary y axis and 2)
+#' anything you specify for \code{facet_column_x} in the horizontal direction.
+#' \strong{If you're the kind of person who prefers to wing it rather than
+#' reading the instructions when assembling furniture (we get that), we
+#' recommend skipping to the end of this help file and trying out the examples.}
+#' WARNING: This is a relatively new function and should be rigorously QC'ed.
 #'
 #' @param forest_dataframe a data.frame with extracted forest-plot data,
 #'   generated from running \code{\link{extractForestData}} on Simulator output
@@ -27,35 +30,50 @@
 #'   \code{c(...)}.
 #' @param y_axis_column the column by which you would like to break up the y
 #'   axis, e.g., \code{y_axis_column = File} (default). You must specify
-#'   something here; it cannot be left blank. If you use File as the column to
-#'   break up the data, this will assume that what you want to show on the y
-#'   axis is the substrate if the drug of interest is a perpetrator or the
-#'   inhibitor if it's a victim.
+#'   something here; it cannot be left blank. This will automatically replace
+#'   the file names listed in \code{forest_dataframe} with the effector for
+#'   victim forest plots and with the substrate for perpetrator forest plots.
 #' @param y_order optionally supply a character vector to specify the order of
-#'   the items on the y axis. If you'd like to change the name of the item as on
-#'   the y axis -- for example, change your file names to something more
-#'   readable than things like "abc-25mg-qd.xlsx" -- you can do that here with a
-#'   named character vector like this: \code{y_order = c("abc1a-mdz.xlsx" =
-#'   "Midazolam with in vitro induction", "abc1a-mdz-10x.xlsx" = "Midazolam with
-#'   10-fold higher Indmax")} If \code{y_order} is left as NA, the y axis will
-#'   be sorted according to the geometric mean AUC ratio with inhibitors on top
-#'   and inducers on the bottom. Please see the example section at the bottom of
-#'   this help file for more examples.
+#'   the items on the y axis. This can be specified in three possible ways:
+#'   \describe{\item{a character vector of file names}{e.g., \code{y_order =
+#'   c("myfile1.xlsx", "myfile2.xlsx")}. The file names will automatically be
+#'   replaced with the compounds of interest, so, if this were a victim forest
+#'   plot, what will appear on the y axis will be, e.g., "itraconazole" and
+#'   "efavirenz".} \item{a character vector of the compounds of interest, named
+#'   by the file}{e.g., \code{y_order = c("myfile1.xlsx" = "itraconazole",
+#'   "myfile2.xlsx" = "efavirenz")}. As with the 1st option, what appears on the
+#'   y axis is not the file name but "itraconazole" and "efavirenz". This is
+#'   also a good way to specify something \emph{exactly} the way you want, e.g.,
+#'   \code{y_order = c("myfile1.xlsx" = "itraconazole (strong CYP3A inhibitor)",
+#'   "myfile2.xlsx" = "efavirenz (moderate CYP3A inducer)")}}\item{a character
+#'   vector of the compounds of interest}{e.g., \code{y_order =
+#'   c("itraconazole", "efavirenz")}}. These must be spelled perfectly!} If
+#'   \code{y_order} is left as NA, the y axis will be sorted according to the
+#'   geometric mean AUC ratio with inhibitors on top and inducers on the bottom.
+#'   Please see the example section at the bottom of this help file.
 #' @param y_axis_column_secondary optionally break up the graphs along the y
 #'   axis by an additional column. For example, say your drug of interest is a
 #'   perpetrator and you've administered each of the substrates on different
-#'   days. Here's how you could approach that: \enumerate{\item{Make a column
-#'   "DoseDay" in your data.frame that specifies which day the substrate was
-#'   administered. Let's say you have values in that column of "Day 1", "Day 5",
-#'   and "Day 14".} \item{Set \code{y_axis_column = DoseDay}} \item{Set the
-#'   order of the dose days: \code{y_order = c("Day 1", "Day 5", "Day 14")}.
-#'   Please note that these must perfectly match the actual values in that
-#'   DoseDay column.} \item{Set \code{y_axis_column_secondary = Substrate}}
-#'   \item{Last, set \code{y_order_secondary = c("buprenorphine", "repaglinide",
-#'   "midazolam")}, where those are the substrates simulated in the order you
-#'   want.}} This will break up the graphs first by the dose day and next by the
-#'   substrate and do so in the order you specified.
-#' @param y_order_secondary 
+#'   days. Here's one way you could approach that: \enumerate{\item{Make a
+#'   column "DoseDay" in your data.frame that specifies which day the substrate
+#'   was administered. (Please ask a member of the R Working Group for
+#'   assistance if you're unsure how to do that.) Let's say you have values in
+#'   that column of "Day 1", "Day 5", and "Day 14".} \item{Set
+#'   \code{y_axis_column = DoseDay}} \item{Set the order of the dose days:
+#'   \code{y_order = c("Day 1", "Day 5", "Day 14")}. Please note that these must
+#'   perfectly match the actual values in that DoseDay column.} \item{Set
+#'   \code{y_axis_column_secondary = File} (Nota bene: At least one of
+#'   \code{y_axis_column} or \code{y_axis_column_secondary} MUST be set to
+#'   File.)} \item{Last, set \code{y_order_secondary = c("buprenorphine",
+#'   "repaglinide", "midazolam")}, where those are the substrates simulated in
+#'   the order you want.}} This will break up the graphs first by the dose day
+#'   and next by the substrate and do so in the order you specified.
+#' @param y_order_secondary the order to use for the secondary y axis
+#'   (optional). Just like with the argument \code{y_order}, this may be a
+#'   character vector of the unique items in \code{y_axis_column_secondary} or,
+#'   if \code{y_axis_column_secondary} is File, the compounds that each file
+#'   represents or a named character vector of the compounds. Please see the
+#'   examples at the bottom of this file.
 #' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
 #' @param x_axis_label optionally supply a character vector or an expression to
 #'   use for the x axis label
@@ -108,8 +126,7 @@
 #' # with various effectors. To start, we'll just look at one dose level.
 #' Buf_lowdose <- ForestData %>% filter(Dose_sub == 20)
 #' forest_plot(forest_dataframe = Buf_lowdose,
-#'             perp_or_victim = "victim",
-#'             x_axis_limits = c(0.9, 5))
+#'             perp_or_victim = "victim")
 #'
 #' # If there were multiple dosing levels of your drug, though, it might be
 #' # nice to break up the graph by the substrate dose like this:
@@ -121,6 +138,72 @@
 #' # Maybe you want just one longer graph  with all the low-dose simulations
 #' # on the top and the high-dose simulations on the bottom. Here's one
 #' # way to do that: 
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             y_axis_column = Dose_sub,
+#'             y_axis_column_secondary = File)
+#'             
+#' # Or you could break things up first by the file and then by the dose:
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             y_axis_column = File,
+#'             y_axis_column_secondary = Dose_sub)
+#'             
+#' # Here's one way you could change the order in which the compounds appear:
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             y_axis_column = Dose_sub, 
+#'             y_axis_column_secondary = File, 
+#'             y_order_secondary = c("itraconazole", "fluvoxamine", 
+#'                                   "ticlopidine", "quinidine"))
+#' 
+#' # Perhaps it would be less opaque to just list the full file names
+#' # in the order you want: 
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             y_axis_column = Dose_sub,
+#'             y_axis_column_secondary = File,
+#'             y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx", 
+#'                                   "buf-20mg-sd-itra-200mg-qd.xlsx", 
+#'                                   "buf-20mg-sd-quin-200mg-qd.xlsx",
+#'                                   "buf-20mg-sd-tic-219mg-bid.xlsx", 
+#'                                   "buf-50mg-sd-fluv-36mg-qd.xlsx", 
+#'                                   "buf-50mg-sd-itra-200mg-qd.xlsx", 
+#'                                   "buf-50mg-sd-quin-200mg-qd.xlsx",
+#'                                   "buf-50mg-sd-tic-219mg-bid.xlsx"))
+#'                                    
+#' # You could also change the way the compound names appear when
+#' # you list the file names as a named character vector like this:
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             y_axis_column = Dose_sub,
+#'             y_axis_column_secondary = File,
+#'             y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)", 
+#'                                   "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)", 
+#'                                   "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(CYP2D6 inhibitor)",
+#'                                   "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine", 
+#'                                   "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate", 
+#'                                   "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate", 
+#'                                   "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
+#'                                   "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
+#' # (The "\n" means "new line".)
+#'                                   
+#' # As long as there are unique values for each of the files in that named
+#' # character vector, you don't need to break up your data in any other way. 
+#' # Here's basically the same function call as above but without
+#' # y_axis_column_secondary.
+#' forest_plot(forest_dataframe = ForestData,
+#'             perp_or_victim = "victim",
+#'             y_axis_column = File,
+#'             y_order = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)",
+#'                         "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)",
+#'                         "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(CYP2D6 inhibitor)",
+#'                         "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine",
+#'                         "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate",
+#'                         "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate",
+#'                         "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
+#'                         "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
+#'             
 
 forest_plot <- function(forest_dataframe, 
                         perp_or_victim, 
@@ -213,29 +296,17 @@ forest_plot <- function(forest_dataframe,
                     switch(perp_or_victim, 
                            "perpetrator" = "substrate", 
                            "victim" = "effector"),
-                    " for `",
+                    " for the compounds ",
                     str_comma(Check$Compound[which(Check$N > 1)]),
-                    "`. Did you specify `perp_or_victim` correctly? You *can* have more than one file per ",
+                    ". Did you specify `perp_or_victim` correctly? You *can* have more than one file per ",
                     switch(perp_or_victim, 
                            "perpetrator" = "substrate", 
                            "victim" = "effector"),
-                    ", but only if you either facet your graphs with `facet_column_x` so that there's only one file per ",
-                    switch(perp_or_victim, 
-                           "perpetrator" = "substrate", 
-                           "victim" = "effector"),
-                    " or if you specify something for `y_order` so that it's clear what y axis labels you want to use for those files."),
+                    ", but only if you break up your graphs using `facet_column_x` or `y_axis_secondary` or if you specify something for `y_order` so that it's clear what y axis labels you want to use for each of those files."),
              call. = FALSE)
     }
     
     if(complete.cases(y_order[1])){
-        # RETURN TO THIS. Will need to uncomment this once I've written the extra facetting bit.    
-        #     if(anyDuplicated(unique(names(y_order))) > 0 |
-        #        (is.null(names(y_order)) == FALSE &&
-        #        length(unique(names(y_order))) != length(unique(y_order)))){
-        #         stop("One of your files or file labels is duplicated in `y_order`. Please list each file and each label only once and try again.",
-        #              call. = FALSE)
-        #     }
-        
         if(is.null(names(y_order)) == FALSE && 
            any(forest_dataframe$File %in% names(y_order) == FALSE)){
             warning(paste0("The file(s) ", 
@@ -243,6 +314,15 @@ forest_plot <- function(forest_dataframe,
                                              names(y_order))), 
                            " are not included in `y_order`, so they will be labeled as NA on the y axis unless that's fixed."), 
                     call. = FALSE)
+        }
+        
+        if(is.null(names(y_order)) == FALSE & any(str_detect(y_order, "xlsx"))){
+            warning("If you supply a named character vector for `y_order` to indicate what order the files should be and what compound they represent, then the files should be used as the names of the vector and the compound should be used as the values, e.g., `c('MyFile1.xlsx' = 'Compound A', 'MyFile2.xlsx' = 'Compound B')`. We will swap those for you.", 
+                    call. = FALSE)
+            temp <- y_order
+            y_order <- names(temp)
+            names(y_order) <- temp
+            rm(temp)
         }
     }
     
@@ -252,7 +332,7 @@ forest_plot <- function(forest_dataframe,
         prettify_compound_names <- TRUE
     }
     
-    # Making most character arguments lower case to avoid case sensitivity
+    # Making legend argument lower case to avoid case sensitivity
     legend_position <- tolower(legend_position)
     
     if(legend_position %in% c("none", "bottom", "left", "right", "top") == FALSE){
@@ -274,9 +354,9 @@ forest_plot <- function(forest_dataframe,
         mutate(MyCompound_orig = switch(perp_or_victim,
                                         "perpetrator" = Substrate,
                                         "victim" = Inhibitor1),
-               MyCompound = ifelse(prettify_compound_names, 
-                                   prettify_compound_name(MyCompound_orig), 
-                                   MyCompound_orig))
+               MyCompound = switch(as.character({{prettify_compound_names}}), 
+                                   "TRUE" = prettify_compound_name(MyCompound_orig), 
+                                   "FALSE" = MyCompound_orig))
     
     # Reshaping the data to make the data.frame long format instead of wide.
     forest_dataframe <- forest_dataframe %>% 
@@ -285,7 +365,7 @@ forest_plot <- function(forest_dataframe,
         separate(PKParam, into = c("PKParam", "Statistic"), sep = "__") %>% 
         pivot_wider(names_from = "Statistic", values_from = "Value")
     
-    if(complete.cases(PKparameters[1]) &&
+    if(any(complete.cases(PKparameters)) &&
        any(PKparameters %in% forest_dataframe$PKParam) == FALSE){
         stop("None of the PK parameters requested are present in the data.frame supplied for `forest_dataframe`. No graph can be made.", 
              call. = FALSE)
@@ -318,130 +398,137 @@ forest_plot <- function(forest_dataframe,
                 call. = FALSE)
     }
     
-    if(is.na(y_order[1]) & 
-       (as_label(rlang::enquo(y_axis_column)) == "File" |
-        as_label(rlang::enquo(y_axis_column_secondary)) == "File")){
-        # Determining order of files/compounds if unspecified
-        
-        if(str_detect(perp_or_victim, "perp")){
-            # perpetrator plots where y_order is unspecified
-            
-            if(length(ParamToUse) == 0){
-                YCmpdOrder <- sort(unique(forest_dataframe$Substrate))
-            } else {
-                YCmpdOrder <- forest_dataframe %>%
-                    select(Substrate, PKParam, GMR) %>% 
-                    filter(PKParam %in% ParamToUse) %>% 
-                    group_by(Substrate, PKParam) %>% 
-                    summarize(GMR = max(GMR, na.rm = T)) %>% 
-                    pivot_wider(names_from = PKParam, values_from = GMR) %>% 
-                    arrange(across(any_of(c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
-                                            "AUCtau_ratio_last", "Cmax_ratio_dose1", 
-                                            "Cmax_ratio_last")))) %>% 
-                    pull(Substrate) %>% rev()
-            }
-            
-            forest_dataframe <- forest_dataframe %>% 
-                mutate(YCmpd = factor(Substrate, levels = YCmpdOrder), 
-                       YCol = {{y_axis_column}})
-            
-            if(as_label(y_axis_column) %in% c("Dose_sub", "Dose_inhib")){
-                forest_dataframe <- forest_dataframe %>% 
-                    mutate(YCol = paste(YCol, {{dose_units}}), 
-                           YCol = forcats::fct_reorder(.f = YCol, 
-                                                       .x = !!y_axis_column,
-                                                       .fun = min))
-            }
-            
+    
+    ## Figuring out y axes and y axis orders ---------------------------------
+    # Things don't work if more than one thing is mapped to File.
+    if(as_label(y_axis_column) == "File" & 
+       as_label(y_axis_column_secondary) == "File"){
+        warning("You can only have one of `y_axis_column` or `y_axis_column_secondary` set to File, and you have both. We're going to ignore your settings for `y_axis_column_secondary`.", 
+                call. = FALSE)
+        y_axis_column_secondary <- as_quosure(NULL)
+    }
+    
+    # Making a vector generally and then a column in forest_dataframe that
+    # specifies the order of files. This could be the y_axis_column and y_order
+    # or it could be y_axis_column_secondary and y_order_secondary, so we need
+    # it to be flexible here.
+    if(as_label(y_axis_column) == "File"){
+        if(any(complete.cases(y_order))){
+            YFileOrder <- y_order
         } else {
-            # victim plots where order y_order is unspecified
-            
-            if(length(ParamToUse) == 0){
-                YCmpdOrder <- sort(unique(forest_dataframe$Inhibitor1))
-            } else {
-                YCmpdOrder <- forest_dataframe %>%
-                    select(Inhibitor1, PKParam, GMR) %>% 
-                    filter(PKParam %in% ParamToUse) %>% 
-                    group_by(Inhibitor1, PKParam) %>% 
-                    summarize(GMR = max(GMR, na.rm = T)) %>% 
-                    pivot_wider(names_from = PKParam, values_from = GMR) %>% 
-                    arrange(across(any_of(c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
-                                            "AUCtau_ratio_last", "Cmax_ratio_dose1", 
-                                            "Cmax_ratio_last")))) %>% 
-                    pull(Inhibitor1) %>% rev()
-            }
-            
-            forest_dataframe <- forest_dataframe %>% 
-                mutate(YCmpd = factor(Inhibitor1, levels = YCmpdOrder), 
-                       YCol = {{y_axis_column}}) %>% 
-                arrange(YCmpd) %>% 
-                mutate(File = factor(File, levels = unique(File)))
-            
-            if(as_label(y_axis_column) %in% c("Dose_sub", "Dose_inhib")){
-                forest_dataframe <- forest_dataframe %>% 
-                    mutate(YCol = paste(YCol, {{dose_units}}), 
-                           YCol = forcats::fct_reorder(.f = YCol, 
-                                                       .x = !!y_axis_column,
-                                                       .fun = min))
-            } else {
-                forest_dataframe <- forest_dataframe %>% 
-                    mutate(YCol = as.factor(YCol))
-            }
+            YFileOrder <- "tbd"
         }
     } else {
-        # this is when the user *has* specified y order
+        # y_axis_column_secondary is File.
+        if(any(complete.cases(y_order_secondary))){
+            YFileOrder <- y_order_secondary
+        } else {
+            YFileOrder <- "tbd"
+        }
+    }
+    
+    if(length(YFileOrder) == 1 && YFileOrder == "tbd"){
+        # Determining order of files/compounds if unspecified
+        YCmpdOrder <- forest_dataframe %>%
+            select(MyCompound, PKParam, GMR) %>% 
+            filter(PKParam %in% ParamToUse) %>% 
+            group_by(MyCompound, PKParam) %>% 
+            summarize(GMR = max(GMR, na.rm = T)) %>% 
+            pivot_wider(names_from = PKParam, values_from = GMR) %>% 
+            arrange(across(any_of(c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
+                                    "AUCtau_ratio_last", "Cmax_ratio_dose1", 
+                                    "Cmax_ratio_last")))) %>% 
+            pull(MyCompound) %>% rev() %>% unique()
         
-        # Checking on *how* user specified order
-        if(as_label(y_axis_column) == "File"){
-            # This is when they specified by file names
+        forest_dataframe <- forest_dataframe %>%
+            mutate(MyCompound = factor(MyCompound, levels = YCmpdOrder)) %>% 
+            arrange(MyCompound) %>% 
+            mutate(File = factor(File, levels = unique(File)))
+        # File and MyCompound are both now factor.
+    } else {
+        # this is when the user *has* specified y_order or y_order_secondary, so
+        # checking on *how* user specified order. They may have specified file
+        # names or specified the compounds that each file represents.
+        # Furthermore, they may have specified files using the names of a
+        # character vector. Dealing with each of those three scenarios.
+        if(any(str_detect(names(YFileOrder), "xlsx"))){
+            # When the file names are specified
+            forest_dataframe <- forest_dataframe %>% 
+                mutate(File = factor(File, levels = names(YFileOrder))) %>% 
+                arrange(File) %>% 
+                left_join(data.frame(File = names(YFileOrder),
+                                     MyCompound_rev = YFileOrder)) %>% 
+                mutate(MyCompound = factor(MyCompound_rev, levels = unique(MyCompound_rev)))
+            # File and MyCompound are both now factor. 
             
-            # They may have specified file names or specified the compounds that
-            # each file represents. Furthermore, they may have specified files
-            # in the names of a character vector. Dealing with each of those
-            # three scenarios.
-            if(any(str_detect(names(y_order), "xlsx"))){
-                # When the file labels are specified
-                Yorder <- names(y_order)
-                forest_dataframe <- forest_dataframe %>% 
-                    mutate(YCol = y_order[File],
-                           File = factor(File, levels = Yorder)) %>% 
-                    arrange(File) %>% 
-                    mutate(YCol = factor(YCol, levels = unique(YCol)))
-                
-            } else if(any(str_detect(y_order, "xlsx"))){
-                # When the file labels are not specified but the files
-                # themselves are
-                Yorder <- y_order
-                
-                forest_dataframe <- forest_dataframe %>% 
-                    mutate(YCol = factor(File, levels = Yorder))
-            } else {
-                # This is when they have gone straight to the compounds that
-                # each file represents and just listed them.
-                
-                # Check whether the items they listed are among the compounds or
-                # the prettified compounds.
-                
-                
-            }
+        } else if(any(str_detect(YFileOrder, "xlsx"))){
+            # When the file names are not specified but the files
+            # themselves are
+            forest_dataframe <- forest_dataframe %>% 
+                mutate(File = factor(File, levels = YFileOrder)) %>% 
+                arrange(File) %>% 
+                mutate(MyCompound = factor(MyCompound, levels = unique(MyCompound)))
+            # File and MyCompound are both now factor. 
             
         } else {
-            Yorder <- y_order
+            # This is when they have gone straight to the compounds that
+            # each file represents and just listed them.
             
-            if(str_detect(perp_or_victim, "perp")){
-                
+            # Check whether the items they listed are among the compounds or
+            # the prettified compounds.
+            if(any(YFileOrder %in% forest_dataframe$MyCompound)){
                 forest_dataframe <- forest_dataframe %>% 
-                    mutate(YCol = factor(Substrate, levels = y_order))
+                    mutate(MyCompound = factor(MyCompound, 
+                                               levels = YFileOrder)) %>% 
+                    arrange(MyCompound) %>% 
+                    mutate(File = factor(File, levels = unique(File)))
+                # File and MyCompound are both now factor. 
                 
             } else {
-                
+                # compound names listed are not prettified
                 forest_dataframe <- forest_dataframe %>% 
-                    mutate(YCol = factor(Inhibitor1, levels = y_order))
-                
+                    mutate(MyCompound_orig = factor(MyCompound_orig, 
+                                                    levels = YFileOrder)) %>% 
+                    arrange(MyCompound_orig) %>% 
+                    mutate(MyCompound = factor(MyCompound, 
+                                               levels = unique(MyCompound)), 
+                           File = factor(File, levels = unique(File)))
+                # File and MyCompound are both now factor.
             }
         }
     }
     
+    # Now that we know what the y axis columns should be, setting them for each
+    # possible scenario.
+    if(as_label(y_axis_column) == "File"){
+        # This is when the primary y axis grouping is by File.
+        forest_dataframe <- forest_dataframe %>% 
+            mutate(YCol = MyCompound)
+        # Note that YCol is MyCompound, which is already a factor and thus in order.
+        if(as_label(y_axis_column_secondary) != "<empty>"){
+            forest_dataframe <- forest_dataframe %>% 
+                mutate(Y2Col = !!y_axis_column_secondary)
+            if(any(complete.cases(y_order_secondary))){
+                forest_dataframe <- forest_dataframe %>% 
+                    mutate(Y2Col = factor(Y2Col, levels = y_order_secondary))
+            }
+        }
+    } else {
+        # This is when the primary y axis grouping is NOT by File, which means
+        # that the secondary grouping MUST be by File. The primary y axis
+        # grouping will be by whatever the user specified.
+        forest_dataframe <- forest_dataframe %>% 
+            mutate(Y2Col = MyCompound, 
+                   YCol = !!y_axis_column)
+        # Note that Y2Col is File, which is already a factor and thus in order.
+        if(any(complete.cases(y_order))){
+            forest_dataframe <- forest_dataframe %>% 
+                mutate(YCol = factor(YCol, levels = y_order))
+        }
+    }
+    
+    
+    ##  Dealing with possible facet_column_x --------------------------------
     if(as_label(facet_column_x) != "<empty>"){
         forest_dataframe <- forest_dataframe %>%
             mutate(FCX = !!facet_column_x)
@@ -454,6 +541,7 @@ forest_plot <- function(forest_dataframe,
         }
     }
     
+    ## Setting up other stuff for graphing ----------------------------------
     Rect <- data.frame(Xmin = c(1.25, 2, 5, 0.5, 0.2, 0, 0.8), 
                        Xmax = c(2, 5, Inf, 0.8, 0.5, 0.2, 1.25), 
                        Ymin = -Inf, Ymax = Inf, 
@@ -486,23 +574,10 @@ forest_plot <- function(forest_dataframe,
         XBreaks <- c(XBreaks, x_axis_limits[2])
     }
     
-    ## Making graph w/y_order_secondary column specified ---------------------
+    # Graph w/y_order_secondary column specified --------------------------
     if(as_label(y_axis_column_secondary) != "<empty>"){
         # This is when the user wants to have an additional y axis grouping s/a
-        # day of dosing or prandial state or something like that.
-        
-        forest_dataframe <- forest_dataframe %>%
-            mutate(Y2Col = {{y_axis_column_secondary}})
-        
-        if(as_label(y_axis_column) == "File"){
-            forest_dataframe <- forest_dataframe %>% 
-                mutate(YCol = YCmpd)
-        }
-        
-        if(as_label(y_axis_column_secondary) == "File"){
-            forest_dataframe <- forest_dataframe %>% 
-                mutate(Y2Col = YCmpd)
-        }
+        # day of dosing or prandial state or something like that. 
         
         if(as_label(y_axis_column_secondary) %in% c("Dose_sub", "Dose_inhib")){
             forest_dataframe <- forest_dataframe %>% 
@@ -512,16 +587,19 @@ forest_plot <- function(forest_dataframe,
                                                     .fun = min))
         }
         
+        if(as_label(y_axis_column) %in% c("Dose_sub", "Dose_inhib")){
+            forest_dataframe <- forest_dataframe %>% 
+                mutate(YCol = paste(YCol, {{dose_units}}), 
+                       YCol = forcats::fct_reorder(.f = YCol, 
+                                                   .x = !!y_axis_column,
+                                                   .fun = min))
+        }
+        
         G <- list()
         
         for(g in unique(forest_dataframe$YCol)){
             
             Forest_subset <- forest_dataframe %>% filter(YCol == g)
-            
-            if(as_label(y_axis_column_secondary) == "File"){
-                Forest_subset$Y2Col <- factor(Forest_subset$YCmpd, 
-                                              levels = YCmpdOrder)
-            }
             
             G[[g]] <- suppressWarnings(
                 ggplot(Forest_subset, aes(x = GMR, y = PKParam, 
@@ -586,7 +664,7 @@ forest_plot <- function(forest_dataframe,
         ## Making graph w/out y secondary column ------------------------------
         if(as_label(y_axis_column) == "File"){
             forest_dataframe <- forest_dataframe %>% 
-                mutate(YCol = YCmpd)
+                mutate(YCol = MyCompound)
         }
         
         G <- ggplot(forest_dataframe, aes(x = GMR, y = PKParam, 
