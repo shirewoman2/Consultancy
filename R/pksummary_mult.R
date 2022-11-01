@@ -17,7 +17,7 @@
 #'  \code{PKParameterDefinitions}. If you would like the output table to include
 #'  the observed data CV for any of the parameters, add "_CV" to the end of the
 #'  parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
-#'  this help file for examples of how to set this up. 
+#'  this help file for examples of how to set this up.
 #'@param PKparameters (optional) the PK parameters to include as a character
 #'  vector. \itemize{
 #'
@@ -59,9 +59,10 @@
 #'@param tissue For which tissue would you like the PK parameters to be pulled?
 #'  Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'  tested).
-#'@param mean_type return "arithmetic" or "geometric" (default) means and CVs.
-#'  If you supplied a report input form, only specify this if you'd like to
-#'  override the value listed there.
+#'@param mean_type What kind of means and CVs do you want listed in the output
+#'  table? Options are "arithmetic" or "geometric" (default). If you supplied a
+#'  report input form, only specify this if you'd like to override the value
+#'  listed there.
 #'@param includeTrialMeans TRUE or FALSE (default) for whether to include the
 #'  range of trial means for a given parameter. Note: This is calculated from
 #'  individual values rather than being pulled directly from the output.
@@ -145,6 +146,20 @@ pksummary_mult <- function(sim_data_files = NA,
                            save_table = NA, 
                            fontsize = 11){
     
+    # Error catching ----------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Check for appropriate input for arguments
+    tissue <- tolower(tissue)
+    if(tissue %in% c("plasma", "blood") == FALSE){
+        stop("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. Please check your input and try again.", 
+             call. = FALSE)
+    }
+    
+    # Main body of function --------------------------------------------------
     # Read in the observed_PK data if it's not already a data.frame. Note that
     # the class of observed_PK will be logical if left as NA.
     if(class(observed_PK) == "character"){
@@ -152,6 +167,10 @@ pksummary_mult <- function(sim_data_files = NA,
                                 "csv" = read.csv(observed_PK), 
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                          sheetIndex = 1))
+        if(is.na(sim_data_files[1])){
+            sim_data_files <- observed_PKDF$File
+        }
+        
     } else {
         
         # If user did not supply specific files, then extract all the files in
@@ -179,6 +198,15 @@ pksummary_mult <- function(sim_data_files = NA,
     if(exists("observed_PKDF", inherits = FALSE)){
         
         for(i in 1:nrow(observed_PKDF)){
+            
+            # This warning only applies if they have both provided values for
+            # sim_data_files AND files in observed_PKDF$File.
+            if(observed_PKDF$File[i] %in% sim_data_files == FALSE){
+                warning(paste0("The file ", observed_PKDF$File[i],
+                               " was listed in your observed data but not in `sim_data_files`. It will be skipped."), 
+                        call. = FALSE)
+                next
+            }
             
             print(paste("Extracting data from", observed_PKDF$File[i]))
             
@@ -264,6 +292,12 @@ pksummary_mult <- function(sim_data_files = NA,
         }
     }
     
+    if(length(MyPKResults) == 0){
+        warning("No PK values could be found in the supplied files.", 
+                call. = FALSE)
+        return(list())
+    }
+    
     if(PKorder == "default"){
         
         MyPKResults <- bind_rows(MyPKResults)
@@ -333,7 +367,12 @@ pksummary_mult <- function(sim_data_files = NA,
                 mutate(Statistic = sub("Simulated", 
                                        paste("Simulated", MeanType, "mean"), Statistic))
             
-            write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
+            WarningDF <- data.frame(Col1 = "WARNING:",
+                                    Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")
+            names(WarningDF) <- names(MyPKResults)[1:2]
+            
+            write.csv(bind_rows(MyPKResults, WarningDF),
+                      paste0(OutPath, "/", save_table), row.names = F)
             
         } else {
             # This is when they want a Word file as output
