@@ -29,7 +29,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         ObsConcUnits <- sort(unique(Data$Conc_units))
     }
     
-    if(any(ADAM)){
+    if(any(ADAM, na.rm = TRUE)){
         
         # # ADAM options available (this is for my reference and was copied from ct_plot.R)
         # ADAMoptions <- c("undissolved compound", "enterocyte concentration",
@@ -117,7 +117,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                               "mg/L" = bquote(bold(Concentration~"("*"\u03bc"*g*"/"*mL*")")),
                               "mL" = "Volume (mL)",
                               "PD response" = "PD response",
-                              "Relative abundance" = "Relative abundance (%)")
+                              "Relative abundance" = "Relative abundance")
         
         ylab <- PossConcUnits[[ObsConcUnits]]
         
@@ -129,7 +129,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     # To do this, when observed data are present, filtering Ylim_data to only
     # include concentrations >= 0.8*min(observed conc). t0 point isn't included
     # in this calculation. 
-    if(nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
+    if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
         ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
             pull(Conc) %>% min(na.rm = TRUE) 
         
@@ -207,10 +207,19 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     
     # Adding padding if user requests it
     if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
-        if(pad_y_axis){
-            pad_y_num <-  c(0.02, 0)
+        if(EnzPlot){
+            if(pad_y_axis){
+                pad_y_num <-  c(0.02, 0.1)
+            } else {
+                pad_y_num <- c(0, 0)
+            }
+            
         } else {
-            pad_y_num <- c(0, 0)
+            if(pad_y_axis){
+                pad_y_num <-  c(0.02, 0)
+            } else {
+                pad_y_num <- c(0, 0)
+            }
         }
     } else {
         pad_y_num <- pad_y_axis

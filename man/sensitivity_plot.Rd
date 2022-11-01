@@ -10,6 +10,8 @@ sensitivity_plot(
   ind_var_label = NA,
   target_DV = NA,
   linear_or_log = "linear",
+  y_axis_limits_lin = NA,
+  y_axis_limits_log = NA,
   title = NA,
   save_graph = NA,
   fig_height = 4,
@@ -27,13 +29,14 @@ ones you requested when you ran the sensitivity analysis. Not case
 sensitive.}
 
 \item{ind_var_label}{optionally specify what text use for labeling the
-independent variable. If left as NA, R will find the value listed next to
-"Run Number" on the "ASA Summary" tab, which may be something not terribly
-pretty like "Fugut Value (Sub) (No Units)", and attempt to prettify it. If
-we haven't set things up to prettify that value, which is likely as we
-haven't used this function with very many sensitivity-analysis scenarios
-yet, the value will be unchanged. (If you have an independent variable
-you'd like to add to our list, email Laura Shireman!)}
+independent variable (the x axis). If left as NA, R will find the value
+listed next to "Run Number" on the "ASA Summary" tab, which may be
+something not terribly pretty like "Fugut Value (Sub) (No Units)", and
+attempt to prettify it. If we haven't set things up to prettify that value,
+which is likely as we haven't used this function with very many
+sensitivity-analysis scenarios yet, the value will be unchanged. (If you
+have an independent variable you'd like to add to our list, email Laura
+Shireman!)}
 
 \item{target_DV}{optionally specify a target value for the dependent
 variable, which will add a horizontal red dotted line to the graph where
@@ -41,6 +44,15 @@ the target lies.}
 
 \item{linear_or_log}{make the y axis "linear" (default) or "log" for plasma
 concentration-time plots (this is ignored for all other plots)}
+
+\item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
+plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
+limits for the linear plot will be automatically selected.}
+
+\item{y_axis_limits_log}{optionally set the Y axis limits for the semi-log
+plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
+respectively, to a round number. If left as the default NA, the Y axis
+limits for the semi-log plot will be automatically selected.}
 
 \item{title}{(optional) a title to include on your graph in quotes}
 

@@ -248,6 +248,13 @@ extractConcTime <- function(sim_data_file,
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
+    if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
+                call. = FALSE)
+    }
+    
     # Noting whether this was animal data
     Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
     Animal <- ifelse(is.na(Animal), FALSE, Animal)
@@ -264,6 +271,17 @@ extractConcTime <- function(sim_data_file,
     AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
                       Deets$Inhibitor1Metabolite)
     AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
+    
+    # Noting all compounds present
+    AllCompounds <- c("substrate" = Deets$Substrate,
+                      "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                      "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                      "secondary metabolite" = Deets$SecondaryMetabolite,
+                      "inhibitor 1" = Deets$Inhibitor1,
+                      "inhibitor 2" = Deets$Inhibitor2,
+                      "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+    AllCompounds <- AllCompounds[complete.cases(AllCompounds)]
+    AllCompoundsID <- names(AllCompounds)
     
     # For matching the correct effector to the correct names in the output file.
     # NB: I made inhibitor 1 be "EFFECTOR1INHIB" rather than just "EFFECTOR1"
@@ -348,11 +366,11 @@ extractConcTime <- function(sim_data_file,
                                   "portal vein" = "^pv"))]
         }
         
-        # Searching for correct compound. Substrate, inhibitor 1, and inhibitor
-        # 2 concentrations will all be on the main concentration-time data tab,
-        # but other compounds will be on separate tabs.
-        if(any(compoundToExtract %in%  c("inhibitor 1 metabolite",
-                                         "primary metabolite 1",
+        # Searching for correct compound. Substrate, inhibitor 1, inhibitor 1
+        # metabolite, and inhibitor 2 concentrations will all be on the main
+        # concentration-time data tab, but other compounds will be on separate
+        # tabs. 
+        if(any(compoundToExtract %in%  c("primary metabolite 1",
                                          "primary metabolite 2",
                                          "secondary metabolite"))){
             PossSheets <- PossSheets[
@@ -363,9 +381,7 @@ extractConcTime <- function(sim_data_file,
                        "primary metabolite 2" = 
                            str_detect(tolower(PossSheets), "sub met2|sub pri met2"), 
                        "secondary metabolite" = 
-                           str_detect(tolower(PossSheets), "sub sm|sub sec met"),
-                       "inhibitor 1 metabolite" = 
-                           str_detect(tolower(PossSheets), "inh1 m")
+                           str_detect(tolower(PossSheets), "sub sm|sub sec met")
                 )]
         }
         
@@ -1304,11 +1320,8 @@ extractConcTime <- function(sim_data_file,
         
         ## observed data -------------------------------------------------------
         
-        # This section of code ONLY applies to the singular extractConcTime
-        # function and NOT to extractConcTime_mult, which extracts obs conc time
-        # separately. 
-        
-        # This piece of code also ONLY applies to systemic concs. 
+        # This section of code ONLY applies when obs concs are NOT extracted
+        # separately. This piece of code also ONLY applies to systemic concs. 
         
         # Setting up some names of observed data for use later
         ObsCompounds <-
@@ -1323,7 +1336,11 @@ extractConcTime <- function(sim_data_file,
         AllEffectors_comma <- ifelse(length(AllEffectors) == 0,
                                      NA, str_comma(AllEffectors))
         
-        if(TissueType == "systemic" & fromMultFunction == FALSE){
+        # Use the supplied obs file here if a) tissue is systemic and b) the
+        # function was NOT called from the mult function OR the function WAS
+        # called from the mult function but the user supplied an obs data file.
+        if(TissueType == "systemic" &
+           (fromMultFunction == FALSE | (fromMultFunction & complete.cases(obs_data_file)))){
             
             # If the user did not specify a file to use for observed data, use
             # the observed data that they included for the simulation. Note that
@@ -1351,9 +1368,19 @@ extractConcTime <- function(sim_data_file,
                             # obs data in that situation.
                             rm(obs_data)
                         } else {
-                            
-                            warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.",
-                                    call. = FALSE)
+                            if(tissue == "plasma" & compoundToExtract == "substrate" &
+                               all(AllCompoundsID == "substrate")){
+                                warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.",
+                                        call. = FALSE)
+                            } else {
+                                warning("WARNING: This function is extracting observed data from simulator output, ",
+                                        "which does not contain information about the observed compound ID or ",
+                                        "whether the observed compound was in the presence of an effector. Since ",
+                                        "you are extracting something other than the substrate and/or extracting from a ",
+                                        "tissue other than plasma, we do not have enough information to assign the compoundID and it will be ",
+                                        "listed as `UNKNOWN` in your data. The safer way to include observed data is to supply a separate file for 'obs_data_file'.",
+                                        call. = FALSE)
+                            }
                             
                             # If subject names include special characters s/a
                             # "_", that messes up the regex below. Dealing with
@@ -1398,12 +1425,14 @@ extractConcTime <- function(sim_data_file,
                                         left_join(NewNamesObs %>% select(Indiv_code, Individual)) %>%
                                         mutate(Trial = "obs",
                                                Inhibitor = "none",
-                                               CompoundID = m,
-                                               Compound = MyCompound, # NOTE THAT THIS IS ASSUMED!
-                                               # The simulator doesn't provide much
-                                               # info on the identity of the
-                                               # compound for the observed data
-                                               # included in a simjlator file.
+                                               CompoundID = ifelse(tissue == "plasma" &
+                                                                       compoundToExtract == "substrate" &
+                                                                       all(AllCompoundsID == "substrate"),
+                                                                   m, "UNKNOWN"),
+                                               Compound = ifelse(tissue == "plasma" & 
+                                                                     compoundToExtract == "substrate" &
+                                                                     all(AllCompoundsID == "substrate"),
+                                                                 MyCompound, "UNKNOWN"), 
                                                ObsFile = NA,
                                                Species = ifelse(is.na(Deets$Species), 
                                                                 "human", 
@@ -1428,35 +1457,40 @@ extractConcTime <- function(sim_data_file,
                                               AllEffectors_comma, Inhibitor)) %>% 
                     filter(CompoundID == m)
                 
-                # If obs_data_file included compounds that were not present in
-                # the simulation, don't include those and give the user a
-                # warning.
-                Missing <- setdiff(unique(obs_data$CompoundID), 
-                                   names(ObsCompounds[complete.cases(ObsCompounds)])) 
-                
-                if(length(Missing) > 0){
-                    warning(paste0("The observed data file includes ",
-                                   str_comma(Missing), 
-                                   ", which is/are not present in the simulated data. Observed data for ", 
-                                   str_comma(Missing), 
-                                   " will not be included in the output."),
-                            call. = FALSE)
-                    obs_data <- obs_data %>% 
-                        filter(!CompoundID %in% Missing)
-                }
-                
-                # As necessary, convert simulated data units to match the
-                # observed data
-                if("individual" %in% returnAggregateOrIndiv){
-                    sim_data_ind[[m]] <-
-                        match_units(DF_to_adjust = sim_data_ind[[m]],
-                                    goodunits = obs_data)
-                }
-                
-                if("aggregate" %in% returnAggregateOrIndiv){
-                    sim_data_mean[[m]] <-
-                        match_units(DF_to_adjust = sim_data_mean[[m]],
-                                    goodunits = obs_data)
+                if(nrow(obs_data) == 0){
+                    rm(obs_data)
+                } else {
+                    
+                    # If obs_data_file included compounds that were not present in
+                    # the simulation, don't include those and give the user a
+                    # warning.
+                    Missing <- setdiff(unique(obs_data$CompoundID), 
+                                       names(ObsCompounds[complete.cases(ObsCompounds)])) 
+                    
+                    if(length(Missing) > 0){
+                        warning(paste0("The observed data file includes ",
+                                       str_comma(Missing), 
+                                       ", which is/are not present in the simulated data. Observed data for ", 
+                                       str_comma(Missing), 
+                                       " will not be included in the output."),
+                                call. = FALSE)
+                        obs_data <- obs_data %>% 
+                            filter(!CompoundID %in% Missing)
+                    }
+                    
+                    # As necessary, convert simulated data units to match the
+                    # observed data
+                    if("individual" %in% returnAggregateOrIndiv){
+                        sim_data_ind[[m]] <-
+                            match_units(DF_to_adjust = sim_data_ind[[m]],
+                                        goodunits = obs_data)
+                    }
+                    
+                    if("aggregate" %in% returnAggregateOrIndiv){
+                        sim_data_mean[[m]] <-
+                            match_units(DF_to_adjust = sim_data_mean[[m]],
+                                        goodunits = obs_data)
+                    }
                 }
             }
         }
@@ -1554,7 +1588,8 @@ extractConcTime <- function(sim_data_file,
           "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
                                             NA, Deets$DoseInt_inhib),
           "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
-                                 NA, Deets$DoseInt_inhib2))
+                                 NA, Deets$DoseInt_inhib2), 
+          "UNKNOWN" = NA)
     
     MyStartTimes <- 
         c("substrate" = Deets$StartHr_sub,
@@ -1566,7 +1601,8 @@ extractConcTime <- function(sim_data_file,
           "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
                                  Deets$StartHr_inhib2),
           "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                            Deets$StartHr_inhib))
+                                            Deets$StartHr_inhib), 
+          "UNKNOWN" = NA)
     
     MyMaxDoseNum <- 
         c("substrate" = ifelse(Deets$Regimen_sub == "Single Dose", 
@@ -1585,7 +1621,8 @@ extractConcTime <- function(sim_data_file,
                                         1, Deets$NumDoses_inhib2)),
           "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
                                             ifelse(Deets$Regimen_inhib == "Single Dose", 
-                                                   1, Deets$NumDoses_inhib)))
+                                                   1, Deets$NumDoses_inhib)), 
+          "UNKNOWN" = NA)
     
     # Converting data to numeric while also retaining names
     suppressWarnings(
@@ -1600,12 +1637,12 @@ extractConcTime <- function(sim_data_file,
                TimeSinceDose1 = Time - StartHr,
                DoseInt = MyIntervals[CompoundID],
                MaxDoseNum = MyMaxDoseNum[CompoundID],
-               DoseNum = Time %/% DoseInt + 1,
+               DoseNum = (Time - StartHr) %/% DoseInt + 1,
                # Taking care of possible artifacts
                DoseNum = ifelse(DoseNum < 0, 0, DoseNum),
                DoseNum = ifelse(DoseNum > MaxDoseNum, MaxDoseNum, DoseNum),
                # If it was a single dose, make everything after StartHr dose
-               # 1 and everything before StartHr dose 0. if it was a single
+               # 1 and everything before StartHr dose 0. If it was a single
                # dose, then DoseInt is NA.
                DoseNum = ifelse(is.na(DoseInt),
                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
@@ -1730,7 +1767,7 @@ extractConcTime <- function(sim_data_file,
     # itself rather than extractConcTime_mult.
     if(fromMultFunction == FALSE){
         Data <- Data %>%
-            filter(CompoundID %in% compoundToExtract)
+            filter(CompoundID %in% c(compoundToExtract, "UNKNOWN"))
     }
     
     return(Data)

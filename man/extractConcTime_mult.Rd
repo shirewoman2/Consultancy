@@ -6,7 +6,7 @@
 \usage{
 extractConcTime_mult(
   sim_data_files = NA,
-  obs_data_files = NA,
+  obs_to_sim_assignment = NA,
   ct_dataframe = ConcTime,
   overwrite = FALSE,
   tissues = "plasma",
@@ -14,7 +14,8 @@ extractConcTime_mult(
   conc_units_to_use = "ng/mL",
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
-  ...
+  ...,
+  obs_data_files = NA
 )
 }
 \arguments{
@@ -27,15 +28,53 @@ If some of your Excel files are not regular simulator output, e.g. they are
 sensitivity analyses or a file where you were doing some calculations,
 those files will be skipped.}
 
-\item{obs_data_files}{a character vector of the observed data files, each in
-quotes and encapsulated with \code{c(...)}, that you'd like to compare,
-e.g., \code{c("obsdata1.xlsx", "obsdata2.xlsx")}. The path should be
-included with the file names if they are located somewhere other than your
-working directory. This is the file that it is ready to be converted to an
-XML file, not the file that contains only the digitized time and
-concentration data. This function assumes that the dosing intervals for the
-observed data match those in the simulated data. See "Details" for more
-info.}
+\item{obs_to_sim_assignment}{the assignment of which observed files go with
+  which simulated files. There are three ways to supply this:
+
+  \describe{\item{a character vector of the observed data files, each in
+  quotes and encapsulated with \code{c(...)}}{If all the observed data can be
+  compared to all the simulated data, then an example of acceptable input
+  would be: \code{obs_to_sim_assignment = "obsdata1.xlsx"}. However, if you
+  would like to specify which observed file goes with which simulated file,
+  you can do this with a named character vector, e.g.,
+  \code{c("obsdata1.xlsx" = "simfileA.xlsx", "obsdata2.xlsx" =
+  "simfileB.xlsx")}. If one observed file needs to match more than one
+  simulated file but not \emph{all} the simulated files, you can do that by
+  separating the simulated files with commas, e.g.,
+  \code{obs_to_sim_assignment = c("obs data 1.xlsx" = "mdz-5mg-qd.xlsx,
+  mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx,
+  mdz-5mg-qd-cancer-fa08.xlsx")}. Pay close attention to the position of
+  commas and quotes there! This can get a bit confusing, in our opinions, so
+  you may want to try the other options if you need to link specific observed
+  and simulated files; they can be easier to follow but require more typing.}
+
+  \item{a data.frame with one column for the observed files and one column
+  for the simulated files they each match}{The data.frame must have column
+  names of "ObsFile" and "SimFile" for the observed and simulated files,
+  respectively. Here's an example of acceptable input:
+  \code{obs_to_sim_assignment = data.frame(ObsFile = c("obsdata1.xlsx",
+  "obsdata2.xlsx"), SimFile = c("simfileA.xlsx", "simfileB.xlsx"))} Each row
+  should contain one observed file and one simulated file, so if you want to
+  compare a single observed file to multiple simulated files, you'll need to
+  repeat the observed file, e.g., \code{obs_to_sim_assignment =
+  data.frame(ObsFile = c("obsdata1.xlsx", "obsdata2.xlsx", "obsdata2.xlsx",
+  "obsdata2.xlsx"), SimFile = c("simfileA.xlsx", "simfileB.xlsx",
+  "simfileC.xlsx", "simfileD.xlsx"))}}
+
+  \item{a csv file with one column for the observed files and one column for
+  the simulated files they each match}{The setup of this csv file should be
+  just like that described for supplying a data.frame, so one row for each
+  pair of simulated and observed files you want to compare to each other.
+  Supply this as a character string, like this: \code{obs_to_sim_assignment =
+  "My obs to sim assignments.csv"}}}
+
+  For whichever option you choose, the observed files' paths should be
+  included if they are located somewhere other than your working directory.
+  The observed data files should be for the Excel file that it is
+  \emph{ready} to be converted to an XML file, not the file that contains
+  only the digitized time and concentration data. This function assumes that
+  the dosing intervals for the observed data match those in the simulated
+  data. See "Details" for more info.}
 
 \item{ct_dataframe}{(optional) a data.frame that contains previously
 extracted concentration-time data. This should NOT be in quotes. Because we
@@ -93,6 +132,10 @@ simulator output rows labeled as "Population Statistics".}
 
 \item{...}{other arguments passed to the function
 \code{\link{extractConcTime}}}
+
+\item{obs_data_files}{TO BE DEPRECATED. This is the same argument as
+obs_to_sim_assignment; we just renamed it to try to be clearer about what
+the argument does and in what order you should list the files.}
 }
 \value{
 Returns a large data.frame with multiple sets of concentration-time
@@ -102,16 +145,15 @@ Returns a large data.frame with multiple sets of concentration-time
 \description{
 \code{extractConcTime_mult} is meant to be used in conjunction with
 \code{\link{ct_plot_overlay}} or \code{\link{ct_plot_mult}} to create graphs
-from multiple Simcyp Simulator output files. \strong{A couple of
-notes:}\enumerate{\item{If ANY of the Excel files you wish to extract data
-from are saved on SharePoint and are open, this WILL CRASH and WILL NOT save
-whatever progress it has made so far. Be sure to close all of the source
-Excel files.} \item{If you list multiple files, multiple tissues, and/or
-multiple compounds to extract (see options below), this will extract
-\emph{all} possible variations of them. For example, if you ask for
-"sim1.xlsx" and "sim2.xlsx" and then also ask for "substrate" and "primary
-metabolite 1", you will get the substrate and primary metabolite 1 data from
-\emph{both} files.}}
+from multiple Simcyp Simulator output files. If you list multiple files,
+multiple tissues, and/or multiple compounds to extract (see options below),
+this will extract \emph{all} possible variations of them. For example, if you
+ask for "sim1.xlsx" and "sim2.xlsx" and then also ask for "substrate" and
+"primary metabolite 1", you will get the substrate and primary metabolite 1
+data from \emph{both} files. \strong{NOTE:} If ANY of the Excel files you
+wish to extract data from are saved on SharePoint and are open, this WILL
+CRASH and WILL NOT save whatever progress it has made so far. Be sure to
+close all of the source Excel files.
 }
 \details{
 \strong{Regarding dose intervals for observed data:} The observed data files

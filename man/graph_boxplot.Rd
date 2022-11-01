@@ -12,8 +12,8 @@ graph_boxplot(
   facet2_column,
   graph_type = "boxplot",
   include_errorbars = FALSE,
-  xlabel = NA,
-  ylabel = NA,
+  x_axis_label = NA,
+  y_axis_label = NA,
   color_set = "default",
   save_graph = NA,
   fig_width = 6,
@@ -46,11 +46,11 @@ might break up the graph into small multiples, unquoted.}
 \item{include_errorbars}{TRUE or FALSE (default) on whether to include
 horizontal error bars on the whiskers}
 
-\item{xlabel}{the label to  use for the x axis, in quotes; default will use
-the name of category_column.}
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the x axis label}
 
-\item{ylabel}{the label to use for the y axis, in quotes; default will use
-the name of value_column.}
+\item{y_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 

@@ -660,15 +660,11 @@ inductFit <- function(DF,
             ggtitle(ModelTitle) +
             xlab(expression(Concentration~(mu*M))) +
             ylab(Ylab) +
-            theme(panel.background = element_rect(fill="white", color=NA),
-                  panel.grid.minor.y = element_line(color = NA),
+            theme_consultancy() +
+            theme(panel.grid.minor.y = element_line(color = NA),
                   panel.grid.minor.x = element_line(color = NA),
                   panel.grid.major = element_line(colour = NA),
-                  plot.background = element_rect(fill="white", colour=NA),
-                  panel.border = element_rect(color="black", fill=NA),
-                  strip.background = element_rect(color=NA, fill="white"),
-                  legend.background = element_rect(color=NA, fill=NA),
-                  legend.key = element_rect(color=NA, fill=NA)
+                  panel.border = element_rect(color="black", fill=NA)
             )
     )
     

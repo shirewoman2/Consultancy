@@ -6,16 +6,19 @@
 \usage{
 ct_plot_mult(
   ct_dataframe,
+  obs_to_sim_assignment = NA,
   graph_arrangement = "all together",
   figure_type = "percentiles",
   mean_type = "arithmetic",
   linear_or_log = "semi-log",
   time_range = NA,
   x_axis_interval = NA,
+  x_axis_label = NA,
   pad_x_axis = TRUE,
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_label = NA,
   legend_position = "none",
   legend_label = NA,
   graph_titles = NA,
@@ -25,13 +28,26 @@ ct_plot_mult(
   file_suffix = NA,
   fig_height = 8,
   fig_width = 8,
-  ...,
-  file_labels = NA
+  ...
 )
 }
 \arguments{
 \item{ct_dataframe}{the data.frame with multiple sets of concentration-time
 data}
+
+\item{obs_to_sim_assignment}{optionally specify which observed files should
+be compared to which simulator files. If left as NA and what you supplied
+for \code{ct_dataframe} doesn't already specify which observed data go with
+which simulated file, this will assume that \emph{all} observed data goes
+with \emph{all} simulated data. To specify, use a named character vector
+like this: \code{obs_to_sim_assignment = c("obs data 1.xlsx" =
+"mdz-5mg-qd.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx")} If one
+observed file needs to match more than one simulated file but not
+\emph{all} the simulated files, you can do that by separating the simulated
+files with commas, e.g., \code{obs_to_sim_assignment = c("obs data 1.xlsx"
+= "mdz-5mg-qd.xlsx, mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" =
+"mdz-5mg-qd-cancer.xlsx, mdz-5mg-qd-cancer-fa08.xlsx")}. Pay close
+attention to the position of commas and quotes there!}
 
 \item{graph_arrangement}{set how to arrange the graphs. Options are
   \describe{\item{"all together"}{(default) for all graphs being nicely
@@ -126,6 +142,9 @@ Acceptable input: any number or leave as NA to accept default values, which
 are generally reasonable guesses as to aesthetically pleasing and
 PK-relevant intervals.}
 
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the x axis label}
+
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If
 changed to FALSE, the y axis will be placed right at the beginning of your
@@ -154,6 +173,9 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
 
+\item{y_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
+
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all. If you include the legend but then some graphs do have a legend and
@@ -167,24 +189,30 @@ label in the legend for the line style and the shape. If left as the
 default NA when a legend is included and an effector is present, the label
 in the legend will be "Inhibitor".}
 
-\item{graph_titles}{optionally specify titles to be used in place of the file
-name in the graphs and specify the order in which the files are graphed.
-Input should be a named character vector of the files in the order you
-would like. (Not applicable if \code{graph_arrangement = "separate
-files"}.) The file name must \emph{perfectly} match the file name listed in
+\item{graph_titles}{optionally specify titles to be used in the graphs and
+specify the order in which the files are graphed or use "none" to have no
+titles on your graphs. Input should be a named character vector of the
+files in the order you would like and what you want to use for the title.
+The file name must \emph{perfectly} match the file name listed in
 ct_dataframe or it won't be used. An example of how this might be
 specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
 "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
 you didn't think you specified, please double check that you have specified
-the file names \emph{exactly} as they appear in \code{ct_dataframe}.}
+the file names \emph{exactly} as they appear in \code{ct_dataframe}.
+\strong{CAVEAT:} If you have more than one dataset per file, this is
+trickier. However, you can specify titles using the name of the simulator
+output file, the compound ID, the tissue, and then the ADAM-model
+subsection (use "none" if that doesn't apply here), each separated with a
+".". An example: \code{graph_titles = c("my sim
+file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
+1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
+example with the dataset MDZ_Keto.}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
-default is 14}
+default is 14. This also determines the font size of the graph labels.}
 
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
-B, C, etc.) for each of the small graphs. This is only slightly different
-from \code{file_labels}, so please try out the options to see what we mean.
-Not applicable if \code{graph_arrangement = "separate files"}.}
+B, C, etc.) for each of the small graphs.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
@@ -215,18 +243,6 @@ percentiles.png". This is only used when \code{graph_arrangement =
 \item{fig_width}{figure width in inches; default is 8}
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
-
-\item{file_labels}{SOON TO BE DEPRECATED. Please use \code{graph_titles}
-instead. optionally specify a label to be used for the file name in the
-graphs and specify the order in which the files are graphed with a named
-character vector of the files in the order you would like. (Not applicable
-if \code{graph_arrangement = "separate files"}.) The file name must
-\emph{perfectly} match the file name listed in ct_dataframe or it won't be
-used. An example of how this might be specified: \code{file_labels = c("My
-file 1.xlsx" = "Healthy volunteers", "My file 2.xlsx" = "Mild hepatic
-impairment")}  If you get an order that you didn't think you specified,
-please double check that you have specified the file names \emph{exactly}
-as they appear in \code{ct_dataframe}.}
 }
 \value{
 
@@ -234,19 +250,27 @@ as they appear in \code{ct_dataframe}.}
 \description{
 This function was designed for making nicely arranged concentration-time
 graphs from several Simcyp Simulator output files all together \emph{or} for
-making multiple files -- one for each Simulator file -- all at once.
+making multiple files -- one for each Simulator file -- all at once. Behind
+the scenes, it uses the function \code{\link{ct_plot}} to make these graphs,
+so it will automatically break up your supplied concentration-time data into
+datasets by a) file, b) compound ID, c) tissue, and d) subsection of any
+ADAM-model data. If you have more than one dataset per file, the graph titles
+won't necessarily be clear, so please pay attention to what data you're
+including. If you get unexpected or unclear output, try using
+\code{\link{ct_plot_overlay}} to graph your data; it might work better for
+what you want to show.
 }
 \details{
 \strong{A note on the order of the graphs:} This function arranges graphs
 first by file, then by compound ID, and then by tissue, and all sorting is
 alphabetical. However, since sorting alphabetically might not be the optimal
-graph arrangement for your scenario, you \emph{can} specify the order of the
-graphs using either the \code{file_labels} argument or, if you're comfortable
-with setting factors in R, by making any of File, CompoundID, Tissue, and
-subsection_ADAM factor rather than character data and setting the levels how
-you wish. If you're unfamiliar with setting factor levels in R and setting
-\code{file_labels} isn't achieving what you want, please ask a member of the
-R Working Group for assistance.
+graph arrangement for \emph{your} scenario, you can specify the order of the
+graphs using either the \code{graph_titles} argument or, if you're
+comfortable with setting factors in R, by making any of File, CompoundID,
+Tissue, and subsection_ADAM factor rather than character data and setting the
+levels how you wish. If you're unfamiliar with setting factor levels in R and
+setting \code{graph_titles} isn't achieving what you want, please ask a
+member of the R Working Group for assistance.
 }
 \examples{
 
@@ -254,9 +278,19 @@ data(MDZct)
 ct_plot_mult(ct_dataframe = MDZct)
 
 ct_plot_mult(ct_dataframe = MDZct,
-   file_labels = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
-                   "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
-                   "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
-                   "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
+   graph_titles = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
+                    "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
+                    "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
+                    "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
+
+
+# Graph titles when you have the tricky situation of more than one
+# dataset per file
+ct_plot_mult(
+    ct_dataframe = MDZ_Keto,
+    graph_titles = c("mdz-qd-keto-qd.xlsx.substrate.plasma.none" = "Midazolam in plasma",
+                     "mdz-qd-keto-qd.xlsx.substrate.blood.none" = "Midazolam in blood",
+                     "mdz-qd-keto-qd.xlsx.inhibitor 1.plasma.none" = "Ketoconazole in plasma",
+                     "mdz-qd-keto-qd.xlsx.inhibitor 1.blood.none" = "Ketoconazole in blood"))
 
 }

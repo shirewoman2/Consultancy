@@ -167,10 +167,10 @@
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of an effector. Input should look like this, for example:
 #'   \code{c(1, 2)} to get an open circle and an open triangle. To see all the
-#'   possible shapes and what number corresponds to which shape, see
-#'   \url{https://r-graphics.org/recipe-scatter-shapes} (there's a graph around
-#'   the middle of that page). If left as NA, substrate alone will be an open
-#'   circle and substrate + inhibitor 1 will be an open triangle.
+#'   possible shapes and what number corresponds to which shape, type
+#'   \code{ggpubr::show_point_shapes()} into the console. If left as NA,
+#'   substrate alone will be an open circle and substrate + inhibitor 1 will be
+#'   an open triangle.
 #' @param obs_size optionally specify the size of the points to use for the
 #'   observed data. If left as NA, the size will be 2.
 #' @param obs_fill_trans optionally specify the transparency for the fill of the
@@ -221,7 +221,7 @@
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14
+#'   default is 14. This also determines the font size of the graph labels. 
 #' @param legend_label optionally indicate on the legend whether the effector is
 #'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as the
@@ -385,7 +385,27 @@ ct_plot <- function(ct_dataframe = NA,
              call. = FALSE)
     }
     
-    if(length(sort(unique(ct_dataframe$CompoundID))) > 1){
+    # Noting whether this is an enzyme-abundance plot b/c some options change
+    # then.
+    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+    
+    # Checking whether user tried to include obs data directly from simulator
+    # output for a simulation that included anything other than substrate in
+    # plasma.
+    if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
+        return(
+            ggplot(data.frame(Problem = 1, DataFail = 1), 
+                   aes(y = Problem, x = DataFail)) +
+                xlab("Please check the help file for extractConcTime") +
+                theme(axis.title.x = element_text(size = 14, color = "red", 
+                                                  face = "italic")) +
+                annotate(geom = "text", x = 1, y = 1, size = 8,
+                         color = "red", 
+                         label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+        )
+    }
+    
+    if(EnzPlot == FALSE && length(sort(unique(ct_dataframe$CompoundID))) > 1){
         stop(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
                     length(sort(unique(ct_dataframe$CompoundID))), 
                     " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
@@ -439,10 +459,6 @@ ct_plot <- function(ct_dataframe = NA,
     obs_fill_trans_user <- obs_fill_trans
     obs_color_user <- obs_color
     obs_shape_user <- obs_shape
-    
-    # Noting whether this is an enzyme-abundance plot b/c some options change
-    # then.
-    EnzPlot <- "Enzyme" %in% names(ct_dataframe)
     
     # If user had already filtered ct_dataframe to include only the ADAM data
     # they wanted, the subsection_ADAM column might not include the default
@@ -503,7 +519,8 @@ ct_plot <- function(ct_dataframe = NA,
         Data <- Data %>% mutate(CompoundID = Enzyme) %>%
             rename(Conc = Abundance) %>%
             mutate(Simulated = TRUE,
-                   Compound = Enzyme)
+                   Compound = Enzyme, 
+                   Conc = Conc / 100) # putting this into decimal format
     }
     
     # Noting whether the tissue was from an ADAM model
@@ -905,6 +922,9 @@ ct_plot <- function(ct_dataframe = NA,
         
         A <- addObsPoints(obs_data = obs_data, 
                           A = A, 
+                          # Needed the argument AES for ct_plot_overlay, but
+                          # it's only ever going to be "linetype" for ct_plot.
+                          AES = "linetype", 
                           obs_shape = obs_shape,
                           obs_shape_user = obs_shape_user,
                           obs_size = obs_size, 
@@ -933,13 +953,24 @@ ct_plot <- function(ct_dataframe = NA,
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                limits = time_range_relative,
                                expand = expansion(
-                                   mult = pad_x_num)) +
-            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                 0, y_axis_limits_lin[1]),
-                                          YmaxRnd), 
-                               breaks = YBreaks,
-                               labels = YLabels,
-                               expand = expansion(mult = pad_y_num)) 
+                                   mult = pad_x_num))
+        
+        if(EnzPlot){
+            A <- A +
+                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                     0, y_axis_limits_lin[1]),
+                                              YmaxRnd), 
+                                   labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))    
+        } else {
+            A <- A +
+                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                     0, y_axis_limits_lin[1]),
+                                              YmaxRnd), 
+                                   breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) 
+        }
         
     } else {
         A <- A +
@@ -949,10 +980,18 @@ ct_plot <- function(ct_dataframe = NA,
                                      YmaxRnd)) +
             scale_x_continuous(breaks = XBreaks, labels = XLabels,
                                expand = expansion(
-                                   mult = pad_x_num)) +
-            scale_y_continuous(breaks = YBreaks,
-                               labels = YLabels,
-                               expand = expansion(mult = pad_y_num)) 
+                                   mult = pad_x_num))
+        
+        if(EnzPlot){
+            A <- A +
+                scale_y_continuous(labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))    
+        } else {
+            A <- A +
+                scale_y_continuous(breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) 
+        }
     }
     
     if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
@@ -975,13 +1014,7 @@ ct_plot <- function(ct_dataframe = NA,
                             legend_label, "Inhibitor"),
              fill = ifelse(complete.cases(legend_label), 
                            legend_label, "Inhibitor")) +
-        theme(panel.background = element_rect(fill="white", color=NA),
-              legend.key = element_rect(fill = "white"),
-              axis.ticks = element_line(color = "black"),
-              axis.text = element_text(color = "black"),
-              axis.title = element_text(color = "black", face = "bold"),
-              axis.line.x.bottom = element_line(color = "black"),
-              axis.line.y.left = element_line(color = "black"))
+        theme_consultancy()
     
     
     # If the user didn't want the legend or if the graph is of an effector,
@@ -1018,13 +1051,19 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     B <- suppressWarnings(suppressMessages(
-        A + scale_y_log10(breaks = YLogBreaks,
-                          labels = YLogLabels,
-                          expand = expansion(mult = pad_y_num)) +
-            # labels = function(.) format(., scientific = FALSE, drop0trailing = TRUE)) +
-            coord_cartesian(xlim = time_range_relative, 
-                            ylim = Ylim_log)
-    ))
+        A + coord_cartesian(xlim = time_range_relative, 
+                            ylim = Ylim_log)))
+    
+    if(EnzPlot){
+        B <- suppressWarnings(suppressMessages(
+            B + scale_y_log10(labels = scales::percent,
+                              expand = expansion(mult = pad_y_num))))
+    } else {
+        B <- suppressWarnings(suppressMessages(
+            B + scale_y_log10(breaks = YLogBreaks,
+                              labels = YLogLabels,
+                              expand = expansion(mult = pad_y_num))))
+    }
     
     if(graph_labels){
         labels <- "AUTO"
@@ -1037,13 +1076,15 @@ ct_plot <- function(ct_dataframe = NA,
                                 "inhibitor 1 metabolite")){
         AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, 
-                              labels = labels,
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
                               align = "v")
         )
         
         ABhoriz <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 2, 
-                              labels = labels,
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
                               align = "hv")
         )
         
@@ -1055,23 +1096,27 @@ ct_plot <- function(ct_dataframe = NA,
                                     "inhibitor 1 metabolite")){
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1, 
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   legend = "none", align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   legend = "none", align = "hv"))
         } else {
             AB <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 1,  
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
             
             ABhoriz <- suppressWarnings(
                 ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = labels,
+                                  labels = labels, 
+                                  font.label = list(size = graph_title_size),
                                   common.legend = TRUE, legend = legend_position,
                                   align = "hv"))
         }
@@ -1102,6 +1147,10 @@ ct_plot <- function(ct_dataframe = NA,
     if(length(Out) == 1){
         Out <- Out[[1]]
     }
+    
+    
+    
+    # Saving -----------------------------------------------------------------
     
     if(complete.cases(save_graph)){
         FileName <- save_graph

@@ -10,17 +10,45 @@
 #' @param DF a data.frame, usually output from \code{\link{pksummary_table}} or
 #'   \code{\link{pksummary_mult}}
 #' @param fontsize the numeric font size for the output. Default is 11 point.
+#' @param shading_column If you would like to alternate the shading of the rows
+#'   in the output data.frame, supply here the unquoted name of the column to
+#'   check for when to change the shading; everytime that column's value
+#'   changes, the shading will alternate between white and light gray. For
+#'   example, if you have a table with PK values for multiple files and you have
+#'   more than one row per file (an example of this would be the output from the
+#'   function \code{\link{pksummary_mult}}), if you set \code{shading_column =
+#'   File}, the shading of the rows will alternate between white and light gray
+#'   whenever the file changes.
 #'
 #' @return
 #' @export
 #'
-#' @examples 
+#' @examples
+#' MyData <- data.frame(ColA = rep(LETTERS[1:3], each = 2),
+#'                      ColB = 1:6)
+#' formatTable_Simcyp(MyData)
 #' 
-#' pksummary_table(sim_data_file = "My simulation.xlsx")$Table %>% 
-#'     formatTable_Simcyp()
-#' 
-formatTable_Simcyp <- function(DF, fontsize = 11){
+formatTable_Simcyp <- function(DF, 
+                               fontsize = 11, 
+                               shading_column){
     
+    # Error catching ---------------------------------------------------------
+    # Check whether tidyverse is loaded
+    if("package:tidyverse" %in% search() == FALSE){
+        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+             call. = FALSE)
+    }
+    
+    if(nrow(DF) == 0){
+        stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
+             call. = FALSE)
+    }
+    
+    # Setting things up for nonstandard evaluation ----------------------------
+    shading_column <- rlang::enquo(shading_column)
+    
+    
+    # Main body of function -------------------------------------------------
     FT <- DF %>% 
         flextable::flextable() %>% 
         
@@ -40,9 +68,6 @@ formatTable_Simcyp <- function(DF, fontsize = 11){
         # Set the font size
         flextable::fontsize(part = "all", size = fontsize) %>% 
         
-        # Set the font name
-        flextable::font(part = "all", fontname = "Calibri") %>% 
-        
         # setting up which borderlines to show
         flextable::border_remove() %>% 
         flextable::border_inner_v(part = "all", 
@@ -51,6 +76,29 @@ formatTable_Simcyp <- function(DF, fontsize = 11){
         
         # making the width autofitted to contents
         flextable::set_table_properties(width = 1, layout = "autofit")
+    
+    # Optionally including shading whenever the shading column changes
+    if(as_label(shading_column) != "<empty>"){
+        
+        ShadeCol <- DF %>% pull(!!shading_column)
+        
+        ShadeChange <- which(ShadeCol[1:(length(ShadeCol) - 1)] != 
+                                 ShadeCol[2:nrow(DF)]) + 1
+        ShadeRows <- ShadeChange[seq(1, length(ShadeChange), by = 2)]
+        if(length(ShadeChange) > 1){
+            NoShadeRows <- ShadeChange[seq(2, length(ShadeChange), by = 2)]
+        } else {
+            NoShadeRows <- 1
+        }
+        DF$Shade <- as.logical(NA)
+        DF$Shade[ShadeRows] <- TRUE
+        DF$Shade[NoShadeRows] <- FALSE
+        DF <- DF %>% fill(Shade, .direction = "down") %>% 
+            mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
+        ShadeRows <- which(DF$Shade)
+        FT <- FT %>% 
+            flextable::bg(i = ShadeRows, bg = "#F2F2F2")
+    }
     
     # Dealing with subscripts
     NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag"

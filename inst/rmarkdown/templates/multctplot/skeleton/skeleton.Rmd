@@ -14,6 +14,10 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r figheading}
 
+# Things work best from here down if ct_dataframe is, in fact, a data.frame
+# again rather than a list split by file name. 
+ct_dataframe <- bind_rows(ct_dataframe)
+
 Text1 <- switch(linear_or_log, 
                 "both" = "Linear (A) and log-linear (B)",
                 "both horizontal" ="Linear (A) and log-linear (B)",
@@ -50,11 +54,15 @@ CapText1 <-
                    ""), 
             " plasma concentration-time profiles of ",
             str_comma(prettify_compound_name(
-                unique(ct_dataframe$Compound[!ct_dataframe$Compound %in% MyEffector])), 
+                unique(ct_dataframe$Compound[!ct_dataframe$CompoundID %in% 
+                                                 c("inhibitor 1", "inhibitor 2",
+                                                   "inhibitor 1 metabolite")])), 
                 conjunction = "or"), 
             " following a single oral dose of ", 
             str_comma(prettify_compound_name(
-                unique(ct_dataframe$Compound[!ct_dataframe$Compound %in% MyEffector])), 
+                unique(ct_dataframe$Compound[!ct_dataframe$CompoundID %in% 
+                                                 c("inhibitor 1", "inhibitor 2",
+                                                   "inhibitor 1 metabolite")])), 
                 conjunction = "or"),
             " in the absence of ", 
             str_comma(prettify_compound_name(

@@ -8,12 +8,17 @@ forest_plot(
   forest_dataframe,
   perp_or_victim,
   PKparameters = NA,
-  color_set = "grays",
-  y_axis_order = NA,
-  x_axis_limits = c(0.05, 15),
-  facet_column,
+  y_axis_column = File,
+  y_order = NA,
+  y_axis_column_secondary,
+  y_order_secondary = NA,
+  x_axis_limits = NA,
+  x_axis_label = NA,
+  facet_column_x,
+  dose_units = "mg",
   prettify_compound_names = TRUE,
   legend_position = "none",
+  color_set = "grays",
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -30,9 +35,9 @@ like some other label to appear on the y axis, please see the argument
 \code{y_axis_labels}.}
 
 \item{perp_or_victim}{specify whether the drug of interest is a "victim" or
-"perpetrator". This will determine the graphs will be labeled on the y axis
-by the substrate name (for perpetrator forest plots) or by the effector
-name (for victim forest plots).}
+"perpetrator". This will determine whether the graphs will be labeled on
+the y axis by the substrate name (for perpetrator forest plots) or by the
+effector name (for victim forest plots).}
 
 \item{PKparameters}{optionally specify which PK parameters included in
 \code{forest_dataframe} to use as input. If left as NA, all the PK
@@ -41,39 +46,73 @@ included. If you try to include a parameter that's not already present in
 forest_dataframe, it will be ignored. Enclose the parameters with
 \code{c(...)}.}
 
-\item{color_set}{the set of colors to use for shading the areas of the graph
-by whether the interaction is insignificant, weak, moderate or strong.
-Leaving as the default value, "grays", will result in white to light gray
-areas on the graph; "blues" or "reds" will result in increasingly darker
-blues or reds, respectively, as the strength of the DDI increases; and
-"none" will show no shading on the graph. You may specify a character
-vector of 4 color names in order from weakest to strongest interaction if
-you want finer control over the colors.}
+\item{y_axis_column}{the column by which you would like to break up the y
+axis, e.g., \code{y_axis_column = File} (default). You must specify
+something here; it cannot be left blank. This will automatically replace
+the file names listed in \code{forest_dataframe} with the effector for
+victim forest plots and with the substrate for perpetrator forest plots.}
 
-\item{y_axis_order}{optionally supply a character vector to specify the order
-of the files or compounds on the y axis. If your character vector contains
-"xlsx" in the any of the text, we'll assume you want to sort by the file
-names; otherwise, we'll assume you want to sort by the compound names. If
-\code{y_axis_order} is unspecified, the y axis will be sorted according to
-the geometric mean AUC ratio with inhibitors on top and inducers on the
-bottom. If there's more than one row for a substrate or inhibitor (say
-you're including scenarios where you've reduced the Ki or the IndC50, for
-example), this may not give you the order you want and you might be better
-off specifying manually. If you supply a named character vector of file
-names, in addition to using that for setting the y axis order, we'll use
-those values for the y axis labels instead of the compound names. This can
-be useful when you want to add notes about changes in parameters such as
-when you're including sensitivity analyses. An example of the syntax to
-use: \code{y_axis_labels = c("abc1a-mdz.xlsx" = "Midazolam with in vitro
-induction", "abc-1a-mdz-10x.xlsx" = "Midazolam with 10-fold higher
-Indmax")} Please see the example section at the bottom of this help file
-for more examples.}
+\item{y_order}{optionally supply a character vector to specify the order of
+the items on the y axis. This can be specified in three possible ways:
+\describe{\item{a character vector of file names}{e.g., \code{y_order =
+c("myfile1.xlsx", "myfile2.xlsx")}. The file names will automatically be
+replaced with the compounds of interest, so, if this were a victim forest
+plot, what will appear on the y axis will be, e.g., "itraconazole" and
+"efavirenz".} \item{a character vector of the compounds of interest, named
+by the file}{e.g., \code{y_order = c("myfile1.xlsx" = "itraconazole",
+"myfile2.xlsx" = "efavirenz")}. As with the 1st option, what appears on the
+y axis is not the file name but "itraconazole" and "efavirenz". This is
+also a good way to specify something \emph{exactly} the way you want, e.g.,
+\code{y_order = c("myfile1.xlsx" = "itraconazole (strong CYP3A inhibitor)",
+"myfile2.xlsx" = "efavirenz (moderate CYP3A inducer)")}}\item{a character
+vector of the compounds of interest}{e.g., \code{y_order =
+c("itraconazole", "efavirenz")}}. These must be spelled perfectly!} If
+\code{y_order} is left as NA, the y axis will be sorted according to the
+geometric mean AUC ratio with inhibitors on top and inducers on the bottom.
+Please see the example section at the bottom of this help file.}
+
+\item{y_axis_column_secondary}{optionally break up the graphs along the y
+axis by an additional column. For example, say your drug of interest is a
+perpetrator and you've administered each of the substrates on different
+days. Here's one way you could approach that: \enumerate{\item{Make a
+column "DoseDay" in your data.frame that specifies which day the substrate
+was administered. (Please ask a member of the R Working Group for
+assistance if you're unsure how to do that.) Let's say you have values in
+that column of "Day 1", "Day 5", and "Day 14".} \item{Set
+\code{y_axis_column = DoseDay}} \item{Set the order of the dose days:
+\code{y_order = c("Day 1", "Day 5", "Day 14")}. Please note that these must
+perfectly match the actual values in that DoseDay column.} \item{Set
+\code{y_axis_column_secondary = File} (Nota bene: At least one of
+\code{y_axis_column} or \code{y_axis_column_secondary} MUST be set to
+File.)} \item{Last, set \code{y_order_secondary = c("buprenorphine",
+"repaglinide", "midazolam")}, where those are the substrates simulated in
+the order you want.}} This will break up the graphs first by the dose day
+and next by the substrate and do so in the order you specified.}
+
+\item{y_order_secondary}{the order to use for the secondary y axis
+(optional). Just like with the argument \code{y_order}, this may be a
+character vector of the unique items in \code{y_axis_column_secondary} or,
+if \code{y_axis_column_secondary} is File, the compounds that each file
+represents or a named character vector of the compounds. Please see the
+examples at the bottom of this file.}
 
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
-\item{facet_column}{optionally break up the graph into small multiples. The
-designated column name should be unquoted, e.g., \code{facet_column =
-Dose_sub}}
+\item{x_axis_label}{optionally supply a character vector or an expression to
+use for the x axis label}
+
+\item{facet_column_x}{optionally break up the graph horizontally into small
+multiples. The designated column name should be unquoted, e.g.,
+\code{facet_column_x = Dose_sub}}
+
+\item{dose_units}{the units used in dosing. If you set \code{facet_column_x},
+\code{y_axis_column}, or \code{y_axis_column_secondary} to Dose_sub or
+Dose_inhib, setting the dose units here will automatically add those units
+to the appropriate graph labels. This way, the graph label will be, e.g.,
+"50 mg" and "100 mg" instead of just "50" and "100". This just helps make
+it clearer what the numbers represent. If you specify anything other than
+Dose_sub or Dose_inhib for \code{facet_column_x}, \code{y_axis_column}, or
+\code{y_axis_column_secondary}, this will be ignored.}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier. This was designed for simulations where the
@@ -85,7 +124,20 @@ become "midazolam".}
 
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
-at all.}
+at all. \emph{Note:} We're still working on the legend position when
+there's something specified for \code{y_axis_column_secondary}; choosing
+that option requires us to lay out the graphs differently, and when we do
+that, the legend position doesn't work well for anything other than "none"
+or "right".}
+
+\item{color_set}{the set of colors to use for shading the graph background to
+indicate the level of interaction depicted. Options are "grays" (default),
+"yellow to red" (makes graphs like Figure 1 of
+\href{https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12864}{Chen
+Jones 2022 CPT, doi 10.1002/psp4.12864}), "none" for no shading at all, or
+a named character vector of the colors you want for each interaction level,
+e.g., \code{color_set = c("insignificant" = "white", "weak" = "gray90",
+"moderate" = "gray75", strong = "gray50")}}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -109,37 +161,136 @@ Output is a graph.
 \description{
 \code{forest_plot} creates forest plots of AUC and Cmax ratios. Please use
 the function \code{\link{extractForestData}} to generate the input data for
-\code{forest_dataframe}. The data will be broken up by the file name on the y
-axis and, optionally, whatever you specify for \code{facet_column} in the
-horizontal direction. WARNING: This is a relatively new function and should
-be rigorously QC'ed.
+\code{forest_dataframe}. The data will be broken up by: 1) the file name on
+either the main y axis or, if you would like, a secondary y axis and 2)
+anything you specify for \code{facet_column_x} in the horizontal direction.
+\strong{If you're the kind of person who prefers to wing it rather than
+reading the instructions when assembling furniture (we get that), we
+recommend skipping to the end of this help file and trying out the examples.}
+WARNING: This is a relatively new function and should be rigorously QC'ed.
 }
 \examples{
 
 # We'll use some example forest-plot data for the substrate bufuralol
-# with various effectors.
-forest_plot(forest_dataframe = ForestData,
-            perp_or_victim = "victim",
-            x_axis_limits = c(0.9, 5))
+# with various effectors. To start, we'll just look at one dose level.
+Buf_lowdose <- ForestData \%>\% filter(Dose_sub == 20)
+forest_plot(forest_dataframe = Buf_lowdose,
+            perp_or_victim = "victim")
 
-# If there were multiple dosing levels of bufuralol, it might be
+# If there were multiple dosing levels of your drug, though, it might be
 # nice to break up the graph by the substrate dose like this:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
-            facet_column = Dose_sub,
-            x_axis_limits = c(0.9, 5))
+            facet_column_x = Dose_sub)
 
-
-# If you want to maybe add some units in the graph to the substrate dose
-# or maybe also say "Dose = X mg MyCompound", you can modify the column
-# Dose_sub into a new column, Dose_sub_pretty, and use it like this:
-ForestData <- ForestData \%>\%
-                  mutate(Dose_sub_pretty = paste("Dose =", Dose_sub,
-                                                 "mg bufuralol"))
-
+# Maybe you want just one longer graph  with all the low-dose simulations
+# on the top and the high-dose simulations on the bottom. Here's one
+# way to do that:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
-            facet_column = Dose_sub_pretty,
+            y_axis_column = Dose_sub,
+            y_axis_column_secondary = File)
+
+# Or you could break things up first by the file and then by the dose:
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            y_axis_column = File,
+            y_axis_column_secondary = Dose_sub)
+
+# Here's one way you could change the order in which the compounds appear:
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            y_axis_column = Dose_sub,
+            y_axis_column_secondary = File,
+            y_order_secondary = c("itraconazole", "fluvoxamine",
+                                  "ticlopidine", "quinidine"))
+
+# Perhaps it would be less opaque to just list the full file names
+# in the order you want:
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            y_axis_column = Dose_sub,
+            y_axis_column_secondary = File,
+            y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx",
+                                  "buf-20mg-sd-itra-200mg-qd.xlsx",
+                                  "buf-20mg-sd-quin-200mg-qd.xlsx",
+                                  "buf-20mg-sd-tic-219mg-bid.xlsx",
+                                  "buf-50mg-sd-fluv-36mg-qd.xlsx",
+                                  "buf-50mg-sd-itra-200mg-qd.xlsx",
+                                  "buf-50mg-sd-quin-200mg-qd.xlsx",
+                                  "buf-50mg-sd-tic-219mg-bid.xlsx"))
+
+# You could also change the way the compound names appear when
+# you list the file names as a named character vector like this:
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            y_axis_column = Dose_sub,
+            y_axis_column_secondary = File,
+            y_order_secondary = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)",
+                                  "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)",
+                                  "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(CYP2D6 inhibitor)",
+                                  "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine",
+                                  "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate",
+                                  "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate",
+                                  "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
+                                  "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
+# (The "\n" means "new line".)
+
+# As long as there are unique values for each of the files in that named
+# character vector, you don't need to break up your data in any other way.
+# Here's basically the same function call as above but without
+# y_axis_column_secondary.
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            y_axis_column = File,
+            y_order = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)",
+                        "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraonazole\n(strong CYP3A inhibitor)",
+                        "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(CYP2D6 inhibitor)",
+                        "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlodipine",
+                        "buf-50mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine\nwith higher dose substrate",
+                        "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate",
+                        "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
+                        "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
+            
+# Here are some options for modifying the aesthetics of your graph:
+# -- Adjust the x axis limits with x_axis_limits
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
             x_axis_limits = c(0.9, 5))
 
+# -- Include a legend for the shading
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom")
+
+# -- Change the shading to be like in Chen Jones 2022 CPT
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom", 
+            color_set = "yellow to red")
+
+# -- Or make the shading disappear
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom", 
+            color_set = "none")
+
+# -- Or specify exactly which colors you want for which interaction level
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            legend_position = "bottom", 
+            color_set = c("insignificant" = "white", "weak" = "gray90",
+                          "moderate" = "gray75", strong = "gray50"))
+                          
+# -- Make the compound names match *exactly* what was in the simulator file
+# rather than being automatically prettified
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            facet_column_x = Dose_sub,
+            prettify_compound_names = FALSE)
 }

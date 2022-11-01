@@ -1,9 +1,8 @@
 #' Make a compound name prettier and more human readable
 #'
 #' @param CompoundName a compound name or vector of names to be prettified such
-#'   as "Sim-Midazolam" or "Sim-Ketoconazole-400 mg QD", which would become
-#'   "midazolam" and "ketoconazole". This works fine with tidyverse syntax such
-#'   as "mutate". .
+#'   as "Sim-Midazolam" or "Sim-Ketoconazole-400 mg QD", which will become
+#'   "midazolam" and "ketoconazole".
 #' @param case set the case to be "lower" (default), "title" (only the first
 #'   letter in each word is capitalized), or "original" (nothing about the case
 #'   changes). If you set the case to "lower" or "title", compounds with "OH-",
