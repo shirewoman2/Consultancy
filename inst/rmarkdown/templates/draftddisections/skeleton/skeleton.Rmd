@@ -242,9 +242,15 @@ CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
                     ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
                            "CI: confidence interval; ", ""))
 
+# Cleaning up clin_study_name so that "Clinical Study" isn't repeated regardless
+# of whether they had included that in the name.
+clin_study_name <- sub("Clinical Study|clinical study|clin study", "", 
+                       clin_study_name)
+
 CapText2 <- paste0(sub("; $", ".", CapText2a), 
                    ifelse(Observedincluded, 
-                          "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
+                          paste0("S/O: simulated/observed; source observed data: Clinical Study ",
+                                 clin_study_name, "; "),
                           ""))
 
 ```

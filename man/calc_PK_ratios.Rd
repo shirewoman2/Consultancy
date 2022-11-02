@@ -2,12 +2,13 @@
 % Please edit documentation in R/calc_PK_ratios.R
 \name{calc_PK_ratios}
 \alias{calc_PK_ratios}
-\title{Calculate the ratio of PK parameters between the two matched simulations --
-UNDER CONSTRUCTION}
+\title{Calculate the ratio of PK parameters between the two simulations -- UNDER
+CONSTRUCTION}
 \usage{
 calc_PK_ratios(
   sim_data_file_numerator,
   sim_data_file_denominator,
+  paired = TRUE,
   PKparameters = "AUC tab",
   sheet_PKparameters_num = NA,
   sheet_PKparameters_denom = NA,
@@ -29,6 +30,17 @@ provide the numerator for the calculated ratios.}
 
 \item{sim_data_file_denominator}{a simulator output Excel file that will
 provide the denominator for the calculated ratios}
+
+\item{paired}{TRUE (default) or FALSE for whether the study design is paired,
+as in, the subjects are \emph{identical} between the two simulations. For
+paired study designs, the order of operations is to calculate each
+subject's ratio and then to calculate the mean of those ratios. For
+unpaired study designs, the order of operations is to calculate the mean of
+the parameter of interest for the numerator file and then divide it by the
+mean of the parameter of interest for the denominator file. \strong{A
+caveat:} We're checking on how best to calculate the CV and confidence
+intervals for the unpaired data, so please check our work before using
+those! REMINDER: THIS FUNCTION IS UNDER CONSTRUCTION.}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
   output file. Options are: \describe{
@@ -74,8 +86,8 @@ should be left as NA.}
 
 \item{sheet_PKparameters_denom}{(optional) If you want the PK parameters for
 the numerator to be pulled from a specific tab in
-\code{sim_data_file_denominator}, list that tab here. Most of the time, this
-should be left as NA.}
+\code{sim_data_file_denominator}, list that tab here. Most of the time,
+this should be left as NA.}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
@@ -85,8 +97,8 @@ tested).}
 listed in the output table? Options are "arithmetic" or "geometric"
 (default).}
 
-\item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV in
-the table}
+\item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
+in the table}
 
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that

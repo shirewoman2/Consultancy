@@ -192,8 +192,8 @@ confInt <- function(x, CI = 0.95, na.rm = TRUE) {
     
     alpha <- 1-CI
     
-    Up <- mean(x) + qnorm(1-(alpha)/2)*sd(x)/sqrt(length(x))
-    Low <- mean(x) - qnorm(1-(alpha)/2)*sd(x)/sqrt(length(x))
+    Up <- mean(x) + qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
+    Low <- mean(x) - qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
     
     Out <- c("lower" = Low, "upper" = Up)
     

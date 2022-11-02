@@ -1,5 +1,5 @@
-#' Calculate the ratio of PK parameters between the two matched simulations --
-#' UNDER CONSTRUCTION
+#' Calculate the ratio of PK parameters between the two simulations -- UNDER
+#' CONSTRUCTION
 #'
 #' \code{calc_PK_ratios} matches PK data from two simulator output Excel files
 #' by subject ID and trial and calculates the ratio of those parameters for each
@@ -10,6 +10,16 @@
 #'   provide the numerator for the calculated ratios.
 #' @param sim_data_file_denominator a simulator output Excel file that will
 #'   provide the denominator for the calculated ratios
+#' @param paired TRUE (default) or FALSE for whether the study design is paired,
+#'   as in, the subjects are \emph{identical} between the two simulations. For
+#'   paired study designs, the order of operations is to calculate each
+#'   subject's ratio and then to calculate the mean of those ratios. For
+#'   unpaired study designs, the order of operations is to calculate the mean of
+#'   the parameter of interest for the numerator file and then divide it by the
+#'   mean of the parameter of interest for the denominator file. \strong{A
+#'   caveat:} We're checking on how best to calculate the CV and confidence
+#'   intervals for the unpaired data, so please check our work before using
+#'   those! REMINDER: THIS FUNCTION IS UNDER CONSTRUCTION.
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \describe{
 #'
@@ -52,22 +62,22 @@
 #'   should be left as NA.
 #' @param sheet_PKparameters_denom (optional) If you want the PK parameters for
 #'   the numerator to be pulled from a specific tab in
-#'   \code{sim_data_file_denominator}, list that tab here. Most of the time, this
-#'   should be left as NA.
+#'   \code{sim_data_file_denominator}, list that tab here. Most of the time,
+#'   this should be left as NA.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
 #'   tested).
 #' @param mean_type What kind of means and confidence intervals do you want
 #'   listed in the output table? Options are "arithmetic" or "geometric"
 #'   (default).
-#' @param includeCV TRUE (default) or FALSE for whether to include rows for CV in
-#'  the table
+#' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
+#'   in the table
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
-#'  confidence intervals were included in the simulator output file. Note that
-#'  the confidence intervals are geometric since that's what the simulator
-#'  outputs (see an AUC tab and the summary statistics; these values are the
-#'  ones for, e.g., "90\% confidence interval around the geometric mean(lower
-#'  limit)").
+#'   confidence intervals were included in the simulator output file. Note that
+#'   the confidence intervals are geometric since that's what the simulator
+#'   outputs (see an AUC tab and the summary statistics; these values are the
+#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
+#'   limit)").
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -121,6 +131,7 @@
 #' 
 calc_PK_ratios <- function(sim_data_file_numerator,
                            sim_data_file_denominator, 
+                           paired = TRUE,
                            PKparameters = "AUC tab", 
                            sheet_PKparameters_num = NA,
                            sheet_PKparameters_denom = NA,
@@ -171,7 +182,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                      PKparameters = PKnumerator, 
                      sheet = sheet_PKparameters_num,
                      tissue = tissue,
-                     returnAggregateOrIndiv = "individual", 
+                     returnAggregateOrIndiv = ifelse(paired, 
+                                                     "individual", "both"),
                      returnExpDetails = TRUE)
     # RETURN TO THIS LATER. For now, I'm just getting the experimental details
     # for file 1. Later, we could add code to check and compare them for file 2
@@ -181,49 +193,117 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                      PKparameters = PKdenominator, 
                      sheet = sheet_PKparameters_denom,
                      tissue = tissue,
-                     returnAggregateOrIndiv = "individual")
+                     returnAggregateOrIndiv = ifelse(paired, 
+                                                     "individual", "both"))
     
-    # Making the order of columns match the order set by the user so that we can
-    # match the appropriate things between files.
-    PK1$individual <- PK1$individual[, c("Individual", "Trial", PKnumerator)]
-    PK2$individual <- PK2$individual[, c("Individual", "Trial", PKdenominator)]
-    
-    # Because we need to match parameters when joining, renaming PK parameters
-    # in PK2 to match the names in PK1 even though they're not *really* the same
-    # PK parameters. We'll deal with that difference later.
-    names(PK2$individual) <- names(PK1$individual)
-    
-    suppressMessages(
-        MyPK <- PK1$individual %>% 
-            pivot_longer(cols = -c(Individual, Trial), 
-                         names_to = "Parameter", 
-                         values_to = "Value1") %>% 
-            left_join(PK2$individual %>% 
-                          pivot_longer(cols = -c(Individual, Trial), 
-                                       names_to = "Parameter", 
-                                       values_to = "Value2")) %>% 
-            mutate(Ratio = Value1 / Value2)
-    )
-    
-    MyPKResults <- MyPK %>% group_by(Parameter) %>% 
-        summarize(Ratio_mean = switch(mean_type, 
-                                      "geometric" = round_consult(gm_mean(Ratio)), 
-                                      "arithmetic" = round_consult(mean(Ratio, na.rm = T))), 
-                  Ratio_CV = switch(mean_type, 
-                                    "geometric" = as.character(round(100*gm_CV(Ratio))),
-                                    "arithmetic" = as.character(round(100*sd(Ratio, na.rm = T) /
-                                                                          mean(Ratio, na.rm = T)))),
-                  Ratio_CI_l = switch(mean_type, 
-                                      "geometric" = round_consult(gm_conf(Ratio, CI = conf_int)[1]),
-                                      "arithmetic" = round_consult(confInt(Ratio, CI = conf_int)[1])), 
-                  Ratio_CI_u = switch(mean_type, 
-                                      "geometric" = round_consult(gm_conf(Ratio, CI = conf_int)[2]),
-                                      "arithmetic" = round_consult(confInt(Ratio, CI = conf_int)[2]))) %>% 
-        pivot_longer(cols = matches("Ratio"), 
-                     names_to = "Statistic", 
-                     values_to = "Value") %>% 
-        pivot_wider(names_from = Parameter, 
-                    values_from = Value)
+    if(paired){
+        # We need PKnumerator and PKdenominator to be the individual, coded PK
+        # parameter names, so if the user specified something to indicate a set
+        # of parameters, need to change that here.
+        PKnumerator <- setdiff(names(PK1$individual), c("Individual", "Trial"))
+        PKdenominator <- setdiff(names(PK2$individual), c("Individual", "Trial"))
+        
+        # Making the order of columns match the order set by the user so that we
+        # can match the appropriate things between files.
+        PK1$individual <- PK1$individual[, c("Individual", "Trial", PKnumerator)]
+        PK2$individual <- PK2$individual[, c("Individual", "Trial", PKdenominator)]
+        
+        # Because we need to match parameters when joining, renaming PK
+        # parameters in PK2 to match the names in PK1 even though they're not
+        # *really* the same PK parameters. We'll deal with that difference
+        # later.
+        names(PK2$individual) <- names(PK1$individual)
+        
+        suppressMessages(
+            MyPK <- PK1$individual %>% 
+                pivot_longer(cols = -c(Individual, Trial), 
+                             names_to = "Parameter", 
+                             values_to = "Value1") %>% 
+                left_join(PK2$individual %>% 
+                              pivot_longer(cols = -c(Individual, Trial), 
+                                           names_to = "Parameter", 
+                                           values_to = "Value2")) %>% 
+                mutate(Ratio = Value1 / Value2)
+        )
+        
+        MyPKResults <- MyPK %>% group_by(Parameter) %>% 
+            summarize(Ratio_mean = switch(mean_type, 
+                                          "geometric" = round_consult(gm_mean(Ratio)), 
+                                          "arithmetic" = round_consult(mean(Ratio, na.rm = T))), 
+                      Ratio_CV = switch(mean_type, 
+                                        "geometric" = as.character(round(100*gm_CV(Ratio))),
+                                        "arithmetic" = as.character(round(100*sd(Ratio, na.rm = T) /
+                                                                              mean(Ratio, na.rm = T)))),
+                      Ratio_CI_l = switch(mean_type, 
+                                          "geometric" = round_consult(gm_conf(Ratio, CI = conf_int)[1]),
+                                          "arithmetic" = round_consult(confInt(Ratio, CI = conf_int)[1])), 
+                      Ratio_CI_u = switch(mean_type, 
+                                          "geometric" = round_consult(gm_conf(Ratio, CI = conf_int)[2]),
+                                          "arithmetic" = round_consult(confInt(Ratio, CI = conf_int)[2]))) %>% 
+            pivot_longer(cols = matches("Ratio"), 
+                         names_to = "Statistic", 
+                         values_to = "Value") %>% 
+            pivot_wider(names_from = Parameter, 
+                        values_from = Value)
+        
+    } else {
+        # unpaired study design
+        PKnum <- PK1$aggregate %>% 
+            pivot_longer(cols = -Statistic, 
+                         names_to = "PKparameter", values_to = "ValueNum")
+        
+        PKdenom <- PK2$aggregate %>% 
+            pivot_longer(cols = -Statistic, 
+                         names_to = "PKparameter", values_to = "ValueDenom")
+        
+        MyPKResults <- left_join(PKnum, PKdenom) %>% 
+            filter(Statistic == switch(mean_type,
+                                       "geometric" = "Geometric Mean",
+                                       "arithmetic" = "Mean")) %>% 
+            mutate(Ratio_mean = ValueNum / ValueDenom) %>% 
+            select(PKparameter, Ratio_mean)
+        
+        PKCV <- left_join(
+            PKnum %>% 
+                filter(Statistic %in% switch(mean_type,
+                                             "geometric" = c("Geometric Mean", "Geometric CV"),
+                                             "arithmetic" = c("Mean", "cv"))) %>% 
+                mutate(Statistic = ifelse(str_detect(Statistic, "Mean"), "MeanNum", "CVNum")) %>% 
+                pivot_wider(names_from = Statistic, values_from = ValueNum),
+            
+            PKdenom %>% 
+                filter(Statistic %in% switch(mean_type,
+                                             "geometric" = c("Geometric Mean", "Geometric CV"),
+                                             "arithmetic" = c("Mean", "cv"))) %>% 
+                mutate(Statistic = ifelse(str_detect(Statistic, "Mean"), "MeanDenom", "CVDenom")) %>% 
+                pivot_wider(names_from = Statistic, values_from = ValueDenom)
+        ) %>% 
+            # NOT AT ALL POSITIVE I'M DOING THIS RIGHT
+            mutate(Ratio_CV = sqrt(CVNum^2 + CVDenom^2))
+        
+        MyPKResults <- MyPKResults %>% left_join(PKCV) %>% 
+            mutate(Ratio_SD = Ratio_CV * Ratio_mean, 
+                   Ratio_CI_l = Ratio_mean - 
+                       qnorm(1-(1-conf_int)/2)*Ratio_SD/sqrt(nrow(PK1$individual)), 
+                   Ratio_CI_u = Ratio_mean + 
+                       qnorm(1-(1-conf_int)/2)*Ratio_SD/sqrt(nrow(PK1$individual)))
+        
+        if(nrow(PK1$individual) != nrow(PK2$individual)){
+            warning("You have different numbers of individuals in your two simulations, and this function is simply not sophisticated enough statistically to calculate the confidence interval when the sample size differs. You will get NA values for the upper and lower bounds of the confidence intervals.")
+            MyPKResults <- MyPKResults %>% 
+                mutate(Ratio_CI_l = NA, 
+                       Ratio_CI_u = NA)
+        }
+        
+        # Getting this into a form that matches form from paired option.
+        MyPKResults <- MyPKResults %>% 
+            select(PKparameter, matches("Ratio")) %>% 
+            pivot_longer(cols = -PKparameter, 
+                         names_to = "Statistic", values_to = "Val") %>% 
+            mutate(Val = round_consult(Val)) %>% 
+            pivot_wider(names_from = PKparameter, values_from = Val) %>% 
+            filter(Statistic != "Ratio_SD")
+    }
     
     StatNames_geo <- c(
         "Ratio_mean" = "Geometric Mean Ratio", 
