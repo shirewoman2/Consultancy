@@ -30,7 +30,7 @@ if(class(prettify_compound_names) == "logical" &&
 } else if(class(prettify_compound_names) == "character"){
     
     MySubstrate <- as.character(prettify_compound_names["substrate"])
-    MyEffector <- as.character(prettify_compound_names["inhibitor"])
+    MyEffector <- as.character(prettify_compound_names["effector"])
     
 } else {
     
@@ -39,7 +39,7 @@ if(class(prettify_compound_names) == "logical" &&
 }
 
 prettify_compound_names <- c("substrate" = as.character(MySubstrate), 
-                             "inhibitor" = as.character(MyEffector))
+                             "effector" = as.character(MyEffector))
 
 SDMD_sub_txt <- ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", 
                        switch(exp_detail_data$DoseRoute_sub, 
@@ -112,7 +112,9 @@ Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` 
 
 PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file), 
                          PKparameters = PKparameters, 
-                         mean_type = mean_type_PK, tissue = tissue, 
+                         observed_PK = observed_PK,
+                         mean_type = mean_type_PK, 
+                         tissue = tissue, 
                          includeCV = includeCV,
                          includeConfInt = includeConfInt,
                          includeTrialMeans = includeTrialMeans,
@@ -120,7 +122,7 @@ PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file),
 
 suppressMessages(
     PKToPull <- data.frame(
-        PrettifiedNames = sub(as.character(prettify_compound_names["inhibitor"]),
+        PrettifiedNames = sub(as.character(prettify_compound_names["effector"]),
                               "effector", names(PKsum$Table))) %>% 
         left_join(AllPKParameters) %>% 
         filter(complete.cases(PKparameter)) %>% pull(PKparameter)
@@ -160,44 +162,43 @@ MyPKResults <- PKsum$Table
 TableSubHead <- as.data.frame(t(names(MyPKResults)))
 names(MyPKResults) <- paste0("V", 1:ncol(MyPKResults))
 
-FT <- flextable::flextable(MyPKResults) %>% 
-    flextable::delete_part(part = "header") %>% 
-    flextable::add_header(V1 = "", 
-                          V2 = str_to_title(MySubstrate), 
+FT <- flextable::flextable(MyPKResults) %>%
+    flextable::delete_part(part = "header") %>%
+    flextable::add_header(V1 = "",
+                          V2 = str_to_title(MySubstrate),
                           V3 = str_to_title(MySubstrate),
-                          V4 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)), 
-                          V5 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)), 
-                          V6 = "GMR", 
-                          V7 = "GMR") %>% 
-    flextable::merge_h(part = "header") %>% 
-    flextable::add_body(values = TableSubHead) %>% 
-    
+                          V4 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)),
+                          V5 = paste(str_to_title(MySubstrate), "plus", str_to_title(MyEffector)),
+                          V6 = "GMR",
+                          V7 = "GMR") %>%
+    flextable::merge_h(part = "header") %>%
+    flextable::add_body(values = TableSubHead) %>%
+
     # center text
-    flextable::align(align = "center", part = "all") %>% 
-    
+    flextable::align(align = "center", part = "all") %>%
+
     # making the width work
-    flextable::set_table_properties(layout = "fixed") %>% 
-    flextable::width(j = 1, width = 1.15) %>% 
-    
+    flextable::set_table_properties(layout = "fixed") %>%
+    flextable::width(j = 1, width = 1.15) %>%
+
     # Set the font size
-    flextable::fontsize(part = "body", size = fontsize) %>% 
-    
+    flextable::fontsize(part = "body", size = fontsize) %>%
+
     # Make the text bold
     flextable::bold(part = "body", i = 1) %>%
     flextable::bold(part = "body", j = 1) %>%
     flextable::bold(part = "header") %>%
-    
+
     # borders
-    flextable::border_remove() %>% 
-    flextable::vline(border = officer::fp_border(width = 0.5), part = "all") %>% 
+    flextable::border_remove() %>%
+    flextable::vline(border = officer::fp_border(width = 0.5), part = "all") %>%
     flextable::hline_bottom(border = officer::fp_border(width = 0.5)) %>%
     flextable::hline_top(border = officer::fp_border(width = 0.5), part = "header") %>%
-    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "body", 
-                         j = 2:7) %>% 
+    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "body",
+                         j = 2:7) %>%
     flextable::vline_left(part = "all", border = officer::fp_border(width = 0.5)) %>%
     flextable::hline(border = officer::fp_border(width = 0.5),
-                     part = "body", i = 1) 
-
+                     part = "body", i = 1)
 
 # Dealing with subscripts
 NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag"

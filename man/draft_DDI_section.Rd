@@ -151,15 +151,15 @@ effectors, or effector metabolites are among the standard options for the
 simulator, and leaving \code{prettify_compound_names = TRUE} will make the
 name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-become "midazolam". Set each compound to the name you'd prefer to see in
-your legend and Word output if you would like something different. For
-example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
-"substrate" = "superstatin")}. Please note that "inhibitor" includes
-\emph{all} the effectors and effector metabolites present, so, if you're
-setting the effector name, you really should use something like this if
-you're including effector metabolites: \code{prettify_compound_names =
-c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-"superstatin")}.}
+become "midazolam". Set each of "substrate" and "effector" to the names
+you'd prefer to see in your legend and Word output if you would like
+something different. For example, \code{prettify_compound_names =
+c("substrate" = "superstatin", "effector" = "teeswiftavir")}. Please note
+that "effector" includes \emph{all} the effectors and effector metabolites
+present, so, if you're setting the effector name, you really should use
+something like this if you're including effector metabolites:
+\code{prettify_compound_names = c("effector" = "teeswiftavir and
+1-OH-teeswiftavir", "substrate" = "superstatin")}. (Order doesn't matter.)}
 
 \item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
 simulation, so "TRUE" means that the client's drug was the victim. The only

@@ -228,15 +228,15 @@
 #'   simulator, and leaving \code{prettify_compound_names = TRUE} will make the
 #'   name of those compounds something more human readable. For example,
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-#'   become "midazolam". Set each compound to the name you'd prefer to see in
-#'   your legend and Word output if you would like something different. For
-#'   example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
-#'   "substrate" = "superstatin")}. Please note that "inhibitor" includes
-#'   \emph{all} the effectors and effector metabolites present, so, if you're
-#'   setting the effector name, you really should use something like this if
-#'   you're including effector metabolites: \code{prettify_compound_names =
-#'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-#'   "superstatin")}.
+#'   become "midazolam". Set each of "substrate" and "effector" to the names
+#'   you'd prefer to see in your legend and Word output if you would like
+#'   something different. For example, \code{prettify_compound_names =
+#'   c("substrate" = "superstatin", "effector" = "teeswiftavir")}. Please note
+#'   that "effector" includes \emph{all} the effectors and effector metabolites
+#'   present, so, if you're setting the effector name, you really should use
+#'   something like this if you're including effector metabolites:
+#'   \code{prettify_compound_names = c("effector" = "teeswiftavir and
+#'   1-OH-teeswiftavir", "substrate" = "superstatin")}. (Order doesn't matter.)
 #' @param save_draft the name of the Word file to use for saving the output. If
 #'   left as NA, this will be set to "Draft DDI report section for XXXX.docx"
 #'   where "XXXX" is the name of the simulator output Excel file.
@@ -346,6 +346,26 @@ draft_DDI_section <- function(sim_data_file,
        nrow(ct_dataframe %>% filter(CompoundID == "inhibitor 1")) == 0){
         stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows with inhibitor 1 concentration-time data, and we'll need that.", 
              call. = FALSE)
+    }
+    
+    if(class(prettify_compound_names) == "character" &&
+       is.null(names(prettify_compound_names))){
+        warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the effector(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+                call. = FALSE)
+        prettify_compound_names <- TRUE
+    }
+    
+    if(class(prettify_compound_names) == "character"){
+        if(any(str_detect(names(prettify_compound_names), "inhibitor"))){
+            names(prettify_compound_names)[
+                which(str_detect(names(prettify_compound_names), "inhibitor"))] <- "effector"
+        }
+        
+        if(all(c("substrate", "effector") %in% names(prettify_compound_names)) == FALSE){
+            warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of both `substrate` and `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+                    call. = FALSE)
+            prettify_compound_names <- TRUE
+        }
     }
     
     # Making most character arguments lower case to avoid case sensitivity

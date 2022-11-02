@@ -188,12 +188,12 @@
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
 #'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
 #'   you'd prefer to see in your column titles if you would like something
-#'   different. For example, \code{prettify_compound_names = c("inhibitor" =
-#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "inhibitor"
+#'   different. For example, \code{prettify_compound_names = c("effector" =
+#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
 #'   includes \emph{all} the effectors and effector metabolites present, so, if
 #'   you're setting the effector name, you really should use something like this
 #'   if you're including effector metabolites: \code{prettify_compound_names =
-#'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
@@ -294,6 +294,27 @@ pksummary_table <- function(sim_data_file = NA,
                 call. = FALSE)
         PKorder <- "default"
     }
+    
+    if(class(prettify_compound_names) == "character" &&
+       is.null(names(prettify_compound_names))){
+        warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the effector(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+                call. = FALSE)
+        prettify_compound_names <- TRUE
+    }
+    
+    if(class(prettify_compound_names) == "character"){
+        if(any(str_detect(names(prettify_compound_names), "inhibitor"))){
+            names(prettify_compound_names)[
+                which(str_detect(names(prettify_compound_names), "inhibitor"))] <- "effector"
+        }
+        
+        if(all(c("substrate", "effector") %in% names(prettify_compound_names)) == FALSE){
+            warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of both `substrate` and `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+                    call. = FALSE)
+            prettify_compound_names <- TRUE
+        }
+    }
+    
     
     # Main body of function --------------------------------------------------
     
@@ -1063,8 +1084,8 @@ pksummary_table <- function(sim_data_file = NA,
             if(class(prettify_compound_names) == "character"){
                 names(prettify_compound_names)[
                     str_detect(tolower(names(prettify_compound_names)), 
-                               "inhibitor")][1] <- "inhibitor"
-                MyEffector <- prettify_compound_names["inhibitor"]
+                               "effector")][1] <- "effector"
+                MyEffector <- prettify_compound_names["effector"]
             }
             
             PrettyCol <- sub("effector", MyEffector, PrettyCol)

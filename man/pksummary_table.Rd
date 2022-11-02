@@ -154,12 +154,12 @@ TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
 "Sim-Midazolam" will become "midazolam". Set each compound to the name
 you'd prefer to see in your column titles if you would like something
-different. For example, \code{prettify_compound_names = c("inhibitor" =
-"teeswiftavir", "substrate" = "superstatin")}. Please note that "inhibitor"
+different. For example, \code{prettify_compound_names = c("effector" =
+"teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
 includes \emph{all} the effectors and effector metabolites present, so, if
 you're setting the effector name, you really should use something like this
 if you're including effector metabolites: \code{prettify_compound_names =
-c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the

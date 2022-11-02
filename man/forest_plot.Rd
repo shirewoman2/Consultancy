@@ -15,6 +15,7 @@ forest_plot(
   x_axis_limits = NA,
   x_axis_label = NA,
   facet_column_x,
+  x_order = NA,
   dose_units = "mg",
   prettify_compound_names = TRUE,
   legend_position = "none",
@@ -104,6 +105,12 @@ use for the x axis label}
 \item{facet_column_x}{optionally break up the graph horizontally into small
 multiples. The designated column name should be unquoted, e.g.,
 \code{facet_column_x = Dose_sub}}
+
+\item{x_order}{optionally specify the order in which the x-axis facets should
+appear. For example, if you \code{facet_column_x} is the dosing regimen and
+the values there are "QD" and "BID", the default will be to show them in
+alphabetical order. If you want "QD" to show up first, though, set the
+order with \code{x_order = c("QD", "BID")}}
 
 \item{dose_units}{the units used in dosing. If you set \code{facet_column_x},
 \code{y_axis_column}, or \code{y_axis_column_secondary} to Dose_sub or
@@ -251,7 +258,7 @@ forest_plot(forest_dataframe = ForestData,
                         "buf-50mg-sd-itra-200mg-qd.xlsx" = "itraconazole\nwith higher dose substrate",
                         "buf-50mg-sd-quin-200mg-qd.xlsx" = "quinidine\n(antimalarial)",
                         "buf-50mg-sd-tic-219mg-bid.xlsx" = "ticlodipine\nwith higher dose substrate"))
-            
+
 # Here are some options for modifying the aesthetics of your graph:
 # -- Adjust the x axis limits with x_axis_limits
 forest_plot(forest_dataframe = ForestData,
@@ -269,24 +276,24 @@ forest_plot(forest_dataframe = ForestData,
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             facet_column_x = Dose_sub,
-            legend_position = "bottom", 
+            legend_position = "bottom",
             color_set = "yellow to red")
 
 # -- Or make the shading disappear
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             facet_column_x = Dose_sub,
-            legend_position = "bottom", 
+            legend_position = "bottom",
             color_set = "none")
 
 # -- Or specify exactly which colors you want for which interaction level
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             facet_column_x = Dose_sub,
-            legend_position = "bottom", 
+            legend_position = "bottom",
             color_set = c("insignificant" = "white", "weak" = "gray90",
                           "moderate" = "gray75", strong = "gray50"))
-                          
+
 # -- Make the compound names match *exactly* what was in the simulator file
 # rather than being automatically prettified
 forest_plot(forest_dataframe = ForestData,
