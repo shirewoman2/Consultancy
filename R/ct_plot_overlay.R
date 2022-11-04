@@ -612,7 +612,7 @@ ct_plot_overlay <- function(ct_dataframe,
                 call. = FALSE)
         
         WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
-                              gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
+                               gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
         color_labels[names(color_labels) %in% BadLabs] <- WarningLabel
         NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
         NewNames <- NewNames[complete.cases(NewNames)]
@@ -742,15 +742,20 @@ ct_plot_overlay <- function(ct_dataframe,
     } else {
         # for conc-time data
         ct_dataframe <- ct_dataframe %>%
-            # If it's dose number 0, remove those rows so that we'll show only the
-            # parts we want when facetting and user wants scales to float freely.
-            filter(DoseNum != 0 | Simulated == FALSE) %>% 
             mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
                    CompoundID = factor(CompoundID,
                                        levels = c("substrate", "primary metabolite 1",
                                                   "primary metabolite 2", "secondary metabolite",
                                                   "inhibitor 1", "inhibitor 1 metabolite", 
                                                   "inhibitor 2"))) 
+        
+        if(all(complete.cases(ct_dataframe$DoseNum))){
+            # If it's dose number 0, remove those rows so that we'll show only the
+            # parts we want when facetting and user wants scales to float freely.
+            ct_dataframe <- ct_dataframe %>% 
+                filter(DoseNum != 0 | Simulated == FALSE)
+        }
+        
         sim_dataframe <- ct_dataframe %>%
             filter(Simulated == TRUE &
                        Trial %in% 

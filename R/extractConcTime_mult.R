@@ -375,6 +375,13 @@ extractConcTime_mult <- function(sim_data_files = NA,
                            "primary metabolite 2" = Deets$PrimaryMetabolite2,
                            "secondary metabolite" = Deets$SecondaryMetabolite)
         
+        if(Deets$ADCSimulation){
+            CompoundCheck <- c(CompoundCheck, 
+                               "conjugated protein" = "conjugated protein", 
+                               "total protein" = "total protein", 
+                               "released payload" = "released payload")
+        }
+        
         if(compoundsToExtract[1] == "all"){
             compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
         } else {
@@ -474,15 +481,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                 # inhibitor concs are on the same sheet, but metabolite
                 # concs are elsewhere.
                 CompoundTypes <-
-                    data.frame(PossCompounds =
-                                   c("substrate", "inhibitor 1",
-                                     "inhibitor 2", "inhibitor 1 metabolite",
-                                     "primary metabolite 1",
-                                     "primary metabolite 2",
-                                     "secondary metabolite")) %>%
+                    data.frame(PossCompounds = PossCmpd) %>%
                     mutate(Type = ifelse(PossCompounds %in%
                                              c("substrate", "inhibitor 1",
-                                               "inhibitor 2", "inhibitor 1 metabolite"),
+                                               "inhibitor 2",
+                                               "inhibitor 1 metabolite"),
                                          "substrate", PossCompounds)) %>%
                     filter(PossCompounds %in% compoundsToExtract_n)
                 
