@@ -598,6 +598,28 @@ ct_plot_overlay <- function(ct_dataframe,
         warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.")
     }
     
+    # If the color labels don't match the files available, give a warning.
+    if(as_label(colorBy_column) != "<empty>" && 
+       any(complete.cases(color_labels)) && 
+       all(color_labels %in% unique(ct_dataframe[, as_label(colorBy_column)])) == FALSE){
+        BadLabs <- setdiff(names(color_labels), unique(ct_dataframe[, as_label(colorBy_column)]))
+        
+        warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
+                       as_label(colorBy_column), 
+                       ". This will mess up the colors on your graph unless that's fixed. Specifically, the following values are not present in the column ",
+                       as_label(colorBy_column), ": ", 
+                       str_comma(BadLabs)), 
+                call. = FALSE)
+        
+        WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
+                              gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
+        color_labels[names(color_labels) %in% BadLabs] <- WarningLabel
+        NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
+        NewNames <- NewNames[complete.cases(NewNames)]
+        names(color_labels)[which(names(color_labels) %in% BadLabs)] <- NewNames
+        rm(NewNames, BadLabs, WarningLabel)
+    }
+    
     if(as_label(colorBy_column) != "<empty>"){
         ct_dataframe <- ct_dataframe %>%
             mutate(colorBy_column = {{colorBy_column}})
