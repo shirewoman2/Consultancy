@@ -634,29 +634,34 @@ extractConcTime <- function(sim_data_file,
         }
         
         MyCompound <- 
-            ifelse(CompoundType == "ADC", 
-                   compoundToExtract,
-                   switch(paste(m, TissueType),
-                          "substrate systemic" = Deets$Substrate,
-                          "substrate tissue" = Deets$Substrate,
-                          "inhibitor 1 systemic" = Deets$Inhibitor1,
-                          "inhibitor 1 tissue" = Deets$Inhibitor1,
-                          "inhibitor 2 systemic" = Deets$Inhibitor2,
-                          "inhibitor 2 tissue" = Deets$Inhibitor2,
-                          "inhibitor 1 metabolite systemic" = Deets$Inhibitor1Metabolite,
-                          "inhibitor 2 systemic" = Deets$Inhibitor2,
-                          "inhibitor 2 tissue" = Deets$Inhibitor2,
-                          "primary metabolite 1 systemic" = Deets$PrimaryMetabolite1,
-                          "primary metabolite 2 systemic" = Deets$PrimaryMetabolite2,
-                          "secondary metabolite systemic" = Deets$SecondaryMetabolite,
-                          "primary metabolite 1 tissue" = Deets$PrimaryMetabolite1,
-                          "primary metabolite 2 tissue" = Deets$PrimaryMetabolite2,
-                          "secondary metabolite tissue" = Deets$SecondaryMetabolite,
-                          # inhibitor 1 metabolite concs aren't available in
-                          # tissues, are they? Giving the user the Inhibitor
-                          # instead b/c I don't think they are.
-                          "inhibitor 1 metabolite tissue" = Deets$Inhibitor1) %>%
-                       as.character())
+            switch(paste(m, TissueType),
+                   "substrate systemic" = Deets$Substrate,
+                   "substrate tissue" = Deets$Substrate,
+                   "inhibitor 1 systemic" = Deets$Inhibitor1,
+                   "inhibitor 1 tissue" = Deets$Inhibitor1,
+                   "inhibitor 2 systemic" = Deets$Inhibitor2,
+                   "inhibitor 2 tissue" = Deets$Inhibitor2,
+                   "inhibitor 1 metabolite systemic" = Deets$Inhibitor1Metabolite,
+                   "inhibitor 2 systemic" = Deets$Inhibitor2,
+                   "inhibitor 2 tissue" = Deets$Inhibitor2,
+                   "primary metabolite 1 systemic" = Deets$PrimaryMetabolite1,
+                   "primary metabolite 2 systemic" = Deets$PrimaryMetabolite2,
+                   "secondary metabolite systemic" = Deets$SecondaryMetabolite,
+                   "primary metabolite 1 tissue" = Deets$PrimaryMetabolite1,
+                   "primary metabolite 2 tissue" = Deets$PrimaryMetabolite2,
+                   "secondary metabolite tissue" = Deets$SecondaryMetabolite,
+                   # inhibitor 1 metabolite concs aren't available in
+                   # tissues, are they? Giving the user the Inhibitor
+                   # instead b/c I don't think they are.
+                   "inhibitor 1 metabolite tissue" = Deets$Inhibitor1) %>%
+            as.character()
+        
+        if(CompoundType == "ADC"){
+            MyCompound <- switch(m, 
+                                 "total protein" = paste("total", Deets$Substrate),
+                                 "conjugated protein" = paste("conjugated", Deets$Substrate),
+                                 "released payload" = Deets$PrimaryMetabolite1)
+        } 
         
         if(EffectorPresent){
             # When the simulator output is for an inhibitor, for reasons I
@@ -1112,7 +1117,7 @@ extractConcTime <- function(sim_data_file,
                 sim_data_mean[[m]][[n]] <- sim_data_mean[[m]][[n]] %>%
                     pivot_longer(names_to = "Trial", values_to = "Conc",
                                  cols = -c(Time)) %>%
-                    mutate(Compound = n,
+                    mutate(Compound = MyCompound,
                            CompoundID = n,
                            Inhibitor = "none",
                            Time_units = SimTimeUnits,
@@ -1445,54 +1450,54 @@ extractConcTime <- function(sim_data_file,
                 
                 # for(n in ADCCompoundIDs){
                 n = compoundToExtract
-                    
-                    RowsToUse <- which(
-                        str_detect(tolower(sim_data_xl$...1),
-                                   switch(n, 
-                                          "total protein" = "protein total .dar0",
-                                          "conjugated protein" = "conjugated protein .dar1", 
-                                          "total antibody" = "cantibody total", 
-                                          "protein-conjugated substrate" = "protein conjugated drug" # CHECK THIS ONE with an example; just guessing for now
-                                   )))
-                    
-                    RowsToUse <- RowsToUse[RowsToUse > TimeRow]
-                    
-                    # if(length(RowsToUse) == 0){
-                    #     next
-                    # }
-                    
-                    suppressWarnings(
-                        sim_data_ind[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-                            t() %>%
-                            as.data.frame() %>% slice(-(1:3)) %>%
-                            mutate_all(as.numeric) %>%
-                            rename(Time = "V1")
-                    )
-                    
-                    SubjTrial <- sim_data_xl[RowsToUse, 2:3] %>%
-                        rename(Individual = ...2, Trial = ...3) %>%
-                        mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
-                    
-                    names(sim_data_ind[[m]][[n]])[2:ncol(sim_data_ind[[m]][[n]])] <- SubjTrial$SubjTrial
-                    
-                    sim_data_ind[[m]][[n]] <- sim_data_ind[[m]][[n]] %>%
-                        pivot_longer(names_to = "SubjTrial", values_to = "Conc",
-                                     cols = -Time) %>%
-                        mutate(Compound = m,
-                               CompoundID = m,
-                               Inhibitor = "none",
-                               SubjTrial = sub("ID", "", SubjTrial),
-                               Time_units = SimTimeUnits,
-                               Conc_units = ifelse(ADAM, 
-                                                   SimConcUnits$ConcUnit[
-                                                       SimConcUnits$Type == n],
-                                                   SimConcUnits), 
-                               subsection_ADAM = ifelse(ADAM, n, NA)) %>%
-                        separate(SubjTrial, into = c("Individual", "Trial"),
-                                 sep = "_")
-                    
-                    rm(RowsToUse)
-                    
+                
+                RowsToUse <- which(
+                    str_detect(tolower(sim_data_xl$...1),
+                               switch(n, 
+                                      "total protein" = "protein total .dar0",
+                                      "conjugated protein" = "conjugated protein .dar1", 
+                                      "total antibody" = "cantibody total", 
+                                      "protein-conjugated substrate" = "protein conjugated drug" # CHECK THIS ONE with an example; just guessing for now
+                               )))
+                
+                RowsToUse <- RowsToUse[RowsToUse > TimeRow]
+                
+                # if(length(RowsToUse) == 0){
+                #     next
+                # }
+                
+                suppressWarnings(
+                    sim_data_ind[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                        t() %>%
+                        as.data.frame() %>% slice(-(1:3)) %>%
+                        mutate_all(as.numeric) %>%
+                        rename(Time = "V1")
+                )
+                
+                SubjTrial <- sim_data_xl[RowsToUse, 2:3] %>%
+                    rename(Individual = ...2, Trial = ...3) %>%
+                    mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
+                
+                names(sim_data_ind[[m]][[n]])[2:ncol(sim_data_ind[[m]][[n]])] <- SubjTrial$SubjTrial
+                
+                sim_data_ind[[m]][[n]] <- sim_data_ind[[m]][[n]] %>%
+                    pivot_longer(names_to = "SubjTrial", values_to = "Conc",
+                                 cols = -Time) %>%
+                    mutate(Compound = MyCompound,
+                           CompoundID = m,
+                           Inhibitor = "none",
+                           SubjTrial = sub("ID", "", SubjTrial),
+                           Time_units = SimTimeUnits,
+                           Conc_units = ifelse(ADAM, 
+                                               SimConcUnits$ConcUnit[
+                                                   SimConcUnits$Type == n],
+                                               SimConcUnits), 
+                           subsection_ADAM = ifelse(ADAM, n, NA)) %>%
+                    separate(SubjTrial, into = c("Individual", "Trial"),
+                             sep = "_")
+                
+                rm(RowsToUse)
+                
                 # }
                 
                 sim_data_ind[[m]] <- bind_rows(sim_data_ind[[m]])
@@ -1518,8 +1523,8 @@ extractConcTime <- function(sim_data_file,
         
         if(CompoundType == "ADC"){
             ObsCompounds <- c(ObsCompounds, 
-                              "conjugated protein" = "conjugated protein",
-                              "total protein" = "total protein", 
+                              "conjugated protein" = paste("conjugated", Deets$Substrate),
+                              "total protein" = paste("total", Deets$Substrate), 
                               "released payload" = Deets$PrimaryMetabolite1)
         }
         
@@ -1647,8 +1652,9 @@ extractConcTime <- function(sim_data_file,
                                               AllEffectors_comma, Inhibitor))
                 
                 if(CompoundType == "ADC"){
-                    obs_data$CompoundID[obs_data$CompoundID == "primary metabolite 1"] <- 
-                             "released payload"
+                    obs_data <- obs_data %>% 
+                        mutate(CompoundID = ifelse(CompoundID == "primary metabolite 1", 
+                                                   "released payload", CompoundID))
                 }
                 
                 obs_data <- obs_data %>% filter(CompoundID == m)
