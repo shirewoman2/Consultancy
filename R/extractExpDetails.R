@@ -263,6 +263,12 @@ extractExpDetails <- function(sim_data_file,
             return(Val)
         }
         
+        # Checking whether this was an ADC sim b/c have to do this differently. 
+        MySumDeets <- setdiff(MySumDeets, "ADCSimulation")
+        Out[["ADCSimulation"]] <- 
+            str_detect(as.character(SummaryTab[, 1]), 
+                       SumDeets %>% filter(Deet == "ADCSimulation") %>% pull(Regex))
+        
         for(i in MySumDeets){
             Out[[i]] <- pullValue(i)
             if(str_detect(i, "^StartDayTime") & is.na(Out[[i]])){
@@ -421,16 +427,21 @@ extractExpDetails <- function(sim_data_file,
         }
         
         # pullValue doesn't work for CL, so those are separate. Also need
-        # to do StartDayTime_x separately.
+        # to do StartDayTime_x and ADCSimulation separately.
         MyInputDeets1 <-
             MyInputDeets[!str_detect(MyInputDeets, 
-                                     "CLint_|Interaction_|^StartDayTime|Transport_")]
+                                     "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation")]
         
         if(length(MyInputDeets1) > 0){
             for(i in MyInputDeets1){
                 Out[[i]] <- pullValue(i)
             }
         }
+        
+        # Checking whether this was an ADC sim. 
+        Out[["ADCSimulation"]] <- 
+            str_detect(as.character(InputTab[, 1]), 
+                       InputDeets %>% filter(Deet == "ADCSimulation") %>% pull(Regex))
         
         # Pulling CL info
         MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
