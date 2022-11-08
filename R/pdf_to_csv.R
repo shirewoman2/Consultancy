@@ -11,8 +11,8 @@
 #' @param page page number of the pdf you want to read (this function only works
 #'   with one page at a time)
 #' @param save_csv optionally specify a file name for saving the output. If left
-#'   as NA, no file will be saved. If set to just "csv", the file name will be
-#'   the pdf file name plus the page number requested.
+#'   as "csv", the file name will be the pdf file name plus the page number
+#'   requested. If set to NA, no file will be saved.
 #'
 #' @return
 #' @export
@@ -22,7 +22,7 @@
 #' 
 pdf_to_csv <- function(pdf_file, 
                        page, 
-                       save_csv = NA){
+                       save_csv = "csv"){
     
     # Error catching ----------------------------------------------------------
     # Check whether tidyverse is loaded

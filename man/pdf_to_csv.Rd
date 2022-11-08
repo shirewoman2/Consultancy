@@ -4,7 +4,7 @@
 \alias{pdf_to_csv}
 \title{Convert a page from a pdf file to a csv file}
 \usage{
-pdf_to_csv(pdf_file, page, save_csv = NA)
+pdf_to_csv(pdf_file, page, save_csv = "csv")
 }
 \arguments{
 \item{pdf_file}{the pdf file you want to read, in quotes, e.g.,
@@ -14,8 +14,8 @@ pdf_to_csv(pdf_file, page, save_csv = NA)
 with one page at a time)}
 
 \item{save_csv}{optionally specify a file name for saving the output. If left
-as NA, no file will be saved. If set to just "csv", the file name will be
-the pdf file name plus the page number requested.}
+as "csv", the file name will be the pdf file name plus the page number
+requested. If set to NA, no file will be saved.}
 }
 \value{
 
