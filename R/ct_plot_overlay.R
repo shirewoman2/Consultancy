@@ -601,7 +601,7 @@ ct_plot_overlay <- function(ct_dataframe,
     # If the color labels don't match the files available, give a warning.
     if(as_label(colorBy_column) != "<empty>" && 
        any(complete.cases(color_labels)) && 
-       all(color_labels %in% unique(ct_dataframe[, as_label(colorBy_column)])) == FALSE){
+       all(names(color_labels) %in% sort(unique(ct_dataframe[, as_label(colorBy_column)]))) == FALSE){
         BadLabs <- setdiff(names(color_labels), unique(ct_dataframe[, as_label(colorBy_column)]))
         
         warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
