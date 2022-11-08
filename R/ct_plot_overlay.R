@@ -441,13 +441,14 @@ ct_plot_overlay <- function(ct_dataframe,
     # Checking for more than one tissue or ADAM data type b/c there's only one y
     # axis and it should have only one concentration type.
     if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
-        stop("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit.",
+        stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
+", deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
              call. = FALSE)
     }
     
     if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
-        stop("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this, replacing `ct_dataframe` with the name of your actual data.frame:
-ct_dataframe %>% select(subsection_ADAM) %>% unique()",
+        stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:
+", deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
 call. = FALSE)
     }
     
@@ -531,19 +532,24 @@ call. = FALSE)
                                     names(prettify_compound_names))
             OrigPrettyNames <- prettify_compound_names
             prettify_compound_names <- c(prettify_compound_names, MissingNames)
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-                MissingNames
+            if(length(MissingNames) > 0){
+                names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                    MissingNames
+            }
             
             ct_dataframe <- ct_dataframe %>% 
                 mutate(Inhibitor = prettify_compound_names[Inhibitor])
         } else {
-            MissingNames <- setdiff(unique(c(ct_dataframe$Compound,
-                                             ct_dataframe$Inhibitor)), 
+            MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
+                                                  ct_dataframe$Inhibitor))), 
                                     names(prettify_compound_names))
+            MissingNames <- MissingNames[!MissingNames == "none"]
             OrigPrettyNames <- prettify_compound_names
             prettify_compound_names <- c(prettify_compound_names, MissingNames)
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-                MissingNames
+            if(length(MissingNames) > 0){
+                names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                    MissingNames
+            }
             
             ct_dataframe <- ct_dataframe %>% 
                 mutate(Compound = prettify_compound_names[Compound], 
@@ -677,7 +683,8 @@ call. = FALSE)
     ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
                                                    "jejunum II", "ileum I", "ileum II",
                                                    "ileum III", "ileum IV", "colon", 
-                                                   "faeces", "cumulative absorption", 
+                                                   "faeces", "gut tissue",
+                                                   "cumulative absorption", 
                                                    "cumulative dissolution")) &
         EnzPlot == FALSE
     

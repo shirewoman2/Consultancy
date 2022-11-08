@@ -38,19 +38,17 @@ are listed in the Excel file.}
 \item{tissue}{From which tissue should the desired concentrations be
 extracted? Default is plasma for typical plasma concentration-time data.
 Other options are "blood" or any tissues included in "Sheet Options",
-"Tissues" in the simulator. Notes: \itemize{ \item{All possible options for
-first-order absorption models: "plasma", "blood", "unbound blood", "unbound
-plasma", "additional organ", "adipose", "bone", "brain", "feto-placenta",
-"GI tissue", "heart", "kidney", "liver", "lung", "muscle", "pancreas",
-"peripheral blood", "peripheral plasma", "peripheral unbound blood",
-"peripheral unbound plasma", "portal vein blood", "portal vein plasma",
-"portal vein unbound blood", "portal vein unbound plasma", "skin", or
-"spleen".} \item{Additional options for ADAM-model simulations: "stomach",
-"duodenum", "jejunum I", "jejunum II", "ileum I", "ileum II", "ileum III",
-"ileum IV", "colon", "faeces", "gut tissue", "cumulative absorption", or
-"cumulative dissolution". \strong{This has not been thoroughly tested for
-very many ADAM-model scenarios, so please check that the data extracted are
-correct.}}} Not case sensitive.}
+"Tissues" in the simulator. All possible options:\describe{
+\item{First-order absorption models}{"plasma", "blood", "unbound blood",
+"unbound plasma", "additional organ", "adipose", "bone", "brain",
+"feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+"pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
+blood", "peripheral unbound plasma", "portal vein blood", "portal vein
+plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
+or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+"jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+"faeces", "gut tissue", "cumulative absorption", or "cumulative
+dissolution".}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"substrate"

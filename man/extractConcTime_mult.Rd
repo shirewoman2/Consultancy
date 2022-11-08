@@ -94,16 +94,21 @@ where you might want to set this to TRUE would be when you have changed
 input parameters for simulations and re-run them.}
 
 \item{tissues}{From which tissue(s) should the desired concentrations be
-extracted? The default is plasma for typical plasma concentration-time
-data. Other options are "blood" or any tissues included in "Sheet Options",
-"Tissues" in the simulator. All possible options: "plasma", "blood",
-"unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
-"brain", "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung",
-"muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
-unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
-vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
-"skin", or "spleen". Not case sensitive. Acceptable input is all tissues
-desired as a character vector, e.g., \code{c("plasma", "blood", "liver")}.}
+extracted? Default is plasma for typical plasma concentration-time data.
+Other options are "blood" or any tissues included in "Sheet Options",
+"Tissues" in the simulator. All possible options:\describe{
+\item{First-order absorption models}{"plasma", "blood", "unbound blood",
+"unbound plasma", "additional organ", "adipose", "bone", "brain",
+"feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+"pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
+blood", "peripheral unbound plasma", "portal vein blood", "portal vein
+plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
+or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+"jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+"faeces", "gut tissue", "cumulative absorption", or "cumulative
+dissolution".}} Not case sensitive. Acceptable input is all tissues desired
+as a character vector, e.g., \code{tissues = c("plasma", "blood",
+"liver")}.}
 
 \item{compoundsToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"substrate"
@@ -121,9 +126,9 @@ Protein Conjugate Plasma Total" will match these simulated data,}
 as primary metabolite 1 in Simulator output files; or} \item{"all" for all
 possible compounds in the simulation.}} Input to this argument should be
 all desired compounds as a character vector, e.g., \code{c("substrate",
-"primary metabolite 1")}. \strong{Note:} If your compound is a
-therapeutic protein or ADC, we haven't tested this very thoroughly, so
-please be extra careful to check that you're getting the correct data.}
+"primary metabolite 1")}. \strong{Note: If your compound is a therapeutic
+protein or ADC, we haven't tested this very thoroughly, so please be extra
+careful to check that you're getting the correct data.}}
 
 \item{conc_units_to_use}{concentration units to use so that all data will be
 comparable. Options are the same as the ones in the Excel form for PE data

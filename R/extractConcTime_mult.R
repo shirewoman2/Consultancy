@@ -92,16 +92,21 @@
 #'   where you might want to set this to TRUE would be when you have changed
 #'   input parameters for simulations and re-run them.
 #' @param tissues From which tissue(s) should the desired concentrations be
-#'   extracted? The default is plasma for typical plasma concentration-time
-#'   data. Other options are "blood" or any tissues included in "Sheet Options",
-#'   "Tissues" in the simulator. All possible options: "plasma", "blood",
-#'   "unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
-#'   "brain", "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung",
-#'   "muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
-#'   unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
-#'   vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
-#'   "skin", or "spleen". Not case sensitive. Acceptable input is all tissues
-#'   desired as a character vector, e.g., \code{c("plasma", "blood", "liver")}.
+#'   extracted? Default is plasma for typical plasma concentration-time data.
+#'   Other options are "blood" or any tissues included in "Sheet Options",
+#'   "Tissues" in the simulator. All possible options:\describe{
+#'   \item{First-order absorption models}{"plasma", "blood", "unbound blood",
+#'   "unbound plasma", "additional organ", "adipose", "bone", "brain",
+#'   "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+#'   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
+#'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
+#'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
+#'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+#'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+#'   "faeces", "gut tissue", "cumulative absorption", or "cumulative
+#'   dissolution".}} Not case sensitive. Acceptable input is all tissues desired
+#'   as a character vector, e.g., \code{tissues = c("plasma", "blood",
+#'   "liver")}.
 #' @param compoundsToExtract For which compound do you want to extract
 #'   concentration-time data? Options are: \itemize{\item{"substrate"
 #'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
@@ -118,9 +123,9 @@
 #'   as primary metabolite 1 in Simulator output files; or} \item{"all" for all
 #'   possible compounds in the simulation.}} Input to this argument should be
 #'   all desired compounds as a character vector, e.g., \code{c("substrate",
-#'   "primary metabolite 1")}. \strong{Note:} If your compound is a
-#'   therapeutic protein or ADC, we haven't tested this very thoroughly, so
-#'   please be extra careful to check that you're getting the correct data.
+#'   "primary metabolite 1")}. \strong{Note: If your compound is a therapeutic
+#'   protein or ADC, we haven't tested this very thoroughly, so please be extra
+#'   careful to check that you're getting the correct data.}
 #' @param ... other arguments passed to the function
 #'   \code{\link{extractConcTime}}
 #' @param conc_units_to_use concentration units to use so that all data will be
@@ -447,9 +452,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         mutate(File = ff)
                     
                     # Need to handle ADAM data specially
-                    ADAMtissue <- c("stomach", "duodenum", "jejunum i",
-                                    "jejunum ii", "ileum i", "ileum ii",
-                                    "ileum iii", "ileum iv", "colon", "faeces")
+                    ADAMtissue <- c("stomach", "duodenum", "jejunum I",
+                                    "jejunum II", "ileum I", "ileum II",
+                                    "ileum III", "ileum IV", "colon", "faeces", 
+                                    "gut tissue", "cumulative absorption", 
+                                    "cumulative dissolution")
                     if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue)){
                         CT_adam <- MultData[[ff]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue)
