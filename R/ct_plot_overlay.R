@@ -445,6 +445,12 @@ ct_plot_overlay <- function(ct_dataframe,
              call. = FALSE)
     }
     
+    if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
+        stop("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this, replacing `ct_dataframe` with the name of your actual data.frame:
+ct_dataframe %>% select(subsection_ADAM) %>% unique()",
+call. = FALSE)
+    }
+    
     if(length(obs_color) > 1){
         warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
                 call. = FALSE)

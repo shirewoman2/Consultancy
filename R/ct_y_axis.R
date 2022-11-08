@@ -41,9 +41,18 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         #                  "cumulative fraction of compound absorbed", 
         #                  "cumulative fraction of compound dissolved")
         
-        CompoundLab <- ifelse(prettify_compound_names, 
-                              prettify_compound_name(unique(Data$Compound)), 
-                              unique(Data$Compound))
+        if(class(prettify_compound_names) == "logical"){
+            CompoundLab <- ifelse(prettify_compound_names == TRUE, 
+                                  prettify_compound_name(unique(Data$Compound)), 
+                                  unique(Data$Compound))
+        } else {
+            CompoundLab <- str_comma(
+                unique(
+                    prettify_compound_names[
+                        prettify_compound_names %in%
+                            unique(Data$Compound[Data$CompoundID == "substrate"])]), 
+                conjunction = "or")
+        }
         
         ylab1 <- 
             switch(subsection_ADAM, 
@@ -52,8 +61,8 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                    "undissolved compound" = 
                        paste0("Undissolved ", CompoundLab, " in ", unique(Data$Tissue)),
                    "enterocyte concentration" = 
-                       bquote(atop("Enterocyte concentration of"~bquote(.(CompoundLab)))), 
-                   # paste0("Enterocyte concentration of ", CompoundLab, " in ", unique(Data$Tissue)),
+                       # bquote(atop("Enterocyte concentration of", bquote(CompoundLab))), # can't get this to work
+                       paste("Enterocyte concentration of", CompoundLab),
                    "free compound in lumen" = 
                        paste0("Free ", CompoundLab, " in lumen"),
                    "total compound in lumen" = 
