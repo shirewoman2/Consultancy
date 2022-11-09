@@ -213,7 +213,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         # If left as NA, pull all the files in this folder. 
-        sim_data_files <- list.files(pattern = "xlsx")
+        sim_data_files <- list.files(pattern = "xlsx$")
         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
     
