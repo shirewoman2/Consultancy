@@ -175,6 +175,11 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
+#' @param adjust_conc_units Would you like to adjust the units to something
+#'   other than what was used in the simulation? Default is NA to leave the
+#'   units as is, but if you set the concentration units to something else, this
+#'   will attempt to adjust the units to match that. This only adjusts AUC and
+#'   Cmax values at present and is very much under construction!
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -262,6 +267,7 @@ pksummary_table <- function(sim_data_file = NA,
                             includePerc = FALSE,
                             includeTrialMeans = FALSE,
                             concatVariability = FALSE,
+                            adjust_conc_units = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
                             checkDataSource = TRUE, 
@@ -575,6 +581,28 @@ pksummary_table <- function(sim_data_file = NA,
     if(complete.cases(sheet_PKparameters) &
        any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
         PKToPull <- sub("_last|_dose1", "", PKToPull)
+    }
+    
+    # Changing units if user wants. 
+    if(complete.cases(adjust_conc_units)){
+        # Only adjusting AUC and Cmax values and not adjusting time portion of
+        # units -- only conc.
+        if(Deets$Units_Cmax != adjust_conc_units){
+            ColsToChange <- names(MyPKResults_all$aggregate)[
+                str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax")
+            ]
+            
+            for(i in ColsToChange){
+                TEMP <- match_units(MyPKResults_all$aggregate %>% 
+                                        rename(Conc = i) %>% 
+                                        mutate(Conc_units = Deets$Units_Cmax, 
+                                               Time = 1, Time_units = "hours"),
+                                    goodunits = list("Conc_units" = adjust_conc_units, 
+                                                     "Time_units" = "hours"))
+                MyPKResults_all$aggregate[, i] <- TEMP$Conc
+                rm(TEMP)
+            }
+        }
     }
     
     # If they requested AUCinf but there was trouble with that extrapolation,
@@ -1064,11 +1092,16 @@ pksummary_table <- function(sim_data_file = NA,
             )
         }
         
+        if(complete.cases(adjust_conc_units)){
+            PrettyCol <- gsub(Deets$Units_Cmax,  adjust_conc_units, PrettyCol)
+        }
+        
         # Adjusting units as needed.
         PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
         PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
         PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
         PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
+        PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
         
         MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
                         Deets$Inhibitor2)
