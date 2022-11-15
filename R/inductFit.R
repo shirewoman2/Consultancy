@@ -658,7 +658,7 @@ inductFit <- function(DF,
                                 long = unit(3,"mm")) +
             scale_x_log10() +
             ggtitle(ModelTitle) +
-            xlab(expression(Concentration~(mu*M))) +
+            xlab("Concentration (μM)") +
             ylab(Ylab) +
             theme_consultancy() +
             theme(panel.grid.minor.y = element_line(color = NA),
