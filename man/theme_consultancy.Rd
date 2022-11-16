@@ -18,8 +18,8 @@ it's a concentration-time plot or an enzyme-abundance plot that does
 line on the y axis but no overall border around the graph.} \item{If the
 graph is facetted, the labels for the facets are not enclosed with a border.}
 \item{Axis titles and, when applicable, the plot title are bold face.}
-\item{Font sizes and margins are the same as in
-\code{\link{ggplot2::ggtheme}}} }
+\item{Font sizes and margins are the same as in the ggplot2 theme
+"theme_bw"}}
 }
 \examples{
 # Some example data to work with
