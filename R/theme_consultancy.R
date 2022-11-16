@@ -9,7 +9,7 @@
 #' graph is facetted, the labels for the facets are not enclosed with a border.}
 #' \item{Axis titles and, when applicable, the plot title are bold face.}
 #' \item{Font sizes and margins are the same as in
-#' \code{\link{ggplot2::theme_bw}}} }
+#' \code{\link{ggplot2::ggtheme}}} }
 #'
 #' @return
 #' @export
