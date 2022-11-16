@@ -88,6 +88,10 @@
 #'   "printer-friendly, perceptually uniform and easy to read by those with
 #'   colorblindness", according to the package author}}
 #'
+#' @param graph_title optionally specify a title that will be centered across
+#'   your graph or set of graphs
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14. This also determines the font size of the graph labels. 
 #' @param y_axis_limits optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 #'   If left as NA, the Y axis limits will be automatically selected. (Reminder:
 #'   Numeric data should not be in quotes.)
@@ -156,6 +160,8 @@ inductFit <- function(DF,
                       y_axis_limits = NA,
                       hline_foldinduct1 = FALSE,
                       num_sigfig = NA, 
+                      graph_title = NA,
+                      graph_title_size = 14, 
                       save_graph = NA,
                       fig_height = 5,
                       fig_width = 5.5, 
@@ -658,7 +664,7 @@ inductFit <- function(DF,
                                 long = unit(3,"mm")) +
             scale_x_log10() +
             ggtitle(ModelTitle) +
-            xlab(expression(Concentration~(mu*M))) +
+            xlab("Concentration (μM)") +
             ylab(Ylab) +
             theme_consultancy() +
             theme(panel.grid.minor.y = element_line(color = NA),
@@ -718,6 +724,11 @@ inductFit <- function(DF,
                                labels = YLabels)
     )
     
+    if(complete.cases(graph_title)){
+        Out$Graph <- Out$Graph + ggtitle(graph_title) +
+            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+    }
+    
     # Adding options for colors -----------------------------------------------
     NumColors <- length(unique(DF$DonorID))
     
@@ -775,7 +786,7 @@ inductFit <- function(DF,
     
     if(complete.cases(num_sigfig)){
         Out$Fit <- Out$Fit %>% 
-            mutate(across(.cols = c(Indmax, IndC50, slope), 
+            mutate(across(.cols = any_of(c("Indmax", "IndC50", "slope")), 
                           .fns = signif, digits = num_sigfig))
     }
     

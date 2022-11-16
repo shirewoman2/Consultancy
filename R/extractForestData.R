@@ -54,6 +54,19 @@ extractForestData <- function(sim_data_files = NA,
              call. = FALSE)
     }
     
+    # If the user supplied "XXX_ss", change that to "XXX_last".
+    PKparameters <- sub("_last", "_last", PKparameters)
+    
+    # If the user used "_first" instead of "_dose1", change that.
+    PKparameters <- sub("_first", "_dose1", PKparameters)
+    
+    # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
+    PKparameters <- sub("tau_dose1", "t_dose1", PKparameters)
+    
+    # If the user used AUCt_last instead of AUCtau_last, fix that for them.
+    PKparameters <- sub("AUCt_last", "AUCtau_last", PKparameters)
+    PKparameters <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKparameters)
+    
     if(all(PKparameters %in% c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
                                "Cmax_ratio_dose1", "AUCtau_ratio_last", 
                                "Cmax_ratio_last")) == FALSE){

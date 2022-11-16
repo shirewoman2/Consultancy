@@ -95,14 +95,18 @@ extractPK <- function(sim_data_file,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
-    # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
-    PKparameters <- sub("tau_dose1", "t_dose1", PKparameters)
-    
     # If the user supplied "XXX_ss", change that to "XXX_last".
     PKparameters <- sub("_last", "_last", PKparameters)
     
     # If the user used "_first" instead of "_dose1", change that.
     PKparameters <- sub("_first", "_dose1", PKparameters)
+    
+    # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
+    PKparameters <- sub("tau_dose1", "t_dose1", PKparameters)
+    
+    # If the user used AUCt_last instead of AUCtau_last, fix that for them.
+    PKparameters <- sub("AUCt_last", "AUCtau_last", PKparameters)
+    PKparameters <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKparameters)
     
     # If they didn't include ".xlsx" at the end, add that.
     sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
