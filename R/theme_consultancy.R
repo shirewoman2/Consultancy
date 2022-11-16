@@ -8,8 +8,8 @@
 #' line on the y axis but no overall border around the graph.} \item{If the
 #' graph is facetted, the labels for the facets are not enclosed with a border.}
 #' \item{Axis titles and, when applicable, the plot title are bold face.}
-#' \item{Font sizes and margins are the same as in theme_bw in
-#' \code{\link{ggplot2::ggtheme}}} }
+#' \item{Font sizes and margins are the same as in
+#' \code{\link{ggplot2::theme_bw}}} }
 #'
 #' @return
 #' @export
