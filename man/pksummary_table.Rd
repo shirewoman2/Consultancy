@@ -20,6 +20,7 @@ pksummary_table(
   includePerc = FALSE,
   includeTrialMeans = FALSE,
   concatVariability = FALSE,
+  adjust_conc_units = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   checkDataSource = TRUE,
@@ -139,6 +140,12 @@ and listed as the lower confidence interval or percentile to the upper CI
 or percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
+
+\item{adjust_conc_units}{Would you like to adjust the units to something
+other than what was used in the simulation? Default is NA to leave the
+units as is, but if you set the concentration units to something else, this
+will attempt to adjust the units to match that. This only adjusts AUC and
+Cmax values at present and is very much under construction!}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
