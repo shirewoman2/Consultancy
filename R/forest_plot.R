@@ -730,7 +730,9 @@ forest_plot <- function(forest_dataframe,
                           strip.placement = "outside",
                           panel.border = element_rect(colour = "grey70", fill = NA),
                           panel.spacing.y = unit(0, "cm"),
-                          panel.spacing.x = unit(0.5, "cm"))
+                          panel.spacing.x = unit(0.5, "cm"), 
+                          axis.line.x.bottom = element_blank(),
+                          axis.line.y.left = element_blank())
             )
             
             if(g != unique(forest_dataframe$YCol)[
