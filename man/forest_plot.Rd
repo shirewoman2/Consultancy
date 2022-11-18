@@ -53,24 +53,34 @@ something here; it cannot be left blank. This will automatically replace
 the file names listed in \code{forest_dataframe} with the effector for
 victim forest plots and with the substrate for perpetrator forest plots.}
 
-\item{y_order}{optionally supply a character vector to specify the order of
-the items on the y axis. This can be specified in three possible ways:
-\describe{\item{a character vector of file names}{e.g., \code{y_order =
-c("myfile1.xlsx", "myfile2.xlsx")}. The file names will automatically be
-replaced with the compounds of interest, so, if this were a victim forest
-plot, what will appear on the y axis will be, e.g., "itraconazole" and
-"efavirenz".} \item{a character vector of the compounds of interest, named
-by the file}{e.g., \code{y_order = c("myfile1.xlsx" = "itraconazole",
-"myfile2.xlsx" = "efavirenz")}. As with the 1st option, what appears on the
-y axis is not the file name but "itraconazole" and "efavirenz". This is
-also a good way to specify something \emph{exactly} the way you want, e.g.,
-\code{y_order = c("myfile1.xlsx" = "itraconazole (strong CYP3A inhibitor)",
-"myfile2.xlsx" = "efavirenz (moderate CYP3A inducer)")}}\item{a character
-vector of the compounds of interest}{e.g., \code{y_order =
-c("itraconazole", "efavirenz")}}. These must be spelled perfectly!} If
-\code{y_order} is left as NA, the y axis will be sorted according to the
-geometric mean AUC ratio with inhibitors on top and inducers on the bottom.
-Please see the example section at the bottom of this help file.}
+\item{y_order}{optionally set the order of items on the y axis. If
+  \code{y_order} is left as NA, the y axis will be sorted according to the
+  geometric mean AUC ratio with inhibitors on top and inducers on the bottom.
+  If you would like to use some other order, there are four possible ways to
+  specify this: \describe{
+
+  \item{"as is"}{If you're already happy with the order of things in the
+  input data \code{forest_dataframe}, then setting \code{y_order = "as is"}
+  will keep things in exactly the same order.}
+
+
+  \item{a character vector of file names}{e.g., \code{y_order =
+  c("myfile1.xlsx", "myfile2.xlsx")}. The file names will automatically be
+  replaced with the compounds of interest, so, if this were a victim forest
+  plot, what will appear on the y axis will be, e.g., "itraconazole" and
+  "efavirenz".}
+
+  \item{a character vector of the compounds of interest, named by the
+  file}{e.g., \code{y_order = c("myfile1.xlsx" = "itraconazole",
+  "myfile2.xlsx" = "efavirenz")}. As with the second option, what appears on
+  the y axis is not the file name but "itraconazole" and "efavirenz". This is
+  also a good way to specify that that compound appear \emph{exactly} the way
+  you want, e.g., \code{y_order = c("myfile1.xlsx" = "itraconazole (strong
+  CYP3A inhibitor)", "myfile2.xlsx" = "efavirenz (moderate CYP3A inducer)")}}
+
+  \item{a character vector of the compounds of interest}{e.g., \code{y_order
+  = c("itraconazole", "efavirenz")} These must be spelled perfectly!}} Please
+  see the bottom of this help file for examples.}
 
 \item{y_axis_column_secondary}{optionally break up the graphs along the y
 axis by an additional column. For example, say your drug of interest is a
@@ -91,11 +101,11 @@ the order you want.}} This will break up the graphs first by the dose day
 and next by the substrate and do so in the order you specified.}
 
 \item{y_order_secondary}{the order to use for the secondary y axis
-(optional). Just like with the argument \code{y_order}, this may be a
-character vector of the unique items in \code{y_axis_column_secondary} or,
-if \code{y_axis_column_secondary} is File, the compounds that each file
-represents or a named character vector of the compounds. Please see the
-examples at the bottom of this file.}
+(optional). Just like with the argument \code{y_order}, this may be
+\code{y_order_secondary = "as is"}, a character vector of the unique items
+in \code{y_axis_column_secondary}, or, if \code{y_axis_column_secondary} is
+File, the compounds that each file represents or a named character vector
+of the compounds. Please see the examples at the bottom of this file.}
 
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
@@ -204,7 +214,18 @@ forest_plot(forest_dataframe = ForestData,
             y_axis_column = File,
             y_axis_column_secondary = Dose_sub)
 
-# Here's one way you could change the order in which the compounds appear:
+# By default, the order of compounds will put inhibitors on top and 
+# inducers on the bottom, sorted by their AUC GMR. If you already liked
+# the order you had things in whatever you supplied for forest_dataframe,
+# you can tell the forest_plot function not to change that by setting 
+# y_order or y_order_secondary to "as is". 
+forest_plot(forest_dataframe = ForestData,
+            perp_or_victim = "victim",
+            y_axis_column = Dose_sub,
+            y_axis_column_secondary = File,
+            y_order_secondary = "as is")
+
+# Here's another way you could set the order in which the compounds appear:
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             y_axis_column = Dose_sub,
