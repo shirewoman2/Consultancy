@@ -17,6 +17,8 @@ inductFit(
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
   num_sigfig = NA,
+  graph_title = NA,
+  graph_title_size = 14,
   save_graph = NA,
   fig_height = 5,
   fig_width = 5.5,
@@ -116,6 +118,12 @@ dotted red line where the fold induction = 1.}
 \item{num_sigfig}{optionally specify the number of significant figures you
 would like any output rounded to. If left as NA, no rounding will be
 performed.}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14. This also determines the font size of the graph labels.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
