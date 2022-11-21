@@ -5,12 +5,12 @@
 #' from multiple Simcyp Simulator output files. If you list multiple files,
 #' multiple tissues, and/or multiple compounds to extract (see options below),
 #' this will extract \emph{all} possible variations of them. For example, if you
-#' ask for "sim1.xlsx" and "sim2.xlsx" and then also ask for "substrate" and
-#' "primary metabolite 1", you will get the substrate and primary metabolite 1
-#' data from \emph{both} files. \strong{NOTE:} If ANY of the Excel files you
-#' wish to extract data from are saved on SharePoint and are open, this WILL
-#' CRASH and WILL NOT save whatever progress it has made so far. Be sure to
-#' close all of the source Excel files.
+#' ask for data from the files "sim1.xlsx" and "sim2.xlsx" and then also ask for
+#' "substrate" and "primary metabolite 1", you will get the substrate and
+#' primary metabolite 1 data from \emph{both} files. \strong{NOTE:} If ANY of
+#' the Excel files you wish to extract data from are saved on SharePoint and are
+#' open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
+#' Be sure to close all of the source Excel files.
 #'
 #' \strong{Regarding dose intervals for observed data:} The observed data files
 #' don't include information on dosing intervals or dose numbers, which makes it
@@ -152,9 +152,9 @@
 #' ConcTimeData <-
 #'       extractConcTime_mult(
 #'             sim_data_files = c("MyFile1.xlsx", "MyFile2.xlsx"),
-#'             ct_dataframe = "ConcTimeData",
+#'             ct_dataframe = ConcTimeData,
 #'             overwrite = FALSE,
-#'             tissue = "unbound plasma") # Note that "tissue" is passed to "extractConcTime".
+#'             tissues = "unbound plasma")
 #' 
 
 extractConcTime_mult <- function(sim_data_files = NA,
@@ -208,8 +208,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
     }
     
     # Main body of function -----------------------------------------------
-    
-    compoundsToExtract <- tolower(compoundsToExtract)
     
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         # If left as NA, pull all the files in this folder. 
@@ -352,6 +350,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
         }
     } 
     
+    
+    ## Start of loop through files ------------------------------------------
     MultData <- list()
     
     for(ff in sim_data_files_topull){

@@ -9,8 +9,8 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   enzyme-abundance-time data, in quotes
-#' @param enzyme the enzyme, e.g., "CYP3A4" (default), "UGT1A1", etc. Spaces or
-#'   hyphens in enzyme names will be ignored. Not case sensitive.
+#' @param enzyme the enzyme of interest, e.g., "CYP3A4" (default), "UGT1A1",
+#'   etc. Spaces or hyphens in enzyme names will be ignored. Not case sensitive.
 #' @param tissue From which tissue should the desired enzyme abundance be
 #'   extracted? Options are "liver" (default), "gut", or "kidney". Note: If
 #'   "gut" is selected, the output will return both colon and small intestine
@@ -19,6 +19,13 @@
 #'   enzyme abundance data? Options are "individual", "aggregate", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "mean".
+#' @param expdetails If you have already run \code{extractExpDetails} to get all
+#'   the details from the "Input Sheet", you can save some processing time by
+#'   supplying it here, unquoted. If left as NA, this function will run
+#'   \code{extractExpDetails} behind the scenes to figure out some information
+#'   about your experimental set up.
+#' @param fromMultFunction INTERNAL USE ONLY. TRUE or FALSE on whether this is
+#'   being called on by \code{\link{extractConcTime_mult}}.
 #'
 #' @return A data.frame of enzyme abundance with time with the following
 #'   columns: \describe{
@@ -68,7 +75,8 @@
 extractEnzAbund <- function(sim_data_file,
                             enzyme = "CYP3A4",
                             tissue = "liver",
-                            returnAggregateOrIndiv = "both"){
+                            returnAggregateOrIndiv = "both", 
+                            expdetails = NA){
     
 	# Error catching --------------------------------------------------------------------
     # Check whether tidyverse is loaded
@@ -87,14 +95,16 @@ extractEnzAbund <- function(sim_data_file,
              call. = FALSE)
     }
     
-    if(tissue %in% c("gut", "liver", "kidney") == FALSE){
-        stop("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.",
-             call. = FALSE)
+    if(length(tissue) != 1){
+        warning("You must enter one and only one tissue option. (Default is liver.)",
+                call. = FALSE)
+        return(data.frame())
     }
     
-    if(length(tissue) != 1){
-        stop("You must enter one and only one tissue option. (Default is liver.)",
+    if(tissue %in% c("gut", "liver", "kidney") == FALSE){
+        warning("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.",
              call. = FALSE)
+        return(data.frame())
     }
     
 	
@@ -103,7 +113,18 @@ extractEnzAbund <- function(sim_data_file,
     enzyme <- gsub(" |_|-", "", toupper(enzyme))
     
     # Getting experimental details 
-    Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+    if(class(expdetails) != "logical"){
+        Deets <- expdetails
+    } else {
+        Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+    } 
+    
+    if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
+                call. = FALSE)
+    }
     
     # Figuring out which sheet to extract and dealing with case since that
     # apparently changes between Simulator versions.
@@ -124,9 +145,9 @@ extractEnzAbund <- function(sim_data_file,
                                                  "liver" = "(liver)",
                                                  "gut" = "(gut)",
                                                  "kidney" = "(kidney)")), 
-                    "`` and could not find it. Please check your simulator output and try again."), 
+                    "`` and could not find it, so these data cannot be returned."), 
              call. = FALSE)
-        return(list())
+        return(data.frame())
     }
     
     # Reading in simulated abundance-time profile data
