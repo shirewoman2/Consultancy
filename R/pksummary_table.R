@@ -230,7 +230,7 @@
 #' @examples
 #' pksummary_table("abc1a-5mg-qd.xlsx")
 #'
-#' pksummary_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
+#' pksummary_table(report_input_file = "My report input - project abc-1a.xlsx",
 #'          sheet_report = "study info - Clinical study 001A",
 #'          includeTrialMeans = TRUE)
 #'
@@ -249,7 +249,8 @@
 #'                                 "Cmax_dose1_CV" = 0.24))
 #'
 #' # Or an Excel or csv file:
-#' pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
+#' pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx",
+#'                 observed_PK = "mdz observed PK.csv")
 #' 
 
 pksummary_table <- function(sim_data_file = NA, 
@@ -321,10 +322,21 @@ pksummary_table <- function(sim_data_file = NA,
         }
     }
     
+    # If user asked for a specific sheet and that sheet is the same thing as the
+    # AUC tab, then set sheet_PKparameters to NA b/c a) it will automatically
+    # look there 1st for the PK and b) it won't mess up anything for knowing
+    # which dose the PK is for. The other sheets w/PK parameters are not obvious
+    # as to which dose it is, so for those, we need to remove the "_dose1" or
+    # "_last".
+    if(complete.cases(sheet_PKparameters) &&
+       sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")){
+        sheet_PKparameters <- NA
+    }
+    
     
     # Main body of function --------------------------------------------------
     
-    # Reading in all data and tidying ------------------------------------
+    ## Reading in all data and tidying ------------------------------------
     if(complete.cases(report_input_file)){
         
         # If they didn't include ".xlsx" at the end of whatever they supplied for
@@ -415,6 +427,48 @@ pksummary_table <- function(sim_data_file = NA,
             
             sim_data_file <- observed_PK$File
         }
+        
+        # Cleaning up and harmonizing observed data
+        MyObsPK <- observed_PK
+        
+        names(MyObsPK) <- sub("_first", "_dose1", names(MyObsPK))
+        names(MyObsPK) <- sub("tau_dose1", "t_dose1", names(MyObsPK))
+        names(MyObsPK) <- sub("AUCt_ratio_last", "AUCtau_ratio_last", names(MyObsPK))
+        names(MyObsPK) <- sub("_last", "_last", names(MyObsPK))
+        
+        # Making obs PK names match correct PK parameters regardless of case
+        suppressMessages(
+            ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
+                mutate(PKparameter_lower = sub("_first", "_dose1",
+                                               tolower(OrigName)), 
+                       PKparameter_lower = sub("_ss", "_last", 
+                                               PKparameter_lower),
+                       PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
+                left_join(AllPKParameters %>% select(PKparameter) %>% 
+                              unique() %>% 
+                              mutate(PKparameter_lower = tolower(PKparameter))) %>% 
+                mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
+                                            paste0(PKparameter, "_CV"), 
+                                            PKparameter), 
+                       PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
+                       PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
+        )
+        names(MyObsPK) <- ObsNames$PKparameter
+        
+        # Having extra columns messes things up, so removing any extraneous
+        # things the user might have included.
+        
+        # Getting the names w/out "File"
+        NewObsNames <- names(MyObsPK)[names(MyObsPK) %in% 
+                                          c(AllPKParameters$PKparameter, 
+                                            paste0(AllPKParameters$PKparameter, "_CV"))]
+        MyObsPK <- as.data.frame(MyObsPK[, NewObsNames])
+        names(MyObsPK) <- NewObsNames
+        
+        # If user provided observed PK, then make sure those PK parameters are
+        # included in the PK to extract.
+        PKparameters <- unique(c(PKparameters, names(MyObsPK)))
+        
     }
     
     # At this point, we should have the sim_data_file. 
@@ -479,18 +533,29 @@ pksummary_table <- function(sim_data_file = NA,
         return(list())
     }
     
+    ## Determining which PK parameters to pull --------------------------------
     if(complete.cases(PKparameters[1])){
         # If user specified "_first" instead of "_dose1", make that work, too. 
         PKToPull <- sub("_first", "_dose1", PKparameters)
         
+        # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
+        PKToPull <- sub("tau_dose1", "t_dose1", PKToPull)
+        
+        # If the user supplied "XXX_ss", change that to "XXX_last".
+        PKToPull <- sub("_last", "_last", PKToPull)
+        
+        # If the user used AUCt_last instead of AUCtau_last, fix that for them.
+        PKToPull <- sub("AUCt_last", "AUCtau_last", PKToPull)
+        PKToPull <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKToPull)
+        
     } else {
         
         if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
-            if("data.frame" %in% class(observed_PK)){
+            if("data.frame" %in% class(MyObsPK)){
                 # If user supplies an observed file, then pull the parameters
                 # they want to match. If user specified "_first" instead of
                 # "_dose1", make that work, too.
-                PKToPull <- sub("_first", "_dose1", tolower(names(observed_PK)))
+                PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
                 
             } else {
                 # If the user didn't specify an observed file, didn't list
@@ -555,7 +620,7 @@ pksummary_table <- function(sim_data_file = NA,
         return(list())
     }
     
-    # Getting PK parameters. 
+    ## Getting PK parameters -------------------------------------------------
     suppressWarnings(
         MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                      PKparameters = PKToPull,
@@ -821,44 +886,7 @@ pksummary_table <- function(sim_data_file = NA,
     
     # observed data -----------------------------------------------------
     
-    if(any(c("data.frame", "numeric") %in% class(observed_PK))){
-        
-        if(class(observed_PK) == "numeric"){
-            MyObsPK <- as.data.frame(observed_PK)
-            names(MyObsPK) <- names(observed_PK)
-        } else {
-            MyObsPK <- observed_PK
-        }
-        
-        # Making obs PK names match correct PK parameters regardless of case
-        suppressMessages(
-            ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
-                mutate(PKparameter_lower = sub("_first", "_dose1",
-                                               tolower(OrigName)), 
-                       PKparameter_lower = sub("_ss", "_last", 
-                                               PKparameter_lower),
-                       PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
-                left_join(AllPKParameters %>% select(PKparameter) %>% 
-                              unique() %>% 
-                              mutate(PKparameter_lower = tolower(PKparameter))) %>% 
-                mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
-                                            paste0(PKparameter, "_CV"), 
-                                            PKparameter), 
-                       PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
-                       PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
-        )
-        names(MyObsPK) <- ObsNames$PKparameter
-        
-        # Having extra columns messes things up, so removing any extraneous
-        # things the user might have included.
-        
-        # Getting the names w/out "File"
-        NewObsNames <- names(MyObsPK)[names(MyObsPK) %in% 
-                                          c(AllPKParameters$PKparameter, 
-                                            paste0(AllPKParameters$PKparameter, "_CV"))]
-        MyObsPK <- as.data.frame(MyObsPK[, NewObsNames])
-        names(MyObsPK) <- NewObsNames
-        
+    if(exists("MyObsPK", inherits = FALSE)){
         # Making observed_PK that was supplied as a data.frame or file long
         # w/column for PKparameter.
         MyObsPK <- MyObsPK %>% 
@@ -925,7 +953,7 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     
-    # Putting everything together and formatting -------------------------
+    ## Putting everything together and formatting -------------------------
     
     # Formatting and selecting only rows where there are data
     MyPKResults <- MyPKResults %>%
