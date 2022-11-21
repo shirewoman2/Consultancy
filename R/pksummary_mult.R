@@ -84,6 +84,11 @@
 #'  percentile, e.g., "2400 to 2700". Please note that the current
 #'  SimcypConsultancy template lists one row for each of the upper and lower
 #'  values, so this should be set to FALSE for official reports.
+#' @param adjust_conc_units Would you like to adjust the units to something
+#'   other than what was used in the simulation? Default is NA to leave the
+#'   units as is, but if you set the concentration units to something else, this
+#'   will attempt to adjust the units to match that. This only adjusts AUC and
+#'   Cmax values at present and is very much under construction!
 #'@param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'  human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'  (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -141,6 +146,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            includePerc = FALSE, 
                            includeTrialMeans = FALSE, 
                            concatVariability = FALSE, 
+                           adjust_conc_units = NA, 
                            prettify_columns = TRUE, 
                            checkDataSource = TRUE, 
                            save_table = NA, 
@@ -224,6 +230,7 @@ pksummary_mult <- function(sim_data_files = NA,
                 includePerc = includePerc, 
                 includeTrialMeans = includeTrialMeans,
                 concatVariability = concatVariability,
+                adjust_conc_units = adjust_conc_units,
                 prettify_columns = prettify_columns, 
                 checkDataSource = checkDataSource,
                 prettify_compound_names = c("inhibitor" = "effector",
@@ -263,6 +270,7 @@ pksummary_mult <- function(sim_data_files = NA,
                                     includePerc = includePerc, 
                                     includeTrialMeans = includeTrialMeans,
                                     concatVariability = concatVariability,
+                                    adjust_conc_units = adjust_conc_units,
                                     prettify_columns = prettify_columns, 
                                     checkDataSource = checkDataSource,
                                     prettify_compound_names = c("inhibitor" = "effector",
