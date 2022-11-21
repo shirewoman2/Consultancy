@@ -551,7 +551,7 @@ pksummary_table <- function(sim_data_file = NA,
     } else {
         
         if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
-            if("data.frame" %in% class(MyObsPK)){
+            if("data.frame" %in% class(observed_PK)){
                 # If user supplies an observed file, then pull the parameters
                 # they want to match. If user specified "_first" instead of
                 # "_dose1", make that work, too.

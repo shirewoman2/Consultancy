@@ -281,7 +281,7 @@ the file.} }
 \examples{
 pksummary_table("abc1a-5mg-qd.xlsx")
 
-pksummary_table(report_input_file = "//certara.com/data/sites/SHF/Consult/abc-1a/Report input.xlsx",
+pksummary_table(report_input_file = "My report input - project abc-1a.xlsx",
          sheet_report = "study info - Clinical study 001A",
          includeTrialMeans = TRUE)
 
@@ -300,6 +300,7 @@ pksummary_table(sim_data_file = "My simulated data.xlsx",
                                 "Cmax_dose1_CV" = 0.24))
 
 # Or an Excel or csv file:
-pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx", observed_PK = MyObsPK)
+pksummary_table(sim_data_file = "mdz-5mg-sd.xlsx",
+                observed_PK = "mdz observed PK.csv")
 
 }
