@@ -84,31 +84,36 @@ formatTable_Simcyp <- function(DF,
         
         ShadeChange <- which(ShadeCol[1:(length(ShadeCol) - 1)] != 
                                  ShadeCol[2:nrow(DF)]) + 1
-        ShadeRows <- ShadeChange[seq(1, length(ShadeChange), by = 2)]
-        if(length(ShadeChange) > 1){
-            NoShadeRows <- ShadeChange[seq(2, length(ShadeChange), by = 2)]
+        if(length(ShadeChange) == 0){
+            DF$Shade <- FALSE
         } else {
-            NoShadeRows <- 1
+            ShadeRows <- ShadeChange[seq(1, length(ShadeChange), by = 2)]
+            if(length(ShadeChange) > 1){
+                NoShadeRows <- ShadeChange[seq(2, length(ShadeChange), by = 2)]
+            } else {
+                NoShadeRows <- 1
+            }
+            DF$Shade <- as.logical(NA)
+            DF$Shade[ShadeRows] <- TRUE
+            DF$Shade[NoShadeRows] <- FALSE
+            DF <- DF %>% fill(Shade, .direction = "down") %>% 
+                mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
         }
-        DF$Shade <- as.logical(NA)
-        DF$Shade[ShadeRows] <- TRUE
-        DF$Shade[NoShadeRows] <- FALSE
-        DF <- DF %>% fill(Shade, .direction = "down") %>% 
-            mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
+        
         ShadeRows <- which(DF$Shade)
         FT <- FT %>% 
             flextable::bg(i = ShadeRows, bg = "#F2F2F2")
     }
     
     # Dealing with subscripts
-    NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag"
+    NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag|Indmax|IndC50"
     
     ColNames <- data.frame(OrigName = names(DF)) %>% 
         mutate(Part1 = sapply(OrigName, 
                               FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][1]}), 
-               Part2 = sub("inf|tau|max|min|a|g|h|lag", "", str_trim(str_extract(OrigName, NamePattern))), 
+               Part2 = sub("inf|tau|max|min|a|g|h|lag|50", "", str_trim(str_extract(OrigName, NamePattern))), 
                Part2 = sub("AUCt", "AUC", Part2),
-               Subscript = sub(" AUC| C| t| f| k", "", str_extract(OrigName, NamePattern)), 
+               Subscript = sub(" AUC| C| t| f| k|Ind|IndC", "", str_extract(OrigName, NamePattern)), 
                Part3 = sapply(OrigName, 
                               FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][2]})) 
     
