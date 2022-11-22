@@ -10,6 +10,8 @@ inductFit(
   fold_change_column = FoldInduction,
   model = "IndmaxSlope",
   measurement = "mRNA",
+  enzyme = "CYP3A4",
+  drug = NA,
   donor_column = DonorID,
   fitByDonor = TRUE,
   weights = "1/y^2",
@@ -60,6 +62,15 @@ unquoted.}
 
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}
+
+\item{enzyme}{the enzyme involved. Default is "CYP3A4" but can be set to NA
+to leave as unspecified. This only affects the figure and table headings
+and captions in the Word document output.}
+
+\item{drug}{the drug used in the incubations. Default is NA to leave this
+unspecified, but supplying a value will include the drug name in the x-axis
+label on the graphs as well as the figure and table headings and captions
+in the Word document output.}
 
 \item{donor_column}{the name of the column within DF that contains the donor
 IDs, unquoted}

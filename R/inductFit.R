@@ -46,6 +46,13 @@
 #'
 #' @param measurement the type of measurement used. Options are "mRNA" or
 #'   "activity". This only affects the y axis labels on the output graph(s).
+#' @param enzyme the enzyme involved. Default is "CYP3A4" but can be set to NA
+#'   to leave as unspecified. This only affects the figure and table headings
+#'   and captions in the Word document output.
+#' @param drug the drug used in the incubations. Default is NA to leave this
+#'   unspecified, but supplying a value will include the drug name in the x-axis
+#'   label on the graphs as well as the figure and table headings and captions
+#'   in the Word document output.
 #' @param fitByDonor TRUE (default) or FALSE for whether to fit the data by
 #'   individual donor
 #' @param weights weighting scheme to use for the regression. User may supply a
@@ -91,7 +98,7 @@
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels. 
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param y_axis_limits optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 #'   If left as NA, the Y axis limits will be automatically selected. (Reminder:
 #'   Numeric data should not be in quotes.)
@@ -112,8 +119,7 @@
 #'   quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
 #'   file will save only the fitted parameters. However, if you would like a
 #'   Word file with a) the equations used, b) the fitted parameters, and c) the
-#'   graphs, end this file name with ".docx" instead. 
-#'
+#'   graphs, end this file name with ".docx" instead.
 #'
 #' @return Returns a list of \describe{ \item{Fit}{the fitted parameters}
 #'   \item{Fit_means}{the mean fitted parameters for all donors} \item{Graph}{a
@@ -153,6 +159,8 @@ inductFit <- function(DF,
                       fold_change_column = FoldInduction,
                       model = "IndmaxSlope",
                       measurement = "mRNA",
+                      enzyme = "CYP3A4", 
+                      drug = NA,
                       donor_column = DonorID,
                       fitByDonor = TRUE, 
                       weights = "1/y^2", 
@@ -664,7 +672,8 @@ inductFit <- function(DF,
                                 long = unit(3,"mm")) +
             scale_x_log10() +
             ggtitle(ModelTitle) +
-            xlab("Concentration (μM)") +
+            xlab(ifelse(complete.cases(drug), 
+                        paste(drug, "concentration (μM)"), "Concentration (μM)")) +
             ylab(Ylab) +
             theme_consultancy() +
             theme(panel.grid.minor.y = element_line(color = NA),
@@ -784,12 +793,6 @@ inductFit <- function(DF,
     
     # saving and formatting output ---------------------------------------------
     
-    if(complete.cases(num_sigfig)){
-        Out$Fit <- Out$Fit %>% 
-            mutate(across(.cols = any_of(c("Indmax", "IndC50", "slope")), 
-                          .fns = signif, digits = num_sigfig))
-    }
-    
     if(complete.cases(save_graph)){
         FileName <- save_graph
         if(str_detect(FileName, "\\.")){
@@ -878,6 +881,12 @@ inductFit <- function(DF,
             }
             write.csv(Out$Fit, FileName, row.names = F)
         }
+    }
+    
+    if(complete.cases(num_sigfig)){
+        Out$Fit <- Out$Fit %>% 
+            mutate(across(.cols = any_of(c("Indmax", "IndC50", "slope")), 
+                          .fns = signif, digits = num_sigfig))
     }
     
     return(Out)

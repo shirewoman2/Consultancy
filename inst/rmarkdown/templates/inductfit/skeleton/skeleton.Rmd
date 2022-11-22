@@ -15,28 +15,28 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 # Induction models available 
 
-Here are the equations for each of the four models the inductFit function can use:  
+Four induction models (Equations 1, 2, 3, and 4) were fit to the *in vitro* induction data. 
 
-**Ind~max~ model** 
+*Equation 1. Ind~max~ model* 
 
 $$ \text{fold induction} = \frac{Ind_{max} \times I}{IndC_{50} + I} $$
 
-**Ind~max~ slope model** 
+*Equation 2. Ind~max~ slope model* 
 
 $$ \text{fold induction} = 1 + Ind_{max} \times \frac{I^n}{IndC_{50}^n + I^n} $$
 
 
-**Slope model** 
+*Equation 3. Slope model* 
 
 $$ \text{fold induction} = I \times n $$
 
 
-**Sigmoidal three-parameter model (often used by Xenotech)** 
+*Equation 4. Sigmoidal three-parameter model* 
 
 $$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-[Ind]}{\gamma}}} $$
 
 
-```{r indfit1}
+```{r indFit_ind}
 
 model_label <- switch(model, 
                       "IndmaxSlope" = "Ind~max~ slope model", 
@@ -49,23 +49,53 @@ model_label <- switch(model,
 ```
 
 
-*Figure XXX. A graph of the `r model_label` fit to `r measurement` induction data*
+*Figure XXX. `r ifelse(model == "all", "Fits", "Fit")` of the `r model_label` to`r ifelse(is.na(enzyme), "", paste0(" ", enzyme))` `r measurement` fold-change data after incubations of human hepatocytes`r ifelse(complete.cases(drug), paste0(" with ", drug, "."), ".")`*
 
-
-```{r indfit2, fig.width = fig_width, fig.height = fig_height}
+```{r indFit_sum, fig.width = fig_width, fig.height = fig_height}
 
 Out$Graph
 
+FitsThatWorked <- unique(Out$Fit$model)
+FitsThatWorked <- paste(str_comma(FitsThatWorked), 
+                        ifelse(length(FitsThatWorked) == 1, "model", "models"))
+FitsThatWorked <- gsub("Indmax", "Ind~max~", FitsThatWorked)
+
 ```
 
-*Table XXX. Fitted parameters for the `r model_label` fit to `r measurement` induction data*
+
+*The models were fit to the `r ifelse(fitByDonor, "individual", "mean")` data, and lines represent successful fits; where fits failed to converge, no line is shown.*
+
+*Table XXX. Fitted parameters for the `r FitsThatWorked` for `r ifelse(is.na(enzyme), "", paste0(" ", enzyme))` `r measurement` fold-change data after incubations of human hepatocytes`r ifelse(complete.cases(drug), paste0(" with ", drug, "."), ".")`*
 
 ```{r indfit3}
 
-Out$Fit %>% formatTable_Simcyp()
+Fit_ind <- Out$Fit %>% 
+    rename(Model = model)
 
+suppressWarnings(
+    Fit_sum <- Fit_ind %>% group_by(Model) %>% 
+        summarize(across(.cols = everything(), .fns = mean, na.rm = T)) %>% 
+        mutate(DonorID = "mean")
+)
+
+AllFits <- bind_rows(Fit_ind, Fit_sum) %>% 
+    mutate(DonorID = as.factor(DonorID),
+           DonorID = forcats::fct_relevel(DonorID, "mean", after = Inf)) %>% 
+    arrange(Model, DonorID)
+
+if(complete.cases(num_sigfig)){
+        AllFits <- AllFits %>% 
+            mutate(across(.cols = any_of(c("Indmax", "IndC50", "slope")), 
+                          .fns = signif, digits = num_sigfig))
+}
+
+AllFits %>% 
+    formatTable_Simcyp(shading_column = Model) %>% 
+    flextable::bold(i = which(AllFits$DonorID == "mean")) %>% 
+    flextable::merge_v(j = 1) %>% 
+    flextable::hline_bottom(border = officer::fp_border(width = 0.5))
 
 ```
 
-
+*`r ifelse(FitsThatWorked == model_label, "", "Only fits that converged are shown in the table.")`*
 
