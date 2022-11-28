@@ -248,7 +248,6 @@ extractPK <- function(sim_data_file,
         # This will happen if user requests PKparameters = "AUC" but "AUC" tab
         # is not present but a tab for AUC0 *is*.
         PKparameters <- ParamAUC0
-        
     }
     
     # Allowing for flexibility in case. Get the lower-case version of whatever
@@ -257,7 +256,7 @@ extractPK <- function(sim_data_file,
     PKparameters <- AllPKParameters %>%
         mutate(PKparameter_lower = tolower(PKparameter)) %>% 
         filter(PKparameter_lower %in% tolower(PKparameters)) %>% 
-        pull(PKparameter)
+        pull(PKparameter) %>% unique()
     
     MissingPKParam <- setdiff(PKparameters, AllPKParameters$PKparameter)
     if(length(MissingPKParam) > 0){

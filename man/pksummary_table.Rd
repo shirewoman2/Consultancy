@@ -208,14 +208,12 @@ output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 see the notes at the bottom of this help file for how to supply observed data
 in a standardized fashion that this function can read.} \item{If you would
 like to make a single PK table for multiple files at once, please see the
-function \code{\link{pksummary_mult}}.} \item{Nearly all parameters are for
-the \emph{substrate}. We're still validating this for extracting PK for an
-effector. \strong{A request for assistance:} If you extract PK data for an
-effector by specifying an Excel sheet for that compound, please check the
-values and tell Laura Shireman how well it works!} \item{ If the simulator
-output Excel file lives on SharePoint, you'll need to close it or this
-function will just keep running and not generate any output while it waits
-for access to the file.}}
+function \code{\link{pksummary_mult}}.} \item{All parameters are for the
+\emph{substrate} unless you specify that you would like the PK parameters to
+be pulled from a specific tab in the Excel output file that is for some other
+compound.} \item{ If the simulator output Excel file lives on SharePoint,
+you'll need to close it or this function will just keep running and not
+generate any output while it waits for access to the file.}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up
