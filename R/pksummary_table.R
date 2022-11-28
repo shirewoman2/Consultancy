@@ -177,7 +177,9 @@
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
 #'   will attempt to adjust the units to match that. This only adjusts AUC and
-#'   Cmax values at present.
+#'   Cmax values at present and, if you're switching between mass per volume and
+#'   mole per volume units, it will assume you want to use the MW of the
+#'   substrate to do that.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -656,15 +658,22 @@ pksummary_table <- function(sim_data_file = NA,
             ]
             
             for(i in ColsToChange){
-                TEMP <- match_units(MyPKResults_all$aggregate %>% 
-                                        rename(Conc = i) %>% 
-                                        mutate(Conc_units = Deets$Units_Cmax, 
-                                               Time = 1, Time_units = "hours"),
-                                    goodunits = list("Conc_units" = adjust_conc_units, 
-                                                     "Time_units" = "hours"))
+                TEMP <- match_units(
+                    MyPKResults_all$aggregate %>% 
+                        rename(Conc = i) %>% 
+                        mutate(CompoundID = "substrate", # need a placeholder here. This will only work for substrate anyway.
+                               Conc_units = Deets$Units_Cmax, 
+                               Time = 1, Time_units = "hours"),
+                    goodunits = list("Conc_units" = adjust_conc_units, 
+                                     "Time_units" = "hours"), 
+                    MW = c("substrate" = Deets$MW_sub))
                 MyPKResults_all$aggregate[, i] <- TEMP$Conc
                 rm(TEMP)
             }
+            
+            # Need to change units in Deets now to match.
+            Deets$Units_AUC <- sub(Deets$Units_Cmax, adjust_conc_units, Deets$Units_AUC)
+            Deets$Units_Cmax <- adjust_conc_units
         }
     }
     

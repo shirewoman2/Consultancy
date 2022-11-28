@@ -145,7 +145,9 @@ values, so this should be set to FALSE for official reports.}
 other than what was used in the simulation? Default is NA to leave the
 units as is, but if you set the concentration units to something else, this
 will attempt to adjust the units to match that. This only adjusts AUC and
-Cmax values at present.}
+Cmax values at present and, if you're switching between mass per volume and
+mole per volume units, it will assume you want to use the MW of the
+substrate to do that.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
