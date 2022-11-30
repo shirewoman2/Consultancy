@@ -28,9 +28,9 @@ forest_plot(
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
 generated from running \code{\link{extractForestData}} on Simulator output
-files or a csv file with the same data. If this is a forest plot of
-perpetrator DDIs, the column "Substrate" will be what is used to label the
-y axis. If it is a forest plot of victim DDIs, it will be the column
+files or a csv or Excel file with the same data. If this is a forest plot
+of perpetrator DDIs, the column "Substrate" will be what is used to label
+the y axis. If it is a forest plot of victim DDIs, it will be the column
 "Inhibitor1". If, instead of the compound or inhibitor 1 names, you would
 like some other label to appear on the y axis, please see the argument
 \code{y_axis_labels}.}
@@ -214,11 +214,11 @@ forest_plot(forest_dataframe = ForestData,
             y_axis_column = File,
             y_axis_column_secondary = Dose_sub)
 
-# By default, the order of compounds will put inhibitors on top and 
+# By default, the order of compounds will put inhibitors on top and
 # inducers on the bottom, sorted by their AUC GMR. If you already liked
 # the order you had things in whatever you supplied for forest_dataframe,
-# you can tell the forest_plot function not to change that by setting 
-# y_order or y_order_secondary to "as is". 
+# you can tell the forest_plot function not to change that by setting
+# y_order or y_order_secondary to "as is".
 forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             y_axis_column = Dose_sub,

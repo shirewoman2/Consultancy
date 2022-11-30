@@ -12,9 +12,9 @@
 #'
 #' @param forest_dataframe a data.frame with extracted forest-plot data,
 #'   generated from running \code{\link{extractForestData}} on Simulator output
-#'   files or a csv file with the same data. If this is a forest plot of
-#'   perpetrator DDIs, the column "Substrate" will be what is used to label the
-#'   y axis. If it is a forest plot of victim DDIs, it will be the column
+#'   files or a csv or Excel file with the same data. If this is a forest plot
+#'   of perpetrator DDIs, the column "Substrate" will be what is used to label
+#'   the y axis. If it is a forest plot of victim DDIs, it will be the column
 #'   "Inhibitor1". If, instead of the compound or inhibitor 1 names, you would
 #'   like some other label to appear on the y axis, please see the argument
 #'   \code{y_axis_labels}.
@@ -60,7 +60,7 @@
 #'
 #'   \item{a character vector of the compounds of interest}{e.g., \code{y_order
 #'   = c("itraconazole", "efavirenz")} These must be spelled perfectly!}} Please
-#'   see the bottom of this help file for examples. 
+#'   see the bottom of this help file for examples.
 #' @param y_axis_column_secondary optionally break up the graphs along the y
 #'   axis by an additional column. For example, say your drug of interest is a
 #'   perpetrator and you've administered each of the substrates on different
@@ -171,17 +171,17 @@
 #'             y_axis_column = File,
 #'             y_axis_column_secondary = Dose_sub)
 #'
-#' # By default, the order of compounds will put inhibitors on top and 
+#' # By default, the order of compounds will put inhibitors on top and
 #' # inducers on the bottom, sorted by their AUC GMR. If you already liked
 #' # the order you had things in whatever you supplied for forest_dataframe,
-#' # you can tell the forest_plot function not to change that by setting 
-#' # y_order or y_order_secondary to "as is". 
+#' # you can tell the forest_plot function not to change that by setting
+#' # y_order or y_order_secondary to "as is".
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File,
 #'             y_order_secondary = "as is")
-#' 
+#'
 #' # Here's another way you could set the order in which the compounds appear:
 #' forest_plot(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
@@ -306,9 +306,15 @@ forest_plot <- function(forest_dataframe,
              call. = FALSE)
     }
     
-    if(class(forest_dataframe) == "character" && 
-       str_detect(forest_dataframe, "csv")){
-        forest_dataframe <- read.csv(forest_dataframe)
+    if(class(forest_dataframe) == "character"){
+        if(str_detect(forest_dataframe, "csv$")){
+            forest_dataframe <- read.csv(forest_dataframe)
+        } else if(str_detect(forest_dataframe, "xlsx$")){
+            forest_dataframe <- readxl::read_excel(forest_dataframe)
+        } else {
+            stop("It looks like you are supplying a file to be read for `forest_dataframe`, but we're not sure whether it's a csv or Excel file, so we can't read it. Please add the file extension to the file name and try again.", 
+                 call. = FALSE)
+        }
     }
     
     if(nrow(forest_dataframe) == 0){
@@ -456,6 +462,13 @@ forest_plot <- function(forest_dataframe,
                MyCompound = switch(as.character({{prettify_compound_names}}), 
                                    "TRUE" = prettify_compound_name(MyCompound_orig), 
                                    "FALSE" = MyCompound_orig))
+    
+    # Making sure that the data classes are correct
+    suppressWarnings(
+        forest_dataframe <- forest_dataframe %>% 
+            mutate(across(.cols = matches("^AUC.*ratio|^Cmax.*ratio|Dose_sub"), 
+                          .fns = as.numeric))
+    )
     
     # Reshaping the data to make the data.frame long format instead of wide.
     forest_dataframe <- forest_dataframe %>% 
