@@ -320,17 +320,20 @@ extractExpDetails <- function(sim_data_file,
         # a single dose. That messes up, e.g., extractPK b/c it looks on the
         # wrong tab for the info it needs. When that happens, set the regimen to
         # "Single Dose".
-        if(Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
+        if(complete.cases(Out$Regimen_sub) &
+           Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
             Out$Regimen_sub <- "Single Dose"
         }
         
         if(complete.cases(Out$Inhibitor1)){
-            if(Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
+            if(complete.cases(Out$Regimen_inhib) & 
+               Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
                 Out$Regimen_inhib <- "Single Dose" 
             }
         }
         if(complete.cases(Out$Inhibitor2)){
-            if(Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
+            if(complete.cases(Out$Regimen_inhib2) & 
+               Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
                 Out$Regimen_inhib2 <- "Single Dose" 
             }
         }
@@ -933,16 +936,22 @@ extractExpDetails <- function(sim_data_file,
         # a single dose. That messes up, e.g., extractPK b/c it looks on the
         # wrong tab for the info it needs. When that happens, set the regimen to
         # "Single Dose".
-        if(Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
+        if(complete.cases(Out$Regimen_sub) &
+           Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
             Out$Regimen_sub <- "Single Dose"
         }
-        if(length(Out$Inhibitor1) > 0 && 
-           Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
-            Out$Regimen_inhib <- "Single Dose"
+        
+        if(complete.cases(Out$Inhibitor1)){
+            if(complete.cases(Out$Regimen_inhib) & 
+               Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
+                Out$Regimen_inhib <- "Single Dose" 
+            }
         }
-        if(length(Out$Inhibitor2) > 0 && 
-           Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
-            Out$Regimen_inhib2 <- "Single Dose"
+        if(complete.cases(Out$Inhibitor2)){
+            if(complete.cases(Out$Regimen_inhib2) & 
+               Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
+                Out$Regimen_inhib2 <- "Single Dose" 
+            }
         }
         
     }
