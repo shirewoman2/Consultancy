@@ -314,6 +314,29 @@ extractExpDetails <- function(sim_data_file,
            is.na(Out$SecondaryMetabolite) & any(str_detect(names(Out), "secmet$"))){
             Out <- Out[-which(str_detect(names(Out), "_secmet$"))]
         }
+        
+        # Fixing an issue that trips up other code down the line: Sometimes, the
+        # user might specify a "multiple dose" regimen but then only administer
+        # a single dose. That messes up, e.g., extractPK b/c it looks on the
+        # wrong tab for the info it needs. When that happens, set the regimen to
+        # "Single Dose".
+        if(complete.cases(Out$Regimen_sub) &
+           Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
+            Out$Regimen_sub <- "Single Dose"
+        }
+        
+        if(complete.cases(Out$Inhibitor1)){
+            if(complete.cases(Out$Regimen_inhib) & 
+               Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
+                Out$Regimen_inhib <- "Single Dose" 
+            }
+        }
+        if(complete.cases(Out$Inhibitor2)){
+            if(complete.cases(Out$Regimen_inhib2) & 
+               Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
+                Out$Regimen_inhib2 <- "Single Dose" 
+            }
+        }
     }
     
     # Pulling details from the Input Sheet tab ------------------------------
@@ -907,6 +930,30 @@ extractExpDetails <- function(sim_data_file,
                 }
             }
         }
+        
+        # Fixing an issue that trips up other code down the line: Sometimes, the
+        # user might specify a "multiple dose" regimen but then only administer
+        # a single dose. That messes up, e.g., extractPK b/c it looks on the
+        # wrong tab for the info it needs. When that happens, set the regimen to
+        # "Single Dose".
+        if(complete.cases(Out$Regimen_sub) &
+           Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
+            Out$Regimen_sub <- "Single Dose"
+        }
+        
+        if(complete.cases(Out$Inhibitor1)){
+            if(complete.cases(Out$Regimen_inhib) & 
+               Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
+                Out$Regimen_inhib <- "Single Dose" 
+            }
+        }
+        if(complete.cases(Out$Inhibitor2)){
+            if(complete.cases(Out$Regimen_inhib2) & 
+               Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
+                Out$Regimen_inhib2 <- "Single Dose" 
+            }
+        }
+        
     }
     
     # Dealing with custom dosing schedules ---------------------------------
