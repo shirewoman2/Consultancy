@@ -306,7 +306,7 @@ forest_plot <- function(forest_dataframe,
              call. = FALSE)
     }
     
-    if(class(forest_dataframe) == "character"){
+    if("character" %in% class(forest_dataframe)){
         if(str_detect(forest_dataframe, "csv$")){
             forest_dataframe <- read.csv(forest_dataframe)
         } else if(str_detect(forest_dataframe, "xlsx$")){
