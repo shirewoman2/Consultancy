@@ -177,14 +177,13 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         PKdenominator <- PKparameters
     }
     
-    
     PK1 <- extractPK(sim_data_file = sim_data_file_numerator, 
                      PKparameters = PKnumerator, 
                      sheet = sheet_PKparameters_num,
                      tissue = tissue,
                      returnAggregateOrIndiv = ifelse(paired, 
                                                      "individual", "both"),
-                     returnExpDetails = TRUE)
+                     returnExpDetails = TRUE) 
     # RETURN TO THIS LATER. For now, I'm just getting the experimental details
     # for file 1. Later, we could add code to check and compare them for file 2
     # to make absolutely sure they match.
@@ -195,6 +194,18 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                      tissue = tissue,
                      returnAggregateOrIndiv = ifelse(paired, 
                                                      "individual", "both"))
+    
+    # If user specified the sheet, then they're likely to get both AUCt and
+    # AUCtau as well as CLt and CLtau b/c extractPK doesn't know what dose
+    # number this is for b/c that's not included in the Excel output. When that
+    # happens, we don't want to have BOTH show up in the results b/c they'll be
+    # duplicates. Remove the AUCt and CLt columns from both sets of PK results
+    # and just keep AUCtau and CLtau. User will be able to figure out what it
+    # should be called and change that column name if they want.
+    if(all(c("AUCt", "AUCtau") %in% names(PK1$individual))){
+        PK1$individual <- PK1$individual %>% select(-AUCt, -CLt)
+        PK2$individual <- PK2$individual %>% select(-AUCt, -CLt)
+    }
     
     if(paired){
         # We need PKnumerator and PKdenominator to be the individual, coded PK
@@ -210,8 +221,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         
         # Because we need to match parameters when joining, renaming PK
         # parameters in PK2 to match the names in PK1 even though they're not
-        # *really* the same PK parameters. We'll deal with that difference
-        # later.
+        # *really* the same PK parameters necessarily. We'll deal with that
+        # difference later.
         names(PK2$individual) <- names(PK1$individual)
         
         suppressMessages(
@@ -361,13 +372,32 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     if(all(PKnumerator == PKdenominator)){
         
         if(prettify_columns){
-            suppressMessages(
-                PrettyCol <- data.frame(PKparameter = names(MyPKResults)[
-                    !names(MyPKResults) == "Statistic"]) %>% 
+            if(any(str_detect(names(MyPKResults), "_dose1|_last"))){
+                # this is the usual situation where we know which dose the PK
+                # parameters describe
+                suppressMessages(
+                    PrettyCol <- data.frame(PKparameter = names(MyPKResults)[
+                        !names(MyPKResults) == "Statistic"]) %>% 
                     left_join(AllPKParameters %>% 
-                                  select(PKparameter, PrettifiedNames)) %>% 
+                              select(PKparameter, PrettifiedNames)) %>% 
                     unique()
-            )
+                )
+            } else {
+                # this is when we don't know what dose it was, e.g., a
+                # user-defined tab was used to get the results
+                suppressMessages(
+                    PrettyCol <- data.frame(PKparameter = names(MyPKResults)[
+                        !names(MyPKResults) == "Statistic"]) %>% 
+                        left_join(AllPKParameters %>% 
+                                      select(PKparameter, PrettifiedNames) %>% 
+                                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                                             PrettifiedNames = sub("Dose 1 |Last dose ", "", PrettifiedNames)) %>% 
+                                      unique()) %>% 
+                        unique()
+                )
+                
+            }
+            
             
             if(any(duplicated(PrettyCol$PrettifiedNames))){
                 # This happens when CLt and CLinf are included.
