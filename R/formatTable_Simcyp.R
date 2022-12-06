@@ -106,27 +106,38 @@ formatTable_Simcyp <- function(DF,
     }
     
     # Dealing with subscripts
-    NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag|Indmax|IndC50"
+    ColNames <- names(DF)
+    ColNames <- sub("AUCt ", "AUC~t~ ", ColNames)
+    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
+    ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
+    ColNames <- sub("Cmax", "C~max~", ColNames)
+    ColNames <- sub("Cmin", "C~min~", ColNames)
+    ColNames <- sub("tmax", "t~max~", ColNames)
+    ColNames <- sub("tlag", "t~lag~", ColNames)
+    ColNames <- sub(" ka ", " k~a~ ", ColNames)
+    ColNames <- sub("^ka ", "k~a~ ", ColNames)
+    ColNames <- sub(" fa ", " f~a~ ", ColNames)
+    ColNames <- sub("^fa ", "f~a~ ", ColNames)
+    ColNames <- sub(" fh ", " f~h~ ", ColNames)
+    ColNames <- sub("^fh ", "f~h~ ", ColNames)
+    ColNames <- sub(" fg ", " f~g~ ", ColNames)
+    ColNames <- sub("^fg ", "f~g~ ", ColNames)
+    ColNames <- sub("Indmax", "Ind~max~", ColNames)
+    ColNames <- sub("Emax", "E~max~", ColNames)
+    ColNames <- sub("IndC50", "IndC~50~", ColNames)
+    ColNames <- sub("EC50", "EC~50~", ColNames)
     
-    ColNames <- data.frame(OrigName = names(DF)) %>% 
-        mutate(Part1 = sapply(OrigName, 
-                              FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][1]}), 
-               Part2 = sub("inf|tau|max|min|a|g|h|lag|50", "", str_trim(str_extract(OrigName, NamePattern))), 
-               Part2 = sub("AUCt", "AUC", Part2),
-               Subscript = sub(" AUC| C| t| f| k|Ind|IndC", "", str_extract(OrigName, NamePattern)), 
-               Part3 = sapply(OrigName, 
-                              FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][2]})) 
+    ColNames <- str_split(ColNames, pattern = "~", simplify = T)
     
-    for(i in 1:nrow(ColNames)){
-        
-        if(complete.cases(ColNames$Subscript[i])){
+    if(ncol(ColNames) == 3){
+        for(i in which(ColNames[,2] != "")){
             FT <- FT %>% 
                 flextable::compose(part = "header",
-                                   j = which(names(DF) == ColNames$OrigName[i]),
-                                   value = flextable::as_paragraph(ColNames$Part1[i], " ",
-                                                                   ColNames$Part2[i],
-                                                                   flextable::as_sub(ColNames$Subscript[i]), 
-                                                                   ColNames$Part3[i]))
+                                   j = i,
+                                   value = flextable::as_paragraph(
+                                       ColNames[i, 1],
+                                       flextable::as_sub(ColNames[i, 2]), 
+                                       ColNames[i, 3]))
         }
     }
     
