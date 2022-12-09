@@ -25,9 +25,9 @@ where I is the concentration of the inducer, E~max~ is the maximum change in fol
 
 *Equation 2. E~max~ slope model* 
 
-$$ \text{fold induction} = 1 + E_{max} \times \frac{I^\gamma}{EC_{50}^\gamma + I^\gamma} $$
+$$ \text{fold induction} = 1 + E_{max} \times \frac{I^n}{EC_{50}^n + I^n} $$
 
-where I is the concentration of the inducer, E~max~ is the maximum change in fold induction, EC~50~ is the concentration of the inducer that elicits half the maximum fold-change in induction, and gamma is the Hill equation coefficient describing the slope (E~max~ slope model). 
+where I is the concentration of the inducer, E~max~ is the maximum change in fold induction, EC~50~ is the concentration of the inducer that elicits half the maximum fold-change in induction, and n is the Hill equation coefficient describing the slope. 
 
 *Equation 3. Slope model* 
 
@@ -37,9 +37,9 @@ where I is the concentration of the inducer and n is the slope.
 
 *Equation 4. Sigmoidal three-parameter model* 
 
-$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-I}{\gamma}}} $$
+$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-I}{n}}} $$
 
-where I is the concentration of the inducer, Ind~max~ is the maximum fold induction, IndC~50~ is the concentration of the inducer that elicits half the maximum fold induction, and gamma is the Hill equation coefficient describing the slope. 
+where I is the concentration of the inducer, Ind~max~ is the maximum fold induction, IndC~50~ is the concentration of the inducer that elicits half the maximum fold induction, and n is the Hill equation coefficient describing the slope. 
 
 
 
@@ -50,7 +50,7 @@ model_label <- switch(model,
                       "slope" = "slope model", 
                       "Sig3Param" = "sigmoidal three-parameter model", 
                       "Emax" = "E~max~ model", 
-                      "all" = "E~max~, E~max~ slope, slope, and sigmoidal three-parameter models")
+                      "all" = "E~max~, E~max~ slope, sigmoidal three-parameter, and slope models")
 
 
 ```
@@ -105,6 +105,12 @@ if(model == "all" & fitByDonor){
     AllFits <- Out$Fit
 }
 
+# Making "model" look nice for the table
+AllFits <- AllFits %>% 
+    mutate(Model = case_when(Model == "Emax" ~ "Emax", 
+                             Model == "EmaxSlope" ~ "Emax slope", 
+                             Model == "Sig3Param" ~ "sigmoidal 3-parameter", 
+                             Model == "slope" ~ "slope"))
 
 if(complete.cases(num_sigfig)){
     AllFits <- AllFits %>% 

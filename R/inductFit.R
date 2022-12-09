@@ -7,14 +7,14 @@
 #' can change that with the "weights" argument. \strong{Two important notes:}
 #' \itemize{\item{With the exception of the sigmoidal 3-parameter model, the
 #' fitted parameter describing maximal induction is Emax and \emph{not} Indmax,
-#' the parameter used in the Simcyp Simulator. Indmax = Emax + 1} \item{One way
-#' in which this function differs from Howie's script is that no upper or lower
-#' bounds for parameter estimates are in use. This means that, if sufficient
-#' data to describe the curve do not exist, the function will fail to deliver
-#' any fitted parameters, which is meant to be a benefit but could be an
-#' annoyance depending on your perspective. Because this does not include those
-#' boundaries, you may get different results between this function and Howie's
-#' script.}}
+#' the parameter used in the Simcyp Simulator. Note that \strong{Indmax = Emax +
+#' 1}.} \item{One way in which this function differs from Howie's script is that
+#' no upper or lower bounds for parameter estimates are in use. This means that,
+#' if sufficient data to describe the curve do not exist, the function will fail
+#' to deliver any fitted parameters, which is meant to be a benefit but could be
+#' an annoyance depending on your perspective. Because this does not include
+#' those boundaries, you may get different results between this function and
+#' Howie's script.}}
 #'
 #' @param DF the data.frame containing induction data with a column for the drug
 #'   concentration, a column for the fold induction observed, and, if you want
@@ -44,8 +44,8 @@
 #'
 #'   \item{"Sig3Param"}{Sigmoidal 3-parameter model (often used by Xenotech):
 #'   \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))} SPECIAL NOTE:
-#'   The sigmoidal 3-parameter model is the \emph{only} model that fits the data
-#'   to determine Indmax instead of Emax!}
+#'   The sigmoidal 3-parameter model is the \emph{only} model that determines
+#'   Indmax instead of Emax!}
 #'
 #'   \item{"all"}{All 4 models will be fitted to the data.} }
 #'
