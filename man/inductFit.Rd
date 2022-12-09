@@ -2,19 +2,20 @@
 % Please edit documentation in R/inductFit.R
 \name{inductFit}
 \alias{inductFit}
-\title{Fit induction data to calculate IndC50, Indmax, and/or slope}
+\title{Fit induction data to calculate EC50, Emax, and/or slope}
 \usage{
 inductFit(
   DF,
   conc_column = Concentration_uM,
   fold_change_column = FoldInduction,
-  model = "IndmaxSlope",
+  model = "EmaxSlope",
   measurement = "mRNA",
   enzyme = "CYP3A4",
   drug = NA,
   donor_column = DonorID,
   fitByDonor = TRUE,
   weights = "1/y^2",
+  omit = NA,
   color_set = "default",
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
@@ -43,20 +44,22 @@ unquoted.}
 \item{model}{which model(s) you would like to use. The four model options
   are: \describe{
 
-  \item{"Indmax"}{the Indmax model. This assumes a hyperbolic shape to the
+  \item{"Emax"}{the Emax model. This assumes a hyperbolic shape to the
   interaction when inducer concentration is plotted on the x axis and fold
-  induction is plotted on the y. \deqn{Ind = (Indmax * I)/(IndC50 + I)} where
-  Ind = the y axis observed fold induction, I is the inducer concentration,
-  and Indmax (the maximum induction), and IndC50 (the inducer concentration
-  at 1/2 Indmax) are the fitted parameters.}
+  induction is plotted on the y. \deqn{fold induction = 1 + (Emax * I)/(EC50
+  + I)} where I is the inducer concentration, and Emax (the maximum
+  induction), and EC50 (the inducer concentration at 1/2 Emax) are the fitted
+  parameters.}
 
-  \item{"IndmaxSlope"}{the Indmax model with the addition of a slope n
-  \deqn{fold induction = 1 + Indmax * I^n / (IndC50^n + I^n)}}
+  \item{"EmaxSlope"}{the Emax model with the addition of a slope n \deqn{fold
+  induction = 1 + Emax * I^n / (EC50^n + I^n)}}
 
-  \item{"slope"}{slope only: \deqn{fold induction = I * n}}
+  \item{"slope"}{slope only: \deqn{fold induction = 1 + I * n}}
 
   \item{"Sig3Param"}{Sigmoidal 3-parameter model (often used by Xenotech):
-  \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))}}
+  \deqn{fold induction = Indmax / (1 + exp( -(I - IndC50)/n ))} SPECIAL NOTE:
+  The sigmoidal 3-parameter model is the \emph{only} model that fits the data
+  to determine Indmax instead of Emax!}
 
   \item{"all"}{All 4 models will be fitted to the data.} }}
 
@@ -82,6 +85,13 @@ individual donor}
 numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
 "1/y" or "1/y^2" (default). Be careful that you don't have any infinite
 values or this will fail!}
+
+\item{omit}{An index of which, if any, samples to omit from regression(s).
+These samples will be depicted as open circles in the graph but will not be
+included in the regression. An example of acceptable input where, say, you
+want to omit samples where the concentration was greater than 100 uM but
+still want to see those points on the graph(s): \code{omit =
+which(DF$Concentration > 100)}}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -163,28 +173,31 @@ Returns a list of \describe{ \item{Fit}{the fitted parameters}
 }
 \description{
 \code{inductFit} fits induction data -- either activity or mRNA expression --
-to one or all of four models for calculating Ind_max, Ind50, and, when
+to one or all of four models for calculating Emax, EC50, and, when
 appropriate, a slope. Like Howie's R script for fitting induction data
 ("Induction_fit_script_ver2.r"), default weighting is by 1/y^2, although you
-can change that with the "weights" argument. IMPORTANT: One way in which this
-function differs from Howie's script is that no upper or lower bounds for
-parameter estimates are in use. This means that, if sufficient data to
-describe the curve do not exist, the function will fail to deliver any fitted
-parameters, which is meant to be a benefit but could be an annoyance
-depending on your perspective. Because this does not include those
+can change that with the "weights" argument. \strong{Two important notes:}
+\itemize{\item{With the exception of the sigmoidal 3-parameter model, the
+fitted parameter describing maximal induction is Emax and \emph{not} Indmax,
+the parameter used in the Simcyp Simulator. Indmax = Emax + 1} \item{One way
+in which this function differs from Howie's script is that no upper or lower
+bounds for parameter estimates are in use. This means that, if sufficient
+data to describe the curve do not exist, the function will fail to deliver
+any fitted parameters, which is meant to be a benefit but could be an
+annoyance depending on your perspective. Because this does not include those
 boundaries, you may get different results between this function and Howie's
-script.
+script.}}
 }
 \examples{
 data(IndData)
 
-inductFit(IndData, model = "Indmax")$Graph
+inductFit(IndData, model = "Emax")$Graph
 inductFit(IndData \%>\% rename(Conc_uM = Concentration_uM),
-          conc_column = Conc_uM, model = "IndmaxSlope")$Graph
+          conc_column = Conc_uM, model = "EmaxSlope")$Graph
 inductFit(IndData, model = "slope")$Graph
 inductFit(IndData, model = "Sig3Param")
 
-inductFit(IndData, model = "IndmaxSlope", measurement = "activity")
+inductFit(IndData, model = "EmaxSlope", measurement = "activity")
 
 MyFit <- inductFit(IndData, model = "all")
 MyFit$Graph; MyFit$Fit

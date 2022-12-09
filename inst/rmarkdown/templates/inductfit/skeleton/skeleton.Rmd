@@ -17,33 +17,40 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 Four induction models (Equations 1, 2, 3, and 4) were fit to the *in vitro* induction data. 
 
-*Equation 1. Ind~max~ model* 
+*Equation 1. E~max~ model* 
 
-$$ \text{fold induction} = \frac{Ind_{max} \times I}{IndC_{50} + I} $$
+$$ \text{fold induction} = 1 + \frac{E_{max} \times I}{EC_{50} + I} $$ 
 
-*Equation 2. Ind~max~ slope model* 
+where I is the concentration of the inducer, E~max~ is the maximum change in fold induction, and EC~50~ is the concentration of the inducer that elicits half the maximum fold-change in induction. 
 
-$$ \text{fold induction} = 1 + Ind_{max} \times \frac{I^n}{IndC_{50}^n + I^n} $$
+*Equation 2. E~max~ slope model* 
 
+$$ \text{fold induction} = 1 + E_{max} \times \frac{I^\gamma}{EC_{50}^\gamma + I^\gamma} $$
+
+where I is the concentration of the inducer, E~max~ is the maximum change in fold induction, EC~50~ is the concentration of the inducer that elicits half the maximum fold-change in induction, and gamma is the Hill equation coefficient describing the slope (E~max~ slope model). 
 
 *Equation 3. Slope model* 
 
-$$ \text{fold induction} = I \times n $$
+$$ \text{fold induction} = 1 + I \times n $$
 
+where I is the concentration of the inducer and n is the slope. 
 
 *Equation 4. Sigmoidal three-parameter model* 
 
-$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-[Ind]}{\gamma}}} $$
+$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-I}{\gamma}}} $$
+
+where I is the concentration of the inducer, Ind~max~ is the maximum fold induction, IndC~50~ is the concentration of the inducer that elicits half the maximum fold induction, and gamma is the Hill equation coefficient describing the slope. 
+
 
 
 ```{r indFit_ind}
 
 model_label <- switch(model, 
-                      "IndmaxSlope" = "Ind~max~ slope model", 
+                      "EmaxSlope" = "E~max~ slope model", 
                       "slope" = "slope model", 
                       "Sig3Param" = "sigmoidal three-parameter model", 
-                      "Indmax" = "Ind~max~ model", 
-                      "all" = "Ind~max~, Ind~max~ slope, slope, and sigmoidal three-parameter models")
+                      "Emax" = "E~max~ model", 
+                      "all" = "E~max~, E~max~ slope, slope, and sigmoidal three-parameter models")
 
 
 ```
@@ -61,10 +68,10 @@ if(model == "all"){
     FitsThatWorked <- model
 }
 
-GoodMod <-  c("IndmaxSlope" = "Ind~max~ slope", 
+GoodMod <-  c("EmaxSlope" = "E~max~ slope", 
               "slope" = "slope", 
               "Sig3Param" = "sigmoidal three-parameter", 
-              "Indmax" = "Ind~max~")
+              "Emax" = "E~max~")
 FitsThatWorked <- GoodMod[FitsThatWorked]
 FitsThatWorked <- paste(str_comma(FitsThatWorked), 
                         ifelse(length(FitsThatWorked) == 1, "model", "models"))
@@ -101,9 +108,11 @@ if(model == "all" & fitByDonor){
 
 if(complete.cases(num_sigfig)){
     AllFits <- AllFits %>% 
-        mutate(across(.cols = any_of(c("Indmax", "IndC50", "slope")), 
+        mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")), 
                       .fns = signif, digits = num_sigfig))
 }
+
+MeanRows <- which(AllFits$DonorID == "mean")
 
 if(model == "all"){
     AllFits <- AllFits %>% 
@@ -114,7 +123,7 @@ if(model == "all"){
 }
 
 AllFits %>% 
-    flextable::bold(i = which(AllFits$DonorID == "mean")) %>% 
+    flextable::bold(i = MeanRows) %>% 
     flextable::merge_v(j = 1) %>% 
     flextable::hline_bottom(border = officer::fp_border(width = 0.5))
 
