@@ -392,7 +392,7 @@ ct_plot <- function(ct_dataframe = NA,
     # Checking whether user tried to include obs data directly from simulator
     # output for a simulation that included anything other than substrate in
     # plasma.
-    if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
+    if(EnzPlot == FALSE && any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
         return(
             ggplot(data.frame(Problem = 1, DataFail = 1), 
                    aes(y = Problem, x = DataFail)) +
