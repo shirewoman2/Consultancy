@@ -119,6 +119,7 @@ extractEnzAbund <- function(sim_data_file,
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
+<<<<<<< HEAD
     if(Deets$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
@@ -126,6 +127,8 @@ extractEnzAbund <- function(sim_data_file,
                 call. = FALSE)
     }
     
+=======
+>>>>>>> master
     # Figuring out which sheet to extract and dealing with case since that
     # apparently changes between Simulator versions.
     AllSheets <- readxl::excel_sheets(sim_data_file)
@@ -145,9 +148,15 @@ extractEnzAbund <- function(sim_data_file,
                                                  "liver" = "(liver)",
                                                  "gut" = "(gut)",
                                                  "kidney" = "(kidney)")), 
+<<<<<<< HEAD
                     "`` and could not find it, so these data cannot be returned."), 
              call. = FALSE)
         return(data.frame())
+=======
+                    "`` and could not find it. Please check your simulator output and try again."), 
+             call. = FALSE)
+        return(list())
+>>>>>>> master
     }
     
     # Reading in simulated abundance-time profile data

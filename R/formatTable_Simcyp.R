@@ -84,6 +84,7 @@ formatTable_Simcyp <- function(DF,
         
         ShadeChange <- which(ShadeCol[1:(length(ShadeCol) - 1)] != 
                                  ShadeCol[2:nrow(DF)]) + 1
+<<<<<<< HEAD
         if(length(ShadeChange) == 0){
             DF$Shade <- FALSE
         } else {
@@ -100,6 +101,19 @@ formatTable_Simcyp <- function(DF,
                 mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
         }
         
+=======
+        ShadeRows <- ShadeChange[seq(1, length(ShadeChange), by = 2)]
+        if(length(ShadeChange) > 1){
+            NoShadeRows <- ShadeChange[seq(2, length(ShadeChange), by = 2)]
+        } else {
+            NoShadeRows <- 1
+        }
+        DF$Shade <- as.logical(NA)
+        DF$Shade[ShadeRows] <- TRUE
+        DF$Shade[NoShadeRows] <- FALSE
+        DF <- DF %>% fill(Shade, .direction = "down") %>% 
+            mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
+>>>>>>> master
         ShadeRows <- which(DF$Shade)
         FT <- FT %>% 
             flextable::bg(i = ShadeRows, bg = "#F2F2F2")

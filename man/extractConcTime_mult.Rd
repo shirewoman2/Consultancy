@@ -162,12 +162,21 @@ Returns a large data.frame with multiple sets of concentration-time
 from multiple Simcyp Simulator output files. If you list multiple files,
 multiple tissues, and/or multiple compounds to extract (see options below),
 this will extract \emph{all} possible variations of them. For example, if you
+<<<<<<< HEAD
 ask for data from the files "sim1.xlsx" and "sim2.xlsx" and then also ask for
 "substrate" and "primary metabolite 1", you will get the substrate and
 primary metabolite 1 data from \emph{both} files. \strong{NOTE:} If ANY of
 the Excel files you wish to extract data from are saved on SharePoint and are
 open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
 Be sure to close all of the source Excel files.
+=======
+ask for "sim1.xlsx" and "sim2.xlsx" and then also ask for "substrate" and
+"primary metabolite 1", you will get the substrate and primary metabolite 1
+data from \emph{both} files. \strong{NOTE:} If ANY of the Excel files you
+wish to extract data from are saved on SharePoint and are open, this WILL
+CRASH and WILL NOT save whatever progress it has made so far. Be sure to
+close all of the source Excel files.
+>>>>>>> master
 }
 \details{
 \strong{Regarding dose intervals for observed data:} The observed data files

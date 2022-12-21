@@ -51,6 +51,7 @@ or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 dissolution".}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
+<<<<<<< HEAD
 concentration-time data? Options are: \itemize{\item{"substrate"
 (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
 \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
@@ -67,6 +68,16 @@ as primary metabolite 1 in Simulator output files.}} \strong{Note:} If your
 compound is a therapeutic protein or ADC, we haven't tested this very
 thoroughly, so please be extra careful to check that you're getting the
 correct data.}
+=======
+concentration-time data? Options are "substrate" (default), "primary
+metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
+1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
+labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
+inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
+primary metabolite of inhibitor 1. \strong{Note:} If your compound is a
+therapeutic protein, we haven't tested this very thoroughly, so please be
+extra careful to check that you're getting the correct data.}
+>>>>>>> master
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are "aggregate", "individual", or "both"

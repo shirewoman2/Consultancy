@@ -31,7 +31,10 @@ export(extractForestData)
 export(extractObsConcTime)
 export(extractPK)
 export(findXLChanges)
+<<<<<<< HEAD
 export(fm_treemap)
+=======
+>>>>>>> master
 export(forest_plot)
 export(formatTable_Simcyp)
 export(formatXL)

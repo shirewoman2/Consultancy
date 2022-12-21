@@ -1,7 +1,11 @@
 Package: SimcypConsultancy
 Type: Package
 Title: Useful and standardized tools for using R within the Simcyp Consultancy Team
+<<<<<<< HEAD
 Version: 1.17.17
+=======
+Version: 1.17.11
+>>>>>>> master
 Author: Laura Sh., Mackenzie, Howie, Christiane, Alenka, Ludwig, Magali, Laura Sa.
 Maintainer: The package maintainer <laura.shireman@certara.com>
 Description: This package is meant to be a collection of useful and standardized

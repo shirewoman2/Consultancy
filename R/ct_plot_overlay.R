@@ -441,6 +441,7 @@ ct_plot_overlay <- function(ct_dataframe,
     # Checking for more than one tissue or ADAM data type b/c there's only one y
     # axis and it should have only one concentration type.
     if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
+<<<<<<< HEAD
         stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
 ", deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
              call. = FALSE)
@@ -452,10 +453,17 @@ ct_plot_overlay <- function(ct_dataframe,
 call. = FALSE)
     }
     
+=======
+        stop("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit.",
+             call. = FALSE)
+    }
+    
+>>>>>>> master
     if(length(obs_color) > 1){
         warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
                 call. = FALSE)
         obs_color <- obs_color[1]
+<<<<<<< HEAD
     }
     
     # Cleaning up figure_type for the whole rest of the function
@@ -557,6 +565,104 @@ call. = FALSE)
         }
     }
     
+=======
+    }
+    
+    # Cleaning up figure_type for the whole rest of the function
+    if(str_detect(figure_type, "percentile") & !str_detect(figure_type, "ribbon")){
+        figure_type <- "percentiles"
+    } else if(str_detect(figure_type, "ribbon")){
+        figure_type <- "percentile ribbon"
+    }
+    
+    # Checking for acceptable input
+    if(figure_type %in% c("means only", "percentiles", "percentile ribbon") == FALSE){
+        warning(paste0("The value used for `figure_type` was `", 
+                       figure_type,
+                       "`, but only the only acceptable options are `means only`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used."),
+                call. = FALSE)
+        figure_type <- "means only"
+    }
+    
+    if(class(prettify_compound_names) != "logical" && 
+       any(tolower(names(prettify_compound_names)) %in% 
+           c("substrate", "inhibitor", "inhibitor 1", "primary metabolite 1", 
+             "primary metabolite 2", "secondary metabolite", "inhibitor 2", 
+             "inhibitor 1 metabolite"))){
+        warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_effector_names` to TRUE but will not be able to use the specific names you provided.",
+                call. = FALSE)
+        prettify_compound_names <- TRUE
+    }
+    
+    # Checking whether user tried to include obs data directly from simulator
+    # output for a simulation that included anything other than substrate in
+    # plasma.
+    if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
+        return(
+            ggplot(data.frame(Problem = 1, DataFail = 1), 
+                   aes(y = Problem, x = DataFail)) +
+                xlab("Please check the help file for extractConcTime") +
+                theme(axis.title.x = element_text(size = 14, color = "red", 
+                                                  face = "italic")) +
+                annotate(geom = "text", x = 1, y = 1, size = 8,
+                         color = "red", 
+                         label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+        )
+    }
+    
+    
+    # Main body of function -------------------------------------------------
+    
+    # Noting user's original preferences for a few things
+    obs_line_trans_user <- obs_line_trans
+    obs_fill_trans_user <- obs_fill_trans
+    obs_color_user <- obs_color
+    obs_shape_user <- obs_shape
+    
+    # Prettifying compound names before doing anything else 
+    if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
+        if(prettify_compound_names){
+            if(EnzPlot){ 
+                ct_dataframe <- ct_dataframe %>% 
+                    mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+            } else {
+                ct_dataframe <- ct_dataframe %>% 
+                    mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
+                           Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
+            }
+        } 
+        # If prettify_compound_names is FALSE, then don't do anything.
+        
+    } else {
+        # This is when the user has requested specific value for prettifying. 
+        if(EnzPlot){ 
+            # Any compounds that the user omitted from prettify_compound_names
+            # should be added to that and kept as their original values.
+            MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
+                                    names(prettify_compound_names))
+            OrigPrettyNames <- prettify_compound_names
+            prettify_compound_names <- c(prettify_compound_names, MissingNames)
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                MissingNames
+            
+            ct_dataframe <- ct_dataframe %>% 
+                mutate(Inhibitor = prettify_compound_names[Inhibitor])
+        } else {
+            MissingNames <- setdiff(unique(c(ct_dataframe$Compound,
+                                             ct_dataframe$Inhibitor)), 
+                                    names(prettify_compound_names))
+            OrigPrettyNames <- prettify_compound_names
+            prettify_compound_names <- c(prettify_compound_names, MissingNames)
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                MissingNames
+            
+            ct_dataframe <- ct_dataframe %>% 
+                mutate(Compound = prettify_compound_names[Compound], 
+                       Inhibitor = prettify_compound_names[Inhibitor])
+        }
+    }
+    
+>>>>>>> master
     # Unless the user specifically set the levels for the Inhibitor column, we
     # always want "none" to be the 1st item on the legend for that, and we need
     # there to be some value present for "Inhibitor" for function to work
@@ -613,7 +719,11 @@ call. = FALSE)
     # If the color labels don't match the files available, give a warning.
     if(as_label(colorBy_column) != "<empty>" && 
        any(complete.cases(color_labels)) && 
+<<<<<<< HEAD
        all(names(color_labels) %in% sort(unique(ct_dataframe[, as_label(colorBy_column)]))) == FALSE){
+=======
+       all(color_labels %in% unique(ct_dataframe[, as_label(colorBy_column)])) == FALSE){
+>>>>>>> master
         BadLabs <- setdiff(names(color_labels), unique(ct_dataframe[, as_label(colorBy_column)]))
         
         warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
@@ -624,7 +734,11 @@ call. = FALSE)
                 call. = FALSE)
         
         WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
+<<<<<<< HEAD
                                gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
+=======
+                              gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
+>>>>>>> master
         color_labels[names(color_labels) %in% BadLabs] <- WarningLabel
         NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
         NewNames <- NewNames[complete.cases(NewNames)]
@@ -683,8 +797,12 @@ call. = FALSE)
     ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
                                                    "jejunum II", "ileum I", "ileum II",
                                                    "ileum III", "ileum IV", "colon", 
+<<<<<<< HEAD
                                                    "faeces", "gut tissue",
                                                    "cumulative absorption", 
+=======
+                                                   "faeces", "cumulative absorption", 
+>>>>>>> master
                                                    "cumulative dissolution")) &
         EnzPlot == FALSE
     
@@ -755,12 +873,19 @@ call. = FALSE)
     } else {
         # for conc-time data
         ct_dataframe <- ct_dataframe %>%
+<<<<<<< HEAD
+=======
+            # If it's dose number 0, remove those rows so that we'll show only the
+            # parts we want when facetting and user wants scales to float freely.
+            filter(DoseNum != 0 | Simulated == FALSE) %>% 
+>>>>>>> master
             mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
                    CompoundID = factor(CompoundID,
                                        levels = c("substrate", "primary metabolite 1",
                                                   "primary metabolite 2", "secondary metabolite",
                                                   "inhibitor 1", "inhibitor 1 metabolite", 
                                                   "inhibitor 2"))) 
+<<<<<<< HEAD
         
         if(all(complete.cases(ct_dataframe$DoseNum))){
             # If it's dose number 0, remove those rows so that we'll show only the
@@ -769,6 +894,8 @@ call. = FALSE)
                 filter(DoseNum != 0 | Simulated == FALSE)
         }
         
+=======
+>>>>>>> master
         sim_dataframe <- ct_dataframe %>%
             filter(Simulated == TRUE &
                        Trial %in% 

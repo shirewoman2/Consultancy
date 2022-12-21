@@ -5,12 +5,21 @@
 #' from multiple Simcyp Simulator output files. If you list multiple files,
 #' multiple tissues, and/or multiple compounds to extract (see options below),
 #' this will extract \emph{all} possible variations of them. For example, if you
+<<<<<<< HEAD
 #' ask for data from the files "sim1.xlsx" and "sim2.xlsx" and then also ask for
 #' "substrate" and "primary metabolite 1", you will get the substrate and
 #' primary metabolite 1 data from \emph{both} files. \strong{NOTE:} If ANY of
 #' the Excel files you wish to extract data from are saved on SharePoint and are
 #' open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
 #' Be sure to close all of the source Excel files.
+=======
+#' ask for "sim1.xlsx" and "sim2.xlsx" and then also ask for "substrate" and
+#' "primary metabolite 1", you will get the substrate and primary metabolite 1
+#' data from \emph{both} files. \strong{NOTE:} If ANY of the Excel files you
+#' wish to extract data from are saved on SharePoint and are open, this WILL
+#' CRASH and WILL NOT save whatever progress it has made so far. Be sure to
+#' close all of the source Excel files.
+>>>>>>> master
 #'
 #' \strong{Regarding dose intervals for observed data:} The observed data files
 #' don't include information on dosing intervals or dose numbers, which makes it
@@ -178,6 +187,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     compoundsToExtract <- tolower(compoundsToExtract)
     
+<<<<<<< HEAD
     MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
                          "secondary metabolite",
                          "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
@@ -187,6 +197,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         "released payload")
     
     PossCmpd <- c(MainCompoundIDs, ADCCompoundIDs, "all")
+=======
+    PossCmpd <- c("substrate", "inhibitor 1",
+                  "inhibitor 1 metabolite", "inhibitor 2",
+                  "primary metabolite 1", "all",
+                  "primary metabolite 2", "secondary metabolite")
+>>>>>>> master
     
     if(any(compoundsToExtract %in% PossCmpd == FALSE)){
         warning(paste0("The compound(s) ", 
@@ -211,7 +227,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         # If left as NA, pull all the files in this folder. 
+<<<<<<< HEAD
         sim_data_files <- list.files(pattern = "xlsx$")
+=======
+        sim_data_files <- list.files(pattern = "xlsx")
+>>>>>>> master
         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
     
@@ -350,8 +370,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
         }
     } 
     
+<<<<<<< HEAD
     
     ## Start of loop through files ------------------------------------------
+=======
+>>>>>>> master
     MultData <- list()
     
     for(ff in sim_data_files_topull){
@@ -452,11 +475,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         mutate(File = ff)
                     
                     # Need to handle ADAM data specially
+<<<<<<< HEAD
                     ADAMtissue <- c("stomach", "duodenum", "jejunum I",
                                     "jejunum II", "ileum I", "ileum II",
                                     "ileum III", "ileum IV", "colon", "faeces", 
                                     "gut tissue", "cumulative absorption", 
                                     "cumulative dissolution")
+=======
+                    ADAMtissue <- c("stomach", "duodenum", "jejunum i",
+                                    "jejunum ii", "ileum i", "ileum ii",
+                                    "ileum iii", "ileum iv", "colon", "faeces")
+>>>>>>> master
                     if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue)){
                         CT_adam <- MultData[[ff]][[j]] %>% 
                             filter(Tissue %in% ADAMtissue)
