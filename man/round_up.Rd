@@ -22,7 +22,8 @@ down to the nearest power of 10} \item{round_up_nice}{round up to the nearest
 "nice" value. From
 \url{http://stackoverflow.com/questions/6461209/how-to-round-up-to-the-nearest-10-or-100-or-x)}
 } \item{round_up_unit}{round up x to the nearest b}
-\item{round_down_unit}{round x down to the nearest b}
+\item{round_down_unit}{round x down to the nearest b} \item{round_unit}{round
+x up or down to the nearest b; direction depends on how close x is to b}
 \item{log10_breaks}{creates a vector evenly spaced on a log 10 scale: 10
 points across each order of magnitude} }
 }
