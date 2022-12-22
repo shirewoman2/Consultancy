@@ -254,6 +254,7 @@ round_down_unit <- function(x, b) { # round x down to nearest b
 #'
 #' @examples
 #' round_up(c(4, 1, 101, 99, 1002))
+<<<<<<< HEAD
 #' round_down(c(4, 1, 101, 99, 1002))
 #' round_up_nice(0.24562)
 #' round_up_nice(2936.24562)
@@ -261,6 +262,8 @@ round_down_unit <- function(x, b) { # round x down to nearest b
 #' round_up_unit(33.5, 2)
 #' round_up_unit(33.5, 5)
 #' round_up_unit(x = c(4, 1, 101, 99, 1002), b = 5)
+=======
+>>>>>>> 146233254289943d8ecdd6f107e01df1fdb50110
 #' round_down_unit(1.23, 0.1)
 #' round_down_unit(x = c(4, 1, 101, 99, 1002), b = 25)
 #'
