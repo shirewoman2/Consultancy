@@ -8,14 +8,6 @@
 #' see the notes at the bottom of this help file for how to supply observed data
 #' in a standardized fashion that this function can read.} \item{If you would
 #' like to make a single PK table for multiple files at once, please see the
-<<<<<<< HEAD
-#' function \code{\link{pksummary_mult}}.} \item{All parameters are for the
-#' \emph{substrate} unless you specify that you would like the PK parameters to
-#' be pulled from a specific tab in the Excel output file that is for some other
-#' compound.} \item{ If the simulator output Excel file lives on SharePoint,
-#' you'll need to close it or this function will just keep running and not
-#' generate any output while it waits for access to the file.}}
-=======
 #' function \code{\link{pksummary_mult}}.} \item{Nearly all parameters are for
 #' the \emph{substrate}. We're still validating this for extracting PK for an
 #' effector. \strong{A request for assistance:} If you extract PK data for an
@@ -24,7 +16,6 @@
 #' output Excel file lives on SharePoint, you'll need to close it or this
 #' function will just keep running and not generate any output while it waits
 #' for access to the file.}}
->>>>>>> master
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame or named vector of
