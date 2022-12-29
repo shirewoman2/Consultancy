@@ -22,7 +22,7 @@
 #'   "perpetrator". This will determine whether the graphs will be labeled on
 #'   the y axis by the substrate name (for perpetrator forest plots) or by the
 #'   effector name (for victim forest plots).
-#' @param PKparameters optionally specify which PK parameters included in
+#' @param PKparameters optionally specify which PK parameters in
 #'   \code{forest_dataframe} to use as input. If left as NA, all the PK
 #'   parameters you extracted with \code{\link{extractForestData}} will be
 #'   included. If you try to include a parameter that's not already present in
@@ -59,8 +59,8 @@
 #'   CYP3A inhibitor)", "myfile2.xlsx" = "efavirenz (moderate CYP3A inducer)")}}
 #'
 #'   \item{a character vector of the compounds of interest}{e.g., \code{y_order
-#'   = c("itraconazole", "efavirenz")} These must be spelled perfectly!}} Please
-#'   see the bottom of this help file for examples.
+#'   = c("itraconazole", "efavirenz")} The compound names must be spelled
+#'   perfectly to match!}} Please see the bottom of this help file for examples.
 #' @param y_axis_column_secondary optionally break up the graphs along the y
 #'   axis by an additional column. For example, say your drug of interest is a
 #'   perpetrator and you've administered each of the substrates on different
