@@ -23,8 +23,17 @@
 #'   cause the shading of the rows to alternate between white and light gray
 #'   whenever the file changes. Please see the examples at the bottom of this
 #'   help file.
-#' @param bold_1st_column TRUE (default) or FALSE for whether to make the first
-#'   column bold
+#' @param bold_cells optionally specify cells in the table to be in bold-face
+#'   text with a numeric vector where the 1st number is the row number and the
+#'   2nd number is the column number (just like regular row and column
+#'   specifications in R). For example, \code{bold_cells = c(1, 2)} will make
+#'   the cell in row 1 and column 2 bold face. Use "0" for the row number if you
+#'   want to use bold face for something in the header row, and use NA in place
+#'   of a row or column number to make everything in that row or column bold
+#'   face. If you want to specify multiple places to use bold face, use a list
+#'   of numeric vectors. By default, the header row and the 1st column will be
+#'   bold. Set \code{bold_cells = NA} to make \emph{nothing} bold. Please see
+#'   the examples at the bottom of the help file.
 #' @param center_1st_column TRUE or FALSE (default) for whether to make the
 #'   alignment of the first column centered
 #' @param highlight_cells optionally specify cells in the table to be
@@ -33,10 +42,9 @@
 #'   specifications in R). For example, \code{highlight_cells = c(1, 2)} will
 #'   make the cell in row 1 and column 2 highlighted. Use "0" for the row number
 #'   if you want to highlight something in the header row, and use NA in place
-#'   of a row or column number to mean that you want to highlight everything in
-#'   that row or column. If you want to specify multiple places to highlight,
-#'   use a list of numeric vectors. Please see the examples at the bottom of the
-#'   help file.
+#'   of a row or column number to highlight everything in that row or column. If
+#'   you want to specify multiple places to highlight, use a list of numeric
+#'   vectors. Please see the examples at the bottom of the help file.
 #' @param highlight_color color to use for highlighting; default is yellow.
 #'   Color can be specified using any R-friendly color name or hex code, e.g.,
 #'   "red" or "#D8212D".
@@ -56,7 +64,6 @@
 #' MyData <- data.frame(ColA = rep(LETTERS[1:3], each = 2),
 #'                      ColB = 1:6)
 #' formatTable_Simcyp(MyData)
-#' formatTable_Simcyp(MyData, bold_1st_column = FALSE)
 #' formatTable_Simcyp(MyData, center_1st_column = TRUE)
 #' formatTable_Simcyp(MyData, fontsize = 18)
 #' formatTable_Simcyp(MyData, shading_column = ColA)
@@ -64,23 +71,32 @@
 #' # Highlighting examples
 #' ## Highlight row 1, column 2
 #' formatTable_Simcyp(MyData, highlight_cells = c(1, 2))
-#' 
+#'
 #' ## Highlight all of column 2
 #' formatTable_Simcyp(MyData, highlight_cells = c(NA, 2))
-#' 
+#'
 #' ## Highlight all of row 1
 #' formatTable_Simcyp(MyData, highlight_cells = c(1, NA))
-#' 
+#'
 #' ## Highlight the 2nd column in the header
 #' formatTable_Simcyp(MyData, highlight_cells = c(0, 2))
-#' 
+#'
 #' ## Set the highlight color to light blue instead of yellow
-#' formatTable_Simcyp(MyData, highlight_cells = c(1, NA), 
+#' formatTable_Simcyp(MyData, highlight_cells = c(1, NA),
 #'                    highlight_color = "lightblue")
-#'                    
+#'
 #' ## Highlighting multiple cells
 #' formatTable_Simcyp(MyData, highlight_cells = list(c(1, 2), c(3,1), c(5, 2)),
 #'                    highlight_color = "lightblue")
+#'
+#' # Bold-face examples
+#' ## Make only the cell in row 5 and column 2 be bold face. This will 
+#' ## override the default of having the header row and the 1st column in bold.
+#' formatTable_Simcyp(MyData, bold_cells = c(5, 2))
+#' 
+#' ## Make the cell in row 5 and column 2 be bold face AND include the original
+#' ## defaults of having the header row and the 1st column be in bold.
+#' formatTable_Simcyp(MyData, bold_cells = list(c(0, NA), c(NA, 1), c(5, 2)))
 #' 
 #' # Saving
 #' ## Adding a column called "File" so that there will be a caption in the Word
@@ -91,7 +107,7 @@
 formatTable_Simcyp <- function(DF, 
                                fontsize = 11, 
                                shading_column, 
-                               bold_1st_column = TRUE,
+                               bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
                                highlight_cells = NA, 
                                highlight_color = "yellow",
@@ -121,21 +137,42 @@ formatTable_Simcyp <- function(DF,
         }
     }
     
+    if(any(complete.cases(bold_cells))){
+        if(class(bold_cells) == "numeric"){
+            bold_cells <- list(bold_cells[1:2])
+        }
+        
+        if(any(sapply(bold_cells, length) < 2)){
+            warning("For making cells bold, you must specify a row and a column for everything you want to have bold-face text, and you have only specified one number for at least one of the items you asked to be bold face. We don't know which rows or columns to make bold face without that second number, so we'll use the default settings and make the 1st column and the header row bold.", 
+                    call. = FALSE)
+            bold_cells <- list(c(0, NA), c(NA, 1))
+        }
+    }
+    
     # Setting things up for nonstandard evaluation ----------------------------
     shading_column <- rlang::enquo(shading_column)
     
     
     # Main body of function -------------------------------------------------
-    FT <- DF %>% 
-        flextable::flextable() %>% 
-        
-        # Make the header bold
-        flextable::bold(part = "header")
+    FT <- flextable::flextable(DF)
     
-    # Optionally make the 1st column bold
-    if(bold_1st_column){
-        FT <- FT %>% 
-            flextable::bold(j = 1, part = "body")
+    # Optionally making things bold face
+    if(any(sapply(bold_cells, complete.cases))){
+        for(i in 1:length(bold_cells)){
+            
+            FT <- FT %>% 
+                flextable::bold(i = switch(paste(is.na(bold_cells[[i]][1]), 
+                                                 bold_cells[[i]][1] == 0), 
+                                           "TRUE NA" = NULL, 
+                                           "FALSE TRUE" = 1, # this is when the row should be the only row in the header
+                                           "FALSE FALSE" = bold_cells[[i]][1]), 
+                                j = switch(as.character(is.na(bold_cells[[i]][2])), 
+                                           "TRUE" = NULL, 
+                                           "FALSE" = bold_cells[[i]][2]), 
+                                part = ifelse(complete.cases(bold_cells[[i]][1]) & 
+                                                  bold_cells[[i]][1] == 0, 
+                                              "header", "body"))   
+        }
     }
     
     FT <- FT %>% 
@@ -189,7 +226,7 @@ formatTable_Simcyp <- function(DF,
     }
     
     # Optionally highlight specific cells
-    if(any(complete.cases(highlight_cells))){
+    if(any(sapply(highlight_cells, complete.cases))){
         for(i in 1:length(highlight_cells)){
             
             FT <- FT %>% 
