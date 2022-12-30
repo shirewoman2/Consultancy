@@ -2,40 +2,114 @@
 % Please edit documentation in R/formatTable_Simcyp.R
 \name{formatTable_Simcyp}
 \alias{formatTable_Simcyp}
-\title{Format tables according to Simcyp Consultancy Team specfications}
+\title{Format tables according to Simcyp Consultancy Team specifications}
 \usage{
-formatTable_Simcyp(DF, fontsize = 11, shading_column)
+formatTable_Simcyp(
+  DF,
+  fontsize = 11,
+  shading_column,
+  bold_1st_column = TRUE,
+  center_1st_column = FALSE,
+  highlight_cells = NA,
+  highlight_color = "yellow",
+  save_table = NA
+)
 }
 \arguments{
 \item{DF}{a data.frame, usually output from \code{\link{pksummary_table}} or
 \code{\link{pksummary_mult}}}
 
-\item{fontsize}{the numeric font size for the output. Default is 11 point.}
+\item{fontsize}{the numeric font size for the output table. Default is 11
+point.}
 
 \item{shading_column}{If you would like to alternate the shading of the rows
-in the output data.frame, supply here the unquoted name of the column to
-check for when to change the shading; everytime that column's value
-changes, the shading will alternate between white and light gray. For
-example, if you have a table with PK values for multiple files and you have
-more than one row per file (an example of this would be the output from the
-function \code{\link{pksummary_mult}}), if you set \code{shading_column =
-File}, the shading of the rows will alternate between white and light gray
-whenever the file changes.}
+in the output table, supply here the unquoted name of the column to check
+for when to change the shading; every time that column's value changes, the
+shading will alternate between white and light gray. For example, if you
+have a table with PK values for multiple files and you have more than one
+row per file (an example of this would be the output from the function
+\code{\link{pksummary_mult}}), setting \code{shading_column = File} will
+cause the shading of the rows to alternate between white and light gray
+whenever the file changes. Please see the examples at the bottom of this
+help file.}
+
+\item{bold_1st_column}{TRUE (default) or FALSE for whether to make the first
+column bold}
+
+\item{center_1st_column}{TRUE or FALSE (default) for whether to make the
+alignment of the first column centered}
+
+\item{highlight_cells}{optionally specify cells in the table to be
+highlighted with a numeric vector where the 1st number is the row number
+and the 2nd number is the column number (just like regular row and column
+specifications in R). For example, \code{highlight_cells = c(1, 2)} will
+make the cell in row 1 and column 2 highlighted. Use "0" for the row number
+if you want to highlight something in the header row, and use NA in place
+of a row or column number to mean that you want to highlight everything in
+that row or column. If you want to specify multiple places to highlight,
+use a list of numeric vectors. Please see the examples at the bottom of the
+help file.}
+
+\item{highlight_color}{color to use for highlighting; default is yellow.
+Color can be specified using any R-friendly color name or hex code, e.g.,
+"red" or "#D8212D".}
+
+\item{save_table}{optionally save the output table by supplying a file name
+in quotes here, e.g., "My nicely formatted table.docx". If you leave off
+the file extension, we'll assume you want it to be ".docx". If there is a
+column titled "File" in your table, we'll add a caption listing which files
+were included. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
+SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
+try to save on SharePoint, you will get a warning that R will save your
+file instead to your local (not OneDrive) Documents folder.}
 }
 \value{
 
 }
 \description{
-\code{formatTable_Simcyp} was designed to work with output from
-\code{\link{pksummary_table}} and \code{\link{pksummary_mult}}, and it
-formats tables so that the column headings and the first column are bold, and
-the second through the last columns are centered. Column headings with, e.g.,
-"AUCinf" or "Cmax" will have the "inf" or the "max" subscripted, and the
-table will automatically expand to fit the contents.
+\code{formatTable_Simcyp} makes a nicely formatted table from a data.frame or
+tibble. It was primarily designed to work with output from
+\code{\link{pksummary_table}} and \code{\link{pksummary_mult}}, so, by
+default, it formats tables so that the column headings and the first column
+are bold, and the second through the last columns are centered. Column
+headings with, e.g., "AUCinf" or "Cmax" will have the "inf" or the "max"
+subscripted, and the table will automatically expand to fit the contents. You
+can save the output to a Word file with the argument \code{save_table}.
 }
 \examples{
 MyData <- data.frame(ColA = rep(LETTERS[1:3], each = 2),
                      ColB = 1:6)
 formatTable_Simcyp(MyData)
+formatTable_Simcyp(MyData, bold_1st_column = FALSE)
+formatTable_Simcyp(MyData, center_1st_column = TRUE)
+formatTable_Simcyp(MyData, fontsize = 18)
+formatTable_Simcyp(MyData, shading_column = ColA)
+
+# Highlighting examples
+## Highlight row 1, column 2
+formatTable_Simcyp(MyData, highlight_cells = c(1, 2))
+
+## Highlight all of column 2
+formatTable_Simcyp(MyData, highlight_cells = c(NA, 2))
+
+## Highlight all of row 1
+formatTable_Simcyp(MyData, highlight_cells = c(1, NA))
+
+## Highlight the 2nd column in the header
+formatTable_Simcyp(MyData, highlight_cells = c(0, 2))
+
+## Set the highlight color to light blue instead of yellow
+formatTable_Simcyp(MyData, highlight_cells = c(1, NA), 
+                   highlight_color = "lightblue")
+                   
+## Highlighting multiple cells
+formatTable_Simcyp(MyData, highlight_cells = list(c(1, 2), c(3,1), c(5, 2)),
+                   highlight_color = "lightblue")
+
+# Saving
+## Adding a column called "File" so that there will be a caption in the Word
+## document listing which files were included in the table.
+MyData$File <- "abc-1a.xlsx"
+formatTable_Simcyp(MyData, save_table = "My data.docx")
 
 }
