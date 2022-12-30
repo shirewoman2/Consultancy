@@ -28,7 +28,7 @@
 #'   "_met1" for the primary metabolite, "_met2" for the second primary
 #'   metabolite, "_secmet" for the secondary metabolite, "_inhib" for the 1st
 #'   inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
-#'   listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+#'   listed, or "_inhib1met" for the inhibitor 1 metabolite. An example of
 #'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
 #'   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
@@ -473,7 +473,7 @@ extractExpDetails <- function(sim_data_file,
             
             for(j in MyInputDeets2){
                 
-                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_met2$|_secmet$|_inh1met$")
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_met2$|_secmet$|_inhib1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                 ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
                 CLRows <- which(
@@ -628,19 +628,31 @@ extractExpDetails <- function(sim_data_file,
                                     ValueCol])
                         )
                         
-                        suppressWarnings(
-                            Out[[paste0("CLrenal_InVivoCL", Suffix)]] <- 
-                                as.numeric(InputTab[
-                                    which(str_detect(MyNames,
-                                                     "CL R [(]mL/min")) + i - 1,
-                                    ValueCol])
-                        )
+                        ## Already have renal CL, I think. At least have it
+                        ## already for test file. Check this again w/another
+                        ## file, though.
+                        
+                        # suppressWarnings(
+                        #     Out[[paste0("CLrenal_InVivoCL", Suffix)]] <- 
+                        #         as.numeric(InputTab[
+                        #             which(str_detect(MyNames,
+                        #                              "CL R [(]mL/min")) + i - 1,
+                        #             ValueCol])
+                        # )
                         
                         suppressWarnings(
                             Out[[paste0("CLadditional_InVivoCL", Suffix)]] <- 
                                 as.numeric(InputTab[
                                     which(str_detect(MyNames,
                                                      "Additional Systemic Clearance")) + i - 1,
+                                    ValueCol])
+                        )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLpo_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "^CL .po.")) + i - 1,
                                     ValueCol])
                         )
                         
@@ -658,7 +670,7 @@ extractExpDetails <- function(sim_data_file,
             
             for(j in MyInputDeets3){
                 
-                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                 IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
                                             "^Enzyme$|^Transporter$"))
@@ -831,7 +843,7 @@ extractExpDetails <- function(sim_data_file,
             
             for(j in MyInputDeets5){
                 
-                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                 ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
                 

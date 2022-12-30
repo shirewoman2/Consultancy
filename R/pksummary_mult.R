@@ -168,7 +168,7 @@ pksummary_mult <- function(sim_data_files = NA,
     # Main body of function --------------------------------------------------
     # Read in the observed_PK data if it's not already a data.frame. Note that
     # the class of observed_PK will be logical if left as NA.
-    if(class(observed_PK) == "character"){
+    if(class(observed_PK)[1] == "character"){
         observed_PKDF <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                 "csv" = read.csv(observed_PK), 
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
