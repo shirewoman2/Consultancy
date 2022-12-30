@@ -14,7 +14,8 @@ extractConcTime_mult(
   conc_units_to_use = "ng/mL",
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
-  ...,
+  adjust_obs_time = FALSE,
+  expdetails = NA,
   obs_data_files = NA
 )
 }
@@ -144,12 +145,26 @@ concentration-time data? Options are "aggregate" (default), "individual",
 or "both". Aggregated data are not calculated here but are pulled from the
 simulator output rows labeled as "Population Statistics".}
 
-\item{...}{other arguments passed to the function
-\code{\link{extractConcTime}}}
+\item{adjust_obs_time}{TRUE or FALSE (default) for whether to adjust the time
+listed in the observed data file to match the last dose administered. This
+only applies to multiple-dosing regimens. If TRUE, the graph will show the
+observed data overlaid with the simulated data such that the dose in the
+observed data was administered at the same time as the last dose in the
+simulated data. If FALSE, the observed data will start at whatever times
+are listed in the Excel file.}
+
+\item{expdetails}{If you have already run \code{extractExpDetails_mult} to get all
+the details from the "Input Sheet", you can save some processing time by
+supplying it here, unquoted. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
 
 \item{obs_data_files}{TO BE DEPRECATED. This is the same argument as
 obs_to_sim_assignment; we just renamed it to try to be clearer about what
 the argument does and in what order you should list the files.}
+
+\item{...}{other arguments passed to the function
+\code{\link{extractConcTime}}}
 }
 \value{
 Returns a large data.frame with multiple sets of concentration-time

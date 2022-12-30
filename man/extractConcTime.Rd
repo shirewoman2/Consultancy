@@ -7,10 +7,10 @@
 extractConcTime(
   sim_data_file,
   obs_data_file = NA,
-  adjust_obs_time = FALSE,
   tissue = "plasma",
   compoundToExtract = "substrate",
   returnAggregateOrIndiv = "both",
+  adjust_obs_time = FALSE,
   expdetails = NA,
   fromMultFunction = FALSE
 )
@@ -26,14 +26,6 @@ in quotes. If the observed data you want to plot were already included in
 the Excel output from the simulator, leave this as NA. Otherwise, this is
 the file that it is ready to be converted to an XML file, not the file that
 contains only the digitized time and concentration data.}
-
-\item{adjust_obs_time}{TRUE or FALSE (default) for whether to adjust the time
-listed in the observed data file to match the last dose administered. This
-only applies to multiple-dosing regimens. If TRUE, the graph will show the
-observed data overlaid with the simulated data such that the dose in the
-observed data was administered at the same time as the last dose in the
-simulated data. If FALSE, the observed data will start at whatever times
-are listed in the Excel file.}
 
 \item{tissue}{From which tissue should the desired concentrations be
 extracted? Default is plasma for typical plasma concentration-time data.
@@ -72,6 +64,14 @@ correct data.}
 concentration-time data? Options are "aggregate", "individual", or "both"
 (default). Aggregated data are not calculated here but are pulled from the
 simulator output rows labeled as "Population Statistics".}
+
+\item{adjust_obs_time}{TRUE or FALSE (default) for whether to adjust the time
+listed in the observed data file to match the last dose administered. This
+only applies to multiple-dosing regimens. If TRUE, the graph will show the
+observed data overlaid with the simulated data such that the dose in the
+observed data was administered at the same time as the last dose in the
+simulated data. If FALSE, the observed data will start at whatever times
+are listed in the Excel file.}
 
 \item{expdetails}{If you have already run \code{extractExpDetails} to get all
 the details from the "Input Sheet", you can save some processing time by

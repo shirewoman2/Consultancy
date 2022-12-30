@@ -91,6 +91,13 @@
 #'   add data from any Excel files that aren't already included. A situation
 #'   where you might want to set this to TRUE would be when you have changed
 #'   input parameters for simulations and re-run them.
+#' @param adjust_obs_time TRUE or FALSE (default) for whether to adjust the time
+#'   listed in the observed data file to match the last dose administered. This
+#'   only applies to multiple-dosing regimens. If TRUE, the graph will show the
+#'   observed data overlaid with the simulated data such that the dose in the
+#'   observed data was administered at the same time as the last dose in the
+#'   simulated data. If FALSE, the observed data will start at whatever times
+#'   are listed in the Excel file.
 #' @param tissues From which tissue(s) should the desired concentrations be
 #'   extracted? Default is plasma for typical plasma concentration-time data.
 #'   Other options are "blood" or any tissues included in "Sheet Options",
@@ -139,6 +146,11 @@
 #'   concentration-time data? Options are "aggregate" (default), "individual",
 #'   or "both". Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "Population Statistics".
+#' @param expdetails If you have already run \code{extractExpDetails_mult} to get all
+#'   the details from the "Input Sheet", you can save some processing time by
+#'   supplying it here, unquoted. If left as NA, this function will run
+#'   \code{extractExpDetails} behind the scenes to figure out some information
+#'   about your experimental set up.
 #' @param obs_data_files TO BE DEPRECATED. This is the same argument as
 #'   obs_to_sim_assignment; we just renamed it to try to be clearer about what
 #'   the argument does and in what order you should list the files.
@@ -166,7 +178,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  conc_units_to_use = "ng/mL",
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate",
-                                 ..., 
+                                 adjust_obs_time = FALSE,
+                                 expdetails = NA,
                                  obs_data_files = NA){
     
     # Error catching -------------------------------------------------------
@@ -348,7 +361,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                 # } 
             }
             
-            ObsAssign <- split(ObsAssign, f = ObsAssign$ObsFile)
+            ObsAssign <- split(ObsAssign, f = ObsAssign$File)
         } else {
             ObsAssign <- list() # This is for when all sim files should use the same obs file
         }
@@ -573,11 +586,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     if((any(complete.cases(obs_to_sim_assignment)) & length(ObsAssign) == 0) |   # <--- scenario when one obs file should be used for all sim files
        ("ObsFile" %in% names(MultData) &&                                        # <--- scenario when some obs files were already extracted but some were not b/c they weren't assigned to a sim file
-        length(setdiff(names(ObsAssign), unique(MultData$ObsFile))) > 0 &&
+        length(setdiff(names(ObsAssign), unique(MultData$File))) > 0 &&
         any(complete.cases(obs_to_sim_assignment)))){
         MultObsData <- list()
         if(overwrite){
-            ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% names(ObsAssign))
+            ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in%
+                                                        bind_rows(ObsAssign) %>% 
+                                                        pull(ObsFile) %>% 
+                                                        unique())
             for(ff in names(ObsAssign)){
                 message(paste("Extracting data from observed data file =", ff))
                 MultObsData[[ff]] <- extractObsConcTime(ff)

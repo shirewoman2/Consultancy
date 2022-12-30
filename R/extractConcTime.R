@@ -155,10 +155,10 @@
 #' 
 extractConcTime <- function(sim_data_file,
                             obs_data_file = NA,
-                            adjust_obs_time = FALSE,
                             tissue = "plasma",
                             compoundToExtract = "substrate",
                             returnAggregateOrIndiv = "both",
+                            adjust_obs_time = FALSE,
                             expdetails = NA,
                             fromMultFunction = FALSE){
     
