@@ -255,14 +255,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
         return(ct_dataframe)
     }
     
-    if(class(obs_to_sim_assignment) == "logical"){
+    # Tidying and error catching for any observed data
+    if(class(obs_to_sim_assignment)[1] == "logical"){
         # this is when the user has not specified anything for
         # obs_to_sim_assignment.
         ObsAssign <- list()
         
     } else {
         
-        if(class(obs_to_sim_assignment) == "character"){
+        if(class(obs_to_sim_assignment)[1] == "character"){
             if(any(str_detect(obs_to_sim_assignment, "//.csv"))){
                 # user has supplied a csv file for designating obs and sim
                 # assignments.
@@ -312,9 +313,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
             ObsAssign <- ObsAssign %>% select(-File) %>% rename(FILE = SIMFILE)
         }
         
-        # Now that column names should be correct, converting to the case I like for
-        # ease of coding
-        ObsAssign <- ObsAssign %>% rename(File = FILE, ObsFile = OBSFILE)
+        # Now that column names should be correct, converting to the case I like
+        # for ease of coding
+        ObsAssign <- ObsAssign %>% rename(File = FILE, ObsFile = OBSFILE) %>% 
+            select(File, ObsFile)
         
         if(any(duplicated(ObsAssign$File))){ 
             Dups <- ObsAssign$File[duplicated(ObsAssign$File)]
@@ -338,15 +340,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         call. = FALSE)
                 
                 ObsAssign <- ObsAssign %>% filter(File %in% unique(c(sim_data_files, ct_dataframe$File)))
-                obs_to_sim_assignment <- obs_to_sim_assignment[
-                    !str_detect(obs_to_sim_assignment, 
-                                str_c(MissingFiles, "|"))
-                ]
+                # if(class(obs_to_sim_assignment)[1] == "character"){
+                #     obs_to_sim_assignment <- obs_to_sim_assignment[
+                #         !str_detect(obs_to_sim_assignment, 
+                #                     str_c(MissingFiles, "|"))
+                #         ]
+                # } 
             }
             
-            ObsAssign <- split(ObsAssign, f = ObsAssign$File)
+            ObsAssign <- split(ObsAssign, f = ObsAssign$ObsFile)
         } else {
-            ObsAssign <- list() # All sim files should use the same obs file
+            ObsAssign <- list() # This is for when all sim files should use the same obs file
         }
     } 
     
@@ -569,12 +573,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     if((any(complete.cases(obs_to_sim_assignment)) & length(ObsAssign) == 0) |   # <--- scenario when one obs file should be used for all sim files
        ("ObsFile" %in% names(MultData) &&                                        # <--- scenario when some obs files were already extracted but some were not b/c they weren't assigned to a sim file
-        length(setdiff(names(obs_to_sim_assignment), unique(MultData$ObsFile))) > 0 &&
+        length(setdiff(names(ObsAssign), unique(MultData$ObsFile))) > 0 &&
         any(complete.cases(obs_to_sim_assignment)))){
         MultObsData <- list()
         if(overwrite){
-            ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% obs_to_sim_assignment)
-            for(ff in obs_to_sim_assignment){
+            ct_dataframe <- ct_dataframe %>% filter(!ObsFile %in% names(ObsAssign))
+            for(ff in names(ObsAssign)){
                 message(paste("Extracting data from observed data file =", ff))
                 MultObsData[[ff]] <- extractObsConcTime(ff)
             }
