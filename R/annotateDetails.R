@@ -492,7 +492,8 @@ annotateDetails <- function(Deets,
     # Pivoting wider again ------------------------------------------------
     
     # Checking for details that are the SAME across all files
-    AllSame <- Out %>% group_by(Detail, CompoundID, Compound) %>% 
+    AllSame <- Out %>% 
+        group_by(across(.cols = any_of(c("Detail", "CompoundID", "Compound")))) %>% 
         summarize(Length = length(unique(Value)), 
                   UniqueVal = unique(Value)[1]) %>% 
         filter(Length == 1) %>% 
@@ -506,15 +507,18 @@ annotateDetails <- function(Deets,
             select(any_of(c("SimulatorSection", "Sheet", "Notes",
                             "CompoundID", "Compound", "Detail", 
                             "UniqueVal")), 
-                   everything()) %>% 
-            rename("All files have this value for this compound and compound ID" = UniqueVal)
-    )
+                   everything())
+        )
     
     if("Compound" %in% names(Out)){
         Out <- Out %>% 
             mutate(ToOmit = complete.cases(CompoundID) & 
                        is.na(Compound)) %>% 
-            filter(ToOmit == FALSE) %>% select(-ToOmit)
+            filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
+            rename("All files have this value for this compound ID and compound" = UniqueVal)
+    } else {
+        Out <- Out %>% 
+            rename("All files have this value for this compound ID" = UniqueVal)
     }
     
     # Removing anything that was all NA's if that's what user requested
