@@ -51,15 +51,15 @@ those files will be skipped.}
 
   \item{a data.frame with one column for the observed files and one column
   for the simulated files they each match}{The data.frame must have column
-  names of "ObsFile" and "SimFile" for the observed and simulated files,
+  names of "ObsFile" and "File" for the observed and simulated files,
   respectively. Here's an example of acceptable input:
   \code{obs_to_sim_assignment = data.frame(ObsFile = c("obsdata1.xlsx",
-  "obsdata2.xlsx"), SimFile = c("simfileA.xlsx", "simfileB.xlsx"))} Each row
+  "obsdata2.xlsx"), File = c("simfileA.xlsx", "simfileB.xlsx"))} Each row
   should contain one observed file and one simulated file, so if you want to
   compare a single observed file to multiple simulated files, you'll need to
   repeat the observed file, e.g., \code{obs_to_sim_assignment =
   data.frame(ObsFile = c("obsdata1.xlsx", "obsdata2.xlsx", "obsdata2.xlsx",
-  "obsdata2.xlsx"), SimFile = c("simfileA.xlsx", "simfileB.xlsx",
+  "obsdata2.xlsx"), File = c("simfileA.xlsx", "simfileB.xlsx",
   "simfileC.xlsx", "simfileD.xlsx"))}}
 
   \item{a csv file with one column for the observed files and one column for
