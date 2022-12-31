@@ -1924,8 +1924,10 @@ extractConcTime <- function(sim_data_file,
                     as.character(cut(MyData[[j]]$Time, breaks = Dosing[[j]]$Time,
                                      right = FALSE))
                 
-                MyData[[j]] <- MyData[[j]] %>% 
-                    left_join(Dosing[[j]] %>% select(CompoundID, Breaks, DoseNum))
+                suppressMessages(
+                    MyData[[j]] <- MyData[[j]] %>% 
+                        left_join(Dosing[[j]] %>% select(CompoundID, Breaks, DoseNum))
+                )
                 
             }
             

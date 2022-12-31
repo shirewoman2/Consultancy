@@ -178,19 +178,20 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file. If you supply only the file
-extension, e.g., \code{save_table = "docx"}, the name of the file will be
-the file name plus "PK summary table" with that extension and output will
-be located in the same folder as \code{sim_data_file}. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". While
-the main PK table data will be in whatever file format you requested, if
-you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-its own and will have "- QC" added to the end of the file name.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft permissions issue, not an R issue. If you try to save on
-SharePoint, you will get a warning that R will save your file to your
-Documents folder instead.}
+the main PK table saved as a Word or csv file. (You can also save the table
+to a Word file later with the function \code{\link{formatTable_Simcyp}}.)
+If you supply only the file extension, e.g., \code{save_table = "docx"},
+the name of the file will be the file name plus "PK summary table" with
+that extension and output will be located in the same folder as
+\code{sim_data_file}. If you supply something other than just "docx" or
+just "csv" for the file name but you leave off the file extension, we'll
+assume you want it to be ".csv". While the main PK table data will be in
+whatever file format you requested, if you set \code{checkDataSource =
+TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+added to the end of the file name. \strong{WARNING:} SAVING TO WORD DOES
+NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an R
+issue. If you try to save on SharePoint, you will get a warning that R will
+save your file to your local (not OneDrive) Documents folder instead.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}

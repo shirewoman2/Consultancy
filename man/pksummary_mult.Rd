@@ -123,11 +123,11 @@ percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
-\item{adjust_conc_units}{Would you like to adjust the units to something
-other than what was used in the simulation? Default is NA to leave the
-units as is, but if you set the concentration units to something else, this
-will attempt to adjust the units to match that. This only adjusts AUC and
-Cmax values at present and is very much under construction!}
+\item{adjust_conc_units}{Would you like to adjust the units to something other
+than what was used in the simulation? Default is NA to leave the units as
+is, but if you set the concentration units to something else, this will
+attempt to adjust the units to match that. This only adjusts AUC and Cmax
+values at present and is very much under construction!}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
@@ -141,16 +141,18 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have the
-table saved as a Word or csv file. If you supply only the file extension,
-e.g., \code{save_table = "docx"}, the name of the file will be "PK summary
-table" with that extension. If you supply something other than just "docx"
-or just "csv" for the file name but you leave off the file extension, we'll
-assume you want it to be ".csv". All PK info will be included in a single
-Word or csv file, and, if \code{checkDataSource = TRUE}, that will be saved
-in a single csv file. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
-SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
-try to save on SharePoint, you will get a warning that R will save your file
-instead to your Documents folder.}
+table saved as a Word or csv file. (You can also save the table to a Word
+file later with the function \code{\link{formatTable_Simcyp}}.) If you
+supply only the file extension, e.g., \code{save_table = "docx"}, the name
+of the file will be "PK summary table" with that extension. If you supply
+something other than just "docx" or just "csv" for the file name but you
+leave off the file extension, we'll assume you want it to be ".csv". All PK
+info will be included in a single Word or csv file, and, if
+\code{checkDataSource = TRUE}, that will be saved in a single csv file.
+\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+Microsoft permissions issue, not an R issue. If you try to save on
+SharePoint, you will get a warning that R will save your file instead to
+your local (not OneDrive) Documents folder.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}

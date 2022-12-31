@@ -280,7 +280,7 @@
 #'   be saved to disk. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
 #'   SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
 #'   try to save on SharePoint, you will get a warning that R will save your
-#'   file instead to your Documents folder.
+#'   file instead to your local (not OneDrive) Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
