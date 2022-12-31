@@ -46,7 +46,7 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder.
+#'   your local (not OneDrive) Documents folder.
 #' @param fig_height figure height in inches; default is 4
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -131,10 +131,34 @@ sensitivity_plot <- function(SA_file,
     RunInfo <- RunInfo %>% mutate_all(.funs = as.numeric)
     
     # Reading data
-    SAdata <- read.xlsx(SA_file, sheetName = DVsheets[dependent_variable])
+    SAdata.xl <- read.xlsx(SA_file, sheetName = DVsheets[dependent_variable])
     
     if(str_detect(dependent_variable, "plasma")){
-        SAdata <- as.data.frame(t(SAdata[, c(4:ncol(SAdata))]))
+        ObsRow <- which(SAdata.xl[, 1] == "Observed Data")
+        SimT0Col <- which(names(SAdata.xl) == "RMSE") + 1
+        SimT0Col <- ifelse(length(SimT0Col) == 0, 4, SimT0Col)
+        
+        if(length(ObsRow) > 0){
+            ObsData <- as.data.frame(t(SAdata.xl[(ObsRow + 1):nrow(SAdata.xl),
+                                                 2:ncol(SAdata.xl)]))
+            names(ObsData) <- SAdata.xl[(ObsRow + 1):nrow(SAdata.xl), 1]
+            ObsData$Index <- 1:nrow(ObsData)
+            
+            ObsData <- ObsData %>% 
+                pivot_longer(cols = -Index, names_to = "Parameter", values_to = "Value") %>% 
+                mutate(Parameter = ifelse(str_detect(Parameter, "Time"), "Time", Parameter), 
+                       Parameter = sub(", DV 1", "", Parameter)) %>% 
+                filter(complete.cases(Value)) %>% unique() %>% 
+                pivot_wider(names_from = Parameter, values_from = Value) %>% 
+                select(-Index) %>% 
+                pivot_longer(cols = -Time, 
+                             names_to = "Subject", values_to = "Conc") %>% 
+                mutate(Simulated = FALSE)
+            
+            SAdata <- as.data.frame(t(SAdata.xl[1:(ObsRow - 1), c(SimT0Col:ncol(SAdata.xl))]))
+        } else {
+            SAdata <- as.data.frame(t(SAdata.xl[, c(SimT0Col:ncol(SAdata.xl))]))
+        }
         names(SAdata)[1] <- "Time"
         names(SAdata)[2:ncol(SAdata)] <- paste0("Run", RunInfo$Run)
         
@@ -143,10 +167,14 @@ sensitivity_plot <- function(SA_file,
                 pivot_longer(cols = matches("Run"), 
                              names_to = "Run", 
                              values_to = "Conc") %>% 
-                mutate(Run = as.numeric(sub("Run", "", Run))) %>% 
+                mutate(Run = as.numeric(sub("Run", "", Run)),
+                       Simulated = TRUE) %>% 
                 left_join(RunInfo)
         )
+        
+        
     } else {
+        SAdata <- SAdata.xl
         names(SAdata)[1:2] <- c("SensParameter", "DV")
     }
     
@@ -165,6 +193,7 @@ sensitivity_plot <- function(SA_file,
                      "vss" = expression(V[ss]~"(L/kg)"))
     
     PrettySensParam <- list("Dose .Sub" = "Dose (mg)",
+                            "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
                             "fa" = expression(f[a]),
                             "Fugut" = expression(f[u[gut]]), 
                             "ka" = expression(k[a]), 
@@ -206,6 +235,12 @@ sensitivity_plot <- function(SA_file,
         G <- ggplot(SAdata, aes(x = Time, y = Conc, color = SensValue, 
                                 group = SensValue)) +
             geom_line() +
+            geom_point(data = ObsData, 
+                       switch(as.character(length(unique(ObsData$Subject)) == 1), 
+                              "TRUE" = aes(x = Time, y = Conc),
+                              "FALSE" = aes(x = Time, y = Conc, 
+                                           shape = Subject, group = Subject)), 
+                       inherit.aes = FALSE) +
             labs(color = ind_var_label) +
             scale_x_continuous(breaks = XBreaks, 
                                labels = XLabels) +
