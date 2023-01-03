@@ -38,7 +38,7 @@ in quotes}
   "_met1" for the primary metabolite, "_met2" for the second primary
   metabolite, "_secmet" for the secondary metabolite, "_inhib" for the 1st
   inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
-  listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+  listed, or "_inhib1met" for the inhibitor 1 metabolite. An example of
   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 
   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are

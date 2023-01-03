@@ -8,15 +8,16 @@ extractEnzAbund(
   sim_data_file,
   enzyme = "CYP3A4",
   tissue = "liver",
-  returnAggregateOrIndiv = "both"
+  returnAggregateOrIndiv = "both",
+  expdetails = NA
 )
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulated
 enzyme-abundance-time data, in quotes}
 
-\item{enzyme}{the enzyme, e.g., "CYP3A4" (default), "UGT1A1", etc. Spaces or
-hyphens in enzyme names will be ignored. Not case sensitive.}
+\item{enzyme}{the enzyme of interest, e.g., "CYP3A4" (default), "UGT1A1",
+etc. Spaces or hyphens in enzyme names will be ignored. Not case sensitive.}
 
 \item{tissue}{From which tissue should the desired enzyme abundance be
 extracted? Options are "liver" (default), "gut", or "kidney". Note: If
@@ -27,6 +28,15 @@ concentrations.}
 enzyme abundance data? Options are "individual", "aggregate", or "both"
 (default). Aggregated data are not calculated here but are pulled from the
 simulator output rows labeled as "mean".}
+
+\item{expdetails}{If you have already run \code{extractExpDetails} to get all
+the details from the "Input Sheet", you can save some processing time by
+supplying it here, unquoted. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
+
+\item{fromMultFunction}{INTERNAL USE ONLY. TRUE or FALSE on whether this is
+being called on by \code{\link{extractConcTime_mult}}.}
 }
 \value{
 A data.frame of enzyme abundance with time with the following

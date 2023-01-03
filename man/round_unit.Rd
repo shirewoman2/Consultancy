@@ -29,13 +29,6 @@ points across each order of magnitude} }
 }
 \examples{
 round_up(c(4, 1, 101, 99, 1002))
-round_down(c(4, 1, 101, 99, 1002))
-round_up_nice(0.24562)
-round_up_nice(2936.24562)
-round_up_nice(c(0.2356, 1.52, 102549.2))
-round_up_unit(33.5, 2)
-round_up_unit(33.5, 5)
-round_up_unit(x = c(4, 1, 101, 99, 1002), b = 5)
 round_down_unit(1.23, 0.1)
 round_down_unit(x = c(4, 1, 101, 99, 1002), b = 25)
 
