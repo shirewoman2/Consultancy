@@ -29,19 +29,18 @@ deannotateDetails <- function(Deets,
     FileOrder <- names(Deets)[str_detect(names(Deets), "xlsx")]
     
     CompoundNames <- Deets %>% 
-        select(Compound, CompoundID, matches("xlsx$")) %>% 
-        pivot_longer(cols = -c(Compound, CompoundID),
+        select(any_of(c("Compound", "CompoundID")), matches("xlsx$")) %>% 
+        pivot_longer(cols = !any_of(c("Compound", "CompoundID")),
                      names_to = "File", values_to = "Value") %>%
         filter(complete.cases(Value) & complete.cases(Compound)) %>% 
         select(File, Compound, CompoundID) %>% unique() %>% 
         mutate(File = factor(File, levels = FileOrder))
     
-    # This is when Deets has been annotated.
-    # Ironically, need to de-annotate here to make this work well
-    # with the rest of the function.
     Deets <- Deets %>% 
         select(-any_of(c("SimulatorSection", "Sheet", "Notes",
-                         "CompoundID", "Compound"))) %>% 
+                         "CompoundID", "Compound",
+                         "All files have this value for this compound ID and compound",
+                         "All files have this value for this compound ID"))) %>% 
         pivot_longer(cols = -Detail, 
                      names_to = "File", values_to = "Value") %>% 
         # Need to remove NA values here b/c they can otherwise lead to

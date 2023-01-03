@@ -565,12 +565,13 @@ forest_plot <- function(forest_dataframe,
         # character vector. Dealing with each of those three scenarios.
         if(any(str_detect(names(YFileOrder), "xlsx"))){
             # When the file names are specified
-            forest_dataframe <- forest_dataframe %>% 
-                mutate(File = factor(File, levels = names(YFileOrder))) %>% 
-                arrange(File) %>% 
-                left_join(data.frame(File = names(YFileOrder),
-                                     MyCompound_rev = YFileOrder)) %>% 
-                mutate(MyCompound = factor(MyCompound_rev, levels = unique(MyCompound_rev)))
+            suppressMessages(
+                forest_dataframe <- forest_dataframe %>% 
+                    mutate(File = factor(File, levels = names(YFileOrder))) %>% 
+                    arrange(File) %>% 
+                    left_join(data.frame(File = names(YFileOrder),
+                                         MyCompound_rev = YFileOrder)) %>% 
+                    mutate(MyCompound = factor(MyCompound_rev, levels = unique(MyCompound_rev))))
             # File and MyCompound are both now factor. 
             
         } else if(any(str_detect(YFileOrder, "xlsx"))){

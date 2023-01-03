@@ -233,23 +233,21 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
-    if(PrevAnnotated == FALSE){
-        CompoundNames <- Out %>%
-            filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
-                                 "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                 "Inhibitor1", "Inhibitor2", 
-                                 "Inhibitor1Metabolite")) %>% 
-            mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
-                                          Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
-                                          Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
-                                          Detail == "SecondaryMetabolite" ~ "secondary metabolite",
-                                          Detail == "Inhibitor1" ~ "inhibitor 1", 
-                                          Detail == "Inhibitor2" ~ "inhibitor 2", 
-                                          Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
-            rename("Compound" = Value) %>% 
-            filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
-            select(-Detail)
-    }
+    CompoundNames <- Out %>%
+        filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
+                             "PrimaryMetabolite2", "SecondaryMetabolite", 
+                             "Inhibitor1", "Inhibitor2", 
+                             "Inhibitor1Metabolite")) %>% 
+        mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
+                                      Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
+                                      Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
+                                      Detail == "SecondaryMetabolite" ~ "secondary metabolite",
+                                      Detail == "Inhibitor1" ~ "inhibitor 1", 
+                                      Detail == "Inhibitor2" ~ "inhibitor 2", 
+                                      Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
+        rename("Compound" = Value) %>% 
+        filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
+        select(-Detail)
     
     suppressMessages(
         Out <- Out %>% 
@@ -265,13 +263,16 @@ annotateDetails <- function(Deets,
             mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
                                       Detail == "SimDuration", 
                                   "Summary", Sheet)) %>% 
-            ungroup() %>% 
+            ungroup())
+    
+    suppressMessages(
+        Out <- Out %>% 
             left_join(CompoundNames))
     
     # Metabolism and interaction parameters won't match input details, so
     # adding which sheet they came from and what simulator section they
     # were.
-    Out <- Out %>% 
+    Out <- Out %>% unique() %>% 
         mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
                               "Input Sheet", Sheet), 
                SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
@@ -284,7 +285,8 @@ annotateDetails <- function(Deets,
                               "Input Sheet", Sheet),
                SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
                                          "Transporters", SimulatorSection)) %>% 
-        select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail, everything()) %>% 
+        select(any_of(c("SimulatorSection", "Sheet", "Notes", "CompoundID",
+                        "Compound", "Detail")), everything()) %>% 
         arrange(SimulatorSection, Detail)
     
     if(class(show_compound_col) == "logical"){
@@ -297,9 +299,10 @@ annotateDetails <- function(Deets,
             group_by(CompoundID) %>% 
             summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
         
-        Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
-            select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
-                   File, Value)
+        suppressMessages(
+            Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
+                select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
+                       File, Value))
     }
     
     
@@ -508,7 +511,7 @@ annotateDetails <- function(Deets,
                             "CompoundID", "Compound", "Detail", 
                             "UniqueVal")), 
                    everything())
-        )
+    )
     
     if("Compound" %in% names(Out)){
         Out <- Out %>% 
