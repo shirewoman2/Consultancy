@@ -1,0 +1,30 @@
+---
+title: "A formatted table"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setuptable, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+```{r formattedtable}
+
+FT
+
+```
+
+```{r captionPKSummary}
+
+CapText1 <- ifelse("File" %in% names(DF), 
+                   paste0("Source simulated data: ", str_comma(unique(DF$File))), 
+                   "")
+
+```
+
+*`r CapText1`* 
+
