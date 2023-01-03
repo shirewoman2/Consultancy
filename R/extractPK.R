@@ -205,7 +205,8 @@ extractPK <- function(sim_data_file,
     
     if(tolower(PKparameters_orig[1]) == "auc tab" & 
        "AUC" %in% SheetNames == FALSE & 
-       any(c("AUC0(Sub)(CPlasma)") %in% SheetNames)){ # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
+       any(c("AUC0(Sub)(CPlasma)") %in% SheetNames) & # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
+       is.na(sheet)){ 
         Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), SheetNames)[1]
         
         warning(paste0("You requested all the parameters from the 'AUC' sheet, but that sheet is not present in ",
@@ -248,7 +249,6 @@ extractPK <- function(sim_data_file,
         # This will happen if user requests PKparameters = "AUC" but "AUC" tab
         # is not present but a tab for AUC0 *is*.
         PKparameters <- ParamAUC0
-        
     }
     
     # Allowing for flexibility in case. Get the lower-case version of whatever
@@ -257,7 +257,7 @@ extractPK <- function(sim_data_file,
     PKparameters <- AllPKParameters %>%
         mutate(PKparameter_lower = tolower(PKparameter)) %>% 
         filter(PKparameter_lower %in% tolower(PKparameters)) %>% 
-        pull(PKparameter)
+        pull(PKparameter) %>% unique()
     
     MissingPKParam <- setdiff(PKparameters, AllPKParameters$PKparameter)
     if(length(MissingPKParam) > 0){
@@ -362,10 +362,10 @@ extractPK <- function(sim_data_file,
                                            ParamAUCX, ParamCLTSS) == FALSE)){
                     warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
                                    sim_data_file, " to extract the PK parameters ",
-                                sub("and", "or", 
-                                    str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
-                                ". None of these parameters can be extracted."),
-                         call. = FALSE)
+                                   sub("and", "or", 
+                                       str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
+                                   ". None of these parameters can be extracted."),
+                            call. = FALSE)
                     return(list())
                 } else {
                     warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
@@ -1256,10 +1256,16 @@ extractPK <- function(sim_data_file,
                                        ToDetect$SearchText))
             
             if(length(ColNum) == 0 || is.na(ColNum)){
-                warning(paste0("The column with information for ", i,
-                               " on the tab ", sheet, " cannot be found in the file ", 
-                               sim_data_file, "."), 
-                        call. = FALSE)
+                
+                # Adding a condition for checking whether user requested a set of
+                # parameters b/c we don't really need the warning if they did.
+                # They'll get what they get! :-D
+                if(any(PKparameters_orig %in% c("all", "AUC tab", "Absorption tab")) == FALSE){
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab ", sheet, " cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
+                }
                 suppressMessages(rm(ToDetect, ColNum))
                 PKparameters <- setdiff(PKparameters, i)
                 next
@@ -1460,5 +1466,5 @@ extractPK <- function(sim_data_file,
     }
     
     return(Out)
-    }
+}
 

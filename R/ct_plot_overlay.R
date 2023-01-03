@@ -354,7 +354,7 @@
 #'   automatically saved to disk. \strong{WARNING:} SAVING TO WORD DOES NOT WORK
 #'   ON SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If
 #'   you try to save on SharePoint, you will get a warning that R will save your
-#'   file instead to your Documents folder.
+#'   file instead to your local (not OneDrive) Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -441,8 +441,15 @@ ct_plot_overlay <- function(ct_dataframe,
     # Checking for more than one tissue or ADAM data type b/c there's only one y
     # axis and it should have only one concentration type.
     if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
-        stop("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit.",
+        stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
+", deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
              call. = FALSE)
+    }
+    
+    if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
+        stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:
+", deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
+call. = FALSE)
     }
     
     if(length(obs_color) > 1){
@@ -525,19 +532,24 @@ ct_plot_overlay <- function(ct_dataframe,
                                     names(prettify_compound_names))
             OrigPrettyNames <- prettify_compound_names
             prettify_compound_names <- c(prettify_compound_names, MissingNames)
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-                MissingNames
+            if(length(MissingNames) > 0){
+                names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                    MissingNames
+            }
             
             ct_dataframe <- ct_dataframe %>% 
                 mutate(Inhibitor = prettify_compound_names[Inhibitor])
         } else {
-            MissingNames <- setdiff(unique(c(ct_dataframe$Compound,
-                                             ct_dataframe$Inhibitor)), 
+            MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
+                                                  ct_dataframe$Inhibitor))), 
                                     names(prettify_compound_names))
+            MissingNames <- MissingNames[!MissingNames == "none"]
             OrigPrettyNames <- prettify_compound_names
             prettify_compound_names <- c(prettify_compound_names, MissingNames)
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-                MissingNames
+            if(length(MissingNames) > 0){
+                names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+                    MissingNames
+            }
             
             ct_dataframe <- ct_dataframe %>% 
                 mutate(Compound = prettify_compound_names[Compound], 
@@ -601,7 +613,7 @@ ct_plot_overlay <- function(ct_dataframe,
     # If the color labels don't match the files available, give a warning.
     if(as_label(colorBy_column) != "<empty>" && 
        any(complete.cases(color_labels)) && 
-       all(color_labels %in% unique(ct_dataframe[, as_label(colorBy_column)])) == FALSE){
+       all(names(color_labels) %in% sort(unique(ct_dataframe[, as_label(colorBy_column)]))) == FALSE){
         BadLabs <- setdiff(names(color_labels), unique(ct_dataframe[, as_label(colorBy_column)]))
         
         warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
@@ -612,7 +624,7 @@ ct_plot_overlay <- function(ct_dataframe,
                 call. = FALSE)
         
         WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
-                              gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
+                               gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
         color_labels[names(color_labels) %in% BadLabs] <- WarningLabel
         NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
         NewNames <- NewNames[complete.cases(NewNames)]
@@ -671,7 +683,8 @@ ct_plot_overlay <- function(ct_dataframe,
     ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
                                                    "jejunum II", "ileum I", "ileum II",
                                                    "ileum III", "ileum IV", "colon", 
-                                                   "faeces", "cumulative absorption", 
+                                                   "faeces", "gut tissue",
+                                                   "cumulative absorption", 
                                                    "cumulative dissolution")) &
         EnzPlot == FALSE
     
@@ -742,15 +755,20 @@ ct_plot_overlay <- function(ct_dataframe,
     } else {
         # for conc-time data
         ct_dataframe <- ct_dataframe %>%
-            # If it's dose number 0, remove those rows so that we'll show only the
-            # parts we want when facetting and user wants scales to float freely.
-            filter(DoseNum != 0 | Simulated == FALSE) %>% 
             mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
                    CompoundID = factor(CompoundID,
                                        levels = c("substrate", "primary metabolite 1",
                                                   "primary metabolite 2", "secondary metabolite",
                                                   "inhibitor 1", "inhibitor 1 metabolite", 
                                                   "inhibitor 2"))) 
+        
+        if(all(complete.cases(ct_dataframe$DoseNum))){
+            # If it's dose number 0, remove those rows so that we'll show only the
+            # parts we want when facetting and user wants scales to float freely.
+            ct_dataframe <- ct_dataframe %>% 
+                filter(DoseNum != 0 | Simulated == FALSE)
+        }
+        
         sim_dataframe <- ct_dataframe %>%
             filter(Simulated == TRUE &
                        Trial %in% 

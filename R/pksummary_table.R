@@ -8,14 +8,12 @@
 #' see the notes at the bottom of this help file for how to supply observed data
 #' in a standardized fashion that this function can read.} \item{If you would
 #' like to make a single PK table for multiple files at once, please see the
-#' function \code{\link{pksummary_mult}}.} \item{Nearly all parameters are for
-#' the \emph{substrate}. We're still validating this for extracting PK for an
-#' effector. \strong{A request for assistance:} If you extract PK data for an
-#' effector by specifying an Excel sheet for that compound, please check the
-#' values and tell Laura Shireman how well it works!} \item{ If the simulator
-#' output Excel file lives on SharePoint, you'll need to close it or this
-#' function will just keep running and not generate any output while it waits
-#' for access to the file.}}
+#' function \code{\link{pksummary_mult}}.} \item{All parameters are for the
+#' \emph{substrate} unless you specify that you would like the PK parameters to
+#' be pulled from a specific tab in the Excel output file that is for some other
+#' compound.} \item{ If the simulator output Excel file lives on SharePoint,
+#' you'll need to close it or this function will just keep running and not
+#' generate any output while it waits for access to the file.}}
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame or named vector of
@@ -179,7 +177,9 @@
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
 #'   will attempt to adjust the units to match that. This only adjusts AUC and
-#'   Cmax values at present.
+#'   Cmax values at present and, if you're switching between mass per volume and
+#'   mole per volume units, it will assume you want to use the MW of the
+#'   substrate to do that.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -206,19 +206,20 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file. If you supply only the file
-#'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
-#'   the file name plus "PK summary table" with that extension and output will
-#'   be located in the same folder as \code{sim_data_file}. If you supply
-#'   something other than just "docx" or just "csv" for the file name but you
-#'   leave off the file extension, we'll assume you want it to be ".csv". While
-#'   the main PK table data will be in whatever file format you requested, if
-#'   you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-#'   its own and will have "- QC" added to the end of the file name.
-#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-#'   Microsoft permissions issue, not an R issue. If you try to save on
-#'   SharePoint, you will get a warning that R will save your file to your
-#'   Documents folder instead.
+#'   the main PK table saved as a Word or csv file. (You can also save the table
+#'   to a Word file later with the function \code{\link{formatTable_Simcyp}}.)
+#'   If you supply only the file extension, e.g., \code{save_table = "docx"},
+#'   the name of the file will be the file name plus "PK summary table" with
+#'   that extension and output will be located in the same folder as
+#'   \code{sim_data_file}. If you supply something other than just "docx" or
+#'   just "csv" for the file name but you leave off the file extension, we'll
+#'   assume you want it to be ".csv". While the main PK table data will be in
+#'   whatever file format you requested, if you set \code{checkDataSource =
+#'   TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+#'   added to the end of the file name. \strong{WARNING:} SAVING TO WORD DOES
+#'   NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an R
+#'   issue. If you try to save on SharePoint, you will get a warning that R will
+#'   save your file to your local (not OneDrive) Documents folder instead.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
@@ -315,8 +316,8 @@ pksummary_table <- function(sim_data_file = NA,
                 which(str_detect(names(prettify_compound_names), "inhibitor"))] <- "effector"
         }
         
-        if(all(c("substrate", "effector") %in% names(prettify_compound_names)) == FALSE){
-            warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of both `substrate` and `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+        if("substrate" %in% names(prettify_compound_names) == FALSE){
+            warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of `substrate` and, if there are any effectors, `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
                     call. = FALSE)
             prettify_compound_names <- TRUE
         }
@@ -467,7 +468,7 @@ pksummary_table <- function(sim_data_file = NA,
         
         # If user provided observed PK, then make sure those PK parameters are
         # included in the PK to extract.
-        PKparameters <- unique(c(PKparameters, names(MyObsPK)))
+        PKparameters <- sort(unique(c(PKparameters, names(MyObsPK))))
         
     }
     
@@ -658,15 +659,22 @@ pksummary_table <- function(sim_data_file = NA,
             ]
             
             for(i in ColsToChange){
-                TEMP <- match_units(MyPKResults_all$aggregate %>% 
-                                        rename(Conc = i) %>% 
-                                        mutate(Conc_units = Deets$Units_Cmax, 
-                                               Time = 1, Time_units = "hours"),
-                                    goodunits = list("Conc_units" = adjust_conc_units, 
-                                                     "Time_units" = "hours"))
+                TEMP <- match_units(
+                    MyPKResults_all$aggregate %>% 
+                        rename(Conc = i) %>% 
+                        mutate(CompoundID = "substrate", # need a placeholder here. This will only work for substrate anyway.
+                               Conc_units = Deets$Units_Cmax, 
+                               Time = 1, Time_units = "hours"),
+                    goodunits = list("Conc_units" = adjust_conc_units, 
+                                     "Time_units" = "hours"), 
+                    MW = c("substrate" = Deets$MW_sub))
                 MyPKResults_all$aggregate[, i] <- TEMP$Conc
                 rm(TEMP)
             }
+            
+            # Need to change units in Deets now to match.
+            Deets$Units_AUC <- sub(Deets$Units_Cmax, adjust_conc_units, Deets$Units_AUC)
+            Deets$Units_Cmax <- adjust_conc_units
         }
     }
     
@@ -898,20 +906,26 @@ pksummary_table <- function(sim_data_file = NA,
         MyObsPK <- MyObsPK %>% 
             mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
                                  ifelse({{MeanType}} == "geometric", "GCV", "CV"), 
-                                 ifelse({{MeanType}} == "geometric", "geomean", "mean")), 
-                   # Accounting for when the mean ratios for obs data are
-                   # actually geometric even though the other obs data means are
-                   # arithmetic. This will label observed data GMR values as
-                   # "mean" (for arithmetic means) rather than "geomean" so that
-                   # it will be easier to return only the correct mean types. I
-                   # know that's confusing, but I couldn't come up with a better
-                   # way to do that, so my apologies! -LSh
-                   Stat = ifelse({{MeanType}} == "arithmetic" &
-                                     {{GMR_mean_type}} == "geometric" &
-                                     str_detect(PKParam, "ratio") &
-                                     str_detect(Stat, "mean"), # detecting mean or geomean but not CV 
-                                 "mean", Stat), 
-                   PKParam = sub("_CV", "", PKParam))
+                                 ifelse({{MeanType}} == "geometric", "geomean", "mean")))
+        
+        if(EffectorPresent){
+            # Accounting for when the mean ratios for obs data are
+            # actually geometric even though the other obs data means are
+            # arithmetic. This will label observed data GMR values as
+            # "mean" (for arithmetic means) rather than "geomean" so that
+            # it will be easier to return only the correct mean types. I
+            # know that's confusing, but I couldn't come up with a better
+            # way to do that, so my apologies! -LSh
+            MyObsPK <- MyObsPK %>% 
+                mutate(Stat = ifelse({{MeanType}} == "arithmetic" &
+                              {{GMR_mean_type}} == "geometric" &
+                              str_detect(PKParam, "ratio") &
+                              str_detect(Stat, "mean"), # detecting mean or geomean but not CV 
+                          "mean", Stat))
+        }
+        
+        MyObsPK <- MyObsPK %>% 
+            mutate(PKParam = sub("_CV", "", PKParam))
         
         if(complete.cases(sheet_PKparameters)){
             MyObsPK$PKParam <- sub("_first|_dose1|_last", "", MyObsPK$PKParam)
@@ -1142,7 +1156,8 @@ pksummary_table <- function(sim_data_file = NA,
                 MyEffector <- prettify_compound_name(MyEffector)
             }
             
-            if(class(prettify_compound_names) == "character"){
+            if(class(prettify_compound_names) == "character" &
+               "effector" %in% names(prettify_compound_names)){
                 names(prettify_compound_names)[
                     str_detect(tolower(names(prettify_compound_names)), 
                                "effector")][1] <- "effector"

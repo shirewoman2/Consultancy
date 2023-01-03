@@ -145,7 +145,9 @@ values, so this should be set to FALSE for official reports.}
 other than what was used in the simulation? Default is NA to leave the
 units as is, but if you set the concentration units to something else, this
 will attempt to adjust the units to match that. This only adjusts AUC and
-Cmax values at present.}
+Cmax values at present and, if you're switching between mass per volume and
+mole per volume units, it will assume you want to use the MW of the
+substrate to do that.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
@@ -176,19 +178,20 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file. If you supply only the file
-extension, e.g., \code{save_table = "docx"}, the name of the file will be
-the file name plus "PK summary table" with that extension and output will
-be located in the same folder as \code{sim_data_file}. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". While
-the main PK table data will be in whatever file format you requested, if
-you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-its own and will have "- QC" added to the end of the file name.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft permissions issue, not an R issue. If you try to save on
-SharePoint, you will get a warning that R will save your file to your
-Documents folder instead.}
+the main PK table saved as a Word or csv file. (You can also save the table
+to a Word file later with the function \code{\link{formatTable_Simcyp}}.)
+If you supply only the file extension, e.g., \code{save_table = "docx"},
+the name of the file will be the file name plus "PK summary table" with
+that extension and output will be located in the same folder as
+\code{sim_data_file}. If you supply something other than just "docx" or
+just "csv" for the file name but you leave off the file extension, we'll
+assume you want it to be ".csv". While the main PK table data will be in
+whatever file format you requested, if you set \code{checkDataSource =
+TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+added to the end of the file name. \strong{WARNING:} SAVING TO WORD DOES
+NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an R
+issue. If you try to save on SharePoint, you will get a warning that R will
+save your file to your local (not OneDrive) Documents folder instead.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
@@ -208,14 +211,12 @@ output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 see the notes at the bottom of this help file for how to supply observed data
 in a standardized fashion that this function can read.} \item{If you would
 like to make a single PK table for multiple files at once, please see the
-function \code{\link{pksummary_mult}}.} \item{Nearly all parameters are for
-the \emph{substrate}. We're still validating this for extracting PK for an
-effector. \strong{A request for assistance:} If you extract PK data for an
-effector by specifying an Excel sheet for that compound, please check the
-values and tell Laura Shireman how well it works!} \item{ If the simulator
-output Excel file lives on SharePoint, you'll need to close it or this
-function will just keep running and not generate any output while it waits
-for access to the file.}}
+function \code{\link{pksummary_mult}}.} \item{All parameters are for the
+\emph{substrate} unless you specify that you would like the PK parameters to
+be pulled from a specific tab in the Excel output file that is for some other
+compound.} \item{ If the simulator output Excel file lives on SharePoint,
+you'll need to close it or this function will just keep running and not
+generate any output while it waits for access to the file.}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up

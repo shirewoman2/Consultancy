@@ -28,7 +28,7 @@
 #'   "_met1" for the primary metabolite, "_met2" for the second primary
 #'   metabolite, "_secmet" for the secondary metabolite, "_inhib" for the 1st
 #'   inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
-#'   listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+#'   listed, or "_inhib1met" for the inhibitor 1 metabolite. An example of
 #'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
 #'   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
@@ -473,7 +473,7 @@ extractExpDetails <- function(sim_data_file,
             
             for(j in MyInputDeets2){
                 
-                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_met2$|_secmet$|_inh1met$")
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_met2$|_secmet$|_inhib1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                 ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
                 CLRows <- which(
@@ -628,19 +628,31 @@ extractExpDetails <- function(sim_data_file,
                                     ValueCol])
                         )
                         
-                        suppressWarnings(
-                            Out[[paste0("CLrenal_InVivoCL", Suffix)]] <- 
-                                as.numeric(InputTab[
-                                    which(str_detect(MyNames,
-                                                     "CL R [(]mL/min")) + i - 1,
-                                    ValueCol])
-                        )
+                        ## Already have renal CL, I think. At least have it
+                        ## already for test file. Check this again w/another
+                        ## file, though.
+                        
+                        # suppressWarnings(
+                        #     Out[[paste0("CLrenal_InVivoCL", Suffix)]] <- 
+                        #         as.numeric(InputTab[
+                        #             which(str_detect(MyNames,
+                        #                              "CL R [(]mL/min")) + i - 1,
+                        #             ValueCol])
+                        # )
                         
                         suppressWarnings(
                             Out[[paste0("CLadditional_InVivoCL", Suffix)]] <- 
                                 as.numeric(InputTab[
                                     which(str_detect(MyNames,
                                                      "Additional Systemic Clearance")) + i - 1,
+                                    ValueCol])
+                        )
+                        
+                        suppressWarnings(
+                            Out[[paste0("CLpo_InVivoCL", Suffix)]] <- 
+                                as.numeric(InputTab[
+                                    which(str_detect(MyNames,
+                                                     "^CL .po.")) + i - 1,
                                     ValueCol])
                         )
                         
@@ -658,7 +670,7 @@ extractExpDetails <- function(sim_data_file,
             
             for(j in MyInputDeets3){
                 
-                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                 IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
                                             "^Enzyme$|^Transporter$"))
@@ -831,7 +843,7 @@ extractExpDetails <- function(sim_data_file,
             
             for(j in MyInputDeets5){
                 
-                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inh1met$")
+                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
                 NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
                 ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
                 
@@ -930,30 +942,6 @@ extractExpDetails <- function(sim_data_file,
                 }
             }
         }
-        
-        # Fixing an issue that trips up other code down the line: Sometimes, the
-        # user might specify a "multiple dose" regimen but then only administer
-        # a single dose. That messes up, e.g., extractPK b/c it looks on the
-        # wrong tab for the info it needs. When that happens, set the regimen to
-        # "Single Dose".
-        if(complete.cases(Out$Regimen_sub) &
-           Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
-            Out$Regimen_sub <- "Single Dose"
-        }
-        
-        if(complete.cases(Out$Inhibitor1)){
-            if(complete.cases(Out$Regimen_inhib) & 
-               Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
-                Out$Regimen_inhib <- "Single Dose" 
-            }
-        }
-        if(complete.cases(Out$Inhibitor2)){
-            if(complete.cases(Out$Regimen_inhib2) & 
-               Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
-                Out$Regimen_inhib2 <- "Single Dose" 
-            }
-        }
-        
     }
     
     # Dealing with custom dosing schedules ---------------------------------
@@ -1014,6 +1002,8 @@ extractExpDetails <- function(sim_data_file,
             
         }
     }
+    
+    
     
     # Pulling details from the population tab -------------------------------
     MyPopDeets <- intersect(exp_details, PopDeets$Deet)
@@ -1213,6 +1203,30 @@ extractExpDetails <- function(sim_data_file,
     }
     
     Out <- Out[sort(names(Out))]
+    
+    # Fixing an issue that trips up other code down the line: Sometimes, the
+    # user might specify a "multiple dose" regimen but then only administer
+    # a single dose. That messes up, e.g., extractPK b/c it looks on the
+    # wrong tab for the info it needs. When that happens, set the regimen to
+    # "Single Dose".
+    if(complete.cases(Out$Regimen_sub) &
+       Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
+        Out$Regimen_sub <- "Single Dose"
+    }
+    
+    if(complete.cases(Out$Inhibitor1)){
+        if(complete.cases(Out$Regimen_inhib) & 
+           Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
+            Out$Regimen_inhib <- "Single Dose" 
+        }
+    }
+    if(complete.cases(Out$Inhibitor2)){
+        if(complete.cases(Out$Regimen_inhib2) & 
+           Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
+            Out$Regimen_inhib2 <- "Single Dose" 
+        }
+    }
+    
     
     if(annotate_output){
         OutDF <- annotateDetails(Out)

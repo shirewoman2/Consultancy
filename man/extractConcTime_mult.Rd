@@ -14,7 +14,8 @@ extractConcTime_mult(
   conc_units_to_use = "ng/mL",
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
-  ...,
+  adjust_obs_time = FALSE,
+  expdetails = NA,
   obs_data_files = NA
 )
 }
@@ -50,15 +51,15 @@ those files will be skipped.}
 
   \item{a data.frame with one column for the observed files and one column
   for the simulated files they each match}{The data.frame must have column
-  names of "ObsFile" and "SimFile" for the observed and simulated files,
+  names of "ObsFile" and "File" for the observed and simulated files,
   respectively. Here's an example of acceptable input:
   \code{obs_to_sim_assignment = data.frame(ObsFile = c("obsdata1.xlsx",
-  "obsdata2.xlsx"), SimFile = c("simfileA.xlsx", "simfileB.xlsx"))} Each row
+  "obsdata2.xlsx"), File = c("simfileA.xlsx", "simfileB.xlsx"))} Each row
   should contain one observed file and one simulated file, so if you want to
   compare a single observed file to multiple simulated files, you'll need to
   repeat the observed file, e.g., \code{obs_to_sim_assignment =
   data.frame(ObsFile = c("obsdata1.xlsx", "obsdata2.xlsx", "obsdata2.xlsx",
-  "obsdata2.xlsx"), SimFile = c("simfileA.xlsx", "simfileB.xlsx",
+  "obsdata2.xlsx"), File = c("simfileA.xlsx", "simfileB.xlsx",
   "simfileC.xlsx", "simfileD.xlsx"))}}
 
   \item{a csv file with one column for the observed files and one column for
@@ -94,27 +95,41 @@ where you might want to set this to TRUE would be when you have changed
 input parameters for simulations and re-run them.}
 
 \item{tissues}{From which tissue(s) should the desired concentrations be
-extracted? The default is plasma for typical plasma concentration-time
-data. Other options are "blood" or any tissues included in "Sheet Options",
-"Tissues" in the simulator. All possible options: "plasma", "blood",
-"unbound blood", "unbound plasma", "additional organ", "adipose", "bone",
-"brain", "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung",
-"muscle", "pancreas", "peripheral blood", "peripheral plasma", "peripheral
-unbound blood", "peripheral unbound plasma", "portal vein blood", "portal
-vein plasma", "portal vein unbound blood", "portal vein unbound plasma",
-"skin", or "spleen". Not case sensitive. Acceptable input is all tissues
-desired as a character vector, e.g., \code{c("plasma", "blood", "liver")}.}
+extracted? Default is plasma for typical plasma concentration-time data.
+Other options are "blood" or any tissues included in "Sheet Options",
+"Tissues" in the simulator. All possible options:\describe{
+\item{First-order absorption models}{"plasma", "blood", "unbound blood",
+"unbound plasma", "additional organ", "adipose", "bone", "brain",
+"feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+"pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
+blood", "peripheral unbound plasma", "portal vein blood", "portal vein
+plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
+or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+"jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+"faeces", "gut tissue", "cumulative absorption", or "cumulative
+dissolution".}} Not case sensitive. Acceptable input is all tissues desired
+as a character vector, e.g., \code{tissues = c("plasma", "blood",
+"liver")}.}
 
-\item{compoundsToExtract}{For which compound(s) do you want to extract
+\item{compoundsToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"substrate"
 (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
-\item{"secondary metabolite",} \item{"inhibitor 1" (this can be an inducer,
-inhibitor, activator, or suppresesor, but it's labeled as "Inhibitor 1" in
-the simulator),} \item{"inhibitor 2" for the 2nd inhibitor listed in the
-simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
-inhibitor 1, or} \item{"all" for all possible compounds in the
-simulation.}} Input to this argument should be all desired compounds as a
-character vector, e.g., \code{c("substrate", "primary metabolite 1")}.}
+\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+inducer, inhibitor, activator, or suppresesor, but it's labeled as
+"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+metabolite of inhibitor 1} \item{"conjugated protein" for DAR1-DARmax for
+an antibody-drug conjugate; observed data with DV listed as "Conjugated
+Protein Plasma Total" will match these simulated data,} \item{"total
+protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
+Protein Conjugate Plasma Total" will match these simulated data,}
+\item{"released payload" for the released drug from an ADC, which shows up
+as primary metabolite 1 in Simulator output files; or} \item{"all" for all
+possible compounds in the simulation.}} Input to this argument should be
+all desired compounds as a character vector, e.g., \code{c("substrate",
+"primary metabolite 1")}. \strong{Note: If your compound is a therapeutic
+protein or ADC, we haven't tested this very thoroughly, so please be extra
+careful to check that you're getting the correct data.}}
 
 \item{conc_units_to_use}{concentration units to use so that all data will be
 comparable. Options are the same as the ones in the Excel form for PE data
@@ -130,12 +145,26 @@ concentration-time data? Options are "aggregate" (default), "individual",
 or "both". Aggregated data are not calculated here but are pulled from the
 simulator output rows labeled as "Population Statistics".}
 
-\item{...}{other arguments passed to the function
-\code{\link{extractConcTime}}}
+\item{adjust_obs_time}{TRUE or FALSE (default) for whether to adjust the time
+listed in the observed data file to match the last dose administered. This
+only applies to multiple-dosing regimens. If TRUE, the graph will show the
+observed data overlaid with the simulated data such that the dose in the
+observed data was administered at the same time as the last dose in the
+simulated data. If FALSE, the observed data will start at whatever times
+are listed in the Excel file.}
+
+\item{expdetails}{If you have already run \code{extractExpDetails_mult} to get all
+the details from the "Input Sheet", you can save some processing time by
+supplying it here, unquoted. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
 
 \item{obs_data_files}{TO BE DEPRECATED. This is the same argument as
 obs_to_sim_assignment; we just renamed it to try to be clearer about what
 the argument does and in what order you should list the files.}
+
+\item{...}{other arguments passed to the function
+\code{\link{extractConcTime}}}
 }
 \value{
 Returns a large data.frame with multiple sets of concentration-time
@@ -148,12 +177,12 @@ Returns a large data.frame with multiple sets of concentration-time
 from multiple Simcyp Simulator output files. If you list multiple files,
 multiple tissues, and/or multiple compounds to extract (see options below),
 this will extract \emph{all} possible variations of them. For example, if you
-ask for "sim1.xlsx" and "sim2.xlsx" and then also ask for "substrate" and
-"primary metabolite 1", you will get the substrate and primary metabolite 1
-data from \emph{both} files. \strong{NOTE:} If ANY of the Excel files you
-wish to extract data from are saved on SharePoint and are open, this WILL
-CRASH and WILL NOT save whatever progress it has made so far. Be sure to
-close all of the source Excel files.
+ask for data from the files "sim1.xlsx" and "sim2.xlsx" and then also ask for
+"substrate" and "primary metabolite 1", you will get the substrate and
+primary metabolite 1 data from \emph{both} files. \strong{NOTE:} If ANY of
+the Excel files you wish to extract data from are saved on SharePoint and are
+open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
+Be sure to close all of the source Excel files.
 }
 \details{
 \strong{Regarding dose intervals for observed data:} The observed data files
@@ -169,8 +198,8 @@ that's not the case, these dose number assignments will be off.
 ConcTimeData <-
       extractConcTime_mult(
             sim_data_files = c("MyFile1.xlsx", "MyFile2.xlsx"),
-            ct_dataframe = "ConcTimeData",
+            ct_dataframe = ConcTimeData,
             overwrite = FALSE,
-            tissue = "unbound plasma") # Note that "tissue" is passed to "extractConcTime".
+            tissues = "unbound plasma")
 
 }

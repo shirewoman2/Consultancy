@@ -7,10 +7,10 @@
 extractConcTime(
   sim_data_file,
   obs_data_file = NA,
-  adjust_obs_time = FALSE,
   tissue = "plasma",
   compoundToExtract = "substrate",
   returnAggregateOrIndiv = "both",
+  adjust_obs_time = FALSE,
   expdetails = NA,
   fromMultFunction = FALSE
 )
@@ -27,6 +27,44 @@ the Excel output from the simulator, leave this as NA. Otherwise, this is
 the file that it is ready to be converted to an XML file, not the file that
 contains only the digitized time and concentration data.}
 
+\item{tissue}{From which tissue should the desired concentrations be
+extracted? Default is plasma for typical plasma concentration-time data.
+Other options are "blood" or any tissues included in "Sheet Options",
+"Tissues" in the simulator. All possible options:\describe{
+\item{First-order absorption models}{"plasma", "blood", "unbound blood",
+"unbound plasma", "additional organ", "adipose", "bone", "brain",
+"feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+"pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
+blood", "peripheral unbound plasma", "portal vein blood", "portal vein
+plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
+or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+"jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+"faeces", "gut tissue", "cumulative absorption", or "cumulative
+dissolution".}} Not case sensitive.}
+
+\item{compoundToExtract}{For which compound do you want to extract
+concentration-time data? Options are: \itemize{\item{"substrate"
+(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+inducer, inhibitor, activator, or suppresesor, but it's labeled as
+"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+metabolite of inhibitor 1} \item{"conjugated protein" for DAR1-DARmax for
+an antibody-drug conjugate; observed data with DV listed as "Conjugated
+Protein Plasma Total" will match these simulated data,} \item{"total
+protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
+Protein Conjugate Plasma Total" will match these simulated data,}
+\item{"released payload" for the released drug from an ADC, which shows up
+as primary metabolite 1 in Simulator output files.}} \strong{Note:} If your
+compound is a therapeutic protein or ADC, we haven't tested this very
+thoroughly, so please be extra careful to check that you're getting the
+correct data.}
+
+\item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
+concentration-time data? Options are "aggregate", "individual", or "both"
+(default). Aggregated data are not calculated here but are pulled from the
+simulator output rows labeled as "Population Statistics".}
+
 \item{adjust_obs_time}{TRUE or FALSE (default) for whether to adjust the time
 listed in the observed data file to match the last dose administered. This
 only applies to multiple-dosing regimens. If TRUE, the graph will show the
@@ -34,38 +72,6 @@ observed data overlaid with the simulated data such that the dose in the
 observed data was administered at the same time as the last dose in the
 simulated data. If FALSE, the observed data will start at whatever times
 are listed in the Excel file.}
-
-\item{tissue}{From which tissue should the desired concentrations be
-extracted? Default is plasma for typical plasma concentration-time data.
-Other options are "blood" or any tissues included in "Sheet Options",
-"Tissues" in the simulator. Notes: \itemize{ \item{All possible options for
-first-order absorption models: "plasma", "blood", "unbound blood", "unbound
-plasma", "additional organ", "adipose", "bone", "brain", "feto-placenta",
-"GI tissue", "heart", "kidney", "liver", "lung", "muscle", "pancreas",
-"peripheral blood", "peripheral plasma", "peripheral unbound blood",
-"peripheral unbound plasma", "portal vein blood", "portal vein plasma",
-"portal vein unbound blood", "portal vein unbound plasma", "skin", or
-"spleen".} \item{Additional options for ADAM-model simulations: "stomach",
-"duodenum", "jejunum I", "jejunum II", "ileum I", "ileum II", "ileum III",
-"ileum IV", "colon", "faeces", "gut tissue", "cumulative absorption", or
-"cumulative dissolution". \strong{This has not been thoroughly tested for
-very many ADAM-model scenarios, so please check that the data extracted are
-correct.}}} Not case sensitive.}
-
-\item{compoundToExtract}{For which compound do you want to extract
-concentration-time data? Options are "substrate" (default), "primary
-metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
-1" (this can be an inducer, inhibitor, activator, or suppresesor, but it's
-labeled as "Inhibitor 1" in the simulator), "inhibitor 2" for the 2nd
-inhibitor listed in the simulation, or "inhibitor 1 metabolite" for the
-primary metabolite of inhibitor 1. \strong{Note:} If your compound is a
-therapeutic protein, we haven't tested this very thoroughly, so please be
-extra careful to check that you're getting the correct data.}
-
-\item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
-concentration-time data? Options are "aggregate", "individual", or "both"
-(default). Aggregated data are not calculated here but are pulled from the
-simulator output rows labeled as "Population Statistics".}
 
 \item{expdetails}{If you have already run \code{extractExpDetails} to get all
 the details from the "Input Sheet", you can save some processing time by

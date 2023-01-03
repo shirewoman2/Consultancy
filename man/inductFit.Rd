@@ -161,7 +161,11 @@ means the file will not be automatically saved to disk.}
 quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
 file will save only the fitted parameters. However, if you would like a
 Word file with a) the equations used, b) the fitted parameters, and c) the
-graphs, end this file name with ".docx" instead.}
+graphs, end this file name with ".docx" instead. \strong{WARNING:} SAVING
+TO WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue,
+not an R issue. If you try to save on SharePoint, you will get a warning
+that R will save your file instead to your local (not OneDrive) Documents
+folder.}
 }
 \value{
 Returns a list of \describe{ \item{Fit}{the fitted parameters}
@@ -173,20 +177,20 @@ Returns a list of \describe{ \item{Fit}{the fitted parameters}
 }
 \description{
 \code{inductFit} fits induction data -- either activity or mRNA expression --
-to one or all of four models for calculating Emax, EC50, and, when
+to one or all of four models for calculating Indmax or Emax, EC50, and, when
 appropriate, a slope. Like Howie's R script for fitting induction data
-("Induction_fit_script_ver2.r"), default weighting is by 1/y^2, although you
-can change that with the "weights" argument. \strong{Two important notes:}
-\itemize{\item{With the exception of the sigmoidal 3-parameter model, the
-fitted parameter describing maximal induction is Emax and \emph{not} Indmax,
-the parameter used in the Simcyp Simulator. Note that \strong{Indmax = Emax +
-1}.} \item{One way in which this function differs from Howie's script is that
-no upper or lower bounds for parameter estimates are in use. This means that,
-if sufficient data to describe the curve do not exist, the function will fail
-to deliver any fitted parameters, which is meant to be a benefit but could be
-an annoyance depending on your perspective. Because this does not include
-those boundaries, you may get different results between this function and
-Howie's script.}}
+("Induction_fit_script_ver2.r"), by default, data are weighted by 1/y^2, but
+you can change that with the "weights" argument. \strong{Two important
+notes:} \itemize{\item{With the exception of the sigmoidal 3-parameter model,
+the fitted parameter describing maximal induction is Emax and \emph{not}
+Indmax, the parameter used in the Simcyp Simulator. Note that \strong{Indmax
+= Emax + 1}.} \item{One way in which this function differs from Howie's
+script is that no upper or lower bounds for parameter estimates are in use.
+This means that, if sufficient data to describe the curve do not exist, the
+function will fail to deliver any fitted parameters, which is meant to be a
+benefit but could be an annoyance depending on your perspective. Because this
+does not include those boundaries, you may get different results between this
+function and Howie's script.}}
 }
 \examples{
 data(IndData)

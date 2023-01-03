@@ -76,14 +76,14 @@
 #'
 #'   \item{a string of the specific details you want, each in quotes and
 #'   encapsulated with \code{c(...)},}{For a complete list of possibilities,
-#'   type \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
-#'   console. Parameters are reported with a suffix depending on which compound
-#'   they pertain to: "_sub" for the substrate, "_met1" for the primary
-#'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-#'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-#'   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-#'   inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
-#'   "fa_inhib2", "Regimen_sub")}}  Not case sensitive.}
+#'   type \code{view(ExpDetailDefinitions)} into the console. Parameters are
+#'   reported with a suffix depending on which compound they pertain to: "_sub"
+#'   for the substrate, "_met1" for the primary metabolite, "_met2" for the
+#'   second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
+#'   for the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
+#'   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+#'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}  Not
+#'   case sensitive.}
 #' @param simulator_section optionally supply a specific simulator section or
 #'   sections from which to find simulation experimental details and then return
 #'   \emph{only} those details. Options are "Absorption", "Distribution",
@@ -95,27 +95,53 @@
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
 #'
-#' @return
+#' @return Returns a data.frame of simulation experimental details including the
+#'   following columns: \describe{
+#'
+#'   \item{SimulatorSection}{the simulator section this detail is from, e.g.,
+#'   "absorption" or "elimination"}
+#'
+#'   \item{Sheet}{the sheet in the Excel output where the data were found}
+#'
+#'   \item{Notes}{an explanation of what this detail is}
+#'
+#'   \item{CompoundID}{the simulator compound ID that this information pertains
+#'   to, e.g., "substrate" or "inhibitor 1"}
+#'
+#'   \item{Compound}{the name of the compound in the simulator, e.g.,
+#'   "Sim-Midazolam"}
+#'
+#'   \item{Detail}{the specific experimental detail}
+#'
+#'   \item{All files have this value for this compound and compound ID}{If all
+#'   of the files have the \emph{exact same value} for this particular
+#'   combination of detail, compound, and compound ID, that value will show up
+#'   in this column. The idea is that this makes it easy to check that
+#'   everything that \emph{should} be the same in a plethora of simulations
+#'   actually \emph{is} the same.}
+#'
+#'   \item{one column for every file included}{the extracted simulator
+#'   experimental details for each file will show up in their own columns}}
 #' @export
 #'
 #' @examples
 #'
-#' annotateDetails(Deets)
+#' annotateDetails(Deets = MDZdetails)
 #'
 #' # Get annotated details regarding absorption.
-#' annotateDetails(Deets = MyDetails, simulator_section = "absorption")
+#' annotateDetails(Deets = MDZdetails, simulator_section = "absorption")
 #'
 #' # Get annotated details on whatever was used as inhibitor 1
-#' annotateDetails(Deets = MyDetails, compoundID = "inhibitor 1")
+#' annotateDetails(Deets = MDZdetails, compoundID = "inhibitor 1")
 #'
 #' # Get annotated details for any compounds with "midaz" or "keto" in the name.
-#' annotateDetails(Deets = MyDetails, compound = "midaz|keto")
+#' annotateDetails(Deets = MDZdetails, compound = "midaz|keto")
 #'
 #' # Get (most of) the details to put into a table of simulation inputs:
-#' annotateDetails(Deets = MyDetails, detail_set = "Simcyp inputs")
+#' annotateDetails(Deets = MDZdetails, detail_set = "Simcyp inputs")
 #'
 #' # Combine multiple options to get just a few specific details:
-#' annotateDetails(Deets = MyDetails,
+#' annotateDetails(Deets = MDZdetails,
 #'             simulator_section = "absorption",
 #'             compound = "midaz|keto",
 #'             compoundID = "substrate")
@@ -184,36 +210,7 @@ annotateDetails <- function(Deets,
     
     if(PrevAnnotated){
         
-        FileOrder <- names(Deets)[str_detect(names(Deets), "xlsx")]
-        
-        CompoundNames <- Deets %>% 
-            select(Compound, CompoundID, matches("xlsx$")) %>% 
-            pivot_longer(cols = -c(Compound, CompoundID),
-                         names_to = "File", values_to = "Value") %>%
-            filter(complete.cases(Value) & complete.cases(Compound)) %>% 
-            select(File, Compound, CompoundID) %>% unique() %>% 
-            mutate(File = factor(File, levels = FileOrder))
-        
-        # This is when Deets has been annotated.
-        # Ironically, need to de-annotate here to make this work well
-        # with the rest of the function.
-        Deets <- Deets %>% 
-            select(-any_of(c("SimulatorSection", "Sheet", "Notes",
-                             "CompoundID", "Compound"))) %>% 
-            pivot_longer(cols = -Detail, 
-                         names_to = "File", values_to = "Value") %>% 
-            # Need to remove NA values here b/c they can otherwise lead to
-            # multiple values for a given detail when one value is for the
-            # correct compound and the other is for compounds that are present
-            # in other files but DO have that particular compound ID. For
-            # example, metabolite 1 might be OH-MDZ for some files and
-            # OH-bupropion for others, and that will have multiple rows. Removed
-            # NA values should mostly come out in the wash, I think, but there
-            # is a risk that we'll lose some NA values that should be included.
-            # I think that's an acceptable risk. - LSh
-            filter(complete.cases(Value)) %>% 
-            pivot_wider(names_from = Detail, values_from = Value) %>% 
-            mutate(File = factor(File, levels = FileOrder))
+        Deets <- deannotateDetails(Deets, apply_class = FALSE)
         
     } else if("File" %in% names(Deets) == FALSE){
         Deets$File <- paste("unknown file", 1:nrow(Deets))
@@ -236,23 +233,21 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
-    if(PrevAnnotated == FALSE){
-        CompoundNames <- Out %>%
-            filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
-                                 "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                 "Inhibitor1", "Inhibitor2", 
-                                 "Inhibitor1Metabolite")) %>% 
-            mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
-                                          Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
-                                          Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
-                                          Detail == "SecondaryMetabolite" ~ "secondary metabolite",
-                                          Detail == "Inhibitor1" ~ "inhibitor 1", 
-                                          Detail == "Inhibitor2" ~ "inhibitor 2", 
-                                          Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
-            rename("Compound" = Value) %>% 
-            filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
-            select(-Detail)
-    }
+    CompoundNames <- Out %>%
+        filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
+                             "PrimaryMetabolite2", "SecondaryMetabolite", 
+                             "Inhibitor1", "Inhibitor2", 
+                             "Inhibitor1Metabolite")) %>% 
+        mutate(CompoundID = case_when(Detail == "Substrate" ~ "substrate",
+                                      Detail == "PrimaryMetabolite1" ~ "primary metabolite 1",
+                                      Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
+                                      Detail == "SecondaryMetabolite" ~ "secondary metabolite",
+                                      Detail == "Inhibitor1" ~ "inhibitor 1", 
+                                      Detail == "Inhibitor2" ~ "inhibitor 2", 
+                                      Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
+        rename("Compound" = Value) %>% 
+        filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
+        select(-Detail)
     
     suppressMessages(
         Out <- Out %>% 
@@ -268,16 +263,19 @@ annotateDetails <- function(Deets,
             mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
                                       Detail == "SimDuration", 
                                   "Summary", Sheet)) %>% 
-            ungroup() %>% 
+            ungroup())
+    
+    suppressMessages(
+        Out <- Out %>% 
             left_join(CompoundNames))
     
     # Metabolism and interaction parameters won't match input details, so
     # adding which sheet they came from and what simulator section they
     # were.
-    Out <- Out %>% 
-        mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal"), 
+    Out <- Out %>% unique() %>% 
+        mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
                               "Input Sheet", Sheet), 
-               SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal"), 
+               SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
                                          "Elimination", SimulatorSection), 
                Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
                               "Input Sheet", Sheet),
@@ -287,7 +285,8 @@ annotateDetails <- function(Deets,
                               "Input Sheet", Sheet),
                SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
                                          "Transporters", SimulatorSection)) %>% 
-        select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail, everything()) %>% 
+        select(any_of(c("SimulatorSection", "Sheet", "Notes", "CompoundID",
+                        "Compound", "Detail")), everything()) %>% 
         arrange(SimulatorSection, Detail)
     
     if(class(show_compound_col) == "logical"){
@@ -300,9 +299,10 @@ annotateDetails <- function(Deets,
             group_by(CompoundID) %>% 
             summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
         
-        Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
-            select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
-                   File, Value)
+        suppressMessages(
+            Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
+                select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
+                       File, Value))
     }
     
     
@@ -382,7 +382,7 @@ annotateDetails <- function(Deets,
         
         if(length(MySections) == 0){
             warning(paste0("You entered ", simulator_section_orig), 
-                    " for the argument `simulator_section`, but that is not among the acceptable options. Please check the help file. We will not filter your results based on simulator section.", 
+                    " for the argument `simulator_section`, but that is not among the acceptable options, which are listed in the help file. We will not filter your results based on simulator section.", 
                     call. = FALSE)
         }
         
@@ -392,59 +392,63 @@ annotateDetails <- function(Deets,
     
     ## detail_set -------------------------------------------------------------
     
-    if(complete.cases(detail_set)){
+    if(all(complete.cases(detail_set))){
         
-        if(tolower(detail_set) == "simcyp inputs"){
-            
-            CDSdetails <- c("MW", "logP", "CompoundType", "pKa1", "pKa2",
-                            "BPratio", "fu", "BindingProtein", "Abs_model",
-                            "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
-                            "Qgut", "fu_gut", "ka", "fa", "tlag",
-                            "ModelType", "VssPredMeth", "Vss_input",
-                            "kp_scalar", "kin_sac", "kout_sac",
-                            "Vsac", "CLint", "CLrenal")
-            
-            Out <- Out %>%
-                filter(Detail %in%
-                           c("Substrate", "PrimaryMetabolite1", 
-                             "PrimaryMetabolite2", "SecondaryMetabolite", 
-                             AllExpDetails %>% filter(complete.cases(CDSInputMatch)) %>%
-                                 pull(Detail)) | SimulatorSection %in%
-                           c("Elimination", "Interaction", "Transporters")) %>%
-                mutate(CompoundID = factor(CompoundID, 
-                                           levels = c("Substrate", "PrimaryMetabolite1", 
-                                                      "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                                      "Inhibitor1", "Inhibitor2", 
-                                                      "Inhibitor1Metabolite"))) %>% 
-                arrange(CompoundID) %>% 
-                mutate(Detail = factor(
-                    Detail,
-                    levels = unique(c("Substrate", "PrimaryMetabolite1", 
-                                      "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                      "Inhibitor1", "Inhibitor2", 
-                                      "Inhibitor1Metabolite", 
-                                      paste0(rep(CDSdetails, 7), 
-                                             rep(c("_sub", "_met1", "_met2", 
-                                                   "_secmet", "_inhib", 
-                                                   "_inhib2", "_inhib1met"), 
-                                                 each = length(CDSdetails))),
-                                      unique(Out$Detail))))) %>%
-                # Yes, this is taking multiple steps to get the factors in the
-                # correct order; I'm not sure of a more concise way to do this
-                # that will still accomplish what I want. -LSh
-                arrange(CompoundID, Detail) %>% 
-                mutate(Detail = factor(Detail, levels = unique(Detail))) %>% 
-                filter(complete.cases(Value))
-            
-        } else if(str_detect(tolower(detail_set), "summary")){
-            Out <- Out %>% filter(Sheet == "Summary")
-            
-        } else if(str_detect(tolower(detail_set), "input")){
-            Out <- Out %>% filter(Sheet == "Input Sheet")
-            
-        } else if(str_detect(tolower(detail_set), "population")){
-            Out <- Out %>% filter(Sheet == "population")
-            
+        if(length(detail_set) == 1){
+            if(tolower(detail_set) == "simcyp inputs"){
+                
+                CDSdetails <- c("MW", "logP", "CompoundType", "pKa1", "pKa2",
+                                "BPratio", "fu", "BindingProtein", "Abs_model",
+                                "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
+                                "Qgut", "fu_gut", "ka", "fa", "tlag",
+                                "ModelType", "VssPredMeth", "Vss_input",
+                                "kp_scalar", "kin_sac", "kout_sac",
+                                "Vsac", "CLint", "CLrenal")
+                
+                Out <- Out %>%
+                    filter(Detail %in%
+                               c("Substrate", "PrimaryMetabolite1", 
+                                 "PrimaryMetabolite2", "SecondaryMetabolite", 
+                                 AllExpDetails %>% filter(complete.cases(CDSInputMatch)) %>%
+                                     pull(Detail)) | SimulatorSection %in%
+                               c("Elimination", "Interaction", "Transporters")) %>%
+                    mutate(CompoundID = factor(CompoundID, 
+                                               levels = c("Substrate", "PrimaryMetabolite1", 
+                                                          "PrimaryMetabolite2", "SecondaryMetabolite", 
+                                                          "Inhibitor1", "Inhibitor2", 
+                                                          "Inhibitor1Metabolite"))) %>% 
+                    arrange(CompoundID) %>% 
+                    mutate(Detail = factor(
+                        Detail,
+                        levels = unique(c("Substrate", "PrimaryMetabolite1", 
+                                          "PrimaryMetabolite2", "SecondaryMetabolite", 
+                                          "Inhibitor1", "Inhibitor2", 
+                                          "Inhibitor1Metabolite", 
+                                          paste0(rep(CDSdetails, 7), 
+                                                 rep(c("_sub", "_met1", "_met2", 
+                                                       "_secmet", "_inhib", 
+                                                       "_inhib2", "_inhib1met"), 
+                                                     each = length(CDSdetails))),
+                                          unique(Out$Detail))))) %>%
+                    # Yes, this is taking multiple steps to get the factors in the
+                    # correct order; I'm not sure of a more concise way to do this
+                    # that will still accomplish what I want. -LSh
+                    arrange(CompoundID, Detail) %>% 
+                    mutate(Detail = factor(Detail, levels = unique(Detail))) %>% 
+                    filter(complete.cases(Value))
+                
+            } else if(str_detect(tolower(detail_set), "summary")){
+                Out <- Out %>% filter(Sheet == "Summary")
+                
+            } else if(str_detect(tolower(detail_set), "input")){
+                Out <- Out %>% filter(Sheet == "Input Sheet")
+                
+            } else if(str_detect(tolower(detail_set), "population")){
+                Out <- Out %>% filter(Sheet == "population")
+            }
+        } else {
+            # This is when they have requested individual details.
+            Out <- filter(Detail %in% detail_set)
         }
         
         # Removing unnecessary compounds.
@@ -490,15 +494,34 @@ annotateDetails <- function(Deets,
     
     # Pivoting wider again ------------------------------------------------
     
-    Out <- Out %>% 
-        pivot_wider(names_from = File, 
-                    values_from = Value)
+    # Checking for details that are the SAME across all files
+    AllSame <- Out %>% 
+        group_by(across(.cols = any_of(c("Detail", "CompoundID", "Compound")))) %>% 
+        summarize(Length = length(unique(Value)), 
+                  UniqueVal = unique(Value)[1]) %>% 
+        filter(Length == 1) %>% 
+        select(-Length)
+    
+    suppressMessages(
+        Out <- Out %>% 
+            pivot_wider(names_from = File, 
+                        values_from = Value) %>%
+            left_join(AllSame) %>% 
+            select(any_of(c("SimulatorSection", "Sheet", "Notes",
+                            "CompoundID", "Compound", "Detail", 
+                            "UniqueVal")), 
+                   everything())
+    )
     
     if("Compound" %in% names(Out)){
         Out <- Out %>% 
             mutate(ToOmit = complete.cases(CompoundID) & 
                        is.na(Compound)) %>% 
-            filter(ToOmit == FALSE) %>% select(-ToOmit)
+            filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
+            rename("All files have this value for this compound ID and compound" = UniqueVal)
+    } else {
+        Out <- Out %>% 
+            rename("All files have this value for this compound ID" = UniqueVal)
     }
     
     # Removing anything that was all NA's if that's what user requested

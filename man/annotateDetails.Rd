@@ -51,14 +51,14 @@ here, e.g., \code{compound = "midaz|keto"} to find any compound with either
 
   \item{a string of the specific details you want, each in quotes and
   encapsulated with \code{c(...)},}{For a complete list of possibilities,
-  type \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
-  console. Parameters are reported with a suffix depending on which compound
-  they pertain to: "_sub" for the substrate, "_met1" for the primary
-  metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-  secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-  "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-  inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
-  "fa_inhib2", "Regimen_sub")}}  Not case sensitive.}}
+  type \code{view(ExpDetailDefinitions)} into the console. Parameters are
+  reported with a suffix depending on which compound they pertain to: "_sub"
+  for the substrate, "_met1" for the primary metabolite, "_met2" for the
+  second primary metabolite, "_secmet" for the secondary metabolite, "_inhib"
+  for the 1st inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or
+  inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
+  acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}  Not
+  case sensitive.}}
 
 \item{find_matching_details}{optionally supply a string of text to search for
   in the column "Detail". Regular expressions are supported here, so use,
@@ -104,7 +104,33 @@ quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 it will still be saved as a csv file.}
 }
 \value{
+Returns a data.frame of simulation experimental details including the
+  following columns: \describe{
 
+  \item{SimulatorSection}{the simulator section this detail is from, e.g.,
+  "absorption" or "elimination"}
+
+  \item{Sheet}{the sheet in the Excel output where the data were found}
+
+  \item{Notes}{an explanation of what this detail is}
+
+  \item{CompoundID}{the simulator compound ID that this information pertains
+  to, e.g., "substrate" or "inhibitor 1"}
+
+  \item{Compound}{the name of the compound in the simulator, e.g.,
+  "Sim-Midazolam"}
+
+  \item{Detail}{the specific experimental detail}
+
+  \item{All files have this value for this compound and compound ID}{If all
+  of the files have the \emph{exact same value} for this particular
+  combination of detail, compound, and compound ID, that value will show up
+  in this column. The idea is that this makes it easy to check that
+  everything that \emph{should} be the same in a plethora of simulations
+  actually \emph{is} the same.}
+
+  \item{one column for every file included}{the extracted simulator
+  experimental details for each file will show up in their own columns}}
 }
 \description{
 \code{annotateDetails} converts output from either
@@ -126,22 +152,22 @@ names in the output.
 }
 \examples{
 
-annotateDetails(Deets)
+annotateDetails(Deets = MDZdetails)
 
 # Get annotated details regarding absorption.
-annotateDetails(Deets = MyDetails, simulator_section = "absorption")
+annotateDetails(Deets = MDZdetails, simulator_section = "absorption")
 
 # Get annotated details on whatever was used as inhibitor 1
-annotateDetails(Deets = MyDetails, compoundID = "inhibitor 1")
+annotateDetails(Deets = MDZdetails, compoundID = "inhibitor 1")
 
 # Get annotated details for any compounds with "midaz" or "keto" in the name.
-annotateDetails(Deets = MyDetails, compound = "midaz|keto")
+annotateDetails(Deets = MDZdetails, compound = "midaz|keto")
 
 # Get (most of) the details to put into a table of simulation inputs:
-annotateDetails(Deets = MyDetails, detail_set = "Simcyp inputs")
+annotateDetails(Deets = MDZdetails, detail_set = "Simcyp inputs")
 
 # Combine multiple options to get just a few specific details:
-annotateDetails(Deets = MyDetails,
+annotateDetails(Deets = MDZdetails,
             simulator_section = "absorption",
             compound = "midaz|keto",
             compoundID = "substrate")

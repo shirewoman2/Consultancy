@@ -166,7 +166,7 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder.
+#'   your local (not OneDrive) Documents folder.
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed}
 #'

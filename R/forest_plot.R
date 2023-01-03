@@ -22,7 +22,7 @@
 #'   "perpetrator". This will determine whether the graphs will be labeled on
 #'   the y axis by the substrate name (for perpetrator forest plots) or by the
 #'   effector name (for victim forest plots).
-#' @param PKparameters optionally specify which PK parameters included in
+#' @param PKparameters optionally specify which PK parameters in
 #'   \code{forest_dataframe} to use as input. If left as NA, all the PK
 #'   parameters you extracted with \code{\link{extractForestData}} will be
 #'   included. If you try to include a parameter that's not already present in
@@ -59,8 +59,8 @@
 #'   CYP3A inhibitor)", "myfile2.xlsx" = "efavirenz (moderate CYP3A inducer)")}}
 #'
 #'   \item{a character vector of the compounds of interest}{e.g., \code{y_order
-#'   = c("itraconazole", "efavirenz")} These must be spelled perfectly!}} Please
-#'   see the bottom of this help file for examples.
+#'   = c("itraconazole", "efavirenz")} The compound names must be spelled
+#'   perfectly to match!}} Please see the bottom of this help file for examples.
 #' @param y_axis_column_secondary optionally break up the graphs along the y
 #'   axis by an additional column. For example, say your drug of interest is a
 #'   perpetrator and you've administered each of the substrates on different
@@ -135,7 +135,7 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder.
+#'   your local (not OneDrive) Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -565,12 +565,13 @@ forest_plot <- function(forest_dataframe,
         # character vector. Dealing with each of those three scenarios.
         if(any(str_detect(names(YFileOrder), "xlsx"))){
             # When the file names are specified
-            forest_dataframe <- forest_dataframe %>% 
-                mutate(File = factor(File, levels = names(YFileOrder))) %>% 
-                arrange(File) %>% 
-                left_join(data.frame(File = names(YFileOrder),
-                                     MyCompound_rev = YFileOrder)) %>% 
-                mutate(MyCompound = factor(MyCompound_rev, levels = unique(MyCompound_rev)))
+            suppressMessages(
+                forest_dataframe <- forest_dataframe %>% 
+                    mutate(File = factor(File, levels = names(YFileOrder))) %>% 
+                    arrange(File) %>% 
+                    left_join(data.frame(File = names(YFileOrder),
+                                         MyCompound_rev = YFileOrder)) %>% 
+                    mutate(MyCompound = factor(MyCompound_rev, levels = unique(MyCompound_rev))))
             # File and MyCompound are both now factor. 
             
         } else if(any(str_detect(YFileOrder, "xlsx"))){
