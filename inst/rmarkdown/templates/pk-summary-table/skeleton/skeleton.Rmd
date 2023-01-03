@@ -74,7 +74,7 @@ CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
 
 CapText2 <- paste0(sub("; $", ".", CapText2a), 
                    ifelse(Observedincluded, 
-                          "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
+                          " S/O: simulated/observed; source observed data: Clinical Study XXX; ",
                           ""))
 
 ```
