@@ -222,6 +222,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     # Main body of function -----------------------------------------------
     
+    sim_data_files <- unique(sim_data_files)
+    
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         # If left as NA, pull all the files in this folder. 
         sim_data_files <- list.files(pattern = "xlsx$")
@@ -280,7 +282,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             if(any(str_detect(obs_to_sim_assignment, "//.csv"))){
                 # user has supplied a csv file for designating obs and sim
                 # assignments.
-                ObsAssign <- read.csv(obs_to_sim_assignment)
+                ObsAssign <- read.csv(obs_to_sim_assignment) %>% unique()
             } else {
                 # Separating obs_to_sim_assignment so that it will work well
                 # with each simulator file. I wanted this to be obs 1st and then
@@ -305,14 +307,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     
                 } else {
                     ObsAssign <- data.frame(ObsFile = obs_to_sim_assignment, 
-                                            File = NA)
+                                            File = NA) %>% unique()
                 } 
             }
             
         } else if("data.frame" %in% class(obs_to_sim_assignment)){
             # This is when the user has supplied a data.frame for
             # obs_to_sim_assignment.
-            ObsAssign <- obs_to_sim_assignment
+            ObsAssign <- obs_to_sim_assignment %>% unique()
         }
         
         # Tidying up a few things. Checking column names and dealing with any

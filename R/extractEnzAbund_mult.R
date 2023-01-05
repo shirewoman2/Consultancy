@@ -88,6 +88,8 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
     
     enzymesToExtract <- toupper(enzymes)
     
+    sim_data_files <- unique(sim_data_files)
+    
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         # If left as NA, pull all the files in this folder. 
         sim_data_files <- list.files(pattern = "xlsx$")
