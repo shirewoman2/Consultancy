@@ -5,7 +5,7 @@
 #' concentration-time data for multiple tissues, compounds, or Simcyp Simulator
 #' output files for easy comparisons. \emph{Note:} There are some nuances to
 #' overlaying observed data. Please see the "Details" section at the bottom of
-#' this help file. 
+#' this help file.
 #'
 #' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include
@@ -102,10 +102,10 @@
 #'   This should be unquoted, e.g., \code{colorBy_column = Tissue}.
 #' @param color_labels optionally specify a character vector for how you'd like
 #'   the labels for whatever you choose for \code{colorBy_column} to show up in
-#'   the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
-#'   2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for an fa of 0.5 and
-#'   "file 2.xlsx" is for an fa of 0.2. The order in the legend will match the
-#'   order designated here.
+#'   the legend. For example, use \code{color_labels = c("file 1.xlsx" = "fa
+#'   0.5", "file 2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for an
+#'   fa of 0.5 and "file 2.xlsx" is for an fa of 0.2. The order in the legend
+#'   will match the order designated here.
 #' @param legend_label_color optionally indicate on the legend something
 #'   explanatory about what the colors represent. For example, if
 #'   \code{colorBy_column = File} and \code{legend_label_color = "Simulations
@@ -211,6 +211,12 @@
 #'   when the inhibitor \emph{is} present. You can set which types of lines to
 #'   use with the argument \code{linetypes} and you can set which shapes of
 #'   points you want with the argument \code{obs_shape}.
+#' @param linetype_labels optionally specify a character vector for how you'd
+#'   like the labels for whatever you choose for \code{linetype_column} to show
+#'   up in the legend. For example, use \code{linetype_labels = c("file 1.xlsx"
+#'   = "fa 0.5", "file 2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is
+#'   for an fa of 0.5 and "file 2.xlsx" is for an fa of 0.2. The order in the
+#'   legend will match the order designated here.
 #' @param linetypes the line types to use. Default is "solid" for all lines.
 #'   You'll need one line type for each possible value in the column you
 #'   specified for \code{linetype_column}. If you get a graph you didn't expect
@@ -328,7 +334,7 @@
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels. 
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
@@ -397,6 +403,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_fill_trans = NA, 
                             obs_line_trans = NA, 
                             linetype_column, 
+                            linetype_labels = NA, 
                             linetypes = c("solid", "dashed"),
                             line_width = NA,
                             legend_label_linetype = NA,
@@ -443,7 +450,7 @@ ct_plot_overlay <- function(ct_dataframe,
     if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
         stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
 ", deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
-             call. = FALSE)
+call. = FALSE)
     }
     
     if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
@@ -610,6 +617,11 @@ call. = FALSE)
         warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.")
     }
     
+    # If user filled in linetype_labels but not linetype_column, give a warning.
+    if(as_label(linetype_column) == "<empty>" & any(complete.cases(linetype_labels))){
+        warning("You have specified something for `linetype_labels` but nothing for `linetype_column`. Since R doesn't know which column contains the data to use for your linetype labels, they will be ignored.")
+    }
+    
     # If the color labels don't match the files available, give a warning.
     if(as_label(colorBy_column) != "<empty>" && 
        any(complete.cases(color_labels)) && 
@@ -629,6 +641,28 @@ call. = FALSE)
         NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
         NewNames <- NewNames[complete.cases(NewNames)]
         names(color_labels)[which(names(color_labels) %in% BadLabs)] <- NewNames
+        rm(NewNames, BadLabs, WarningLabel)
+    }
+    
+    # If the linetype labels don't match the files available, give a warning.
+    if(as_label(linetype_column) != "<empty>" && 
+       any(complete.cases(linetype_labels)) && 
+       all(names(linetype_labels) %in% sort(unique(ct_dataframe[, as_label(linetype_column)]))) == FALSE){
+        BadLabs <- setdiff(names(linetype_labels), unique(ct_dataframe[, as_label(linetype_column)]))
+        
+        warning(paste0("The labels you supplied for `linetype_labels` are not all present in the column ", 
+                       as_label(linetype_column), 
+                       ". This will mess up the linetypes on your graph unless that's fixed. Specifically, the following values are not present in the column ",
+                       as_label(linetype_column), ": ", 
+                       str_comma(BadLabs)), 
+                call. = FALSE)
+        
+        WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
+                               gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
+        linetype_labels[names(linetype_labels) %in% BadLabs] <- WarningLabel
+        NewNames <- setdiff(unique(ct_dataframe[, as_label(linetype_column)]), names(linetype_labels))
+        NewNames <- NewNames[complete.cases(NewNames)]
+        names(linetype_labels)[which(names(linetype_labels) %in% BadLabs)] <- NewNames
         rm(NewNames, BadLabs, WarningLabel)
     }
     
@@ -867,6 +901,42 @@ call. = FALSE)
                 obs_dataframe <- obs_dataframe %>% 
                     mutate(colorBy_column = color_labels[colorBy_column], 
                            colorBy_column = factor(colorBy_column, levels = color_labels))
+            }
+        }
+    }
+    
+    # Now that all columns in both sim and obs data are filled in whenever they
+    # need to be, setting factors for linetype_labels. 
+    if(complete.cases(linetype_labels[1])){
+        simcheck <- sim_dataframe %>% 
+            filter(linetype_column %in% names(linetype_labels)) %>% 
+            select(linetype_column) %>% unique() %>% pull()
+        obscheck <- obs_dataframe %>% 
+            filter(linetype_column %in% names(linetype_labels)) %>% 
+            select(linetype_column) %>% unique() %>% pull()
+        
+        if(length(sort(unique(c(simcheck, obscheck)))) > 
+           length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column])){
+            warning(paste0("You have not included enough labels for the linetypes in the legend. The values in '",
+                           as_label(linetype_column), 
+                           "' will be used as labels instead."),
+                    call. = FALSE)
+            linetype_labels <- NA
+        } else {
+            if(length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column]) == 0 |
+               length(sort(unique(c(simcheck, obscheck)))) == 0){
+                warning(paste0("There is some kind of mismatch between the linetype labels provided and the values actually present in ",
+                               as_label(linetype_column), ". The specified labels cannot be used."),
+                        call. = FALSE)  
+            } else {
+                
+                sim_dataframe <- sim_dataframe %>% 
+                    mutate(linetype_column = linetype_labels[linetype_column], 
+                           linetype_column = factor(linetype_column, levels = linetype_labels))
+                
+                obs_dataframe <- obs_dataframe %>% 
+                    mutate(linetype_column = linetype_labels[linetype_column], 
+                           linetype_column = factor(linetype_column, levels = linetype_labels))
             }
         }
     }
