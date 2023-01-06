@@ -959,11 +959,7 @@ ct_plot <- function(ct_dataframe = NA,
         A <- A +
             scale_time_axis(time_range = time_range_relative, 
                             pad_x_axis = pad_x_axis)
-            # scale_x_continuous(breaks = XBreaks, labels = XLabels,
-            #                    limits = time_range_relative,
-            #                    expand = expansion(
-            #                        mult = pad_x_num))
-        
+            
         if(EnzPlot){
             A <- A +
                 scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
@@ -989,10 +985,7 @@ ct_plot <- function(ct_dataframe = NA,
                                      YmaxRnd)) +
             scale_time_axis(time_range = time_range_relative, 
                             pad_x_axis = pad_x_axis)
-            # scale_x_continuous(breaks = XBreaks, labels = XLabels,
-            #                    expand = expansion(
-            #                        mult = pad_x_num))
-        
+            
         if(EnzPlot){
             A <- A +
                 scale_y_continuous(labels = scales::percent,

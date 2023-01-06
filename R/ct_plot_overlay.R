@@ -1526,14 +1526,9 @@ call. = FALSE)
                 scale_y_continuous(expand = expansion(mult = pad_y_num))
         }
         
-        if(complete.cases(x_axis_interval)){
-            A <- A + scale_x_continuous(
-                expand = expansion(mult = pad_x_num),
-                breaks = XBreaks, labels = XLabels)
-        } else {
-            A <- A + scale_x_continuous(
-                expand = expansion(mult = pad_x_num))
-        }
+        A <- A + scale_time_axis(time_units = TimeUnits, 
+                                 x_axis_interval = x_axis_interval, 
+                                 pad_x_axis = pad_x_axis)
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
@@ -1543,9 +1538,9 @@ call. = FALSE)
                                 ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
                                                 0, y_axis_limits_lin[1]),
                                          YmaxRnd)) +
-                scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                                   expand = expansion(
-                                       mult = pad_x_num)) +
+                scale_time_axis(time_units = TimeUnits, 
+                                x_axis_interval = x_axis_interval, 
+                                pad_x_axis = pad_x_axis) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
                                         AESCols["facet2"] == "<empty>"), 
                                   "TRUE FALSE" = vars(!!facet2_column),
@@ -1572,9 +1567,9 @@ call. = FALSE)
                             ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
                                             0, y_axis_limits_lin[1]),
                                      YmaxRnd)) +
-            scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                               expand = expansion(
-                                   mult = pad_x_num)) +
+            scale_time_axis(time_units = TimeUnits, 
+                            x_axis_interval = x_axis_interval, 
+                            pad_x_axis = pad_x_axis) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
         
         if(EnzPlot){
