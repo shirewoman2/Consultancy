@@ -1173,13 +1173,20 @@ call. = FALSE)
     }
     
     # Setting up the x axis using the subfunction ct_x_axis
-    ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
-              time_range = time_range, 
-              t0 = "simulation start",
-              x_axis_interval = x_axis_interval,
-              pad_x_axis = pad_x_axis,
-              compoundToExtract = AnchorCompound, 
-              EnzPlot = EnzPlot)
+    XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
+                        time_range = time_range, 
+                        t0 = "simulation start",
+                        x_axis_interval = x_axis_interval,
+                        pad_x_axis = pad_x_axis,
+                        compoundToExtract = AnchorCompound, 
+                        EnzPlot = EnzPlot)
+    
+    xlab <- XStuff$xlab
+    Data <- XStuff$Data # Is this necessary??
+    time_range <- XStuff$time_range
+    time_range_relative <- XStuff$time_range_relative
+    t0 <- XStuff$t0
+    TimeUnits <- XStuff$TimeUnits
     
     # Setting up the y axis using the subfunction ct_y_axis
     ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
@@ -1520,11 +1527,12 @@ call. = FALSE)
         }
         
         if(complete.cases(x_axis_interval)){
-            A <- A + scale_x_continuous(expand = expansion(
-                mult = pad_x_num), breaks = XBreaks, labels = XLabels)
+            A <- A + scale_x_continuous(
+                expand = expansion(mult = pad_x_num),
+                breaks = XBreaks, labels = XLabels)
         } else {
-            A <- A + scale_x_continuous(expand = expansion(
-                mult = pad_x_num))
+            A <- A + scale_x_continuous(
+                expand = expansion(mult = pad_x_num))
         }
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
