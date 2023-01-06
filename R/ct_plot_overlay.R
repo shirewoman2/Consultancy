@@ -1538,18 +1538,18 @@ call. = FALSE)
         if(EnzPlot){
             A <- A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
                                   y_axis_limits_lin = NA, pad_y_axis = pad_y_axis)
-                # scale_y_continuous(expand = expansion(mult = pad_y_num),
-                #                    labels = scales::percent)
+            # scale_y_continuous(expand = expansion(mult = pad_y_num),
+            #                    labels = scales::percent)
         } else {
             A <- A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = FALSE, 
                                   y_axis_limits_lin = NA, pad_y_axis = pad_y_axis)
-                # scale_y_continuous(expand = expansion(mult = pad_y_num))
+            # scale_y_continuous(expand = expansion(mult = pad_y_num))
         }
         
         A <- A + scale_x_time(time_range = time_range_relative,
-                                 time_units = TimeUnits, 
-                                 x_axis_interval = x_axis_interval, 
-                                 pad_x_axis = pad_x_axis)
+                              time_units = TimeUnits, 
+                              x_axis_interval = x_axis_interval, 
+                              pad_x_axis = pad_x_axis)
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
@@ -1563,9 +1563,9 @@ call. = FALSE)
                                                                  Data$Time <= time_range_relative[2]],
                                                    na.rm = T)))) +
                 scale_x_time(time_range = time_range_relative,
-                                time_units = TimeUnits, 
-                                x_axis_interval = x_axis_interval, 
-                                pad_x_axis = pad_x_axis) +
+                             time_units = TimeUnits, 
+                             x_axis_interval = x_axis_interval, 
+                             pad_x_axis = pad_x_axis) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
                                         AESCols["facet2"] == "<empty>"), 
                                   "TRUE FALSE" = vars(!!facet2_column),
@@ -1579,16 +1579,16 @@ call. = FALSE)
                 A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
                                  y_axis_limits_lin = y_axis_limits_lin, 
                                  pad_y_axis = pad_y_axis)
-                    # scale_y_continuous(labels = scales::percent,
-                    #                    expand = expansion(mult = pad_y_num)) 
+                # scale_y_continuous(labels = scales::percent,
+                #                    expand = expansion(mult = pad_y_num)) 
             ))
         } else {
             A <- suppressWarnings(suppressMessages(
                 A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = FALSE, 
                                  y_axis_limits_lin = y_axis_limits_lin, 
                                  pad_y_axis = pad_y_axis)
-                    # scale_y_continuous(breaks = YBreaks, labels = YLabels,
-                    #                    expand = expansion(mult = pad_y_num)) 
+                # scale_y_continuous(breaks = YBreaks, labels = YLabels,
+                #                    expand = expansion(mult = pad_y_num)) 
             ))
         }
         
@@ -1602,9 +1602,9 @@ call. = FALSE)
                                                              Data$Time <= time_range_relative[2]],
                                                na.rm = T)))) +
             scale_x_time(time_range = time_range_relative,
-                            time_units = TimeUnits, 
-                            x_axis_interval = x_axis_interval, 
-                            pad_x_axis = pad_x_axis) +
+                         time_units = TimeUnits, 
+                         x_axis_interval = x_axis_interval, 
+                         pad_x_axis = pad_x_axis) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
         
         if(EnzPlot){
@@ -1612,8 +1612,8 @@ call. = FALSE)
                 A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
                                  y_axis_limits_lin = y_axis_limits_lin, 
                                  pad_y_axis = pad_y_axis)
-                    # scale_y_continuous(labels = scales::percent,
-                    #                    expand = expansion(mult = pad_y_num))
+                # scale_y_continuous(labels = scales::percent,
+                #                    expand = expansion(mult = pad_y_num))
             ))
         } else {
             A <- suppressWarnings(suppressMessages(
@@ -1851,25 +1851,17 @@ call. = FALSE)
                 call. = FALSE)
     }
     
-    if(EnzPlot){
-        B <- suppressMessages(suppressWarnings(
-            A + scale_y_log10(labels = scales::percent, 
-                              expand = expansion(mult = pad_y_num)) +
-                switch(as.character(floating_facet_scale), 
-                       "TRUE" = coord_cartesian(ylim = Ylim_log), 
-                       "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                                 xlim = time_range_relative))
-        ))
-    } else {
-        B <- suppressMessages(suppressWarnings(
-            A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
-                              expand = expansion(mult = pad_y_num)) +
-                switch(as.character(floating_facet_scale), 
-                       "TRUE" = coord_cartesian(ylim = Ylim_log), 
-                       "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                                 xlim = time_range_relative))
-        ))
-    }
+    B <- suppressMessages(suppressWarnings(
+        A + scale_y_conc(conc_range = y_axis_limits_log, 
+                         linear_or_log = "log", 
+                         IsEnzPlot = EnzPlot, 
+                         pad_y_axis = pad_y_axis) +
+            switch(as.character(floating_facet_scale), 
+                   "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                   "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                             xlim = time_range_relative))
+    ))
+    
     
     if(complete.cases(legend_position)){
         A <- A + theme(legend.position = legend_position)  

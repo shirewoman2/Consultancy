@@ -978,7 +978,7 @@ ct_plot <- function(ct_dataframe = NA,
                             pad_x_axis = pad_x_axis) +
             scale_y_conc(linear_or_log = "linear", 
                          IsEnzPlot = EnzPlot, 
-                         y_axis_limits_lin = y_axis_limits_lin, 
+                         conc_range = y_axis_limits_lin, 
                          pad_y_axis = pad_y_axis)
         
     } else {
@@ -994,7 +994,7 @@ ct_plot <- function(ct_dataframe = NA,
                             pad_x_axis = pad_x_axis) +
             scale_y_conc(linear_or_log = "linear", 
                          IsEnzPlot = EnzPlot, 
-                         y_axis_limits_lin = y_axis_limits_lin, 
+                         conc_range = y_axis_limits_lin, 
                          pad_y_axis = pad_y_axis)
         
     }
@@ -1059,7 +1059,7 @@ ct_plot <- function(ct_dataframe = NA,
         A + coord_cartesian(xlim = time_range_relative, 
                             ylim = Ylim_log))) +
         scale_y_conc(linear_or_log = "log", IsEnzPlot = EnzPlot, 
-                     y_axis_limits_log = y_axis_limits_log, 
+                     conc_range = y_axis_limits_log, 
                      pad_y_axis = pad_y_axis)
 
     if(graph_labels){
