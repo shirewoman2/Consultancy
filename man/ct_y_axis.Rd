@@ -5,40 +5,22 @@
 \title{Set up y axis in a conc-time plot}
 \usage{
 ct_y_axis(
-  Data,
-  ADAM,
-  subsection_ADAM,
-  EnzPlot,
-  y_axis_limits_lin,
-  time_range,
-  prettify_compound_names = TRUE,
-  y_axis_limits_log,
-  Ylim_data,
-  pad_y_axis,
-  time_range_relative
+  y_compound_info,
+  IsADAM = FALSE,
+  subsection_ADAM = "free compound in lumen",
+  IsEnzPlot = FALSE,
+  prettify_compound_names = TRUE
 )
 }
 \arguments{
-\item{Data}{the data.frame containing conc-time data; this is the output from
-extractConcTime}
+\item{y_compound_info}{a data.frame containing columns for subsection_ADAM
+and Conc_units}
 
-\item{ADAM}{T or F for whether ADAM model used}
+\item{IsADAM}{T or F for whether ADAM model used}
 
 \item{subsection_ADAM}{which ADAM-model subsection the data include}
 
-\item{EnzPlot}{T or F for whether this was a plot of enzyme abundance}
-
-\item{y_axis_limits_lin}{user input for y axis limits for a linear plot}
-
-\item{time_range}{user-specified time range}
-
-\item{y_axis_limits_log}{user input for y axis limits for a semi-log plot}
-
-\item{Ylim_data}{data used for determining y axis limits}
-
-\item{pad_y_axis}{user-specified value for pad_y_axis}
-
-\item{time_range_relative}{relative time range}
+\item{IsEnzPlot}{T or F for whether this was a plot of enzyme abundance}
 }
 \value{
 

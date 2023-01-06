@@ -1,6 +1,6 @@
 #' Automatically scale a ggplot graph x axis for time
 #'
-#' \code{scale_time_axis} formats a ggplot graph x axis to have breaks that make
+#' \code{scale_x_time} formats a ggplot graph x axis to have breaks that make
 #' sense for the user-specified time units and adds a minor tick between the
 #' labels. It optionally adds padding to the left and right sides of the x axis.
 #'
@@ -34,29 +34,29 @@
 #' MyData <- data.frame(Time = 0:168, 
 #'                      Conc = rnorm(n = 169, mean = 100))
 #' ggplot(MyData, aes(x = Time, y = Conc)) +
-#'     geom_point() + scale_time_axis()
+#'     geom_point() + scale_x_time()
 #' 
 #' ggplot(MyData, aes(x = Time, y = Conc)) +
-#'     geom_point() + scale_time_axis(time_range = c(24, 48))
+#'     geom_point() + scale_x_time(time_range = c(24, 48))
 #' 
 #' # You don't have to name the column with your x-axis data "Time". 
 #' MyAltData <- data.frame(Mango = 0:24, 
 #'                         Conc = rnorm(n = 25, mean = 100))
 #' 
 #' ggplot(MyAltData, aes(x = Mango, y = Conc)) +
-#'     geom_point() + scale_time_axis()
+#'     geom_point() + scale_x_time()
 #'
 #' 
-scale_time_axis <- function(time_range = NA, 
-                            time_units = "hours", 
-                            x_axis_interval = NA, 
-                            pad_x_axis = TRUE){
+scale_x_time <- function(time_range = NA, 
+                         time_units = "hours", 
+                         x_axis_interval = NA, 
+                         pad_x_axis = TRUE){
     
     # Error catching --------------------------------------------------------
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
        time_range[1] >= time_range[2]){
         warning("The 1st value for 'time_range' must be less than the 2nd value. We'll use the full time range instead.",
-             call. = FALSE)
+                call. = FALSE)
         time_range <- NA
     }
     

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ct_x_axis.R
 \name{ct_x_axis}
 \alias{ct_x_axis}
-\title{Set up x axis in a conc-time plot}
+\title{Set up x axis in a concentration-time plot}
 \usage{
 ct_x_axis(
   Data,

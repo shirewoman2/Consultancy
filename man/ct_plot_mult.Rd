@@ -178,10 +178,13 @@ use for the y axis label}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
-at all. If you include the legend but then some graphs do have a legend and
-some graphs do not (e.g., some have effectors and some do not so there's
-nothing to put in a legend), the alignment between sets of graphs will be a
-bit off.}
+at all. IMPORTANT NOTE ABOUT LEGENDS: If some of the graph legends differ
+from some of the other graph legends, the legend may be accurate for some
+graphs and inaccurate for others or just be a little messed up! You may
+want to plot graphs that require different legends separately. Also, if you
+include the legend but then some graphs do have a legend and some graphs do
+not (e.g., some have effectors and some do not so there's nothing to put in
+a legend), the alignment between sets of graphs will be a bit off.}
 
 \item{legend_label}{optionally indicate on the legend whether the effector is
 an inhibitor, inducer, activator, or suppressor. Input will be used as the

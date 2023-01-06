@@ -1172,8 +1172,10 @@ call. = FALSE)
             pull(CompoundID) %>% as.character()
     }
     
+    Data <- bind_rows(sim_dataframe, obs_dataframe)
+    
     # Setting up the x axis using the subfunction ct_x_axis
-    XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
+    XStuff <- ct_x_axis(Data = Data,
                         time_range = time_range, 
                         t0 = "simulation start",
                         x_axis_interval = x_axis_interval,
@@ -1182,27 +1184,43 @@ call. = FALSE)
                         EnzPlot = EnzPlot)
     
     xlab <- XStuff$xlab
-    Data <- XStuff$Data # Is this necessary??
+    t0_num <- XStuff$t0_num
     time_range <- XStuff$time_range
-    time_range_relative <- XStuff$time_range_relative
-    t0 <- XStuff$t0
-    TimeUnits <- XStuff$TimeUnits
+    time_range_relative <- time_range - XStuff$t0_num
+    Data$Time_orig <- Data$Time
+    Data$Time <- Data$Time - XStuff$t0_num
+    TimeUnits <- sort(unique(Data$Time_units))
     
     # Setting up the y axis using the subfunction ct_y_axis
-    ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
-              ADAM = ADAM, 
-              subsection_ADAM = switch(as.character(EnzPlot), 
-                                       "TRUE" = NA, 
-                                       "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
-              prettify_compound_names = prettify_compound_names,
-              EnzPlot = EnzPlot, 
-              time_range_relative = time_range_relative,
-              Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
-                  mutate(Time_orig = Time), 
-              pad_y_axis = pad_y_axis,
-              y_axis_limits_lin = y_axis_limits_lin, 
-              time_range = time_range,
-              y_axis_limits_log = y_axis_limits_log)
+    
+    Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
+        mutate(Time_orig = Time) %>%
+        filter(Time >= time_range_relative[1] & 
+                   Time <= time_range_relative[2])
+    
+    # Per Hannah: If there are observed data included in the simulation, set the
+    # y axis limits to show those data well. 
+    
+    # To do this, when observed data are present, filtering Ylim_data to only
+    # include concentrations >= 0.8*min(observed conc). t0 point isn't included
+    # in this calculation. 
+    if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
+        ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
+            pull(Conc) %>% min(na.rm = TRUE) 
+        
+        Ylim_data <- Ylim_data %>% filter(Conc >= ObsMin)
+    }
+    
+    ylab <- ct_y_axis(
+        y_compound_info = Ylim_data %>% 
+            select(Compound, CompoundID, Conc_units, 
+                   subsection_ADAM) %>% unique(), 
+        IsADAM = ADAM, 
+        subsection_ADAM = switch(as.character(EnzPlot), 
+                                 "TRUE" = NA, 
+                                 "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
+        prettify_compound_names = prettify_compound_names,
+        IsEnzPlot = EnzPlot)
     
     
     # Setting figure types and general aesthetics ------------------------------
@@ -1518,15 +1536,18 @@ call. = FALSE)
                        strip.position = strip.position)
         
         if(EnzPlot){
-            A <- A +
-                scale_y_continuous(expand = expansion(mult = pad_y_num),
-                                   labels = scales::percent)
+            A <- A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
+                                  y_axis_limits_lin = NA, pad_y_axis = pad_y_axis)
+                # scale_y_continuous(expand = expansion(mult = pad_y_num),
+                #                    labels = scales::percent)
         } else {
-            A <- A +
-                scale_y_continuous(expand = expansion(mult = pad_y_num))
+            A <- A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = FALSE, 
+                                  y_axis_limits_lin = NA, pad_y_axis = pad_y_axis)
+                # scale_y_continuous(expand = expansion(mult = pad_y_num))
         }
         
-        A <- A + scale_time_axis(time_units = TimeUnits, 
+        A <- A + scale_x_time(time_range = time_range_relative,
+                                 time_units = TimeUnits, 
                                  x_axis_interval = x_axis_interval, 
                                  pad_x_axis = pad_x_axis)
         
@@ -1537,8 +1558,12 @@ call. = FALSE)
                 coord_cartesian(xlim = time_range_relative, 
                                 ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
                                                 0, y_axis_limits_lin[1]),
-                                         YmaxRnd)) +
-                scale_time_axis(time_units = TimeUnits, 
+                                         # YmaxRnd)) + # RETURN TO THIS
+                                         round(max(Data$Conc[Data$Time >= time_range_relative[1] &
+                                                                 Data$Time <= time_range_relative[2]],
+                                                   na.rm = T)))) +
+                scale_x_time(time_range = time_range_relative,
+                                time_units = TimeUnits, 
                                 x_axis_interval = x_axis_interval, 
                                 pad_x_axis = pad_x_axis) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
@@ -1551,13 +1576,19 @@ call. = FALSE)
         
         if(EnzPlot){
             A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(labels = scales::percent,
-                                       expand = expansion(mult = pad_y_num)) 
+                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
+                                 y_axis_limits_lin = y_axis_limits_lin, 
+                                 pad_y_axis = pad_y_axis)
+                    # scale_y_continuous(labels = scales::percent,
+                    #                    expand = expansion(mult = pad_y_num)) 
             ))
         } else {
             A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(breaks = YBreaks, labels = YLabels,
-                                       expand = expansion(mult = pad_y_num)) 
+                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = FALSE, 
+                                 y_axis_limits_lin = y_axis_limits_lin, 
+                                 pad_y_axis = pad_y_axis)
+                    # scale_y_continuous(breaks = YBreaks, labels = YLabels,
+                    #                    expand = expansion(mult = pad_y_num)) 
             ))
         }
         
@@ -1566,22 +1597,32 @@ call. = FALSE)
             coord_cartesian(xlim = time_range_relative, 
                             ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
                                             0, y_axis_limits_lin[1]),
-                                     YmaxRnd)) +
-            scale_time_axis(time_units = TimeUnits, 
+                                     # YmaxRnd)) + # RETURN TO THIS
+                                     round(max(Data$Conc[Data$Time >= time_range_relative[1] &
+                                                             Data$Time <= time_range_relative[2]],
+                                               na.rm = T)))) +
+            scale_x_time(time_range = time_range_relative,
+                            time_units = TimeUnits, 
                             x_axis_interval = x_axis_interval, 
                             pad_x_axis = pad_x_axis) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
         
         if(EnzPlot){
             A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(labels = scales::percent,
-                                       expand = expansion(mult = pad_y_num))
+                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
+                                 y_axis_limits_lin = y_axis_limits_lin, 
+                                 pad_y_axis = pad_y_axis)
+                    # scale_y_continuous(labels = scales::percent,
+                    #                    expand = expansion(mult = pad_y_num))
             ))
         } else {
             A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(breaks = YBreaks,
-                                       labels = YLabels,
-                                       expand = expansion(mult = pad_y_num))
+                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
+                                 y_axis_limits_lin = y_axis_limits_lin, 
+                                 pad_y_axis = pad_y_axis)
+                # scale_y_continuous(breaks = YBreaks,
+                #                        labels = YLabels,
+                #                        expand = expansion(mult = pad_y_num))
             ))
         }
     }

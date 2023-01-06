@@ -215,35 +215,23 @@ sensitivity_plot <- function(SA_file,
     
     if(str_detect(dependent_variable, "plasma|conc")){
         
-        ct_x_axis(Data = SAdata %>% 
-                      # adding some placeholder values that aren't important for
-                      # the SA plot but are required for ct_x_axis.
-                      mutate(Time_units = "hours",
-                             Simulated = TRUE,
-                             DoseNum = 1, 
-                             File = SA_file, 
-                             Compound = "My compound",
-                             CompoundID = "substrate", 
-                             Inhibitor = "none"), 
-                  time_range = range(SAdata$Time), 
-                  t0 = "simulation start", 
-                  x_axis_interval = NA, 
-                  compoundToExtract = "substrate", 
-                  pad_x_axis = FALSE,
-                  EnzPlot = FALSE)
-        
         G <- ggplot(SAdata, aes(x = Time, y = Conc, color = SensValue, 
                                 group = SensValue)) +
-            geom_line() +
-            geom_point(data = ObsData, 
-                       switch(as.character(length(unique(ObsData$Subject)) == 1), 
-                              "TRUE" = aes(x = Time, y = Conc),
-                              "FALSE" = aes(x = Time, y = Conc, 
-                                           shape = Subject, group = Subject)), 
-                       inherit.aes = FALSE) +
+            geom_line()
+        
+        if(length(ObsRow) > 0){
+            G <- G +
+                geom_point(data = ObsData, 
+                           switch(as.character(length(unique(ObsData$Subject)) == 1), 
+                                  "TRUE" = aes(x = Time, y = Conc),
+                                  "FALSE" = aes(x = Time, y = Conc, 
+                                                shape = Subject, group = Subject)), 
+                           inherit.aes = FALSE) 
+        }
+        
+        G <- G +
             labs(color = ind_var_label) +
-            scale_x_continuous(breaks = XBreaks, 
-                               labels = XLabels) +
+            scale_time_axis(pad_x_axis = FALSE) +
             xlab("Time (h)") +
             ylab("Concentration (ng/mL)")
         
@@ -274,7 +262,7 @@ sensitivity_plot <- function(SA_file,
     
     G <- G + 
         theme_consultancy() +
-        theme(axis.title = element_text(color = "black")) # Note that this is NOT bold b/c can't make expressions bold and you could thus end up with 1 axis title bold and 1 regular.
+        theme(axis.title = element_text(color = "black", face = "plain")) # Note that this is NOT bold b/c can't make expressions bold and you could thus end up with 1 axis title bold and 1 regular.
     
     if(complete.cases(title)){
         G <- G + ggtitle(title)
