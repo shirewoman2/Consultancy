@@ -739,14 +739,25 @@ ct_plot <- function(ct_dataframe = NA,
         Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
     }
     
-    ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
-              EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-              Ylim_data = Ylim_data, 
-              prettify_compound_names = prettify_compound_names,
-              pad_y_axis = pad_y_axis,
-              y_axis_limits_lin = y_axis_limits_lin, 
-              time_range = time_range,
-              y_axis_limits_log = y_axis_limits_log)
+    YStuff <- ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
+                        EnzPlot = EnzPlot, time_range_relative = time_range_relative,
+                        Ylim_data = Ylim_data, 
+                        prettify_compound_names = prettify_compound_names,
+                        pad_y_axis = pad_y_axis,
+                        y_axis_limits_lin = y_axis_limits_lin, 
+                        time_range = time_range,
+                        y_axis_limits_log = y_axis_limits_log)
+    
+    ObsConcUnits <- YStuff$ObsConcUnits
+    ylab <- YStuff$ylab
+    YLabels <- YStuff$YLabels
+    YLogLabels <- YStuff$YLogLabels
+    YBreaks <- YStuff$YBreaks
+    YLogBreaks <- YStuff$YLogBreaks
+    Ylim_log <- YStuff$Ylim_log
+    YmaxRnd <- YStuff$YmaxRnd
+    pad_y_num <- YStuff$pad_y_num
+    pad_y_axis <- YStuff$pad_y_axis
     
     
     # Figure types ---------------------------------------------------------
@@ -953,10 +964,13 @@ ct_plot <- function(ct_dataframe = NA,
         A <- A + guides(shape = "none")
     }
     
-    A <- A +
-            scale_time_axis(time_range = time_range_relative, 
-                            pad_x_axis = pad_x_axis)
-            
+    if(str_detect(figure_type, "ribbon")){
+        # There's a known glitch w/ggplot2 with coord_cartesian and
+        # geom_ribbon. Hacking around that.
+        A <- A +
+            scale_x_time(time_range = time_range_relative, 
+                         pad_x_axis = pad_x_axis)
+        
         if(EnzPlot){
             A <- A +
                 scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
@@ -973,10 +987,16 @@ ct_plot <- function(ct_dataframe = NA,
                                    labels = YLabels,
                                    expand = expansion(mult = pad_y_num)) 
         }
+        
+    } else {
+        A <- A +
+            coord_cartesian(xlim = time_range_relative, 
+                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                            0, y_axis_limits_lin[1]),
                                      YmaxRnd)) +
-            scale_time_axis(time_range = time_range_relative, 
-                            pad_x_axis = pad_x_axis)
-            
+            scale_x_time(time_range = time_range_relative, 
+                         pad_x_axis = pad_x_axis)
+        
         if(EnzPlot){
             A <- A +
                 scale_y_continuous(labels = scales::percent,
@@ -987,6 +1007,7 @@ ct_plot <- function(ct_dataframe = NA,
                                    labels = YLabels,
                                    expand = expansion(mult = pad_y_num)) 
         }
+    }
     
     if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
        (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){

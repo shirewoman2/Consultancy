@@ -1,11 +1,7 @@
 #' Set up y axis in a conc-time plot
 #'
 #' This function is specifically for setting options for the y axis in a
-#' SimcypConsultancy package concentration-time graph and is NOT meant to be
-#' called on its own. The function \code{\link{scale_y_conc}} is more generic
-#' and \emph{is} meant to be called on its own, so check that out if you're
-#' looking to scale y axes quickly and easily and similar to how they look in
-#' SimcypConsultancy concentration-time plots.
+#' concentration-time graph and is NOT meant to be called on its own.
 #'
 #' @param Data the data.frame containing conc-time data; this is the output from
 #'   extractConcTime
@@ -28,8 +24,6 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                       time_range_relative){
     
     if(EnzPlot){
-    
-    if(is_enz_plot){
         ObsConcUnits <- "Relative abundance"
     } else {
         ObsConcUnits <- sort(unique(Data$Conc_units))
@@ -141,6 +135,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     
     # Per Hannah: If there are observed data included in the simulation, set the
     # y axis limits to show those data well. 
+    
     # To do this, when observed data are present, filtering Ylim_data to only
     # include concentrations >= 0.8*min(observed conc). t0 point isn't included
     # in this calculation. 
@@ -286,6 +281,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         # Ylim_log[2] <- round_up(Ylim[2])
         
     }
+    
     YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
     YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
     YLogLabels   <- rep("",length(YLogBreaks))
@@ -324,14 +320,16 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     # Assigning the variables created or changed here to the environment one
     # level up, e.g., probably the environment within the function that's
     # calling on *this* function.
-    assign("ObsConcUnits", ObsConcUnits, envir = parent.frame())
-    assign("ylab", ylab, envir = parent.frame())
-    assign("YLabels", YLabels, envir = parent.frame())
-    assign("YLogLabels", YLogLabels, envir = parent.frame())
-    assign("YBreaks", YBreaks, envir = parent.frame())
-    assign("YLogBreaks", YLogBreaks, envir = parent.frame())
-    assign("Ylim_log", Ylim_log, envir = parent.frame())
-    assign("YmaxRnd", YmaxRnd, envir = parent.frame())
-    assign("pad_y_num", pad_y_num, envir = parent.frame())
-    assign("pad_y_axis", pad_y_axis, envir = parent.frame())
+    
+    Out <- list("ObsConcUnits" = ObsConcUnits,
+                "ylab" = ylab,
+                "YLabels" = YLabels,
+                "YLogLabels" = YLogLabels,
+                "YBreaks" = YBreaks, 
+                "YLogBreaks" = YLogBreaks, 
+                "Ylim_log" = Ylim_log,
+                "YmaxRnd" = YmaxRnd, 
+                "pad_y_num" = pad_y_num, 
+                "pad_y_axis" = pad_y_axis)
 }
+

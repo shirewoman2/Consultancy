@@ -45,9 +45,5 @@ extractConcTime}
 }
 \description{
 This function is specifically for setting options for the y axis in a
-SimcypConsultancy package concentration-time graph and is NOT meant to be
-called on its own. The function \code{\link{scale_y_conc}} is more generic
-and \emph{is} meant to be called on its own, so check that out if you're
-looking to scale y axes quickly and easily and similar to how they look in
-SimcypConsultancy concentration-time plots.
+concentration-time graph and is NOT meant to be called on its own.
 }
