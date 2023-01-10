@@ -763,7 +763,7 @@ ct_plot <- function(ct_dataframe = NA,
                                  subsection_ADAM) %>% unique(), 
                       IsADAM = ADAM, 
                       subsection_ADAM = subsection_ADAM,
-                      IsEnzPlot = EnzPlot, 
+                      is_enz_plot = EnzPlot, 
                       prettify_compound_names = prettify_compound_names)
     
     # Figure types ---------------------------------------------------------
@@ -970,34 +970,14 @@ ct_plot <- function(ct_dataframe = NA,
         A <- A + guides(shape = "none")
     }
     
-    if(str_detect(figure_type, "ribbon")){
-        # There's a known glitch w/ggplot2 with coord_cartesian and
-        # geom_ribbon. Hacking around that.
-        A <- A +
-            scale_x_time(time_range = time_range_relative, 
-                            pad_x_axis = pad_x_axis) +
-            scale_y_conc(linear_or_log = "linear", 
-                         IsEnzPlot = EnzPlot, 
-                         conc_range = y_axis_limits_lin, 
-                         pad_y_axis = pad_y_axis)
-        
-    } else {
-        A <- A +
-            coord_cartesian(xlim = time_range_relative, 
-                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                            0, y_axis_limits_lin[1]),
-                                     # YmaxRnd)) + # RETURN TO THIS
-                                     round(max(Data$Conc[Data$Time >= time_range_relative[1] &
-                                                             Data$Time <= time_range_relative[2]],
-                                               na.rm = T)))) +
-            scale_x_time(time_range = time_range_relative, 
-                            pad_x_axis = pad_x_axis) +
-            scale_y_conc(linear_or_log = "linear", 
-                         IsEnzPlot = EnzPlot, 
-                         conc_range = y_axis_limits_lin, 
-                         pad_y_axis = pad_y_axis)
-        
-    }
+    A <- A +
+        scale_x_time(time_range = time_range_relative, 
+                     pad_x_axis = pad_x_axis) +
+        scale_y_conc(linear_or_log = "linear", 
+                     is_enz_plot = EnzPlot, 
+                     conc_range = y_axis_limits_lin, 
+                     pad_y_axis = pad_y_axis)
+    
     
     if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
        (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
@@ -1058,10 +1038,11 @@ ct_plot <- function(ct_dataframe = NA,
     B <- suppressWarnings(suppressMessages(
         A + coord_cartesian(xlim = time_range_relative, 
                             ylim = Ylim_log))) +
-        scale_y_conc(linear_or_log = "log", IsEnzPlot = EnzPlot, 
+        scale_y_conc(linear_or_log = "log", 
+                     is_enz_plot = EnzPlot, 
                      conc_range = y_axis_limits_log, 
                      pad_y_axis = pad_y_axis)
-
+    
     if(graph_labels){
         labels <- "AUTO"
     } else {

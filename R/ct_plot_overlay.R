@@ -1220,7 +1220,7 @@ call. = FALSE)
                                  "TRUE" = NA, 
                                  "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
         prettify_compound_names = prettify_compound_names,
-        IsEnzPlot = EnzPlot)
+        is_enz_plot = EnzPlot)
     
     
     # Setting figure types and general aesthetics ------------------------------
@@ -1533,98 +1533,42 @@ call. = FALSE)
                        nrow = switch(as.character(is.na(facet_nrow)),
                                      "TRUE" = NULL, 
                                      "FALSE" = facet_nrow), 
-                       strip.position = strip.position)
-        
-        if(EnzPlot){
-            A <- A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
-                                  y_axis_limits_lin = NA, pad_y_axis = pad_y_axis)
-            # scale_y_continuous(expand = expansion(mult = pad_y_num),
-            #                    labels = scales::percent)
-        } else {
-            A <- A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = FALSE, 
-                                  y_axis_limits_lin = NA, pad_y_axis = pad_y_axis)
-            # scale_y_continuous(expand = expansion(mult = pad_y_num))
-        }
-        
-        A <- A + scale_x_time(time_range = time_range_relative,
-                              time_units = TimeUnits, 
-                              x_axis_interval = x_axis_interval, 
-                              pad_x_axis = pad_x_axis)
+                       strip.position = strip.position) + 
+            # scale_x_time(time_range = time_range_relative,
+            #              time_units = TimeUnits, 
+            #              x_axis_interval = x_axis_interval, 
+            #              pad_x_axis = pad_x_axis) + # RETURN TO THIS!!!!
+            scale_y_conc(linear_or_log = "linear", is_enz_plot = EnzPlot, 
+                         y_axis_limits_lin = NA, pad_y_axis = pad_y_axis) 
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
         suppressWarnings(
             A <- A +
-                coord_cartesian(xlim = time_range_relative, 
-                                ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                0, y_axis_limits_lin[1]),
-                                         # YmaxRnd)) + # RETURN TO THIS
-                                         round(max(Data$Conc[Data$Time >= time_range_relative[1] &
-                                                                 Data$Time <= time_range_relative[2]],
-                                                   na.rm = T)))) +
-                scale_x_time(time_range = time_range_relative,
-                             time_units = TimeUnits, 
-                             x_axis_interval = x_axis_interval, 
-                             pad_x_axis = pad_x_axis) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
                                         AESCols["facet2"] == "<empty>"), 
                                   "TRUE FALSE" = vars(!!facet2_column),
                                   "FALSE TRUE" = vars(!!facet1_column),
                                   "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
-                           ncol = facet_ncol, nrow = facet_nrow)
+                           ncol = facet_ncol, nrow = facet_nrow) + 
+                scale_x_time(time_range = time_range_relative,
+                             time_units = TimeUnits, 
+                             x_axis_interval = x_axis_interval, 
+                             pad_x_axis = pad_x_axis) +
+                scale_y_conc(conc_range = y_limits_lin, is_enz_plot = EnzPlot, 
+                             linear_or_log = "linear", pad_y_axis = pad_y_axis)
         )
-        
-        if(EnzPlot){
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
-                                 y_axis_limits_lin = y_axis_limits_lin, 
-                                 pad_y_axis = pad_y_axis)
-                # scale_y_continuous(labels = scales::percent,
-                #                    expand = expansion(mult = pad_y_num)) 
-            ))
-        } else {
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = FALSE, 
-                                 y_axis_limits_lin = y_axis_limits_lin, 
-                                 pad_y_axis = pad_y_axis)
-                # scale_y_continuous(breaks = YBreaks, labels = YLabels,
-                #                    expand = expansion(mult = pad_y_num)) 
-            ))
-        }
         
     } else {
         A <- A +
-            coord_cartesian(xlim = time_range_relative, 
-                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                            0, y_axis_limits_lin[1]),
-                                     # YmaxRnd)) + # RETURN TO THIS
-                                     round(max(Data$Conc[Data$Time >= time_range_relative[1] &
-                                                             Data$Time <= time_range_relative[2]],
-                                               na.rm = T)))) +
+            scale_y_conc(linear_or_log = "linear", is_enz_plot = EnzPlot, 
+                         conc_range = y_axis_limits_lin, 
+                         pad_y_axis = pad_y_axis) +
             scale_x_time(time_range = time_range_relative,
                          time_units = TimeUnits, 
                          x_axis_interval = x_axis_interval, 
                          pad_x_axis = pad_x_axis) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
-        
-        if(EnzPlot){
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
-                                 y_axis_limits_lin = y_axis_limits_lin, 
-                                 pad_y_axis = pad_y_axis)
-                # scale_y_continuous(labels = scales::percent,
-                #                    expand = expansion(mult = pad_y_num))
-            ))
-        } else {
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_conc(linear_or_log = "linear", IsEnzPlot = TRUE, 
-                                 y_axis_limits_lin = y_axis_limits_lin, 
-                                 pad_y_axis = pad_y_axis)
-                # scale_y_continuous(breaks = YBreaks,
-                #                        labels = YLabels,
-                #                        expand = expansion(mult = pad_y_num))
-            ))
-        }
     }
     
     # Colors, linetypes, & legends -------------------------------------------
@@ -1854,7 +1798,7 @@ call. = FALSE)
     B <- suppressMessages(suppressWarnings(
         A + scale_y_conc(conc_range = y_axis_limits_log, 
                          linear_or_log = "log", 
-                         IsEnzPlot = EnzPlot, 
+                         is_enz_plot = EnzPlot, 
                          pad_y_axis = pad_y_axis) +
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 

@@ -8,7 +8,7 @@ ct_y_axis(
   y_compound_info,
   IsADAM = FALSE,
   subsection_ADAM = "free compound in lumen",
-  IsEnzPlot = FALSE,
+  is_enz_plot = FALSE,
   prettify_compound_names = TRUE
 )
 }
@@ -20,12 +20,16 @@ and Conc_units}
 
 \item{subsection_ADAM}{which ADAM-model subsection the data include}
 
-\item{IsEnzPlot}{T or F for whether this was a plot of enzyme abundance}
+\item{is_enz_plot}{T or F for whether this was a plot of enzyme abundance}
 }
 \value{
 
 }
 \description{
 This function is specifically for setting options for the y axis in a
-concentration-time graph and is NOT meant to be called on its own.
+SimcypConsultancy package concentration-time graph and is NOT meant to be
+called on its own. The function \code{\link{scale_y_conc}} is more generic
+and \emph{is} meant to be called on its own, so check that out if you're
+looking to scale y axes quickly and easily and similar to how they look in
+SimcypConsultancy concentration-time plots.
 }
