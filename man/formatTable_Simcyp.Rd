@@ -8,6 +8,7 @@ formatTable_Simcyp(
   DF,
   fontsize = 11,
   shading_column,
+  merge_shaded_cells = TRUE,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
   highlight_cells = NA,
@@ -32,6 +33,11 @@ row per file (an example of this would be the output from the function
 cause the shading of the rows to alternate between white and light gray
 whenever the file changes. Please see the examples at the bottom of this
 help file.}
+
+\item{merge_shaded_cells}{TRUE (default) or FALSE for whether to merge the
+cells that have the same shade. This only applies when one of the columns
+in the input data.frame is used for deciding when to alternate shading,
+that is, \code{shading_column} has a value.}
 
 \item{bold_cells}{optionally specify cells in the table to be in bold-face
 text with a numeric vector where the 1st number is the row number and the
@@ -114,7 +120,7 @@ formatTable_Simcyp(MyData, highlight_cells = list(c(1, 2), c(3,1), c(5, 2)),
                    highlight_color = "lightblue")
 
 # Bold-face examples
-## Make only the cell in row 5 and column 2 be bold face. This will 
+## Make only the cell in row 5 and column 2 be bold face. This will
 ## override the default of having the header row and the 1st column in bold.
 formatTable_Simcyp(MyData, bold_cells = c(5, 2))
 
