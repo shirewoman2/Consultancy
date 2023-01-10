@@ -1,4 +1,4 @@
-#' Set up x axis in a concentration-time plot
+#' Set up x axis in a conc-time plot
 #'
 #' This function is specifically for setting options for the x axis in a
 #' concentration-time graph and is NOT meant to be called on its own.
@@ -273,17 +273,29 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     }
     
     # If t0 isn't "simulation start", need to adjust x axis.
-    t0_num <- switch(
-        t0,
-        "simulation start" = 0,
-        "dose 1" = DoseTimes$FirstDoseStart,
-        "last dose" = DoseTimes$LastDoseStart,
-        "penultimate dose" = DoseTimes$PenultDoseStart)
+    if(t0 != "simulation start"){
+        
+        t0_num <- switch(
+            t0,
+            "dose 1" = DoseTimes$FirstDoseStart,
+            "last dose" = DoseTimes$LastDoseStart,
+            "penultimate dose" = DoseTimes$PenultDoseStart)
+        
+        Data$Time_orig <- Data$Time
+        Data$Time <- Data$Time - t0_num
+        time_range_relative <- time_range - t0_num
+    } else {
+        t0_num <- 0
+        Data$Time_orig <- Data$Time
+        time_range_relative <- time_range
+    }
     
     Out <- list("xlab" = xlab, 
+                "Data" = Data, 
                 "time_range" = time_range, 
-                "t0_num" = t0_num)
-    
+                "time_range_relative" = time_range_relative,
+                "t0" = t0_num, 
+                "TimeUnits" = TimeUnits)
     return(Out)
     
 }    

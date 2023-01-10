@@ -583,12 +583,11 @@ ct_plot <- function(ct_dataframe = NA,
                         x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
                         compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
     xlab <- XStuff$xlab
-    t0_num <- XStuff$t0_num
+    Data <- XStuff$Data # Is this necessary??
     time_range <- XStuff$time_range
-    time_range_relative <- time_range - XStuff$t0_num
-    Data$Time_orig <- Data$Time
-    Data$Time <- Data$Time - XStuff$t0_num
-    
+    time_range_relative <- XStuff$time_range_relative
+    t0 <- XStuff$t0
+    TimeUnits <- XStuff$TimeUnits
     
     # Dealing with possible inhibitor 1 data ---------------------------------
     # Adding a grouping variable to data and also making the inhibitor 1 name
@@ -725,7 +724,7 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     
-    # Setting up the y axis ---------------------------------------------------
+    # Setting up the y axis using the subfunction ct_y_axis -------------------
     
     # Setting Y axis limits for both linear and semi-log plots
     if(figure_type == "trial means") {
@@ -733,38 +732,22 @@ ct_plot <- function(ct_dataframe = NA,
     } else if(str_detect(figure_type, "percentiles|freddy|ribbon")) {
         Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
     } else if(figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) %>% 
-            bind_rows(obs_data)
+        Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
     }
     
     if(nrow(Ylim_data) == 0){
         Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
     }
     
-    # Per Hannah: If there are observed data included in the simulation, set the
-    # y axis limits to show those data well. 
+    ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
+              EnzPlot = EnzPlot, time_range_relative = time_range_relative,
+              Ylim_data = Ylim_data, 
+              prettify_compound_names = prettify_compound_names,
+              pad_y_axis = pad_y_axis,
+              y_axis_limits_lin = y_axis_limits_lin, 
+              time_range = time_range,
+              y_axis_limits_log = y_axis_limits_log)
     
-    # To do this, when observed data are present, filtering Ylim_data to only
-    # include concentrations >= 0.8*min(observed conc). t0 point isn't included
-    # in this calculation. 
-    if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
-        ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
-            pull(Conc) %>% min(na.rm = TRUE) 
-        
-        Ylim_data <- Ylim_data %>% filter(Conc >= ObsMin)
-    }
-    
-    Ylim_data <- Ylim_data %>%
-        filter(Time >= time_range_relative[1] & 
-                   Time <= time_range_relative[2]) 
-    
-    ylab <- ct_y_axis(y_compound_info = Ylim_data %>% 
-                          select(Compound, CompoundID, Conc_units, 
-                                 subsection_ADAM) %>% unique(), 
-                      IsADAM = ADAM, 
-                      subsection_ADAM = subsection_ADAM,
-                      is_enz_plot = EnzPlot, 
-                      prettify_compound_names = prettify_compound_names)
     
     # Figure types ---------------------------------------------------------
     
@@ -971,13 +954,39 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     A <- A +
-        scale_x_time(time_range = time_range_relative, 
-                     pad_x_axis = pad_x_axis) +
-        scale_y_conc(linear_or_log = "linear", 
-                     is_enz_plot = EnzPlot, 
-                     conc_range = y_axis_limits_lin, 
-                     pad_y_axis = pad_y_axis)
-    
+            scale_time_axis(time_range = time_range_relative, 
+                            pad_x_axis = pad_x_axis)
+            
+        if(EnzPlot){
+            A <- A +
+                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                     0, y_axis_limits_lin[1]),
+                                              YmaxRnd), 
+                                   labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))    
+        } else {
+            A <- A +
+                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                     0, y_axis_limits_lin[1]),
+                                              YmaxRnd), 
+                                   breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) 
+        }
+                                     YmaxRnd)) +
+            scale_time_axis(time_range = time_range_relative, 
+                            pad_x_axis = pad_x_axis)
+            
+        if(EnzPlot){
+            A <- A +
+                scale_y_continuous(labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))    
+        } else {
+            A <- A +
+                scale_y_continuous(breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) 
+        }
     
     if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
        (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
@@ -1037,11 +1046,18 @@ ct_plot <- function(ct_dataframe = NA,
     
     B <- suppressWarnings(suppressMessages(
         A + coord_cartesian(xlim = time_range_relative, 
-                            ylim = Ylim_log))) +
-        scale_y_conc(linear_or_log = "log", 
-                     is_enz_plot = EnzPlot, 
-                     conc_range = y_axis_limits_log, 
-                     pad_y_axis = pad_y_axis)
+                            ylim = Ylim_log)))
+    
+    if(EnzPlot){
+        B <- suppressWarnings(suppressMessages(
+            B + scale_y_log10(labels = scales::percent,
+                              expand = expansion(mult = pad_y_num))))
+    } else {
+        B <- suppressWarnings(suppressMessages(
+            B + scale_y_log10(breaks = YLogBreaks,
+                              labels = YLogLabels,
+                              expand = expansion(mult = pad_y_num))))
+    }
     
     if(graph_labels){
         labels <- "AUTO"
