@@ -1558,7 +1558,8 @@ call. = FALSE)
                                   "TRUE FALSE" = vars(!!facet2_column),
                                   "FALSE TRUE" = vars(!!facet1_column),
                                   "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
-                           ncol = facet_ncol, nrow = facet_nrow)
+                           ncol = switch(as.character(is.na(facet_ncol)), "TRUE" = NULL, "FALSE" = facet_ncol), 
+                           nrow = switch(as.character(is.na(facet_nrow)), "TRUE" = NULL, "FALSE" = facet_nrow))
         )
         
         if(EnzPlot){
