@@ -63,7 +63,8 @@ scale_x_time <- function(time_range = NA,
     DataLayers <- which(sapply(last_plot()$layers,
                                FUN = function(x) "data.frame" %in% class(x$data)))
     GraphData <- bind_rows(lapply(last_plot()$layers[DataLayers], 
-                                  FUN = function(x) x$data))
+                                  FUN = function(x) x$data), 
+                           last_plot()$data)
     names(GraphData)[which(names(GraphData) == as_label(last_plot()$mapping$x))] <- "Time"
     
     if(all(is.na(time_range))){
@@ -89,9 +90,16 @@ scale_x_time <- function(time_range = NA,
     # next one and doesn't look as nice on the graph. Rounding tlast down to the
     # nearest 4 for hours, nearest 15 for minutes, and nearest 2 for days.
     tlast <- switch(time_units, 
-                    "hours" = round_down_unit(time_range_adj[2], 4),
-                    "minutes" = round_down_unit(time_range_adj[2], 15), 
-                    "days" = round_down_unit(time_range_adj[2], 2))
+                    "hours" = round_unit(time_range_adj[2], 4),
+                    "minutes" = round_unit(time_range_adj[2], 15), 
+                    "days" = round_unit(time_range_adj[2], 2))
+    
+    if(tlast <= max(time_range_adj) * 0.8){
+        tlast <- switch(time_units, 
+                        "hours" = round_up_unit(time_range_adj[2], 4),
+                        "minutes" = round_up_unit(time_range_adj[2], 15), 
+                        "days" = round_up_unit(time_range_adj[2], 2))
+    }
     
     if(time_units == "hours"){
         
