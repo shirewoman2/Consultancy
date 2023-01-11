@@ -370,6 +370,9 @@ pksummary_mult <- function(sim_data_files = NA,
         }
         
         if(str_detect(save_table, "\\.csv")){
+            
+            MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
+            
             # This is when they want a csv file as output. In this scenario,
             # changing the value "simulated" in the list of stats to include
             # whether it was arithmetic or geometric b/c that info is included
