@@ -414,9 +414,13 @@ extractExpDetails <- function(sim_data_file,
                 filter(Detail == deet & Sheet == "Input Sheet") %>% pull(Regex)
             NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
             Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
-            Val <- InputTab[Row,
-                            InputDeets$ValueCol[
-                                which(InputDeets$Deet == deet)]] %>% pull()
+            if(length(Row) == 0){
+                Val <- NA
+            } else {
+                Val <- InputTab[Row,
+                                InputDeets$ValueCol[
+                                    which(InputDeets$Deet == deet)]] %>% pull()
+            }
             
             # If SimStartDayTime is not found, which will happen with animal
             # sims, it may be possible to piece together from other data. 

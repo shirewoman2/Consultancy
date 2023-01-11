@@ -36,6 +36,9 @@ A data.frame with 10 columns: \describe{
   section does this detail belong? Options: Absorption, Distribution,
   Elimination, Interaction, Phys Chem and Blood Binding.}
 
+  \item{ADAMParameter}{FOR INTERNAL USE: TRUE or FALSE for whether the
+  parameter only comes into play when it's an ADAM model}
+
   }
 }
 \usage{
