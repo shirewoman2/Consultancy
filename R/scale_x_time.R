@@ -48,19 +48,22 @@
 #'
 #' 
 scale_x_time <- function(time_range = NA, 
-                            time_units = "hours", 
-                            x_axis_interval = NA, 
-                            pad_x_axis = TRUE){
+                         time_units = "hours", 
+                         x_axis_interval = NA, 
+                         pad_x_axis = TRUE){
     
     # Error catching --------------------------------------------------------
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
        time_range[1] >= time_range[2]){
         warning("The 1st value for 'time_range' must be less than the 2nd value. We'll use the full time range instead.",
-             call. = FALSE)
+                call. = FALSE)
         time_range <- NA
     }
     
-    GraphData <- last_plot()$data
+    DataLayers <- which(sapply(last_plot()$layers,
+                               FUN = function(x) "data.frame" %in% class(x$data)))
+    GraphData <- bind_rows(lapply(last_plot()$layers[DataLayers], 
+                                  FUN = function(x) x$data))
     names(GraphData)[which(names(GraphData) == as_label(last_plot()$mapping$x))] <- "Time"
     
     if(all(is.na(time_range))){
