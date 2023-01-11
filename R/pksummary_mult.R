@@ -176,21 +176,21 @@ pksummary_mult <- function(sim_data_files = NA,
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                          sheetIndex = 1))
         if(is.na(sim_data_files[1])){
-            sim_data_files <- observed_PKDF$File
+            sim_data_files <- unique(observed_PKDF$File)
         }
         
     } else {
         
         # If user did not supply specific files, then extract all the files in
         # the current folder that end in "xlsx".
-        if(length(sim_data_files) == 1 && is.na(sim_data_files)){
+        if(length(unique(sim_data_files)) == 1 && is.na(sim_data_files)){
             sim_data_files <- list.files(pattern = "xlsx$")
             sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
         }
     }
     
     if("data.frame" %in% class(observed_PK)){
-        observed_PKDF <- observed_PK
+        observed_PKDF <- unique(observed_PK)
     }
     
     if(exists("observed_PKDF", inherits = FALSE) &&
@@ -370,6 +370,9 @@ pksummary_mult <- function(sim_data_files = NA,
         }
         
         if(str_detect(save_table, "\\.csv")){
+            
+            MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
+            
             # This is when they want a csv file as output. In this scenario,
             # changing the value "simulated" in the list of stats to include
             # whether it was arithmetic or geometric b/c that info is included
