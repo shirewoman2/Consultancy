@@ -94,7 +94,7 @@ scale_x_time <- function(time_range = NA,
                     "minutes" = round_unit(time_range_adj[2], 15), 
                     "days" = round_unit(time_range_adj[2], 2))
     
-    if(tlast <= max(time_range_adj) * 0.8){
+    if(tlast <= max(time_range_adj, na.rm = T) * 0.8){
         tlast <- switch(time_units, 
                         "hours" = round_up_unit(time_range_adj[2], 4),
                         "minutes" = round_up_unit(time_range_adj[2], 15), 
