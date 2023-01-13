@@ -12,7 +12,7 @@ annotateDetails(
   find_matching_details = NA,
   simulator_section = NA,
   show_compound_col = TRUE,
-  omit_all_missing = FALSE,
+  omit_all_missing = TRUE,
   save_output = NA
 )
 }
@@ -96,7 +96,7 @@ this to "concatenate", you'll get all the possible compound names together;
 for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 as the compound.}
 
-\item{omit_all_missing}{TRUE or FALSE (default) for whether to omit a detail
+\item{omit_all_missing}{TRUE (default) or FALSE for whether to omit a detail
 if the values are NA for all files}
 
 \item{save_output}{optionally save the output by supplying a file name in
@@ -133,22 +133,15 @@ Returns a data.frame of simulation experimental details including the
   experimental details for each file will show up in their own columns}}
 }
 \description{
-\code{annotateDetails} converts output from either
-\code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
-a long data.frame and adds to that data.frame columns for
-\enumerate{\item{which compound the information pertains to (substrate,
-inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
-found in (physchem, absorption, distribution, etc.),} \item{notes describing
-what the detail is, and} \item{which sheet in the Excel file the information
-was pulled from.}} It will also optionally filter the data to return only
-specifically requested information.
+
 }
 \details{
 \emph{Nota bene:} When you initially extracted your simulation experimental
 details, if you set \code{annotate_output = TRUE} and \code{show_compound_col
-= "concatenate"}, please understand that you cannot go backwards here an
-un-concatenate the compound names. You'll still get concatenated compound
-names in the output.
+= "concatenate"}, please understand that you cannot go backwards here and
+un-concatenate the compound names because, once we combine everything, we
+don't know which piece of data belonged to which compound. You'll still get
+concatenated compound names in the output.
 }
 \examples{
 

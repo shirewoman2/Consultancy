@@ -8,13 +8,24 @@
 #' found in (physchem, absorption, distribution, etc.),} \item{notes describing
 #' what the detail is, and} \item{which sheet in the Excel file the information
 #' was pulled from.}} It will also optionally filter the data to return only
-#' specifically requested information.
+#' specifically requested information. \strong{A recent change as of Jan. 2023:}
+#' There are now \emph{so many} possible details that it can be overwhelming to
+#' get all of them! For that reason, we changed the default setting for
+#' \code{omit_all_missing} to be TRUE so that, if there are only NA values for
+#' all the files you're annotating, that detail will be dropped. If you still
+#' get a \emph{ton} of information all at once, we recommend looking at just one
+#' compound at a time. You can set the \code{compoundID} argument to just the
+#' compound ID you want -- "substrate", "inhibitor 1", etc. -- or set the
+#' \code{compound| argument to just the compound you want -- "midazolam" or
+#' "Client Drug X" -- and that will also help make things less overwhelming and
+#' easier to find.
 #'
 #' \emph{Nota bene:} When you initially extracted your simulation experimental
 #' details, if you set \code{annotate_output = TRUE} and \code{show_compound_col
-#' = "concatenate"}, please understand that you cannot go backwards here an
-#' un-concatenate the compound names. You'll still get concatenated compound
-#' names in the output.
+#' = "concatenate"}, please understand that you cannot go backwards here and
+#' un-concatenate the compound names because, once we combine everything, we
+#' don't know which piece of data belonged to which compound. You'll still get
+#' concatenated compound names in the output.
 #'
 #' @param Deets output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}
@@ -31,7 +42,7 @@
 #'   this to "concatenate", you'll get all the possible compound names together;
 #'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 #'   as the compound.
-#' @param omit_all_missing TRUE or FALSE (default) for whether to omit a detail
+#' @param omit_all_missing TRUE (default) or FALSE for whether to omit a detail
 #'   if the values are NA for all files
 #' @param compoundID optionally supply one or more of "substrate", "primary
 #'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
@@ -154,7 +165,7 @@ annotateDetails <- function(Deets,
                             find_matching_details = NA,
                             simulator_section = NA, 
                             show_compound_col = TRUE,
-                            omit_all_missing = FALSE, 
+                            omit_all_missing = TRUE, 
                             save_output = NA){
     
     # Error catching --------------------------------------------------------
@@ -232,6 +243,70 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_met2" | Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
+    
+    if("Abs_model_sub" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "substrate" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_inhib" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "inhibitor 1" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_inhib2" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "inhibitor 2" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_met1" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "primary metabolite 1" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_met2" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "primary metabolite 2" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_secmet" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "secondary metabolite" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_inhib1met" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "inhibitor 1 metabolite" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
     
     CompoundNames <- Out %>%
         filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 

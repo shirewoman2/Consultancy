@@ -11,7 +11,7 @@ extractExpDetails_mult(
   overwrite = FALSE,
   annotate_output = TRUE,
   show_compound_col = TRUE,
-  omit_all_missing = FALSE,
+  omit_all_missing = TRUE,
   save_output = NA
 )
 }
@@ -85,7 +85,9 @@ wider, and adding columns to the output for a) which compound the
 information pertains to (substrate, inhibitor, etc.), b) which section of
 the Simcyp Simulator this detail is found in (physchem, absorption,
 distribution, etc.), c) notes describing what the detail is, and d) which
-sheet in the Excel file the information was pulled from.}
+sheet in the Excel file the information was pulled from. Please see
+\code{annotateDetails} for ways to sift through and organize this output to
+find what you need.}
 
 \item{show_compound_col}{TRUE, FALSE, or "concatenate" (default) for whether
 to include in the results the column "Compound", which is the compound's
@@ -101,7 +103,7 @@ this to "concatenate", you'll get all the possible compound names together;
 for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 as the compound.}
 
-\item{omit_all_missing}{TRUE or FALSE (default) for whether to omit a detail
+\item{omit_all_missing}{TRUE (default) or FALSE for whether to omit a detail
 if the values are NA for all files}
 
 \item{save_output}{optionally save the output by supplying a file name in

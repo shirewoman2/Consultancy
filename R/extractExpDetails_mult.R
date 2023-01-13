@@ -71,7 +71,9 @@
 #'   information pertains to (substrate, inhibitor, etc.), b) which section of
 #'   the Simcyp Simulator this detail is found in (physchem, absorption,
 #'   distribution, etc.), c) notes describing what the detail is, and d) which
-#'   sheet in the Excel file the information was pulled from.
+#'   sheet in the Excel file the information was pulled from. Please see
+#'   \code{annotateDetails} for ways to sift through and organize this output to
+#'   find what you need.
 #' @param show_compound_col TRUE, FALSE, or "concatenate" (default) for whether
 #'   to include in the results the column "Compound", which is the compound's
 #'   specific name in each simulation. Why would you ever omit this? If you have
@@ -85,7 +87,7 @@
 #'   this to "concatenate", you'll get all the possible compound names together;
 #'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 #'   as the compound.
-#' @param omit_all_missing TRUE or FALSE (default) for whether to omit a detail
+#' @param omit_all_missing TRUE (default) or FALSE for whether to omit a detail
 #'   if the values are NA for all files
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
@@ -114,7 +116,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    overwrite = FALSE,
                                    annotate_output = TRUE,
                                    show_compound_col = TRUE,
-                                   omit_all_missing = FALSE, 
+                                   omit_all_missing = TRUE, 
                                    save_output = NA){
     
     # Error catching ---------------------------------------------------------
@@ -241,7 +243,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     if(annotate_output){
         Out <- annotateDetails(Out, 
                                show_compound_col = show_compound_col, 
-                               save_output = NA)
+                               save_output = NA, 
+                               omit_all_missing = omit_all_missing)
     }
     
     if(complete.cases(save_output)){

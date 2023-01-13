@@ -53,9 +53,10 @@
 #'   information pertains to (substrate, inhibitor, etc.), b) which section of
 #'   the Simcyp Simulator this detail is found in (physchem, absorption,
 #'   distribution, etc.), c) notes describing what the detail is, and d) which
-#'   sheet in the Excel file the information was pulled from. If set to "TRUE",
-#'   annotate_output basically runs the function \code{\link{annotateDetails}}
-#'   behind the scenes.
+#'   sheet in the Excel file the information was pulled from. Setting this to
+#'   "TRUE" runs the function \code{\link{annotateDetails}} behind the scenes.
+#'   Please see \code{annotateDetails} for further ways to sift through and
+#'   organize this output to find what you need.
 #' @param save_output optionally save the output by supplying a file name in
 #'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
 #'   it will still be saved as a csv file.
