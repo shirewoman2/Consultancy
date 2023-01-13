@@ -69,9 +69,10 @@ sheet in the Excel file the information was pulled from. Setting this to
 Please see \code{annotateDetails} for further ways to sift through and
 organize this output to find what you need.}
 
-\item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-it will still be saved as a csv file.}
+\item{save_output}{optionally save the output by supplying a csv or Excel
+file name in quotes here, e.g., "Simulation details.csv" or "Simulation
+details.xlsx". If you leave off the file extension, it will be saved as a
+csv file.}
 }
 \value{
 Returns a named list of the experimental details

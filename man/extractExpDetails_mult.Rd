@@ -106,9 +106,10 @@ as the compound.}
 \item{omit_all_missing}{TRUE (default) or FALSE for whether to omit a detail
 if the values are NA for all files}
 
-\item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-it will still be saved as a csv file.}
+\item{save_output}{optionally save the output by supplying a csv or Excel
+file name in quotes here, e.g., "Simulation details.csv" or "Simulation
+details.xlsx". If you leave off the file extension, it will be saved as a
+csv file.}
 }
 \value{
 Returns a data.frame of experimental details for simulator files

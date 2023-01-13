@@ -16,7 +16,7 @@
 #' get a \emph{ton} of information all at once, we recommend looking at just one
 #' compound at a time. You can set the \code{compoundID} argument to just the
 #' compound ID you want -- "substrate", "inhibitor 1", etc. -- or set the
-#' \code{compound| argument to just the compound you want -- "midazolam" or
+#' \code{compound} argument to just the compound you want -- "midazolam" or
 #' "Client Drug X" -- and that will also help make things less overwhelming and
 #' easier to find.
 #'
@@ -102,9 +102,10 @@
 #'   "Transport", or "Trial Design". Not case sensitive. If you want more than
 #'   one, enclose them with \code{c(...)}.
 #'
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
+#' @param save_output optionally save the output by supplying a csv or Excel
+#'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
+#'   details.xlsx". If you leave off the file extension, it will be saved as a
+#'   csv file.
 #'
 #' @return Returns a data.frame of simulation experimental details including the
 #'   following columns: \describe{
@@ -569,34 +570,44 @@ annotateDetails <- function(Deets,
     
     # Pivoting wider again ------------------------------------------------
     
-    # Checking for details that are the SAME across all files
-    AllSame <- Out %>% 
-        group_by(across(.cols = any_of(c("Detail", "CompoundID", "Compound")))) %>% 
-        summarize(Length = length(unique(Value)), 
-                  UniqueVal = unique(Value)[1]) %>% 
-        filter(Length == 1) %>% 
-        select(-Length)
+    AllFiles <- unique(Out$File)
     
-    suppressMessages(
-        Out <- Out %>% 
-            pivot_wider(names_from = File, 
-                        values_from = Value) %>%
-            left_join(AllSame) %>% 
-            select(any_of(c("SimulatorSection", "Sheet", "Notes",
-                            "CompoundID", "Compound", "Detail", 
-                            "UniqueVal")), 
-                   everything())
-    )
+    Out <- Out %>% 
+        pivot_wider(names_from = File, 
+                    values_from = Value)
     
-    if("Compound" %in% names(Out)){
-        Out <- Out %>% 
-            mutate(ToOmit = complete.cases(CompoundID) & 
-                       is.na(Compound)) %>% 
-            filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
-            rename("All files have this value for this compound ID and compound" = UniqueVal)
-    } else {
-        Out <- Out %>% 
-            rename("All files have this value for this compound ID" = UniqueVal)
+    if(length(AllFiles) > 1){
+        # Checking for details that are the SAME across all files
+        AllSame <- Out %>% 
+            group_by(across(.cols = any_of(c("Detail", "CompoundID", "Compound")))) %>% 
+            summarize(Length = length(unique(Value)), 
+                      UniqueVal = unique(Value)[1]) %>% 
+            filter(Length == 1) %>% 
+            select(-Length)
+        
+        suppressMessages(
+            Out <- Out %>%
+                left_join(AllSame)
+        )
+    }
+    
+    Out <- Out %>% 
+        select(any_of(c("SimulatorSection", "Sheet", "Notes",
+                        "CompoundID", "Compound", "Detail", 
+                        "UniqueVal")), 
+               everything())
+    
+    if("UniqueVal" %in% names(Out)){
+        if("Compound" %in% names(Out)){
+            Out <- Out %>% 
+                mutate(ToOmit = complete.cases(CompoundID) & 
+                           is.na(Compound)) %>% 
+                filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
+                rename("All files have this value for this compound ID and compound" = UniqueVal)
+        } else {
+            Out <- Out %>% 
+                rename("All files have this value for this compound ID" = UniqueVal)
+        }
     }
     
     # Removing anything that was all NA's if that's what user requested
@@ -610,17 +621,36 @@ annotateDetails <- function(Deets,
     
     # Saving ---------------------------------------------------------------
     if(complete.cases(save_output)){
-        
-        if(str_detect(save_output, "\\.")){
-            # If they specified a file extension, replace whatever they supplied
-            # with csv b/c that's the only option for file format here.
-            FileName <- sub("\\..*", ".csv", save_output)
+        FileName <- save_output
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
+                          Ext, "csv")
+            FileName <- paste0(FileName, ".", Ext)
         } else {
-            # If they didn't specify file extension, make it csv.
-            FileName <- paste0(save_output, ".csv")
+            FileName <- paste0(FileName, ".csv")
+            Ext <- "csv"
         }
         
-        write.csv(Out, FileName, row.names = F)
+        switch(Ext, 
+               "csv" = write.csv(Out, FileName, row.names = F), 
+               "xlsx" = formatXL(
+                   Out, FileName, sheet = "Simulation experimental details",
+                   styles = list(
+                       list(columns = which(names(Out) == "Notes"), 
+                            textposition = list(wrapping = TRUE)),
+                       list(rows = 0, font = list(bold = TRUE),
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE)), 
+                       list(columns = which(str_detect(names(Out), "All files have this value")),
+                            fill = "#E7F3FF"), 
+                       list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
+                            font = list(bold = TRUE), 
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE), 
+                            fill = "#E7F3FF"))))
     }
     
     return(Out)

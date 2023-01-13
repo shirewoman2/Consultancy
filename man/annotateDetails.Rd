@@ -99,9 +99,10 @@ as the compound.}
 \item{omit_all_missing}{TRUE (default) or FALSE for whether to omit a detail
 if the values are NA for all files}
 
-\item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-it will still be saved as a csv file.}
+\item{save_output}{optionally save the output by supplying a csv or Excel
+file name in quotes here, e.g., "Simulation details.csv" or "Simulation
+details.xlsx". If you leave off the file extension, it will be saved as a
+csv file.}
 }
 \value{
 Returns a data.frame of simulation experimental details including the
@@ -133,7 +134,25 @@ Returns a data.frame of simulation experimental details including the
   experimental details for each file will show up in their own columns}}
 }
 \description{
-
+\code{annotateDetails} converts output from either
+\code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
+a long data.frame and adds to that data.frame columns for
+\enumerate{\item{which compound the information pertains to (substrate,
+inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
+found in (physchem, absorption, distribution, etc.),} \item{notes describing
+what the detail is, and} \item{which sheet in the Excel file the information
+was pulled from.}} It will also optionally filter the data to return only
+specifically requested information. \strong{A recent change as of Jan. 2023:}
+There are now \emph{so many} possible details that it can be overwhelming to
+get all of them! For that reason, we changed the default setting for
+\code{omit_all_missing} to be TRUE so that, if there are only NA values for
+all the files you're annotating, that detail will be dropped. If you still
+get a \emph{ton} of information all at once, we recommend looking at just one
+compound at a time. You can set the \code{compoundID} argument to just the
+compound ID you want -- "substrate", "inhibitor 1", etc. -- or set the
+\code{compound} argument to just the compound you want -- "midazolam" or
+"Client Drug X" -- and that will also help make things less overwhelming and
+easier to find.
 }
 \details{
 \emph{Nota bene:} When you initially extracted your simulation experimental

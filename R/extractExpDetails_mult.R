@@ -89,9 +89,10 @@
 #'   as the compound.
 #' @param omit_all_missing TRUE (default) or FALSE for whether to omit a detail
 #'   if the values are NA for all files
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
+#' @param save_output optionally save the output by supplying a csv or Excel
+#'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
+#'   details.xlsx". If you leave off the file extension, it will be saved as a
+#'   csv file.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #' @import tidyverse
@@ -248,19 +249,39 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     }
     
     if(complete.cases(save_output)){
-        
-        if(str_detect(save_output, "\\.")){
-            # If they specified a file extension, replace whatever they supplied
-            # with csv b/c that's the only option for file format here.
-            FileName <- sub("\\..*", ".csv", save_output)
+        FileName <- save_output
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
+                          Ext, "csv")
+            FileName <- paste0(FileName, ".", Ext)
         } else {
-            # If they didn't specify file extension, make it csv.
-            FileName <- paste0(save_output, ".csv")
+            FileName <- paste0(FileName, ".csv")
+            Ext <- "csv"
         }
         
-        write.csv(Out, FileName, row.names = F)
+        switch(Ext, 
+               "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
+               "xlsx" = formatXL(
+                   as.data.frame(Out), 
+                   FileName, 
+                   sheet = "Simulation experimental details",
+                   styles = list(
+                       list(columns = which(names(Out) == "Notes"), 
+                            textposition = list(wrapping = TRUE)),
+                       list(rows = 0, font = list(bold = TRUE),
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE)), 
+                       list(columns = which(str_detect(names(Out), "All files have this value")),
+                            fill = "#E7F3FF"), 
+                       list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
+                            font = list(bold = TRUE), 
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE), 
+                            fill = "#E7F3FF"))))
     }
-    
     
     return(Out)
 }
