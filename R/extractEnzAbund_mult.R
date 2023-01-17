@@ -75,7 +75,8 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                                  tissues = "liver",
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate", 
-                                 fromMultFunction = FALSE){
+                                 fromMultFunction = FALSE, 
+                                 ...){
     
     # Error catching -------------------------------------------------------
     
@@ -83,6 +84,24 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
+    
+    # Checking whether they've supplied extractConcTime args instead of
+    # extractConctTime_mult args
+    if("sim_data_file" %in% names(match.call()) &
+       "sim_data_files" %in% names(match.call()) == FALSE){
+        sim_data_files <- sys.call()$sim_data_file
+    }
+    
+    if("enzyme" %in% names(match.call()) &
+       "enzymes" %in% names(match.call()) == FALSE){
+        enzymes <- sys.call()$enzyme
+    }
+    
+    if("tissue" %in% names(match.call()) &
+       "tissues" %in% names(match.call()) == FALSE){
+        tissues <- sys.call()$tissue
+    }
+    
     
     # Main body of function -----------------------------------------------
     

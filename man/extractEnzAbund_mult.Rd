@@ -12,7 +12,8 @@ extractEnzAbund_mult(
   tissues = "liver",
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
-  fromMultFunction = FALSE
+  fromMultFunction = FALSE,
+  ...
 )
 }
 \arguments{

@@ -12,7 +12,8 @@ extractExpDetails_mult(
   annotate_output = TRUE,
   show_compound_col = TRUE,
   omit_all_missing = TRUE,
-  save_output = NA
+  save_output = NA,
+  ...
 )
 }
 \arguments{

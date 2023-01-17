@@ -180,13 +180,36 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  returnAggregateOrIndiv = "aggregate",
                                  adjust_obs_time = FALSE,
                                  expdetails = NA,
-                                 obs_data_files = NA){
+                                 obs_data_files = NA, 
+                                 ...){
     
     # Error catching -------------------------------------------------------
     
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Checking whether they've supplied extractConcTime args instead of
+    # extractConctTime_mult args
+    if("sim_data_file" %in% names(match.call()) &
+       "sim_data_files" %in% names(match.call()) == FALSE){
+        sim_data_files <- sys.call()$sim_data_file
+    }
+    
+    if("obs_data_file" %in% names(match.call()) &
+       "obs_data_files" %in% names(match.call()) == FALSE){
+        obs_data_files <- sys.call()$obs_data_file
+    }
+    
+    if("tissue" %in% names(match.call()) &
+       "tissues" %in% names(match.call()) == FALSE){
+        tissues <- sys.call()$tissue
+    }
+    
+    if("compoundToExtract" %in% names(match.call()) &
+       "compoundsToExtract" %in% names(match.call()) == FALSE){
+        compoundsToExtract <- sys.call()$compoundToExtract
     }
     
     compoundsToExtract <- tolower(compoundsToExtract)

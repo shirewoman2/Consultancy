@@ -118,12 +118,20 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    annotate_output = TRUE,
                                    show_compound_col = TRUE,
                                    omit_all_missing = TRUE, 
-                                   save_output = NA){
+                                   save_output = NA, 
+                                   ...){
     
     # Error catching ---------------------------------------------------------
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Checking whether they've supplied extractExpDetails args instead of
+    # extractExpDetails_mult args
+    if("sim_data_file" %in% names(match.call()) &
+       "sim_data_files" %in% names(match.call()) == FALSE){
+        sim_data_files <- sys.call()$sim_data_file
     }
     
     # If user did not supply files, then extract all the files in the current
