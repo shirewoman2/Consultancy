@@ -191,8 +191,11 @@ extractForestData <- function(sim_data_files = NA,
         Forest_l <- Forest_l[names(Forest_l)[names(Forest_l) %in% Deets$File]]
     }
     
+    Forest <- bind_rows(Forest_l)
+    
     if(complete.cases(sheet)){
         PKparameters <- sub("_last|_dose1", "", PKparameters)
+        names(Forest) <- sub("_last|_dose1", "", names(Forest))
     }
     
     ColNames <- data.frame(PKparam = PKparameters) %>% 
@@ -201,7 +204,7 @@ extractForestData <- function(sim_data_files = NA,
         pull(Cols)
     
     suppressMessages(
-        Forest <- bind_rows(Forest_l) %>% 
+         Forest <- Forest %>% 
             mutate(Stat = recode(Statistic, "Geometric Mean" = "GMR",
                                  "90% confidence interval around the geometric mean(lower limit)" = "CI90_lo", 
                                  "90% confidence interval around the geometric mean(upper limit)" = "CI90_hi")) %>% 
@@ -215,7 +218,7 @@ extractForestData <- function(sim_data_files = NA,
             left_join(Deets %>% select(File, Substrate, Dose_sub, Inhibitor1, 
                                        Dose_inhib)) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
-                   any_of(ColNames))
+                   any_of(ColNames)) %>% unique()
     )
     
     if(complete.cases(save_output)){

@@ -13,11 +13,11 @@
 #' @param forest_dataframe a data.frame with extracted forest-plot data,
 #'   generated from running \code{\link{extractForestData}} on Simulator output
 #'   files or a csv or Excel file with the same data. If this is a forest plot
-#'   of perpetrator DDIs, the column "Substrate" will be what is used to label
-#'   the y axis. If it is a forest plot of victim DDIs, it will be the column
-#'   "Inhibitor1". If, instead of the compound or inhibitor 1 names, you would
-#'   like some other label to appear on the y axis, please see the argument
-#'   \code{y_axis_labels}.
+#'   of perpetrator drug-drug interactions (DDIs), the column "Substrate" will
+#'   be what is used to label the y axis. If it is a forest plot of victim DDIs,
+#'   it will be the column "Inhibitor1". If, instead of the compound or
+#'   inhibitor 1 names, you would like some other label to appear on the y axis,
+#'   please see the argument \code{y_axis_labels}.
 #' @param perp_or_victim specify whether the drug of interest is a "victim" or
 #'   "perpetrator". This will determine whether the graphs will be labeled on
 #'   the y axis by the substrate name (for perpetrator forest plots) or by the
@@ -305,6 +305,11 @@ forest_plot <- function(forest_dataframe,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
              call. = FALSE)
     }
+    
+    if("perp_or_victim" %in% names(match.call()) == FALSE){
+        stop("You must use the argument `perp_or_victim` to specify whether your compound of interest is a DDI perpetrator or a DDI victim. Otherwise, we don't know whether to break of your graph by the substrate (when it's a perpetrator) or the inhibitor (when it's a victim).")
+    }
+    
     
     if("character" %in% class(forest_dataframe)){
         if(str_detect(forest_dataframe, "csv$")){
