@@ -520,7 +520,15 @@ ct_plot <- function(ct_dataframe = NA,
             rename(Conc = Abundance) %>%
             mutate(Simulated = TRUE,
                    Compound = Enzyme, 
-                   Conc = Conc / 100) # putting this into decimal format
+                   # putting "conc" into decimal format b/c it works better with
+                   # using percents on y axis labels
+                   Conc = Conc / 100) 
+        
+        # Since the y axis is now scaled by 1/100, need to also scale y axis
+        # limits.
+        y_axis_limits_lin <- y_axis_limits_lin / 100
+        y_axis_limits_log <- y_axis_limits_log / 100
+        
     }
     
     # Noting whether the tissue was from an ADAM model
