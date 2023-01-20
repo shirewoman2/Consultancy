@@ -19,6 +19,7 @@ calc_PK_ratios(
   includeConfInt = TRUE,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
+  rounding = NA,
   checkDataSource = TRUE,
   save_table = NA,
   fontsize = 11
@@ -97,6 +98,8 @@ tested).}
 listed in the output table? Options are "arithmetic" or "geometric"
 (default).}
 
+\item{conf_int}{}
+
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}
 
@@ -131,6 +134,21 @@ you're setting the effector name, you really should use something like this
 if you're including effector metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
+
+\item{rounding}{option for what rounding to perform, if any. Options are:
+\describe{\item{NA or "Consultancy"}{All output will be rounded according
+to Simcyp Consultancy Team standards: to three significant figures when the
+value is < 100 or to the ones place if the value is >= 100. Please see the
+function \code{\link{round_consultancy}}, which does the rounding here.}
+\item{"none"}{No rounding will be performed.} \item{"significant X" where
+"X" is a number}{Output will be rounded to X significant figures. "signif
+X" also works fine.} \item{"round X" where "X" is a number}{Output will be
+rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
+will be rounded using the function \code{\link{round_consultancy}}, but
+nothing will be rounded in the output R object. This can be useful when you
+want to have nicely rounded and formatted output in a Word file but you
+\emph{also} want to use the results from \code{calc_PK_ratios} to make
+forest plots, which requires numbers that are \emph{not} rounded.}}}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the

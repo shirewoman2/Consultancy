@@ -101,6 +101,20 @@
 #'   if you're including effector metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
+#' @param rounding option for what rounding to perform, if any. Options are:
+#'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
+#'   to Simcyp Consultancy Team standards: to three significant figures when the
+#'   value is < 100 or to the ones place if the value is >= 100. Please see the
+#'   function \code{\link{round_consultancy}}, which does the rounding here.}
+#'   \item{"none"}{No rounding will be performed.} \item{"significant X" where
+#'   "X" is a number}{Output will be rounded to X significant figures. "signif
+#'   X" also works fine.} \item{"round X" where "X" is a number}{Output will be
+#'   rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
+#'   will be rounded using the function \code{\link{round_consultancy}}, but
+#'   nothing will be rounded in the output R object. This can be useful when you
+#'   want to have nicely rounded and formatted output in a Word file but you
+#'   \emph{also} want to use the results from \code{calc_PK_ratios} to make
+#'   forest plots, which requires numbers that are \emph{not} rounded.}}
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -122,6 +136,7 @@
 #'   Documents folder instead.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param conf_int
 #'
 #' @return
 #' @export
@@ -142,6 +157,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            includeConfInt = TRUE,
                            prettify_columns = TRUE,
                            prettify_compound_names = TRUE,
+                           rounding = NA,
                            checkDataSource = TRUE, 
                            save_table = NA, 
                            fontsize = 11){
@@ -207,6 +223,35 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         PK2$individual <- PK2$individual %>% select(-AUCt, -CLt)
     }
     
+    # Setting the rounding option
+    round_opt <- function(x, round_fun){
+        
+        round_fun <- ifelse(is.na(round_fun), "consultancy", tolower(round_fun))
+        round_fun <- ifelse(str_detect(tolower(round_fun), "word"), "none", round_fun)
+        
+        suppressWarnings(
+            NumDig <- as.numeric(str_trim(sub("signif(icant)?|round", "", round_fun)))
+        )
+        
+        if(str_detect(round_fun, "signif|round") & 
+           !str_detect(round_fun, "[0-9]{1,}")){
+            warning("You appear to want some rounding, but we're not sure how many digits. We'll use 3 for now, but please check the help file for appropriate input for the argument `rounding`.", 
+                    call. = FALSE)
+            NumDig <- 3
+        }
+        
+        round_fun <- str_trim(sub("[0-9]{1,}", "", round_fun))
+        round_fun <- ifelse(str_detect(round_fun, "signif"), "signif", round_fun)
+        
+        Out <- switch(round_fun, 
+                      "round" = round(x, digits = NumDig),
+                      "signif" = signif(x, digits = NumDig), 
+                      "consultancy" = round_consultancy(x), 
+                      "none" = x)
+        
+        return(Out)
+    }
+    
     if(paired){
         # We need PKnumerator and PKdenominator to be the individual, coded PK
         # parameter names, so if the user specified something to indicate a set
@@ -238,19 +283,27 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         )
         
         MyPKResults <- MyPK %>% group_by(Parameter) %>% 
-            summarize(Ratio_mean = switch(mean_type, 
-                                          "geometric" = round_consult(gm_mean(Ratio)), 
-                                          "arithmetic" = round_consult(mean(Ratio, na.rm = T))), 
-                      Ratio_CV = switch(mean_type, 
-                                        "geometric" = as.character(round(100*gm_CV(Ratio))),
-                                        "arithmetic" = as.character(round(100*sd(Ratio, na.rm = T) /
-                                                                              mean(Ratio, na.rm = T)))),
-                      Ratio_CI_l = switch(mean_type, 
-                                          "geometric" = round_consult(gm_conf(Ratio, CI = conf_int)[1]),
-                                          "arithmetic" = round_consult(confInt(Ratio, CI = conf_int)[1])), 
-                      Ratio_CI_u = switch(mean_type, 
-                                          "geometric" = round_consult(gm_conf(Ratio, CI = conf_int)[2]),
-                                          "arithmetic" = round_consult(confInt(Ratio, CI = conf_int)[2]))) %>% 
+            summarize(Ratio_mean = switch(
+                mean_type, 
+                "geometric" = round_opt(gm_mean(Ratio), rounding), 
+                "arithmetic" = round_opt(mean(Ratio, na.rm = T), rounding)), 
+                
+                Ratio_CV = switch(
+                    mean_type, 
+                    "geometric" = round_opt(100*gm_CV(Ratio), rounding),
+                    "arithmetic" = round_opt(100*sd(Ratio, na.rm = T) /
+                                                 mean(Ratio, na.rm = T), rounding)),
+                
+                Ratio_CI_l = switch(
+                    mean_type, 
+                    "geometric" = round_opt(gm_conf(Ratio, CI = conf_int)[1], rounding),
+                    "arithmetic" = round_opt(confInt(Ratio, CI = conf_int)[1], rounding)), 
+                
+                Ratio_CI_u = switch(
+                    mean_type, 
+                    "geometric" = round_opt(gm_conf(Ratio, CI = conf_int)[2], rounding),
+                    "arithmetic" = round_opt(confInt(Ratio, CI = conf_int)[2], rounding))) %>%
+            
             pivot_longer(cols = matches("Ratio"), 
                          names_to = "Statistic", 
                          values_to = "Value") %>% 
@@ -311,7 +364,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             select(PKparameter, matches("Ratio")) %>% 
             pivot_longer(cols = -PKparameter, 
                          names_to = "Statistic", values_to = "Val") %>% 
-            mutate(Val = round_consult(Val)) %>% 
+            mutate(Val = round_opt(Val, rounding)) %>% 
             pivot_wider(names_from = PKparameter, values_from = Val) %>% 
             filter(Statistic != "Ratio_SD")
     }
@@ -378,9 +431,9 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                 suppressMessages(
                     PrettyCol <- data.frame(PKparameter = names(MyPKResults)[
                         !names(MyPKResults) == "Statistic"]) %>% 
-                    left_join(AllPKParameters %>% 
-                              select(PKparameter, PrettifiedNames)) %>% 
-                    unique()
+                        left_join(AllPKParameters %>% 
+                                      select(PKparameter, PrettifiedNames)) %>% 
+                        unique()
                 )
             } else {
                 # this is when we don't know what dose it was, e.g., a
@@ -443,6 +496,14 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     
     # Saving --------------------------------------------------------------
     if(complete.cases(save_table)){
+        
+        MyPKResults_out <- MyPKResults
+        
+        # Rounding as necessary
+        if(rounding == "Word only"){
+            MyPKResults <- MyPKResults %>% 
+                mutate(across(.cols = -Statistic, .fns = round_consultancy))   
+        } 
         
         # Checking whether they have specified just "docx" or just "csv" for
         # output b/c then, we'll use sim_data_file as file name. This allows us
@@ -553,16 +614,16 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     }
     
     if(checkDataSource){
-        MyPKResults <- list("Table" = MyPKResults,
-                            "QC" = bind_rows(PK1$QC, PK2$QC))
+        MyPKResults_out <- list("Table" = MyPKResults_out,
+                                "QC" = bind_rows(PK1$QC, PK2$QC))
         
         if(complete.cases(save_table)){ 
-            write.csv(MyPKResults$QC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
+            write.csv(MyPKResults_out$QC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
         
     }
     
-    return(MyPKResults)
+    return(MyPKResults_out)
     
 }
 
