@@ -131,7 +131,7 @@ create_dose_rows_from_file(study_file = "My dose info.csv",
 # but still get just one csv file at the end:
 
 # Substrate is dosed one time at 10 mg starting at t = 168 h.
-Doses_sub <- create_doses(study_file = "Subject metadata.csv", 
+Doses_sub <- create_doses(study_file = "Subject metadata.csv",
                           subj_ID_column = SubjectID,
                           subj_age_column = Age,
                           num_doses = 1, compound_ID = "Substrate",
@@ -139,7 +139,7 @@ Doses_sub <- create_doses(study_file = "Subject metadata.csv",
                           compound_dose_amount = 10)
 
 # Inhibitor is dosed QD at 500 mg for 336 h starting at t = 0 h.
-Doses_inhib <- create_doses(study_file = "Subject metadata.csv", 
+Doses_inhib <- create_doses(study_file = "Subject metadata.csv",
                             subj_ID_column = SubjectID,
                             subj_age_column = Age,
                             dose_interval = 24, end_time = 336,

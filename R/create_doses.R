@@ -275,9 +275,9 @@ create_doses <- function(dose_interval = 24,
                 call. = FALSE)
     }
     
-    CmpdInfo <- CmpdInfo %>% left_join(MyStartTimes) %>% 
-        mutate(Time = Time + Compound_start) %>% 
-        select(-Compound_start)
+    suppressMessages(CmpdInfo <- CmpdInfo %>% left_join(MyStartTimes) %>% 
+                         mutate(Time = Time + Compound_start) %>% 
+                         select(-Compound_start))
     
     if(complete.cases(end_time)){
         CmpdInfo <- CmpdInfo %>% filter(Time <= end_time)
