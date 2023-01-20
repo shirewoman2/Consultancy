@@ -972,8 +972,8 @@ pksummary_table <- function(sim_data_file = NA,
     # Formatting and selecting only rows where there are data
     MyPKResults <- MyPKResults %>%
         mutate(Value = if_else(str_detect(Stat, "CV"), 
-                               round_consult(100*Value),
-                               round_consult(Value))) %>%
+                               round_consultancy(100*Value),
+                               round_consultancy(Value))) %>%
         filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
                            "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                            "min", "max", "per5", "per95", 

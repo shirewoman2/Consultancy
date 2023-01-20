@@ -279,11 +279,11 @@ round_unit <- function(x, b){
 #' @export
 #'
 #' @examples
-#' round_consult(1239.236)
-#' round_consult(0.23513)
-#' round_consult(c(1239.236, 0.23513))
+#' round_consultancy(1239.236)
+#' round_consultancy(0.23513)
+#' round_consultancy(c(1239.236, 0.23513))
 #' 
-round_consult <- function(x){
+round_consultancy <- function(x){
     if_else(x > 100, 
             as.character(round(x, 0)), 
             # This next convoluted bit will retain trailing zeroes since
