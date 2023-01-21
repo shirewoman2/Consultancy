@@ -1,9 +1,9 @@
-#' Calculate the ratio of PK parameters between the two simulations
+#' Calculate the ratio of PK parameters between two simulations 
 #'
-#' \code{calc_PK_ratios} matches PK data from two simulator output Excel files
-#' by subject ID and trial and calculates the ratio of those parameters for each
-#' individual. It then calculates either the geometric or arithmetic mean and
-#' desired confidence interval for those data.
+#' \code{calc_PK_ratios_mult} matches PK data from a pair of simulator output
+#' Excel files and calculates the mean and confidence intervals of the ratios of
+#' the requested PK parameters. To do this for multiple pairs of simulator
+#' output files, please see the function \code{\link{calc_PK_ratios_mult}}.
 #'
 #' @param sim_data_file_numerator a simulator output Excel file that will
 #'   provide the numerator for the calculated ratios.
@@ -16,9 +16,9 @@
 #'   unpaired study designs, the order of operations is to calculate the mean of
 #'   the parameter of interest for the numerator file and then divide it by the
 #'   mean of the parameter of interest for the denominator file. \strong{A
-#'   caveat:} We're checking on how best to calculate the CV and confidence
-#'   intervals for the unpaired data, so please check our work before using
-#'   those! REMINDER: THIS FUNCTION IS UNDER CONSTRUCTION.
+#'   caveat for unpaired data:} We're checking on how best to calculate the CV
+#'   and confidence intervals for the unpaired data, so please check our work
+#'   before using those! 
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \describe{
 #'
@@ -76,21 +76,21 @@
 #'   settting \code{include_num_denom_columns = TRUE} would give you that ratio
 #'   and also a column with summary statistics on the AUC for cancer patients
 #'   and a column with summary statistics on the AUC for healthy volunteers.
-#'   Setting it to FALSE would give you only the ratios.
-#' @param conf_int confidence interval to use; default is 90%
+#'   Setting it to FALSE would give you only the ratios. 
+#' @param conf_int confidence interval to use; default is 90\%
 #' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
-#'   in the table
+#'   in the table 
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
 #'   confidence intervals were included in the simulator output file. Note that
 #'   the confidence intervals are geometric since that's what the simulator
 #'   outputs (see an AUC tab and the summary statistics; these values are the
 #'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
-#'   limit)").
+#'   limit)"). 
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 #'   \code{\link{extractPK}}, e.g., "AUCinf_dose1". We're still tweaking this to
-#'   make it look just right!
+#'   make it look just right! 
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
@@ -106,7 +106,7 @@
 #'   you're setting the effector name, you really should use something like this
 #'   if you're including effector metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-#'   "superstatin")}.
+#'   "superstatin")}. 
 #' @param rounding option for what rounding to perform, if any. Options are:
 #'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
 #'   to Simcyp Consultancy Team standards: to three significant figures when the
@@ -592,12 +592,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     }
     
     # Saving --------------------------------------------------------------
+    MyPKResults_out <- MyPKResults
+    
     if(complete.cases(save_table)){
         
-        MyPKResults_out <- MyPKResults
-        
         # Rounding as necessary
-        if(rounding == "Word only"){
+        if(complete.cases(rounding) && rounding == "Word only"){
             MyPKResults <- MyPKResults %>% 
                 mutate(across(.cols = -Statistic, .fns = round_consultancy))   
         } 
@@ -610,7 +610,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             OutPath <- dirname(sim_data_file)
             save_table <- sub("xlsx", 
                               # If they included "." at the beginning of the
-                              # file exension, need to remove that here.
+                              # file extension, need to remove that here.
                               sub("\\.", "", save_table),
                               basename(sim_data_file))
         } else {

@@ -51,9 +51,18 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
                           "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
                           ""))
 
+AllFiles <- switch(
+    exists("sim_data_file_pairs", inherits = FALSE), 
+    "TRUE" = # from calc_PK_ratios_mult
+        str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
+    
+    "FALSE" = # from pksummary_mult
+        str_comma(basename(unique(MyPKResults$File))))
+        
+
 ```
 
-*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r str_comma(basename(unique(MyPKResults$File)))`* 
+*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r AllFiles`* 
 
 
 
