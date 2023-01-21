@@ -2,8 +2,7 @@
 % Please edit documentation in R/calc_PK_ratios.R
 \name{calc_PK_ratios}
 \alias{calc_PK_ratios}
-\title{Calculate the ratio of PK parameters between the two simulations -- UNDER
-CONSTRUCTION}
+\title{Calculate the ratio of PK parameters between the two simulations}
 \usage{
 calc_PK_ratios(
   sim_data_file_numerator,
@@ -14,6 +13,7 @@ calc_PK_ratios(
   sheet_PKparameters_denom = NA,
   tissue = "plasma",
   mean_type = "geometric",
+  include_num_denom_columns = TRUE,
   conf_int = 0.9,
   includeCV = TRUE,
   includeConfInt = TRUE,
@@ -98,7 +98,16 @@ tested).}
 listed in the output table? Options are "arithmetic" or "geometric"
 (default).}
 
-\item{conf_int}{}
+\item{include_num_denom_columns}{TRUE (default) or FALSE for whether to
+include columns in the output table for the numerator data alone and
+columns for the denominator alone. For example, if you wanted to calculate
+the dose 1 AUC ratio for cancer patients compared to healthy volunteers,
+settting \code{include_num_denom_columns = TRUE} would give you that ratio
+and also a column with summary statistics on the AUC for cancer patients
+and a column with summary statistics on the AUC for healthy volunteers.
+Setting it to FALSE would give you only the ratios.}
+
+\item{conf_int}{confidence interval to use; default is 90%}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}
@@ -113,10 +122,8 @@ limit)").}
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-\code{\link{extractPK}}, e.g., "AUCinf_dose1". \emph{Note:} This does not
-currently do anything if the supplied PK parameters are ratios of one
-parameter for the numerator file and a different parameter for the
-denominator file; we haven't figured out how best to set that up yet.}
+\code{\link{extractPK}}, e.g., "AUCinf_dose1". We're still tweaking this to
+make it look just right!}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in the prettified column titles and in any Word
