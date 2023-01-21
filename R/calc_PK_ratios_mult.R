@@ -17,11 +17,11 @@
 #'   paired study designs, the order of operations is to calculate each
 #'   subject's ratio and then to calculate the mean of those ratios. For
 #'   unpaired study designs, the order of operations is to calculate the mean of
-#'   the parameter of interest for the numerator file and then divide it by the
-#'   mean of the parameter of interest for the denominator file. \strong{A
-#'   caveat for unpaired data:} We're checking on how best to calculate the CV
-#'   and confidence intervals for the unpaired data, so please check our work
-#'   before using those!
+#'   the parameter of interest for the numerator simulation and then divide it
+#'   by the mean of the parameter of interest for the denominator simulation.
+#'   \strong{A caveat for unpaired data:} We're checking on how best to
+#'   calculate the CV and confidence intervals for the unpaired data, so please
+#'   check our work before using those!
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \describe{
 #'
@@ -213,7 +213,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
     
     for(i in 1:nrow(sim_data_file_pairs)){
         # Including a progress message
-        print(paste0("Extracting data for ratio #", i))
+        print(paste0("Extracting data for file pair #", i))
         
         TEMP <- calc_PK_ratios(
             sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 

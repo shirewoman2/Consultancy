@@ -1,4 +1,4 @@
-#' Calculate the ratio of PK parameters between two simulations 
+#' Calculate the ratio of PK parameters between two simulations
 #'
 #' \code{calc_PK_ratios_mult} matches PK data from a pair of simulator output
 #' Excel files and calculates the mean and confidence intervals of the ratios of
@@ -14,11 +14,11 @@
 #'   paired study designs, the order of operations is to calculate each
 #'   subject's ratio and then to calculate the mean of those ratios. For
 #'   unpaired study designs, the order of operations is to calculate the mean of
-#'   the parameter of interest for the numerator file and then divide it by the
-#'   mean of the parameter of interest for the denominator file. \strong{A
-#'   caveat for unpaired data:} We're checking on how best to calculate the CV
-#'   and confidence intervals for the unpaired data, so please check our work
-#'   before using those! 
+#'   the parameter of interest for the numerator simulation and then divide it
+#'   by the mean of the parameter of interest for the denominator simulation.
+#'   \strong{A caveat for unpaired data:} We're checking on how best to
+#'   calculate the CV and confidence intervals for the unpaired data, so please
+#'   check our work before using those!
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \describe{
 #'
@@ -76,21 +76,21 @@
 #'   settting \code{include_num_denom_columns = TRUE} would give you that ratio
 #'   and also a column with summary statistics on the AUC for cancer patients
 #'   and a column with summary statistics on the AUC for healthy volunteers.
-#'   Setting it to FALSE would give you only the ratios. 
+#'   Setting it to FALSE would give you only the ratios.
 #' @param conf_int confidence interval to use; default is 90\%
 #' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
-#'   in the table 
+#'   in the table
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
 #'   confidence intervals were included in the simulator output file. Note that
 #'   the confidence intervals are geometric since that's what the simulator
 #'   outputs (see an AUC tab and the summary statistics; these values are the
 #'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
-#'   limit)"). 
+#'   limit)").
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 #'   \code{\link{extractPK}}, e.g., "AUCinf_dose1". We're still tweaking this to
-#'   make it look just right! 
+#'   make it look just right!
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
@@ -106,7 +106,7 @@
 #'   you're setting the effector name, you really should use something like this
 #'   if you're including effector metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-#'   "superstatin")}. 
+#'   "superstatin")}.
 #' @param rounding option for what rounding to perform, if any. Options are:
 #'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
 #'   to Simcyp Consultancy Team standards: to three significant figures when the
@@ -233,8 +233,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     
     # Keeping track of which columns came from where and the desired order
     # in the output
-    ColNames <- data.frame(ValType = c(rep("Value_num", ncol(PKnumerator$individual)), 
-                                       rep("Value_denom", ncol(PKdenominator$individual))), 
+    ColNames <- data.frame(ValType = c(rep("NumeratorSim", ncol(PKnumerator$individual)), 
+                                       rep("DenominatorSim", ncol(PKdenominator$individual))), 
                            OrigName = c(names(PKnumerator$individual), 
                                         names(PKdenominator$individual)), 
                            Parameter = c(names(PKnumerator$individual),
@@ -298,14 +298,14 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             MyPK <- PKnumerator$individual %>% 
                 pivot_longer(cols = -c(Individual, Trial), 
                              names_to = "Parameter", 
-                             values_to = "Value_num") %>% 
+                             values_to = "NumeratorSim") %>% 
                 left_join(PKdenominator$individual %>% 
                               pivot_longer(cols = -c(Individual, Trial), 
                                            names_to = "Parameter", 
-                                           values_to = "Value_denom")) %>% 
-                mutate(Ratio = Value_num / Value_denom) %>% 
+                                           values_to = "DenominatorSim")) %>% 
+                mutate(Ratio = NumeratorSim / DenominatorSim) %>% 
                 pivot_longer(cols = switch(include_num_denom_columns, 
-                                           "TRUE" = c("Value_num", "Value_denom", "Ratio"), 
+                                           "TRUE" = c("NumeratorSim", "DenominatorSim", "Ratio"), 
                                            "FALSE" = "Ratio"),
                              names_to = "ValType", 
                              values_to = "Value") %>% 
@@ -350,7 +350,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         # numerator (comparison) simulation, in alphabetical order, 3) all
         # ratios of numerator / denominator PK in alphabetical order. If user
         # only wanted ratios, then the only ValType is "Ratio". Otherwise,
-        # ValType is "Ratio", "Value_denom", and "Value_num".
+        # ValType is "Ratio", "DenominatorSim", and "NumeratorSim".
         
     } else {
         # unpaired study design
@@ -428,12 +428,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             suppressMessages(
                 MyPKResults <- MyPKResults %>% 
                     left_join(
-                        PKnum %>% mutate(ValType = "Value_num") %>% 
+                        PKnum %>% mutate(ValType = "NumeratorSim") %>% 
                             rename(Value = ValueNum) %>% 
                             
                             bind_rows(
                                 PKdenom %>% 
-                                    mutate(ValType = "Value_denom") %>% 
+                                    mutate(ValType = "DenominatorSim") %>% 
                                     rename(Value = ValueDenom)) %>% 
                             
                             filter(Statistic %in% 
@@ -562,8 +562,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         
         # Setting prettified names.
         names(MyPKResults) <- c("Statistic", PrettyCol)
-        names(MyPKResults) <- sub("Value_denom", "denominator file", names(MyPKResults))
-        names(MyPKResults) <- sub("Value_num", "numerator file", names(MyPKResults))
+        names(MyPKResults) <- sub("DenominatorSim", "denominator simulation", names(MyPKResults))
+        names(MyPKResults) <- sub("NumeratorSim", "numerator simulation", names(MyPKResults))
     }
     
     # Checking on possible effectors to prettify

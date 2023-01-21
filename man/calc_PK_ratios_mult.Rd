@@ -39,11 +39,11 @@ as in, the subjects are \emph{identical} between the two simulations. For
 paired study designs, the order of operations is to calculate each
 subject's ratio and then to calculate the mean of those ratios. For
 unpaired study designs, the order of operations is to calculate the mean of
-the parameter of interest for the numerator file and then divide it by the
-mean of the parameter of interest for the denominator file. \strong{A
-caveat for unpaired data:} We're checking on how best to calculate the CV
-and confidence intervals for the unpaired data, so please check our work
-before using those!}
+the parameter of interest for the numerator simulation and then divide it
+by the mean of the parameter of interest for the denominator simulation.
+\strong{A caveat for unpaired data:} We're checking on how best to
+calculate the CV and confidence intervals for the unpaired data, so please
+check our work before using those!}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
   output file. Options are: \describe{
