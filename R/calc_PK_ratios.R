@@ -124,6 +124,10 @@
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
+#' @param returnExpDetails TRUE or FALSE (default) for whether to return the
+#'   simulator experimental details, which this function will look up anyway
+#'   behind the scenes. If TRUE, this will return a list, and each set of
+#'   simulation details will be an item in that list.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -165,6 +169,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            prettify_compound_names = TRUE,
                            rounding = NA,
                            checkDataSource = TRUE, 
+                           returnExpDetails = FALSE,
                            save_table = NA, 
                            fontsize = 11){
     
@@ -216,6 +221,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                PKparameters = PKparam_denom, 
                                sheet = sheet_PKparameters_denom,
                                tissue = tissue,
+                               returnExpDetails = TRUE,
                                returnAggregateOrIndiv = ifelse(paired, 
                                                                "individual", "both"))
     
@@ -246,6 +252,15 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                          paste(unique(ColNames$Parameter), "Ratio")))
     ColOrder <- ColOrder[!str_detect(ColOrder,"Individual|Trial")]
     
+    # Because we need to match parameters when joining, renaming PK
+    # parameters in PKdenominator to match the names in PKnumerator even
+    # though they're not *really* the same PK parameters necessarily. We'll
+    # deal with that difference later.
+    
+    names(PKdenominator$individual) <- names(PKnumerator$individual)
+    names(PKdenominator$aggregate) <- names(PKnumerator$aggregate)
+    
+    
     # Setting the rounding option
     round_opt <- function(x, round_fun){
         
@@ -275,6 +290,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         return(Out)
     }
     
+    
     if(paired){
         # We need PKparam_num and PKparam_denom to be the individual, coded PK
         # parameter names, so if the user specified something to indicate a set
@@ -286,13 +302,6 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         # can match the appropriate things between files.
         PKnumerator$individual <- PKnumerator$individual[, c("Individual", "Trial", PKparam_num)]
         PKdenominator$individual <- PKdenominator$individual[, c("Individual", "Trial", PKparam_denom)]
-        
-        # Because we need to match parameters when joining, renaming PK
-        # parameters in PKdenominator to match the names in PKnumerator even
-        # though they're not *really* the same PK parameters necessarily. We'll
-        # deal with that difference later.
-        
-        names(PKdenominator$individual) <- names(PKnumerator$individual)
         
         suppressMessages(
             MyPK <- PKnumerator$individual %>% 
@@ -451,6 +460,17 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                             pivot_wider(names_from = PKparameter,
                                         values_from = Value)
                     ))
+            
+            # Changing the names to match what the columns actually contain
+            ColNames <- ColNames %>% 
+                mutate(TempName_ValType = paste(Parameter, ValType)) %>% 
+                filter(!Parameter %in% c("Individual", "Trial"))
+            RevisedNames <- c("Statistic", ColOrder[str_detect(ColOrder, "Ratio")],
+                              ColNames$OrigName_ValType)
+            names(RevisedNames) <- c("Statistic", ColOrder[str_detect(ColOrder, "Ratio")],
+                                     ColNames$TempName_ValType)
+            MyPKResults <- MyPKResults[, names(RevisedNames)]
+            names(MyPKResults) <- RevisedNames
         }
         
         MyPKResults <- MyPKResults[, c("Statistic", ColOrder)]
@@ -710,17 +730,27 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         }
     }
     
+    Out <- list("Table" = MyPKResults_out)
+    
     if(checkDataSource){
-        MyPKResults_out <- list("Table" = MyPKResults_out,
-                                "QC" = bind_rows(PKnumerator$QC, PKdenominator$QC))
+        Out[["QC"]] <- bind_rows(PKnumerator$QC, PKdenominator$QC)
         
         if(complete.cases(save_table)){ 
-            write.csv(MyPKResults_out$QC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
+            write.csv(Out[["QC"]], sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
         
     }
     
-    return(MyPKResults_out)
+    if(returnExpDetails){
+        Out[["ExpDetails_num"]] <- PKnumerator$ExpDetails
+        Out[["ExpDetails_denom"]] <- PKdenominator$ExpDetails
+    }
+    
+    if(length(Out) == 1){
+        return(Out[[1]])
+    } else {
+        return(Out)
+    }
     
 }
 

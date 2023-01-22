@@ -21,6 +21,7 @@ calc_PK_ratios(
   prettify_compound_names = TRUE,
   rounding = NA,
   checkDataSource = TRUE,
+  returnExpDetails = FALSE,
   save_table = NA,
   fontsize = 11
 )
@@ -160,6 +161,11 @@ forest plots, which requires numbers that are \emph{not} rounded.}}}
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
+
+\item{returnExpDetails}{TRUE or FALSE (default) for whether to return the
+simulator experimental details, which this function will look up anyway
+behind the scenes. If TRUE, this will return a list, and each set of
+simulation details will be an item in that list.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

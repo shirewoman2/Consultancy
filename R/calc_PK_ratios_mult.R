@@ -80,6 +80,16 @@
 #'   and also a column with summary statistics on the AUC for cancer patients
 #'   and a column with summary statistics on the AUC for healthy volunteers.
 #'   Setting it to FALSE would give you only the ratios.
+#' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
+#'   the same time. If set to TRUE, this will return a list that includes data
+#'   formatted for use with the function \code{\link{forest_plot}}. This will
+#'   assume that the denominator is the baseline or control scenario and the
+#'   numerator is the comparison. In the output for this, the column "Dose_sub"
+#'   will contain the dose of the substrate in the denominator simualtions, and
+#'   the column "Dose_inhib" will contain the dose of the inhibitor (if there
+#'   was one) in the numerator simulations or the dose of the substrate in the
+#'   numerator simulations if there was not. If there was not an inhibitor, the
+#'   column "Inhibitor 1" will contain the file names for the numerator sims.
 #' @param conf_int confidence interval to use; default is 90\%
 #' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
 #'   in the table
@@ -163,10 +173,9 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 conf_int = 0.9, 
                                 includeCV = TRUE, 
                                 includeConfInt = TRUE,
-                                prettify_columns = TRUE,
-                                prettify_compound_names = TRUE,
                                 rounding = NA,
                                 checkDataSource = TRUE, 
+                                extract_forest_data = FALSE, 
                                 save_table = NA, 
                                 fontsize = 11){
     
@@ -182,6 +191,12 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
                 call. = FALSE)
         tissue <- "plasma"
+    }
+    
+    if(extract_forest_data & includeConfInt == FALSE){
+        warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
+                call. = FALSE)
+        includeConfInt <- TRUE
     }
     
     # Main body of function -------------------------------------------------
@@ -208,8 +223,10 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         sim_data_file_pairs$sheet_PKparameters_denom <- sheet_PKparameters_denom
     }
     
+    
     MyTable <- list()
     QC <- list()
+    ForestInfo <- list()
     
     for(i in 1:nrow(sim_data_file_pairs)){
         # Including a progress message
@@ -228,10 +245,11 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
             conf_int = conf_int, 
             includeCV = includeCV, 
             includeConfInt = includeConfInt, 
-            prettify_columns = prettify_columns, 
-            prettify_compound_names = prettify_compound_names, 
-            rounding = rounding, 
+            prettify_columns = FALSE, 
+            prettify_compound_names = FALSE, 
+            rounding = "none", 
             checkDataSource = TRUE, 
+            returnExpDetails = TRUE,
             save_table = NA)
         
         MyTable[[i]] <- TEMP$Table %>% 
@@ -239,15 +257,65 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 sim_data_file_pairs$Denominator[i]))
         QC[[i]] <- TEMP$QC
         
+        ForestInfo[[i]] <- data.frame(
+            File = paste(sim_data_file_pairs$Numerator[i], "/", 
+                         sim_data_file_pairs$Denominator[i]), 
+            Dose_sub = TEMP$ExpDetails_denom$Dose_sub, 
+            Dose_inhib = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
+                                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
+                                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
+            Substrate = TEMP$ExpDetails_denom$Substrate, 
+            Inhibitor1 = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
+                                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
+                                "FALSE" = TEMP$ExpDetails_num$Substrate), 
+            File_num = sim_data_file_pairs$Numerator[i], 
+            File_denom = sim_data_file_pairs$Denominator[i])
+        
         rm(TEMP)
     }
     
     MyPKResults <- bind_rows(MyTable)
     
     
-    # Saving --------------------------------------------------------------
+    # Setting the rounding option
+    round_opt <- function(x, round_fun){
+        
+        round_fun <- ifelse(is.na(round_fun), "consultancy", tolower(round_fun))
+        round_fun <- ifelse(str_detect(tolower(round_fun), "word"), "none", round_fun)
+        
+        suppressWarnings(
+            NumDig <- as.numeric(str_trim(sub("signif(icant)?|round", "", round_fun)))
+        )
+        
+        if(str_detect(round_fun, "signif|round") & 
+           !str_detect(round_fun, "[0-9]{1,}")){
+            warning("You appear to want some rounding, but we're not sure how many digits. We'll use 3 for now, but please check the help file for appropriate input for the argument `rounding`.", 
+                    call. = FALSE)
+            NumDig <- 3
+        }
+        
+        round_fun <- str_trim(sub("[0-9]{1,}", "", round_fun))
+        round_fun <- ifelse(str_detect(round_fun, "signif"), "signif", round_fun)
+        
+        Out <- switch(round_fun, 
+                      "round" = round(x, digits = NumDig),
+                      "signif" = signif(x, digits = NumDig), 
+                      "consultancy" = round_consultancy(x), 
+                      "none" = x)
+        
+        return(Out)
+    }
+    
     MyPKResults_out <- MyPKResults %>% 
+        mutate(across(.cols = where(is.numeric), 
+                      .fns = round_opt, round_fun = rounding)) %>% 
         select(-File, File)
+    
+    
+    # Saving --------------------------------------------------------------
+    
+    Out <- list(Table = MyPKResults_out)
+    
     
     if(complete.cases(save_table)){
         
@@ -362,10 +430,48 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         }
     }
     
-    Out <- switch(checkDataSource, 
-                  "TRUE" = list(Table = MyPKResults_out,
-                                QC = bind_rows(QC)),
-                  "FALSE" = bind_rows(MyTable))
+    if(extract_forest_data){
+        StatNames <- unique(MyPKResults$Statistic[
+            str_detect(MyPKResults$Statistic, "Mean Ratio|CI")])
+        names(StatNames) <- StatNames
+        StatNames[which(str_detect(StatNames, "Ratio"))] <- "GMR"
+        StatNames[which(str_detect(StatNames, "CI - Lower"))] <- "CI90_lo"
+        StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI90_hi"
+        
+        suppressMessages(
+            FD <- MyPKResults %>% select(Statistic, File, matches(" / ")) %>% 
+                filter(str_detect(Statistic, "Ratio|Lower|Upper")) %>% 
+                pivot_longer(cols = -c("Statistic", "File"), 
+                             names_to = "Parameter1", 
+                             values_to = "Value") %>% 
+                mutate(
+                    Statistic = StatNames[Statistic],
+                    Parameter = str_extract(
+                        Parameter1, 
+                        str_c(AllPKParameters %>% filter(AppliesOnlyWhenEffectorPresent == FALSE) %>% 
+                                  pull(PKparameter) %>% unique(), 
+                              collapse = "|")), 
+                    Parameter = paste(Parameter, Statistic, sep = "__")) %>% 
+                select(-Parameter1, -Statistic) %>% 
+                pivot_wider(names_from = Parameter, values_from = Value) %>% 
+                left_join(bind_rows(ForestInfo)) %>% 
+                select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
+                       everything())
+        )
+        
+        Out[["ForestData"]] <- FD
+        
+    }
     
-    return(Out)
+    if(checkDataSource){
+        Out[["QC"]] <- bind_rows(QC)
+    }
+    
+    if(length(Out) == 1){
+        return(Out[[1]])
+    } else {
+        return(Out)
+    }
+    
 }
+
