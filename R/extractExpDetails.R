@@ -328,17 +328,21 @@ extractExpDetails <- function(sim_data_file,
         }
         
         if(complete.cases(Out$Inhibitor1)){
-            if(complete.cases(Out$Regimen_inhib) & 
+            if(complete.cases(Out$Regimen_inhib) && 
                Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
                 Out$Regimen_inhib <- "Single Dose" 
             }
         }
-        if(complete.cases(Out$Inhibitor2)){
-            if(complete.cases(Out$Regimen_inhib2) & 
-               Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
-                Out$Regimen_inhib2 <- "Single Dose" 
-            }
-        }
+        
+        # Commenting this next bit out b/c I don't think the summary tab
+        # includes info on Inhib2 regimen, so this is null right now.
+        
+        # if(complete.cases(Out$Inhibitor2)){
+        #     if(complete.cases(Out$Regimen_inhib2) & 
+        #        Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
+        #         Out$Regimen_inhib2 <- "Single Dose" 
+        #     }
+        # }
     }
     
     # Pulling details from the Input Sheet tab ------------------------------
