@@ -619,7 +619,9 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         # Rounding as necessary
         if(complete.cases(rounding) && rounding == "Word only"){
             MyPKResults <- MyPKResults %>% 
-                mutate(across(.cols = -Statistic, .fns = round_consultancy))   
+                mutate(across(.cols = where(is.numeric), 
+                              .fns = round_opt, round_fun = rounding))
+                
         } 
         
         # Checking whether they have specified just "docx" or just "csv" for
