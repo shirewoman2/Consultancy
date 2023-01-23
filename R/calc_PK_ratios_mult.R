@@ -440,26 +440,37 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         StatNames[which(str_detect(StatNames, "CI - Lower"))] <- "CI90_lo"
         StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI90_hi"
         
-        suppressMessages(
-            FD <- MyPKResults %>% select(Statistic, File, matches(" / ")) %>% 
-                filter(str_detect(Statistic, "Ratio|Lower|Upper")) %>% 
-                pivot_longer(cols = -c("Statistic", "File"), 
-                             names_to = "Parameter1", 
-                             values_to = "Value") %>% 
-                mutate(
-                    Statistic = StatNames[Statistic],
-                    Parameter = str_extract(
-                        Parameter1, 
-                        str_c(AllPKParameters %>% filter(AppliesOnlyWhenEffectorPresent == FALSE) %>% 
-                                  pull(PKparameter) %>% unique(), 
-                              collapse = "|")), 
-                    Parameter = paste(Parameter, Statistic, sep = "__")) %>% 
-                select(-Parameter1, -Statistic) %>% 
-                pivot_wider(names_from = Parameter, values_from = Value) %>% 
-                left_join(bind_rows(ForestInfo)) %>% 
-                select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
-                       everything())
-        )
+        FD <- MyPKResults %>% select(Statistic, File, matches(" / ")) %>% 
+            filter(str_detect(Statistic, "Ratio|Lower|Upper")) %>% 
+            pivot_longer(cols = -c("Statistic", "File"), 
+                         names_to = "Parameter1", 
+                         values_to = "Value") %>% 
+            mutate(
+                Statistic = StatNames[Statistic],
+                Parameter = str_extract(
+                    Parameter1, 
+                    str_c(AllPKParameters %>% filter(AppliesOnlyWhenEffectorPresent == FALSE) %>% 
+                              pull(PKparameter) %>% unique(), 
+                          collapse = "|")), 
+                Parameter = paste(Parameter, Statistic, sep = "__"), 
+                Parameter = sub("_dose1", "_ratio_dose1", Parameter), 
+                Parameter = sub("_last", "_ratio_last", Parameter))%>% 
+            select(-Parameter1, -Statistic) %>% 
+            filter(str_detect(Parameter, "AUCinf|AUCt|Cmax"))
+        if(nrow(FD) == 0){
+            warning("The PK parameters selected don't work for forest plots, which can only take PK parameters for AUCinf, AUCtau, and Cmax for dose 1 or the last dose. We cannot return any forest-plot data.", 
+                    call. = FALSE)
+            FD <- data.frame()
+        } else {
+            suppressMessages(
+                FD <-  FD %>% 
+                    pivot_wider(names_from = Parameter, values_from = Value) %>% 
+                    left_join(bind_rows(ForestInfo)) %>% 
+                    select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
+                           everything())
+            )
+            
+        }
         
         Out[["ForestData"]] <- FD
         
