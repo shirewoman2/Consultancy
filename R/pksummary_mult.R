@@ -168,6 +168,17 @@ pksummary_mult <- function(sim_data_files = NA,
         sim_data_files <- sys.call()$sim_data_file
     }
     
+    # Making sure that all the files exist before attempting to pull data
+    if(any(file.exists(sim_data_files) == FALSE)){
+        MissingSimFiles <- sim_data_files[
+            which(file.exists(sim_data_files) == FALSE)]
+        warning(paste0("The file(s) ", 
+                       str_comma(paste0("`", MissingSimFiles, "`")), 
+                       " is/are not present and thus will not be extracted."), 
+                call. = FALSE)
+        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+    }
+    
     # Check for appropriate input for arguments
     tissue <- tolower(tissue)
     if(tissue %in% c("plasma", "blood") == FALSE){

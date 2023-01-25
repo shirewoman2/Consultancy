@@ -269,11 +269,13 @@ extractConcTime_mult <- function(sim_data_files = NA,
         ct_dataframe <- ct_dataframe %>%
             mutate(ID = paste(File, Tissue, CompoundID))
         
-        DataToFetch <- ct_dataframe %>% select(File, Tissue, CompoundID) %>%
-            unique() %>% mutate(ExistsAlready = TRUE) %>%
-            right_join(Requested) %>%
-            filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
-            mutate(ID = paste(File, Tissue, CompoundID))
+        suppressMessages(
+            DataToFetch <- ct_dataframe %>% select(File, Tissue, CompoundID) %>%
+                unique() %>% mutate(ExistsAlready = TRUE) %>%
+                right_join(Requested) %>%
+                filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
+                mutate(ID = paste(File, Tissue, CompoundID))
+        )
         
         if(overwrite == FALSE){
             sim_data_files_topull <- unique(DataToFetch$File)
@@ -291,6 +293,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
     if(length(sim_data_files_topull) == 0){
         message("There are no data to pull that are not already present in your current data.frame. Returning current data.frame.")
         return(ct_dataframe)
+    }
+    
+    # Making sure that all the files exist before attempting to pull data
+    if(any(file.exists(sim_data_files_topull) == FALSE)){
+        MissingSimFiles <- sim_data_files_topull[
+            which(file.exists(sim_data_files_topull) == FALSE)]
+        warning(paste0("The file(s) ", 
+                       str_comma(paste0("`", MissingSimFiles, "`")), 
+                       " is/are not present and thus will not be extracted."), 
+                call. = FALSE)
+        sim_data_files_topull <- setdiff(sim_data_files_topull, MissingSimFiles)
     }
     
     # Tidying and error catching for any observed data
@@ -386,6 +399,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     ObsAssign <-
                         ObsAssign %>% 
                         filter(File %in% unique(c(sim_data_files, ct_dataframe$File)))
+                }
+                
+                # Making sure obs files exist before trying to pull data from them
+                if(any(file.exists(ObsAssign$ObsFile) == FALSE)){
+                    
+                    MissingObsFiles <- ObsAssign$ObsFile[
+                        which(file.exists(ObsAssign$ObsFile) == FALSE)]
+                    warning(paste0("The file(s) ", 
+                                   str_comma(paste0("`", MissingObsFiles, "`")), 
+                                   " is/are not present and thus will not be extracted."), 
+                            call. = FALSE)
+                    ObsAssign <- ObsAssign %>% filter(!ObsFile %in% MissingObsFiles)
                 }
                 
                 ObsAssign <- split(ObsAssign, f = ObsAssign$File)

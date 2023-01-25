@@ -141,6 +141,18 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
     
+    # Making sure that all the files exist before attempting to pull data
+    if(any(file.exists(sim_data_files) == FALSE)){
+        MissingSimFiles <- sim_data_files[
+            which(file.exists(sim_data_files) == FALSE)]
+        warning(paste0("The file(s) ", 
+                       str_comma(paste0("`", MissingSimFiles, "`")), 
+                       " is/are not present and thus will not be extracted."), 
+                call. = FALSE)
+        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+    }
+    
+    
     # Main body of function ---------------------------------------------------
     
     # print(quo_name(enquo(existing_exp_details))) # for bug fixing
