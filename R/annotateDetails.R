@@ -579,7 +579,8 @@ annotateDetails <- function(Deets,
     if(length(AllFiles) > 1){
         # Checking for details that are the SAME across all files
         AllSame <- Out %>% 
-            select(CompoundID, Compound, Detail, matches("xlsx$")) %>% 
+            select(any_of(c("CompoundID", "Compound", "Detail")),
+                   matches("xlsx$")) %>% 
             pivot_longer(cols = matches("xlsx$"), 
                          names_to = "File", values_to = "Value") %>% 
             group_by(across(.cols = any_of(c("Detail", "CompoundID", "Compound")))) %>% 
