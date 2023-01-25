@@ -302,7 +302,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
     } else {
         
         if(class(obs_to_sim_assignment)[1] == "character"){
-            if(any(str_detect(obs_to_sim_assignment, "//.csv"))){
+            if(any(str_detect(obs_to_sim_assignment, ".csv$"))){
                 # user has supplied a csv file for designating obs and sim
                 # assignments.
                 ObsAssign <- read.csv(obs_to_sim_assignment) %>% unique()
