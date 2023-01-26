@@ -13,6 +13,77 @@
 #' @param overlay TRUE or FALSE for whether to make overlaid graphs, i.e.,
 #'   whether to use \code{\link{ct_plot_overlay}} (TRUE) or use
 #'   \code{\link{ct_plot}} (FALSE) to generate the graphs
+#' @param figure_type type of figure to plot. Options are:
+#'
+#'   \describe{
+#'
+#'   \item{"percentiles"}{(default) plots an opaque line for the mean data,
+#'   lighter lines for the 5th and 95th percentiles of the simulated data, and
+#'   open circles for the observed data. If an effecter were present, the
+#'   default is dashed lines for the data in the presence of an effector.}
+#'
+#'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
+#'   for the mean of each trial of simulated data, and open circles for the
+#'   observed data. If an effector were present, lighter dashed lines indicate
+#'   the mean of each trial of simulated data in the presence of the effector.}
+#'
+#'   \item{"percentile ribbon"}{plots an opaque line for the mean data,
+#'   transparent shading for the 5th to 95th percentiles of the simulated data,
+#'   and open circles for the observed data. If an effector were present, the
+#'   default is to show the data without the effector in blue and the data in
+#'   the presence of the effector in red. Note: You may sometimes see some
+#'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
+#'   cut off. For arcane reasons we don't want to bore you with here, we can't
+#'   easily prevent this. However, a possible fix is to set your y axis limits
+#'   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
+#'
+#'   \item{"means only"}{plots a black line for the mean data and, if an
+#'   effector was modeled, a dashed line for the concentration-time data with
+#'   Inhibitor 1.}
+#'
+#'   \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
+#'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
+#'   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
+#'   with an effector present lose the trial means, and the percentiles switch
+#'   to solid, gray lines. \strong{An editorial comment:} While this does not
+#'   align with the officially sanctioned template at this time, this looks
+#'   \emph{sharp}, makes it easy to see the defining characteristics of the
+#'   data, and I recommend checking it out, even just for your own purposes of
+#'   examining your data. If the color is too much for you but you like the
+#'   rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}}
+#'
+#' @param mean_type graph "arithmetic" (default) or "geometric" means or
+#'   "median" for median concentrations. If that option was not included in the
+#'   output, you'll get a warning and the graph will include one that was.
+#' @param linear_or_log the type of graph to be returned. Options: \describe{
+#'   \item{"semi-log"}{y axis is log transformed}
+#'
+#'   \item{"linear"}{no axis transformation}
+#'
+#'   \item{"both vertical"}{(default) both the linear and the semi-log graphs
+#'   will be returned, and graphs are stacked vertically}
+#'
+#'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
+#'   returned, and graphs are side by side horizontally}
+#'
+#'   \item{"horizontal and vertical"}{both the linear and the semi-log graphs
+#'   will be returned, and graphs are side by side horizontally (one graph; file
+#'   name will end in "- horizontal") and stacked vertically (second graph; file
+#'   name will end in "- vertical"). This option, which was designed to create
+#'   the vertically stacked version of a graph for a report and the horizontal,
+#'   side-by-side version for a presentation, is a bit different from the others
+#'   since it will return two separate files. In the RStudio "Plots" window,
+#'   you'll only see the vertically stacked version. Setting \code{fig_height}
+#'   and \code{fig_width} will adjust only the dimensions of the horizontal
+#'   figure; the default values will be used for the vertical one. If you
+#'   request Word output, only the vertical plot will be saved in Word format;
+#'   the horizontal plot will be saved as a png file.}}
+#' @param legend_position Specify where you want the legend to be. Options are
+#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
+#'   at all. If you include the legend but then some graphs do have a legend and
+#'   some graphs do not (e.g., some have effectors and some do not so there's
+#'   nothing to put in a legend), the alignment between sets of graphs will be a
+#'   bit off.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -23,7 +94,7 @@
 #'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder. 
+#'   your Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param ... arguments that pass through to \code{\link{ct_plot}} or
@@ -46,6 +117,7 @@ ct_plot3 <- function(ct_dataframe,
                      figure_type = "means only",
                      mean_type = "arithmetic",
                      linear_or_log = "semi-log", 
+                     legend_position = "none",
                      save_graph = NA,
                      fig_height = 6,
                      fig_width = 5,
@@ -121,6 +193,7 @@ ct_plot3 <- function(ct_dataframe,
                      figure_type = figure_type,
                      mean_type = mean_type, 
                      linear_or_log = linear_or_log,
+                     legend_position = legend_position,
                      ..., # comment this for development
                      time_range = NA, 
                      save_graph = NA) +
@@ -131,6 +204,7 @@ ct_plot3 <- function(ct_dataframe,
                          figure_type = figure_type,
                          mean_type = mean_type, 
                          linear_or_log = linear_or_log,
+                         legend_position = "none",
                          ..., # comment this for development
                          time_range = "first dose", 
                          save_graph = NA) +
@@ -141,13 +215,20 @@ ct_plot3 <- function(ct_dataframe,
                          figure_type = figure_type,
                          mean_type = mean_type, 
                          linear_or_log = linear_or_log,
+                         legend_position = "none",
                          ..., # comment this for development
                          time_range = "last dose", 
                          save_graph = NA) +
                 ggtitle("Last dose")))
         
-        Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                                 nrow = 2, common.legend = TRUE, legend = "bottom")
+        if(legend_position == "none"){
+            Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
+                                     nrow = 2, legend = "none")
+            
+        } else {
+            Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
+                                     nrow = 2, common.legend = TRUE, legend = "bottom")
+        }
     }
     
     if(complete.cases(save_graph)){
