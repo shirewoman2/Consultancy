@@ -29,6 +29,11 @@
 #'   \item{"Absorption tab"}{only those parameters on the "Absorption" or
 #'   "Overall Fa Fg" tab}
 #'
+#'   \item{"Regional ADAM"}{regional fraction absorbed and fraction metabolized
+#'   from intestinal segments; only applies to ADAM models where the tab
+#'   "Regional ADAM Fractions (Sub)" is included in the Excel file and currently
+#'   only applies to substrate}
+#'
 #'   \item{a vector of any combination of specific, individual parameters, each
 #'   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
 #'   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
@@ -219,7 +224,11 @@ extractPK <- function(sim_data_file,
     ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
         pull(PKparameter) %>% unique()
     
-    ParamAbsorption <- AllPKParameters %>% filter(Sheet %in% c("Absorption", "Overall Fa Fg")) %>% 
+    ParamAbsorption <- AllPKParameters %>% filter(Sheet %in% c("Absorption",
+                                                               "Overall Fa Fg")) %>% 
+        pull(PKparameter) %>% unique()
+    
+    ParamRegADAM <- AllPKParameters %>% filter(Sheet %in% c("Regional ADAM Fractions (Sub)")) %>% 
         pull(PKparameter) %>% unique()
     
     ParamAUC0 <- AllPKParameters %>% filter(Sheet == "AUC0") %>% 
@@ -248,6 +257,10 @@ extractPK <- function(sim_data_file,
         # This will happen if user requests PKparameters = "AUC" but "AUC" tab
         # is not present but a tab for AUC0 *is*.
         PKparameters <- ParamAUC0
+    }
+    
+    if(tolower(PKparameters[1]) == "regional adam"){
+        PKparameters <- ParamRegADAM
     }
     
     # Allowing for flexibility in case. Get the lower-case version of whatever
@@ -1328,6 +1341,118 @@ extractPK <- function(sim_data_file,
             suppressWarnings(rm(StartRow_agg, EndRow_agg, StartCol_agg, EndRow_ind))
         }
     }
+    
+    # Pulling data from RegADAM tab -------------------------
+    PKparameters_RegADAM <- intersect(PKparameters, ParamRegADAM)
+    
+    # Some PK parameters show up on multiple sheets. No need to pull
+    # those here if they've already been pulled from another sheet.
+    PKparameters_RegADAM <- setdiff(PKparameters_RegADAM, names(Out_agg))
+    
+    if(complete.cases(sheet)){
+        # How do you set something to have length 0? Hacking it for now.
+        PKparameters_RegADAM <- intersect("A", "B")
+    }
+    
+    if(length(PKparameters_RegADAM) > 0){
+        # Error catching
+        if("Regional ADAM Fractions (Sub)" %in% SheetNames == FALSE){
+            warning(paste0("The sheet `Regional ADAM Fractions (Sub)` must be present in the Excel simulated data file to extract the PK parameters ",
+                           sub("and", "or", str_comma(PKparameters_RegADAM)),
+                           ". None of these parameters can be extracted."),
+                    call. = FALSE)
+        } else {
+            
+            Sheet <- "Regional ADAM Fractions (Sub)"
+            
+            RegADAM_xl <- suppressMessages(
+                readxl::read_excel(path = sim_data_file, sheet = Sheet,
+                                   col_names = FALSE))
+            
+            # Finding the last row of the individual data
+            EndRow_ind <- which(is.na(RegADAM_xl$...2[2:nrow(RegADAM_xl)]))[1]
+            
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
+                        call. = FALSE)
+                return(list())
+            } 
+            
+            # Finding the aggregate data rows 
+            StartRow_agg <- which(RegADAM_xl$...2 == "Statistics") + 2
+            EndRow_agg <- which(is.na(RegADAM_xl$...2))
+            EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(RegADAM_xl), EndRow_agg)
+            
+            # Looping through parameters and extracting values
+            for(i in PKparameters_RegADAM){
+                
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. 
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "Regional ADAM Fractions (Sub)" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText)
+                
+                # Looking for the regular expression specific to this parameter
+                # i. 
+                ColNum <- which(str_detect(as.vector(t(RegADAM_xl[2, ])),
+                                           ToDetect$SearchText))
+                # fa values 1st, fm values 2nd for this sheet
+                ColNum <- ifelse(str_detect(i, "fa"), ColNum[1], ColNum[2])
+                
+                if(length(ColNum) == 0 | is.na(ColNum)){
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab `Regional ADAM Fractions (Sub)` cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
+                    suppressMessages(rm(ToDetect, ColNum))
+                    PKparameters_RegADAM <- setdiff(PKparameters_RegADAM, i)
+                    next
+                }
+                
+                suppressWarnings(
+                    Out_ind[[i]] <- RegADAM_xl[3:EndRow_ind, ColNum] %>%
+                        pull(1) %>% as.numeric
+                )
+                
+                suppressWarnings(
+                    Out_agg[[i]] <- RegADAM_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                        pull(1) %>% as.numeric()
+                )
+                names(Out_agg[[i]]) <- RegADAM_xl[StartRow_agg:EndRow_agg, 2] %>%
+                    pull(1)
+                
+                if(checkDataSource){
+                    DataCheck <- DataCheck %>%
+                        bind_rows(data.frame(PKparam = i, 
+                                             Tab = Sheet,
+                                             SearchText = ToDetect$SearchText,
+                                             Column = ColNum, 
+                                             StartRow_agg = StartRow_agg,
+                                             EndRow_agg = EndRow_agg,
+                                             StartRow_ind = 2,
+                                             EndRow_ind = EndRow_ind))
+                }
+            }   
+            
+            if(includeTrialInfo){
+                # Subject and trial info
+                SubjTrial_RegADAM <- RegADAM_xl[3:EndRow_ind, 1:2] %>%
+                    rename("Individual" = ...1, "Trial" = ...2)
+                
+                Out_ind[["RegADAMtab"]] <- cbind(SubjTrial_RegADAM,
+                                                 as.data.frame(Out_ind[PKparameters_RegADAM]))
+            }
+            
+            suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
+        }
+    }
+    
     
     # Pulling parameters from a user-specified sheet --------------------------
     if(complete.cases(sheet) & UserAUC == FALSE){

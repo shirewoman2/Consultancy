@@ -30,6 +30,11 @@ in quotes}
   \item{"Absorption tab"}{only those parameters on the "Absorption" or
   "Overall Fa Fg" tab}
 
+  \item{"Regional ADAM"}{regional fraction absorbed and fraction metabolized
+  from intestinal segments; only applies to ADAM models where the tab
+  "Regional ADAM Fractions (Sub)" is included in the Excel file and currently
+  only applies to substrate}
+
   \item{a vector of any combination of specific, individual parameters, each
   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
