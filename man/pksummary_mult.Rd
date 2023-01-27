@@ -22,7 +22,8 @@ pksummary_mult(
   prettify_columns = TRUE,
   checkDataSource = TRUE,
   save_table = NA,
-  fontsize = 11
+  fontsize = 11,
+  ...
 )
 }
 \arguments{

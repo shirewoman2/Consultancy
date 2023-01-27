@@ -37,6 +37,7 @@ formatXL_head <- function(DF, file, sheet = NA){
     
     # Main body of function ---------------------------------------------------
     
+    ## Column widths ---------------------------------------------------------
     # Guessing at appropriate column width based on max number of characters
     # in that column. First, need to include headers as a row so that it will
     # count those.
@@ -95,10 +96,10 @@ formatXL_head <- function(DF, file, sheet = NA){
                                 Header_nchar[i], Nchar_word[i])
     }
     
-    # Using 10 pixels for values < 10, 15 for values from 10 to 15, 20 for
+    # Using 10 pixels for values < 10, 15 for values from 9 to 15, 20 for
     # values up to 30 characters and then 30 pixels for values even larger.
     GoodWidths <- cutNumeric(as.numeric(Nchar_word),
-                             breaks = c(0, 10, 15, 20, 30, 100, 1000))
+                             breaks = c(0, 8, 15, 20, 30, 100, 1000))
     GoodWidths[which(GoodWidths > 30)] <- 30
     
     # However, if there were more than 5 words for that column, set the column
@@ -112,7 +113,7 @@ formatXL_head <- function(DF, file, sheet = NA){
     }
     GoodWidths[which(NumWord > 20)] <- 50
     
-    # Setting column widths, applying styles, and saving.
+    ## Setting column widths, applying styles, and saving --------------------
     formatXL(DF, file = file, sheet = sheet,
              colWidth = list(colNum = NULL, width = GoodWidths),
              styles = list(list(rows = 0,

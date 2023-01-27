@@ -520,7 +520,15 @@ ct_plot <- function(ct_dataframe = NA,
             rename(Conc = Abundance) %>%
             mutate(Simulated = TRUE,
                    Compound = Enzyme, 
-                   Conc = Conc / 100) # putting this into decimal format
+                   # putting "conc" into decimal format b/c it works better with
+                   # using percents on y axis labels
+                   Conc = Conc / 100) 
+        
+        # Since the y axis is now scaled by 1/100, need to also scale y axis
+        # limits.
+        y_axis_limits_lin <- y_axis_limits_lin / 100
+        y_axis_limits_log <- y_axis_limits_log / 100
+        
     }
     
     # Noting whether the tissue was from an ADAM model
@@ -579,9 +587,15 @@ ct_plot <- function(ct_dataframe = NA,
     }
     
     # Setting up the x axis using the subfunction ct_x_axis
-    ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
-              x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
-              compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
+    XStuff <- ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
+                        x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
+                        compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
+    xlab <- XStuff$xlab
+    Data <- XStuff$Data # Is this necessary??
+    time_range <- XStuff$time_range
+    time_range_relative <- XStuff$time_range_relative
+    t0 <- XStuff$t0
+    TimeUnits <- XStuff$TimeUnits
     
     # Dealing with possible inhibitor 1 data ---------------------------------
     # Adding a grouping variable to data and also making the inhibitor 1 name
@@ -733,13 +747,25 @@ ct_plot <- function(ct_dataframe = NA,
         Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
     }
     
-    ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
-              EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-              Ylim_data = Ylim_data, 
-              prettify_compound_names = prettify_compound_names,
-              pad_y_axis = pad_y_axis,
-              y_axis_limits_lin = y_axis_limits_lin, time_range = time_range,
-              y_axis_limits_log = y_axis_limits_log)
+    YStuff <- ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
+                        EnzPlot = EnzPlot, time_range_relative = time_range_relative,
+                        Ylim_data = Ylim_data, 
+                        prettify_compound_names = prettify_compound_names,
+                        pad_y_axis = pad_y_axis,
+                        y_axis_limits_lin = y_axis_limits_lin, 
+                        time_range = time_range,
+                        y_axis_limits_log = y_axis_limits_log)
+    
+    ObsConcUnits <- YStuff$ObsConcUnits
+    ylab <- YStuff$ylab
+    YLabels <- YStuff$YLabels
+    YLogLabels <- YStuff$YLogLabels
+    YBreaks <- YStuff$YBreaks
+    YLogBreaks <- YStuff$YLogBreaks
+    Ylim_log <- YStuff$Ylim_log
+    YmaxRnd <- YStuff$YmaxRnd
+    pad_y_num <- YStuff$pad_y_num
+    pad_y_axis <- YStuff$pad_y_axis
     
     
     # Figure types ---------------------------------------------------------
@@ -950,10 +976,8 @@ ct_plot <- function(ct_dataframe = NA,
         # There's a known glitch w/ggplot2 with coord_cartesian and
         # geom_ribbon. Hacking around that.
         A <- A +
-            scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                               limits = time_range_relative,
-                               expand = expansion(
-                                   mult = pad_x_num))
+            scale_x_time(time_range = time_range_relative, 
+                         pad_x_axis = pad_x_axis)
         
         if(EnzPlot){
             A <- A +
@@ -978,9 +1002,8 @@ ct_plot <- function(ct_dataframe = NA,
                             ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
                                             0, y_axis_limits_lin[1]),
                                      YmaxRnd)) +
-            scale_x_continuous(breaks = XBreaks, labels = XLabels,
-                               expand = expansion(
-                                   mult = pad_x_num))
+            scale_x_time(time_range = time_range_relative, 
+                         pad_x_axis = pad_x_axis)
         
         if(EnzPlot){
             A <- A +

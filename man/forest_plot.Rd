@@ -29,11 +29,11 @@ forest_plot(
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
 generated from running \code{\link{extractForestData}} on Simulator output
 files or a csv or Excel file with the same data. If this is a forest plot
-of perpetrator DDIs, the column "Substrate" will be what is used to label
-the y axis. If it is a forest plot of victim DDIs, it will be the column
-"Inhibitor1". If, instead of the compound or inhibitor 1 names, you would
-like some other label to appear on the y axis, please see the argument
-\code{y_axis_labels}.}
+of perpetrator drug-drug interactions (DDIs), the column "Substrate" will
+be what is used to label the y axis. If it is a forest plot of victim DDIs,
+it will be the column "Inhibitor1". If, instead of the compound or
+inhibitor 1 names, you would like some other label to appear on the y axis,
+please see the argument \code{y_axis_labels}.}
 
 \item{perp_or_victim}{specify whether the drug of interest is a "victim" or
 "perpetrator". This will determine whether the graphs will be labeled on

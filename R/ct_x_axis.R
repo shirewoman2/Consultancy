@@ -19,14 +19,9 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
        length(time_range) != 2){
-        stop("You must enter a start and stop time for 'time_range', e.g., 'c(0, 24)' or enter 'last dose' to plot only the time range for the last dose.",
-             call. = FALSE)
-    }
-    
-    if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
-       time_range[1] >= time_range[2]){
-        stop("The 1st value for 'time_range' must be less than the 2nd value.", 
-             call. = FALSE)
+        warning("You must enter a start and stop time for 'time_range', e.g., 'time_range = c(0, 24)' or enter which dose you want. Please see the help file. For now, we'll use the full time range.",
+                call. = FALSE)
+        time_range <- NA
     }
     
     if(all(complete.cases(time_range)) && class(time_range) == "character" &
@@ -40,16 +35,18 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                               "last observed", "last to last obs", 
                               "last dose to last observed")) &
        !any(str_detect(tolower(time_range), "^dose"))){
-        stop("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', or a numeric time range, e.g., c(12, 24).",
-             call. = FALSE)
+        warning("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', or a numeric time range, e.g., c(12, 24). FOr now, we'll use the full time range.",
+                call. = FALSE)
+        time_range <- NA
     }
     
     t0 <- tolower(t0)
     t0_opts <- c("simulation start", "dose 1", "last dose", "penultimate dose")
     if(t0 %in% t0_opts == FALSE){
-        stop(paste0("t0 must be set to ",
-                    sub("and", "or", str_comma(t0_opts)), "."),
-             call. = FALSE)
+        warning(paste0("t0 must be set to ",
+                       sub("and", "or", str_comma(t0_opts)), ". For now, we'll set t0 to the start of the simulation."),
+                call. = FALSE)
+        t0 <- "simulation start"
     }
     
     TimeUnits <- sort(unique(Data$Time_units))
@@ -58,20 +55,23 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
     if(all(complete.cases(time_range))){
         if(class(time_range) == "numeric" &&
            (any(time_range < switch(as.character(EnzPlot), 
-                                   "TRUE" = min(Data$Time), 
-                                   "FALSE" = min(Data$Time[Data$Simulated == TRUE]))) |
-           any(time_range > switch(as.character(EnzPlot), 
-                                   "TRUE" = max(Data$Time), 
-                                   "FALSE" = max(Data$Time[Data$Simulated == TRUE]))))){
-            stop(paste0(
+                                    "TRUE" = min(Data$Time), 
+                                    "FALSE" = min(Data$Time[Data$Simulated == TRUE]))) |
+            any(time_range > switch(as.character(EnzPlot), 
+                                    "TRUE" = max(Data$Time), 
+                                    "FALSE" = max(Data$Time[Data$Simulated == TRUE]))))){
+            warning(paste0(
                 "Both the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
                 switch(as.character(EnzPlot), 
-                       "TRUE" = min(Data$Time), 
-                       "FALSE" = min(Data$Time[Data$Simulated == TRUE])), " to ",
-                switch(as.character(EnzPlot), 
-                       "TRUE" = max(Data$Time), 
-                       "FALSE" = max(Data$Time[Data$Simulated == TRUE])), " ", TimeUnits, "."),
+                       "TRUE" = str_c(range(Data$Time), collapse = " to "), 
+                       "FALSE" = str_c(range(Data$Time[Data$Simulated == TRUE]), collapse = " to ")),
+                " ", TimeUnits,
+                ". We'll use that range instead."),
                 call. = FALSE)
+            
+            time_range <- switch(as.character(EnzPlot), 
+                                 "TRUE" = range(Data$Time), 
+                                 "FALSE" = range(Data$Time[Data$Simulated == TRUE]))
         }
     }
     
@@ -272,112 +272,6 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                                    "FALSE" = range(Data$Time[complete.cases(Data$Conc)], na.rm = T)))
     }
     
-    # Setting the x axis intervals using tlast doesn't work well if the time
-    # range starts at something other than 0 or ends somewhere other than the
-    # max time, so adjusting for that situation.
-    if(time_range[1] != 0 | time_range[2] != max(Data$Time)){
-        tlast <- time_range[2] - time_range[1]
-        LastDoseTime <- time_range[1]
-        
-    } else {
-        LastDoseTime <- round(switch(as.character(EnzPlot), 
-                                     "TRUE" = min(Data$Time),
-                                     "FALSE" = min(Data$Time[complete.cases(Data$Conc)])))
-    }
-    
-    # If tlast is just a smidge over one of the possible breaks I've set, it
-    # goes to the next one and doesn't look as nice on the graph. Rounding tlast
-    # down to the nearest 4 for hours, nearest 15 for minutes, and nearest 2 for
-    # days.
-    tlast <- switch(TimeUnits, 
-                    "hours" = round_down_unit(tlast, 4),
-                    "minutes" = round_down_unit(tlast, 15), 
-                    "days" = round_down_unit(tlast, 2))
-    
-    if(TimeUnits == "hours"){
-        
-        PossBreaks <- data.frame(
-            Tlast = c(2, 4, 8, 12, 24, 48, 96, 168, 336, 360, 504, 672, Inf),
-            BreaksToUse = c("2hr", "4hr", "8hr", "12hr", "24hr", "48hr", "96hr",
-                            "1wk", "2wk",
-                            "15d", "3wk", "4wk", "4wkplus"))
-        
-        BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
-            slice(which.min(Tlast)) %>% pull(BreaksToUse)
-        
-        BreaksToUse <- ifelse(complete.cases(x_axis_interval),
-                              "UserDefined", BreaksToUse)
-        
-        XBreaks <- switch(BreaksToUse,
-                          "2hr" = seq(0, 2, 0.25),
-                          "4hr" = seq(0, 4, 0.5),
-                          "8hr" = seq(0, 8, 0.5),
-                          "12hr" = seq(0, 12, 1),
-                          "24hr" = seq(0, 24, 2),
-                          "48hr" = seq(0, 48, 4),
-                          "96hr" = seq(0, 96, 6),
-                          "1wk" = seq(0, 168, 12),
-                          "2wk" = seq(0, 336, 24),
-                          "15d" = seq(0, 360, 24),
-                          "3wk" = seq(0, 504, 36),
-                          "4wk" = seq(0, 672, 48),
-                          "4wkplus" = round_up_nice(seq(0, tlast,
-                                                        length.out = 12)),
-                          "UserDefined" = seq(0, max(Data$Time, na.rm = T),
-                                              x_axis_interval/2))
-        
-    } else if(TimeUnits == "minutes"){
-        PossBreaks <- data.frame(Tlast = c(60, 240, 480, 720, 1440, Inf),
-                                 BreaksToUse = c("1hr", "4hr",
-                                                 "8hr", "12hr",
-                                                 "24hr", "24hrplus"))
-        
-        BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
-            slice(which.min(Tlast)) %>% pull(BreaksToUse)
-        
-        BreaksToUse <- ifelse(complete.cases(x_axis_interval),
-                              "UserDefined", BreaksToUse)
-        
-        XBreaks <- switch(BreaksToUse,
-                          "1hr" = seq(0, 60, 7.5),
-                          "4hr" = seq(0, 240, 15),
-                          "8hr" = seq(0, 480, 30),
-                          "12hr" = seq(0, 720, 60),
-                          "24hr" = seq(0, 1440, 120),
-                          "24hrplus" = round_up_nice(seq(0, tlast,
-                                                         length.out = 12)),
-                          "UserDefined" = seq(0, max(Data$Time, na.rm = T),
-                                              x_axis_interval/2))
-    } else if(TimeUnits == "days"){
-        PossBreaks <- data.frame(
-            Tlast = c(7, 14, 21, 28, 35, 42, 49, 70, 105, 140, Inf),
-            BreaksToUse = c("1wk", "2wk", "3wk", "4wk", "5wk", "6wk",
-                            "7wk", "10wk", "15wk", "20wk", "20wkplus"))
-        
-        BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
-            slice(which.min(Tlast)) %>% pull(BreaksToUse)
-        
-        BreaksToUse <- ifelse(complete.cases(x_axis_interval),
-                              "UserDefined", BreaksToUse)
-        
-        XBreaks <- switch(BreaksToUse,
-                          "1wk" = seq(0, 7, 1),
-                          "2wk" = seq(0, 14, 2),
-                          "3wk" = seq(0, 21, 3), 
-                          "4wk" = seq(0, 28, 4), 
-                          "5wk" = seq(0, 35, 5),
-                          "6wk" = seq(0, 42, 6), 
-                          "7wk" = seq(0, 49, 7), 
-                          "10wk" = seq(0, 70, 7), 
-                          "15wk" = seq(0, 105, 7),
-                          "20wk" = seq(0, 140, 14),
-                          "20wkplus" = round_up_nice(seq(0, tlast,
-                                                        length.out = 12)),
-                          "UserDefined" = seq(0, max(Data$Time, na.rm = T),
-                                              x_axis_interval/2))
-    }
-    
-    
     # If t0 isn't "simulation start", need to adjust x axis.
     if(t0 != "simulation start"){
         
@@ -389,51 +283,21 @@ ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
         
         Data$Time_orig <- Data$Time
         Data$Time <- Data$Time - t0_num
-        XBreaks <- XBreaks - t0_num
         time_range_relative <- time_range - t0_num
     } else {
+        t0_num <- 0
         Data$Time_orig <- Data$Time
         time_range_relative <- time_range
     }
     
-    # Adjusting the breaks when time_range[1] isn't 0
-    if(all(complete.cases(time_range)) & time_range[1] != 0){
-        XBreaks <- XBreaks + LastDoseTime
-    }
+    Out <- list("xlab" = xlab, 
+                "Data" = Data, 
+                "time_range" = time_range, 
+                "time_range_relative" = time_range_relative,
+                "t0" = t0_num, 
+                "TimeUnits" = TimeUnits)
+    return(Out)
     
-    XLabels <- XBreaks
-    XLabels[seq(2,length(XLabels),2)] <- ""
-    XLabels[which(XBreaks == 0)] <- "0"
-    
-    # Adding padding if user requests it
-    if(class(pad_x_axis) == "logical"){ # class is logical if pad_x_axis unspecified
-        if(pad_x_axis){
-            pad_x_num <-  c(0.02, 0.04)
-        } else {
-            pad_x_num <- c(0, 0)
-        }
-    } else {
-        pad_x_num <- pad_x_axis
-        if(length(pad_x_axis) == 1){
-            pad_x_num <- c(pad_x_num, 0.04)
-        } else {
-            pad_x_axis <- pad_x_axis[1:2]
-        }
-        
-        pad_x_axis <- pad_x_num[1] != 0 # Making pad_x_axis logical again to work with code elsewhere
-    }
-    
-    # Assigning the variables created or changed here to the environment one
-    # level up, e.g., probably the environment within the function that's
-    # calling on *this* function.
-    assign("pad_x_axis", pad_x_axis, envir = parent.frame())
-    assign("pad_x_num", pad_x_num, envir = parent.frame())
-    assign("XLabels", XLabels, envir = parent.frame())
-    assign("XBreaks", XBreaks, envir = parent.frame())
-    assign("xlab", xlab, envir = parent.frame())
-    assign("Data", Data, envir = parent.frame())
-    assign("time_range", time_range, envir = parent.frame())
-    assign("time_range_input", time_range_input, envir = parent.frame())
-    assign("TimeUnits", TimeUnits, envir = parent.frame())
-    assign("time_range_relative", time_range_relative, envir = parent.frame())
 }    
+
+
