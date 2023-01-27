@@ -27,9 +27,8 @@ in quotes}
   \item{"AUC tab"}{only those parameters on the "AUC" tab (default). The
   "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is not present.}
 
-  \item{"Absorption tab"}{only those parameters on the "Absorption" tab.
-  Please note that we haven't developed this function for output in the
-  "Overall Fa Fg" tab for ADAM-model simulations yet.}
+  \item{"Absorption tab"}{only those parameters on the "Absorption" or
+  "Overall Fa Fg" tab}
 
   \item{a vector of any combination of specific, individual parameters, each
   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
