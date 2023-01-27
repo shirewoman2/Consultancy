@@ -1151,10 +1151,64 @@ extractPK <- function(sim_data_file,
        PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
         # Error catching
         if("Clearance Trials SS" %in% SheetNames == FALSE){
-            warning(paste0("The sheet `Clearance Trials SS` must be present in the Excel simulated data file to extract the PK parameters ",
-                           str_c(PKparameters_CLTSS, collapse = ", "),
-                           ". None of these parameters can be extracted."),
+            
+            ## Pulling data from the Summary tab -------------------------------
+            
+            warning(paste0("The sheet `Clearance Trials SS` was not present in the Excel simulated data file to extract the PK parameters ",
+                           str_comma(PKparameters_CLTSS),
+                           ", so only the aggregated data from the `PKPD Parameters` section on the `Summary` tab will be extracted."),
                     call. = FALSE)
+            
+            # Getting anything that we couldn't get if user didn't export
+            # "Clearance Trials SS" tab
+            Sum_xl <- suppressMessages(
+                readxl::read_excel(path = sim_data_file, sheet = "Summary",
+                                   col_names = FALSE))
+            
+            StartRow_agg <- which(Sum_xl$...1 == "PKPD Parameters") + 1
+            EndRow_agg <- which(is.na(Sum_xl$...1[StartRow_agg:nrow(Sum_xl)]))[1] +
+                StartRow_agg - 2
+            
+            TEMP <- Sum_xl[StartRow_agg:EndRow_agg, 1:6]
+            names(TEMP) <- c("Parameter", as.character(Sum_xl[StartRow_agg - 1, 2:5]),
+                             "CI_lo")
+            TEMP <- TEMP %>% 
+                mutate(Parameter = recode(Parameter, 
+                                          "CL (L/h)" = "CL_hepatic", 
+                                          "CLpo (L/h)" = "CL_po", 
+                                          "F (Sub)" = "F_sub", 
+                                          "Fg (Sub)" = "Fg_sub", 
+                                          "Fh (Sub)" = "Fh_sub")) %>% 
+                filter(Parameter %in% PKparameters_CLTSS) %>% 
+                pivot_longer(cols = -Parameter, 
+                             names_to = "Statistic", 
+                             values_to = "Value") %>% 
+                mutate(Value = as.numeric(Value),
+                       Statistic = recode(Statistic, 
+                                          "Confidence Interval" = "90% confidence interval around the geometric mean(lower limit)", 
+                                          "CI_lo" = "90% confidence interval around the geometric mean(upper limit)"))
+            TEMP <- split(TEMP, f = TEMP$Parameter)
+            TEMP <- lapply(TEMP, function(x){
+                Stat_names <- x$Statistic
+                Stat_values <- x$Value
+                names(Stat_values) <- Stat_names
+                return(Stat_values)
+            })
+            
+            Out_agg <- append(Out_agg, TEMP)
+            
+            DataCheck <- DataCheck %>%
+                bind_rows(data.frame(PKparam = PKparameters_CLTSS,
+                                     Tab = "Summary",
+                                     SearchText = NA,
+                                     Column = 1,
+                                     StartRow_agg = StartRow_agg,
+                                     EndRow_agg = EndRow_agg,
+                                     StartRow_ind = NA,
+                                     EndRow_ind = NA))
+            
+            rm(TEMP)
+            
         } else {
             
             CLTSS_xl <- suppressMessages(
@@ -1274,7 +1328,6 @@ extractPK <- function(sim_data_file,
             suppressWarnings(rm(StartRow_agg, EndRow_agg, StartCol_agg, EndRow_ind))
         }
     }
-    
     
     # Pulling parameters from a user-specified sheet --------------------------
     if(complete.cases(sheet) & UserAUC == FALSE){
