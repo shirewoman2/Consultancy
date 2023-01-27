@@ -258,6 +258,7 @@ formatTable_Simcyp <- function(DF,
     # Dealing with subscripts
     ColNames <- names(DF)
     ColNames <- sub("AUCt ", "AUC~t~ ", ColNames)
+    ColNames <- sub("AUCinf ", "AUC~inf~ ", ColNames)
     ColNames <- sub("AUCt$", "AUC~t~", ColNames)
     ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
     ColNames <- sub("Cmax", "C~max~", ColNames)
