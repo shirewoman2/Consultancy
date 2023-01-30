@@ -824,7 +824,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         "Species", "Tissue", "Individual", "Trial",
                         "Simulated", "Time", "Conc",
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
-                        "DoseInt", "File", "ObsFile")))
+                        "DoseInt", "File", "ObsFile"))) %>% 
+        unique()
     
     return(ct_dataframe)
     
