@@ -169,7 +169,8 @@ pksummary_mult <- function(sim_data_files = NA,
     }
     
     # Making sure that all the files exist before attempting to pull data
-    if(any(file.exists(sim_data_files) == FALSE)){
+    if(all(complete.cases(sim_data_files)) && 
+       any(file.exists(sim_data_files) == FALSE)){
         MissingSimFiles <- sim_data_files[
             which(file.exists(sim_data_files) == FALSE)]
         warning(paste0("The file(s) ", 
