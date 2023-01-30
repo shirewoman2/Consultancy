@@ -130,7 +130,7 @@ scale_x_time <- function(time_range = NA,
                           "4wk" = seq(0, 672, 48),
                           "4wkplus" = round_up_nice(seq(0, tlast,
                                                         length.out = 12)),
-                          "UserDefined" = seq(0, max(Data$Time, na.rm = T),
+                          "UserDefined" = seq(0, max(GraphData$Time, na.rm = T),
                                               x_axis_interval/2))
         
     } else if(time_units == "minutes"){
@@ -153,7 +153,7 @@ scale_x_time <- function(time_range = NA,
                           "24hr" = seq(0, 1440, 120),
                           "24hrplus" = round_up_nice(seq(0, tlast,
                                                          length.out = 12)),
-                          "UserDefined" = seq(0, max(Data$Time, na.rm = T),
+                          "UserDefined" = seq(0, max(GraphData$Time, na.rm = T),
                                               x_axis_interval/2))
     } else if(time_units == "days"){
         PossBreaks <- data.frame(
@@ -180,7 +180,7 @@ scale_x_time <- function(time_range = NA,
                           "20wk" = seq(0, 140, 14),
                           "20wkplus" = round_up_nice(seq(0, tlast,
                                                          length.out = 12)),
-                          "UserDefined" = seq(0, max(Data$Time, na.rm = T),
+                          "UserDefined" = seq(0, max(GraphData$Time, na.rm = T),
                                               x_axis_interval/2))
     }
     
