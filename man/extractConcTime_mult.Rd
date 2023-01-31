@@ -107,10 +107,10 @@ blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
-"faeces", "gut tissue", "cumulative absorption", or "cumulative
-dissolution".}} Not case sensitive. Acceptable input is all tissues desired
-as a character vector, e.g., \code{tissues = c("plasma", "blood",
-"liver")}.}
+"faeces", "gut tissue", "cumulative absorption", "cumulative fraction
+released", or "cumulative dissolution".}} Not case sensitive. Acceptable
+input is all tissues desired as a character vector, e.g., \code{tissues =
+c("plasma", "blood", "liver")}.}
 
 \item{compoundsToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"substrate"
@@ -154,9 +154,9 @@ observed data was administered at the same time as the last dose in the
 simulated data. If FALSE, the observed data will start at whatever times
 are listed in the Excel file.}
 
-\item{expdetails}{If you have already run \code{extractExpDetails_mult} to get all
-the details from the "Input Sheet", you can save some processing time by
-supplying it here, unquoted. If left as NA, this function will run
+\item{expdetails}{If you have already run \code{extractExpDetails_mult} to
+get all the details from the "Input Sheet", you can save some processing
+time by supplying it here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
 

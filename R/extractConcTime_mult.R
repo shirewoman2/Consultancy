@@ -110,10 +110,10 @@
 #'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 #'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 #'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
-#'   "faeces", "gut tissue", "cumulative absorption", or "cumulative
-#'   dissolution".}} Not case sensitive. Acceptable input is all tissues desired
-#'   as a character vector, e.g., \code{tissues = c("plasma", "blood",
-#'   "liver")}.
+#'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
+#'   released", or "cumulative dissolution".}} Not case sensitive. Acceptable
+#'   input is all tissues desired as a character vector, e.g., \code{tissues =
+#'   c("plasma", "blood", "liver")}.
 #' @param compoundsToExtract For which compound do you want to extract
 #'   concentration-time data? Options are: \itemize{\item{"substrate"
 #'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
@@ -146,9 +146,9 @@
 #'   concentration-time data? Options are "aggregate" (default), "individual",
 #'   or "both". Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "Population Statistics".
-#' @param expdetails If you have already run \code{extractExpDetails_mult} to get all
-#'   the details from the "Input Sheet", you can save some processing time by
-#'   supplying it here, unquoted. If left as NA, this function will run
+#' @param expdetails If you have already run \code{extractExpDetails_mult} to
+#'   get all the details from the "Input Sheet", you can save some processing
+#'   time by supplying it here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
 #' @param obs_data_files TO BE DEPRECATED. This is the same argument as

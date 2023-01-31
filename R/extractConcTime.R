@@ -50,8 +50,8 @@
 #'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 #'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 #'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
-#'   "faeces", "gut tissue", "cumulative absorption", or "cumulative
-#'   dissolution".}} Not case sensitive.
+#'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
+#'   released", or "cumulative dissolution".}} Not case sensitive.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are: \itemize{\item{"substrate"
 #'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
@@ -118,8 +118,9 @@
 #'   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
 #'   simulations), e.g., "undissolved compound", "free compound in lumen",
 #'   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
-#'   compound", "luminal CLint", "cumulative fraction of compound dissolved" or
-#'   "cumulative fraction of compound absorbed".}
+#'   compound", "luminal CLint", "cumulative fraction of compound dissolved",
+#'   "cumulative fraction of compound released", or "cumulative fraction of
+#'   compound absorbed".}
 #'
 #'   \item{Dose_num}{the dose number}
 #'
@@ -217,7 +218,8 @@ extractConcTime <- function(sim_data_file,
     
     tissue <- tolower(tissue)
     PossTiss <- c("additional organ", "adipose", "blood", "bone", "brain",
-                  "colon", "csf", "cumulative absorption", "cumulative dissolution",
+                  "colon", "csf", "cumulative absorption",
+                  "cumulative dissolution", "cumulative fraction released",
                   "duodenum", "faeces", "feto-placenta", 
                   "gi tissue", "gut tissue", "heart", 
                   "ileum i", "ileum ii", "ileum iii", "ileum iv",
@@ -254,7 +256,8 @@ extractConcTime <- function(sim_data_file,
     # Noting whether the tissue was from an ADAM model
     ADAM <- tissue %in% c("stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
                           "ileum ii", "ileum iii", "ileum iv", "colon", "faeces", 
-                          "cumulative absorption", "cumulative dissolution")
+                          "cumulative absorption", "cumulative dissolution", 
+                          "cumulative fraction released")
     
     # Getting summary data for the simulation(s)
     if(fromMultFunction | class(expdetails) != "logical"){
@@ -441,6 +444,7 @@ extractConcTime <- function(sim_data_file,
                    "faeces" = "Faeces Prof",
                    "gut tissue" = "Gut Tissue Conc", 
                    "cumulative absorption" = "Cumulative Abs",
+                   "cumulative fraction released" = "CR Profile",
                    "cumulative dissolution" = paste0("Cum.*Dissolution.*",
                                                      switch(compoundToExtract, 
                                                             "substrate" = "Sub",
@@ -551,6 +555,10 @@ extractConcTime <- function(sim_data_file,
         PopStatRow <- which(sim_data_xl$...1 == "Population Statistics")
         Blank1 <- which(is.na(sim_data_xl$...1))
         Blank1 <- Blank1[Blank1 > PopStatRow][1]
+        
+        # For cumulative release, tab is laid out slightly differently (because
+        # YOLO so why not?), and the row that contains the units is farther
+        # down. Just setting it instead.
         SimConcUnits <- sim_data_xl[PopStatRow:(Blank1 -1), 1] %>% 
             rename(OrigVal = ...1) %>% 
             mutate(TypeCode = str_extract(
@@ -576,6 +584,14 @@ extractConcTime <- function(sim_data_file,
                 # Heff unit is um but isn't included in the title
                 ConcUnit = ifelse(TypeCode == "Heff", "µm", ConcUnit)) %>% 
             filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique()
+        
+        if("cumulative fraction released" %in% tissue){
+            SimConcUnits <- bind_rows(SimConcUnits %>% 
+                                          mutate(across(.fns = as.character)), 
+                                      data.frame(ConcUnit = "cumulative fraction", 
+                                                 TypeCode = "Release Fraction",
+                                                 Type = "cumulative fraction released"))
+        }
     }
     
     SimTimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
@@ -763,6 +779,9 @@ extractConcTime <- function(sim_data_file,
                                                                "", "^"), 
                                                         tolower(SimConcUnits$TypeCode[
                                                             SimConcUnits$Type == n]))))
+                            if(tissue == "cumulative fraction released"){
+                                Include <- 2:5
+                            }
                             
                         } else {
                             Include <-
@@ -790,11 +809,11 @@ extractConcTime <- function(sim_data_file,
                                                   "geometric|interaction")),
                             Include) + TimeRow-1,
                         "per5" = intersect(
-                            which(str_detect(NamesToCheck," 5(th)? percentile|5th ptile") &
+                            which(str_detect(NamesToCheck," 5(th)? percentile|5th ptile|^5th percentile$") &
                                       !str_detect(NamesToCheck, "interaction|95")),
                             Include) + TimeRow-1,
                         "per95" = intersect(
-                            which(str_detect(NamesToCheck, " 95(th)? percentile|95th ptile") &
+                            which(str_detect(NamesToCheck, " 95(th)? percentile|95th ptile|^95th percentile$") &
                                       !str_detect(NamesToCheck, "interaction")),
                             Include) + TimeRow-1,
                         "per10" = intersect(
@@ -818,7 +837,8 @@ extractConcTime <- function(sim_data_file,
                     suppressWarnings(
                         sim_data_mean[[m]][[n]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                             t() %>%
-                            as.data.frame() %>% slice(-(1:3)) %>%
+                            as.data.frame() %>%
+                            slice(-(1:3)) %>%
                             mutate_all(as.numeric)
                     )
                     
@@ -1175,7 +1195,7 @@ extractConcTime <- function(sim_data_file,
                         RowsToUse <- 
                             data.frame(Orig = sim_data_xl$...1) %>% 
                             mutate(TypeCode = str_extract(Orig,
-                                                          "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed|^C Enterocyte"), 
+                                                          "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed|^C Enterocyte|Release Fraction"), 
                                    TypeCode = ifelse(str_detect(Orig, "with interaction|Inh C Lumen"), 
                                                      NA, TypeCode)) %>% 
                             left_join(SimConcUnits, by = "TypeCode")
