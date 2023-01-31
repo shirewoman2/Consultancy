@@ -1815,10 +1815,11 @@ call. = FALSE)
                    Conc < Ylim_log[1]) %>% 
         pull(Conc)
     
-    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
+    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
+       linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
         warning(paste0("Some of your data are less than the lower y axis value of ",
                        Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this sometimes leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If this happens to your graph, please try setting the minimum value for the y axis to less than or equal to ",
-                       min(LowConc, na.rm = T), 
+                       signif(min(LowConc, na.rm = T), 3), 
                        ", the lowest value in your data."),
                 call. = FALSE)
     }

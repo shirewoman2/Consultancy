@@ -78,7 +78,9 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                    "cumulative fraction of compound absorbed" =
                        paste0("Cumulative fraction of ", CompoundLab, " absorbed"), 
                    "cumulative fraction of compound dissolved" =
-                       paste0("Cumulative fraction of ", CompoundLab, " dissolved")) 
+                       paste0("Cumulative fraction of ", CompoundLab, " dissolved"), 
+                   "cumulative fraction of compound released" = 
+                       paste0("cumulative fraction of ", CompoundLab, " released")) 
         
         # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
         # so do NOT interchange them in the code.
@@ -104,7 +106,8 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
         
         if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
-                                  "cumulative fraction of compound dissolved")){
+                                  "cumulative fraction of compound dissolved", 
+                                  "cumulative fraction of compound released")){
             ylab <- bquote(bold(.(ylab1)))
             
         } else {
