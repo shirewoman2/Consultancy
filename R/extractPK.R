@@ -1370,7 +1370,11 @@ extractPK <- function(sim_data_file,
                                    col_names = FALSE))
             
             # Finding the last row of the individual data
-            EndRow_ind <- which(is.na(RegADAM_xl$...2[2:nrow(RegADAM_xl)]))[1]
+            StartRow_ind <- ifelse(complete.cases(RegADAM_xl[1, 1]) &&
+                                       str_detect(RegADAM_xl[1, 1], "Fa greater than 1"), 
+                                   4, 3)
+            EndRow_ind <- which(is.na(RegADAM_xl$...2[StartRow_ind:nrow(RegADAM_xl)]))[1] +
+                StartRow_ind - 2
             
             if(length(EndRow_ind) == 0){
                 # Using "warning" instead of "stop" here b/c I want this to be
@@ -1400,7 +1404,7 @@ extractPK <- function(sim_data_file,
                 
                 # Looking for the regular expression specific to this parameter
                 # i. 
-                ColNum <- which(str_detect(as.vector(t(RegADAM_xl[2, ])),
+                ColNum <- which(str_detect(as.vector(t(RegADAM_xl[StartRow_ind - 1, ])),
                                            ToDetect$SearchText))
                 # fa values 1st, fm values 2nd for this sheet
                 ColNum <- ifelse(str_detect(i, "fa"), ColNum[1], ColNum[2])
@@ -1416,7 +1420,7 @@ extractPK <- function(sim_data_file,
                 }
                 
                 suppressWarnings(
-                    Out_ind[[i]] <- RegADAM_xl[3:EndRow_ind, ColNum] %>%
+                    Out_ind[[i]] <- RegADAM_xl[StartRow_ind:EndRow_ind, ColNum] %>%
                         pull(1) %>% as.numeric
                 )
                 
@@ -1435,14 +1439,14 @@ extractPK <- function(sim_data_file,
                                              Column = ColNum, 
                                              StartRow_agg = StartRow_agg,
                                              EndRow_agg = EndRow_agg,
-                                             StartRow_ind = 2,
+                                             StartRow_ind = StartRow_ind,
                                              EndRow_ind = EndRow_ind))
                 }
             }   
             
             if(includeTrialInfo){
                 # Subject and trial info
-                SubjTrial_RegADAM <- RegADAM_xl[3:EndRow_ind, 1:2] %>%
+                SubjTrial_RegADAM <- RegADAM_xl[StartRow_ind:EndRow_ind, 1:2] %>%
                     rename("Individual" = ...1, "Trial" = ...2)
                 
                 Out_ind[["RegADAMtab"]] <- cbind(SubjTrial_RegADAM,
