@@ -526,6 +526,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                     "jejunum II", "ileum I", "ileum II",
                                     "ileum III", "ileum IV", "colon", "faeces", 
                                     "gut tissue", "cumulative absorption", 
+                                    "cumulative fraction released",
                                     "cumulative dissolution")
                     if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue)){
                         CT_adam <- MultData[[ff]][[j]] %>% 
