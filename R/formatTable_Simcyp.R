@@ -188,7 +188,8 @@ formatTable_Simcyp <- function(DF,
         # center the columns with numbers, i.e., the 2nd column through the
         # penultimate column
         flextable::align(align = "center", 
-                         j = ifelse(center_1st_column, 1, 2):ncol(DF)) %>%
+                         j = ifelse(center_1st_column, 1, 
+                                    ifelse(ncol(DF) > 1, 2, 1):ncol(DF))) %>%
         
         # Set the font size
         flextable::fontsize(part = "all", size = fontsize) %>% 
