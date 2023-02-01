@@ -1,14 +1,11 @@
 Package: SimcypConsultancy
 Type: Package
 Title: Useful and standardized tools for using R within the Simcyp Consultancy Team
-Version: 1.18.7
+Version: 1.18.8
 Author: Laura Sh., Mackenzie, Howie, Christiane, Alenka, Ludwig, Magali, Laura Sa.
 Maintainer: The package maintainer <laura.shireman@certara.com>
 Description: This package is meant to be a collection of useful and standardized
-    reporting tools for the Simcyp Consultancy Team. NOTE FROM LSh: I'm messing
-    around with ct_plot-related axis formatting, so if you have trouble with this
-    between Jan. 5 and Jan. 15, 2023, please try installing using
-    devtools::install_github("shirewoman2/Consultancy", ref = "beta1_18_1")
+    reporting tools for the Simcyp Consultancy Team. 
 Imports:
       tidyverse,
       readxl,

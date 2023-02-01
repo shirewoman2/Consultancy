@@ -23,6 +23,7 @@ pksummary_table(
   adjust_conc_units = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
+  extract_forest_data = FALSE,
   checkDataSource = TRUE,
   save_table = NA,
   fontsize = 11
@@ -170,6 +171,15 @@ you're setting the effector name, you really should use something like this
 if you're including effector metabolites: \code{prettify_compound_names =
 c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
+
+\item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
+the same time. If set to TRUE, this will return a list that includes data
+formatted for use with the function \code{\link{forest_plot}}. Since the
+\code{\link{forest_plot}} function only works with simulations with
+effectors (at least, for now), this will only work for simulations that
+included an effector. This is probably most useful for the
+\code{\link{pksummary_mult}} function since a forest plot with only one
+simulation isn't terribly informative.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the

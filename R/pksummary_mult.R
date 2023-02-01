@@ -1,122 +1,129 @@
-#'Make PK summary tables from multiple simulator output files at once
+#' Make PK summary tables from multiple simulator output files at once
 #'
-#'@param sim_data_files a character vector of simulator output files, e.g.,
-#'  \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
-#'  want all the Excel files in the current folder, \code{sim_data_files = NA}.
-#'  If you supply data for \code{observed_PK}, anything you enter here will be
-#'  ignored because the file names will be pulled from there instead.
-#'@param observed_PK (optional) If you have a data.frame, a named numeric
-#'  vector, or an Excel or csv file with observed PK parameters, supply the full
-#'  file name in quotes or the data.frame or vector here, and the
-#'  simulated-to-observed mean ratios will be calculated. If you supply an Excel
-#'  file, it should have only one tab. We prefer supplying csv files here since
-#'  they're faster to read in anyway. The supplied data.frame or file
-#'  \emph{must} include columns for the simulator output Excel file (title this
-#'  "File") and each of the PK parameters you would like to compare, and those
-#'  column names \emph{must} be among the PK parameter options listed in
-#'  \code{PKParameterDefinitions}. If you would like the output table to include
-#'  the observed data CV for any of the parameters, add "_CV" to the end of the
-#'  parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
-#'  this help file for examples of how to set this up.
-#'@param PKparameters (optional) the PK parameters to include as a character
-#'  vector. \itemize{
+#' @param sim_data_files a character vector of simulator output files, e.g.,
+#'   \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
+#'   want all the Excel files in the current folder, \code{sim_data_files = NA}.
+#'   If you supply data for \code{observed_PK}, anything you enter here will be
+#'   ignored because the file names will be pulled from there instead.
+#' @param observed_PK (optional) If you have a data.frame, a named numeric
+#'   vector, or an Excel or csv file with observed PK parameters, supply the
+#'   full file name in quotes or the data.frame or vector here, and the
+#'   simulated-to-observed mean ratios will be calculated. If you supply an
+#'   Excel file, it should have only one tab. We prefer supplying csv files here
+#'   since they're faster to read in anyway. The supplied data.frame or file
+#'   \emph{must} include columns for the simulator output Excel file (title this
+#'   "File") and each of the PK parameters you would like to compare, and those
+#'   column names \emph{must} be among the PK parameter options listed in
+#'   \code{PKParameterDefinitions}. If you would like the output table to
+#'   include the observed data CV for any of the parameters, add "_CV" to the
+#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
+#'   "Example" section of this help file for examples of how to set this up.
+#' @param PKparameters (optional) the PK parameters to include as a character
+#'   vector. \itemize{
 #'
-#'  \item{By default, if you have a single-dose simulation, the parameters will
-#'  include AUC and Cmax for dose 1, and, if you have a multiple-dose
-#'  simulation, AUC and Cmax for the last dose. Also by default, if you have an
-#'  effector present, the parameters will include the AUC and Cmax values with
-#'  and without the effector as well as those ratios.}
+#'   \item{By default, if you have a single-dose simulation, the parameters will
+#'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
+#'   simulation, AUC and Cmax for the last dose. Also by default, if you have an
+#'   effector present, the parameters will include the AUC and Cmax values with
+#'   and without the effector as well as those ratios.}
 #'
-#'  \item{Alternatively, you can specify a vector of any combination of
-#'  specific, individual parameters, e.g., \code{c("Cmax_dose1",
-#'  "AUCtau_last").} Be sure to encapsulate the parameters you want with
-#'  \code{c(...)}! To see the full set of possible parameters to extract, enter
-#'  \code{view(PKParameterDefinitions)} into the console.}
+#'   \item{Alternatively, you can specify a vector of any combination of
+#'   specific, individual parameters, e.g., \code{c("Cmax_dose1",
+#'   "AUCtau_last").} Be sure to encapsulate the parameters you want with
+#'   \code{c(...)}! To see the full set of possible parameters to extract, enter
+#'   \code{view(PKParameterDefinitions)} into the console.}
 #'
-#'  \item{If you supply observed data using either the argument
-#'  \code{report_input_file} or the argument \code{observed_PK}, the only PK
-#'  parameters that will be included are those available for the observed data.}
+#'   \item{If you supply observed data using either the argument
+#'   \code{report_input_file} or the argument \code{observed_PK}, the only PK
+#'   parameters that will be included are those available for the observed
+#'   data.}
 #'
-#'  \item{Parameters that don't make sense for your scenario -- such as asking
-#'  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-#'  inhibitor or effector -- will not be included.}
+#'   \item{Parameters that don't make sense for your scenario -- such as asking
+#'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
+#'   inhibitor or effector -- will not be included.}
 #'
-#'  \item{tmax will be listed as median, min, and max rather than mean, lower
-#'  and higher X\% confidence interval or X percentiles. Similarly, if you
-#'  request trial means, the values for tmax will be the range of medians for
-#'  the trials rather than the range of means.}}
+#'   \item{tmax will be listed as median, min, and max rather than mean, lower
+#'   and higher X\% confidence interval or X percentiles. Similarly, if you
+#'   request trial means, the values for tmax will be the range of medians for
+#'   the trials rather than the range of means.}}
 #'
-#'  An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
-#'  "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
-#'  "AUCtau_ratio_last", "Cmax_ratio_last")}.
-#'@param PKorder Would you like the order of the PK parameters to be the the
-#'  order specified in the Consultancy Report Template (default), or would you
-#'  like the order to match the order you specified with the argument
-#'  \code{PKparameters}? Options are "default" or "user specified".
-#'@param sheet_PKparameters (optional) If you want the PK parameters to be
-#'  pulled from a specific tab in the simulator output file, list that tab here.
-#'  Most of the time, this should be left as NA.
-#'@param tissue For which tissue would you like the PK parameters to be pulled?
-#'  Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'  tested).
-#'@param mean_type What kind of means and CVs do you want listed in the output
-#'  table? Options are "arithmetic" or "geometric" (default). If you supplied a
-#'  report input form, only specify this if you'd like to override the value
-#'  listed there.
-#'@param includeTrialMeans TRUE or FALSE (default) for whether to include the
-#'  range of trial means for a given parameter. Note: This is calculated from
-#'  individual values rather than being pulled directly from the output.
-#'@param includeCV TRUE (default) or FALSE for whether to include rows for CV in
-#'  the table
-#'@param includeConfInt TRUE (default) or FALSE for whether to include whatever
-#'  confidence intervals were included in the simulator output file. Note that
-#'  the confidence intervals are geometric since that's what the simulator
-#'  outputs (see an AUC tab and the summary statistics; these values are the
-#'  ones for, e.g., "90\% confidence interval around the geometric mean(lower
-#'  limit)").
-#'@param includeRange TRUE or FALSE (default) for whether to include the minimum
-#'  and maximum values
-#'@param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
-#'  percentiles
-#'@param concatVariability TRUE or FALSE (default) for whether to concatenate
-#'  the variability. If "TRUE", the output will be formatted into a single row
-#'  and listed as the lower confidence interval or percentile to the upper CI or
-#'  percentile, e.g., "2400 to 2700". Please note that the current
-#'  SimcypConsultancy template lists one row for each of the upper and lower
-#'  values, so this should be set to FALSE for official reports.
-#'@param adjust_conc_units Would you like to adjust the units to something other
-#'  than what was used in the simulation? Default is NA to leave the units as
-#'  is, but if you set the concentration units to something else, this will
-#'  attempt to adjust the units to match that. This only adjusts AUC and Cmax
-#'  values at present and is very much under construction!
-#'@param prettify_columns TRUE (default) or FALSE for whether to make easily
-#'  human-readable column names. TRUE makes pretty column names such as "AUCinf
-#'  (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-#'  \code{\link{extractPK}}, e.g., "AUCinf_dose1".
-#'@param checkDataSource TRUE (default) or FALSE for whether to include in the
-#'  output a data.frame that lists exactly where the data were pulled from the
-#'  simulator output file. Useful for QCing.
-#'@param save_table optionally save the output table and, if requested, the QC
-#'  info, by supplying a file name in quotes here, e.g., "My nicely formatted
-#'  table.docx" or "My table.csv", depending on whether you'd prefer to have the
-#'  table saved as a Word or csv file. (You can also save the table to a Word
-#'  file later with the function \code{\link{formatTable_Simcyp}}.) If you
-#'  supply only the file extension, e.g., \code{save_table = "docx"}, the name
-#'  of the file will be "PK summary table" with that extension. If you supply
-#'  something other than just "docx" or just "csv" for the file name but you
-#'  leave off the file extension, we'll assume you want it to be ".csv". All PK
-#'  info will be included in a single Word or csv file, and, if
-#'  \code{checkDataSource = TRUE}, that will be saved in a single csv file.
-#'  \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-#'  Microsoft permissions issue, not an R issue. If you try to save on
-#'  SharePoint, you will get a warning that R will save your file instead to
-#'  your local (not OneDrive) Documents folder.
-#'@param fontsize the numeric font size for Word output. Default is 11 point.
-#'  This only applies when you save the table as a Word file.
+#'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
+#'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
+#'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
+#' @param PKorder Would you like the order of the PK parameters to be the the
+#'   order specified in the Consultancy Report Template (default), or would you
+#'   like the order to match the order you specified with the argument
+#'   \code{PKparameters}? Options are "default" or "user specified".
+#' @param sheet_PKparameters (optional) If you want the PK parameters to be
+#'   pulled from a specific tab in the simulator output file, list that tab
+#'   here. Most of the time, this should be left as NA.
+#' @param tissue For which tissue would you like the PK parameters to be pulled?
+#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
+#'   tested).
+#' @param mean_type What kind of means and CVs do you want listed in the output
+#'   table? Options are "arithmetic" or "geometric" (default). If you supplied a
+#'   report input form, only specify this if you'd like to override the value
+#'   listed there.
+#' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
+#'   range of trial means for a given parameter. Note: This is calculated from
+#'   individual values rather than being pulled directly from the output.
+#' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
+#'   in the table
+#' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
+#'   confidence intervals were included in the simulator output file. Note that
+#'   the confidence intervals are geometric since that's what the simulator
+#'   outputs (see an AUC tab and the summary statistics; these values are the
+#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
+#'   limit)").
+#' @param includeRange TRUE or FALSE (default) for whether to include the
+#'   minimum and maximum values
+#' @param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
+#'   percentiles
+#' @param concatVariability TRUE or FALSE (default) for whether to concatenate
+#'   the variability. If "TRUE", the output will be formatted into a single row
+#'   and listed as the lower confidence interval or percentile to the upper CI
+#'   or percentile, e.g., "2400 to 2700". Please note that the current
+#'   SimcypConsultancy template lists one row for each of the upper and lower
+#'   values, so this should be set to FALSE for official reports.
+#' @param adjust_conc_units Would you like to adjust the units to something
+#'   other than what was used in the simulation? Default is NA to leave the
+#'   units as is, but if you set the concentration units to something else, this
+#'   will attempt to adjust the units to match that. This only adjusts AUC and
+#'   Cmax values at present and is very much under construction!
+#' @param prettify_columns TRUE (default) or FALSE for whether to make easily
+#'   human-readable column names. TRUE makes pretty column names such as "AUCinf
+#'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
+#'   the same time. If set to TRUE, this will return a list that includes data
+#'   formatted for use with the function \code{\link{forest_plot}}. Since the
+#'   \code{\link{forest_plot}} function only works with simulations with
+#'   effectors (at least, for now), this will only work for simulations that
+#'   included an effector. 
+#' @param checkDataSource TRUE (default) or FALSE for whether to include in the
+#'   output a data.frame that lists exactly where the data were pulled from the
+#'   simulator output file. Useful for QCing.
+#' @param save_table optionally save the output table and, if requested, the QC
+#'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
+#'   table.docx" or "My table.csv", depending on whether you'd prefer to have
+#'   the table saved as a Word or csv file. (You can also save the table to a
+#'   Word file later with the function \code{\link{formatTable_Simcyp}}.) If you
+#'   supply only the file extension, e.g., \code{save_table = "docx"}, the name
+#'   of the file will be "PK summary table" with that extension. If you supply
+#'   something other than just "docx" or just "csv" for the file name but you
+#'   leave off the file extension, we'll assume you want it to be ".csv". All PK
+#'   info will be included in a single Word or csv file, and, if
+#'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
+#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
+#'   Microsoft permissions issue, not an R issue. If you try to save on
+#'   SharePoint, you will get a warning that R will save your file instead to
+#'   your local (not OneDrive) Documents folder.
+#' @param fontsize the numeric font size for Word output. Default is 11 point.
+#'   This only applies when you save the table as a Word file.
 #'
-#'@return Returns a data.frame with summary PK parameters from multiple
-#'  simulator output files
-#'@export
+#' @return Returns a data.frame with summary PK parameters from multiple
+#'   simulator output files
+#' @export
 #'
 #' @examples
 #'
@@ -133,8 +140,8 @@
 #'                              Cmax_last = c(20, 20),
 #'                              AUCtau_last_withInhib = c(800, 20),
 #'                              Cmax_last_withInhib = c(100, 5)))
-#'
- 
+#' 
+
 pksummary_mult <- function(sim_data_files = NA, 
                            PKparameters = NA,
                            PKorder = "default", 
@@ -150,6 +157,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            concatVariability = FALSE, 
                            adjust_conc_units = NA, 
                            prettify_columns = TRUE, 
+                           extract_forest_data = FALSE, 
                            checkDataSource = TRUE, 
                            save_table = NA, 
                            fontsize = 11, 
@@ -187,7 +195,15 @@ pksummary_mult <- function(sim_data_files = NA,
              call. = FALSE)
     }
     
+    if(extract_forest_data & includeConfInt == FALSE){
+        warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
+                call. = FALSE)
+        includeConfInt <- TRUE
+    }
+    
     # Main body of function --------------------------------------------------
+    
+    ## Read obs data --------------------------------------------------------
     # Read in the observed_PK data if it's not already a data.frame. Note that
     # the class of observed_PK will be logical if left as NA.
     if(class(observed_PK)[1] == "character"){
@@ -219,9 +235,10 @@ pksummary_mult <- function(sim_data_files = NA,
              call. = FALSE)
     }
     
-    # Getting the data
+    ## Getting simulated data ------------------------------------------------
     MyPKResults <- list()
     OutQC <- list()
+    FD <- list()
     
     if(exists("observed_PKDF", inherits = FALSE)){
         
@@ -254,22 +271,20 @@ pksummary_mult <- function(sim_data_files = NA,
                 concatVariability = concatVariability,
                 adjust_conc_units = adjust_conc_units,
                 prettify_columns = prettify_columns, 
+                extract_forest_data = extract_forest_data,
                 checkDataSource = checkDataSource,
                 prettify_compound_names = c("inhibitor" = "effector",
                                             "substrate" = "substrate"))
             
+            MyPKResults[[i]] <- temp$Table %>% 
+                mutate(File = as.character(observed_PKDF[i, "File"]))
+            
             if(checkDataSource){
-                
-                MyPKResults[[i]] <- temp$Table %>% 
-                    mutate(File = as.character(observed_PKDF[i, "File"]))
-                
                 OutQC[[i]] <- temp$QC
-                
-            } else {
-                
-                MyPKResults[[i]] <- temp %>% 
-                    mutate(File = as.character(observed_PKDF[i, "File"]))    
-                
+            } 
+            
+            if(extract_forest_data){
+                FD[[i]] <- temp$ForestData
             }
             
             rm(temp)
@@ -295,6 +310,7 @@ pksummary_mult <- function(sim_data_files = NA,
                                     concatVariability = concatVariability,
                                     adjust_conc_units = adjust_conc_units,
                                     prettify_columns = prettify_columns, 
+                                    extract_forest_data = extract_forest_data,
                                     checkDataSource = checkDataSource,
                                     prettify_compound_names = c("inhibitor" = "effector",
                                                                 "substrate" = "substrate"))
@@ -304,18 +320,14 @@ pksummary_mult <- function(sim_data_files = NA,
                 next
             }
             
+            MyPKResults[[i]] <- temp$Table %>% mutate(File = i)
+            
             if(checkDataSource){
-                
-                MyPKResults[[i]] <- temp$Table %>% 
-                    mutate(File = i)
-                
                 OutQC[[i]] <- temp$QC
-                
-            } else {
-                
-                MyPKResults[[i]] <- temp %>% 
-                    mutate(File = i)    
-                
+            } 
+            
+            if(extract_forest_data){
+                FD[[i]] <- temp$ForestData
             }
             
             rm(temp)
@@ -329,6 +341,15 @@ pksummary_mult <- function(sim_data_files = NA,
         return(list())
     }
     
+    if(extract_forest_data & # NOT SURE THIS IS NECESSARY
+       any(str_detect(names(bind_rows(MyPKResults)), "ratio")) == FALSE){
+        warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.", 
+                call. = FALSE)
+        
+        extract_forest_data <- FALSE
+    } 
+    
+    ## Formatting and arranging the data -------------------------------------
     if(PKorder == "default"){
         
         MyPKResults <- bind_rows(MyPKResults)
@@ -353,14 +374,7 @@ pksummary_mult <- function(sim_data_files = NA,
     }
     
     OutQC <- bind_rows(OutQC)
-    
-    if(checkDataSource){
-        Out <- list(MyPKResults, OutQC)
-        names(Out) <- c("Table", "QC")
-    } else {
-        Out <- MyPKResults
-    }
-    
+   
     ## Saving --------------------------------------------------------------
     if(complete.cases(save_table)){
         
@@ -470,9 +484,29 @@ pksummary_mult <- function(sim_data_files = NA,
         if(checkDataSource){
             write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
+        
+        if(extract_forest_data){
+            write.csv(bind_rows(FD), sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
+        }
+        
+    }
+    
+    Out <- list("Table" = MyPKResults)
+    
+    if(checkDataSource){
+        Out[["QC"]] <- OutQC
+    }
+    
+    if(extract_forest_data){
+        Out[["ForestData"]] <- bind_rows(FD)
+    }
+    
+    if(length(Out) == 1){
+        Out <- Out[["Table"]]
     }
     
     return(Out)
+    
 }
 
 

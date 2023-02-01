@@ -52,7 +52,7 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
                           ""))
 
 AllFiles <- switch(
-    exists("sim_data_file_pairs", inherits = FALSE), 
+    as.character(exists("sim_data_file_pairs", inherits = FALSE)), 
     "TRUE" = # from calc_PK_ratios_mult
         str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
     

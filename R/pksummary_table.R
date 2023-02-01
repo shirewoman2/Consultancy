@@ -200,6 +200,14 @@
 #'   if you're including effector metabolites: \code{prettify_compound_names =
 #'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
+#' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
+#'   the same time. If set to TRUE, this will return a list that includes data
+#'   formatted for use with the function \code{\link{forest_plot}}. Since the
+#'   \code{\link{forest_plot}} function only works with simulations with
+#'   effectors (at least, for now), this will only work for simulations that
+#'   included an effector. This is probably most useful for the
+#'   \code{\link{pksummary_mult}} function since a forest plot with only one
+#'   simulation isn't terribly informative.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -272,6 +280,7 @@ pksummary_table <- function(sim_data_file = NA,
                             adjust_conc_units = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
+                            extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
                             save_table = NA, 
                             fontsize = 11){
@@ -966,6 +975,29 @@ pksummary_table <- function(sim_data_file = NA,
             mutate(SorO = "Sim")
     }
     
+    ## Arranging forest data ------------------------------------------
+    
+    if(extract_forest_data){
+        FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
+                                         Stat %in% c("geomean", "CI90_low", "CI90_high"))
+        
+        FD <- FD %>% 
+            mutate(Stat = recode(Stat, "geomean" = "GMR",
+                                      "CI90_low" = "CI90_lo", 
+                                      "CI90_high" = "CI90_hi"),
+                   Parameter = paste(PKParam, Stat, sep = "__")) %>% 
+            select(-PKParam, -Stat, -SorO) %>% 
+            filter(str_detect(Parameter, "AUCinf|AUCt|Cmax")) %>% 
+            pivot_wider(names_from = Parameter, values_from = Value) %>% 
+            mutate(File = sim_data_file, 
+                   Substrate = Deets$Substrate, 
+                   Dose_sub = Deets$Dose_sub, 
+                   Inhibitor1 = Deets$Inhibitor1, 
+                   Dose_inhib = Deets$Dose_inhib) %>% 
+            select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
+                   everything())
+        
+    }
     
     ## Putting everything together and formatting -------------------------
     
@@ -1316,17 +1348,30 @@ pksummary_table <- function(sim_data_file = NA,
         }
     }
     
+    Out <- list("Table" = MyPKResults)
+    
     if(checkDataSource){
-        MyPKResults <- list("Table" = MyPKResults,
-                            "QC" = OutQC)
+        Out[["QC"]] <- OutQC
         
         if(complete.cases(save_table)){ 
             write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
-        
     }
     
-    return(MyPKResults)
+    if(extract_forest_data){
+        Out[["ForestData"]] <- FD
+        
+        if(complete.cases(save_table)){ 
+            write.csv(OutQC, sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
+        }
+    }
+    
+    if(length(Out) == 1){
+        Out <- Out[["Table"]]
+    }
+    
+    return(Out)
+    
 }
 
 
