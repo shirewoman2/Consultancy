@@ -8,7 +8,9 @@ Description: This package is meant to be a collection of useful and standardized
     reporting tools for the Simcyp Consultancy Team. 
 Imports:
       tidyverse,
+      flextable, 
       readxl,
+      xlsx,
       stringr
 License: none
 Encoding: UTF-8
