@@ -1468,7 +1468,8 @@ extractConcTime <- function(sim_data_file,
                 sim_data_ind[[m]] <- bind_rows(sim_data_ind[[m]])
             }
             ### m is an ADC compound -----------
-            if(CompoundType == "ADC" & compoundToExtract != "released payload" &
+            if(CompoundType == "ADC" & 
+               all(compoundToExtract != "released payload") &
                length(AllEffectors) == 0){
                 
                 # substrate data

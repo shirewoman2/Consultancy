@@ -276,7 +276,9 @@ pksummary_mult <- function(sim_data_files = NA,
                 prettify_compound_names = c("inhibitor" = "effector",
                                             "substrate" = "substrate"))
             
-            MyPKResults[[i]] <- temp$Table %>% 
+            MyPKResults[[i]] <- switch(as.character("list" %in% class(temp)), 
+                                       "TRUE" = temp$Table, 
+                                       "FALSE" = temp) %>% 
                 mutate(File = as.character(observed_PKDF[i, "File"]))
             
             if(checkDataSource){
