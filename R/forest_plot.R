@@ -142,7 +142,6 @@
 #' @return Output is a graph.
 #' @import tidyverse
 #' @export
-#'
 #' @examples
 #'
 #' # We'll use some example forest-plot data for the substrate bufuralol
