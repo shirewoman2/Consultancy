@@ -95,8 +95,6 @@
 #'   csv file.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
-#' @import tidyverse
-#' @import xlsx
 #'
 #' @export
 #'
