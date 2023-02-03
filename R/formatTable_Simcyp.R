@@ -183,13 +183,22 @@ formatTable_Simcyp <- function(DF,
     FT <- FT %>% 
         
         # center the header row
-        flextable::align(align = "center", part = "header") %>% 
-        
-        # center the columns with numbers, i.e., the 2nd column through the
-        # penultimate column
-        flextable::align(align = "center", 
-                         j = ifelse(center_1st_column, 1, 
-                                    ifelse(ncol(DF) > 1, 2, 1):ncol(DF))) %>%
+        flextable::align(align = "center", part = "header")
+    
+    # center the columns that contain numbers, i.e., the 2nd column through the
+    # penultimate column and optionally center the 1st column
+    if(center_1st_column == FALSE & ncol(DF) == 1){
+        FT <- FT %>% flextable::align(align = "left")
+    } else {
+        FT <- FT %>% 
+            flextable::align(align = "center", 
+                             j = switch(paste(center_1st_column, ncol(DF) > 1),
+                                        "TRUE TRUE" = 1:ncol(DF),
+                                        "TRUE FALSE" = 1:ncol(DF), 
+                                        "FALSE TRUE" = 2:ncol(DF)))
+    }
+    
+    FT <- FT %>% 
         
         # Set the font size
         flextable::fontsize(part = "all", size = fontsize) %>% 
