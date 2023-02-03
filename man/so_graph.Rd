@@ -6,19 +6,23 @@
 \usage{
 so_graph(
   PKtable,
-  PKparameter,
+  PKparameters = NA,
   color_set = "red green",
   boundary_indicator = "line",
-  line_width = 0.8
+  line_width = 0.8,
+  save_graph = NA,
+  fig_width = 8,
+  fig_height = 6
 )
 }
 \arguments{
 \item{PKtable}{a table in the same format as output from the function
 \code{\link{pksummary_mult}}}
 
-\item{PKparameter}{any of the PK parameters included in the output from
-\code{\link{pksummary_mult}}. To see the full set of possible parameters,
-enter \code{view(PKParameterDefinitions)} into the console.}
+\item{PKparameters}{any of the PK parameters included in the output from
+\code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
+parameter included in \code{PKtable}. To see the full set of possible
+parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 
 \item{color_set}{set of colors to use for indicating the 1.5-fold and 2-fold
 boundaries of the simulated / observed ratio. The default is "red green",
@@ -34,6 +38,13 @@ set this to any two colors you'd like, e.g., \code{color_set = c("yellow",
 boundaries.}
 
 \item{line_width}{line width; default is 0.8}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png"}
+
+\item{fig_width}{figure width in inches; default is 6}
+
+\item{fig_height}{figure height in inches; default is 8}
 }
 \value{
 
