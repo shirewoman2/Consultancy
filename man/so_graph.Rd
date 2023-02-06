@@ -7,9 +7,9 @@
 so_graph(
   PKtable,
   PKparameters = NA,
-  color_set = "red green",
+  color_set = "red black",
   boundary_indicator = "line",
-  line_width = 0.8,
+  line_width = 0.7,
   save_graph = NA,
   fig_width = 8,
   fig_height = 6
@@ -25,17 +25,19 @@ parameter included in \code{PKtable}. To see the full set of possible
 parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 
 \item{color_set}{set of colors to use for indicating the 1.5-fold and 2-fold
-boundaries of the simulated / observed ratio. The default is "red green",
-"muted red green" will result in lighter, somewhat more muted red and green
-that works better for indicating the boundary with shading instead of
-lines, and "black" will result in only black lines or shading. You also can
-set this to any two colors you'd like, e.g., \code{color_set = c("yellow",
-"blue")}}
+boundaries of the simulated / observed ratio. The default is "red black",
+which results in a black line at the 1.5-fold boundary and a red one at the
+2-fold boundary. Other options are "red green", "muted red green" (a
+lighter, somewhat more muted red and green that work well for indicating
+the boundary when you're using shading instead of lines), and "black",
+which will result in only black lines or shading. You also can set this to
+any two colors you'd like, e.g., \code{color_set = c("yellow", "blue")}}
 
 \item{boundary_indicator}{how to indicate the boundaries of 1.5-fold and
 2-fold comparisons of simulated / observed. Options are "lines" (default)
 "fill" to get a shaded area, or "none" to remove any indicators of those
-boundaries.}
+boundaries. NOTE: The "fill" option doesn't currently work when you're
+comparing GMRs.}
 
 \item{line_width}{line width; default is 0.8}
 
@@ -52,7 +54,10 @@ in quotes here, e.g., "My conc time graph.png"}
 \description{
 \code{so_graph} makes a graph of simulated vs. observed PK, including
 indicating where the predicted parameters fell within 1.5- or 2-fold of the
-observed.
+observed. When the PK parameter is a geometric mean ratio of the parameter in
+the presence of an effector / the parameter in the absence of the effector,
+the 1.5-fold line will be replaced with a curve as described in Guest Galetin
+2011 Drug Metab Dispos.
 }
 \examples{
 

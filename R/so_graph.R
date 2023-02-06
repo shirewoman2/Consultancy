@@ -2,7 +2,10 @@
 #'
 #' \code{so_graph} makes a graph of simulated vs. observed PK, including
 #' indicating where the predicted parameters fell within 1.5- or 2-fold of the
-#' observed.
+#' observed. When the PK parameter is a geometric mean ratio of the parameter in
+#' the presence of an effector / the parameter in the absence of the effector,
+#' the 1.5-fold line will be replaced with a curve as described in Guest Galetin
+#' 2011 Drug Metab Dispos.
 #'
 #' @param PKtable a table in the same format as output from the function
 #'   \code{\link{pksummary_mult}}
@@ -11,16 +14,18 @@
 #'   parameter included in \code{PKtable}. To see the full set of possible
 #'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
 #' @param color_set set of colors to use for indicating the 1.5-fold and 2-fold
-#'   boundaries of the simulated / observed ratio. The default is "red green",
-#'   "muted red green" will result in lighter, somewhat more muted red and green
-#'   that works better for indicating the boundary with shading instead of
-#'   lines, and "black" will result in only black lines or shading. You also can
-#'   set this to any two colors you'd like, e.g., \code{color_set = c("yellow",
-#'   "blue")}
+#'   boundaries of the simulated / observed ratio. The default is "red black",
+#'   which results in a black line at the 1.5-fold boundary and a red one at the
+#'   2-fold boundary. Other options are "red green", "muted red green" (a
+#'   lighter, somewhat more muted red and green that work well for indicating
+#'   the boundary when you're using shading instead of lines), and "black",
+#'   which will result in only black lines or shading. You also can set this to
+#'   any two colors you'd like, e.g., \code{color_set = c("yellow", "blue")}
 #' @param boundary_indicator how to indicate the boundaries of 1.5-fold and
 #'   2-fold comparisons of simulated / observed. Options are "lines" (default)
 #'   "fill" to get a shaded area, or "none" to remove any indicators of those
-#'   boundaries.
+#'   boundaries. NOTE: The "fill" option doesn't currently work when you're
+#'   comparing GMRs.
 #' @param line_width line width; default is 0.8
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"
@@ -35,9 +40,9 @@
 
 so_graph <- function(PKtable, 
                      PKparameters = NA, 
-                     color_set = "red green", 
+                     color_set = "red black", 
                      boundary_indicator = "line",
-                     line_width = 0.8, 
+                     line_width = 0.7, 
                      save_graph = NA, 
                      fig_width = 8, 
                      fig_height = 6){
@@ -60,11 +65,6 @@ so_graph <- function(PKtable,
     if(is.na(PKparameters)){
         PKparameters <- names(PKtable)
         PKparameters <- PKparameters[!str_detect(PKparameters, "Statistic|File")]
-    }
-    
-    if(any(str_detect(PKparameters, "ratio"))){
-        warning("You've requested a simulated vs. observed graph for a geometric mean ratio, which means that you really should make a graph like that in Guest Galetin 2011 Drug Metab Dispos, but we haven't set that up yet.", 
-                call. = FALSE)
     }
     
     # Main body of function --------------------------------------------------
@@ -100,14 +100,27 @@ so_graph <- function(PKtable,
         mutate(LimitName = "lower", 
                Simulated = Observed / 1.5)
     
-    Fold2_upper <- data.frame(Observed = 10^seq(-3, 6, length.out = 100)) %>% 
+    Fold2_upper <- data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
         mutate(LimitName = "upper", 
                Simulated = Observed * 2)
     Fold2_lower <- Fold2_upper %>% 
         mutate(LimitName = "lower", 
                Simulated = Observed / 2)
-    Unity <- data.frame(Observed = 10^seq(-3, 6, length.out = 100)) %>% 
+    Unity <- data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
         mutate(Simulated = Observed)
+    
+    # Guest curves
+    GuestCurve_upper <- data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
+        mutate(Limit = ifelse(Observed >= 1, 
+                              (1 + 2*(Observed - 1))/Observed,
+                              (1 + 2*((1/Observed) - 1))/(1/Observed)),
+               LimitName = "upper",
+               Simulated = Observed * Limit)
+    
+    GuestCurve_lower <- GuestCurve_upper %>% 
+        mutate(LimitName = "lower", 
+               Simulated = Observed / Limit)
+    
     
     # Setting up polygons
     Poly2x <- Fold2_upper %>% arrange(Observed) %>% 
@@ -116,11 +129,15 @@ so_graph <- function(PKtable,
     Poly1.5x <- Fold1.5_upper %>% arrange(Observed) %>% 
         bind_rows(Fold1.5_lower %>% arrange(desc(Observed)))
     
+    Poly1.5xGuest <- GuestCurve_upper %>% arrange(Observed) %>% 
+        bind_rows(GuestCurve_lower %>% arrange(desc(Observed)))
+    
     
     if(length(color_set) == 1){
         BoundColors <- switch(color_set, 
                               "red green" = c("red", "#17A142"), 
                               "muted red green" = c("#E6A2A2", "#A4E4AF"),
+                              "red black" = c("red", "black"),
                               "black" = c("black", "black"))
     } else {
         BoundColors <- color_set[1:2]
@@ -145,27 +162,36 @@ so_graph <- function(PKtable,
             G[[i]] <- G[[i]] + 
                 geom_line(data = Fold2_upper, color = BoundColors[1], linewidth = line_width) +
                 geom_line(data = Fold2_lower, color = BoundColors[1], linewidth = line_width) +
-                geom_line(data = Fold1.5_upper, color = BoundColors[2], linewidth = line_width) +
-                geom_line(data = Fold1.5_lower, color = BoundColors[2], linewidth = line_width) 
+                geom_line(data = switch(as.character(str_detect(i, "ratio")), 
+                                        "TRUE" = GuestCurve_upper,
+                                        "FALSE" = Fold1.5_upper), 
+                          color = BoundColors[2], linewidth = line_width) +
+                geom_line(data = switch(as.character(str_detect(i, "ratio")), 
+                                        "TRUE" = GuestCurve_lower, 
+                                        "FALSE" = Fold1.5_lower),
+                          color = BoundColors[2], linewidth = line_width) 
         }
         
         if(str_detect(boundary_indicator, "fill")){
             G[[i]] <- G[[i]] +
-                geom_polygon(data = Poly2x, fill = BoundColors[1]) +
-                geom_polygon(data = Poly1.5x, fill = BoundColors[2])
+                geom_polygon(data = Poly2x, fill = BoundColors[1], alpha = 0.2) +
+                geom_polygon(data = switch(as.character(str_detect(i, "ratio")),
+                                           "TRUE" = Poly1.5xGuest,
+                                           "FALSE" = Poly1.5x), 
+                             fill = BoundColors[2], alpha = 0.2)
         }
         
         G[[i]] <- G[[i]] + geom_point(size = 2) +
             scale_y_log10(
-                breaks = c(10^(-1:4),
-                           3*10^(-1:4),
-                           5*10^(-1:4)),
-                minor_breaks = rep(1:9)*rep(10^(-1:4), each = 9)) +
+                breaks = c(10^(-3:6),
+                           3*10^(-3:6),
+                           5*10^(-3:6)),
+                minor_breaks = rep(1:9)*rep(10^(-3:6), each = 9)) +
             scale_x_log10(
-                breaks = c(10^(-1:4),
-                           3*10^(-1:4),
-                           5*10^(-1:4)),
-                minor_breaks = rep(1:9)*rep(10^(-1:4), each = 9)) +
+                breaks = c(10^(-3:6),
+                           3*10^(-3:6),
+                           5*10^(-3:6)),
+                minor_breaks = rep(1:9)*rep(10^(-3:6), each = 9)) +
             coord_cartesian(xlim = Limits, ylim = Limits) +
             ggtitle(PKexpressions[[i]]) +
             theme_bw() +
