@@ -24,9 +24,13 @@
 #' @param boundary_indicator how to indicate the boundaries of 1.5-fold and
 #'   2-fold comparisons of simulated / observed. Options are "lines" (default)
 #'   "fill" to get a shaded area, or "none" to remove any indicators of those
-#'   boundaries. NOTE: The "fill" option doesn't currently work when you're
-#'   comparing GMRs.
-#' @param line_width line width; default is 0.8
+#'   boundaries. \strong{NOTE: There is a known bug within RStudio that causes
+#'   filled semi-transparent areas like you get with the "fill" option to NOT
+#'   get graphed for certain versions of RStudio.} To get around this, within
+#'   RStudio, go to Tools --> Global Options --> General --> Graphics --> And
+#'   then set "Graphics device: backend" to "AGG". Honestly, this is a better
+#'   option for higher-quality graphics anyway!
+#' @param line_width line width; default is 0.7
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"
 #' @param fig_height figure height in inches; default is 8
@@ -41,7 +45,7 @@
 so_graph <- function(PKtable, 
                      PKparameters = NA, 
                      color_set = "red black", 
-                     boundary_indicator = "line",
+                     boundary_indicator = "lines",
                      line_width = 0.7, 
                      save_graph = NA, 
                      fig_width = 8, 
@@ -60,6 +64,15 @@ so_graph <- function(PKtable,
     if("Observed" %in% PKtable$Statistic == FALSE){
         stop("We can't find the observed data in the table provided for `PKtable`, so we can't make a simulated-versus-observed graph.", 
              call. = FALSE)
+    }
+    
+    boundary_indicator <- ifelse(str_detect(tolower(boundary_indicator), "fil"), 
+                                 "fill", "lines")
+    
+    if(boundary_indicator == "fill" & length(color_set) == 1 & 
+       !str_detect(color_set, " ")){
+        warning("You have requested only one color for the fill, which means you'll only see a shaded rectangle for the 2-fold boundary. If you would also like to see the 1.5-fold or Guest-curve boundary, please add a second color.", 
+                call. = FALSE)
     }
     
     if(is.na(PKparameters)){
@@ -124,10 +137,17 @@ so_graph <- function(PKtable,
     
     # Setting up polygons
     Poly2x <- Fold2_upper %>% arrange(Observed) %>% 
+        bind_rows(Fold1.5_upper %>% arrange(desc(Observed))) %>% 
+        bind_rows(Fold1.5_lower %>% arrange(Observed)) %>% 
         bind_rows(Fold2_lower %>% arrange(desc(Observed)))
     
     Poly1.5x <- Fold1.5_upper %>% arrange(Observed) %>% 
         bind_rows(Fold1.5_lower %>% arrange(desc(Observed)))
+    
+    Poly2xGuest <- Fold2_upper %>% arrange(Observed) %>% 
+        bind_rows(GuestCurve_upper %>% arrange(desc(Observed))) %>% 
+        bind_rows(GuestCurve_lower %>% arrange(Observed)) %>% 
+        bind_rows(Fold2_lower %>% arrange(desc(Observed)))
     
     Poly1.5xGuest <- GuestCurve_upper %>% arrange(Observed) %>% 
         bind_rows(GuestCurve_lower %>% arrange(desc(Observed)))
@@ -174,7 +194,10 @@ so_graph <- function(PKtable,
         
         if(str_detect(boundary_indicator, "fill")){
             G[[i]] <- G[[i]] +
-                geom_polygon(data = Poly2x, fill = BoundColors[1], alpha = 0.2) +
+                geom_polygon(data = switch(as.character(str_detect(i, "ratio")), 
+                                           "TRUE" = Poly2xGuest, 
+                                           "FALSE" = Poly2x), 
+                             fill = BoundColors[1], alpha = 0.2) +
                 geom_polygon(data = switch(as.character(str_detect(i, "ratio")),
                                            "TRUE" = Poly1.5xGuest,
                                            "FALSE" = Poly1.5x), 
@@ -192,7 +215,7 @@ so_graph <- function(PKtable,
                            3*10^(-3:6),
                            5*10^(-3:6)),
                 minor_breaks = rep(1:9)*rep(10^(-3:6), each = 9)) +
-            coord_cartesian(xlim = Limits, ylim = Limits) +
+            coord_cartesian(xlim = Limits, ylim = Limits) + # this causes the shading to disappear for Guest curves. no idea why, but I think it's a bug w/coord_cartesian.
             ggtitle(PKexpressions[[i]]) +
             theme_bw() +
             theme(aspect.ratio = 1, 

@@ -8,7 +8,7 @@ so_graph(
   PKtable,
   PKparameters = NA,
   color_set = "red black",
-  boundary_indicator = "line",
+  boundary_indicator = "lines",
   line_width = 0.7,
   save_graph = NA,
   fig_width = 8,
@@ -36,10 +36,14 @@ any two colors you'd like, e.g., \code{color_set = c("yellow", "blue")}}
 \item{boundary_indicator}{how to indicate the boundaries of 1.5-fold and
 2-fold comparisons of simulated / observed. Options are "lines" (default)
 "fill" to get a shaded area, or "none" to remove any indicators of those
-boundaries. NOTE: The "fill" option doesn't currently work when you're
-comparing GMRs.}
+boundaries. \strong{NOTE: There is a known bug within RStudio that causes
+filled semi-transparent areas like you get with the "fill" option to NOT
+get graphed for certain versions of RStudio.} To get around this, within
+RStudio, go to Tools --> Global Options --> General --> Graphics --> And
+then set "Graphics device: backend" to "AGG". Honestly, this is a better
+option for higher-quality graphics anyway!}
 
-\item{line_width}{line width; default is 0.8}
+\item{line_width}{line width; default is 0.7}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"}
