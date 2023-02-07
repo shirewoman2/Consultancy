@@ -55,11 +55,13 @@
 #'   transparent shading for the 5th to 95th percentiles of the simulated data,
 #'   and open circles for the observed data. If an effector were present, the
 #'   default is to show the data without the effector in blue and the data in
-#'   the presence of the effector in red. Note: You may sometimes see some
-#'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
-#'   cut off. For arcane reasons we don't want to bore you with here, we can't
-#'   easily prevent this. However, a possible fix is to set your y axis limits
-#'   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
+#'   the presence of the effector in red. \strong{NOTE: There is a known bug
+#'   within RStudio that causes filled semi-transparent areas like you get with
+#'   the "percentile ribbon" figure type to NOT get graphed for certain versions
+#'   of RStudio.} To get around this, within RStudio, go to Tools --> Global
+#'   Options --> General --> Graphics --> And then set "Graphics device:
+#'   backend" to "AGG". Honestly, this is a better option for higher-quality
+#'   graphics anyway!}
 #'
 #'   \item{"means only"}{plots a black line for the mean data and, if an
 #'   effector was modeled, a dashed line for the concentration-time data with
@@ -221,7 +223,7 @@
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels. 
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param legend_label optionally indicate on the legend whether the effector is
 #'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as the
