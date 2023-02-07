@@ -3,21 +3,19 @@
 #' @param sim_data_files a character vector of simulator output files, e.g.,
 #'   \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
 #'   want all the Excel files in the current folder, \code{sim_data_files = NA}.
-#'   If you supply data for \code{observed_PK}, anything you enter here will be
-#'   ignored because the file names will be pulled from there instead.
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
 #'   vector, or an Excel or csv file with observed PK parameters, supply the
 #'   full file name in quotes or the data.frame or vector here, and the
 #'   simulated-to-observed mean ratios will be calculated. If you supply an
-#'   Excel file, it should have only one tab. We prefer supplying csv files here
-#'   since they're faster to read in anyway. The supplied data.frame or file
-#'   \emph{must} include columns for the simulator output Excel file (title this
-#'   "File") and each of the PK parameters you would like to compare, and those
-#'   column names \emph{must} be among the PK parameter options listed in
-#'   \code{PKParameterDefinitions}. If you would like the output table to
-#'   include the observed data CV for any of the parameters, add "_CV" to the
-#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
-#'   "Example" section of this help file for examples of how to set this up.
+#'   Excel file, R will be looking to read a tab named "observed PK". The
+#'   supplied data.frame or file \emph{must} include columns for the simulator
+#'   output Excel file (title this "File") and each of the PK parameters you
+#'   would like to compare, and those column names \emph{must} be among the PK
+#'   parameter options listed in \code{PKParameterDefinitions}. If you would
+#'   like the output table to include the observed data CV for any of the
+#'   parameters, add "_CV" to the end of the parameter name, e.g.,
+#'   "AUCinf_dose1_CV". Please see the "Example" section of this help file for
+#'   examples of how to set this up.
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. \itemize{
 #'
@@ -34,9 +32,9 @@
 #'   \code{view(PKParameterDefinitions)} into the console.}
 #'
 #'   \item{If you supply observed data using either the argument
-#'   \code{report_input_file} or the argument \code{observed_PK}, the only PK
-#'   parameters that will be included are those available for the observed
-#'   data.}
+#'   \code{report_input_file} or the argument \code{observed_PK} and do not
+#'   specify anything for \code{PKparameters}, the PK parameters will be those
+#'   included for the observed data.}
 #'
 #'   \item{Parameters that don't make sense for your scenario -- such as asking
 #'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
@@ -99,7 +97,7 @@
 #'   formatted for use with the function \code{\link{forest_plot}}. Since the
 #'   \code{\link{forest_plot}} function only works with simulations with
 #'   effectors (at least, for now), this will only work for simulations that
-#'   included an effector. 
+#'   included an effector.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -210,13 +208,10 @@ pksummary_mult <- function(sim_data_files = NA,
         observed_PKDF <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                 "csv" = read.csv(observed_PK), 
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
-                                                         sheetIndex = 1))
-        if(is.na(sim_data_files[1])){
-            sim_data_files <- unique(observed_PKDF$File)
-        }
-        
+                                                         sheetName = "observed PK"))
+        sim_data_files <- c(sim_data_files, observed_PKDF$File)
+        sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
     } else {
-        
         # If user did not supply specific files, then extract all the files in
         # the current folder that end in "xlsx".
         if(length(unique(sim_data_files)) == 1 && is.na(sim_data_files)){
@@ -242,7 +237,7 @@ pksummary_mult <- function(sim_data_files = NA,
     
     if(exists("observed_PKDF", inherits = FALSE)){
         
-        for(i in 1:nrow(observed_PKDF)){
+        for(i in 1:length(sim_data_files)){
             
             # This warning only applies if they have both provided values for
             # sim_data_files AND files in observed_PKDF$File.
