@@ -318,10 +318,10 @@ ct_plot_mult <- function(ct_dataframe,
         # missing ones, too.
         if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
             names(graph_titles)[is.na(names(graph_titles))] <-
-                DatasetCheck$GraphLabs[is.na(names(graph_titles))]
+                graph_titles[is.na(names(graph_titles))]
             
             names(graph_titles)[names(graph_titles) == ""] <-
-                DatasetCheck$GraphLabs[names(graph_titles) == ""]
+                graph_titles[names(graph_titles) == ""]
         }
         
         # Convert labels to file base names (this doesn't do anything to the
@@ -446,6 +446,11 @@ ct_plot_mult <- function(ct_dataframe,
                                        as.character(ct_dataframe$subsection_ADAM)))
     } else {
         ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
+    }
+    
+    # Dealing with scenario where user has specified a file name incorrectly
+    if(any(Order %in% names(ct_dataframe) == FALSE)){
+        Order <- Order[Order %in% names(ct_dataframe)]
     }
     
     for(i in Order){

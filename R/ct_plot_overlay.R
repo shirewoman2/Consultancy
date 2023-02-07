@@ -638,8 +638,9 @@ call. = FALSE)
                 call. = FALSE)
         
         WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
-                               gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
-        color_labels[names(color_labels) %in% BadLabs] <- WarningLabel
+                               gsub(" - problem no. 1", "", 
+                                    paste(" - problem no.", 1:length(unique(ct_dataframe$File)))))
+        color_labels[which(names(color_labels) %in% BadLabs)] <- WarningLabel[1:length(BadLabs)]
         NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
         NewNames <- NewNames[complete.cases(NewNames)]
         names(color_labels)[which(names(color_labels) %in% BadLabs)] <- NewNames
