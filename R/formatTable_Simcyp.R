@@ -125,6 +125,11 @@ formatTable_Simcyp <- function(DF,
              call. = FALSE)
     }
     
+    if("data.frame" %in% class(DF) == FALSE){
+        stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames, and it looks like you have supplied some other type of data.", 
+             call. = FALSE)
+    }
+    
     if(nrow(DF) == 0){
         stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
              call. = FALSE)

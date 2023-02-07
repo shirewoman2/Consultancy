@@ -40,6 +40,10 @@
 #' @export
 #'
 #' @examples
+#' # Assuming you have run pksummary_mult on a few files with observed data 
+#' # to generate an object called MyPKOutput, then:
+#' so_graph(MyPKOutput)
+#' so_graph(MyPKOutput, boundary_indicator = "fill")
 #' 
 
 so_graph <- function(PKtable, 
