@@ -68,11 +68,11 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     # Assigning the variables created or changed here to the environment one
     # level up, e.g., probably the environment within the function that's
     # calling on *this* function.
-    assign("line_type", line_type, envir = parent.frame())
-    assign("line_color", line_color, envir = parent.frame())
-    assign("obs_shape", obs_shape, envir = parent.frame())
-    assign("obs_color", obs_color, envir = parent.frame())
-    assign("obs_fill_trans", obs_fill_trans, envir = parent.frame())
-    assign("obs_line_trans", obs_line_trans, envir = parent.frame())
+    Out <- list("line_type" = line_type, 
+                "line_color" = line_color,
+                "obs_shape" = obs_shape,
+                "obs_color" = obs_color, 
+                "obs_fill_trans" = obs_fill_trans,
+                "obs_line_trans" = obs_line_trans)
     
 }

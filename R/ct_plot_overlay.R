@@ -1192,19 +1192,19 @@ call. = FALSE)
     
     # Setting up the y axis using the subfunction ct_y_axis
     YStuff <- ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
-              ADAM = ADAM, 
-              subsection_ADAM = switch(as.character(EnzPlot), 
-                                       "TRUE" = NA, 
-                                       "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
-              prettify_compound_names = prettify_compound_names,
-              EnzPlot = EnzPlot, 
-              time_range_relative = time_range_relative,
-              Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
-                  mutate(Time_orig = Time), 
-              pad_y_axis = pad_y_axis,
-              y_axis_limits_lin = y_axis_limits_lin, 
-              time_range = time_range,
-              y_axis_limits_log = y_axis_limits_log)
+                        ADAM = ADAM, 
+                        subsection_ADAM = switch(as.character(EnzPlot), 
+                                                 "TRUE" = NA, 
+                                                 "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
+                        prettify_compound_names = prettify_compound_names,
+                        EnzPlot = EnzPlot, 
+                        time_range_relative = time_range_relative,
+                        Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
+                            mutate(Time_orig = Time), 
+                        pad_y_axis = pad_y_axis,
+                        y_axis_limits_lin = y_axis_limits_lin, 
+                        time_range = time_range,
+                        y_axis_limits_log = y_axis_limits_log)
     
     ObsConcUnits <- YStuff$ObsConcUnits
     ylab <- YStuff$ylab
@@ -1294,16 +1294,22 @@ call. = FALSE)
         NumShapes <- 1
     }
     
-    set_aesthet(line_type = linetypes, figure_type = figure_type,
-                MyEffector = MyEffector, 
-                compoundToExtract = switch(as.character(EnzPlot),
-                                           "TRUE" = "substrate", 
-                                           "FALSE" = unique(sim_dataframe$CompoundID)),
-                obs_shape = obs_shape, obs_color = obs_color,
-                obs_fill_trans = obs_fill_trans,
-                obs_line_trans = obs_line_trans,
-                # line_color is just a placeholder b/c not using it here.
-                line_color = NA)
+    AesthetStuff <- set_aesthet(line_type = linetypes, figure_type = figure_type,
+                                MyEffector = MyEffector, 
+                                compoundToExtract = switch(as.character(EnzPlot),
+                                                           "TRUE" = "substrate", 
+                                                           "FALSE" = unique(sim_dataframe$CompoundID)),
+                                obs_shape = obs_shape, obs_color = obs_color,
+                                obs_fill_trans = obs_fill_trans,
+                                obs_line_trans = obs_line_trans,
+                                # line_color is just a placeholder b/c not using it here.
+                                line_color = NA)
+    
+    line_type <- AesthetStuff$line_type
+    obs_shape <- AesthetStuff$obs_shape
+    obs_color <- AesthetStuff$obs_color
+    obs_fill_trans<- AesthetStuff$obs_fill_trans
+    obs_line_trans <- AesthetStuff$obs_line_trans
     
     if(length(obs_shape) < NumShapes){
         # This odd syntax will work both when obs_shape is a single value
@@ -1541,8 +1547,8 @@ call. = FALSE)
         }
         
         A <- A + scale_x_time(time_units = TimeUnits, 
-                                 x_axis_interval = x_axis_interval, 
-                                 pad_x_axis = pad_x_axis)
+                              x_axis_interval = x_axis_interval, 
+                              pad_x_axis = pad_x_axis)
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
@@ -1553,8 +1559,8 @@ call. = FALSE)
                                                 0, y_axis_limits_lin[1]),
                                          YmaxRnd)) +
                 scale_x_time(time_units = TimeUnits, 
-                                x_axis_interval = x_axis_interval, 
-                                pad_x_axis = pad_x_axis) +
+                             x_axis_interval = x_axis_interval, 
+                             pad_x_axis = pad_x_axis) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
                                         AESCols["facet2"] == "<empty>"), 
                                   "TRUE FALSE" = vars(!!facet2_column),
@@ -1583,8 +1589,8 @@ call. = FALSE)
                                             0, y_axis_limits_lin[1]),
                                      YmaxRnd)) +
             scale_x_time(time_units = TimeUnits, 
-                            x_axis_interval = x_axis_interval, 
-                            pad_x_axis = pad_x_axis) +
+                         x_axis_interval = x_axis_interval, 
+                         pad_x_axis = pad_x_axis) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
         
         if(EnzPlot){

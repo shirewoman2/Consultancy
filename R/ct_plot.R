@@ -776,12 +776,19 @@ ct_plot <- function(ct_dataframe = NA,
     obs_fill_trans_user <- obs_fill_trans
     obs_color_user <- obs_color_user
     
-    set_aesthet(line_type = line_type, figure_type = figure_type,
-                MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
-                obs_shape = obs_shape, obs_color = obs_color, 
-                obs_fill_trans = obs_fill_trans,
-                obs_line_trans = obs_line_trans,
-                line_color = line_color)
+    AesthetStuff <- set_aesthet(line_type = line_type, figure_type = figure_type,
+                                MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
+                                obs_shape = obs_shape, obs_color = obs_color, 
+                                obs_fill_trans = obs_fill_trans,
+                                obs_line_trans = obs_line_trans,
+                                line_color = line_color)
+    
+    line_type <- AesthetStuff$line_type
+    line_color <-  AesthetStuff$line_color
+    obs_shape <- AesthetStuff$obs_shape
+    obs_color <- AesthetStuff$obs_color
+    obs_fill_trans<- AesthetStuff$obs_fill_trans
+    obs_line_trans <- AesthetStuff$obs_line_trans
     
     # if(length(obs_color) > 1){
     #     obs_color <- obs_color[1]
