@@ -55,7 +55,7 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
        (complete.cases(obs_color[1]) & obs_color == "default") |
        (is.na(obs_color[1]) & figure_type == "freddy")){
         obs_color <- "#3030FE"
-    } else {
+    } else if(length(obs_color) == 1 && is.na(obs_color)){
         obs_color = "black"
     }
     
