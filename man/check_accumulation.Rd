@@ -79,7 +79,7 @@ Leaving this as NA means the file will not be automatically saved to disk.}
 \item{fig_width}{figure width in inches; default is 5}
 }
 \value{
-
+a ggplot2 graph
 }
 \description{
 Create a graph with time on the x axis and then some useful concentration

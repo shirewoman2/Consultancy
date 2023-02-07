@@ -82,11 +82,13 @@ simulator output, you'll receive a warning message and we'll plot one that
   lines for the 5th and 95th percentiles of the simulated data}
 
   \item{"percentile ribbon"}{show an opaque line for the mean data and
-  transparent shading for the 5th to 95th percentiles. Note: You may
-  sometimes see some artifacts -- especially for semi-log plots -- where the
-  ribbon gets partly cut off. For arcane reasons we don't want to bore you
-  with here, we can't easily prevent this. To fix this, increase your y axis
-  limits for the semi-log plot.}}}
+  transparent shading for the 5th to 95th percentiles. \strong{NOTE: There is
+  a known bug within RStudio that can cause filled semi-transparent areas
+  like you get with the "percentile ribbon" figure type to NOT get graphed
+  for certain versions of RStudio.} To get around this, within RStudio, go to
+  Tools --> Global Options --> General --> Graphics --> And then set
+  "Graphics device: backend" to "AGG". Honestly, this is a better option for
+  higher-quality graphics anyway!}}}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
   \item{"semi-log"}{y axis is log transformed; this is the default}
@@ -400,7 +402,7 @@ file instead to your local (not OneDrive) Documents folder.}
 \item{fig_width}{figure width in inches; default is 5}
 }
 \value{
-
+a ggplot2 graphs or a set of arranged ggplot2 graphs
 }
 \description{
 \code{ct_plot_overlay} is meant to be used in conjunction with

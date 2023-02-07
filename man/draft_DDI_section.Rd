@@ -352,7 +352,7 @@ left as NA, this will be set to "Draft DDI report section for XXXX.docx"
 where "XXXX" is the name of the simulator output Excel file.}
 }
 \value{
-
+a Word file
 }
 \description{
 \code{draft_DDI_section} outputs a Word document that can be copied, pasted,

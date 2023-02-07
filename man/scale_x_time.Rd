@@ -39,7 +39,8 @@ If you only specify one number, we'll assume that's the percent you want
 added to the left side.}
 }
 \value{
-
+a ggplot2 graph scale for the x axis (replaces scale_x_continuous in
+  a graph)
 }
 \description{
 \code{scale_x_time} formats a ggplot graph x axis to have breaks that make
@@ -47,7 +48,7 @@ sense for the user-specified time units and adds a minor tick between the
 labels. It optionally adds padding to the left and right sides of the x axis.
 }
 \examples{
-MyData <- data.frame(Time = 0:168, 
+MyData <- data.frame(Time = 0:168,
                      Conc = rnorm(n = 169, mean = 100))
 ggplot(MyData, aes(x = Time, y = Conc)) +
     geom_point() + scale_x_time()
@@ -55,8 +56,8 @@ ggplot(MyData, aes(x = Time, y = Conc)) +
 ggplot(MyData, aes(x = Time, y = Conc)) +
     geom_point() + scale_x_time(time_range = c(24, 48))
 
-# You don't have to name the column with your x-axis data "Time". 
-MyAltData <- data.frame(Mango = 0:24, 
+# You don't have to name the column with your x-axis data "Time".
+MyAltData <- data.frame(Mango = 0:24,
                         Conc = rnorm(n = 25, mean = 100))
 
 ggplot(MyAltData, aes(x = Mango, y = Conc)) +

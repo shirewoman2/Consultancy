@@ -10,7 +10,7 @@ blueGreens(ncolors)
 \item{ncolors}{number of colors desired}
 }
 \value{
-
+a character vector of colors
 }
 \description{
 \code{blueGreens} is useful for getting a set of pretty blues that fade into

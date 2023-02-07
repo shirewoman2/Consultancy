@@ -94,7 +94,7 @@ left as NA, this will generate a data.frame in R but no output will be
 saved.}
 }
 \value{
-
+a data.frame
 }
 \description{
 \code{create_doses_from_file} uses an Excel or csv file with subject

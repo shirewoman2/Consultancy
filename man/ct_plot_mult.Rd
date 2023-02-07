@@ -21,7 +21,7 @@ ct_plot_mult(
   y_axis_label = NA,
   legend_position = "none",
   legend_label = NA,
-  graph_titles = NA,
+  graph_titles = "none",
   graph_title_size = 14,
   graph_labels = TRUE,
   save_graph = NA,
@@ -84,11 +84,13 @@ attention to the position of commas and quotes there!}
   transparent shading for the 5th to 95th percentiles of the simulated data,
   and open circles for the observed data. If an effector were present, the
   default is to show the data without the effector in blue and the data in
-  the presence of the effector in red. Note: You may sometimes see some
-  artifacts -- especially for semi-log plots -- where the ribbon gets partly
-  cut off. For arcane reasons we don't want to bore you with here, we can't
-  easily prevent this. However, a possible fix is to set your y axis limits
-  for the semi-log plot to be wider using \code{y_axis_limits_log}.}
+  the presence of the effector in red. \strong{NOTE: There is a known bug
+  within RStudio that can cause filled semi-transparent areas like you get
+  with the "percentile ribbon" figure type to NOT get graphed for certain
+  versions of RStudio.} To get around this, within RStudio, go to Tools -->
+  Global Options --> General --> Graphics --> And then set "Graphics device:
+  backend" to "AGG". Honestly, this is a better option for higher-quality
+  graphics anyway!}
 
   \item{"means only"}{plots a black line for the mean data and, if an
   effector was modeled, a dashed line for the concentration-time data with
@@ -190,10 +192,10 @@ default NA when a legend is included and an effector is present, the label
 in the legend will be "Inhibitor".}
 
 \item{graph_titles}{optionally specify titles to be used in the graphs and
-specify the order in which the files are graphed or use "none" to have no
-titles on your graphs. Input should be a named character vector of the
-files in the order you would like and what you want to use for the title.
-The file name must \emph{perfectly} match the file name listed in
+specify the order in which the files are graphed or use "none" (default) to
+have no titles on your graphs. Input should be a named character vector of
+the files in the order you would like and what you want to use for the
+title. The file name must \emph{perfectly} match the file name listed in
 ct_dataframe or it won't be used. An example of how this might be
 specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
 "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
@@ -245,7 +247,7 @@ percentiles.png". This is only used when \code{graph_arrangement =
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
 }
 \value{
-
+a set of arranged ggplot2 graphs and/or saved files of those graphs
 }
 \description{
 This function was designed for making nicely arranged concentration-time

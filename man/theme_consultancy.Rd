@@ -7,7 +7,7 @@
 theme_consultancy(border = FALSE)
 }
 \value{
-
+a ggplot2 theme
 }
 \description{
 \code{theme_consultancy} sets the following: \itemize{ \item{Plot background

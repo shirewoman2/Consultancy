@@ -315,7 +315,7 @@ file instead to your Documents folder.}
 \item{fig_width}{figure width in inches; default is 5}
 }
 \value{
-
+a ggplot2 graph
 }
 \description{
 \code{enz_plot_overlay} is meant to be used in conjunction with

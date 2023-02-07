@@ -36,7 +36,7 @@
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 6
 #'
-#' @return
+#' @return a set of arranged ggplot2 graphs 
 #' @export
 #'
 #' @examples

@@ -69,7 +69,7 @@
 #'   left as NA, this will generate a data.frame in R but no output will be
 #'   saved.
 #'
-#' @return
+#' @return a data.frame 
 #' @export
 #'
 #' @examples

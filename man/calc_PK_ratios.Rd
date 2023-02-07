@@ -188,7 +188,8 @@ Documents folder instead.}
 This only applies when you save the table as a Word file.}
 }
 \value{
-
+A list or a data.frame of PK data that optionally includes where the
+  data came from
 }
 \description{
 \code{calc_PK_ratios_mult} matches PK data from a pair of simulator output

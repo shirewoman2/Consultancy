@@ -9,10 +9,10 @@
 #' @param MyEffector concatenated string of all effectors involved
 #' @param compoundToExtract compound user wants
 #' @param obs_shape user-specified observed data shape
-#' @param line_color user-specified line color 
+#' @param line_color user-specified line color
 #' @param obs_color user-specified observed-data color
 #'
-#' @return
+#' @return several objects to use with setting graph aesthetics
 
 set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract, 
                         obs_shape, line_color, obs_color, 

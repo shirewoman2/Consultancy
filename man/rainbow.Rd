@@ -10,7 +10,7 @@ rainbow(ncolors)
 \item{ncolors}{number of colors desired}
 }
 \value{
-
+a character vector of colors
 }
 \description{
 \code{rainbow} is useful for getting a set of colors for graphs when you need

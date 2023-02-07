@@ -237,9 +237,9 @@ filling out an Excel form.
 \strong{OPTION A: Supply a data.frame or a named vector.} If you supply a
 data.frame, the column names will indicate which PK parameter you want, and
 if you supply a named numeric vector, the names of the vector will perform
-the same function. If you have CV values for any observed data that you'd
-like to include in the table, make the name be the PK parameter with a suffix
-of "_CV".
+the same task. If you have CV values for any observed data that you'd like to
+include in the table, make the name be the PK parameter with a suffix of
+"_CV".
 
 An example of specifying a data.frame: \code{observed_PK =
 data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22,
@@ -248,12 +248,11 @@ Cmax_dose1_CV = 0.24)}
 An example of specifying a named vector: \code{observed_PK = c("AUCinf_dose1"
 = 60, "AUCinf_dose1_CV" = 0.38, "Cmax_dose1" = 22, "Cmax_dose1_CV" = 0.24)}.
 
-\strong{OPTION B: Use an Excel or csv file of oserved PK data.} In Excel,
-create a single-tab Excel file or a csv file where the 1st row lists the
-names of the PK parameters and the 2nd row lists the values. Just as with
-Option A, you can include observed CV values by adding "_CV" to the parameter
-name. To see an example of how this should look, run this in the console and
-then open the csv file:
+\strong{OPTION B: Use a csv file of observed PK data.} In Excel, create a csv
+file where the first row is the PK parameters you want and the second row
+lists the values for each. This should look the same as the examples for
+Option A. To see an example of how this should look, run this in the console
+and then open the csv file:
 
 \code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
 Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
@@ -263,7 +262,27 @@ When you call on \code{pksummary_table}, use the following syntax,
 substituting your file name for the example: \code{observed_PK = "Example
 observed PK values.csv"}
 
-\strong{OPTION C: Fill out an Excel form.} Here are the steps to take for
+\strong{OPTION C: Use a tab named "observed PK" in the compound data sheet
+for your project.} Just as with the other examples, the first row lists the
+PK parameters you want, and subsequent rows list the values for those
+parameters. Since this will also work for looking at PK for other possible
+simulations, please include the column "File" and list the name of the
+simulation output file that you want to compare. It's ok to leave blank any
+cells where you don't have a value, and it's ok to change the PK parameter
+names to something else that you want as long as it's one of the options for
+"PKparameter" in the table you can see by running this in the console:
+\code{view(PKParameterDefinitions)} If your compound data sheet is on
+SharePoint, make sure you close it before running this or R won't be able to
+access the file!
+
+When you call on \code{pksummary_table}, use the following syntax,
+substituting your project's compound data sheet file name for the example:
+\code{observed_PK = paste0(SimcypDir$SharePtDir, "abc-1a/Research/abc-1a
+compound data sheet.xlsx")}  (This assumes that the compound data sheet lives
+on the SharePoint drive in the "Research" folder for you project. Change
+"abc-1a" and the file name to whatever you need for your project.)
+
+\strong{OPTION D: Fill out an Excel form.} Here are the steps to take for
 this option: \enumerate{
 
 \item{Use the function \code{\link{generateReportInputForm}} to create an

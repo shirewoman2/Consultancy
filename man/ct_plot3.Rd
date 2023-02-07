@@ -120,7 +120,7 @@ your Documents folder.}
 \code{\link{ct_plot_overlay}}}
 }
 \value{
-
+a set of 3 arranged ggplot2 graphs
 }
 \description{
 Conveniently group three concentration-time plots of multiple-dose regimen

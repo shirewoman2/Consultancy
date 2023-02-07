@@ -61,7 +61,7 @@
 #'   try to save on SharePoint, you will get a warning that R will save your
 #'   file instead to your local (not OneDrive) Documents folder.
 #'
-#' @return
+#' @return a formatted table 
 #' @export
 #'
 #' @examples

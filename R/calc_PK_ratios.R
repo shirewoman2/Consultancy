@@ -147,7 +147,8 @@
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
-#' @return
+#' @return A list or a data.frame of PK data that optionally includes where the
+#'   data came from
 #' @export
 #'
 #' @examples

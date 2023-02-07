@@ -53,7 +53,7 @@ in quotes here, e.g., "My conc time graph.png"}
 \item{fig_height}{figure height in inches; default is 8}
 }
 \value{
-
+a set of arranged ggplot2 graphs
 }
 \description{
 \code{so_graph} makes a graph of simulated vs. observed PK, including
@@ -64,5 +64,9 @@ the 1.5-fold line will be replaced with a curve as described in Guest Galetin
 2011 Drug Metab Dispos.
 }
 \examples{
+# Assuming you have run pksummary_mult on a few files with observed data 
+# to generate an object called MyPKOutput, then:
+so_graph(MyPKOutput)
+so_graph(MyPKOutput, boundary_indicator = "fill")
 
 }

@@ -272,7 +272,7 @@
 #'   style and the shape. If left as the default NA when a legend is included
 #'   and an effector is present, the label in the legend will be "Inhibitor".
 #'
-#' @return
+#' @return a Word file
 #' @export
 #'
 #' @examples

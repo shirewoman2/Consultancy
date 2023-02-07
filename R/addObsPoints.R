@@ -11,7 +11,7 @@
 #' @param LegCheck TRUE or FALSE for whether to include the legend. From
 #'   ct_plot_overlay originally and should always be TRUE for ct_plot.
 #'
-#' @return
+#' @return a ggplot2 layer with observed data
 
 addObsPoints <- function(obs_data, 
                          A, 

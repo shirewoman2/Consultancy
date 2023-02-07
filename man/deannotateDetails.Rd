@@ -18,7 +18,7 @@ in \code{AllExpDetails}. If set to FALSE, all data classes will be
 character.}
 }
 \value{
-
+a list of simulator experimental details
 }
 \description{
 \code{deannotateDetails} takes a data.frame that contains annotated

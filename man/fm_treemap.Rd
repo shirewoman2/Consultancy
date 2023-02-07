@@ -46,7 +46,7 @@ Leaving this as NA means the file will not be automatically saved to disk.}
 \item{fig_width}{figure width in inches; default is 4}
 }
 \value{
-
+a ggplot2 graph
 }
 \description{
 Create a treemap -- filled rectangles -- to indicate the fraction of

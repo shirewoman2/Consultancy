@@ -50,7 +50,7 @@
 #' @param fig_height figure height in inches; default is 4
 #' @param fig_width figure width in inches; default is 5
 #'
-#' @return
+#' @return a ggplot2 graph
 #' @export
 #'
 #' @examples

@@ -31,7 +31,7 @@ extractConcTime}
 \item{EnzPlot}{T or F for whether this is an enzyme-abundance plut}
 }
 \value{
-
+values to use for ct_plots
 }
 \description{
 This function is specifically for setting options for the x axis in a

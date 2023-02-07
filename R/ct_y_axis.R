@@ -15,7 +15,7 @@
 #' @param pad_y_axis user-specified value for pad_y_axis
 #' @param time_range_relative relative time range
 #'
-#' @return
+#' @return values to use for ct_plots
 
 ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
                       y_axis_limits_lin, time_range,
