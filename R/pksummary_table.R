@@ -444,6 +444,10 @@ pksummary_table <- function(sim_data_file = NA,
             observed_PK <- observed_PK[1, ]
         }
         
+        if("File" %in% names(observed_PK) == FALSE){
+            observed_PK$File <- sim_data_file
+        }
+        
         # Also only keeping columns with complete cases for PK values.
         observed_PK <- observed_PK %>% select(where(complete.cases))
         
