@@ -456,8 +456,7 @@ pksummary_table <- function(sim_data_file = NA,
         # sim_data_file will be the same as the only entry for File in
         # observed_PK. Either way, setting sim_data_file and making sure it has
         # the correct file extension.
-        sim_data_file <- sub("\\..*", ".xlsx", observed_PK$File)
-        sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx"), 
+        sim_data_file <- ifelse(str_detect(sim_data_file, "\\.xlsx"), 
                                 sim_data_file, paste0(sim_data_file, ".xlsx"))
         
         # Cleaning up and harmonizing observed data
