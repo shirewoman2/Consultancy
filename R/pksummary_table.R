@@ -665,7 +665,8 @@ pksummary_table <- function(sim_data_file = NA,
     # If there were no PK parameters to be pulled, MyPKResults_all will have
     # length 0 and we can't proceed.
     if(length(MyPKResults_all) == 0){
-        warning("No PK results were found. Does your simulator output file include any sheets with names such as 'AUC', 'AUC_CI' or 'AUC_SD'? Something like that must be present for most of the typical PK parameters to get extracted.", 
+        warning(paste0("No PK results were found in the file `",
+                       sim_data_file, "`. Does your simulator output file include any sheets with names such as 'AUC', 'AUC_CI' or 'AUC_SD'? Something like that must be present for most of the typical PK parameters to get extracted."), 
                 call. = FALSE)
         return()
     }

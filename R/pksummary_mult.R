@@ -235,102 +235,66 @@ pksummary_mult <- function(sim_data_files = NA,
     OutQC <- list()
     FD <- list()
     
-    if(exists("observed_PKDF", inherits = FALSE)){
+    for(i in sim_data_files){
         
-        for(i in 1:length(sim_data_files)){
-            
-            # This warning only applies if they have both provided values for
-            # sim_data_files AND files in observed_PKDF$File.
-            if(observed_PKDF$File[i] %in% sim_data_files == FALSE){
-                warning(paste0("The file ", observed_PKDF$File[i],
-                               " was listed in your observed data but not in `sim_data_files`. It will be skipped."), 
-                        call. = FALSE)
-                next
-            }
-            
-            print(paste("Extracting data from", observed_PKDF$File[i]))
-            
-            temp <- pksummary_table(
-                sim_data_file = as.character(observed_PKDF[i, "File"]),
-                observed_PK = observed_PKDF[i, ], 
-                PKparameters = PKparameters, 
-                PKorder = PKorder, 
-                sheet_PKparameters = sheet_PKparameters, 
-                mean_type = mean_type,
-                tissue = tissue, 
-                includeCV = includeCV,
-                includeRange = includeRange,
-                includeConfInt = includeConfInt, 
-                includePerc = includePerc, 
-                includeTrialMeans = includeTrialMeans,
-                concatVariability = concatVariability,
-                adjust_conc_units = adjust_conc_units,
-                prettify_columns = prettify_columns, 
-                extract_forest_data = extract_forest_data,
-                checkDataSource = checkDataSource,
-                prettify_compound_names = c("inhibitor" = "effector",
-                                            "substrate" = "substrate"))
-            
-            MyPKResults[[i]] <- switch(as.character("list" %in% class(temp)), 
-                                       "TRUE" = temp$Table, 
-                                       "FALSE" = temp) %>% 
-                mutate(File = as.character(observed_PKDF[i, "File"]))
-            
-            if(checkDataSource){
-                OutQC[[i]] <- temp$QC
-            } 
-            
-            if(extract_forest_data){
-                FD[[i]] <- temp$ForestData
-            }
-            
-            rm(temp)
+        # This warning only applies if they have both provided values for
+        # sim_data_files AND files in observed_PKDF$File.
+        if(exists("observed_PKDF", inherits = FALSE) && 
+           observed_PKDF$File[i] %in% sim_data_files == FALSE){
+            warning(paste0("The file ", observed_PKDF$File[i],
+                           " was listed in your observed data but not in `sim_data_files`. It will be skipped."), 
+                    call. = FALSE)
+            next
         }
         
-    } else {
+        print(paste("Extracting data from", i))
         
-        for(i in sim_data_files){
-            
-            print(paste("Extracting data from", i))
-            
-            temp <- pksummary_table(sim_data_file = i, 
-                                    PKparameters = PKparameters, 
-                                    PKorder = PKorder, 
-                                    sheet_PKparameters = sheet_PKparameters, 
-                                    mean_type = mean_type,
-                                    tissue = tissue, 
-                                    includeCV = includeCV,
-                                    includeConfInt = includeConfInt, 
-                                    includeRange = includeRange,
-                                    includePerc = includePerc, 
-                                    includeTrialMeans = includeTrialMeans,
-                                    concatVariability = concatVariability,
-                                    adjust_conc_units = adjust_conc_units,
-                                    prettify_columns = prettify_columns, 
-                                    extract_forest_data = extract_forest_data,
-                                    checkDataSource = checkDataSource,
-                                    prettify_compound_names = c("inhibitor" = "effector",
-                                                                "substrate" = "substrate"))
-            
-            if(length(temp) == 0){
-                rm(temp)
-                next
-            }
-            
-            MyPKResults[[i]] <- temp$Table %>% mutate(File = i)
-            
-            if(checkDataSource){
-                OutQC[[i]] <- temp$QC
-            } 
-            
-            if(extract_forest_data){
-                FD[[i]] <- temp$ForestData
-            }
-            
+        temp <- pksummary_table(
+            sim_data_file = i,
+            observed_PK = switch(
+                as.character(exists("observed_PKDF", inherits = FALSE) &&
+                                 i %in% observed_PKDF$File), 
+                "TRUE" = observed_PKDF[i, ], 
+                "FALSE" = NA),
+            PKparameters = PKparameters, 
+            PKorder = PKorder, 
+            sheet_PKparameters = sheet_PKparameters, 
+            mean_type = mean_type,
+            tissue = tissue, 
+            includeCV = includeCV,
+            includeRange = includeRange,
+            includeConfInt = includeConfInt, 
+            includePerc = includePerc, 
+            includeTrialMeans = includeTrialMeans,
+            concatVariability = concatVariability,
+            adjust_conc_units = adjust_conc_units,
+            prettify_columns = prettify_columns, 
+            extract_forest_data = extract_forest_data,
+            checkDataSource = checkDataSource,
+            prettify_compound_names = c("inhibitor" = "effector",
+                                        "substrate" = "substrate"))
+        
+        if(length(temp) == 0){
             rm(temp)
-            
+            next
         }
+        
+        MyPKResults[[i]] <- switch(as.character("list" %in% class(temp)), 
+                                   "TRUE" = temp$Table, 
+                                   "FALSE" = temp) %>% 
+            mutate(File = i)
+        
+        if(checkDataSource){
+            OutQC[[i]] <- temp$QC
+        } 
+        
+        if(extract_forest_data){
+            FD[[i]] <- temp$ForestData
+        }
+        
+        rm(temp)
     }
+    
     
     if(length(MyPKResults) == 0){
         warning("No PK values could be found in the supplied files.", 
@@ -371,7 +335,7 @@ pksummary_mult <- function(sim_data_files = NA,
     }
     
     OutQC <- bind_rows(OutQC)
-   
+    
     ## Saving --------------------------------------------------------------
     if(complete.cases(save_table)){
         
