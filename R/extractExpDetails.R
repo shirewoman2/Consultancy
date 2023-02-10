@@ -322,27 +322,25 @@ extractExpDetails <- function(sim_data_file,
         # a single dose. That messes up, e.g., extractPK b/c it looks on the
         # wrong tab for the info it needs. When that happens, set the regimen to
         # "Single Dose".
-        if(complete.cases(Out$Regimen_sub) &
-           Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
+        if(is.null(Out$Regimen_sub) == FALSE && 
+           (complete.cases(Out$Regimen_sub) &
+            Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1)){
             Out$Regimen_sub <- "Single Dose"
         }
         
-        if(complete.cases(Out$Inhibitor1)){
-            if(complete.cases(Out$Regimen_inhib) && 
-               Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
-                Out$Regimen_inhib <- "Single Dose" 
-            }
+        if(is.null(Out$Regimen_inhib) == FALSE && 
+           (complete.cases(Out$Inhibitor1 & 
+                           complete.cases(Out$Regimen_inhib) && 
+                           (Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1)))){
+            Out$Regimen_inhib <- "Single Dose" 
         }
         
-        # Commenting this next bit out b/c I don't think the summary tab
-        # includes info on Inhib2 regimen, so this is null right now.
-        
-        # if(complete.cases(Out$Inhibitor2)){
-        #     if(complete.cases(Out$Regimen_inhib2) & 
-        #        Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
-        #         Out$Regimen_inhib2 <- "Single Dose" 
-        #     }
-        # }
+        if(is.null(Out$Regimen_inhib2) == FALSE && 
+           (complete.cases(Out$Inhibitor2 & 
+                           complete.cases(Out$Regimen_inhib2) && 
+                           (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1)))){
+            Out$Regimen_inhib2 <- "Single Dose" 
+        }
     }
     
     # Pulling details from the Input Sheet tab ------------------------------
@@ -419,7 +417,10 @@ extractExpDetails <- function(sim_data_file,
             ToDetect <- AllExpDetails %>% 
                 filter(Detail == deet & Sheet == "Input Sheet") %>% pull(Regex)
             NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
-            Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect))
+            Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect)) +
+                (AllExpDetails %>% 
+                     filter(Detail == deet & Sheet == "Input Sheet") %>% 
+                     pull(OffsetRows))
             if(length(Row) == 0){
                 Val <- NA
             } else {
@@ -1219,24 +1220,25 @@ extractExpDetails <- function(sim_data_file,
     # a single dose. That messes up, e.g., extractPK b/c it looks on the
     # wrong tab for the info it needs. When that happens, set the regimen to
     # "Single Dose".
-    if(complete.cases(Out$Regimen_sub) &
-       Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1){
+    if(is.null(Out$Regimen_sub) == FALSE && 
+       (complete.cases(Out$Regimen_sub) &
+        Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1)){
         Out$Regimen_sub <- "Single Dose"
     }
     
-    if(complete.cases(Out$Inhibitor1)){
-        if(complete.cases(Out$Regimen_inhib) & 
-           Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1){
-            Out$Regimen_inhib <- "Single Dose" 
-        }
-    }
-    if(complete.cases(Out$Inhibitor2)){
-        if(complete.cases(Out$Regimen_inhib2) & 
-           Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1){
-            Out$Regimen_inhib2 <- "Single Dose" 
-        }
+    if(is.null(Out$Regimen_inhib1) == FALSE && 
+       (complete.cases(Out$Inhibitor1 & 
+                       complete.cases(Out$Regimen_inhib1) && 
+                       (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1)))){
+        Out$Regimen_inhib1 <- "Single Dose" 
     }
     
+    if(is.null(Out$Regimen_inhib2) == FALSE && 
+       (complete.cases(Out$Inhibitor2 & 
+                       complete.cases(Out$Regimen_inhib2) && 
+                       (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1)))){
+        Out$Regimen_inhib2 <- "Single Dose" 
+    }
     
     if(annotate_output){
         Out <- annotateDetails(Out)
