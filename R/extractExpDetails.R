@@ -329,16 +329,18 @@ extractExpDetails <- function(sim_data_file,
         }
         
         if(is.null(Out$Regimen_inhib) == FALSE && 
-           (complete.cases(Out$Inhibitor1 & 
-                           complete.cases(Out$Regimen_inhib) && 
-                           (Out$Regimen_inhib == "Multiple Dose" & Out$NumDoses_inhib == 1)))){
+           (complete.cases(Out$Inhibitor1) & 
+                           complete.cases(Out$Regimen_inhib)) && 
+                           (Out$Regimen_inhib == "Multiple Dose" & 
+                            Out$NumDoses_inhib == 1)){
             Out$Regimen_inhib <- "Single Dose" 
         }
         
         if(is.null(Out$Regimen_inhib2) == FALSE && 
-           (complete.cases(Out$Inhibitor2 & 
-                           complete.cases(Out$Regimen_inhib2) && 
-                           (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1)))){
+           (complete.cases(Out$Inhibitor2) & 
+                           complete.cases(Out$Regimen_inhib2)) && 
+                           (Out$Regimen_inhib2 == "Multiple Dose" &
+                            Out$NumDoses_inhib2 == 1)){
             Out$Regimen_inhib2 <- "Single Dose" 
         }
     }

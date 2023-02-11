@@ -254,7 +254,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     # Removing anything that was all NA's if that's what user requested
     if(omit_all_missing){
         Keep <- 
-            Out %>% summarize(across(.fns = function(.) all(is.na(.)))) %>% 
+            Out %>% summarize(across(.cols = everything(),
+                                     .fns = function(.) all(is.na(.)))) %>% 
             pivot_longer(cols = -File, names_to = "ColName", values_to = "Val") %>% 
             filter(Val == FALSE) %>% pull(ColName)
         
