@@ -518,7 +518,8 @@ extractExpDetails <- function(sim_data_file,
                         if(as.character(InputTab[i+1, NameCol]) == "Genotype"){
                             Enzyme <- paste0(Enzyme, InputTab[i+1, NameCol + 1])
                             CLrow <- i + 2
-                        } else if(str_detect(Enzyme, "User") |
+                        } else if((str_detect(Enzyme, "User") &
+                                   !str_detect(InputTab[i+1, NameCol], "CLint|Vmax")) |
                                   str_detect(tolower(InputTab[i + 1, NameCol]), 
                                              "ontogeny")){
                             CLrow <- i + 2
