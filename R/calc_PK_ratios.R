@@ -206,25 +206,27 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         PKparam_denom <- PKparameters
     }
     
-    PKnumerator <- extractPK(sim_data_file = sim_data_file_numerator, 
-                             PKparameters = PKparam_num, 
-                             sheet = sheet_PKparameters_num,
-                             tissue = tissue,
-                             returnAggregateOrIndiv = ifelse(paired, 
-                                                             "individual", "both"),
-                             returnExpDetails = TRUE) 
+    suppressWarnings(
+        PKnumerator <- extractPK(sim_data_file = sim_data_file_numerator, 
+                                 PKparameters = PKparam_num, 
+                                 sheet = sheet_PKparameters_num,
+                                 tissue = tissue,
+                                 returnAggregateOrIndiv = "both",
+                                 returnExpDetails = TRUE) 
+    )
     # RETURN TO THIS LATER. For now, I'm just getting the experimental details
     # for file 1. Later, we could add code to check and compare them for file 2
-    # to make absolutely sure they match.
+    # to make absolutely sure they match when they should. Future plan...
     Deets <- PKnumerator$ExpDetails
     
-    PKdenominator <- extractPK(sim_data_file = sim_data_file_denominator, 
-                               PKparameters = PKparam_denom, 
-                               sheet = sheet_PKparameters_denom,
-                               tissue = tissue,
-                               returnExpDetails = TRUE,
-                               returnAggregateOrIndiv = ifelse(paired, 
-                                                               "individual", "both"))
+    suppressWarnings(
+        PKdenominator <- extractPK(sim_data_file = sim_data_file_denominator, 
+                                   PKparameters = PKparam_denom, 
+                                   sheet = sheet_PKparameters_denom,
+                                   tissue = tissue,
+                                   returnExpDetails = TRUE,
+                                   returnAggregateOrIndiv = "both")
+    )
     
     # If user specified the sheet, then they're likely to get both AUCt and
     # AUCtau as well as CLt and CLtau b/c extractPK doesn't know what dose
@@ -245,21 +247,84 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            OrigName = c(names(PKnumerator$individual), 
                                         names(PKdenominator$individual)), 
                            Parameter = c(names(PKnumerator$individual),
-                                         names(PKnumerator$individual))) %>% 
+                                         names(PKdenominator$individual))) %>% 
         arrange(ValType, OrigName) %>% 
         mutate(OrigName_ValType = paste(OrigName, ValType))
-    # Using ColNames to set factor order for later
-    ColOrder <- unique(c(ColNames$OrigName_ValType, 
-                         paste(unique(ColNames$Parameter), "Ratio")))
-    ColOrder <- ColOrder[!str_detect(ColOrder,"Individual|Trial")]
     
-    # Because we need to match parameters when joining, renaming PK
-    # parameters in PKdenominator to match the names in PKnumerator even
-    # though they're not *really* the same PK parameters necessarily. We'll
-    # deal with that difference later.
+    # Checking that we can make the correct comparisons
+    if(all(PKparam_num == PKparam_denom)){
+        
+        # NB: Using the names of the aggregated data rather than the individual
+        # b/c aggregated data will NOT include, e.g., AUCinf, if there was any
+        # trouble extrapolating to infinity.
+        Comparisons <- data.frame(PKparam_num = 
+                                      intersect(names(PKnumerator$aggregate), 
+                                                names(PKdenominator$aggregate))) %>% 
+            mutate(PKparam_denom = PKparam_num) %>% 
+            filter(!PKparam_num %in% c("Individual", "Trial"))
+        
+        if(all(names(PKnumerator$aggregate) %in% 
+               names(PKdenominator$aggregate)) == FALSE){
+            warning(
+                paste0("The parameters ", 
+                       str_comma(paste0("`", setdiff(names(PKnumerator$aggregate),
+                                                     names(PKdenominator$aggregate)))), 
+                       " were available in the numerator but not in the denominator simulation and thus will not be included in your output."),
+                call. = FALSE)
+            }
+        
+        if(all(names(PKdenominator$individual) %in% 
+               names(PKnumerator$individual)) == FALSE){
+            warning(
+                paste0("The parameters ", 
+                       str_comma(paste0("`", setdiff(names(PKdenominator$individual),
+                                                     names(PKnumerator$individual)), 
+                                        "`")), 
+                       " were available in the denominator but not in the numerator simulation and thus cannot be included in your output."),
+                call. = FALSE)
+            
+           }
+        
+        GoodParams <- intersect(names(PKnumerator$aggregate),
+                                names(PKnumerator$individual))
+        GoodParams <- intersect(GoodParams,
+                                names(PKdenominator$aggregate))
+        GoodParams <- intersect(GoodParams,  
+                                names(PKdenominator$individual))
+                 
+        PKdenominator$individual <- 
+            PKdenominator$individual[, c("Individual", "Trial", GoodParams)]
+        PKnumerator$individual <- 
+            PKnumerator$individual[, c("Individual", "Trial", GoodParams)]
+        
+        PKdenominator$aggregate <- 
+            PKdenominator$aggregate[, c("Statistic", GoodParams)]
+        PKnumerator$aggregate <- 
+            PKnumerator$aggregate[, c("Statistic", GoodParams)]
+        
+    } else {
+        
+        Comparisons <- data.frame(PKparam_num = PKparam_num, 
+                                  PKparam_denom = PKparam_denom)
+    }
     
-    names(PKdenominator$individual) <- names(PKnumerator$individual)
-    names(PKdenominator$aggregate) <- names(PKnumerator$aggregate)
+    # Only keeping comparisons where we have data for both files
+    Comparisons <- Comparisons %>%
+        filter(PKparam_num %in% names(PKnumerator$individual) &
+                   PKparam_denom %in% names(PKdenominator$individual))
+    
+    # !!!!!!!!!!!!!!! CHANGING COL NAMES FOR DENOMINATOR !!!!!!!!!!!!!!!!!!!!!!
+    # Because we need to match parameters when joining, renaming PK parameters
+    # in PKdenominator to match the names in PKnumerator even though they're not
+    # *really* the same PK parameters necessarily. We'll deal with that
+    # difference later.
+    PKdenominator$individual <- 
+        PKdenominator$individual[, c("Individual", "Trial", Comparisons$PKparam_denom)]
+    names(PKdenominator$individual) <- c("Individual", "Trial", Comparisons$PKparam_num)
+    
+    PKdenominator$aggregate <-
+        PKdenominator$aggregate[, c("Statistic", Comparisons$PKparam_denom)]
+    names(PKdenominator$aggregate) <- c("Statistic", Comparisons$PKparam_num)
     
     
     # Setting the rounding option
@@ -305,7 +370,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         PKdenominator$individual <- PKdenominator$individual[, c("Individual", "Trial", PKparam_denom)]
         
         suppressMessages(
-            MyPK <- PKnumerator$individual %>% 
+            MyPKResults <- PKnumerator$individual %>% 
                 pivot_longer(cols = -c(Individual, Trial), 
                              names_to = "Parameter", 
                              values_to = "NumeratorSim") %>% 
@@ -351,16 +416,6 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                 select(-ValType, -OrigName) %>% 
                 pivot_wider(names_from = Parameter, values_from = Value)
         )
-        MyPKResults <- MyPK[, c("Statistic", ColOrder)]
-        
-        # At this point, MyPKResults has columns for Statistic and then one
-        # column for each combination of Parameter and ValType, and the order
-        # left-to-right is 1) all PK parameters for the denominator (control)
-        # simulation, in alphabetical order, 2) all PK parameters for the
-        # numerator (comparison) simulation, in alphabetical order, 3) all
-        # ratios of numerator / denominator PK in alphabetical order. If user
-        # only wanted ratios, then the only ValType is "Ratio". Otherwise,
-        # ValType is "Ratio", "DenominatorSim", and "NumeratorSim".
         
     } else {
         # unpaired study design
@@ -435,15 +490,26 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             pivot_wider(names_from = Parameter, values_from = Value)
         
         if(include_num_denom_columns){
+            
+            # Earlier, had to change column names of denominator results for
+            # matching w/numerator results when joining data.frames. Now, need
+            # to change names back to what the values *actually are* so that
+            # things don't get any further confused.
+            PKdenom <- PKdenom %>% rename(PKparam_num = PKparameter) %>% 
+                left_join(Comparisons, by = "PKparam_num") %>% 
+                rename(PKparameter = PKparam_denom) %>% select(-PKparam_num)
+            
             suppressMessages(
                 MyPKResults <- MyPKResults %>% 
                     left_join(
-                        PKnum %>% mutate(ValType = "NumeratorSim") %>% 
+                        PKnum %>% mutate(ValType = "NumeratorSim", 
+                                         ValueNum = round_opt(ValueNum, rounding)) %>% 
                             rename(Value = ValueNum) %>% 
                             
                             bind_rows(
                                 PKdenom %>% 
-                                    mutate(ValType = "DenominatorSim") %>% 
+                                    mutate(ValType = "DenominatorSim", 
+                                           ValueDenom = round_opt(ValueDenom, rounding)) %>% 
                                     rename(Value = ValueDenom)) %>% 
                             
                             filter(Statistic %in% 
@@ -461,23 +527,36 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                             pivot_wider(names_from = PKparameter,
                                         values_from = Value)
                     ))
-            
-            # Changing the names to match what the columns actually contain
-            ColNames <- ColNames %>% 
-                mutate(TempName_ValType = paste(Parameter, ValType)) %>% 
-                filter(!Parameter %in% c("Individual", "Trial"))
-            RevisedNames <- c("Statistic", ColOrder[str_detect(ColOrder, "Ratio")],
-                              ColNames$OrigName_ValType)
-            names(RevisedNames) <- c("Statistic", ColOrder[str_detect(ColOrder, "Ratio")],
-                                     ColNames$TempName_ValType)
-            MyPKResults <- MyPKResults[, names(RevisedNames)]
-            names(MyPKResults) <- RevisedNames
         }
-        
-        MyPKResults <- MyPKResults[, c("Statistic", ColOrder)]
-        
     }
     
+    # Filtering ColNames for columns that are still present and then using
+    # ColNames to set factor order
+    ColNames <- ColNames %>%
+        filter((ValType == "DenominatorSim" &
+                    Parameter %in% Comparisons$PKparam_denom) |
+                   (ValType == "NumeratorSim" &
+                        Parameter %in% Comparisons$PKparam_num))
+    ColOrder <- unique(c(ColNames$OrigName_ValType,
+                         paste(unique(ColNames$Parameter[
+                             ColNames$ValType == "NumeratorSim"]), "Ratio")))
+    ColOrder <- ColOrder[!str_detect(ColOrder,"Individual|Trial")]
+    
+    MyPKResults <- MyPKResults[, c("Statistic", ColOrder)]
+    
+    # At this point, MyPKResults has columns for Statistic and then one
+    # column for each combination of Parameter and ValType, and the order
+    # left-to-right is 1) all PK parameters for the denominator (control)
+    # simulation, in alphabetical order, 2) all PK parameters for the
+    # numerator (comparison) simulation, in alphabetical order, 3) all
+    # ratios of numerator / denominator PK in alphabetical order. If user
+    # only wanted ratios, then the only ValType is "Ratio". Otherwise,
+    # ValType is "Ratio", "DenominatorSim", and "NumeratorSim".
+    
+    
+    
+    
+    # Tidying up names of columns, etc. ------------------------------------
     StatNames_geo <- c(
         "Mean" = "Geometric Mean Ratio", 
         "CV" = "Geometric CV",
@@ -583,8 +662,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         
         # Setting prettified names.
         names(MyPKResults) <- c("Statistic", PrettyCol)
-        names(MyPKResults) <- sub("DenominatorSim", "denominator simulation", names(MyPKResults))
-        names(MyPKResults) <- sub("NumeratorSim", "numerator simulation", names(MyPKResults))
+        names(MyPKResults) <- sub("DenominatorSim", "denominator", names(MyPKResults))
+        names(MyPKResults) <- sub("NumeratorSim", "numerator", names(MyPKResults))
     }
     
     # Checking on possible effectors to prettify
@@ -622,7 +701,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             MyPKResults <- MyPKResults %>% 
                 mutate(across(.cols = where(is.numeric), 
                               .fns = round_opt, round_fun = rounding))
-                
+            
         } 
         
         # Checking whether they have specified just "docx" or just "csv" for

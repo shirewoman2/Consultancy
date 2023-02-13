@@ -262,13 +262,15 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
             File = paste(sim_data_file_pairs$Numerator[i], "/", 
                          sim_data_file_pairs$Denominator[i]), 
             Dose_sub = TEMP$ExpDetails_denom$Dose_sub, 
-            Dose_inhib = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
-                                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
-                                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
+            Dose_inhib = switch(as.character(
+                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
+                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
             Substrate = TEMP$ExpDetails_denom$Substrate, 
-            Inhibitor1 = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
-                                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
-                                "FALSE" = TEMP$ExpDetails_num$Substrate), 
+            Inhibitor1 = switch(as.character(
+                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
+                "FALSE" = TEMP$ExpDetails_num$Substrate), 
             File_num = sim_data_file_pairs$Numerator[i], 
             File_denom = sim_data_file_pairs$Denominator[i])
         
@@ -307,15 +309,19 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         return(Out)
     }
     
-    MyPKResults_out <- MyPKResults %>% 
+    # Rounding as requested and setting column order
+    MyPKResults <- MyPKResults %>% 
         mutate(across(.cols = where(is.numeric), 
-                      .fns = round_opt, round_fun = rounding)) %>% 
+                      .fns = round_opt, 
+                      round_fun = ifelse(complete.cases(rounding) & 
+                                             rounding == "Word only", 
+                                         "none", rounding))) %>% 
         select(-File, File)
     
     
     # Saving --------------------------------------------------------------
     
-    Out <- list(Table = MyPKResults_out)
+    Out <- list(Table = MyPKResults)
     
     
     if(complete.cases(save_table)){
@@ -324,7 +330,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         if(complete.cases(rounding) && rounding == "Word only"){
             MyPKResults <- MyPKResults %>% 
                 mutate(across(.cols = where(is.numeric), 
-                              .fns = round_opt, round_fun = rounding)) %>% 
+                              .fns = round_opt, round_fun = "Consultancy")) %>% 
                 select(-File, File)
         } 
         
