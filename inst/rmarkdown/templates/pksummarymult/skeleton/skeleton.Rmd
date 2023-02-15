@@ -20,6 +20,31 @@ Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
 MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 
 ```
+```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
+
+if(FromCalcPKRatios){
+    if(paired){
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    } else {
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    }
+} 
+
+```
 
 *Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters.*
 

@@ -1337,6 +1337,7 @@ pksummary_table <- function(sim_data_file = NA,
             }
             
             FileName <- basename(save_table)
+            FromCalcPKRatios <- FALSE
             
             rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 

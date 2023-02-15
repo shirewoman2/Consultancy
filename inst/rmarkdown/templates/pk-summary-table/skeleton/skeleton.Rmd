@@ -14,6 +14,32 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```
 
+```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
+
+if(FromCalcPKRatios){
+    if(paired){
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    } else {
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    }
+} 
+
+```
+
 ```{r FigtextPKSummary}
 
 if(class(prettify_compound_names) == "logical" &&

@@ -1,0 +1,6 @@
+**A note on calculations:** Since the numerator simulated subjects were not the same as the denominator simulated subjects, the geometric mean ratios for each PK parameter were calculated as $$GMR = \frac{\mu_{numerator}}{\mu_{denominator}}$$ where &mu; = mean. The coefficient of variation (CV) for the ratio was calculated as $$CV_{GMR} = \sqrt{CV^2_{numerator} + CV^2_{denominator}}$$
+
+The `r conf_int * 100`% CI of the GMR required conversion of this CV estimate to a standard deviation (&sigma;), which was calculated as $$\sigma_{GMR} = \mu_{GMR} \times CV_{GMR}$$ 
+
+For a significance level of `r conf_int * 100`%, &alpha; = `r 1 - conf_int` and the critical value $t_{1 - \frac{\alpha}{2}}$ from a Student's t distribution is `r round(qnorm(1-(1-conf_int)/2), 2)`. The `r conf_int * 100`% confidence interval for each GMR was calculated as $$\text{`r conf_int * 100`% CI} = GMR \pm t_{1 - \frac{\sigma}{2}} \times \frac{\sigma}{\sqrt{n}} = GMR \pm `r round(qnorm(1-(1-conf_int)/2), 2)` \times \frac{\sigma}{\sqrt{n}}$$ where n = the number of subjects simulated. 
+

@@ -423,6 +423,7 @@ pksummary_mult <- function(sim_data_files = NA,
             }
             
             FileName <- basename(save_table)
+            FromCalcPKRatios <- FALSE
             
             rmarkdown::render(
                 system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 

@@ -411,6 +411,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
             # Storing some objects so they'll work with the markdown file
             PKToPull <- PKparameters
             MeanType <- mean_type
+            FromCalcPKRatios <- TRUE
             
             rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
