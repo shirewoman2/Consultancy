@@ -156,9 +156,6 @@ Documents folder instead.}
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
 }
-\value{
-
-}
 \description{
 \code{calc_PK_ratios} matches PK data from two simulator output Excel files
 by subject ID and trial and calculates the ratio of those parameters for each

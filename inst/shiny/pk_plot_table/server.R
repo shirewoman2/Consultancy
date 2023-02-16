@@ -6,12 +6,46 @@ library(SimcypConsultancy)
 library(tidyverse)
 library(shiny)
 library(shinyjs)
+library(shinyFiles)
 library(ggplot2)
 
 options(shiny.maxRequestSize=1000*1024^2)
 
 ## Define server logic required  
 shinyServer(function(input, output, session) {
+    
+    updateDirChooseLocal <- function(folder, username) {
+        od_root <- paste("C:/Users/", username, "/OneDrive - Certara/Documents", sep = "")
+        shinyFiles::shinyDirChoose(input, id = "shiny_output_dir_local", 
+                                   roots=c("OneDrive-Documents" = od_root,
+                                           "C:" = "C:"), 
+                                   session=session)
+    }
+    
+    observe({
+
+        if (input$output_location_selection == "local") {
+            updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
+            od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
+            output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+                                      "/", input$output_folder_name, sep = "")
+        } else if (input$output_location_selection == "lfs") {
+            output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
+        } else if (input$output_location_selection == "mwd") {
+            output_directory <- paste("C:/Users/", input$mwd_od_username, input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
+        }
+        
+        output$output_folder_name <- renderText({
+            output_directory
+        })
+        # print(output_directory)
+    })
+    
+    observe({
+        shinyjs::toggle(id = "output_location_local", anim = TRUE, condition = input$output_location_selection == 'local')
+        shinyjs::toggle(id = "output_location_mwd", anim = TRUE, condition = input$output_location_selection == 'mwd')
+        shinyjs::toggle(id = "output_location_lfs", anim = TRUE, condition = input$output_location_selection == 'lfs')
+    })
     
     observe({
         shinyjs::toggle(id = "obs_data_file_input", anim = TRUE, condition = input$obs_data_file_option == TRUE)
@@ -35,7 +69,6 @@ shinyServer(function(input, output, session) {
         shinyjs::toggle(id = "obs_data_input", anim = TRUE, condition = input$obs_data_inc == TRUE)
         
     })
-    
     
     
     generate_plot <- eventReactive({
@@ -144,13 +177,28 @@ shinyServer(function(input, output, session) {
     output$plotCONC_1 <- renderPlot({
         
         req(input$sim_output_file)
+
+        if (input$output_location_selection == "local") {
+            updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
+            od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
+            output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+                                      "/", input$output_folder_name, sep = "")
+        } else if (input$output_location_selection == "lfs") {
+            output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
+        } else if (input$output_location_selection == "mwd") {
+            output_directory <- paste("C:/Users/", input$mwd_od_username, input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
+        }
+        
+        if (!dir.exists(output_directory)){
+            dir.create(file.path(output_directory))
+        }
         
         inFile <- input$sim_output_file
         file_name <- inFile$name
         file_name <- gsub(".xlsx", "", file_name)
         
-        ggsave(filename = paste("my_outputs/", file_name, ".png", sep=""), plot = generate_plot(), width = input$fig_width, height = input$fig_height, units = "cm", dpi = 600)
-        # ggsave(filename = paste("my_outputs/", file_name, ".png", sep=""), plot = generate_plot(), width = 16, height = 14, units = "cm", dpi = 600)
+        ggsave(filename = paste(output_directory, "/", file_name, ".png", sep=""), plot = generate_plot(), width = input$fig_width, height = input$fig_height, units = "cm", dpi = 600)
+        
         generate_plot()
     })
     
@@ -291,16 +339,33 @@ shinyServer(function(input, output, session) {
             
         }
         
+        if (input$output_location_selection == "local") {
+            updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
+            od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
+            output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+                                      "/", input$output_folder_name, sep = "")
+        } else if (input$output_location_selection == "lfs") {
+            output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
+        } else if (input$output_location_selection == "mwd") {
+            output_directory <- paste("C:/Users/", input$mwd_od_username, input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
+        }
+        
+        if (!dir.exists(output_directory)){
+            dir.create(file.path(output_directory))
+        }
+        
         inFile <- input$sim_output_file
         file_name <- inFile$name
         file_name <- gsub(".xlsx", "", file_name)
         
         if (input$qc_check == TRUE) {
-            write.csv(table[["Table"]], file = paste("my_outputs/", file_name, ".csv", sep=""))
-            write.csv(table[["QC"]], file = paste("my_outputs/", file_name, "_QC.csv", sep=""))
+            
+            write.csv(table[["Table"]], file = paste(output_directory, "/", file_name, ".csv", sep=""))
+            write.csv(table[["QC"]], file = paste(output_directory, "/", file_name, "_QC.csv", sep=""))
             return(table)
         } else {
-            write.csv(table, file = paste("my_outputs/", file_name, ".csv", sep=""))
+            
+            write.csv(table, file = paste(output_directory, "/", file_name, ".csv", sep=""))
             return(list(Table = table, QC = NA))
         }
         

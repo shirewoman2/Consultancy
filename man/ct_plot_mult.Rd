@@ -244,9 +244,6 @@ percentiles.png". This is only used when \code{graph_arrangement =
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
 }
-\value{
-
-}
 \description{
 This function was designed for making nicely arranged concentration-time
 graphs from several Simcyp Simulator output files all together \emph{or} for

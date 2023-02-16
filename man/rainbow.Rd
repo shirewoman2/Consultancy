@@ -9,9 +9,6 @@ rainbow(ncolors)
 \arguments{
 \item{ncolors}{number of colors desired}
 }
-\value{
-
-}
 \description{
 \code{rainbow} is useful for getting a set of colors for graphs when you need
 a LOT of colors; there are prettier and more easily distinguishable options

@@ -17,9 +17,6 @@ with one page at a time)}
 as "csv", the file name will be the pdf file name plus the page number
 requested. If set to NA, no file will be saved.}
 }
-\value{
-
-}
 \description{
 \code{pdf_to_csv} takes as input a pdf file and a page number and converts
 that to a data.frame and, optionally, saves that to a csv file. This can be

@@ -30,9 +30,6 @@ extractConcTime}
 
 \item{EnzPlot}{T or F for whether this is an enzyme-abundance plut}
 }
-\value{
-
-}
 \description{
 This function is specifically for setting options for the x axis in a
 concentration-time graph and is NOT meant to be called on its own.

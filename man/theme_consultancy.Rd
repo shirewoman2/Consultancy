@@ -6,9 +6,6 @@
 \usage{
 theme_consultancy()
 }
-\value{
-
-}
 \description{
 \code{theme_consultancy} sets the following: \itemize{ \item{Plot background
 is white; this includes the background for the legend and any facets and

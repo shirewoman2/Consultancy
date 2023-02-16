@@ -9,9 +9,6 @@ blueGreens(ncolors)
 \arguments{
 \item{ncolors}{number of colors desired}
 }
-\value{
-
-}
 \description{
 \code{blueGreens} is useful for getting a set of pretty blues that fade into
 greens for graphs.

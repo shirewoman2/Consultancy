@@ -391,9 +391,6 @@ file instead to your local (not OneDrive) Documents folder.}
 
 \item{fig_width}{figure width in inches; default is 5}
 }
-\value{
-
-}
 \description{
 \code{ct_plot_overlay} is meant to be used in conjunction with
 \code{\link{extractConcTime_mult}} to create single graphs with overlaid

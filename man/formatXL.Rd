@@ -100,8 +100,6 @@ widths will be used.}
 }
 \value{
 This does not return any R objects; it saves an Excel file.
-
-
 }
 \description{
 This function takes a data.frame you want to save to an Excel file using the

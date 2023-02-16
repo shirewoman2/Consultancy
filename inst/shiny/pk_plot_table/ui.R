@@ -7,6 +7,7 @@ library(SimcypConsultancy)
 library(tidyverse)
 library(shiny)
 library(shinyjs)
+library(shinyFiles)
 library(ggplot2)
 
 ## Draw the user interface
@@ -19,24 +20,61 @@ function(request) { fluidPage(
     tags$style("label{font-family: Palatino Linotype;}"),
     tags$style(type='text/css', ".nav-tabs {font-family: Palatino Linotype; font-size: 14px; font-weight:bold;} ")),
   
+  tags$style(HTML("#big-heading{font-family: Palatino Linotype; font-size:18px; font-weight:bold;}")),
+  tags$style(HTML("#small-heading{font-family: Palatino Linotype; font-size:14px; font-weight:bold;}")),
   
   (fluidRow(
     
     h1(id="big-heading", "Simcyp Consultancy - Excel Output Tool"),
-    tags$style(HTML("#big-heading{font-family: Palatino Linotype; font-size:18px; font-weight:bold;}")),
+    # tags$style(HTML("#big-heading{font-family: Palatino Linotype; font-size:18px; font-weight:bold;}")),
     
     ## The preview graph will be shown on the top of the user-interface
     # column(12, plotOutput("plotCONC_1")),
 
     ## Add sliders under the graph
     tabsetPanel(type = "tabs",
-                tabPanel("Excel Output File:",
+                tabPanel("File Locations:",
                          br(),
-                         fileInput("sim_output_file", "Simcyp Simulator Excel output file (.xlsx):", multiple = FALSE,
-                                   width = '60%', buttonLabel = "Browse...",
-                                   placeholder = "No file selected", accept = c('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx')),
+                         column(6,
+                                tags$h2(id="big-heading", "Input:"),
+                                br(),
+                                fileInput("sim_output_file", "Simcyp Simulator Excel output file (.xlsx):", multiple = FALSE,
+                                          width = '60%', buttonLabel = "Browse...",
+                                          placeholder = "No file selected", accept = c('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx'))),
+                         
+                         
+                         column(6,
+                                tags$h2(id="big-heading", "Output:"),
+                                br(),
+                                selectInput("output_location_selection", "Output Location:", c("Local (i.e. C: drive, Onedrive/Documents)" = "local", 
+                                                                                               "Large File Store" = "lfs", 
+                                                                                               "Modelling Directory" = "mwd"),
+                                            selected = NULL, multiple = FALSE, selectize = TRUE, width = NULL, size = NULL),
+                                
+                                div(id = "output_location_local",
+                                    tags$h2(id="small-heading", "Select Directory:"),
+                                    textInput("local_od_username", "Username:", value = "", width = NULL, placeholder = "e.g., 'hburt', 'lshireman' etc."),
+                                    shinyDirButton("shiny_output_dir_local", "Select folder to place outputs:",
+                                                   title = "Select Output Directory:", viewtype = "list")),
+                                
+                                div(id = "output_location_lfs", 
+                                    selectInput("lfs_folder", 
+                                                "Select Large File Store Directory",
+                                                choices = list.dirs(path = "//certara/data/sites/SHF/Consult", full.names = FALSE, recursive = FALSE))),
+                                
+                                div(id = "output_location_mwd",
+                                    textInput("mwd_od_username", "Username:", value = "", width = NULL, placeholder = "e.g., 'hburt', 'lshireman' etc."),
+                                    textInput("mwd_dir", "Modelling Working Directory Name:", value = "", width = NULL, placeholder = "e.g., 'PBPKConsultTEST4'")),
+                                
+                                br(),
+                                textInput("output_folder_name", "Sub-Folder Name (or path):", value = "Consultancy_Shiny_App_Outputs", width = NULL, placeholder = "e.g., 'Consultancy_Shiny_App_Outputs'"),
+                                
+                                br(),
+                                tags$h2(id="small-heading", "Current Output Location:"),
+                                textOutput("output_folder_name")),
+                         
                 ),
-
+                
                 tabPanel("Plot:",
                          br(),
                          actionButton("plot_generate", "Generate Plot"),

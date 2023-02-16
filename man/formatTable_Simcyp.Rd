@@ -71,9 +71,6 @@ SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
 try to save on SharePoint, you will get a warning that R will save your
 file instead to your local (not OneDrive) Documents folder.}
 }
-\value{
-
-}
 \description{
 \code{formatTable_Simcyp} makes a nicely formatted table from a data.frame or
 tibble. It was primarily designed to work with output from

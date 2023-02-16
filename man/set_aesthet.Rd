@@ -31,9 +31,6 @@ set_aesthet(
 
 \item{obs_color}{user-specified observed-data color}
 }
-\value{
-
-}
 \description{
 This function is specifically for setting certain aesthetic options for a
 concentration-time graph and is NOT meant to be called on its own.

@@ -17,9 +17,6 @@ each column to numeric or character data based on the data classes listed
 in \code{AllExpDetails}. If set to FALSE, all data classes will be
 character.}
 }
-\value{
-
-}
 \description{
 \code{deannotateDetails} takes a data.frame that contains annotated
 experimental details and converts it from having columns for each file and
