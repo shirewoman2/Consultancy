@@ -38,9 +38,6 @@ more space to the left side and 4\% more to the right side of the x axis.
 If you only specify one number, we'll assume that's the percent you want
 added to the left side.}
 }
-\value{
-
-}
 \description{
 \code{scale_x_time} formats a ggplot graph x axis to have breaks that make
 sense for the user-specified time units and adds a minor tick between the

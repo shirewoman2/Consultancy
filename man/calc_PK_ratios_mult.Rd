@@ -193,9 +193,6 @@ if you're including effector metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 }
-\value{
-
-}
 \description{
 \code{calc_PK_ratios_mult} matches PK data from pairs of simulator output
 Excel files and calculates the mean and confidence intervals of the ratios of
