@@ -4,7 +4,7 @@
 \alias{theme_consultancy}
 \title{Apply the standard Consultancy Team graphing styles to your graph}
 \usage{
-theme_consultancy()
+theme_consultancy(border = FALSE)
 }
 \description{
 \code{theme_consultancy} sets the following: \itemize{ \item{Plot background

@@ -71,7 +71,9 @@
 #'   information pertains to (substrate, inhibitor, etc.), b) which section of
 #'   the Simcyp Simulator this detail is found in (physchem, absorption,
 #'   distribution, etc.), c) notes describing what the detail is, and d) which
-#'   sheet in the Excel file the information was pulled from.
+#'   sheet in the Excel file the information was pulled from. Please see
+#'   \code{annotateDetails} for ways to sift through and organize this output to
+#'   find what you need.
 #' @param show_compound_col TRUE, FALSE, or "concatenate" (default) for whether
 #'   to include in the results the column "Compound", which is the compound's
 #'   specific name in each simulation. Why would you ever omit this? If you have
@@ -85,15 +87,14 @@
 #'   this to "concatenate", you'll get all the possible compound names together;
 #'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 #'   as the compound.
-#' @param omit_all_missing TRUE or FALSE (default) for whether to omit a detail
+#' @param omit_all_missing TRUE (default) or FALSE for whether to omit a detail
 #'   if the values are NA for all files
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
+#' @param save_output optionally save the output by supplying a csv or Excel
+#'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
+#'   details.xlsx". If you leave off the file extension, it will be saved as a
+#'   csv file.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
-#' @import tidyverse
-#' @import xlsx
 #'
 #' @export
 #'
@@ -114,13 +115,21 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    overwrite = FALSE,
                                    annotate_output = TRUE,
                                    show_compound_col = TRUE,
-                                   omit_all_missing = FALSE, 
-                                   save_output = NA){
+                                   omit_all_missing = TRUE, 
+                                   save_output = NA, 
+                                   ...){
     
     # Error catching ---------------------------------------------------------
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Checking whether they've supplied extractExpDetails args instead of
+    # extractExpDetails_mult args
+    if("sim_data_file" %in% names(match.call()) &
+       "sim_data_files" %in% names(match.call()) == FALSE){
+        sim_data_files <- sys.call()$sim_data_file
     }
     
     # If user did not supply files, then extract all the files in the current
@@ -129,6 +138,18 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         sim_data_files <- list.files(pattern = "xlsx$")
         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
+    
+    # Making sure that all the files exist before attempting to pull data
+    if(any(file.exists(sim_data_files) == FALSE)){
+        MissingSimFiles <- sim_data_files[
+            which(file.exists(sim_data_files) == FALSE)]
+        warning(paste0("The file(s) ", 
+                       str_comma(paste0("`", MissingSimFiles, "`")), 
+                       " is/are not present and thus will not be extracted."), 
+                call. = FALSE)
+        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+    }
+    
     
     # Main body of function ---------------------------------------------------
     
@@ -158,17 +179,17 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             }
             
             if(overwrite == FALSE){
-                sim_data_files_topull <- setdiff(sim_data_files, 
-                                                 existing_exp_details$File)
+                sim_data_files_topull <- unique(setdiff(sim_data_files, 
+                                                 existing_exp_details$File))
             } else {
-                sim_data_files_topull <- sim_data_files
+                sim_data_files_topull <- unique(sim_data_files)
                 existing_exp_details <- existing_exp_details %>%
                     filter(!File %in% existing_exp_details$File)
             }
         }
         
     } else {
-        sim_data_files_topull <- sim_data_files
+        sim_data_files_topull <- unique(sim_data_files)
     }
     
     MyDeets <- list()
@@ -210,10 +231,12 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         }
         
         # Also then need to make these character for existing_exp_details, too. 
-        existing_exp_details <- existing_exp_details %>% 
-            mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
-                                           "DoseInt_sub", "DoseInt_inhib")), 
-                          .fns = as.character))
+        if(AnyExistingDeets){
+            existing_exp_details <- existing_exp_details %>% 
+                mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
+                                               "DoseInt_sub", "DoseInt_inhib")), 
+                              .fns = as.character))
+        }
     }
     
     Out <- bind_rows(MyDeets)
@@ -241,23 +264,44 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     if(annotate_output){
         Out <- annotateDetails(Out, 
                                show_compound_col = show_compound_col, 
-                               save_output = NA)
+                               save_output = NA, 
+                               omit_all_missing = omit_all_missing)
     }
     
     if(complete.cases(save_output)){
-        
-        if(str_detect(save_output, "\\.")){
-            # If they specified a file extension, replace whatever they supplied
-            # with csv b/c that's the only option for file format here.
-            FileName <- sub("\\..*", ".csv", save_output)
+        FileName <- save_output
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
+                          Ext, "csv")
+            FileName <- paste0(FileName, ".", Ext)
         } else {
-            # If they didn't specify file extension, make it csv.
-            FileName <- paste0(save_output, ".csv")
+            FileName <- paste0(FileName, ".csv")
+            Ext <- "csv"
         }
         
-        write.csv(Out, FileName, row.names = F)
+        switch(Ext, 
+               "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
+               "xlsx" = formatXL(
+                   as.data.frame(Out), 
+                   FileName, 
+                   sheet = "Simulation experimental details",
+                   styles = list(
+                       list(columns = which(names(Out) == "Notes"), 
+                            textposition = list(wrapping = TRUE)),
+                       list(rows = 0, font = list(bold = TRUE),
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE)), 
+                       list(columns = which(str_detect(names(Out), "All files have this value")),
+                            fill = "#E7F3FF"), 
+                       list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
+                            font = list(bold = TRUE), 
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE), 
+                            fill = "#E7F3FF"))))
     }
-    
     
     return(Out)
 }

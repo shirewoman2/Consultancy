@@ -320,14 +320,16 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     # Assigning the variables created or changed here to the environment one
     # level up, e.g., probably the environment within the function that's
     # calling on *this* function.
-    assign("ObsConcUnits", ObsConcUnits, envir = parent.frame())
-    assign("ylab", ylab, envir = parent.frame())
-    assign("YLabels", YLabels, envir = parent.frame())
-    assign("YLogLabels", YLogLabels, envir = parent.frame())
-    assign("YBreaks", YBreaks, envir = parent.frame())
-    assign("YLogBreaks", YLogBreaks, envir = parent.frame())
-    assign("Ylim_log", Ylim_log, envir = parent.frame())
-    assign("YmaxRnd", YmaxRnd, envir = parent.frame())
-    assign("pad_y_num", pad_y_num, envir = parent.frame())
-    assign("pad_y_axis", pad_y_axis, envir = parent.frame())
+    
+    Out <- list("ObsConcUnits" = ObsConcUnits,
+                "ylab" = ylab,
+                "YLabels" = YLabels,
+                "YLogLabels" = YLogLabels,
+                "YBreaks" = YBreaks, 
+                "YLogBreaks" = YLogBreaks, 
+                "Ylim_log" = Ylim_log,
+                "YmaxRnd" = YmaxRnd, 
+                "pad_y_num" = pad_y_num, 
+                "pad_y_axis" = pad_y_axis)
 }
+

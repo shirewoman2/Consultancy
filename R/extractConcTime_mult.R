@@ -180,13 +180,36 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  returnAggregateOrIndiv = "aggregate",
                                  adjust_obs_time = FALSE,
                                  expdetails = NA,
-                                 obs_data_files = NA){
+                                 obs_data_files = NA, 
+                                 ...){
     
     # Error catching -------------------------------------------------------
     
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Checking whether they've supplied extractConcTime args instead of
+    # extractConctTime_mult args
+    if("sim_data_file" %in% names(match.call()) &
+       "sim_data_files" %in% names(match.call()) == FALSE){
+        sim_data_files <- sys.call()$sim_data_file
+    }
+    
+    if("obs_data_file" %in% names(match.call()) &
+       "obs_data_files" %in% names(match.call()) == FALSE){
+        obs_data_files <- sys.call()$obs_data_file
+    }
+    
+    if("tissue" %in% names(match.call()) &
+       "tissues" %in% names(match.call()) == FALSE){
+        tissues <- sys.call()$tissue
+    }
+    
+    if("compoundToExtract" %in% names(match.call()) &
+       "compoundsToExtract" %in% names(match.call()) == FALSE){
+        compoundsToExtract <- sys.call()$compoundToExtract
     }
     
     compoundsToExtract <- tolower(compoundsToExtract)
@@ -222,6 +245,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
     
     # Main body of function -----------------------------------------------
     
+    sim_data_files <- unique(sim_data_files)
+    
     if(length(sim_data_files) == 1 && is.na(sim_data_files)){
         # If left as NA, pull all the files in this folder. 
         sim_data_files <- list.files(pattern = "xlsx$")
@@ -244,11 +269,13 @@ extractConcTime_mult <- function(sim_data_files = NA,
         ct_dataframe <- ct_dataframe %>%
             mutate(ID = paste(File, Tissue, CompoundID))
         
-        DataToFetch <- ct_dataframe %>% select(File, Tissue, CompoundID) %>%
-            unique() %>% mutate(ExistsAlready = TRUE) %>%
-            right_join(Requested) %>%
-            filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
-            mutate(ID = paste(File, Tissue, CompoundID))
+        suppressMessages(
+            DataToFetch <- ct_dataframe %>% select(File, Tissue, CompoundID) %>%
+                unique() %>% mutate(ExistsAlready = TRUE) %>%
+                right_join(Requested) %>%
+                filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
+                mutate(ID = paste(File, Tissue, CompoundID))
+        )
         
         if(overwrite == FALSE){
             sim_data_files_topull <- unique(DataToFetch$File)
@@ -268,6 +295,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
         return(ct_dataframe)
     }
     
+    # Making sure that all the files exist before attempting to pull data
+    if(any(file.exists(sim_data_files_topull) == FALSE)){
+        MissingSimFiles <- sim_data_files_topull[
+            which(file.exists(sim_data_files_topull) == FALSE)]
+        warning(paste0("The file(s) ", 
+                       str_comma(paste0("`", MissingSimFiles, "`")), 
+                       " is/are not present and thus will not be extracted."), 
+                call. = FALSE)
+        sim_data_files_topull <- setdiff(sim_data_files_topull, MissingSimFiles)
+    }
+    
     # Tidying and error catching for any observed data
     if(class(obs_to_sim_assignment)[1] == "logical"){
         # this is when the user has not specified anything for
@@ -277,10 +315,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
     } else {
         
         if(class(obs_to_sim_assignment)[1] == "character"){
-            if(any(str_detect(obs_to_sim_assignment, "//.csv"))){
+            if(any(str_detect(obs_to_sim_assignment, ".csv$"))){
                 # user has supplied a csv file for designating obs and sim
                 # assignments.
-                ObsAssign <- read.csv(obs_to_sim_assignment)
+                ObsAssign <- read.csv(obs_to_sim_assignment) %>% unique()
             } else {
                 # Separating obs_to_sim_assignment so that it will work well
                 # with each simulator file. I wanted this to be obs 1st and then
@@ -305,14 +343,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     
                 } else {
                     ObsAssign <- data.frame(ObsFile = obs_to_sim_assignment, 
-                                            File = NA)
+                                            File = NA) %>% unique()
                 } 
             }
             
         } else if("data.frame" %in% class(obs_to_sim_assignment)){
             # This is when the user has supplied a data.frame for
             # obs_to_sim_assignment.
-            ObsAssign <- obs_to_sim_assignment
+            ObsAssign <- obs_to_sim_assignment %>% unique()
         }
         
         # Tidying up a few things. Checking column names and dealing with any
@@ -361,6 +399,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     ObsAssign <-
                         ObsAssign %>% 
                         filter(File %in% unique(c(sim_data_files, ct_dataframe$File)))
+                }
+                
+                # Making sure obs files exist before trying to pull data from them
+                if(any(file.exists(ObsAssign$ObsFile) == FALSE)){
+                    
+                    MissingObsFiles <- ObsAssign$ObsFile[
+                        which(file.exists(ObsAssign$ObsFile) == FALSE)]
+                    warning(paste0("The file(s) ", 
+                                   str_comma(paste0("`", MissingObsFiles, "`")), 
+                                   " is/are not present and thus will not be extracted."), 
+                            call. = FALSE)
+                    ObsAssign <- ObsAssign %>% filter(!ObsFile %in% MissingObsFiles)
                 }
                 
                 ObsAssign <- split(ObsAssign, f = ObsAssign$File)
@@ -774,7 +824,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         "Species", "Tissue", "Individual", "Trial",
                         "Simulated", "Time", "Conc",
                         "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
-                        "DoseInt", "File", "ObsFile")))
+                        "DoseInt", "File", "ObsFile"))) %>% 
+        unique()
     
     return(ct_dataframe)
     

@@ -20,6 +20,7 @@ ct_plot_overlay(
   obs_fill_trans = NA,
   obs_line_trans = NA,
   linetype_column,
+  linetype_labels = NA,
   linetypes = c("solid", "dashed"),
   line_width = NA,
   legend_label_linetype = NA,
@@ -104,10 +105,10 @@ This should be unquoted, e.g., \code{colorBy_column = Tissue}.}
 
 \item{color_labels}{optionally specify a character vector for how you'd like
 the labels for whatever you choose for \code{colorBy_column} to show up in
-the legend. For example, use \code{c("file 1.xlsx" = "fa 0.5", "file
-2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for an fa of 0.5 and
-"file 2.xlsx" is for an fa of 0.2. The order in the legend will match the
-order designated here.}
+the legend. For example, use \code{color_labels = c("file 1.xlsx" = "fa
+0.5", "file 2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is for an
+fa of 0.5 and "file 2.xlsx" is for an fa of 0.2. The order in the legend
+will match the order designated here.}
 
 \item{legend_label_color}{optionally indicate on the legend something
 explanatory about what the colors represent. For example, if
@@ -220,6 +221,13 @@ then a dashed line (simulated data) and an open triangle (observed data)
 when the inhibitor \emph{is} present. You can set which types of lines to
 use with the argument \code{linetypes} and you can set which shapes of
 points you want with the argument \code{obs_shape}.}
+
+\item{linetype_labels}{optionally specify a character vector for how you'd
+like the labels for whatever you choose for \code{linetype_column} to show
+up in the legend. For example, use \code{linetype_labels = c("file 1.xlsx"
+= "fa 0.5", "file 2.xlsx" = "fa 0.2")} to indicate that "file 1.xlsx" is
+for an fa of 0.5 and "file 2.xlsx" is for an fa of 0.2. The order in the
+legend will match the order designated here.}
 
 \item{linetypes}{the line types to use. Default is "solid" for all lines.
 You'll need one line type for each possible value in the column you

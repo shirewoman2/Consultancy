@@ -152,12 +152,32 @@ pksummary_mult <- function(sim_data_files = NA,
                            prettify_columns = TRUE, 
                            checkDataSource = TRUE, 
                            save_table = NA, 
-                           fontsize = 11){
+                           fontsize = 11, 
+                           ...){
     
     # Error catching ----------------------------------------------------------
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+    }
+    
+    # Checking whether they've supplied pksummary_table args instead of
+    # pksummary_mult args
+    if("sim_data_file" %in% names(match.call()) &
+       "sim_data_files" %in% names(match.call()) == FALSE){
+        sim_data_files <- sys.call()$sim_data_file
+    }
+    
+    # Making sure that all the files exist before attempting to pull data
+    if(all(complete.cases(sim_data_files)) && 
+       any(file.exists(sim_data_files) == FALSE)){
+        MissingSimFiles <- sim_data_files[
+            which(file.exists(sim_data_files) == FALSE)]
+        warning(paste0("The file(s) ", 
+                       str_comma(paste0("`", MissingSimFiles, "`")), 
+                       " is/are not present and thus will not be extracted."), 
+                call. = FALSE)
+        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
     }
     
     # Check for appropriate input for arguments
@@ -269,6 +289,7 @@ pksummary_mult <- function(sim_data_files = NA,
                                     tissue = tissue, 
                                     includeCV = includeCV,
                                     includeConfInt = includeConfInt, 
+                                    includeRange = includeRange,
                                     includePerc = includePerc, 
                                     includeTrialMeans = includeTrialMeans,
                                     concatVariability = concatVariability,

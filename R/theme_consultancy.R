@@ -25,19 +25,25 @@
 #' ggplot(MyData, aes(x = X, y = Y)) + geom_point() +
 #'        theme_consultancy()
 #' 
-theme_consultancy <- function(){
+theme_consultancy <- function(border = FALSE){
     theme(text = element_text(size = 11),
           rect = element_rect(fill = "white", color = "black"),
           plot.background = element_rect(fill="white", colour=NA),
           plot.title = element_text(face = "bold", size = rel(1.2), 
                                     margin = margin(0, 0, 5.5, 0)),
+          
           panel.background = element_rect(fill="white", color=NA),
+          panel.border = switch(as.character(border), 
+                                "TRUE" = element_rect(color = "black", fill = NA), 
+                                "FALSE" = element_rect(color = NA, fill = NA)),
           strip.background = element_rect(color=NA, fill="white"),
           strip.text = element_text(size = rel(0.8),
                                     margin = margin(4.4, 4.4, 4.4, 4.4)),
+          
           legend.key = element_rect(fill = "white", color = NA),
           legend.background = element_rect(color=NA, fill=NA),
           legend.text = element_text(size = rel(0.8)),
+          
           axis.ticks = element_line(color = "black"),
           axis.text = element_text(color = "black",
                                    size = rel(0.8)),
@@ -45,12 +51,15 @@ theme_consultancy <- function(){
           axis.text.x.top = element_text(margin = margin(0, 0, 2.2, 0)),
           axis.text.y = element_text(margin = margin(0, 2.2, 0, 0)),
           axis.text.y.right = element_text(margin = margin(0, 0, 0, 2.2)),
+          
           axis.title = element_text(color = "black", face = "bold"),
           axis.title.x = element_text(margin = margin(2.75, 0, 0, 0)),
           axis.title.x.top = element_text(margin = margin(0, 0, 2.75, 0)),
           axis.title.y = element_text(margin = margin(0, 2.75, 0, 0)),
           axis.title.y.right = element_text(margin = margin(0, 0, 0, 2.75)),
+          
           axis.line.x.bottom = element_line(color = "black"),
           axis.line.y.left = element_line(color = "black"))
 }
+
 

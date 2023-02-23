@@ -16,7 +16,8 @@ extractConcTime_mult(
   returnAggregateOrIndiv = "aggregate",
   adjust_obs_time = FALSE,
   expdetails = NA,
-  obs_data_files = NA
+  obs_data_files = NA,
+  ...
 )
 }
 \arguments{

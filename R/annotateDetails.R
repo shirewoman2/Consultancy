@@ -8,13 +8,24 @@
 #' found in (physchem, absorption, distribution, etc.),} \item{notes describing
 #' what the detail is, and} \item{which sheet in the Excel file the information
 #' was pulled from.}} It will also optionally filter the data to return only
-#' specifically requested information.
+#' specifically requested information. \strong{A recent change as of Jan. 2023:}
+#' There are now \emph{so many} possible details that it can be overwhelming to
+#' get all of them! For that reason, we changed the default setting for
+#' \code{omit_all_missing} to be TRUE so that, if there are only NA values for
+#' all the files you're annotating, that detail will be dropped. If you still
+#' get a \emph{ton} of information all at once, we recommend looking at just one
+#' compound at a time. You can set the \code{compoundID} argument to just the
+#' compound ID you want -- "substrate", "inhibitor 1", etc. -- or set the
+#' \code{compound} argument to just the compound you want -- "midazolam" or
+#' "Client Drug X" -- and that will also help make things less overwhelming and
+#' easier to find.
 #'
 #' \emph{Nota bene:} When you initially extracted your simulation experimental
 #' details, if you set \code{annotate_output = TRUE} and \code{show_compound_col
-#' = "concatenate"}, please understand that you cannot go backwards here an
-#' un-concatenate the compound names. You'll still get concatenated compound
-#' names in the output.
+#' = "concatenate"}, please understand that you cannot go backwards here and
+#' un-concatenate the compound names because, once we combine everything, we
+#' don't know which piece of data belonged to which compound. You'll still get
+#' concatenated compound names in the output.
 #'
 #' @param Deets output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}
@@ -31,7 +42,7 @@
 #'   this to "concatenate", you'll get all the possible compound names together;
 #'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
 #'   as the compound.
-#' @param omit_all_missing TRUE or FALSE (default) for whether to omit a detail
+#' @param omit_all_missing TRUE (default) or FALSE for whether to omit a detail
 #'   if the values are NA for all files
 #' @param compoundID optionally supply one or more of "substrate", "primary
 #'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
@@ -91,9 +102,10 @@
 #'   "Transport", or "Trial Design". Not case sensitive. If you want more than
 #'   one, enclose them with \code{c(...)}.
 #'
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My experimental details.csv". If you leave off ".csv",
-#'   it will still be saved as a csv file.
+#' @param save_output optionally save the output by supplying a csv or Excel
+#'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
+#'   details.xlsx". If you leave off the file extension, it will be saved as a
+#'   csv file.
 #'
 #' @return Returns a data.frame of simulation experimental details including the
 #'   following columns: \describe{
@@ -154,7 +166,7 @@ annotateDetails <- function(Deets,
                             find_matching_details = NA,
                             simulator_section = NA, 
                             show_compound_col = TRUE,
-                            omit_all_missing = FALSE, 
+                            omit_all_missing = TRUE, 
                             save_output = NA){
     
     # Error catching --------------------------------------------------------
@@ -232,6 +244,70 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_met2" | Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
+    
+    if("Abs_model_sub" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "substrate" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_inhib" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "inhibitor 1" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_inhib2" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "inhibitor 2" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_met1" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "primary metabolite 1" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_met2" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "primary metabolite 2" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_secmet" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "secondary metabolite" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
+    if("Abs_model_inhib1met" %in% names(Deets) &&
+       any(Deets$Abs_model_sub == "ADAM") == FALSE){
+        Out <- Out %>% 
+            filter(Detail %in% (AllExpDetails %>%
+                                    filter(CompoundID == "inhibitor 1 metabolite" & 
+                                               ADAMParameter == TRUE) %>%
+                                    pull(Detail)) == FALSE)
+    }
+    
     
     CompoundNames <- Out %>%
         filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
@@ -494,34 +570,48 @@ annotateDetails <- function(Deets,
     
     # Pivoting wider again ------------------------------------------------
     
-    # Checking for details that are the SAME across all files
-    AllSame <- Out %>% 
-        group_by(across(.cols = any_of(c("Detail", "CompoundID", "Compound")))) %>% 
-        summarize(Length = length(unique(Value)), 
-                  UniqueVal = unique(Value)[1]) %>% 
-        filter(Length == 1) %>% 
-        select(-Length)
+    AllFiles <- unique(Out$File)
     
-    suppressMessages(
-        Out <- Out %>% 
-            pivot_wider(names_from = File, 
-                        values_from = Value) %>%
-            left_join(AllSame) %>% 
-            select(any_of(c("SimulatorSection", "Sheet", "Notes",
-                            "CompoundID", "Compound", "Detail", 
-                            "UniqueVal")), 
-                   everything())
-    )
+    Out <- Out %>% 
+        pivot_wider(names_from = File, 
+                    values_from = Value)
     
-    if("Compound" %in% names(Out)){
-        Out <- Out %>% 
-            mutate(ToOmit = complete.cases(CompoundID) & 
-                       is.na(Compound)) %>% 
-            filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
-            rename("All files have this value for this compound ID and compound" = UniqueVal)
-    } else {
-        Out <- Out %>% 
-            rename("All files have this value for this compound ID" = UniqueVal)
+    if(length(AllFiles) > 1){
+        # Checking for details that are the SAME across all files
+        AllSame <- Out %>% 
+            select(any_of(c("CompoundID", "Compound", "Detail")),
+                   matches("xlsx$")) %>% 
+            pivot_longer(cols = matches("xlsx$"), 
+                         names_to = "File", values_to = "Value") %>% 
+            group_by(across(.cols = any_of(c("Detail", "CompoundID", "Compound")))) %>% 
+            summarize(Length = length(unique(Value)), 
+                      UniqueVal = unique(Value)[1]) %>% 
+            filter(Length == 1) %>% 
+            select(-Length)
+        
+        suppressMessages(
+            Out <- Out %>%
+                left_join(AllSame)
+        )
+    }
+    
+    Out <- Out %>% 
+        select(any_of(c("SimulatorSection", "Sheet", "Notes",
+                        "CompoundID", "Compound", "Detail", 
+                        "UniqueVal")), 
+               everything())
+    
+    if("UniqueVal" %in% names(Out)){
+        if("Compound" %in% names(Out)){
+            Out <- Out %>% 
+                mutate(ToOmit = complete.cases(CompoundID) & 
+                           is.na(Compound)) %>% 
+                filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
+                rename("All files have this value for this compound ID and compound" = UniqueVal)
+        } else {
+            Out <- Out %>% 
+                rename("All files have this value for this compound ID" = UniqueVal)
+        }
     }
     
     # Removing anything that was all NA's if that's what user requested
@@ -535,17 +625,36 @@ annotateDetails <- function(Deets,
     
     # Saving ---------------------------------------------------------------
     if(complete.cases(save_output)){
-        
-        if(str_detect(save_output, "\\.")){
-            # If they specified a file extension, replace whatever they supplied
-            # with csv b/c that's the only option for file format here.
-            FileName <- sub("\\..*", ".csv", save_output)
+        FileName <- save_output
+        if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
+                          Ext, "csv")
+            FileName <- paste0(FileName, ".", Ext)
         } else {
-            # If they didn't specify file extension, make it csv.
-            FileName <- paste0(save_output, ".csv")
+            FileName <- paste0(FileName, ".csv")
+            Ext <- "csv"
         }
         
-        write.csv(Out, FileName, row.names = F)
+        switch(Ext, 
+               "csv" = write.csv(Out, FileName, row.names = F), 
+               "xlsx" = formatXL(
+                   Out, FileName, sheet = "Simulation experimental details",
+                   styles = list(
+                       list(columns = which(names(Out) == "Notes"), 
+                            textposition = list(wrapping = TRUE)),
+                       list(rows = 0, font = list(bold = TRUE),
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE)), 
+                       list(columns = which(str_detect(names(Out), "All files have this value")),
+                            fill = "#E7F3FF"), 
+                       list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
+                            font = list(bold = TRUE), 
+                            textposition = list(alignment = "middle",
+                                                wrapping = TRUE), 
+                            fill = "#E7F3FF"))))
     }
     
     return(Out)
