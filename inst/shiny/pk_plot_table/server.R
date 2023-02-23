@@ -2,12 +2,12 @@
 # Server code for Simcyp output analysis
 
 ## Load the required packages
-library(SimcypConsultancy)
-library(tidyverse)
-library(shiny)
-library(shinyjs)
-library(shinyFiles)
-library(ggplot2)
+# library(SimcypConsultancy)
+# library(tidyverse)
+# library(shiny)
+# library(shinyjs)
+# library(shinyFiles)
+# library(ggplot2)
 
 options(shiny.maxRequestSize=1000*1024^2)
 
