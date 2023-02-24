@@ -463,10 +463,10 @@ extractExpDetails <- function(sim_data_file,
         }
         
         # pullValue doesn't work for CL, so those are separate. Also need
-        # to do StartDayTime_x and ADCSimulation separately.
+        # to do StartDayTime_x, SimulatorVersion, and ADCSimulation separately.
         MyInputDeets1 <-
             MyInputDeets[!str_detect(MyInputDeets, 
-                                     "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation")]
+                                     "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation|SimulatorVersion")]
         
         if(length(MyInputDeets1) > 0){
             for(i in MyInputDeets1){
@@ -478,6 +478,10 @@ extractExpDetails <- function(sim_data_file,
         Out[["ADCSimulation"]] <- 
             str_detect(as.character(InputTab[, 1]), 
                        InputDeets %>% filter(Deet == "ADCSimulation") %>% pull(Regex))
+        
+        # Checking simulator version
+        Out[["SimulatorVersion"]] <- str_extract(as.character(InputTab[3, 1]),
+                                                 "Version [12][0-9]")
         
         # Pulling CL info
         MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
@@ -1230,16 +1234,16 @@ extractExpDetails <- function(sim_data_file,
     }
     
     if(is.null(Out$Regimen_inhib1) == FALSE && 
-       (complete.cases(Out$Inhibitor1 & 
+       (complete.cases(Out$Inhibitor1) & 
                        complete.cases(Out$Regimen_inhib1) && 
-                       (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1)))){
+                       (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1))){
         Out$Regimen_inhib1 <- "Single Dose" 
     }
     
     if(is.null(Out$Regimen_inhib2) == FALSE && 
-       (complete.cases(Out$Inhibitor2 & 
+       (complete.cases(Out$Inhibitor2) & 
                        complete.cases(Out$Regimen_inhib2) && 
-                       (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1)))){
+                       (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1))){
         Out$Regimen_inhib2 <- "Single Dose" 
     }
     

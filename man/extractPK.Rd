@@ -9,6 +9,7 @@ extractPK(
   PKparameters = "AUC tab",
   sheet = NA,
   tissue = "plasma",
+  compoundID = "substrate",
   returnAggregateOrIndiv = "aggregate",
   includeTrialInfo = TRUE,
   returnExpDetails = FALSE,
@@ -60,6 +61,13 @@ parameter names do not include the suffixes "_last" or "_dose1".}
 Options are "plasma" (default) or "blood" (possible but not as thoroughly
 tested).}
 
+\item{compoundID}{For which compund ID would you like the PK parameters to be
+pulled? Options are "substrate", "primary metabolite 1", "primary
+metabolite 2", "inhibitor 1", or "inhibitor 2". Note from the package
+authors: We haven't found an instance where the Simulator exports PK
+parameters for the secondary metabolite or the inhibitor 1 metabolite, so
+those are not set up.}
+
 \item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
 parameters? Options are "aggregate", "individual", or "both". For aggregate
 data, values are pulled from simulator output -- not calculated -- and the
@@ -103,7 +111,7 @@ parameters, but it's on our to-do list.
 sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"
 extractPK(sim_data_file)
 extractPK(sim_data_file, PKparameters = "Absorption tab")
-extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
+extractPK(sim_data_file, PKparameters = c("AUCinf_dose1", "Cmax_dose1"))
 
 
 }
