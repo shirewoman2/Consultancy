@@ -86,7 +86,7 @@ extractAUCXtab <- function(PKparameters,
             # They'll get what they get! :-D
             if(any(PKparameters_orig %in% c("all", "AUC tab", "Absorption tab")) == FALSE){
                 warning(paste0("The column with information for ", i,
-                               " on the tab ", sheet, " cannot be found in the file ", 
+                               " on the tab ", Sheet, " cannot be found in the file ", 
                                sim_data_file, "."), 
                         call. = FALSE)
             }

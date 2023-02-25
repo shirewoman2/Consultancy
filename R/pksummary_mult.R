@@ -3,6 +3,16 @@
 #' @param sim_data_files a character vector of simulator output files, e.g.,
 #'   \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
 #'   want all the Excel files in the current folder, \code{sim_data_files = NA}.
+#' @param compoundsToExtract For which compound(s) do you want to extract PK
+#'   data? Options are any combination of the following:
+#'   \itemize{\item{"substrate" (default),} \item{"primary metabolite 1",}
+#'   \item{"primary metabolite 2",} \item{"secondary metabolite",}
+#'   \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+#'   suppresesor, but it's labeled as "Inhibitor 1" in the simulator,}
+#'   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation,}
+#'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}}
+#'   To specify multiple compounds, enclose the compound IDs with parentheses,
+#'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
 #'   vector, or an Excel or csv file with observed PK parameters, supply the
 #'   full file name in quotes or the data.frame or vector here, and the
@@ -55,13 +65,12 @@
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
-#' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'   tested).
+#' @param tissues For which tissue(s) would you like the PK parameters to be
+#'   pulled? Options are any combination of "plasma" (default), "unbound
+#'   plasma", "blood", or "unbound blood". For multiple tissues, enclose them
+#'   with parentheses, e.g., \code{tissues = c("blood", "plasma")}
 #' @param mean_type What kind of means and CVs do you want listed in the output
-#'   table? Options are "arithmetic" or "geometric" (default). If you supplied a
-#'   report input form, only specify this if you'd like to override the value
-#'   listed there.
+#'   table? Options are "arithmetic" or "geometric" (default).
 #' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
 #'   range of trial means for a given parameter. Note: This is calculated from
 #'   individual values rather than being pulled directly from the output.
@@ -118,6 +127,7 @@
 #'   your local (not OneDrive) Documents folder.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param ...
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
 #'   simulator output files
@@ -141,12 +151,14 @@
 #' 
 
 pksummary_mult <- function(sim_data_files = NA, 
+                           tissue = "plasma", 
+                           compoundsToExtract = "substrate",
+                           tissues = "plasma", 
                            PKparameters = NA,
                            PKorder = "default", 
                            sheet_PKparameters = NA, 
                            observed_PK = NA,
                            mean_type = NA, 
-                           tissue = "plasma", 
                            includeCV = TRUE, 
                            includeConfInt = TRUE, 
                            includeRange = FALSE,
@@ -236,7 +248,6 @@ pksummary_mult <- function(sim_data_files = NA,
     FD <- list()
     
     for(i in sim_data_files){
-        
         # This warning only applies if they have both provided values for
         # sim_data_files AND files in observed_PKDF$File.
         if(exists("observed_PKDF", inherits = FALSE) && 
@@ -247,54 +258,85 @@ pksummary_mult <- function(sim_data_files = NA,
             next
         }
         
+        MyPKResults[[i]] <- list()
+        OutQC[[i]] <- list()
+        FD[[i]] <- list()
+        
         print(paste("Extracting data from", i))
         
-        temp <- pksummary_table(
-            sim_data_file = i,
-            observed_PK = switch(
-                as.character(exists("observed_PKDF", inherits = FALSE) &&
-                                 i %in% observed_PKDF$File), 
-                "TRUE" = observed_PKDF[i, ], 
-                "FALSE" = NA),
-            PKparameters = PKparameters, 
-            PKorder = PKorder, 
-            sheet_PKparameters = sheet_PKparameters, 
-            mean_type = mean_type,
-            tissue = tissue, 
-            includeCV = includeCV,
-            includeRange = includeRange,
-            includeConfInt = includeConfInt, 
-            includePerc = includePerc, 
-            includeTrialMeans = includeTrialMeans,
-            concatVariability = concatVariability,
-            adjust_conc_units = adjust_conc_units,
-            prettify_columns = prettify_columns, 
-            extract_forest_data = extract_forest_data,
-            checkDataSource = checkDataSource,
-            prettify_compound_names = c("inhibitor" = "effector",
-                                        "substrate" = "substrate"))
-        
-        if(length(temp) == 0){
-            rm(temp)
-            next
+        for(j in compoundsToExtract){
+            print(paste("Extracting data for compound =", j))
+            
+            MyPKResults[[i]][[j]] <- list()
+            OutQC[[i]][[j]] <- list()
+            FD[[i]][[j]] <- list()
+            
+            for(k in tissues){
+                print(paste("Extracting data for tissue =", k))
+                
+                temp <- pksummary_table(
+                    sim_data_file = i,
+                    compoundToExtract = j,
+                    tissue = k, 
+                    observed_PK = switch(
+                        as.character(exists("observed_PKDF", inherits = FALSE) &&
+                                         i %in% observed_PKDF$File), 
+                        "TRUE" = observed_PKDF[i, ], 
+                        "FALSE" = NA),
+                    PKparameters = PKparameters, 
+                    PKorder = PKorder, 
+                    sheet_PKparameters = sheet_PKparameters, 
+                    mean_type = mean_type,
+                    includeCV = includeCV,
+                    includeRange = includeRange,
+                    includeConfInt = includeConfInt, 
+                    includePerc = includePerc, 
+                    includeTrialMeans = includeTrialMeans,
+                    concatVariability = concatVariability,
+                    adjust_conc_units = adjust_conc_units,
+                    prettify_columns = prettify_columns, 
+                    extract_forest_data = extract_forest_data,
+                    checkDataSource = checkDataSource,
+                    prettify_compound_names = c("inhibitor" = "effector",
+                                                "substrate" = "substrate"))
+                
+                if(length(temp) == 0){
+                    rm(temp)
+                    next
+                }
+                
+                MyPKResults[[i]][[j]][[k]] <- switch(as.character("list" %in% class(temp)), 
+                                                     "TRUE" = temp$Table, 
+                                                     "FALSE" = temp) %>% 
+                    mutate(File = i, 
+                           CompoundID = j, 
+                           Tissue = k)
+                
+                if(checkDataSource){
+                    OutQC[[i]][[j]][[k]] <- temp$QC
+                } 
+                
+                if(extract_forest_data){
+                    FD[[i]][[j]][[k]] <- temp$ForestData
+                }
+                
+                rm(temp)
+            }
+            
+            MyPKResults[[i]][[j]] <- bind_rows(MyPKResults[[i]][[j]])
+            OutQC[[i]][[j]] <- bind_rows(OutQC[[i]][[j]])
+            FD[[i]][[j]] <- bind_rows(FD[[i]][[j]])
         }
         
-        MyPKResults[[i]] <- switch(as.character("list" %in% class(temp)), 
-                                   "TRUE" = temp$Table, 
-                                   "FALSE" = temp) %>% 
-            mutate(File = i)
+        MyPKResults[[i]] <- bind_rows(MyPKResults[[i]])
+        OutQC[[i]] <- bind_rows(OutQC[[i]])
+        FD[[i]] <- bind_rows(FD[[i]])
         
-        if(checkDataSource){
-            OutQC[[i]] <- temp$QC
-        } 
-        
-        if(extract_forest_data){
-            FD[[i]] <- temp$ForestData
-        }
-        
-        rm(temp)
     }
     
+    MyPKResults <- bind_rows(MyPKResults)
+    OutQC <- bind_rows(OutQC)
+    FD <- bind_rows(FD)
     
     if(length(MyPKResults) == 0){
         warning("No PK values could be found in the supplied files.", 
@@ -317,7 +359,7 @@ pksummary_mult <- function(sim_data_files = NA,
         
         suppressMessages(
             MyPKResults <- MyPKResults %>% 
-                select(Statistic, 
+                select(Statistic, CompoundID, Tissue,
                        any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
                                   left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
                                   filter(complete.cases(SortOrder)) %>% 
@@ -329,12 +371,10 @@ pksummary_mult <- function(sim_data_files = NA,
     } else {
         
         MyPKResults <- bind_rows(MyPKResults) %>% 
-            select(Statistic, 
+            select(Statistic, CompoundIT, Tissue,
                    any_of(PKparameters), everything()) %>% 
             relocate(File, .after = last_col())
     }
-    
-    OutQC <- bind_rows(OutQC)
     
     ## Saving --------------------------------------------------------------
     if(complete.cases(save_table)){

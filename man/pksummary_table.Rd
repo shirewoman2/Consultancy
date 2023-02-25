@@ -6,6 +6,8 @@
 \usage{
 pksummary_table(
   sim_data_file = NA,
+  tissue = "plasma",
+  compoundToExtract = "substrate",
   PKparameters = NA,
   PKorder = "default",
   sheet_PKparameters = NA,
@@ -13,7 +15,6 @@ pksummary_table(
   report_input_file = NA,
   sheet_report = NA,
   mean_type = NA,
-  tissue = "plasma",
   includeCV = TRUE,
   includeConfInt = TRUE,
   includeRange = FALSE,
@@ -36,6 +37,19 @@ a data.frame of observed PK or a csv or Excel file of observed PK for
 leave this blank. Similarly, if you supply a filled-out report input form
 to the argument \code{report_input_file}, the file name you supplied
 \emph{there} will be used preferentially, and you can leave this blank.}
+
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+blood".}
+
+\item{compoundToExtract}{For which compound do you want to extract
+PK data? Options are: \itemize{\item{"substrate"
+(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+inducer, inhibitor, activator, or suppresesor, but it's labeled as
+"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+metabolite of inhibitor 1}}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{
@@ -110,10 +124,6 @@ simulator output Excel file for \code{sim_data_file}, ignore this.}
 table? Options are "arithmetic" or "geometric" (default). If you supplied a
 report input form, only specify this if you'd like to override the value
 listed there.}
-
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}

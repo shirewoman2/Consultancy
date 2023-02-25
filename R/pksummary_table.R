@@ -153,8 +153,16 @@
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'   tested).
+#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+#'   blood".
+#' @param compoundToExtract For which compound do you want to extract
+#'   PK data? Options are: \itemize{\item{"substrate"
+#'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+#'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+#'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
+#'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+#'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+#'   metabolite of inhibitor 1}}
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
 #'   vector, or an Excel or csv file with observed PK parameters, supply the
 #'   full file name in quotes or the data.frame or vector here, and the
@@ -282,6 +290,8 @@
 #' 
 
 pksummary_table <- function(sim_data_file = NA, 
+                            tissue = "plasma", 
+                            compoundToExtract = "substrate",
                             PKparameters = NA,
                             PKorder = "default", 
                             sheet_PKparameters = NA,
@@ -289,7 +299,6 @@ pksummary_table <- function(sim_data_file = NA,
                             report_input_file = NA,
                             sheet_report = NA,
                             mean_type = NA,
-                            tissue = "plasma",
                             includeCV = TRUE,
                             includeConfInt = TRUE,
                             includeRange = FALSE,
@@ -312,8 +321,8 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Check for appropriate input for arguments
     tissue <- tolower(tissue)
-    if(tissue %in% c("plasma", "blood") == FALSE){
-        warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+    if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
+        warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
                 call. = FALSE)
         tissue <- "plasma"
     }
@@ -656,6 +665,7 @@ pksummary_table <- function(sim_data_file = NA,
         MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                      PKparameters = PKToPull,
                                      tissue = tissue,
+                                     compoundToExtract = compoundToExtract,
                                      sheet = sheet_PKparameters, 
                                      returnAggregateOrIndiv =
                                          switch(as.character(includeTrialMeans),

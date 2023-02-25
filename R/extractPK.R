@@ -46,15 +46,17 @@
 #'   for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
 #'   This has NOT been as well tested, though, so be sure to check that you're
 #'   getting what you expected!
-#' @param compoundID For which compund ID would you like the PK parameters to be
-#'   pulled? Options are "substrate", "primary metabolite 1", "primary
-#'   metabolite 2", "inhibitor 1", or "inhibitor 2". Note from the package
-#'   authors: We haven't found an instance where the Simulator exports PK
-#'   parameters for the secondary metabolite or the inhibitor 1 metabolite, so
-#'   those are not set up.
+#' @param compoundToExtract For which compound do you want to extract
+#'   PK data? Options are: \itemize{\item{"substrate"
+#'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+#'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+#'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
+#'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+#'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+#'   metabolite of inhibitor 1}}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'   tested).
+#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+#'   blood".
 #' @param returnAggregateOrIndiv return aggregate (default) and/or individual PK
 #'   parameters? Options are "aggregate", "individual", or "both". For aggregate
 #'   data, values are pulled from simulator output -- not calculated -- and the
@@ -94,7 +96,7 @@ extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
                       sheet = NA,
                       tissue = "plasma",
-                      compoundID = "substrate",
+                      compoundToExtract = "substrate",
                       returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
                       returnExpDetails = FALSE, 
@@ -149,6 +151,13 @@ extractPK <- function(sim_data_file,
              call. = FALSE)
     }
     
+    tissue <- tolower(tissue)
+    if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
+        warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+                call. = FALSE)
+        tissue <- "plasma"
+    }
+    
     
     # Main body of function ---------------------------------------------------
     
@@ -200,7 +209,7 @@ extractPK <- function(sim_data_file,
     # last dose, respectively. 
     
     Tab_AUC <- switch(
-        compoundID, 
+        compoundToExtract, 
         "substrate" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?$")][1],
         "primary metabolite 1" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Sub Pri Met1\\)$")][1],
         "primary metabolite 2" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Sub Pri Met2\\)$")][1],
@@ -209,7 +218,7 @@ extractPK <- function(sim_data_file,
         "inhibitor 2" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 2\\)$")][1],
         "inhibitor 1 metabolite" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 1 Met\\)$")][1])
     
-    if(Deets$Species != "human" & compoundID == "substrate"){
+    if(Deets$Species != "human" & compoundToExtract == "substrate"){
         # If it's from Simcyp Discovery, there's only one AUC sheet and
         # it's either for the only dose in a SD sim or the last dose for
         # a MD sim. Not sure about the regular Simcyp Animal, though. 
@@ -222,7 +231,7 @@ extractPK <- function(sim_data_file,
         Tab_first <- SheetNames[
             str_detect(SheetNames, 
                        paste0("Int AUC 1st", 
-                              switch(compoundID,
+                              switch(compoundToExtract,
                                      "substrate" = "\\(Sub\\)", 
                                      "primary metabolite 1" = "\\(Sub Met\\)",
                                      "primary metabolite 2" = "\\(Sub Met2\\)",
@@ -239,7 +248,7 @@ extractPK <- function(sim_data_file,
         Tab_last <- SheetNames[
             str_detect(SheetNames, 
                        paste0("Int AUC last", 
-                              switch(compoundID,
+                              switch(compoundToExtract,
                                      "substrate" = "\\(Sub\\)", 
                                      "primary metabolite 1" = "\\(Sub Met\\)",
                                      "primary metabolite 2" = "\\(Sub Met2\\)",
@@ -258,7 +267,7 @@ extractPK <- function(sim_data_file,
         Tab_first <- SheetNames[
             str_detect(SheetNames, 
                        paste0("AUC0", 
-                              switch(compoundID,
+                              switch(compoundToExtract,
                                      "substrate" = "\\(Sub\\)", 
                                      "primary metabolite 1" = "\\(Sub Met\\)",
                                      "primary metabolite 2" = "\\(Sub Met2\\)",
@@ -278,7 +287,7 @@ extractPK <- function(sim_data_file,
         Tab_last_check <- SheetNames[
             str_detect(SheetNames, 
                        paste0("AUC(t)?[1-9]{1,}", 
-                              switch(compoundID,
+                              switch(compoundToExtract,
                                      "substrate" = "\\(Sub\\)", 
                                      "primary metabolite 1" = "\\(Sub Met\\)",
                                      "primary metabolite 2" = "\\(Sub Met2\\)",
@@ -397,14 +406,14 @@ extractPK <- function(sim_data_file,
                              AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenEffectorPresent == FALSE]]
     }
     
-    if((compoundID %in% c("substrate", "primary metabolite 1", 
+    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
                           "primary metabolite 2", "secondary metabolite") &
         Deets$Regimen_sub == "Single Dose") |
        (complete.cases(Deets$Inhibitor1) && 
-        compoundID %in% c("inhibitor 1", "inhibitor 1 metabolite")
+        compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
         && Deets$Regimen_inhib == "Single Dose") |
        (complete.cases(Deets$Inhibitor2) &&
-        compoundID %in% c("inhibitor 2") && 
+        compoundToExtract %in% c("inhibitor 2") && 
         Deets$Regimen_inhib2 == "Single Dose")){
         
         PKparameters <- 
@@ -421,14 +430,14 @@ extractPK <- function(sim_data_file,
     # parameter was not found. Also, I'm removing some parameters that are not
     # completely clearly and unequivocably labeled so that they can be pulled
     # from sheets where they *are* so labeled. 
-    if((compoundID %in% c("substrate", "primary metabolite 1", 
+    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
                           "primary metabolite 2", "secondary metabolite") &
         Deets$Regimen_sub == "Multiple Dose") |
        (complete.cases(Deets$Inhibitor1) && 
-        compoundID %in% c("inhibitor 1", "inhibitor 1 metabolite")
+        compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
         && Deets$Regimen_inhib == "Multiple Dose") |
        (complete.cases(Deets$Inhibitor2) &&
-        compoundID %in% c("inhibitor 2") && 
+        compoundToExtract %in% c("inhibitor 2") && 
         Deets$Regimen_inhib2 == "Multiple Dose")){
         
         ParamAUC <- setdiff(ParamAUC,
@@ -775,7 +784,7 @@ extractPK <- function(sim_data_file,
     if(length(PKparameters_AUC0) > 0 & complete.cases(Tab_first) &
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
         PKparameters_orig[1] == "AUC tab" & "AUC" %in% SheetNames == FALSE |
-        PKparameters_orig[1] == "AUC tab" & compoundID != "substrate")){
+        PKparameters_orig[1] == "AUC tab" & compoundToExtract != "substrate")){
         # Error catching
         # if(any(str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
         #     # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")

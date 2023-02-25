@@ -6,12 +6,14 @@
 \usage{
 pksummary_mult(
   sim_data_files = NA,
+  tissue = "plasma",
+  compoundsToExtract = "substrate",
+  tissues = "plasma",
   PKparameters = NA,
   PKorder = "default",
   sheet_PKparameters = NA,
   observed_PK = NA,
   mean_type = NA,
-  tissue = "plasma",
   includeCV = TRUE,
   includeConfInt = TRUE,
   includeRange = FALSE,
@@ -31,6 +33,22 @@ pksummary_mult(
 \item{sim_data_files}{a character vector of simulator output files, e.g.,
 \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
 want all the Excel files in the current folder, \code{sim_data_files = NA}.}
+
+\item{compoundsToExtract}{For which compound(s) do you want to extract PK
+data? Options are any combination of the following:
+\itemize{\item{"substrate" (default),} \item{"primary metabolite 1",}
+\item{"primary metabolite 2",} \item{"secondary metabolite",}
+\item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+suppresesor, but it's labeled as "Inhibitor 1" in the simulator,}
+\item{"inhibitor 2" for the 2nd inhibitor listed in the simulation,}
+\item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}}
+To specify multiple compounds, enclose the compound IDs with parentheses,
+e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}}
+
+\item{tissues}{For which tissue(s) would you like the PK parameters to be
+pulled? Options are any combination of "plasma" (default), "unbound
+plasma", "blood", or "unbound blood". For multiple tissues, enclose them
+with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{
@@ -89,13 +107,7 @@ parameters, add "_CV" to the end of the parameter name, e.g.,
 examples of how to set this up.}
 
 \item{mean_type}{What kind of means and CVs do you want listed in the output
-table? Options are "arithmetic" or "geometric" (default). If you supplied a
-report input form, only specify this if you'd like to override the value
-listed there.}
-
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
+table? Options are "arithmetic" or "geometric" (default).}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}
@@ -164,6 +176,8 @@ your local (not OneDrive) Documents folder.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
+
+\item{...}{}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple

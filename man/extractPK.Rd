@@ -9,7 +9,7 @@ extractPK(
   PKparameters = "AUC tab",
   sheet = NA,
   tissue = "plasma",
-  compoundID = "substrate",
+  compoundToExtract = "substrate",
   returnAggregateOrIndiv = "aggregate",
   includeTrialInfo = TRUE,
   returnExpDetails = FALSE,
@@ -58,15 +58,17 @@ we don't know which dose these data were for, you'll see that the output
 parameter names do not include the suffixes "_last" or "_dose1".}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
+Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+blood".}
 
-\item{compoundID}{For which compund ID would you like the PK parameters to be
-pulled? Options are "substrate", "primary metabolite 1", "primary
-metabolite 2", "inhibitor 1", or "inhibitor 2". Note from the package
-authors: We haven't found an instance where the Simulator exports PK
-parameters for the secondary metabolite or the inhibitor 1 metabolite, so
-those are not set up.}
+\item{compoundToExtract}{For which compound do you want to extract
+PK data? Options are: \itemize{\item{"substrate"
+(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+inducer, inhibitor, activator, or suppresesor, but it's labeled as
+"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+metabolite of inhibitor 1}}}
 
 \item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
 parameters? Options are "aggregate", "individual", or "both". For aggregate
