@@ -37,9 +37,6 @@ extractExpDetails you said \code{exp_details = "Input Sheet"} or
 that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
-
-\item{fromMultFunction}{INTERNAL USE ONLY. TRUE or FALSE on whether this is
-being called on by \code{\link{extractConcTime_mult}}.}
 }
 \value{
 A data.frame of enzyme abundance with time with the following

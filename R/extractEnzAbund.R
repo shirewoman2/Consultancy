@@ -27,8 +27,6 @@
 #'   that object here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
-#' @param fromMultFunction INTERNAL USE ONLY. TRUE or FALSE on whether this is
-#'   being called on by \code{\link{extractConcTime_mult}}.
 #'
 #' @return A data.frame of enzyme abundance with time with the following
 #'   columns: \describe{
@@ -116,7 +114,7 @@ extractEnzAbund <- function(sim_data_file,
     enzyme <- gsub(" |_|-", "", toupper(enzyme))
     
     # Getting summary data for the simulation(s)
-    if(fromMultFunction | class(existing_exp_details) != "logical"){
+    if(class(existing_exp_details) != "logical"){
         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                         "TRUE" = existing_exp_details, 
                         "FALSE" = deannotateDetails(existing_exp_details))
