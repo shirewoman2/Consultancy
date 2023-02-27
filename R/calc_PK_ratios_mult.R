@@ -231,7 +231,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
     
     for(i in 1:nrow(sim_data_file_pairs)){
         # Including a progress message
-        print(paste0("Extracting data for file pair #", i))
+        message("Extracting data for file pair #", i)
         
         TEMP <- calc_PK_ratios(
             sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
