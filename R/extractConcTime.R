@@ -263,7 +263,7 @@ extractConcTime <- function(sim_data_file,
                           "cumulative fraction released")
     
     # Getting summary data for the simulation(s)
-    if(fromMultFunction | class(existing_exp_details) != "logical"){
+    if(fromMultFunction | ("logical" %in% class(existing_exp_details) == FALSE)){
         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                         "TRUE" = existing_exp_details, 
                         "FALSE" = deannotateDetails(existing_exp_details))

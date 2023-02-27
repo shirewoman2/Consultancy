@@ -301,8 +301,8 @@
 #' 
 
 pksummary_table <- function(sim_data_file = NA, 
-                            tissue = "plasma", 
                             compoundToExtract = "substrate",
+                            tissue = "plasma", 
                             PKparameters = NA,
                             PKorder = "default", 
                             sheet_PKparameters = NA,
@@ -550,7 +550,7 @@ pksummary_table <- function(sim_data_file = NA,
     
     # First, the scenarios where there are observed data to compare from a
     # filled-out report template (sectionInfo exists)
-    if(class(sectionInfo) != "logical"){
+    if("logical" %in% class(sectionInfo) == FALSE){
         
         MeanType <- ifelse(is.na(mean_type),
                            sectionInfo$ObsData$MeanType,
@@ -574,7 +574,8 @@ pksummary_table <- function(sim_data_file = NA,
         # this to be whatever mean type they set for the main mean type and it's
         # just going to be confusing to change it. If it turns out to be an
         # issue, revisit this. - LSh
-        # Getting summary data for the simulation(s)
+        
+        # Checking experimental details to only pull details that apply
         if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
             Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                        exp_details = "Summary tab")
@@ -647,7 +648,7 @@ pksummary_table <- function(sim_data_file = NA,
         
     } else {
         
-        if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
+        if("logical" %in% class(sectionInfo)){ # sectionInfo is logical if they did not supply a report input form
             if("data.frame" %in% class(observed_PK)){
                 # If user supplies an observed file, then pull the parameters
                 # they want to match. If user specified "_first" instead of
@@ -724,6 +725,7 @@ pksummary_table <- function(sim_data_file = NA,
                                      tissue = tissue,
                                      compoundToExtract = compoundToExtract,
                                      sheet = sheet_PKparameters, 
+                                     existing_exp_details = existing_exp_details,
                                      returnAggregateOrIndiv =
                                          switch(as.character(includeTrialMeans),
                                                 "TRUE" = c("aggregate", "individual"),

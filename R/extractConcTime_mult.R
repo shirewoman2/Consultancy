@@ -311,14 +311,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
     }
     
     # Tidying and error catching for any observed data
-    if(class(obs_to_sim_assignment)[1] == "logical"){
+    if("logical" %in% class(obs_to_sim_assignment)){
         # this is when the user has not specified anything for
         # obs_to_sim_assignment.
         ObsAssign <- list()
         
     } else {
         
-        if(class(obs_to_sim_assignment)[1] == "character"){
+        if("character" %in% class(obs_to_sim_assignment)){
             if(any(str_detect(obs_to_sim_assignment, ".csv$"))){
                 # user has supplied a csv file for designating obs and sim
                 # assignments.
@@ -433,7 +433,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
         MultData[[ff]] <- list()
         
         # Getting summary data for the simulation(s)
-        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+        if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
             Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
         } else {
             Deets <- switch(as.character("File" %in% names(existing_exp_details)), 

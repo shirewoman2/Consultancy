@@ -114,7 +114,7 @@ extractEnzAbund <- function(sim_data_file,
     enzyme <- gsub(" |_|-", "", toupper(enzyme))
     
     # Getting summary data for the simulation(s)
-    if(class(existing_exp_details) != "logical"){
+    if("logical" %in% class(existing_exp_details) == FALSE){
         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                         "TRUE" = existing_exp_details, 
                         "FALSE" = deannotateDetails(existing_exp_details))
