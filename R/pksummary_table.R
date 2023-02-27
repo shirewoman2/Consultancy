@@ -596,7 +596,7 @@ pksummary_table <- function(sim_data_file = NA,
         # We need to know the dosing regimen for whatever compound they
         # requested, but, if the compoundID is inhibitor 2, then that's listed
         # on the input tab, and we'll need to extract exp details for that, too.
-        if("inhibitor 2" %in% compoundsToExtract){
+        if("inhibitor 2" %in% compoundToExtract){
             DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
                                                  exp_details = "Input Sheet")
             Deets <- c(as.list(Deets), DeetsInputSheet)
