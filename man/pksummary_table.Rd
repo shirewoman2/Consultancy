@@ -194,7 +194,8 @@ c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
-the same time. If set to TRUE, this will return a list that includes data
+the same time. This only applies when the compound to extract is
+the substrate or a substrate metabolite. If set to TRUE, this will return a list that includes data
 formatted for use with the function \code{\link{forest_plot}}. Since the
 \code{\link{forest_plot}} function only works with simulations with
 effectors (at least, for now), this will only work for simulations that

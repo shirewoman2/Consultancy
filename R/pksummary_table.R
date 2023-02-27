@@ -237,7 +237,8 @@
 #'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
-#'   the same time. If set to TRUE, this will return a list that includes data
+#'   the same time. This only applies when the compound to extract is
+#'   the substrate or a substrate metabolite. If set to TRUE, this will return a list that includes data
 #'   formatted for use with the function \code{\link{forest_plot}}. Since the
 #'   \code{\link{forest_plot}} function only works with simulations with
 #'   effectors (at least, for now), this will only work for simulations that
@@ -1095,6 +1096,17 @@ pksummary_table <- function(sim_data_file = NA,
     ## Arranging forest data ------------------------------------------
     
     if(extract_forest_data){
+        
+        # Extracting forest data only works when the compound to extract is the
+        # substrate or a substrate metabolite. Could change that in the future
+        # if there's call for it, but that's all for now.
+        if(compoundToExtract %in% c("substrate", "primary metabolite 1", 
+                                    "primary metabolite 2", 
+                                    "secondary metabolite") == FALSE){
+            warning("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.", 
+                    call. = FALSE)
+        } else {
+        
         FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
                                          Stat %in% c("geomean", "CI90_low", "CI90_high"))
         
@@ -1107,13 +1119,18 @@ pksummary_table <- function(sim_data_file = NA,
             filter(str_detect(Parameter, "AUCinf|AUCt|Cmax")) %>% 
             pivot_wider(names_from = Parameter, values_from = Value) %>% 
             mutate(File = sim_data_file, 
-                   Substrate = Deets$Substrate, 
+                   Substrate = switch(compoundToExtract, 
+                                      "substrate" = Deets$Substrate, 
+                                      "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                                      "primary metabolite 2" = Deets$PrimaryMetabolite2, 
+                                      "secondary metabolite" = Deets$SecondaryMetabolite), 
                    Dose_sub = Deets$Dose_sub, 
                    Inhibitor1 = Deets$Inhibitor1, 
                    Dose_inhib = Deets$Dose_inhib) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                    everything())
         
+        }
     }
     
     ## Putting everything together and formatting -------------------------
