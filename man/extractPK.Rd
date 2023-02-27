@@ -8,8 +8,9 @@ extractPK(
   sim_data_file,
   PKparameters = "AUC tab",
   sheet = NA,
-  tissue = "plasma",
   compoundToExtract = "substrate",
+  tissue = "plasma",
+  existing_exp_details = NA,
   returnAggregateOrIndiv = "aggregate",
   includeTrialInfo = TRUE,
   returnExpDetails = FALSE,
@@ -57,10 +58,6 @@ last dose, this function will work best if this is left as NA. Also, since
 we don't know which dose these data were for, you'll see that the output
 parameter names do not include the suffixes "_last" or "_dose1".}
 
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default), "unbound plasma", "blood", or "unbound
-blood".}
-
 \item{compoundToExtract}{For which compound do you want to extract
 PK data? Options are: \itemize{\item{"substrate"
 (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
@@ -69,6 +66,19 @@ inducer, inhibitor, activator, or suppresesor, but it's labeled as
 "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
 listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
 metabolite of inhibitor 1}}}
+
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+blood".}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+get all the details from the "Input Sheet" (e.g., when you ran
+extractExpDetails you said \code{exp_details = "Input Sheet"} or
+\code{exp_details = "all"}), you can save some processing time by supplying
+that object here, unquoted. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
 
 \item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
 parameters? Options are "aggregate", "individual", or "both". For aggregate

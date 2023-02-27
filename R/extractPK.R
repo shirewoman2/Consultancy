@@ -57,6 +57,14 @@
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
 #'   blood".
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+#'   get all the details from the "Input Sheet" (e.g., when you ran
+#'   extractExpDetails you said \code{exp_details = "Input Sheet"} or
+#'   \code{exp_details = "all"}), you can save some processing time by supplying
+#'   that object here, unquoted. If left as NA, this function will run
+#'   \code{extractExpDetails} behind the scenes to figure out some information
+#'   about your experimental set up.
 #' @param returnAggregateOrIndiv return aggregate (default) and/or individual PK
 #'   parameters? Options are "aggregate", "individual", or "both". For aggregate
 #'   data, values are pulled from simulator output -- not calculated -- and the
@@ -95,8 +103,9 @@
 extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
                       sheet = NA,
-                      tissue = "plasma",
                       compoundToExtract = "substrate",
+                      tissue = "plasma",
+                      existing_exp_details = NA, 
                       returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
                       returnExpDetails = FALSE, 
@@ -193,7 +202,41 @@ extractPK <- function(sim_data_file,
     }
     
     # Checking experimental details to only pull details that apply
-    Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+    if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+        Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                   exp_details = "Summary tab")
+    } else {
+        Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                        "TRUE" = existing_exp_details, 
+                        "FALSE" = deannotateDetails(existing_exp_details))
+        
+        if("data.frame" %in% class(Deets)){
+            Deets <- Deets %>% filter(File == sim_data_file)
+            
+            if(nrow(Deets == 0)){
+                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                           exp_details = "Summary tab")
+            }
+        }
+    }
+    
+    # We need to know the dosing regimen for whatever compound they
+    # requested, but, if the compoundID is inhibitor 2, then that's listed
+    # on the input tab, and we'll need to extract exp details for that, too.
+    if("inhibitor 2" %in% compoundToExtract){
+        DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
+                                             exp_details = "Input Sheet")
+        Deets <- c(as.list(Deets), DeetsInputSheet)
+    }
+    
+    # extractExpDetails will check whether the Excel file provided was, in
+    # fact, a Simulator output file and return a list of length 0 if not.
+    # Checking for that here.
+    if(length(Deets) == 0){
+        # warning(paste0("The file ", sim_data_file, 
+        #                " is not a Simulator output file and will be skipped."))
+        return(list())
+    }
     
     # version <= 20: Has "AUC" tab for each compound that was integrated. Sheet
     # names are harder to decipher: AUC0 is 1st dose, but last dose will be on
