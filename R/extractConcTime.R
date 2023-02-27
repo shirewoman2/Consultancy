@@ -789,11 +789,13 @@ extractConcTime <- function(sim_data_file,
                     if(str_detect(tissue, "portal") | TissueType == "tissue"){
                         if(ADAM){
                             Include <- 
-                                which(str_detect(NamesToCheck,
-                                                 paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
-                                                               "", "^"), 
-                                                        tolower(SimConcUnits$TypeCode[
-                                                            SimConcUnits$Type == n]))))
+                                which(str_detect(
+                                    NamesToCheck,
+                                    paste0(ifelse(str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == n],
+                                                             "dissolved|absorbed"),
+                                                  "", "^"), 
+                                           tolower(SimConcUnits$TypeCode[
+                                               SimConcUnits$Type == n]))))
                             if(tissue == "cumulative fraction released"){
                                 Include <- 2:5
                             }
@@ -885,11 +887,13 @@ extractConcTime <- function(sim_data_file,
                         if(str_detect(tissue, "portal") | TissueType == "tissue"){
                             if(ADAM){
                                 Include <- 
-                                    which(str_detect(NamesToCheck,
-                                                     paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
-                                                                   "", "^"), 
-                                                            tolower(SimConcUnits$TypeCode[
-                                                                SimConcUnits$Type == n]))))
+                                    which(str_detect(
+                                        NamesToCheck,
+                                        paste0(ifelse(str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == n],
+                                                                 "dissolved|absorbed"),
+                                                      "", "^"), 
+                                               tolower(SimConcUnits$TypeCode[
+                                                   SimConcUnits$Type == n]))))
                             } else {
                                 Include <-
                                     which(str_detect(
@@ -1014,7 +1018,8 @@ extractConcTime <- function(sim_data_file,
                         if(ADAM){
                             Include <- 
                                 which(str_detect(NamesToCheck,
-                                                 paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
+                                                 paste0(ifelse(str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == n],
+                                                                          "dissolved|absorbed"),
                                                                "", "^"), 
                                                         tolower(SimConcUnits$TypeCode[
                                                             SimConcUnits$Type == n]))))
@@ -1281,7 +1286,8 @@ extractConcTime <- function(sim_data_file,
                             RowsToUse <- intersect(
                                 which(
                                     str_detect(tolower(sim_data_xl$...1), 
-                                               paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
+                                               paste0(ifelse(str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == n],
+                                                                        "dissolved|absorbed"),
                                                              "", "^"), 
                                                       tolower(SimConcUnits$TypeCode[
                                                           SimConcUnits$Type == n])))), 
@@ -1396,11 +1402,13 @@ extractConcTime <- function(sim_data_file,
                     if(str_detect(tissue, "portal") | TissueType == "tissue"){
                         if(ADAM){
                             Include <- 
-                                which(str_detect(NamesToCheck,
-                                                 paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
-                                                               "", "^"), 
-                                                        SimConcUnits$TypeCode[
-                                                            SimConcUnits$Type == n])))
+                                which(str_detect(
+                                    NamesToCheck,
+                                    paste0(ifelse(str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == n],
+                                                             "dissolved|absorbed"),
+                                                  "", "^"), 
+                                           SimConcUnits$TypeCode[
+                                               SimConcUnits$Type == n])))
                         } else {
                             Include <- which(str_detect(NamesToCheck, NumCheck[m]))
                         }
@@ -1420,7 +1428,8 @@ extractConcTime <- function(sim_data_file,
                         RowsToUse <- intersect(
                             which(
                                 str_detect(tolower(sim_data_xl$...1), 
-                                           paste0(ifelse(str_detect(SimConcUnits$TypeCode, "dissolved|absorbed"),
+                                           paste0(ifelse(str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == n], 
+                                                                    "dissolved|absorbed"),
                                                          "", "^"), 
                                                   tolower(SimConcUnits$TypeCode[
                                                       SimConcUnits$Type == n])))), 
