@@ -390,6 +390,17 @@ pksummary_mult <- function(sim_data_files = NA,
             Deets <- c(as.list(Deets), DeetsInputSheet)
         }
         
+        # Checking that the file is, indeed, a simulator output file.
+        if(length(Deets) == 0){
+            # Using "warning" instead of "stop" here b/c I want this to be able to
+            # pass through to other functions and just skip any files that
+            # aren't simulator output.
+            warning(paste("The file", i,
+                          "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                    call. = FALSE)
+            next()
+        }
+        
         # Only include compounds that are actually present.
         AllPossCompounds <- c("substrate" = Deets$Substrate, 
                               "primary metabolite 1" = Deets$PrimaryMetabolite1, 
@@ -476,15 +487,16 @@ pksummary_mult <- function(sim_data_files = NA,
         
     }
     
-    MyPKResults <- bind_rows(MyPKResults)
-    OutQC <- bind_rows(OutQC)
-    FD <- bind_rows(FD)
-    
     if(length(MyPKResults) == 0){
-        warning("No PK values could be found in the supplied files.", 
+        warning("No PK data could be found in the files ", 
+                str_comma(paste0("`", sim_data_files, "`")),
                 call. = FALSE)
         return(list())
     }
+    
+    MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = length) > 0])
+    OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = length) > 0])
+    FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
     
     if(extract_forest_data & # NOT SURE THIS IS NECESSARY
        any(str_detect(names(bind_rows(MyPKResults)), "ratio")) == FALSE){

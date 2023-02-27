@@ -450,19 +450,6 @@ pksummary_table <- function(sim_data_file = NA,
         }
     }
     
-    # Checking that the file is, indeed, a simulator output file.
-    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                           error = openxlsx::getSheetNames(sim_data_file))
-    if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
-        # Using "warning" instead of "stop" here b/c I want this to be able to
-        # pass through to other functions and just skip any files that
-        # aren't simulator output.
-        warning(paste("The file", sim_data_file,
-                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-                call. = FALSE)
-        return(list())
-    }
-    
     # At this point, observed_PK, if it exists, should be a data.frame b/c it
     # either was a data.frame at the outset, it has been created by reading an
     # Excel or csv file for observed data, or it came from a report input form.
@@ -621,6 +608,17 @@ pksummary_table <- function(sim_data_file = NA,
                               "inhibitor 1" = Deets$Regimen_inhib,
                               "inhibitor 2" = Deets$Regimen_inhib2,
                               "inhibitor 1 metabolite" = Deets$Regimen_inhib)
+    }
+    
+    # Checking that the file is, indeed, a simulator output file.
+    if(length(Deets) == 0){
+        # Using "warning" instead of "stop" here b/c I want this to be able to
+        # pass through to other functions and just skip any files that
+        # aren't simulator output.
+        warning(paste("The file", sim_data_file,
+                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                call. = FALSE)
+        return(list())
     }
     
     if(Deets$PopRepSim == "Yes"){
