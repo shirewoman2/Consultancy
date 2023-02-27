@@ -217,7 +217,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                     enzyme = k,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                    expdetails = Deets)
+                    existing_exp_details = Deets)
                 
             } # end of enzyme k loop
             
