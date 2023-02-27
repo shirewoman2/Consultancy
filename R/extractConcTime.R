@@ -73,9 +73,12 @@
 #'   concentration-time data? Options are "aggregate", "individual", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "Population Statistics".
-#' @param expdetails If you have already run \code{extractExpDetails} to get all
-#'   the details from the "Input Sheet", you can save some processing time by
-#'   supplying it here, unquoted. If left as NA, this function will run
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+#'   get all the details from the "Input Sheet" (e.g., when you ran
+#'   extractExpDetails you said \code{exp_details = "Input Sheet"} or
+#'   \code{exp_details = "all"}), you can save some processing time by supplying
+#'   that object here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
 #' @param fromMultFunction INTERNAL USE ONLY. TRUE or FALSE on whether this is
@@ -160,7 +163,7 @@ extractConcTime <- function(sim_data_file,
                             compoundToExtract = "substrate",
                             returnAggregateOrIndiv = "both",
                             adjust_obs_time = FALSE,
-                            expdetails = NA,
+                            existing_exp_details = NA,
                             fromMultFunction = FALSE){
     
     # Error catching ------------------------------------------------------
@@ -260,10 +263,10 @@ extractConcTime <- function(sim_data_file,
                           "cumulative fraction released")
     
     # Getting summary data for the simulation(s)
-    if(fromMultFunction | class(expdetails) != "logical"){
-        Deets <- switch(as.character("File" %in% names(expdetails)), 
-                        "TRUE" = expdetails, 
-                        "FALSE" = deannotateDetails(expdetails))
+    if(fromMultFunction | class(existing_exp_details) != "logical"){
+        Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                        "TRUE" = existing_exp_details, 
+                        "FALSE" = deannotateDetails(existing_exp_details))
         
         if("data.frame" %in% class(Deets)){
             Deets <- Deets %>% filter(File == sim_data_file)

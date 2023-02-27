@@ -148,11 +148,13 @@
 #'   concentration-time data? Options are "aggregate" (default), "individual",
 #'   or "both". Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "Population Statistics".
-#' @param expdetails If you have already run \code{extractExpDetails_mult} to
-#'   get all the details from the "Input Sheet", you can save some processing
-#'   time by supplying it here, unquoted. If left as NA, this function will run
-#'   \code{extractExpDetails} behind the scenes to figure out some information
-#'   about your experimental set up.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
+#'   Sheet" (e.g., when you ran extractExpDetails_mult you said
+#'   \code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+#'   save some processing time by supplying that object here, unquoted. If left
+#'   as NA, this function will run \code{extractExpDetails} behind the scenes to
+#'   figure out some information about your experimental set up.
 #' @param obs_data_files TO BE DEPRECATED. This is the same argument as
 #'   obs_to_sim_assignment; we just renamed it to try to be clearer about what
 #'   the argument does and in what order you should list the files.
@@ -181,7 +183,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate",
                                  adjust_obs_time = FALSE,
-                                 expdetails = NA,
+                                 existing_exp_details = NA,
                                  obs_data_files = NA, 
                                  ...){
     
@@ -431,12 +433,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
         MultData[[ff]] <- list()
         
         # Getting summary data for the simulation(s)
-        if(class(expdetails) == "logical"){ # logical when user has supplied NA
+        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
             Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
         } else {
-            Deets <- switch(as.character("File" %in% names(expdetails)), 
-                            "TRUE" = expdetails, 
-                            "FALSE" = deannotateDetails(expdetails)) 
+            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                            "TRUE" = existing_exp_details, 
+                            "FALSE" = deannotateDetails(existing_exp_details)) 
             
             if("data.frame" %in% class(Deets)){
                 Deets <- Deets %>% filter(File == sim_data_file)
@@ -526,7 +528,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
                     fromMultFunction = TRUE, 
-                    expdetails = Deets %>% filter(File == ff))
+                    existing_exp_details = Deets %>% filter(File == ff))
                 
                 # When the particular combination of compound and tissue is not
                 # available in that file, extractConcTime will return an empty
@@ -601,7 +603,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             tissue = j,
                             returnAggregateOrIndiv = returnAggregateOrIndiv, 
                             fromMultFunction = TRUE, 
-                            expdetails = Deets)
+                            existing_exp_details = Deets)
                     
                     # When the particular combination of compound and
                     # tissue is not available in that file,

@@ -11,7 +11,7 @@ extractConcTime(
   compoundToExtract = "substrate",
   returnAggregateOrIndiv = "both",
   adjust_obs_time = FALSE,
-  expdetails = NA,
+  existing_exp_details = NA,
   fromMultFunction = FALSE
 )
 }
@@ -73,9 +73,12 @@ observed data was administered at the same time as the last dose in the
 simulated data. If FALSE, the observed data will start at whatever times
 are listed in the Excel file.}
 
-\item{expdetails}{If you have already run \code{extractExpDetails} to get all
-the details from the "Input Sheet", you can save some processing time by
-supplying it here, unquoted. If left as NA, this function will run
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+get all the details from the "Input Sheet" (e.g., when you ran
+extractExpDetails you said \code{exp_details = "Input Sheet"} or
+\code{exp_details = "all"}), you can save some processing time by supplying
+that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
 

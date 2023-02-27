@@ -15,7 +15,7 @@ extractConcTime_mult(
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
   adjust_obs_time = FALSE,
-  expdetails = NA,
+  existing_exp_details = NA,
   obs_data_files = NA,
   ...
 )
@@ -156,11 +156,13 @@ observed data was administered at the same time as the last dose in the
 simulated data. If FALSE, the observed data will start at whatever times
 are listed in the Excel file.}
 
-\item{expdetails}{If you have already run \code{extractExpDetails_mult} to
-get all the details from the "Input Sheet", you can save some processing
-time by supplying it here, unquoted. If left as NA, this function will run
-\code{extractExpDetails} behind the scenes to figure out some information
-about your experimental set up.}
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails_mult you said
+\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+save some processing time by supplying that object here, unquoted. If left
+as NA, this function will run \code{extractExpDetails} behind the scenes to
+figure out some information about your experimental set up.}
 
 \item{obs_data_files}{TO BE DEPRECATED. This is the same argument as
 obs_to_sim_assignment; we just renamed it to try to be clearer about what

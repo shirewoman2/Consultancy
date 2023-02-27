@@ -12,6 +12,7 @@ extractEnzAbund_mult(
   tissues = "liver",
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
+  existing_exp_details = NA,
   fromMultFunction = FALSE,
   ...
 )
@@ -62,6 +63,14 @@ comparable. Options are "hours" (default) or "minutes".}
 enzyme-abundance data? Options are "aggregate" (default), "individual", or
 "both". Aggregated data are not calculated here but are pulled from the
 simulator output rows labeled as "Population Statistics".}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails_mult you said
+\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+save some processing time by supplying that object here, unquoted. If left
+as NA, this function will run \code{extractExpDetails} behind the scenes to
+figure out some information about your experimental set up.}
 
 \item{fromMultFunction}{INTERNAL USE ONLY. TRUE or FALSE on whether this is
 being called on by \code{\link{extractConcTime_mult}}.}

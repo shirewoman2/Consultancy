@@ -9,7 +9,7 @@ extractEnzAbund(
   enzyme = "CYP3A4",
   tissue = "liver",
   returnAggregateOrIndiv = "both",
-  expdetails = NA
+  existing_exp_details = NA
 )
 }
 \arguments{
@@ -29,9 +29,12 @@ enzyme abundance data? Options are "individual", "aggregate", or "both"
 (default). Aggregated data are not calculated here but are pulled from the
 simulator output rows labeled as "mean".}
 
-\item{expdetails}{If you have already run \code{extractExpDetails} to get all
-the details from the "Input Sheet", you can save some processing time by
-supplying it here, unquoted. If left as NA, this function will run
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+get all the details from the "Input Sheet" (e.g., when you ran
+extractExpDetails you said \code{exp_details = "Input Sheet"} or
+\code{exp_details = "all"}), you can save some processing time by supplying
+that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
 
