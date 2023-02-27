@@ -261,7 +261,19 @@ extractConcTime <- function(sim_data_file,
     
     # Getting summary data for the simulation(s)
     if(fromMultFunction | class(expdetails) != "logical"){
-        Deets <- expdetails
+        Deets <- switch(as.character("File" %in% names(expdetails)), 
+                        "TRUE" = expdetails, 
+                        "FALSE" = deannotateDetails(expdetails))
+        
+        if("data.frame" %in% class(Deets)){
+            Deets <- Deets %>% filter(File == sim_data_file)
+            
+            if(nrow(Deets == 0)){
+                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                           exp_details = "Input Sheet")
+            }
+        }
+        
     } else {
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 

@@ -115,24 +115,26 @@
 #'   input is all tissues desired as a character vector, e.g., \code{tissues =
 #'   c("plasma", "blood", "liver")}.
 #' @param compoundsToExtract For which compound do you want to extract
-#'   concentration-time data? Options are: \itemize{\item{"substrate"
-#'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+#'   concentration-time data? Options are: \itemize{\item{"all" (default) for
+#'   all the possible compounds in the simulation (substrate, metabolites,
+#'   inhibitors, and ADC-related compounds)} \item{"substrate" (default),}
+#'   \item{"primary metabolite 1",} \item{"primary metabolite 2",}
 #'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
 #'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
 #'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
 #'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-#'   metabolite of inhibitor 1} \item{"conjugated protein" for DAR1-DARmax for
+#'   metabolite of inhibitor 1,} \item{"conjugated protein" for DAR1-DARmax for
 #'   an antibody-drug conjugate; observed data with DV listed as "Conjugated
 #'   Protein Plasma Total" will match these simulated data,} \item{"total
 #'   protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
-#'   Protein Conjugate Plasma Total" will match these simulated data,}
+#'   Protein Conjugate Plasma Total" will match these simulated data, or}
 #'   \item{"released payload" for the released drug from an ADC, which shows up
-#'   as primary metabolite 1 in Simulator output files; or} \item{"all" for all
-#'   possible compounds in the simulation.}} Input to this argument should be
-#'   all desired compounds as a character vector, e.g., \code{c("substrate",
-#'   "primary metabolite 1")}. \strong{Note: If your compound is a therapeutic
-#'   protein or ADC, we haven't tested this very thoroughly, so please be extra
-#'   careful to check that you're getting the correct data.}
+#'   as primary metabolite 1 in Simulator output files}} Input to this argument
+#'   should be all desired compounds as a character vector, e.g.,
+#'   \code{c("substrate", "primary metabolite 1")}. \strong{Note: If your
+#'   compound is a therapeutic protein or ADC, we haven't tested this very
+#'   thoroughly, so please be extra careful to check that you're getting the
+#'   correct data.}
 #' @param ... other arguments passed to the function
 #'   \code{\link{extractConcTime}}
 #' @param conc_units_to_use concentration units to use so that all data will be
@@ -429,7 +431,22 @@ extractConcTime_mult <- function(sim_data_files = NA,
         MultData[[ff]] <- list()
         
         # Getting summary data for the simulation(s)
-        Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
+        if(class(expdetails) == "logical"){ # logical when user has supplied NA
+            Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
+        } else {
+            Deets <- switch(as.character("File" %in% names(expdetails)), 
+                            "TRUE" = expdetails, 
+                            "FALSE" = deannotateDetails(expdetails)) 
+            
+            if("data.frame" %in% class(Deets)){
+                Deets <- Deets %>% filter(File == sim_data_file)
+                
+                if(nrow(Deets == 0)){
+                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                               exp_details = "Input Sheet")
+                }
+            }
+        }
         
         if(length(Deets) == 0){
             # Using "warning" instead of "stop" here b/c I want this to be able to
@@ -509,7 +526,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
                     fromMultFunction = TRUE, 
-                    expdetails = Deets)
+                    expdetails = Deets %>% filter(File == ff))
                 
                 # When the particular combination of compound and tissue is not
                 # available in that file, extractConcTime will return an empty

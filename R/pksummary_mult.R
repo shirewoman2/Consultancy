@@ -1,5 +1,70 @@
 #' Make PK summary tables from multiple simulator output files at once
 #'
+#' \code{pksummary_mult} creates tables of PK parameters for reports and
+#' presentations, including reporting means, CVs, and confidence intervals or
+#' percentiles and, optionally, comparisons to observed data. This function
+#' automatically finds the correct tabs and the correct cells in a Simulator
+#' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+#' see the notes at the bottom of this help file for how to supply observed data
+#' in a standardized fashion that this function can read.} \item{You can specify
+#' which compound (substrate, inhibitor 1, etc.) and which tissue (plasma,
+#' blood, or unbound versions of each) you want to get the PK data for.} \item{
+#' If the simulator output Excel file lives on SharePoint, you'll need to close
+#' it or this function will just keep running and not generate any output while
+#' it waits for access to the file.}}
+#'
+#' Because we need to have a standardized way to input observed data, setting up
+#' the input for this function requires creating a data.frame of the observed PK
+#' data or supplying a csv or Excel file with observed PK data.
+#'
+#' \strong{OPTION A: Supply a data.frame.} Use the column names to indicate
+#' which PK parameter you want, and include a column titled "File" to indicate
+#' which simulator output Excel file the observed PK in that row should be
+#' compared to. If you have CV values for any observed data that you'd like to
+#' include in the table, make the column name be the PK parameter with a suffix
+#' of "_CV".
+#'
+#' An example of specifying a data.frame: \code{observed_PK = data.frame(File =
+#' c("abc1a-25mg.xlsx", "abc1a-50mg.xlsx"), AUCinf_dose1 = c(60, 120),
+#' AUCinf_dose1_CV = c(0.38, 0.42), Cmax_dose1 = c(22, 51), Cmax_dose1_CV =
+#' c(0.24, 0.39))}
+#'
+#' \strong{OPTION B: Use a csv file of observed PK data.} In Excel, create a csv
+#' file where the first row is the PK parameters you want and the second row
+#' lists the values for each. Make sure to include one column titled "File" to
+#' indicate which simulator output Excel file the observed PK in that row should
+#' be compared to. This should look the same as the examples for Option A. To
+#' see an example of how this should look, run this in the console and then open
+#' the csv file:
+#'
+#' \code{write.csv(data.frame(File = c("abc1a-25mg.xlsx", "abc1a-50mg.xlsx"),
+#' AUCinf_dose1 = c(60, 120), AUCinf_dose1_CV = c(0.38, 0.42), Cmax_dose1 =
+#' c(22, 51), Cmax_dose1_CV = c(0.24, 0.39)), file = "Example observed PK
+#' values.csv", row.names = FALSE)}
+#'
+#' When you call on \code{pksummary_table}, use the following syntax,
+#' substituting your file name for the example: \code{observed_PK = "Example
+#' observed PK values.csv"}
+#'
+#' \strong{OPTION C: Use a tab named "observed PK" in the compound data sheet
+#' for your project.} Just as with the other examples, the first row lists the
+#' PK parameters you want, and subsequent rows list the values for those
+#' parameters. Include a column titled "File" and list the name of the
+#' simulation output file that you want to compare. It's ok to leave blank any
+#' cells where you don't have a value, and it's ok to change the PK parameter
+#' names to something else that you want as long as it's one of the options for
+#' "PKparameter" in the table you can see by running this in the console:
+#' \code{view(PKParameterDefinitions)} If your compound data sheet is on
+#' SharePoint, make sure you close it before running this or R won't be able to
+#' access the file!
+#'
+#' When you call on \code{pksummary_table}, use the following syntax,
+#' substituting your project's compound data sheet file name for the example:
+#' \code{observed_PK = paste0(SimcypDir$SharePtDir, "abc-1a/Research/abc-1a
+#' compound data sheet.xlsx")}  (This assumes that the compound data sheet lives
+#' on the SharePoint drive in the "Research" folder for you project. Change
+#' "abc-1a" and the file name to whatever you need for your project.)
+#'
 #' @param sim_data_files a character vector of simulator output files, e.g.,
 #'   \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
 #'   want all the Excel files in the current folder, \code{sim_data_files = NA}.
@@ -151,7 +216,6 @@
 #' 
 
 pksummary_mult <- function(sim_data_files = NA, 
-                           tissue = "plasma", 
                            compoundsToExtract = "substrate",
                            tissues = "plasma", 
                            PKparameters = NA,
@@ -186,6 +250,16 @@ pksummary_mult <- function(sim_data_files = NA,
         sim_data_files <- sys.call()$sim_data_file
     }
     
+    if("compoundToExtract" %in% names(match.call()) &
+       "compoundsToExtract" %in% names(match.call()) == FALSE){
+        compoundsToExtract <- sys.call()$compoundToExtract
+    }
+    
+    if("tissue" %in% names(match.call()) &
+       "tissues" %in% names(match.call()) == FALSE){
+        tissues <- sys.call()$tissue
+    }
+    
     # Making sure that all the files exist before attempting to pull data
     if(all(complete.cases(sim_data_files)) && 
        any(file.exists(sim_data_files) == FALSE)){
@@ -199,10 +273,27 @@ pksummary_mult <- function(sim_data_files = NA,
     }
     
     # Check for appropriate input for arguments
-    tissue <- tolower(tissue)
-    if(tissue %in% c("plasma", "blood") == FALSE){
-        stop("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. Please check your input and try again.", 
-             call. = FALSE)
+    compoundsToExtract <- tolower(compoundsToExtract)
+    
+    PossCmpd <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+                  "secondary metabolite",
+                  "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                  "inhibitor 2 metabolite", "all")
+    
+    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
+        warning(paste0("The compound(s) ", 
+                       str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
+                       " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                       str_comma(paste0("`", PossCmpd, "`"))), 
+                call. = FALSE)
+        compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
+    }
+    
+    tissues <- tolower(tissues)
+    if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
+        warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+                call. = FALSE)
+        tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
     }
     
     if(extract_forest_data & includeConfInt == FALSE){
@@ -248,15 +339,6 @@ pksummary_mult <- function(sim_data_files = NA,
     FD <- list()
     
     for(i in sim_data_files){
-        # This warning only applies if they have both provided values for
-        # sim_data_files AND files in observed_PKDF$File.
-        if(exists("observed_PKDF", inherits = FALSE) && 
-           observed_PKDF$File[i] %in% sim_data_files == FALSE){
-            warning(paste0("The file ", observed_PKDF$File[i],
-                           " was listed in your observed data but not in `sim_data_files`. It will be skipped."), 
-                    call. = FALSE)
-            next
-        }
         
         MyPKResults[[i]] <- list()
         OutQC[[i]] <- list()
@@ -281,7 +363,7 @@ pksummary_mult <- function(sim_data_files = NA,
                     observed_PK = switch(
                         as.character(exists("observed_PKDF", inherits = FALSE) &&
                                          i %in% observed_PKDF$File), 
-                        "TRUE" = observed_PKDF[i, ], 
+                        "TRUE" = observed_PKDF %>% filter(File == i), 
                         "FALSE" = NA),
                     PKparameters = PKparameters, 
                     PKorder = PKorder, 
@@ -359,13 +441,13 @@ pksummary_mult <- function(sim_data_files = NA,
         
         suppressMessages(
             MyPKResults <- MyPKResults %>% 
-                select(Statistic, CompoundID, Tissue,
+                select(Statistic, 
                        any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
                                   left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
                                   filter(complete.cases(SortOrder)) %>% 
                                   arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
                        everything()) %>% 
-                relocate(File, .after = last_col())
+                relocate(c(CompoundID, Tissue, File), .after = last_col())
         )
         
     } else {
@@ -373,7 +455,7 @@ pksummary_mult <- function(sim_data_files = NA,
         MyPKResults <- bind_rows(MyPKResults) %>% 
             select(Statistic, CompoundIT, Tissue,
                    any_of(PKparameters), everything()) %>% 
-            relocate(File, .after = last_col())
+            relocate(c(CompoundID, Tissue, File), .after = last_col())
     }
     
     ## Saving --------------------------------------------------------------

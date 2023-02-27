@@ -535,6 +535,7 @@ extractPK <- function(sim_data_file,
             ColEnd[length(ColStart)] <- which(is.na(t(AUC_xl[3,])))[1] - 1
         } else {
             ColEnd <- which(is.na(t(AUC_xl[3,])))[1] - 1
+            names(ColEnd) <- tissue
         }
         
         AUC_xl <- AUC_xl[, c(1, 2, ColStart[tissue]:ColEnd[tissue])]
@@ -829,7 +830,7 @@ extractPK <- function(sim_data_file,
         PKparameters_AUClast <- intersect("A", "B")
     }
     
-    if(length(PKparameters_AUClast) > 0 & complete.cases(Tab_last) &
+    if(length(PKparameters_AUClast) > 0 && complete.cases(Tab_last) &
        PKparameters_orig[1] %in% c("Regional ADAM", "Absorption tab") == FALSE){
         
         # # Error catching
