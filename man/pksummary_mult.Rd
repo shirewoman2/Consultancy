@@ -12,6 +12,7 @@ pksummary_mult(
   PKorder = "default",
   sheet_PKparameters = NA,
   observed_PK = NA,
+  existing_exp_details = NA,
   mean_type = NA,
   includeCV = TRUE,
   includeConfInt = TRUE,
@@ -104,6 +105,14 @@ like the output table to include the observed data CV for any of the
 parameters, add "_CV" to the end of the parameter name, e.g.,
 "AUCinf_dose1_CV". Please see the "Example" section of this help file for
 examples of how to set this up.}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
+"Input Sheet"} or \code{exp_details = "all"}), you can save some processing
+time by supplying that object here, unquoted. If left as NA, this function
+will run \code{extractExpDetails} behind the scenes to figure out some
+information about your experimental set up.}
 
 \item{mean_type}{What kind of means and CVs do you want listed in the output
 table? Options are "arithmetic" or "geometric" (default).}

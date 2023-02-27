@@ -123,6 +123,13 @@
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
 #'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
+#'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
+#'   "Input Sheet"} or \code{exp_details = "all"}), you can save some processing
+#'   time by supplying that object here, unquoted. If left as NA, this function
+#'   will run \code{extractExpDetails} behind the scenes to figure out some
+#'   information about your experimental set up.
 #' @param PKorder Would you like the order of the PK parameters to be the the
 #'   order specified in the Consultancy Report Template (default), or would you
 #'   like the order to match the order you specified with the argument
@@ -222,6 +229,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            PKorder = "default", 
                            sheet_PKparameters = NA, 
                            observed_PK = NA,
+                           existing_exp_details = NA, 
                            mean_type = NA, 
                            includeCV = TRUE, 
                            includeConfInt = TRUE, 
@@ -289,6 +297,14 @@ pksummary_mult <- function(sim_data_files = NA,
         compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
     }
     
+    compoundsToExtract_orig <- compoundsToExtract
+    if(complete.cases(compoundsToExtract) && "all" %in% compoundsToExtract){
+        compoundsToExtract <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+                                "secondary metabolite",
+                                "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                                "inhibitor 2 metabolite")
+    }
+    
     tissues <- tolower(tissues)
     if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
         warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
@@ -344,43 +360,86 @@ pksummary_mult <- function(sim_data_files = NA,
         OutQC[[i]] <- list()
         FD[[i]] <- list()
         
-        print(paste("Extracting data from", i))
+        message(paste("Extracting data from", i))
         
+        # Getting summary data for the simulation(s)
+        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+            Deets <- extractExpDetails(i, exp_details = "Summary tab")
+        } else {
+            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                            "TRUE" = existing_exp_details, 
+                            "FALSE" = deannotateDetails(existing_exp_details)) 
+            
+            if("data.frame" %in% class(Deets)){
+                Deets <- Deets %>% filter(File == sim_data_file)
+                
+                if(nrow(Deets == 0)){
+                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                               exp_details = "Summary tab")
+                }
+            }
+        }
+        
+        # We need to know the dosing regimen for whatever compound they
+        # requested, but, if the compoundID is inhibitor 2, then that's listed
+        # on the input tab, and we'll need to extract exp details for that, too.
+        if("inhibitor 2" %in% compoundsToExtract){
+            DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
+                                                 exp_details = "Input Sheet")
+            Deets <- c(as.list(Deets), DeetsInputSheet)
+        }
+        
+        # Only include compounds that are actually present.
+        AllPossCompounds <- c("substrate" = Deets$Substrate, 
+                              "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                              "primary metabolite 2" = Deets$PrimaryMetabolite2, 
+                              "secondary metabolite" = Deets$SecondaryMetabolite, 
+                              "inhibitor 1" = Deets$Inhibitor1, 
+                              "inhibitor 2" = Deets$Inhibitor2, 
+                              "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+        AllPossCompounds <- names(AllPossCompounds[complete.cases(AllPossCompounds)])
+        
+        if(any(compoundsToExtract_orig == "all")){
+            compoundsToExtract <- intersect(compoundsToExtract, AllPossCompounds)
+        }
+
         for(j in compoundsToExtract){
-            print(paste("Extracting data for compound =", j))
+            message(paste("Extracting data for compound =", j))
             
             MyPKResults[[i]][[j]] <- list()
             OutQC[[i]][[j]] <- list()
             FD[[i]][[j]] <- list()
             
             for(k in tissues){
-                print(paste("Extracting data for tissue =", k))
-                
-                temp <- pksummary_table(
-                    sim_data_file = i,
-                    compoundToExtract = j,
-                    tissue = k, 
-                    observed_PK = switch(
-                        as.character(exists("observed_PKDF", inherits = FALSE) &&
-                                         i %in% observed_PKDF$File), 
-                        "TRUE" = observed_PKDF %>% filter(File == i), 
-                        "FALSE" = NA),
-                    PKparameters = PKparameters, 
-                    PKorder = PKorder, 
-                    sheet_PKparameters = sheet_PKparameters, 
-                    mean_type = mean_type,
-                    includeCV = includeCV,
-                    includeRange = includeRange,
-                    includeConfInt = includeConfInt, 
-                    includePerc = includePerc, 
-                    includeTrialMeans = includeTrialMeans,
-                    concatVariability = concatVariability,
-                    adjust_conc_units = adjust_conc_units,
-                    prettify_columns = prettify_columns, 
-                    extract_forest_data = extract_forest_data,
-                    checkDataSource = checkDataSource,
-                    prettify_compound_names = c("inhibitor" = "effector",
-                                                "substrate" = "substrate"))
+                message(paste("Extracting data for tissue =", k))
+                suppressMessages(
+                    temp <- pksummary_table(
+                        sim_data_file = i,
+                        compoundToExtract = j,
+                        tissue = k, 
+                        observed_PK = switch(
+                            as.character(exists("observed_PKDF", inherits = FALSE) &&
+                                             i %in% observed_PKDF$File), 
+                            "TRUE" = observed_PKDF %>% filter(File == i), 
+                            "FALSE" = NA),
+                        PKparameters = PKparameters, 
+                        PKorder = PKorder, 
+                        sheet_PKparameters = sheet_PKparameters, 
+                        existing_exp_details = Deets,
+                        mean_type = mean_type,
+                        includeCV = includeCV,
+                        includeRange = includeRange,
+                        includeConfInt = includeConfInt, 
+                        includePerc = includePerc, 
+                        includeTrialMeans = includeTrialMeans,
+                        concatVariability = concatVariability,
+                        adjust_conc_units = adjust_conc_units,
+                        prettify_columns = prettify_columns, 
+                        extract_forest_data = extract_forest_data,
+                        checkDataSource = checkDataSource,
+                        prettify_compound_names = c("inhibitor" = "effector",
+                                                    "substrate" = "substrate"))
+                )
                 
                 if(length(temp) == 0){
                     rm(temp)

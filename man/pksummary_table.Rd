@@ -12,7 +12,7 @@ pksummary_table(
   PKorder = "default",
   sheet_PKparameters = NA,
   observed_PK = NA,
-  expdetails = NA,
+  existing_exp_details = NA,
   report_input_file = NA,
   sheet_report = NA,
   mean_type = NA,
@@ -105,6 +105,15 @@ of the PK parameters you would like to compare, and those column names
 include the observed data CV for any of the parameters, add "_CV" to the
 end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
 "Example" section of this help file for examples of how to set this up.}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+get all the details from the "Input Sheet" (e.g., when you ran
+extractExpDetails you said \code{exp_details = "Input Sheet"} or
+\code{exp_details = "all"}), you can save some processing time by supplying
+that object here, unquoted. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
 
 \item{report_input_file}{(optional) This argument is an alternative way to
 specify both what simulator Excel file to use and also what the observed PK

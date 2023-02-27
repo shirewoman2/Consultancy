@@ -174,6 +174,14 @@
 #'   include the observed data CV for any of the parameters, add "_CV" to the
 #'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
 #'   "Example" section of this help file for examples of how to set this up.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+#'   get all the details from the "Input Sheet" (e.g., when you ran
+#'   extractExpDetails you said \code{exp_details = "Input Sheet"} or
+#'   \code{exp_details = "all"}), you can save some processing time by supplying
+#'   that object here, unquoted. If left as NA, this function will run
+#'   \code{extractExpDetails} behind the scenes to figure out some information
+#'   about your experimental set up.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default). If you supplied a
 #'   report input form, only specify this if you'd like to override the value
@@ -298,7 +306,7 @@ pksummary_table <- function(sim_data_file = NA,
                             PKorder = "default", 
                             sheet_PKparameters = NA,
                             observed_PK = NA, 
-                            expdetails = NA,
+                            existing_exp_details = NA,
                             report_input_file = NA,
                             sheet_report = NA,
                             mean_type = NA,
@@ -374,6 +382,18 @@ pksummary_table <- function(sim_data_file = NA,
         sheet_PKparameters <- NA
     }
     
+    # Checking that the file is, indeed, a simulator output file.
+    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                           error = openxlsx::getSheetNames(sim_data_file))
+    if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
+        # Using "warning" instead of "stop" here b/c I want this to be able to
+        # pass through to other functions and just skip any files that
+        # aren't simulator output.
+        warning(paste("The file", sim_data_file,
+                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                call. = FALSE)
+        return(list())
+    }
     
     # Main body of function --------------------------------------------------
     
@@ -554,22 +574,31 @@ pksummary_table <- function(sim_data_file = NA,
         # just going to be confusing to change it. If it turns out to be an
         # issue, revisit this. - LSh
         # Getting summary data for the simulation(s)
-        if(class(expdetails) == "logical"){ # logical when user has supplied NA
+        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
             Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = "Input Sheet")
+                                       exp_details = "Summary tab")
         } else {
-            Deets <- switch(as.character("File" %in% names(expdetails)), 
-                            "TRUE" = expdetails, 
-                            "FALSE" = deannotateDetails(expdetails))
+            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                            "TRUE" = existing_exp_details, 
+                            "FALSE" = deannotateDetails(existing_exp_details))
             
             if("data.frame" %in% class(Deets)){
                 Deets <- Deets %>% filter(File == sim_data_file)
                 
                 if(nrow(Deets == 0)){
                     Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                               exp_details = "Input Sheet")
+                                               exp_details = "Summary tab")
                 }
             }
+        }
+        
+        # We need to know the dosing regimen for whatever compound they
+        # requested, but, if the compoundID is inhibitor 2, then that's listed
+        # on the input tab, and we'll need to extract exp details for that, too.
+        if("inhibitor 2" %in% compoundsToExtract){
+            DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
+                                                 exp_details = "Input Sheet")
+            Deets <- c(as.list(Deets), DeetsInputSheet)
         }
         
         # extractExpDetails will check whether the Excel file provided was, in
@@ -582,7 +611,14 @@ pksummary_table <- function(sim_data_file = NA,
         }
         
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
-        DoseRegimen <- Deets$Regimen_sub
+        DoseRegimen <- switch(compoundToExtract, 
+                              "substrate" = Deets$Regimen_sub,
+                              "primary metabolite 1" = Deets$Regimen_sub,
+                              "primary metabolite 2" = Deets$Regimen_sub,
+                              "secondary metabolite" = Deets$Regimen_sub,
+                              "inhibitor 1" = Deets$Regimen_inhib,
+                              "inhibitor 2" = Deets$Regimen_inhib2,
+                              "inhibitor 1 metabolite" = Deets$Regimen_inhib)
     }
     
     if(Deets$PopRepSim == "Yes"){
@@ -648,7 +684,7 @@ pksummary_table <- function(sim_data_file = NA,
         pull(PKparameter) %>% unique()
     
     # If dose regimen were single-dose, then only pull dose 1 data.
-    if(Deets$Regimen_sub == "Single Dose"){
+    if(DoseRegimen == "Single Dose"){
         SDParam <- AllPKParameters %>%
             filter(AppliesToSingleDose == TRUE) %>%
             pull(PKparameter)
