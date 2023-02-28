@@ -204,6 +204,19 @@ extractConcTime <- function(sim_data_file,
              call. = FALSE)
     }
     
+    # Checking that the file is, indeed, a simulator output file.
+    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                           error = openxlsx::getSheetNames(sim_data_file))
+    if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
+        # Using "warning" instead of "stop" here b/c I want this to be able to
+        # pass through to other functions and just skip any files that
+        # aren't simulator output.
+        warning(paste("The file", sim_data_file,
+                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                call. = FALSE)
+        return(list())
+    }
+    
     
     # Main body of function ------------------------------------------------
     
@@ -269,16 +282,18 @@ extractConcTime <- function(sim_data_file,
         Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
-    # Checking that the file is, indeed, a simulator output file.
-    if(length(Deets) == 0){
-        # Using "warning" instead of "stop" here b/c I want this to be able to
-        # pass through to other functions and just skip any files that
-        # aren't simulator output.
-        warning(paste("The file", sim_data_file,
-                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-                call. = FALSE)
-        return(list())
-    }
+    # # Checking that the file is, indeed, a simulator output file. <-- This is
+    # # redundant b/c we need to check sheet names anyway, so that's where we're
+    # # checking that it's a simulator output file.
+    # if(length(Deets) == 0){
+    #     # Using "warning" instead of "stop" here b/c I want this to be able to
+    #     # pass through to other functions and just skip any files that
+    #     # aren't simulator output.
+    #     warning(paste("The file", sim_data_file,
+    #                   "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+    #             call. = FALSE)
+    #     return(list())
+    # }
     
     if(Deets$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
