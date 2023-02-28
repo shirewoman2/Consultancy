@@ -33,6 +33,7 @@ pksummary_mult(
 \item{sim_data_files}{a character vector of simulator output files, e.g.,
 \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
 want all the Excel files in the current folder, \code{sim_data_files = NA}.}
+
 \item{compoundsToExtract}{For which compound(s) do you want to extract PK
 data? Options are any combination of the following:
 \itemize{\item{"substrate" (default),} \item{"primary metabolite 1",}
@@ -52,30 +53,30 @@ with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{
 
- \item{By default, if you have a single-dose simulation, the parameters will
- include AUC and Cmax for dose 1, and, if you have a multiple-dose
- simulation, AUC and Cmax for the last dose. Also by default, if you have an
- effector present, the parameters will include the AUC and Cmax values with
- and without the effector as well as those ratios.}
+  \item{By default, if you have a single-dose simulation, the parameters will
+  include AUC and Cmax for dose 1, and, if you have a multiple-dose
+  simulation, AUC and Cmax for the last dose. Also by default, if you have an
+  effector present, the parameters will include the AUC and Cmax values with
+  and without the effector as well as those ratios.}
 
- \item{Alternatively, you can specify a vector of any combination of
- specific, individual parameters, e.g., \code{c("Cmax_dose1",
- "AUCtau_last").} Be sure to encapsulate the parameters you want with
- \code{c(...)}! To see the full set of possible parameters to extract, enter
+  \item{Alternatively, you can specify a vector of any combination of
+  specific, individual parameters, e.g., \code{c("Cmax_dose1",
+  "AUCtau_last").} Be sure to encapsulate the parameters you want with
+  \code{c(...)}! To see the full set of possible parameters to extract, enter
   \code{view(PKParameterDefinitions)} into the console.}
 
- \item{If you supply observed data using either the argument
+  \item{If you supply observed data using either the argument
   \code{report_input_file} or the argument \code{observed_PK} and do not
   specify anything for \code{PKparameters}, the PK parameters will be those
   included for the observed data.}
 
- \item{Parameters that don't make sense for your scenario -- such as asking
- for \code{AUCinf_dose1_withInhib} when your simulation did not include an
- inhibitor or effector -- will not be included.}
+  \item{Parameters that don't make sense for your scenario -- such as asking
+  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
+  inhibitor or effector -- will not be included.}
 
- \item{tmax will be listed as median, min, and max rather than mean, lower
- and higher X\% confidence interval or X percentiles. Similarly, if you
- request trial means, the values for tmax will be the range of medians for
+  \item{tmax will be listed as median, min, and max rather than mean, lower
+  and higher X\% confidence interval or X percentiles. Similarly, if you
+  request trial means, the values for tmax will be the range of medians for
   the trials rather than the range of means.}}
 
   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
@@ -88,8 +89,8 @@ like the order to match the order you specified with the argument
 \code{PKparameters}? Options are "default" or "user specified".}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
-pulled from a specific tab in the simulator output file, list that tab here.
-Most of the time, this should be left as NA.}
+pulled from a specific tab in the simulator output file, list that tab
+here. Most of the time, this should be left as NA.}
 
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
 vector, or an Excel or csv file with observed PK parameters, supply the
@@ -105,11 +106,6 @@ parameters, add "_CV" to the end of the parameter name, e.g.,
 "AUCinf_dose1_CV". Please see the "Example" section of this help file for
 examples of how to set this up.}
 
-\item{mean_type}{What kind of means and CVs do you want listed in the output
-table? Options are "arithmetic" or "geometric" (default). If you supplied a
-report input form, only specify this if you'd like to override the value
-listed there.}
-
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -121,8 +117,8 @@ information about your experimental set up.}
 \item{mean_type}{What kind of means and CVs do you want listed in the output
 table? Options are "arithmetic" or "geometric" (default).}
 
-\item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV in
-the table}
+\item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
+in the table}
 
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that
@@ -143,8 +139,8 @@ individual values rather than being pulled directly from the output.}
 
 \item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
-and listed as the lower confidence interval or percentile to the upper CI or
-percentile, e.g., "2400 to 2700". Please note that the current
+and listed as the lower confidence interval or percentile to the upper CI
+or percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
@@ -173,7 +169,7 @@ simulator output file. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.docx" or "My table.csv", depending on whether you'd prefer to have the
+table.docx" or "My table.csv", depending on whether you'd prefer to have
 the table saved as a Word or csv file. (You can also save the table to a
 Word file later with the function \code{\link{formatTable_Simcyp}}.) If you
 supply only the file extension, e.g., \code{save_table = "docx"}, the name
@@ -194,7 +190,7 @@ This only applies when you save the table as a Word file.}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple
- simulator output files
+  simulator output files
 }
 \description{
 \code{pksummary_mult} creates tables of PK parameters for reports and

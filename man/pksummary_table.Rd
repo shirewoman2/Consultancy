@@ -16,7 +16,6 @@ pksummary_table(
   report_input_file = NA,
   sheet_report = NA,
   mean_type = NA,
-  tissue = "plasma",
   includeCV = TRUE,
   includeConfInt = TRUE,
   includeRange = FALSE,
@@ -71,7 +70,6 @@ blood".}
   \item{If you supply observed data using either the argument
   \code{report_input_file} or the argument \code{observed_PK}, those PK
   parameters will be included automatically.}
-  data.}
 
   \item{Parameters that don't make sense for your scenario -- such as asking
   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
@@ -135,10 +133,6 @@ simulator output Excel file for \code{sim_data_file}, ignore this.}
 table? Options are "arithmetic" or "geometric" (default). If you supplied a
 report input form, only specify this if you'd like to override the value
 listed there.}
-
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}
