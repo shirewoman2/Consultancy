@@ -114,68 +114,11 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
             ylab <- bquote(bold(.(ylab1)) ~ bold(.(ylab2)))
         }
         
-        ylab1 <- 
-            switch(subsection_ADAM, 
-                   "dissolved compound" = 
-                       paste("Dissolved", CompoundLab, "in", unique(Data$Tissue)),
-                   "undissolved compound" = 
-                       paste0("Undissolved ", CompoundLab, " in ", unique(Data$Tissue)),
-                   "enterocyte concentration" = 
-                       # bquote(atop("Enterocyte concentration of", bquote(CompoundLab))), # can't get this to work
-                       paste("Enterocyte concentration of", CompoundLab),
-                   "free compound in lumen" = 
-                       paste0("Free ", CompoundLab, " in lumen"),
-                   "total compound in lumen" = 
-                       paste0("Total ", CompoundLab, " in lumen"),
-                   "Heff" = bquote("Particle"~H[eff]),
-                   "absorption rate" = 
-                       paste0("Absorption rate of ", CompoundLab, " in ", unique(Data$Tissue)),
-                   "unreleased compound in faeces" = 
-                       paste("Unreleased", CompoundLab, "in faeces"),
-                   "luminal CLint" = bquote("Luminal"~CL[int]), 
-                   "dissolution rate of solid state" = 
-                       paste0("Dissolution rate of ", CompoundLab, " in ", unique(Data$Tissue)), 
-                   "cumulative fraction of compound absorbed" =
-                       paste0("Cumulative fraction of ", CompoundLab, " absorbed"), 
-                   "cumulative fraction of compound dissolved" =
-                       paste0("Cumulative fraction of ", CompoundLab, " dissolved")) 
-        
-        # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
-        # so do NOT interchange them in the code.
-        PossConcUnits <- list("mg/mL" = "(mg/mL)",
-                              "µg/L" = bquote("("*"\u03bc"*g*"/"*L*")"),
-                              "µg/mL" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                              "ng/mL" = "(ng/mL)",
-                              "ng/L" = "(ng/L)",
-                              "µM" = bquote("("*"\u03bc"*M*")"),
-                              "µm" = bquote("("*"\u03bc"*m*")"),
-                              "nM" = "(nM)",
-                              "mM" = "(mM)",
-                              "mg" = "(mg)",
-                              "µg" = bquote("("*"\u03bc"*"g)"),
-                              "ng" = "(ng)",
-                              "mg/h" = "(mg/h)",
-                              "mg/L" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                              "mL" = "(mL)", 
-                              "mmol" = "(mmol)", 
-                              "µmol" = bquote("("*"\u03bc"*"mol)"),
-                              "nmol" = "(nmol)")
-        
-        ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
-        
-        if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
-                                  "cumulative fraction of compound dissolved")){
-            ylab <- bquote(bold(.(ylab1)))
-            
-        } else {
-            ylab <- bquote(bold(.(ylab1)) ~ bold(.(ylab2)))
-        }
+    } else {
         
         # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
         # so do NOT interchange them in the code.
         PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
-                              "µg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*L*")"),
-                              "µg/mL" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
                               "µg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*L*")"),
                               "µg/mL" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
                               "ng/mL" = "Concentration (ng/mL)",

@@ -213,31 +213,6 @@ annotateDetails <- function(Deets,
     }
     
     # Formatting as needed ---------------------------------------------------
-        compoundID <- intersect(c("substrate", "primary metabolite 1",
-                                  "primary metabolite 2", "secondary metabolite",
-                                  "inhibitor 1", "inhibitor 2", 
-                                  "inhibitor 1 metabolite"), compoundID)
-    }
-    
-    
-    if(length(compound) > 1){
-        compound <- str_c(compound, collapse = "|")
-    }
-    
-    simulator_section_orig <- simulator_section
-    simulator_section <- str_c(unique(tolower(simulator_section)), collapse = " ")
-    
-    if("Substrate" %in% names(Deets) == FALSE & 
-       (show_compound_col == TRUE | show_compound_col == "concatenate") & 
-       "Compound" %in% names(Deets) == FALSE){
-        warning(paste0("You set show_compound_col to ", show_compound_col,
-                       ", but you appear to have already run annotateDetails on these data with show_compound_col = FALSE. This column no longer exists in your data, so we can't show it."), 
-                call. = FALSE)
-        show_compound_col <- FALSE
-        compound <- NA
-    }
-    
-    # Formatting as needed ---------------------------------------------------
     if(class(Deets)[1] == "list"){
         # This is when the output is the default list from extractExpDetails
         Deets <- as.data.frame(Deets)

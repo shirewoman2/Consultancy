@@ -382,16 +382,9 @@ extractPK <- function(sim_data_file,
         }
         
     } else {
-        
         UserAUC <- FALSE
-       is.na(sheet)){ 
-            
-        } else {
-            UserAUC <- FALSE
-        }
-        
-    } else {
-        UserAUC <- FALSE
+    }
+    
     ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
         pull(PKparameter) %>% unique()
     
@@ -442,14 +435,6 @@ extractPK <- function(sim_data_file,
     }
     
     # Filtering out irrelevant PK
-    if(Deets$PopRepSim == "Yes"){
-        warning(paste0("The simulator file supplied, `", 
-                       sim_data_file, 
-                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
-                call. = FALSE)
-        return(list())
-    }
-    
     if(Deets$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
@@ -532,7 +517,6 @@ extractPK <- function(sim_data_file,
                             EndRow_ind = as.numeric(NA),
                             Note = as.character(NA))
     
-    # Pulling data from "AUC" sheet or a user-specified sheet formatted that way ------------------------------------------
     
     # Pulling data from "AUC" sheet ------------------------------------------
     
@@ -546,30 +530,14 @@ extractPK <- function(sim_data_file,
         
         if(UserAUC){ 
             AUC_xl <- XL
-           any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames) == FALSE){
-                                   sim_data_file, " to extract the PK parameters ",
-                    return(list())
-                                   sim_data_file, " to extract the PK parameters ",
-                    return(list())
-            
         } else {
-            if(Deets$Species != "human"){
-                # If it's from Simcyp Discovery, there's only one AUC sheet and
-                # it's either for the only dose in a SD sim or the last dose for
-                # a MD sim. Not sure about the regular Simcyp Animal, though. 
-                SheetAUC <- SheetNames[which(str_detect(SheetNames, "AUC"))]
-            }
-            if(UserAUC){
-                AUC_xl <- XL
-                SheetAUC <- sheet
-            } else {
-                AUC_xl <- suppressMessages(
-                    readxl::read_excel(path = sim_data_file, 
-                                       # If the user requested the "AUC" tab for PK
-                                       # parameters, it's ok to use the tab "AUC_CI"
-                                       # if "AUC" is not present.
+            AUC_xl <- suppressMessages(
+                readxl::read_excel(path = sim_data_file, 
+                                   # If the user requested the "AUC" tab for PK
+                                   # parameters, it's ok to use the tab "AUC_CI"
+                                   # if "AUC" is not present.
                                    sheet = Tab_AUC,
-                                       col_names = FALSE))
+                                   col_names = FALSE))
         }
         
         # Finding the last row of the individual data
@@ -583,9 +551,6 @@ extractPK <- function(sim_data_file,
                     call. = FALSE)
             
             return(list())
-            } 
-            
-            EndRow_ind <- max(which(complete.cases(AUC_xl$...2[1:(EndRow_ind-1)])))
             
         } 
         
@@ -898,14 +863,6 @@ extractPK <- function(sim_data_file,
     
     # Pulling last-dose data NOT present on AUC tab ------------------------------
     PKparameters_AUClast <- intersect(PKparameters, ParamAUClast)
-                # able to pass through to other functions and just skip any
-                # files that aren't simulator output.
-                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
-                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
-                        call. = FALSE)
-                return(list())
-            } 
-            
     
     # Some PK parameters show up on multiple sheets. No need to pull
     # those here if they've already been pulled from another sheet.
@@ -1018,12 +975,6 @@ extractPK <- function(sim_data_file,
                 StartRow_agg <- 3
                 EndRow_agg <- which(is.na(FaFg_xl$...1[3:nrow(FaFg_xl)]))[1] + 1
                 StartRow_ind <- which(FaFg_xl$...1 == "Index")[1] + 1
-                # files that aren't simulator output.
-                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
-                        call. = FALSE)
-                return(list())
-            } 
-            
                 
                 # Looping through parameters and extracting values
                 for(i in PKparameters_Abs_ADAM){
@@ -1084,98 +1035,6 @@ extractPK <- function(sim_data_file,
                 }
                 
                 if(includeTrialInfo & length(PKparameters_Abs_ADAM) > 0){
-                    # Subject and trial info
-                    SubjTrial_Abs <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), 1:2] %>%
-                        rename("Individual" = ...1, "Trial" = ...2)
-                    
-                    Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
-                                                 as.data.frame(Out_ind[PKparameters_Abs_ADAM]))
-                }
-                
-            } 
-            
-            if("Absorption" %in% SheetNames){
-                
-                PKparameters_Abs <- setdiff(PKparameters_Abs, PKparameters_Abs_ADAM)
-        } else if(Deets$Species != "human"){
-            warning("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet.", 
-                    call. = FALSE)
-                
-            if("Overall Fa Fg" %in% SheetNames){
-                
-                PKparameters_Abs_ADAM <- intersect(PKparameters_Abs, 
-                                                   c("fa_sub", "Fg_sub", "fa_apparent_sub"))
-                
-                FaFg_xl <- suppressMessages(
-                    readxl::read_excel(path = sim_data_file, sheet = "Overall Fa Fg",
-                                       col_names = FALSE))
-                
-                SubCols <- 3:5
-                # This is IN THE PRESENCE OF AN EFFECTOR -- not the effector
-                # itself. I haven't set that up yet. 
-                WithInhibCols <- 6:10
-                
-                StartRow_agg <- 3
-                EndRow_agg <- which(is.na(FaFg_xl$...1[3:nrow(FaFg_xl)]))[1] + 1
-                StartRow_ind <- which(FaFg_xl$...1 == "Index")[1] + 1
-                
-                # Looping through parameters and extracting values
-                for(i in PKparameters_Abs_ADAM){
-                    
-                    # Using regex to find the correct column. See
-                    # data(AllPKParameters) for all the possible parameters as well
-                    # as what regular expressions are being searched for each. 
-                    ToDetect <- AllPKParameters %>% 
-                        filter(Sheet == "Overall Fa Fg" & PKparameter == i) %>% 
-                        select(PKparameter, SearchText)
-                    
-                    # Looking for the regular expression specific to this parameter
-                    # i. For the absorption tab, there are columns for the substrate
-                    # and columns for Inhibitor 1. (There are also columns for
-                    # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
-                    StartCol <- ifelse(str_detect(i, "sub"),
-                                       SubCols, WithInhibCols)
-                    
-                    ColNum <- which(str_detect(
-                        as.character(FaFg_xl[2, StartCol:(StartCol+2)]),
-                        ToDetect$SearchText)) + StartCol - 1
-                    
-                    if(length(ColNum) == 0 | is.na(ColNum)){
-                        warning(paste0("The column with information for ", i,
-                                       " on the tab `Overall Fa Fg` cannot be found in the file ", 
-                                       sim_data_file, "."), 
-                                call. = FALSE)
-                        suppressMessages(rm(ToDetect, ColNum))
-                        PKparameters_Abs_ADAM <- setdiff(PKparameters_Abs_ADAM, i)
-                        next
-                    }
-                    
-                    suppressWarnings(
-                        Out_ind[[i]] <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), ColNum] %>%
-                            pull(1) %>% as.numeric
-                    )
-                    
-                    suppressWarnings(
-                        Out_agg[[i]] <- FaFg_xl[StartRow_agg:EndRow_agg, ColNum] %>%
-                            pull(1) %>% as.numeric
-                    )
-                    names(Out_agg[[i]]) <- FaFg_xl[StartRow_agg:EndRow_agg, 1] %>%
-                        pull(1)
-                    
-                    if(checkDataSource){
-                        DataCheck <- DataCheck %>%
-                            bind_rows(data.frame(PKparam = i,
-                                                 Tab = "Overall Fa Fg",
-                                                 SearchText = ToDetect$SearchText,
-                                                 Column = ColNum,
-                                                 StartRow_agg = StartRow_agg,
-                                                 EndRow_agg = EndRow_agg,
-                                                 StartRow_ind = StartRow_ind,
-                                                 EndRow_ind = nrow(FaFg_xl)))
-                    }
-                }
-                
-                if(includeTrialInfo){
                     # Subject and trial info
                     SubjTrial_Abs <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), 1:2] %>%
                         rename("Individual" = ...1, "Trial" = ...2)
@@ -1529,7 +1388,8 @@ extractPK <- function(sim_data_file,
     # Some PK parameters show up on multiple sheets. No need to pull
     # those here if they've already been pulled from another sheet.
     PKparameters_RegADAM <- setdiff(PKparameters_RegADAM, names(Out_agg))
-    if(complete.cases(sheet) & UserAUC == FALSE){
+    
+    if(complete.cases(sheet)){
         # How do you set something to have length 0? Hacking it for now.
         PKparameters_RegADAM <- intersect("A", "B")
     }
@@ -1555,12 +1415,6 @@ extractPK <- function(sim_data_file,
                                    4, 3)
             EndRow_ind <- which(is.na(RegADAM_xl$...2[StartRow_ind:nrow(RegADAM_xl)]))[1] +
                 StartRow_ind - 2
-            # files that aren't simulator output.
-            warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
-                    call. = FALSE)
-            return(list())
-        } 
-        
             
             if(length(EndRow_ind) == 0){
                 # Using "warning" instead of "stop" here b/c I want this to be
@@ -1602,10 +1456,6 @@ extractPK <- function(sim_data_file,
                                        sim_data_file, "."), 
                                 call. = FALSE)
                     }
-                                   " on the tab ", sheet, " cannot be found in the file ", 
-                                   sim_data_file, "."), 
-                            call. = FALSE)
-                }
                     suppressMessages(rm(ToDetect, ColNum))
                     PKparameters_RegADAM <- setdiff(PKparameters_RegADAM, i)
                     next

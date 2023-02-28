@@ -141,13 +141,6 @@ extractEnzAbund <- function(sim_data_file,
     
     # Figuring out which sheet to extract and dealing with case since that
     # apparently changes between Simulator versions.
-                       sim_data_file, 
-                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
-                call. = FALSE)
-    }
-    
-    # Figuring out which sheet to extract and dealing with case since that
-    # apparently changes between Simulator versions.
     AllSheets <- readxl::excel_sheets(sim_data_file)
     SheetToExtract <- data.frame(Sheet = AllSheets, 
                                  SheetLower = tolower(AllSheets)) %>% 

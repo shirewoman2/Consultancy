@@ -674,14 +674,6 @@ extractExpDetails <- function(sim_data_file,
                                     ValueCol])
                         )
                         
-                        suppressWarnings(
-                            Out[[paste0("CLpo_InVivoCL", Suffix)]] <- 
-                                as.numeric(InputTab[
-                                    which(str_detect(MyNames,
-                                                     "^CL .po.")) + i - 1,
-                                    ValueCol])
-                        )
-                        
                     }
                 }
                 

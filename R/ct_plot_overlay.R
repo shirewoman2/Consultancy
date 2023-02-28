@@ -509,54 +509,6 @@ call. = FALSE)
         )
     }
     
-    if(length(obs_color) > 1){
-        warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
-                call. = FALSE)
-        obs_color <- obs_color[1]
-    }
-    
-    # Cleaning up figure_type for the whole rest of the function
-    if(str_detect(figure_type, "percentile") & !str_detect(figure_type, "ribbon")){
-        figure_type <- "percentiles"
-    } else if(str_detect(figure_type, "ribbon")){
-        figure_type <- "percentile ribbon"
-    }
-    
-    # Checking for acceptable input
-    if(figure_type %in% c("means only", "percentiles", "percentile ribbon") == FALSE){
-        warning(paste0("The value used for `figure_type` was `", 
-                       figure_type,
-                       "`, but only the only acceptable options are `means only`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used."),
-                call. = FALSE)
-        figure_type <- "means only"
-    }
-    
-    if(class(prettify_compound_names) != "logical" && 
-       any(tolower(names(prettify_compound_names)) %in% 
-           c("substrate", "inhibitor", "inhibitor 1", "primary metabolite 1", 
-             "primary metabolite 2", "secondary metabolite", "inhibitor 2", 
-             "inhibitor 1 metabolite"))){
-        warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_effector_names` to TRUE but will not be able to use the specific names you provided.",
-                call. = FALSE)
-        prettify_compound_names <- TRUE
-    }
-    
-    # Checking whether user tried to include obs data directly from simulator
-    # output for a simulation that included anything other than substrate in
-    # plasma.
-    if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
-        return(
-            ggplot(data.frame(Problem = 1, DataFail = 1), 
-                   aes(y = Problem, x = DataFail)) +
-                xlab("Please check the help file for extractConcTime") +
-                theme(axis.title.x = element_text(size = 14, color = "red", 
-                                                  face = "italic")) +
-                annotate(geom = "text", x = 1, y = 1, size = 8,
-                         color = "red", 
-                         label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
-        )
-    }
-    
     
     # Main body of function -------------------------------------------------
     
@@ -586,20 +538,7 @@ call. = FALSE)
             # Any compounds that the user omitted from prettify_compound_names
             # should be added to that and kept as their original values.
             MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
-            OrigPrettyNames <- prettify_compound_names
-            prettify_compound_names <- c(prettify_compound_names, MissingNames)
-            if(length(MissingNames) > 0){
-                names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-                    MissingNames
-            }
-            
-            ct_dataframe <- ct_dataframe %>% 
-                mutate(Inhibitor = prettify_compound_names[Inhibitor])
-        } else {
-            MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
-                                                  ct_dataframe$Inhibitor))), 
                                     names(prettify_compound_names))
-            MissingNames <- MissingNames[!MissingNames == "none"]
             OrigPrettyNames <- prettify_compound_names
             prettify_compound_names <- c(prettify_compound_names, MissingNames)
             if(length(MissingNames) > 0){
@@ -1345,92 +1284,8 @@ call. = FALSE)
             } else {
                 sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
                 obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
-    }
-    
-    if(NumLT == 1){
-        linetypes = "solid"
-    } else if(NumLT < length(linetypes)){
-        linetypes = linetypes[1:NumLT] 
-    } else if(NumLT > length(linetypes)){
-        warning(paste("There are", NumLT,
-                      "unique values in the column you have specified for the line types, but you have only specified", 
-                      length(linetypes), 
-                      "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph."), 
-                call. = FALSE)
-        linetypes = rep(linetypes, 100)[1:NumLT]
-    } 
-    
-    if(as_label(linetype_column) != "<empty>"){
-        
-        # If the original data.frame included levels for linetype_column, then
-        # use those levels. Otherwise, make "none" the base level since most of
-        # the time, this will be used for the column "Inhibitor".
-        if(class(sim_dataframe$linetype_column) != "factor"){
-            if("none" %in% unique(sim_dataframe$linetype_column)){
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
-                
-                obs_dataframe <- obs_dataframe %>% 
-                    mutate(linetype_column = factor(linetype_column, 
-                                                    levels = c(levels(sim_dataframe$linetype_column), 
-                                                               setdiff(obs_dataframe$linetype_column, 
-                                                                       sim_dataframe$linetype_column))))
-            } else {
-                sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
-                obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
             }
         }
-    }
-    
-    if(str_detect(AES, "linetype")){
-        NumShapes <- length(sort(unique(c(sim_dataframe$linetype_column,
-                                          obs_dataframe$linetype_column))))
-    } else {
-        NumShapes <- 1
-    }
-    
-    set_aesthet(line_type = linetypes, figure_type = figure_type,
-                MyEffector = MyEffector, 
-                compoundToExtract = switch(as.character(EnzPlot),
-                                           "TRUE" = "substrate", 
-                                           "FALSE" = unique(sim_dataframe$CompoundID)),
-                obs_shape = obs_shape, obs_color = obs_color,
-                obs_fill_trans = obs_fill_trans,
-                obs_line_trans = obs_line_trans,
-                # line_color is just a placeholder b/c not using it here.
-                line_color = NA)
-    
-    if(length(obs_shape) < NumShapes){
-        # This odd syntax will work both when obs_shape is a single value
-        # and when it is multiple values.
-        obs_shape <- rep(obs_shape, NumShapes)[1:NumShapes] 
-    } else if(length(obs_shape) < NumShapes){
-        obs_shape <- obs_shape[1:NumShapes] 
-    }
-    
-    ## Figure type: means only ---------------------------------------------
-    if(figure_type == "means only"){
-        
-        A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = Conc, 
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column,
-                                                  linetype = linetype_column, 
-                                                  group = Group, 
-                                                  shape = linetype_column),
-                           "color" = aes(x = Time, y = Conc, 
-                                         color = colorBy_column, 
-                                         fill = colorBy_column,
-                                         group = Group), 
-                           "linetype" = aes(x = Time, y = Conc, 
-                                            linetype = linetype_column, 
-                                            group = Group, shape = linetype_column),
-                           "none" = aes(x = Time, y = Conc,
-                                        group = Group))) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
-                      show.legend = AESCols["color"] != "Individual")
-        
     }
     
     if(str_detect(AES, "linetype")){
@@ -1576,10 +1431,6 @@ call. = FALSE)
             LegCheck <- FALSE 
         } else if(length(LegCheck == 1)){
             LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
-        if(length(LegCheck) == 0){
-            LegCheck <- FALSE 
-        } else if(length(LegCheck == 1)){
-            LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
         } else {
             LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
         }
@@ -1622,66 +1473,10 @@ call. = FALSE)
                 warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
                         call. = FALSE)
                 obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
+            }
         }
-        
-        # Need to assign File to correct obs data. At this point, obs_dataframe WILL
-        # have values for File if the user wanted the observed data to be
-        # assigned to ALL the sim files. 
-        if(all(is.na(obs_dataframe$File))){
-            if(any(complete.cases(obs_to_sim_assignment))){
-                # If the user *did* specify values for obs_data_assignment, then use
-                # those for File.
-                
-                # Making sure that the split pattern will work in case the user omitted
-                # spaces.
-                obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
-                ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
-                
-                if(all(sapply(ObsAssign, length) == 1)){
-                    obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
-                } else {
-                    obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
-                    
-                    for(j in 1:length(ObsAssign)){
-                        FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
-                                                  File = ObsAssign[[j]])
-                        suppressMessages(
-                            obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
-                        )
-                        rm(FileAssign)
-                    }
-                    obs_dataframe <- bind_rows(obs_dataframe)
-                }
-            }
-            
-        } else {
-            # If there are some assignments for File but some missing, just warn
-            # the user about that b/c it's not clear how to assign the ones that
-            # are missing.
-            if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
-                warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
-                        call. = FALSE)
-                obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
-            }
         
         A <- addObsPoints(obs_data = obs_dataframe, 
-                          A = A, 
-                          AES = AES,
-                          obs_shape = obs_shape,
-                          obs_shape_user = obs_shape_user,
-                          obs_size = obs_size, 
-                          obs_color = obs_color,
-                          obs_color_user = obs_color_user,
-                          obs_line_trans = obs_line_trans,
-                          obs_line_trans_user = obs_line_trans_user,
-                          obs_fill_trans = obs_fill_trans,
-                          obs_fill_trans_user = obs_fill_trans_user,
-                          figure_type = figure_type,
-                          MapObsData = MapObsData, 
-                          LegCheck = LegCheck)
-        }
-        
-    
                           A = A, 
                           AES = AES,
                           obs_shape = obs_shape,

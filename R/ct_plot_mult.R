@@ -396,52 +396,6 @@ ct_plot_mult <- function(ct_dataframe,
                 ObsCT <- bind_rows(ObsCT)
             }
         }
-    
-    # Dealing with observed data. This is the scenario when any observed data
-    # exist AND *either* any of the observed data are missing a value for File
-    # *or* there are any values for obs_to_sim_assignment.
-    if(any(ct_dataframe$Simulated == FALSE) & 
-       (any(is.na(ct_dataframe$File[ct_dataframe$Simulated == FALSE])) |
-        any(complete.cases(obs_to_sim_assignment)))){
-        
-        ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
-        ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
-        
-        if(all(is.na(obs_to_sim_assignment))){
-            # If there are no values assigned for File and the user did not
-            # specify anything for obs_to_sim_assignment, then make all the
-            # observed data go with all the simulated data.
-            FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
-                                      File = unique(ct_dataframe$File)) %>% 
-                filter(complete.cases(File))
-            suppressMessages(
-                ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
-            )
-        } else {
-            # If the user *did* specify values for obs_to_sim_assignment, then use
-            # those for File.
-            
-            # Making sure that the split pattern will work in case the user omitted
-            # spaces.
-            obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
-            ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
-            
-            if(all(sapply(ObsAssign, length) == 1)){
-                ObsCT <- ObsCT %>% mutate(File = obs_to_sim_assignment[ObsFile])
-            } else {
-                ObsCT <- split(as.data.frame(ObsCT), f = ObsCT$ObsFile)
-                
-                for(j in 1:length(ObsAssign)){
-                    FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
-                                              File = ObsAssign[[j]])
-                    suppressMessages(
-                        ObsCT[[j]] <- FileAssign %>% full_join(ObsCT[[j]] %>% select(-File))
-                    )
-                    rm(FileAssign)
-                }
-                ObsCT <- bind_rows(ObsCT)
-            }
-        }
         
         ct_dataframe <- ct_dataframe %>% bind_rows(ObsCT)
     }

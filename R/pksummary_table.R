@@ -131,7 +131,6 @@
 #'   \item{If you supply observed data using either the argument
 #'   \code{report_input_file} or the argument \code{observed_PK}, those PK
 #'   parameters will be included automatically.}
-#'   data.}
 #'
 #'   \item{Parameters that don't make sense for your scenario -- such as asking
 #'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
@@ -312,7 +311,6 @@ pksummary_table <- function(sim_data_file = NA,
                             report_input_file = NA,
                             sheet_report = NA,
                             mean_type = NA,
-                            tissue = "plasma",
                             includeCV = TRUE,
                             includeConfInt = TRUE,
                             includeRange = FALSE,
@@ -392,7 +390,6 @@ pksummary_table <- function(sim_data_file = NA,
         
         # If they didn't include ".xlsx" at the end of whatever they supplied for
         # report_input_file, add that.
-        # report_input_file, add that.
         report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
                                     report_input_file, paste0(report_input_file, ".xlsx"))
         
@@ -465,16 +462,6 @@ pksummary_table <- function(sim_data_file = NA,
             observed_PK <- observed_PK %>% filter(File == sim_data_file)
         } else {
             observed_PK <- observed_PK[1, ]
-        # If they supplied a file name in the observed PK data, then use that
-        # instead of anything they may have supplied for sim_data_file.
-        if("File" %in% names(observed_PK) && complete.cases(observed_PK$File)){
-            if(complete.cases(sim_data_file) & sim_data_file != observed_PK$File){
-                warning(paste0("The value supplied for `sim_data_file` was `", 
-                               sim_data_file, 
-                               "``, but the value you supplied in the observed PK data was `", 
-                               observed_PK$File,
-                               "`. The file listed with the observed data will be used."), 
-                        call. = FALSE)
         }
         
         if("File" %in% names(observed_PK) == FALSE){
@@ -635,14 +622,6 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     if(Deets$PopRepSim == "Yes"){
-        warning(paste0("The simulator file supplied, `", 
-                       sim_data_file, 
-                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
-                call. = FALSE)
-        return(list())
-    }
-    
-    ## Determining which PK parameters to pull --------------------------------
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
