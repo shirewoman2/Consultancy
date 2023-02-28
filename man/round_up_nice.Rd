@@ -13,7 +13,7 @@ round_up_nice(x, nice = seq(1, 10, 0.1))
 \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)}
 }
 \value{
-
+a rounded number
 }
 \description{
 Round numbers to nice intervals with the following options: \describe{

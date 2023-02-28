@@ -12,7 +12,7 @@ log10_breaks(min, max, prettify = FALSE)
 \item{max}{maximum value to use for breaks}
 }
 \value{
-
+a numeric vector
 }
 \description{
 \code{log10_breaks} creates a vector of numbers fairly evenly spaced on a log 10 scale with 10

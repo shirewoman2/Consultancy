@@ -15,7 +15,7 @@ extractConcTime_mult(
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
   adjust_obs_time = FALSE,
-  expdetails = NA,
+  existing_exp_details = NA,
   obs_data_files = NA,
   ...
 )
@@ -107,30 +107,32 @@ blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
-"faeces", "gut tissue", "cumulative absorption", or "cumulative
-dissolution".}} Not case sensitive. Acceptable input is all tissues desired
-as a character vector, e.g., \code{tissues = c("plasma", "blood",
-"liver")}.}
+"faeces", "gut tissue", "cumulative absorption", "cumulative fraction
+released", or "cumulative dissolution".}} Not case sensitive. Acceptable
+input is all tissues desired as a character vector, e.g., \code{tissues =
+c("plasma", "blood", "liver")}.}
 
 \item{compoundsToExtract}{For which compound do you want to extract
-concentration-time data? Options are: \itemize{\item{"substrate"
-(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+concentration-time data? Options are: \itemize{\item{"all" (default) for
+all the possible compounds in the simulation (substrate, metabolites,
+inhibitors, and ADC-related compounds)} \item{"substrate" (default),}
+\item{"primary metabolite 1",} \item{"primary metabolite 2",}
 \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
 inducer, inhibitor, activator, or suppresesor, but it's labeled as
 "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
 listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-metabolite of inhibitor 1} \item{"conjugated protein" for DAR1-DARmax for
+metabolite of inhibitor 1,} \item{"conjugated protein" for DAR1-DARmax for
 an antibody-drug conjugate; observed data with DV listed as "Conjugated
 Protein Plasma Total" will match these simulated data,} \item{"total
 protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
-Protein Conjugate Plasma Total" will match these simulated data,}
+Protein Conjugate Plasma Total" will match these simulated data, or}
 \item{"released payload" for the released drug from an ADC, which shows up
-as primary metabolite 1 in Simulator output files; or} \item{"all" for all
-possible compounds in the simulation.}} Input to this argument should be
-all desired compounds as a character vector, e.g., \code{c("substrate",
-"primary metabolite 1")}. \strong{Note: If your compound is a therapeutic
-protein or ADC, we haven't tested this very thoroughly, so please be extra
-careful to check that you're getting the correct data.}}
+as primary metabolite 1 in Simulator output files}} Input to this argument
+should be all desired compounds as a character vector, e.g.,
+\code{c("substrate", "primary metabolite 1")}. \strong{Note: If your
+compound is a therapeutic protein or ADC, we haven't tested this very
+thoroughly, so please be extra careful to check that you're getting the
+correct data.}}
 
 \item{conc_units_to_use}{concentration units to use so that all data will be
 comparable. Options are the same as the ones in the Excel form for PE data
@@ -154,11 +156,13 @@ observed data was administered at the same time as the last dose in the
 simulated data. If FALSE, the observed data will start at whatever times
 are listed in the Excel file.}
 
-\item{expdetails}{If you have already run \code{extractExpDetails_mult} to get all
-the details from the "Input Sheet", you can save some processing time by
-supplying it here, unquoted. If left as NA, this function will run
-\code{extractExpDetails} behind the scenes to figure out some information
-about your experimental set up.}
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails_mult you said
+\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+save some processing time by supplying that object here, unquoted. If left
+as NA, this function will run \code{extractExpDetails} behind the scenes to
+figure out some information about your experimental set up.}
 
 \item{obs_data_files}{TO BE DEPRECATED. This is the same argument as
 obs_to_sim_assignment; we just renamed it to try to be clearer about what

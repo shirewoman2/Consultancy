@@ -213,6 +213,31 @@ annotateDetails <- function(Deets,
     }
     
     # Formatting as needed ---------------------------------------------------
+        compoundID <- intersect(c("substrate", "primary metabolite 1",
+                                  "primary metabolite 2", "secondary metabolite",
+                                  "inhibitor 1", "inhibitor 2", 
+                                  "inhibitor 1 metabolite"), compoundID)
+    }
+    
+    
+    if(length(compound) > 1){
+        compound <- str_c(compound, collapse = "|")
+    }
+    
+    simulator_section_orig <- simulator_section
+    simulator_section <- str_c(unique(tolower(simulator_section)), collapse = " ")
+    
+    if("Substrate" %in% names(Deets) == FALSE & 
+       (show_compound_col == TRUE | show_compound_col == "concatenate") & 
+       "Compound" %in% names(Deets) == FALSE){
+        warning(paste0("You set show_compound_col to ", show_compound_col,
+                       ", but you appear to have already run annotateDetails on these data with show_compound_col = FALSE. This column no longer exists in your data, so we can't show it."), 
+                call. = FALSE)
+        show_compound_col <- FALSE
+        compound <- NA
+    }
+    
+    # Formatting as needed ---------------------------------------------------
     if(class(Deets)[1] == "list"){
         # This is when the output is the default list from extractExpDetails
         Deets <- as.data.frame(Deets)
@@ -245,65 +270,69 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
+    # If the model was not ADAM, Deets will include a bunch of irrelevant
+    # details. Removing those if none of the models for that compound ID were
+    # ADAM. NOTE TO SELF: There must be a better way to do this that doesn't
+    # require so much copying and pasting!
     if("Abs_model_sub" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM") == FALSE){
-        Out <- Out %>% 
+       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+        Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
-                                    filter(CompoundID == "substrate" & 
+                                    filter(CompoundID == "substrate" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-    
+
     if("Abs_model_inhib" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM") == FALSE){
-        Out <- Out %>% 
+       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+        Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
-                                    filter(CompoundID == "inhibitor 1" & 
+                                    filter(CompoundID == "inhibitor 1" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-    
+
     if("Abs_model_inhib2" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM") == FALSE){
-        Out <- Out %>% 
+       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+        Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
-                                    filter(CompoundID == "inhibitor 2" & 
+                                    filter(CompoundID == "inhibitor 2" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-    
+
     if("Abs_model_met1" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM") == FALSE){
-        Out <- Out %>% 
+       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+        Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
-                                    filter(CompoundID == "primary metabolite 1" & 
+                                    filter(CompoundID == "primary metabolite 1" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-    
+
     if("Abs_model_met2" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM") == FALSE){
-        Out <- Out %>% 
+       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+        Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
-                                    filter(CompoundID == "primary metabolite 2" & 
+                                    filter(CompoundID == "primary metabolite 2" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-    
+
     if("Abs_model_secmet" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM") == FALSE){
-        Out <- Out %>% 
+       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+        Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
-                                    filter(CompoundID == "secondary metabolite" & 
+                                    filter(CompoundID == "secondary metabolite" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-    
+
     if("Abs_model_inhib1met" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM") == FALSE){
-        Out <- Out %>% 
+       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+        Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
-                                    filter(CompoundID == "inhibitor 1 metabolite" & 
+                                    filter(CompoundID == "inhibitor 1 metabolite" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }

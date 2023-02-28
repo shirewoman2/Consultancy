@@ -34,7 +34,7 @@ specific columns. Originally from ct_plot_overlay.}
 ct_plot_overlay originally and should always be TRUE for ct_plot.}
 }
 \value{
-
+a ggplot2 layer with observed data
 }
 \description{
 \code{addObsPoints} adds observed data to \code{\link{ct_plot}} or

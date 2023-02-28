@@ -61,7 +61,7 @@
 #'   try to save on SharePoint, you will get a warning that R will save your
 #'   file instead to your local (not OneDrive) Documents folder.
 #'
-#' @return
+#' @return a formatted table 
 #' @export
 #'
 #' @examples
@@ -125,6 +125,11 @@ formatTable_Simcyp <- function(DF,
              call. = FALSE)
     }
     
+    if("data.frame" %in% class(DF) == FALSE){
+        stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames, and it looks like you have supplied some other type of data.", 
+             call. = FALSE)
+    }
+    
     if(nrow(DF) == 0){
         stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
              call. = FALSE)
@@ -183,12 +188,22 @@ formatTable_Simcyp <- function(DF,
     FT <- FT %>% 
         
         # center the header row
-        flextable::align(align = "center", part = "header") %>% 
-        
-        # center the columns with numbers, i.e., the 2nd column through the
-        # penultimate column
-        flextable::align(align = "center", 
-                         j = ifelse(center_1st_column, 1, 2):ncol(DF)) %>%
+        flextable::align(align = "center", part = "header")
+    
+    # center the columns that contain numbers, i.e., the 2nd column through the
+    # penultimate column and optionally center the 1st column
+    if(center_1st_column == FALSE & ncol(DF) == 1){
+        FT <- FT %>% flextable::align(align = "left")
+    } else {
+        FT <- FT %>% 
+            flextable::align(align = "center", 
+                             j = switch(paste(center_1st_column, ncol(DF) > 1),
+                                        "TRUE TRUE" = 1:ncol(DF),
+                                        "TRUE FALSE" = 1:ncol(DF), 
+                                        "FALSE TRUE" = 2:ncol(DF)))
+    }
+    
+    FT <- FT %>% 
         
         # Set the font size
         flextable::fontsize(part = "all", size = fontsize) %>% 

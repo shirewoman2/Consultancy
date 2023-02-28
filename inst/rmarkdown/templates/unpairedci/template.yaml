@@ -1,0 +1,4 @@
+name: unpairedCI
+description: >
+   Calculation of confidence intervals for unpaired data
+create_dir: FALSE

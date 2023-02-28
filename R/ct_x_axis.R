@@ -12,7 +12,7 @@
 #' @param pad_x_axis user-supplied value for padding x axis
 #' @param EnzPlot T or F for whether this is an enzyme-abundance plut
 #'
-#' @return
+#' @return values to use for ct_plots
 #' 
 ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
                       compoundToExtract, pad_x_axis, EnzPlot){

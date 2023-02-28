@@ -11,7 +11,7 @@ tidyPop(input_pop)
 with \code{\link{extractExpDetails}} with the output item named "Population"}
 }
 \value{
-
+a tidied set of names for a simulated population
 }
 \description{
 \code{tidyPop}

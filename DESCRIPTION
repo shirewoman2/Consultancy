@@ -1,7 +1,7 @@
 Package: SimcypConsultancy
 Type: Package
 Title: Useful and standardized tools for using R within the Simcyp Consultancy Team
-Version: 1.18.9
+Version: 1.19.0
 Author: Laura Sh., Mackenzie, Howie, Christiane, Alenka, Ludwig, Magali, Laura Sa.
 Maintainer: The package maintainer <laura.shireman@certara.com>
 Description: This package is meant to be a collection of useful and standardized
@@ -15,7 +15,7 @@ Imports:
 License: none
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Suggests: 
     knitr,
     rmarkdown

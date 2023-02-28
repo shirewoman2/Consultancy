@@ -194,7 +194,8 @@ c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 }
 \value{
-
+A list or a data.frame of PK data that optionally includes where the
+  data came from and data to use for making forest plots
 }
 \description{
 \code{calc_PK_ratios_mult} matches PK data from pairs of simulator output

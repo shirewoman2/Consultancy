@@ -78,7 +78,7 @@ try to save on SharePoint, you will get a warning that R will save your
 file instead to your local (not OneDrive) Documents folder.}
 }
 \value{
-
+a formatted table
 }
 \description{
 \code{formatTable_Simcyp} makes a nicely formatted table from a data.frame or

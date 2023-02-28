@@ -3,17 +3,17 @@
 #' \code{pksummary_table} creates tables of PK parameters for reports and
 #' presentations, including reporting means, CVs, and confidence intervals or
 #' percentiles and, optionally, comparisons to observed data. This function
-#' automatically finds the correct tab and the correct cells in a Simulator
+#' automatically finds the correct tabs and the correct cells in a Simulator
 #' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
 #' in a standardized fashion that this function can read.} \item{If you would
 #' like to make a single PK table for multiple files at once, please see the
-#' function \code{\link{pksummary_mult}}.} \item{All parameters are for the
-#' \emph{substrate} unless you specify that you would like the PK parameters to
-#' be pulled from a specific tab in the Excel output file that is for some other
-#' compound.} \item{ If the simulator output Excel file lives on SharePoint,
-#' you'll need to close it or this function will just keep running and not
-#' generate any output while it waits for access to the file.}}
+#' function \code{\link{pksummary_mult}}.} \item{You can specify which compound
+#' (substrate, inhibitor 1, etc.) and which tissue (plasma, blood, or unbound
+#' versions of each) you want to get the PK data for.} \item{ If the simulator
+#' output Excel file lives on SharePoint, you'll need to close it or this
+#' function will just keep running and not generate any output while it waits
+#' for access to the file.}}
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame or named vector of
@@ -23,9 +23,9 @@
 #' \strong{OPTION A: Supply a data.frame or a named vector.} If you supply a
 #' data.frame, the column names will indicate which PK parameter you want, and
 #' if you supply a named numeric vector, the names of the vector will perform
-#' the same function. If you have CV values for any observed data that you'd
-#' like to include in the table, make the name be the PK parameter with a suffix
-#' of "_CV".
+#' the same task. If you have CV values for any observed data that you'd like to
+#' include in the table, make the name be the PK parameter with a suffix of
+#' "_CV".
 #'
 #' An example of specifying a data.frame: \code{observed_PK =
 #' data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22,
@@ -34,12 +34,11 @@
 #' An example of specifying a named vector: \code{observed_PK = c("AUCinf_dose1"
 #' = 60, "AUCinf_dose1_CV" = 0.38, "Cmax_dose1" = 22, "Cmax_dose1_CV" = 0.24)}.
 #'
-#' \strong{OPTION B: Use an Excel or csv file of oserved PK data.} In Excel,
-#' create a single-tab Excel file or a csv file where the 1st row lists the
-#' names of the PK parameters and the 2nd row lists the values. Just as with
-#' Option A, you can include observed CV values by adding "_CV" to the parameter
-#' name. To see an example of how this should look, run this in the console and
-#' then open the csv file:
+#' \strong{OPTION B: Use a csv file of observed PK data.} In Excel, create a csv
+#' file where the first row is the PK parameters you want and the second row
+#' lists the values for each. This should look the same as the examples for
+#' Option A. To see an example of how this should look, run this in the console
+#' and then open the csv file:
 #'
 #' \code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
 #' Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
@@ -49,7 +48,27 @@
 #' substituting your file name for the example: \code{observed_PK = "Example
 #' observed PK values.csv"}
 #'
-#' \strong{OPTION C: Fill out an Excel form.} Here are the steps to take for
+#' \strong{OPTION C: Use a tab named "observed PK" in the compound data sheet
+#' for your project.} Just as with the other examples, the first row lists the
+#' PK parameters you want, and subsequent rows list the values for those
+#' parameters. Since this will also work for looking at PK for other possible
+#' simulations, please include the column "File" and list the name of the
+#' simulation output file that you want to compare. It's ok to leave blank any
+#' cells where you don't have a value, and it's ok to change the PK parameter
+#' names to something else that you want as long as it's one of the options for
+#' "PKparameter" in the table you can see by running this in the console:
+#' \code{view(PKParameterDefinitions)} If your compound data sheet is on
+#' SharePoint, make sure you close it before running this or R won't be able to
+#' access the file!
+#'
+#' When you call on \code{pksummary_table}, use the following syntax,
+#' substituting your project's compound data sheet file name for the example:
+#' \code{observed_PK = paste0(SimcypDir$SharePtDir, "abc-1a/Research/abc-1a
+#' compound data sheet.xlsx")}  (This assumes that the compound data sheet lives
+#' on the SharePoint drive in the "Research" folder for you project. Change
+#' "abc-1a" and the file name to whatever you need for your project.)
+#'
+#' \strong{OPTION D: Fill out an Excel form.} Here are the steps to take for
 #' this option: \enumerate{
 #'
 #' \item{Use the function \code{\link{generateReportInputForm}} to create an
@@ -110,8 +129,8 @@
 #'   \code{view(PKParameterDefinitions)} into the console.}
 #'
 #'   \item{If you supply observed data using either the argument
-#'   \code{report_input_file} or the argument \code{observed_PK}, the only PK
-#'   parameters that will be included are those available for the observed
+#'   \code{report_input_file} or the argument \code{observed_PK}, those PK
+#'   parameters will be included automatically.}
 #'   data.}
 #'
 #'   \item{Parameters that don't make sense for your scenario -- such as asking
@@ -119,9 +138,9 @@
 #'   inhibitor or effector -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
-#'   and higher X\% confidence interval or X percentiles. Similarly, if you
-#'   request trial means, the values for tmax will be the range of medians for
-#'   the trials rather than the range of means.}}
+#'   and higher 90\% confidence interval or 5th to 95th percentiles. Similarly,
+#'   if you request trial means, the values for tmax will be the range of
+#'   medians for the trials rather than the range of means.}}
 #'
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
@@ -134,20 +153,36 @@
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'   tested).
+#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+#'   blood".
+#' @param compoundToExtract For which compound do you want to extract PK data?
+#'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
+#'   metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
+#'   metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
+#'   activator, or suppresesor, but it's labeled as "Inhibitor 1" in the
+#'   simulator,} \item{"inhibitor 2" for the 2nd inhibitor listed in the
+#'   simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
+#'   inhibitor 1}}
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
 #'   vector, or an Excel or csv file with observed PK parameters, supply the
 #'   full file name in quotes or the data.frame or vector here, and the
 #'   simulated-to-observed mean ratios will be calculated. If you supply an
-#'   Excel file, it should have only one tab. We prefer supplying csv files here
-#'   since they're faster to read in anyway. The supplied data.frame or file
-#'   must include columns for each of the PK parameters you would like to
-#'   compare, and those column names \emph{must} be among the PK parameter
-#'   options listed in \code{PKParameterDefinitions}. If you would like the
-#'   output table to include the observed data CV for any of the parameters, add
-#'   "_CV" to the end of the parameter name, e.g., "AUCinf_dose1_CV". Please see
-#'   the "Example" section of this help file for examples of how to set this up.
+#'   Excel file, it \emph{must} have a tab titled "observed PK", and that's what
+#'   will be read. The supplied data.frame or file must include columns for each
+#'   of the PK parameters you would like to compare, and those column names
+#'   \emph{must} be among the PK parameter options listed in
+#'   \code{PKParameterDefinitions}. If you would like the output table to
+#'   include the observed data CV for any of the parameters, add "_CV" to the
+#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
+#'   "Example" section of this help file for examples of how to set this up.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+#'   get all the details from the "Input Sheet" (e.g., when you ran
+#'   extractExpDetails you said \code{exp_details = "Input Sheet"} or
+#'   \code{exp_details = "all"}), you can save some processing time by supplying
+#'   that object here, unquoted. If left as NA, this function will run
+#'   \code{extractExpDetails} behind the scenes to figure out some information
+#'   about your experimental set up.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default). If you supplied a
 #'   report input form, only specify this if you'd like to override the value
@@ -177,13 +212,15 @@
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
 #'   will attempt to adjust the units to match that. This only adjusts AUC and
-#'   Cmax values at present and, if you're switching between mass per volume and
-#'   mole per volume units, it will assume you want to use the MW of the
-#'   substrate to do that.
+#'   Cmax values at present. Acceptable input is any concentration unit listed
+#'   in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
+#'   "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
+#'   automatically converted using the molecular weight of whatever you set for
+#'   \code{compoundToExtract}.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
-#'   human-readable column names. TRUE makes pretty column names such as "AUCinf
-#'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#'   human-readable column names. TRUE makes pretty column names such as "Dose 1
+#'   AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
+#'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
@@ -200,17 +237,27 @@
 #'   if you're including effector metabolites: \code{prettify_compound_names =
 #'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
+#' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
+#'   the same time. This only applies when the compound to extract is
+#'   the substrate or a substrate metabolite. If set to TRUE, this will return a list that includes data
+#'   formatted for use with the function \code{\link{forest_plot}}. Since the
+#'   \code{\link{forest_plot}} function only works with simulations with
+#'   effectors (at least, for now), this will only work for simulations that
+#'   included an effector. This is probably most useful for the
+#'   \code{\link{pksummary_mult}} function since a forest plot with only one
+#'   simulation isn't terribly informative.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file. (You can also save the table
-#'   to a Word file later with the function \code{\link{formatTable_Simcyp}}.)
-#'   If you supply only the file extension, e.g., \code{save_table = "docx"},
-#'   the name of the file will be the file name plus "PK summary table" with
-#'   that extension and output will be located in the same folder as
+#'   the main PK table saved as a Word or csv file. (If you assign the output of
+#'   \code{pksummary_table} to an R object, you can also save the table later to
+#'   a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
+#'   supply only the file extension, e.g., \code{save_table = "docx"}, the name
+#'   of the file will be the file name plus "PK summary table" with that
+#'   extension, and the output file will be located in the same folder as
 #'   \code{sim_data_file}. If you supply something other than just "docx" or
 #'   just "csv" for the file name but you leave off the file extension, we'll
 #'   assume you want it to be ".csv". While the main PK table data will be in
@@ -255,10 +302,13 @@
 #' 
 
 pksummary_table <- function(sim_data_file = NA, 
+                            compoundToExtract = "substrate",
+                            tissue = "plasma", 
                             PKparameters = NA,
                             PKorder = "default", 
                             sheet_PKparameters = NA,
                             observed_PK = NA, 
+                            existing_exp_details = NA,
                             report_input_file = NA,
                             sheet_report = NA,
                             mean_type = NA,
@@ -272,6 +322,7 @@ pksummary_table <- function(sim_data_file = NA,
                             adjust_conc_units = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
+                            extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
                             save_table = NA, 
                             fontsize = 11){
@@ -284,8 +335,8 @@ pksummary_table <- function(sim_data_file = NA,
     
     # Check for appropriate input for arguments
     tissue <- tolower(tissue)
-    if(tissue %in% c("plasma", "blood") == FALSE){
-        warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+    if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
+        warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
                 call. = FALSE)
         tissue <- "plasma"
     }
@@ -334,13 +385,13 @@ pksummary_table <- function(sim_data_file = NA,
         sheet_PKparameters <- NA
     }
     
-    
     # Main body of function --------------------------------------------------
     
     ## Reading in all data and tidying ------------------------------------
     if(complete.cases(report_input_file)){
         
         # If they didn't include ".xlsx" at the end of whatever they supplied for
+        # report_input_file, add that.
         # report_input_file, add that.
         report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
                                     report_input_file, paste0(report_input_file, ".xlsx"))
@@ -390,7 +441,7 @@ pksummary_table <- function(sim_data_file = NA,
             observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                   "csv" = read.csv(observed_PK), 
                                   "xlsx" = xlsx::read.xlsx(observed_PK, 
-                                                           sheetIndex = 1))
+                                                           sheetName = "observed PK"))
             
         } else if(class(observed_PK)[1] == "numeric"){ # This is when user has supplied a named numeric vector
             
@@ -407,13 +458,13 @@ pksummary_table <- function(sim_data_file = NA,
     # Excel or csv file for observed data, or it came from a report input form.
     if("data.frame" %in% class(observed_PK)){
         
-        # There should be only 1 row in observed_PK, so removing any extras that
-        # might have gotten included accidentally.
-        observed_PK <- observed_PK[1, ]
-        
-        # Also only keeping columns with complete cases for PK values.
-        observed_PK[, sapply(observed_PK, complete.cases)]
-        
+        # There should be only 1 row in observed_PK, so removing any extras.
+        if("File" %in% names(observed_PK) & nrow(observed_PK) > 1 & 
+           complete.cases(sim_data_file) && 
+           any(observed_PK$File %in% sim_data_file)){
+            observed_PK <- observed_PK %>% filter(File == sim_data_file)
+        } else {
+            observed_PK <- observed_PK[1, ]
         # If they supplied a file name in the observed PK data, then use that
         # instead of anything they may have supplied for sim_data_file.
         if("File" %in% names(observed_PK) && complete.cases(observed_PK$File)){
@@ -424,10 +475,22 @@ pksummary_table <- function(sim_data_file = NA,
                                observed_PK$File,
                                "`. The file listed with the observed data will be used."), 
                         call. = FALSE)
-            }
-            
-            sim_data_file <- observed_PK$File
         }
+        
+        if("File" %in% names(observed_PK) == FALSE){
+            observed_PK$File <- sim_data_file
+        }
+        
+        # Also only keeping columns with complete cases for PK values.
+        observed_PK <- observed_PK %>% select(where(complete.cases))
+        
+        # If they supplied a file name in the observed PK data and NA for
+        # sim_data_file, then sim_data_file will be NA. If not, then
+        # sim_data_file will be the same as the only entry for File in
+        # observed_PK. Either way, setting sim_data_file and making sure it has
+        # the correct file extension.
+        sim_data_file <- ifelse(str_detect(sim_data_file, "\\.xlsx"), 
+                                sim_data_file, paste0(sim_data_file, ".xlsx"))
         
         # Cleaning up and harmonizing observed data
         MyObsPK <- observed_PK
@@ -487,7 +550,7 @@ pksummary_table <- function(sim_data_file = NA,
     
     # First, the scenarios where there are observed data to compare from a
     # filled-out report template (sectionInfo exists)
-    if(class(sectionInfo) != "logical"){
+    if("logical" %in% class(sectionInfo) == FALSE){
         
         MeanType <- ifelse(is.na(mean_type),
                            sectionInfo$ObsData$MeanType,
@@ -511,7 +574,34 @@ pksummary_table <- function(sim_data_file = NA,
         # this to be whatever mean type they set for the main mean type and it's
         # just going to be confusing to change it. If it turns out to be an
         # issue, revisit this. - LSh
-        Deets <- extractExpDetails(sim_data_file = sim_data_file)
+        
+        # Checking experimental details to only pull details that apply
+        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                       exp_details = "Summary tab")
+        } else {
+            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                            "TRUE" = existing_exp_details, 
+                            "FALSE" = deannotateDetails(existing_exp_details))
+            
+            if("data.frame" %in% class(Deets)){
+                Deets <- Deets %>% filter(File == sim_data_file)
+                
+                if(nrow(Deets == 0)){
+                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                               exp_details = "Summary tab")
+                }
+            }
+        }
+        
+        # We need to know the dosing regimen for whatever compound they
+        # requested, but, if the compoundID is inhibitor 2, then that's listed
+        # on the input tab, and we'll need to extract exp details for that, too.
+        if("inhibitor 2" %in% compoundToExtract){
+            DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
+                                                 exp_details = "Input Sheet")
+            Deets <- c(as.list(Deets), DeetsInputSheet)
+        }
         
         # extractExpDetails will check whether the Excel file provided was, in
         # fact, a Simulator output file and return a list of length 0 if not.
@@ -523,10 +613,36 @@ pksummary_table <- function(sim_data_file = NA,
         }
         
         EffectorPresent <- complete.cases(Deets$Inhibitor1)
-        DoseRegimen <- Deets$Regimen_sub
+        DoseRegimen <- switch(compoundToExtract, 
+                              "substrate" = Deets$Regimen_sub,
+                              "primary metabolite 1" = Deets$Regimen_sub,
+                              "primary metabolite 2" = Deets$Regimen_sub,
+                              "secondary metabolite" = Deets$Regimen_sub,
+                              "inhibitor 1" = Deets$Regimen_inhib,
+                              "inhibitor 2" = Deets$Regimen_inhib2,
+                              "inhibitor 1 metabolite" = Deets$Regimen_inhib)
+    }
+    
+    # Checking that the file is, indeed, a simulator output file.
+    if(length(Deets) == 0){
+        # Using "warning" instead of "stop" here b/c I want this to be able to
+        # pass through to other functions and just skip any files that
+        # aren't simulator output.
+        warning(paste("The file", sim_data_file,
+                      "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                call. = FALSE)
+        return(list())
     }
     
     if(Deets$PopRepSim == "Yes"){
+        warning(paste0("The simulator file supplied, `", 
+                       sim_data_file, 
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
+                call. = FALSE)
+        return(list())
+    }
+    
+    ## Determining which PK parameters to pull --------------------------------
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
@@ -551,7 +667,7 @@ pksummary_table <- function(sim_data_file = NA,
         
     } else {
         
-        if(class(sectionInfo) == "logical"){ # sectionInfo is logical if they did not supply a report input form
+        if("logical" %in% class(sectionInfo)){ # sectionInfo is logical if they did not supply a report input form
             if("data.frame" %in% class(observed_PK)){
                 # If user supplies an observed file, then pull the parameters
                 # they want to match. If user specified "_first" instead of
@@ -589,7 +705,7 @@ pksummary_table <- function(sim_data_file = NA,
         pull(PKparameter) %>% unique()
     
     # If dose regimen were single-dose, then only pull dose 1 data.
-    if(Deets$Regimen_sub == "Single Dose"){
+    if(DoseRegimen == "Single Dose"){
         SDParam <- AllPKParameters %>%
             filter(AppliesToSingleDose == TRUE) %>%
             pull(PKparameter)
@@ -626,7 +742,9 @@ pksummary_table <- function(sim_data_file = NA,
         MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                      PKparameters = PKToPull,
                                      tissue = tissue,
+                                     compoundToExtract = compoundToExtract,
                                      sheet = sheet_PKparameters, 
+                                     existing_exp_details = existing_exp_details,
                                      returnAggregateOrIndiv =
                                          switch(as.character(includeTrialMeans),
                                                 "TRUE" = c("aggregate", "individual"),
@@ -635,7 +753,8 @@ pksummary_table <- function(sim_data_file = NA,
     # If there were no PK parameters to be pulled, MyPKResults_all will have
     # length 0 and we can't proceed.
     if(length(MyPKResults_all) == 0){
-        warning("No PK results were found. Does your simulator output file include any sheets with names such as 'AUC', 'AUC_CI' or 'AUC_SD'? Something like that must be present for most of the typical PK parameters to get extracted.", 
+        warning(paste0("No PK results were found in the file `",
+                       sim_data_file, "`. Does your simulator output file include any sheets with names such as 'AUC', 'AUC_CI' or 'AUC_SD'? Something like that must be present for most of the typical PK parameters to get extracted."), 
                 call. = FALSE)
         return()
     }
@@ -662,14 +781,43 @@ pksummary_table <- function(sim_data_file = NA,
                 TEMP <- match_units(
                     MyPKResults_all$aggregate %>% 
                         rename(Conc = i) %>% 
-                        mutate(CompoundID = "substrate", # need a placeholder here. This will only work for substrate anyway.
+                        mutate(CompoundID = compoundToExtract, 
                                Conc_units = Deets$Units_Cmax, 
                                Time = 1, Time_units = "hours"),
                     goodunits = list("Conc_units" = adjust_conc_units, 
                                      "Time_units" = "hours"), 
-                    MW = c("substrate" = Deets$MW_sub))
+                    MW = c(compoundToExtract = 
+                               switch(compoundToExtract, 
+                                      "substrate" = Deets$MW_sub, 
+                                      "primary metabolite 1" = Deets$MW_met1, 
+                                      "primary metabolite 2" = Deets$MW_met2, 
+                                      "secondary metabolite" = Deets$MW_secmet, 
+                                      "inhibitor 1" = Deets$MW_inhib, 
+                                      "inhibitor 2" = Deets$MW_inhib2, 
+                                      "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
                 MyPKResults_all$aggregate[, i] <- TEMP$Conc
                 rm(TEMP)
+                
+                TEMP <- match_units(
+                    MyPKResults_all$individual %>% 
+                        rename(Conc = i) %>% 
+                        mutate(CompoundID = compoundToExtract, 
+                               Conc_units = Deets$Units_Cmax, 
+                               Time = 1, Time_units = "hours"),
+                    goodunits = list("Conc_units" = adjust_conc_units, 
+                                     "Time_units" = "hours"), 
+                    MW = c(compoundToExtract = 
+                               switch(compoundToExtract, 
+                                      "substrate" = Deets$MW_sub, 
+                                      "primary metabolite 1" = Deets$MW_met1, 
+                                      "primary metabolite 2" = Deets$MW_met2, 
+                                      "secondary metabolite" = Deets$MW_secmet, 
+                                      "inhibitor 1" = Deets$MW_inhib, 
+                                      "inhibitor 2" = Deets$MW_inhib2, 
+                                      "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
+                MyPKResults_all$individual[, i] <- TEMP$Conc
+                rm(TEMP)
+                
             }
             
             # Need to change units in Deets now to match.
@@ -918,10 +1066,10 @@ pksummary_table <- function(sim_data_file = NA,
             # way to do that, so my apologies! -LSh
             MyObsPK <- MyObsPK %>% 
                 mutate(Stat = ifelse({{MeanType}} == "arithmetic" &
-                              {{GMR_mean_type}} == "geometric" &
-                              str_detect(PKParam, "ratio") &
-                              str_detect(Stat, "mean"), # detecting mean or geomean but not CV 
-                          "mean", Stat))
+                                         {{GMR_mean_type}} == "geometric" &
+                                         str_detect(PKParam, "ratio") &
+                                         str_detect(Stat, "mean"), # detecting mean or geomean but not CV 
+                                     "mean", Stat))
         }
         
         MyObsPK <- MyObsPK %>% 
@@ -966,6 +1114,45 @@ pksummary_table <- function(sim_data_file = NA,
             mutate(SorO = "Sim")
     }
     
+    ## Arranging forest data ------------------------------------------
+    
+    if(extract_forest_data){
+        
+        # Extracting forest data only works when the compound to extract is the
+        # substrate or a substrate metabolite. Could change that in the future
+        # if there's call for it, but that's all for now.
+        if(compoundToExtract %in% c("substrate", "primary metabolite 1", 
+                                    "primary metabolite 2", 
+                                    "secondary metabolite") == FALSE){
+            warning("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.", 
+                    call. = FALSE)
+        } else {
+        
+        FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
+                                         Stat %in% c("geomean", "CI90_low", "CI90_high"))
+        
+        FD <- FD %>% 
+            mutate(Stat = recode(Stat, "geomean" = "GMR",
+                                 "CI90_low" = "CI90_lo", 
+                                 "CI90_high" = "CI90_hi"),
+                   Parameter = paste(PKParam, Stat, sep = "__")) %>% 
+            select(-PKParam, -Stat, -SorO) %>% 
+            filter(str_detect(Parameter, "AUCinf|AUCt|Cmax")) %>% 
+            pivot_wider(names_from = Parameter, values_from = Value) %>% 
+            mutate(File = sim_data_file, 
+                   Substrate = switch(compoundToExtract, 
+                                      "substrate" = Deets$Substrate, 
+                                      "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                                      "primary metabolite 2" = Deets$PrimaryMetabolite2, 
+                                      "secondary metabolite" = Deets$SecondaryMetabolite), 
+                   Dose_sub = Deets$Dose_sub, 
+                   Inhibitor1 = Deets$Inhibitor1, 
+                   Dose_inhib = Deets$Dose_inhib) %>% 
+            select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
+                   everything())
+        
+        }
+    }
     
     ## Putting everything together and formatting -------------------------
     
@@ -1283,6 +1470,7 @@ pksummary_table <- function(sim_data_file = NA,
             }
             
             FileName <- basename(save_table)
+            FromCalcPKRatios <- FALSE
             
             rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
@@ -1316,17 +1504,30 @@ pksummary_table <- function(sim_data_file = NA,
         }
     }
     
+    Out <- list("Table" = MyPKResults)
+    
     if(checkDataSource){
-        MyPKResults <- list("Table" = MyPKResults,
-                            "QC" = OutQC)
+        Out[["QC"]] <- OutQC
         
         if(complete.cases(save_table)){ 
             write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
         }
-        
     }
     
-    return(MyPKResults)
+    if(extract_forest_data){
+        Out[["ForestData"]] <- FD
+        
+        if(complete.cases(save_table)){ 
+            write.csv(OutQC, sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
+        }
+    }
+    
+    if(length(Out) == 1){
+        Out <- Out[["Table"]]
+    }
+    
+    return(Out)
+    
 }
 
 

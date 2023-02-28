@@ -73,11 +73,13 @@
 #'   transparent shading for the 5th to 95th percentiles of the simulated data,
 #'   and open circles for the observed data. If an effector were present, the
 #'   default is to show the data without the effector in blue and the data in
-#'   the presence of the effector in red. Note: You may sometimes see some
-#'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
-#'   cut off. For arcane reasons we don't want to bore you with here, we can't
-#'   easily prevent this. However, a possible fix is to set your y axis limits
-#'   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
+#'   the presence of the effector in red. \strong{NOTE: There is a known bug
+#'   within RStudio that can cause filled semi-transparent areas like you get
+#'   with the "percentile ribbon" figure type to NOT get graphed for certain
+#'   versions of RStudio.} To get around this, within RStudio, go to Tools -->
+#'   Global Options --> General --> Graphics --> And then set "Graphics device:
+#'   backend" to "AGG". Honestly, this is a better option for higher-quality
+#'   graphics anyway!}
 #'
 #'   \item{"means only"}{plots a black line for the mean data and, if an
 #'   effector was modeled, a dashed line for the concentration-time data with
@@ -168,10 +170,10 @@
 #'   default NA when a legend is included and an effector is present, the label
 #'   in the legend will be "Inhibitor".
 #' @param graph_titles optionally specify titles to be used in the graphs and
-#'   specify the order in which the files are graphed or use "none" to have no
-#'   titles on your graphs. Input should be a named character vector of the
-#'   files in the order you would like and what you want to use for the title.
-#'   The file name must \emph{perfectly} match the file name listed in
+#'   specify the order in which the files are graphed or use "none" (default) to
+#'   have no titles on your graphs. Input should be a named character vector of
+#'   the files in the order you would like and what you want to use for the
+#'   title. The file name must \emph{perfectly} match the file name listed in
 #'   ct_dataframe or it won't be used. An example of how this might be
 #'   specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
 #'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
@@ -186,7 +188,7 @@
 #'   1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
 #'   example with the dataset MDZ_Keto.
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels. 
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
@@ -215,7 +217,7 @@
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 8
 #'
-#' @return
+#' @return a set of arranged ggplot2 graphs and/or saved files of those graphs 
 #' @export
 #'
 #' @examples
@@ -257,7 +259,7 @@ ct_plot_mult <- function(ct_dataframe,
                          y_axis_label = NA,
                          legend_position = "none",
                          legend_label = NA, 
-                         graph_titles = NA,
+                         graph_titles = "none",
                          graph_title_size = 14,
                          graph_labels = TRUE,
                          save_graph = NA,
@@ -316,10 +318,10 @@ ct_plot_mult <- function(ct_dataframe,
         # missing ones, too.
         if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
             names(graph_titles)[is.na(names(graph_titles))] <-
-                DatasetCheck$GraphLabs[is.na(names(graph_titles))]
+                graph_titles[is.na(names(graph_titles))]
             
             names(graph_titles)[names(graph_titles) == ""] <-
-                DatasetCheck$GraphLabs[names(graph_titles) == ""]
+                graph_titles[names(graph_titles) == ""]
         }
         
         # Convert labels to file base names (this doesn't do anything to the
@@ -348,6 +350,52 @@ ct_plot_mult <- function(ct_dataframe,
         graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
         names(graph_titles_all) <- graph_titles_all
     }
+    
+    # Dealing with observed data. This is the scenario when any observed data
+    # exist AND *either* any of the observed data are missing a value for File
+    # *or* there are any values for obs_to_sim_assignment.
+    if(any(ct_dataframe$Simulated == FALSE) & 
+       (any(is.na(ct_dataframe$File[ct_dataframe$Simulated == FALSE])) |
+        any(complete.cases(obs_to_sim_assignment)))){
+        
+        ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
+        ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
+        
+        if(all(is.na(obs_to_sim_assignment))){
+            # If there are no values assigned for File and the user did not
+            # specify anything for obs_to_sim_assignment, then make all the
+            # observed data go with all the simulated data.
+            FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
+                                      File = unique(ct_dataframe$File)) %>% 
+                filter(complete.cases(File))
+            suppressMessages(
+                ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
+            )
+        } else {
+            # If the user *did* specify values for obs_to_sim_assignment, then use
+            # those for File.
+            
+            # Making sure that the split pattern will work in case the user omitted
+            # spaces.
+            obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
+            ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
+            
+            if(all(sapply(ObsAssign, length) == 1)){
+                ObsCT <- ObsCT %>% mutate(File = obs_to_sim_assignment[ObsFile])
+            } else {
+                ObsCT <- split(as.data.frame(ObsCT), f = ObsCT$ObsFile)
+                
+                for(j in 1:length(ObsAssign)){
+                    FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
+                                              File = ObsAssign[[j]])
+                    suppressMessages(
+                        ObsCT[[j]] <- FileAssign %>% full_join(ObsCT[[j]] %>% select(-File))
+                    )
+                    rm(FileAssign)
+                }
+                ObsCT <- bind_rows(ObsCT)
+            }
+        }
     
     # Dealing with observed data. This is the scenario when any observed data
     # exist AND *either* any of the observed data are missing a value for File
@@ -444,6 +492,11 @@ ct_plot_mult <- function(ct_dataframe,
                                        as.character(ct_dataframe$subsection_ADAM)))
     } else {
         ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
+    }
+    
+    # Dealing with scenario where user has specified a file name incorrectly
+    if(any(Order %in% names(ct_dataframe) == FALSE)){
+        Order <- Order[Order %in% names(ct_dataframe)]
     }
     
     for(i in Order){

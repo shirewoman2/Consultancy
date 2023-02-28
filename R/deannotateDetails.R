@@ -14,7 +14,7 @@
 #'   in \code{AllExpDetails}. If set to FALSE, all data classes will be
 #'   character.
 #'
-#' @return
+#' @return a list of simulator experimental details
 #' @export
 #'
 #' @examples

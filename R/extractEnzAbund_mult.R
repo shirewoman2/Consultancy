@@ -20,6 +20,13 @@
 #'   If some of your Excel files are not regular simulator output, e.g. they are
 #'   sensitivity analyses or a file where you were doing some calculations,
 #'   those files will be skipped.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
+#'   Sheet" (e.g., when you ran extractExpDetails_mult you said
+#'   \code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+#'   save some processing time by supplying that object here, unquoted. If left
+#'   as NA, this function will run \code{extractExpDetails} behind the scenes to
+#'   figure out some information about your experimental set up.
 #' @param sim_enz_dataframe (optional) a data.frame that contains previously
 #'   extracted enzyme-abundance data. This should NOT be in quotes. Because we
 #'   can see scenarios where you might want to extract some enzyme-abundance
@@ -75,6 +82,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                                  tissues = "liver",
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate", 
+                                 existing_exp_details = NA, 
                                  fromMultFunction = FALSE, 
                                  ...){
     
@@ -164,7 +172,22 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
         MultData[[ff]] <- list()
         
         # Getting summary data for the simulation(s)
-        Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
+        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+            Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
+        } else {
+            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                            "TRUE" = existing_exp_details, 
+                            "FALSE" = deannotateDetails(existing_exp_details)) 
+            
+            if("data.frame" %in% class(Deets)){
+                Deets <- Deets %>% filter(File == sim_data_file)
+                
+                if(nrow(Deets == 0)){
+                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                               exp_details = "Input Sheet")
+                }
+            }
+        }
         
         if(length(Deets) == 0){
             # Using "warning" instead of "stop" here b/c I want this to be able to
@@ -194,7 +217,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                     enzyme = k,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                    expdetails = Deets)
+                    existing_exp_details = Deets)
                 
             } # end of enzyme k loop
             

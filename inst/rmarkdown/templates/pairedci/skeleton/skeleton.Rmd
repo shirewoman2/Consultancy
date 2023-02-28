@@ -1,0 +1,10 @@
+**A note on calculations:** For calculations on paired subjects, which is what was requested here, this is the order of operations: 
+
+1. Calculate the ratio for each subject. 
+
+2. Calculate the mean of the ratios and also any other statistics (confidence interval, CV, etc.). 
+
+Note that this order changes if the subjects are unpaired. In that scenario, the order of operations is to first calculate the mean of the parameter of interest for each simulation and then to calculate the ratio of those means. 
+
+**To summarize:** For paired data, calculate the mean of ratios. For unpaired data, calculate the ratio of means. 
+

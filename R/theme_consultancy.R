@@ -11,7 +11,7 @@
 #' \item{Font sizes and margins are the same as in the ggplot2 theme
 #' "theme_bw"}}
 #'
-#' @return
+#' @return a ggplot2 theme 
 #' @export
 #'
 #' @examples

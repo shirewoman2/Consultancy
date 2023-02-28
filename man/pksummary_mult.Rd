@@ -6,12 +6,14 @@
 \usage{
 pksummary_mult(
   sim_data_files = NA,
+  compoundsToExtract = "substrate",
+  tissues = "plasma",
   PKparameters = NA,
   PKorder = "default",
   sheet_PKparameters = NA,
   observed_PK = NA,
+  existing_exp_details = NA,
   mean_type = NA,
-  tissue = "plasma",
   includeCV = TRUE,
   includeConfInt = TRUE,
   includeRange = FALSE,
@@ -20,6 +22,7 @@ pksummary_mult(
   concatVariability = FALSE,
   adjust_conc_units = NA,
   prettify_columns = TRUE,
+  extract_forest_data = FALSE,
   checkDataSource = TRUE,
   save_table = NA,
   fontsize = 11,
@@ -29,12 +32,25 @@ pksummary_mult(
 \arguments{
 \item{sim_data_files}{a character vector of simulator output files, e.g.,
 \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
-want all the Excel files in the current folder, \code{sim_data_files = NA}.
-If you supply data for \code{observed_PK}, anything you enter here will be
-ignored because the file names will be pulled from there instead.}
+want all the Excel files in the current folder, \code{sim_data_files = NA}.}
+\item{compoundsToExtract}{For which compound(s) do you want to extract PK
+data? Options are any combination of the following:
+\itemize{\item{"substrate" (default),} \item{"primary metabolite 1",}
+\item{"primary metabolite 2",} \item{"secondary metabolite",}
+\item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+suppresesor, but it's labeled as "Inhibitor 1" in the simulator,}
+\item{"inhibitor 2" for the 2nd inhibitor listed in the simulation,}
+\item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}}
+To specify multiple compounds, enclose the compound IDs with parentheses,
+e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}}
+
+\item{tissues}{For which tissue(s) would you like the PK parameters to be
+pulled? Options are any combination of "plasma" (default), "unbound
+plasma", "blood", or "unbound blood". For multiple tissues, enclose them
+with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
- vector. \itemize{
+  vector. \itemize{
 
  \item{By default, if you have a single-dose simulation, the parameters will
  include AUC and Cmax for dose 1, and, if you have a multiple-dose
@@ -46,11 +62,12 @@ ignored because the file names will be pulled from there instead.}
  specific, individual parameters, e.g., \code{c("Cmax_dose1",
  "AUCtau_last").} Be sure to encapsulate the parameters you want with
  \code{c(...)}! To see the full set of possible parameters to extract, enter
- \code{view(PKParameterDefinitions)} into the console.}
+  \code{view(PKParameterDefinitions)} into the console.}
 
  \item{If you supply observed data using either the argument
- \code{report_input_file} or the argument \code{observed_PK}, the only PK
- parameters that will be included are those available for the observed data.}
+  \code{report_input_file} or the argument \code{observed_PK} and do not
+  specify anything for \code{PKparameters}, the PK parameters will be those
+  included for the observed data.}
 
  \item{Parameters that don't make sense for your scenario -- such as asking
  for \code{AUCinf_dose1_withInhib} when your simulation did not include an
@@ -59,11 +76,11 @@ ignored because the file names will be pulled from there instead.}
  \item{tmax will be listed as median, min, and max rather than mean, lower
  and higher X\% confidence interval or X percentiles. Similarly, if you
  request trial means, the values for tmax will be the range of medians for
- the trials rather than the range of means.}}
+  the trials rather than the range of means.}}
 
- An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
- "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
- "AUCtau_ratio_last", "Cmax_ratio_last")}.}
+  An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
+  "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
+  "AUCtau_ratio_last", "Cmax_ratio_last")}.}
 
 \item{PKorder}{Would you like the order of the PK parameters to be the the
 order specified in the Consultancy Report Template (default), or would you
@@ -75,27 +92,34 @@ pulled from a specific tab in the simulator output file, list that tab here.
 Most of the time, this should be left as NA.}
 
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
-vector, or an Excel or csv file with observed PK parameters, supply the full
-file name in quotes or the data.frame or vector here, and the
-simulated-to-observed mean ratios will be calculated. If you supply an Excel
-file, it should have only one tab. We prefer supplying csv files here since
-they're faster to read in anyway. The supplied data.frame or file
-\emph{must} include columns for the simulator output Excel file (title this
-"File") and each of the PK parameters you would like to compare, and those
-column names \emph{must} be among the PK parameter options listed in
-\code{PKParameterDefinitions}. If you would like the output table to include
-the observed data CV for any of the parameters, add "_CV" to the end of the
-parameter name, e.g., "AUCinf_dose1_CV". Please see the "Example" section of
-this help file for examples of how to set this up.}
+vector, or an Excel or csv file with observed PK parameters, supply the
+full file name in quotes or the data.frame or vector here, and the
+simulated-to-observed mean ratios will be calculated. If you supply an
+Excel file, R will be looking to read a tab named "observed PK". The
+supplied data.frame or file \emph{must} include columns for the simulator
+output Excel file (title this "File") and each of the PK parameters you
+would like to compare, and those column names \emph{must} be among the PK
+parameter options listed in \code{PKParameterDefinitions}. If you would
+like the output table to include the observed data CV for any of the
+parameters, add "_CV" to the end of the parameter name, e.g.,
+"AUCinf_dose1_CV". Please see the "Example" section of this help file for
+examples of how to set this up.}
 
 \item{mean_type}{What kind of means and CVs do you want listed in the output
 table? Options are "arithmetic" or "geometric" (default). If you supplied a
 report input form, only specify this if you'd like to override the value
 listed there.}
 
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
+"Input Sheet"} or \code{exp_details = "all"}), you can save some processing
+time by supplying that object here, unquoted. If left as NA, this function
+will run \code{extractExpDetails} behind the scenes to figure out some
+information about your experimental set up.}
+
+\item{mean_type}{What kind of means and CVs do you want listed in the output
+table? Options are "arithmetic" or "geometric" (default).}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV in
 the table}
@@ -107,8 +131,8 @@ outputs (see an AUC tab and the summary statistics; these values are the
 ones for, e.g., "90\% confidence interval around the geometric mean(lower
 limit)").}
 
-\item{includeRange}{TRUE or FALSE (default) for whether to include the minimum
-and maximum values}
+\item{includeRange}{TRUE or FALSE (default) for whether to include the
+minimum and maximum values}
 
 \item{includePerc}{TRUE or FALSE (default) for whether to include 5th to 95th
 percentiles}
@@ -124,16 +148,24 @@ percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
-\item{adjust_conc_units}{Would you like to adjust the units to something other
-than what was used in the simulation? Default is NA to leave the units as
-is, but if you set the concentration units to something else, this will
-attempt to adjust the units to match that. This only adjusts AUC and Cmax
-values at present and is very much under construction!}
+\item{adjust_conc_units}{Would you like to adjust the units to something
+other than what was used in the simulation? Default is NA to leave the
+units as is, but if you set the concentration units to something else, this
+will attempt to adjust the units to match that. This only adjusts AUC and
+Cmax values at present and is very much under construction!}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+
+\item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
+the same time. This only applies when the compound to extract is the
+substrate or a substrate metabolite. If set to TRUE, this will return a
+list that includes data formatted for use with the function
+\code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
+only works with simulations with effectors (at least, for now), this will
+only work for simulations that included an effector.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
@@ -142,8 +174,8 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have the
-table saved as a Word or csv file. (You can also save the table to a Word
-file later with the function \code{\link{formatTable_Simcyp}}.) If you
+the table saved as a Word or csv file. (You can also save the table to a
+Word file later with the function \code{\link{formatTable_Simcyp}}.) If you
 supply only the file extension, e.g., \code{save_table = "docx"}, the name
 of the file will be "PK summary table" with that extension. If you supply
 something other than just "docx" or just "csv" for the file name but you
@@ -157,13 +189,79 @@ your local (not OneDrive) Documents folder.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
+
+\item{...}{}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple
  simulator output files
 }
 \description{
-Make PK summary tables from multiple simulator output files at once
+\code{pksummary_mult} creates tables of PK parameters for reports and
+presentations, including reporting means, CVs, and confidence intervals or
+percentiles and, optionally, comparisons to observed data. This function
+automatically finds the correct tabs and the correct cells in a Simulator
+output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+see the notes at the bottom of this help file for how to supply observed data
+in a standardized fashion that this function can read.} \item{You can specify
+which compound (substrate, inhibitor 1, etc.) and which tissue (plasma,
+blood, or unbound versions of each) you want to get the PK data for.} \item{
+If the simulator output Excel file lives on SharePoint, you'll need to close
+it or this function will just keep running and not generate any output while
+it waits for access to the file.}}
+}
+\details{
+Because we need to have a standardized way to input observed data, setting up
+the input for this function requires creating a data.frame of the observed PK
+data or supplying a csv or Excel file with observed PK data.
+
+\strong{OPTION A: Supply a data.frame.} Use the column names to indicate
+which PK parameter you want, and include a column titled "File" to indicate
+which simulator output Excel file the observed PK in that row should be
+compared to. If you have CV values for any observed data that you'd like to
+include in the table, make the column name be the PK parameter with a suffix
+of "_CV".
+
+An example of specifying a data.frame: \code{observed_PK = data.frame(File =
+c("abc1a-25mg.xlsx", "abc1a-50mg.xlsx"), AUCinf_dose1 = c(60, 120),
+AUCinf_dose1_CV = c(0.38, 0.42), Cmax_dose1 = c(22, 51), Cmax_dose1_CV =
+c(0.24, 0.39))}
+
+\strong{OPTION B: Use a csv file of observed PK data.} In Excel, create a csv
+file where the first row is the PK parameters you want and the second row
+lists the values for each. Make sure to include one column titled "File" to
+indicate which simulator output Excel file the observed PK in that row should
+be compared to. This should look the same as the examples for Option A. To
+see an example of how this should look, run this in the console and then open
+the csv file:
+
+\code{write.csv(data.frame(File = c("abc1a-25mg.xlsx", "abc1a-50mg.xlsx"),
+AUCinf_dose1 = c(60, 120), AUCinf_dose1_CV = c(0.38, 0.42), Cmax_dose1 =
+c(22, 51), Cmax_dose1_CV = c(0.24, 0.39)), file = "Example observed PK
+values.csv", row.names = FALSE)}
+
+When you call on \code{pksummary_table}, use the following syntax,
+substituting your file name for the example: \code{observed_PK = "Example
+observed PK values.csv"}
+
+\strong{OPTION C: Use a tab named "observed PK" in the compound data sheet
+for your project.} Just as with the other examples, the first row lists the
+PK parameters you want, and subsequent rows list the values for those
+parameters. Include a column titled "File" and list the name of the
+simulation output file that you want to compare. It's ok to leave blank any
+cells where you don't have a value, and it's ok to change the PK parameter
+names to something else that you want as long as it's one of the options for
+"PKparameter" in the table you can see by running this in the console:
+\code{view(PKParameterDefinitions)} If your compound data sheet is on
+SharePoint, make sure you close it before running this or R won't be able to
+access the file!
+
+When you call on \code{pksummary_table}, use the following syntax,
+substituting your project's compound data sheet file name for the example:
+\code{observed_PK = paste0(SimcypDir$SharePtDir, "abc-1a/Research/abc-1a
+compound data sheet.xlsx")}  (This assumes that the compound data sheet lives
+on the SharePoint drive in the "Research" folder for you project. Change
+"abc-1a" and the file name to whatever you need for your project.)
 }
 \examples{
 

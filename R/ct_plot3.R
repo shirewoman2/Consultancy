@@ -100,7 +100,7 @@
 #' @param ... arguments that pass through to \code{\link{ct_plot}} or
 #'   \code{\link{ct_plot_overlay}}
 #'
-#' @return
+#' @return a set of 3 arranged ggplot2 graphs
 #' @export
 #'
 #' @examples

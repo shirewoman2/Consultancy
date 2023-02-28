@@ -156,7 +156,8 @@
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
-#' @return
+#' @return A list or a data.frame of PK data that optionally includes where the
+#'   data came from and data to use for making forest plots
 #' @export
 #'
 #' @examples
@@ -230,7 +231,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
     
     for(i in 1:nrow(sim_data_file_pairs)){
         # Including a progress message
-        print(paste0("Extracting data for file pair #", i))
+        message("Extracting data for file pair #", i)
         
         TEMP <- calc_PK_ratios(
             sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
@@ -261,13 +262,15 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
             File = paste(sim_data_file_pairs$Numerator[i], "/", 
                          sim_data_file_pairs$Denominator[i]), 
             Dose_sub = TEMP$ExpDetails_denom$Dose_sub, 
-            Dose_inhib = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
-                                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
-                                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
+            Dose_inhib = switch(as.character(
+                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
+                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
             Substrate = TEMP$ExpDetails_denom$Substrate, 
-            Inhibitor1 = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
-                                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
-                                "FALSE" = TEMP$ExpDetails_num$Substrate), 
+            Inhibitor1 = switch(as.character(
+                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
+                "FALSE" = TEMP$ExpDetails_num$Substrate), 
             File_num = sim_data_file_pairs$Numerator[i], 
             File_denom = sim_data_file_pairs$Denominator[i])
         
@@ -306,15 +309,19 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         return(Out)
     }
     
-    MyPKResults_out <- MyPKResults %>% 
+    # Rounding as requested and setting column order
+    MyPKResults <- MyPKResults %>% 
         mutate(across(.cols = where(is.numeric), 
-                      .fns = round_opt, round_fun = rounding)) %>% 
+                      .fns = round_opt, 
+                      round_fun = ifelse(complete.cases(rounding) & 
+                                             rounding == "Word only", 
+                                         "none", rounding))) %>% 
         select(-File, File)
     
     
     # Saving --------------------------------------------------------------
     
-    Out <- list(Table = MyPKResults_out)
+    Out <- list(Table = MyPKResults)
     
     
     if(complete.cases(save_table)){
@@ -323,7 +330,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         if(complete.cases(rounding) && rounding == "Word only"){
             MyPKResults <- MyPKResults %>% 
                 mutate(across(.cols = where(is.numeric), 
-                              .fns = round_opt, round_fun = rounding)) %>% 
+                              .fns = round_opt, round_fun = "Consultancy")) %>% 
                 select(-File, File)
         } 
         
@@ -404,6 +411,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
             # Storing some objects so they'll work with the markdown file
             PKToPull <- PKparameters
             MeanType <- mean_type
+            FromCalcPKRatios <- TRUE
             
             rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
@@ -454,14 +462,17 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                           collapse = "|")), 
                 Parameter = paste(Parameter, Statistic, sep = "__"), 
                 Parameter = sub("_dose1", "_ratio_dose1", Parameter), 
-                Parameter = sub("_last", "_ratio_last", Parameter))%>% 
+                Parameter = sub("_last", "_ratio_last", Parameter)) %>% 
             select(-Parameter1, -Statistic) %>% 
             filter(str_detect(Parameter, "AUCinf|AUCt|Cmax"))
+        
         if(nrow(FD) == 0){
             warning("The PK parameters selected don't work for forest plots, which can only take PK parameters for AUCinf, AUCtau, and Cmax for dose 1 or the last dose. We cannot return any forest-plot data.", 
                     call. = FALSE)
             FD <- data.frame()
+            
         } else {
+            
             suppressMessages(
                 FD <-  FD %>% 
                     pivot_wider(names_from = Parameter, values_from = Value) %>% 
@@ -469,7 +480,6 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                     select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                            everything())
             )
-            
         }
         
         Out[["ForestData"]] <- FD

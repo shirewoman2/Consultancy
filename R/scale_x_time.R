@@ -27,22 +27,23 @@
 #'   If you only specify one number, we'll assume that's the percent you want
 #'   added to the left side.
 #'
-#' @return
+#' @return a ggplot2 graph scale for the x axis (replaces scale_x_continuous in
+#'   a graph)
 #' @export
 #'
 #' @examples
-#' MyData <- data.frame(Time = 0:168, 
+#' MyData <- data.frame(Time = 0:168,
 #'                      Conc = rnorm(n = 169, mean = 100))
 #' ggplot(MyData, aes(x = Time, y = Conc)) +
 #'     geom_point() + scale_x_time()
-#' 
+#'
 #' ggplot(MyData, aes(x = Time, y = Conc)) +
 #'     geom_point() + scale_x_time(time_range = c(24, 48))
-#' 
-#' # You don't have to name the column with your x-axis data "Time". 
-#' MyAltData <- data.frame(Mango = 0:24, 
+#'
+#' # You don't have to name the column with your x-axis data "Time".
+#' MyAltData <- data.frame(Mango = 0:24,
 #'                         Conc = rnorm(n = 25, mean = 100))
-#' 
+#'
 #' ggplot(MyAltData, aes(x = Mango, y = Conc)) +
 #'     geom_point() + scale_x_time()
 #'

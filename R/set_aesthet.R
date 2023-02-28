@@ -9,10 +9,10 @@
 #' @param MyEffector concatenated string of all effectors involved
 #' @param compoundToExtract compound user wants
 #' @param obs_shape user-specified observed data shape
-#' @param line_color user-specified line color 
+#' @param line_color user-specified line color
 #' @param obs_color user-specified observed-data color
 #'
-#' @return
+#' @return several objects to use with setting graph aesthetics
 
 set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract, 
                         obs_shape, line_color, obs_color, 
@@ -55,7 +55,7 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
        (complete.cases(obs_color[1]) & obs_color == "default") |
        (is.na(obs_color[1]) & figure_type == "freddy")){
         obs_color <- "#3030FE"
-    } else {
+    } else if(length(obs_color) == 1 && is.na(obs_color)){
         obs_color = "black"
     }
     
@@ -68,11 +68,11 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     # Assigning the variables created or changed here to the environment one
     # level up, e.g., probably the environment within the function that's
     # calling on *this* function.
-    assign("line_type", line_type, envir = parent.frame())
-    assign("line_color", line_color, envir = parent.frame())
-    assign("obs_shape", obs_shape, envir = parent.frame())
-    assign("obs_color", obs_color, envir = parent.frame())
-    assign("obs_fill_trans", obs_fill_trans, envir = parent.frame())
-    assign("obs_line_trans", obs_line_trans, envir = parent.frame())
+    Out <- list("line_type" = line_type, 
+                "line_color" = line_color,
+                "obs_shape" = obs_shape,
+                "obs_color" = obs_color, 
+                "obs_fill_trans" = obs_fill_trans,
+                "obs_line_trans" = obs_line_trans)
     
 }
