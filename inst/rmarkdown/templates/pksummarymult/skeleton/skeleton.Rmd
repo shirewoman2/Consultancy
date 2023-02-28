@@ -46,7 +46,7 @@ if(FromCalcPKRatios){
 
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r str_comma(tissues)` PK parameters.*
 
 ```{r makeTablePKSummaryOutput}
 
