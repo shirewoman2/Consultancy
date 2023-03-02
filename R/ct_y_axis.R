@@ -239,7 +239,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         if(length(pad_y_axis) == 1){
             pad_y_num <- c(pad_y_num, 0)
         } else {
-            pad_y_axis <- pad_y_axis[1:2]
+            pad_y_num <- pad_y_axis[1:2]
         }
         
         pad_y_axis <- pad_y_num[1] != 0 # Making pad_y_axis logical again to work with code elsewhere
