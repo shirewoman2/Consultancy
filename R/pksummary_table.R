@@ -331,6 +331,10 @@ pksummary_table <- function(sim_data_file = NA,
         stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
     }
     
+    # If they didn't include ".xlsx" at the end, add that.
+    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
+                            sim_data_file, paste0(sim_data_file, ".xlsx"))
+    
     # Check for appropriate input for arguments
     tissue <- tolower(tissue)
     if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
@@ -342,12 +346,6 @@ pksummary_table <- function(sim_data_file = NA,
     PKorder <- tolower(PKorder)
     if(PKorder %in% c("default", "user specified") == FALSE){
         warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
-                call. = FALSE)
-        PKorder <- "default"
-    }
-    
-    if(PKorder != "default" & is.na(PKparameters[1])){
-        warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters`. The order will be the default order from the Consultancy Report Template.", 
                 call. = FALSE)
         PKorder <- "default"
     }
@@ -518,9 +516,18 @@ pksummary_table <- function(sim_data_file = NA,
         
         # If user provided observed PK, then make sure those PK parameters are
         # included in the PK to extract.
-        PKparameters <- sort(unique(c(PKparameters, names(MyObsPK))))
+        PKparameters <- unique(union(PKparameters, names(MyObsPK)))
         
     }
+    
+    # If user specified PKorder, then use *either* PKparameters OR observed PK
+    # to set the order. Not setting order here; just checking whether user input
+    # is acceptable based on whether observed_PK exists.
+    if(PKorder != "default" & is.na(PKparameters[1]) & "logical" %in% class(observed_PK)){
+        warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters` or by supplying observed PK data. The order will be the default order from the Consultancy Report Template.", 
+                call. = FALSE)
+        PKorder <- "default"
+    } 
     
     # At this point, we should have the sim_data_file. 
     if(is.na(sim_data_file)){
@@ -733,7 +740,7 @@ pksummary_table <- function(sim_data_file = NA,
     # length 0 and we can't proceed.
     if(length(MyPKResults_all) == 0){
         warning(paste0("No PK results were found in the file `",
-                       sim_data_file, "` for ", compoundID, " in ", tissue,
+                       sim_data_file, "` for ", compoundToExtract, " in ", tissue,
                        "."), 
                 call. = FALSE)
         return()
@@ -1107,30 +1114,30 @@ pksummary_table <- function(sim_data_file = NA,
             warning("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.", 
                     call. = FALSE)
         } else {
-        
-        FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
-                                         Stat %in% c("geomean", "CI90_low", "CI90_high"))
-        
-        FD <- FD %>% 
-            mutate(Stat = recode(Stat, "geomean" = "GMR",
-                                 "CI90_low" = "CI90_lo", 
-                                 "CI90_high" = "CI90_hi"),
-                   Parameter = paste(PKParam, Stat, sep = "__")) %>% 
-            select(-PKParam, -Stat, -SorO) %>% 
-            filter(str_detect(Parameter, "AUCinf|AUCt|Cmax")) %>% 
-            pivot_wider(names_from = Parameter, values_from = Value) %>% 
-            mutate(File = sim_data_file, 
-                   Substrate = switch(compoundToExtract, 
-                                      "substrate" = Deets$Substrate, 
-                                      "primary metabolite 1" = Deets$PrimaryMetabolite1, 
-                                      "primary metabolite 2" = Deets$PrimaryMetabolite2, 
-                                      "secondary metabolite" = Deets$SecondaryMetabolite), 
-                   Dose_sub = Deets$Dose_sub, 
-                   Inhibitor1 = Deets$Inhibitor1, 
-                   Dose_inhib = Deets$Dose_inhib) %>% 
-            select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
-                   everything())
-        
+            
+            FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
+                                             Stat %in% c("geomean", "CI90_low", "CI90_high"))
+            
+            FD <- FD %>% 
+                mutate(Stat = recode(Stat, "geomean" = "GMR",
+                                     "CI90_low" = "CI90_lo", 
+                                     "CI90_high" = "CI90_hi"),
+                       Parameter = paste(PKParam, Stat, sep = "__")) %>% 
+                select(-PKParam, -Stat, -SorO) %>% 
+                filter(str_detect(Parameter, "AUCinf|AUCt|Cmax")) %>% 
+                pivot_wider(names_from = Parameter, values_from = Value) %>% 
+                mutate(File = sim_data_file, 
+                       Substrate = switch(compoundToExtract, 
+                                          "substrate" = Deets$Substrate, 
+                                          "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                                          "primary metabolite 2" = Deets$PrimaryMetabolite2, 
+                                          "secondary metabolite" = Deets$SecondaryMetabolite), 
+                       Dose_sub = Deets$Dose_sub, 
+                       Inhibitor1 = Deets$Inhibitor1, 
+                       Dose_inhib = Deets$Dose_inhib) %>% 
+                select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
+                       everything())
+            
         }
     }
     
