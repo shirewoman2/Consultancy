@@ -151,7 +151,7 @@ added to the left side.}
 \item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
 is TRUE, which includes some generally reasonable padding). As with
 \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
-the bottom of your data, possible cutting a point in half. If you want a
+the bottom of your data, possibly cutting a point in half. If you want a
 \emph{specific} amount of y-axis padding, set this to a number; the default
 is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
 to the top of the y axis. If you only specify one number, we'll assume
