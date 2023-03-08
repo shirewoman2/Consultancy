@@ -309,7 +309,7 @@ extractPK <- function(sim_data_file,
         
         Tab_first <- SheetNames[
             str_detect(SheetNames, 
-                       paste0("AUC0", 
+                       paste0("AUC0(_SD|_CI)?", 
                               switch(compoundToExtract,
                                      "substrate" = "\\(Sub\\)", 
                                      "primary metabolite 1" = "\\(Sub Met\\)",
@@ -329,7 +329,7 @@ extractPK <- function(sim_data_file,
         # and compound and we'll narrow down to the exact one we want next.
         Tab_last_check <- SheetNames[
             str_detect(SheetNames, 
-                       paste0("AUC(t)?[1-9]{1,}", 
+                       paste0("AUC(t)?[1-9]{1,}(_SD|_CI)?", 
                               switch(compoundToExtract,
                                      "substrate" = "\\(Sub\\)", 
                                      "primary metabolite 1" = "\\(Sub Met\\)",

@@ -269,18 +269,6 @@ pksummary_mult <- function(sim_data_files = NA,
         tissues <- sys.call()$tissue
     }
     
-    # Making sure that all the files exist before attempting to pull data
-    if(all(complete.cases(sim_data_files)) && 
-       any(file.exists(sim_data_files) == FALSE)){
-        MissingSimFiles <- sim_data_files[
-            which(file.exists(sim_data_files) == FALSE)]
-        warning(paste0("The file(s) ", 
-                       str_comma(paste0("`", MissingSimFiles, "`")), 
-                       " is/are not present and thus will not be extracted."), 
-                call. = FALSE)
-        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
-    }
-    
     # Check for appropriate input for arguments
     compoundsToExtract <- tolower(compoundsToExtract)
     
@@ -329,8 +317,8 @@ pksummary_mult <- function(sim_data_files = NA,
                                 "csv" = read.csv(observed_PK), 
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                          sheetName = "observed PK"))
-        sim_data_files <- c(sim_data_files, observed_PKDF$File)
-        sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
+        sim_data_files <- union(sim_data_files, observed_PKDF$File)
+        
     } else {
         # If user did not supply specific files, then extract all the files in
         # the current folder that end in "xlsx".
@@ -342,12 +330,37 @@ pksummary_mult <- function(sim_data_files = NA,
     
     if("data.frame" %in% class(observed_PK)){
         observed_PKDF <- unique(observed_PK)
+        # If user has not included "xlsx" in file name, add that.
+        observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
+            paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
+                   ".xlsx")
+        
     }
     
     if(exists("observed_PKDF", inherits = FALSE) &&
        "File" %in% names(observed_PKDF) == FALSE){
         stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.", 
              call. = FALSE)
+    }
+    
+    # If user has not included "xlsx" in file name, add that.
+    sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
+        paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
+               ".xlsx")
+    
+    # Making sure that we're only extracting each file once
+    sim_data_files <- unique(sim_data_files)
+    
+    # Making sure that all the files exist before attempting to pull data
+    if(all(complete.cases(sim_data_files)) && 
+       any(file.exists(sim_data_files) == FALSE)){
+        MissingSimFiles <- sim_data_files[
+            which(file.exists(sim_data_files) == FALSE)]
+        warning(paste0("The file(s) ", 
+                       str_comma(paste0("`", MissingSimFiles, "`")), 
+                       " is/are not present and thus will not be extracted."), 
+                call. = FALSE)
+        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
     }
     
     ## Getting simulated data ------------------------------------------------
@@ -372,10 +385,10 @@ pksummary_mult <- function(sim_data_files = NA,
                             "FALSE" = deannotateDetails(existing_exp_details)) 
             
             if("data.frame" %in% class(Deets)){
-                Deets <- Deets %>% filter(File == sim_data_file)
+                Deets <- Deets %>% filter(File == i)
                 
-                if(nrow(Deets == 0)){
-                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                if(nrow(Deets) == 0){
+                    Deets <- extractExpDetails(sim_data_file = i, 
                                                exp_details = "Summary tab")
                 }
             }
@@ -414,7 +427,7 @@ pksummary_mult <- function(sim_data_files = NA,
         if(any(compoundsToExtract_orig == "all")){
             compoundsToExtract <- intersect(compoundsToExtract, AllPossCompounds)
         }
-
+        
         for(j in compoundsToExtract){
             message(paste("Extracting data for compound =", j))
             
@@ -525,8 +538,7 @@ pksummary_mult <- function(sim_data_files = NA,
     } else {
         
         MyPKResults <- bind_rows(MyPKResults) %>% 
-            select(Statistic, CompoundIT, Tissue,
-                   any_of(PKparameters), everything()) %>% 
+            select(Statistic, CompoundID, Tissue, everything()) %>% 
             relocate(c(CompoundID, Tissue, File), .after = last_col())
     }
     
