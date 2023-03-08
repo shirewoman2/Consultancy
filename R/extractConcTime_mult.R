@@ -257,6 +257,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
     
+    # If user has not included "xlsx" in file name, add that.
+    sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
+        paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
+               ".xlsx")
+    
     # Checking on what combinations of data the user has requested and what
     # data are already present in ct_dataframe.
     Requested <- expand.grid(Tissue = tissues,
