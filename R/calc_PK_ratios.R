@@ -887,8 +887,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     }
     
     if(returnExpDetails){
-        Out[["ExpDetails_num"]] <- Deets
-        Out[["ExpDetails_denom"]] <- Deets_denom
+        Out[["ExpDetails_num"]] <- PKnumerator$ExpDetails
+        Out[["ExpDetails_denom"]] <- PKdenominator$ExpDetails
     }
     
     if(length(Out) == 1){

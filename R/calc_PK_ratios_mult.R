@@ -200,6 +200,13 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         includeConfInt <- TRUE
     }
     
+    if(paired == FALSE & mean_type == "arithmetic"){
+        warning("You requested arithmetic means for an unpaired comparison. We're sorry, but this function is only set up for geometric means for unpaired comparisons, so that is what we will report.", 
+                call. = FALSE)
+        mean_type <- "geometric"
+    }
+    
+    
     # Main body of function -------------------------------------------------
     
     # Loading sim_data_file_pairs as needed
