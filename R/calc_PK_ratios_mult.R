@@ -279,13 +279,13 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                 "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
                 "FALSE" = TEMP$ExpDetails_num$Substrate), 
             File_num = sim_data_file_pairs$Numerator[i], 
-            File_denom = sim_data_file_pairs$Denominator[i])
+            File_denom = sim_data_file_pairs$Denominator[i]) %>% 
+            left_join(MyTable[[i]], by = join_by(File))
         
         rm(TEMP)
     }
     
     MyPKResults <- bind_rows(MyTable)
-    
     
     # Setting the rounding option
     round_opt <- function(x, round_fun){
@@ -448,16 +448,20 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
     }
     
     if(extract_forest_data){
+        
         StatNames <- unique(MyPKResults$Statistic[
-            str_detect(MyPKResults$Statistic, "Mean Ratio|CI")])
+            str_detect(MyPKResults$Statistic, "Mean Ratio|CI|^Simulated$")])
         names(StatNames) <- StatNames
-        StatNames[which(str_detect(StatNames, "Ratio"))] <- "GMR"
+        StatNames[which(str_detect(StatNames, "Ratio|^Simulated$"))] <- "GMR"
         StatNames[which(str_detect(StatNames, "CI - Lower"))] <- "CI90_lo"
         StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI90_hi"
         
-        FD <- MyPKResults %>% select(Statistic, File, matches(" / ")) %>% 
-            filter(str_detect(Statistic, "Ratio|Lower|Upper")) %>% 
-            pivot_longer(cols = -c("Statistic", "File"), 
+        FD <- bind_rows(ForestInfo) %>% 
+            select(File, Statistic, Substrate, Dose_sub, Inhibitor1, Dose_inhib,
+                   matches(" / ")) %>% 
+            filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
+            pivot_longer(cols = -c("Statistic", "File", "Dose_sub", "Dose_inhib", 
+                                   "Substrate", "Inhibitor1"), 
                          names_to = "Parameter1", 
                          values_to = "Value") %>% 
             mutate(
@@ -483,7 +487,6 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
             suppressMessages(
                 FD <-  FD %>% 
                     pivot_wider(names_from = Parameter, values_from = Value) %>% 
-                    left_join(bind_rows(ForestInfo)) %>% 
                     select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                            everything())
             )
