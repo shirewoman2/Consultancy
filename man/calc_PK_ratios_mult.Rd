@@ -34,15 +34,22 @@ see the arguments \code{sheet_PKparameters_num} and
 \code{sheet_PKparameters_denom}.)}
 
 \item{paired}{TRUE (default) or FALSE for whether the study design is paired,
-as in, the subjects are \emph{identical} between the two simulations. For
-paired study designs, the order of operations is to calculate each
-subject's ratio and then to calculate the mean of those ratios. For
-unpaired study designs, the order of operations is to calculate the mean of
-the parameter of interest for the numerator simulation and then divide it
-by the mean of the parameter of interest for the denominator simulation.
-\strong{A caveat for unpaired data:} We're checking on how best to
-calculate the CV and confidence intervals for the unpaired data, so please
-check our work before using those!}
+as in, the subjects are \emph{identical} between the two simulations.
+\strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
+CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
+study where each subject has a measurement without the effector of interest
+and then has a second measurement \emph{with} the effector. The comparison
+is for repeated measurements of the \emph{same subject}. An example of an
+unpaired study design would be comparing healthy volunteers to subjects
+with hepatic impairment because those are measurements on \emph{different}
+subjects. For paired study designs, the order of operations is to calculate
+each subject's mean ratio and then to calculate the mean of those ratios.
+For unpaired study designs, the order of operations is to calculate the
+mean for the numerator simulation and then divide it by the mean for the
+denominator simulation. Would this be clearer if you could see the
+mathematical equations? We agree but can't easily include equations in the
+help file. However, if you run this and save the output to a Word file, the
+equations will be included in the output.}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
   output file. Options are: \describe{
