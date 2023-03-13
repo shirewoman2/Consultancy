@@ -456,8 +456,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         
         # Making sure that subjects were matched between numerator and
         # denominator
-        NumIDs <- paste(PKumerator$individual$Individual, 
-                        PKumerator$individual$Trial)
+        NumIDs <- paste(PKnumerator$individual$Individual, 
+                        PKnumerator$individual$Trial)
         DenomIDs <- paste(PKdenominator$individual$Individual, 
                           PKdenominator$individual$Trial)
         
@@ -565,7 +565,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                           mutate(NumDenom = "Denom")) %>% 
             group_by(PKparameter) %>% 
             summarize(Mean = geomratio_stats(x_num = Value[NumDenom == "Num"], 
-                                                  x_denom = Value[NumDenom == "Denom"])[1], 
+                                             x_denom = Value[NumDenom == "Denom"])[1], 
                       CI_l = geomratio_stats(x_num = Value[NumDenom == "Num"], 
                                              x_denom = Value[NumDenom == "Denom"])[2], 
                       CI_u = geomratio_stats(x_num = Value[NumDenom == "Num"], 
@@ -616,10 +616,10 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                    Statistic = recode(Statistic, 
                                                       "90% confidence interval around the geometric mean(lower limit)" = "CI_l", 
                                                       "90% confidence interval around the geometric mean(upper limit)" = "CI_u"))) %>% 
-                            select(-ValType) %>% 
-                            pivot_wider(names_from = PKparameter,
-                                        values_from = Value)
-                    )
+                    select(-ValType) %>% 
+                    pivot_wider(names_from = PKparameter,
+                                values_from = Value)
+            )
         }
     }
     
