@@ -41,8 +41,9 @@ data? Options are any combination of the following:
 \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
 suppresesor, but it's labeled as "Inhibitor 1" in the simulator,}
 \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation,}
-\item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}}
-To specify multiple compounds, enclose the compound IDs with parentheses,
+\item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
+\item{"all" for all possible compounds present in the simulations}} To
+specify multiple compounds, enclose the compound IDs with parentheses,
 e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}}
 
 \item{tissues}{For which tissue(s) would you like the PK parameters to be

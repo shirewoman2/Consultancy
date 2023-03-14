@@ -651,7 +651,7 @@ extractPK <- function(sim_data_file,
             }
             
             if(length(ColNum) == 0 | is.na(ColNum)){
-                if(PKparameters_orig %in% c("all", "AUC tab") == FALSE){
+                if(any(PKparameters_orig %in% c("all", "AUC tab")) == FALSE){
                     warning(paste0("The column with information for ", i,
                                    " on the tab 'AUC' cannot be found in the file ", 
                                    sim_data_file, "."), 
