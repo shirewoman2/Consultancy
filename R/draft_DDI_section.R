@@ -465,9 +465,7 @@ draft_DDI_section <- function(sim_data_file,
     
     rmarkdown::render(system.file("rmarkdown/templates/draftddisections/skeleton/skeleton.Rmd",
                                   package="SimcypConsultancy"), 
-                      output_dir = switch(as.character(LFSPath), 
-                                          "TRUE" = TempDir,
-                                          "FALSE" = OutPath),
+                      output_dir = OutPath, 
                       output_file = save_draft, 
                       quiet = TRUE)
     # Note: The "system.file" part of the call means "go to where the
