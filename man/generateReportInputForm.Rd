@@ -41,9 +41,7 @@ this tab as there are clinical data sets you want to compare and name the
 tabs according to which data sets they describe.} }
 }
 \examples{
-generateReportInputForm(paste0(SimcypDir$SharePtDir,
-             "Research/R working group/SimcypConsultancy function examples and instructions/pksummary_table examples/",
-             "Ultraconazole report input.xlsx"))
+generateReportInputForm("Ultraconazole report input.xlsx")
 
 
 }
