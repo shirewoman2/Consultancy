@@ -212,7 +212,18 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         tissue <- "plasma"
     }
     
+    # Only returning geometric means and CI's if they want unpaired data.
+    # Uncertain how to set things up otherwise.
+    if(paired == FALSE & mean_type != "geometric"){
+        warning("You have supplied unpaired data and requested something other than geometric means and confidence intervals. We have only set this function up for unpaired data with geometric means and confidence intervals, so that is what will be returned.", 
+                call = FALSE)
+        mean_type <- "geometric"
+    }
+    
+    
     # Main body of function -------------------------------------------------
+    
+    ## Extracting PK ---------------------------------------------------------
     
     # Checking whether the user wants to have different PK parameters for
     # numerator than for denominator.
@@ -291,6 +302,9 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         PKnumerator$individual <- PKnumerator$individual %>% select(-AUCt, -CLt)
         PKdenominator$individual <- PKdenominator$individual %>% select(-AUCt, -CLt)
     }
+    
+    
+    ## Determining column format & arrangement ---------------------------------
     
     # Keeping track of which columns came from where and the desired order
     # in the output
@@ -424,19 +438,35 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     }
     
     
+    
     if(paired){
+        ## Making paired comparisons -----------------------------------------
         
         MyPKResults <- PKnumerator$individual %>% 
             pivot_longer(cols = -c(Individual, Trial), 
                          names_to = "Parameter", 
                          values_to = "NumeratorSim") %>% 
-            left_join(PKdenominator$individual %>% 
+            full_join(PKdenominator$individual %>% 
                           pivot_longer(cols = -c(Individual, Trial), 
                                        names_to = "Parameter", 
                                        values_to = "DenominatorSim"), 
                       join_by(Individual, Trial, Parameter)) %>% 
-            mutate(Ratio = NumeratorSim / DenominatorSim)
+            mutate(Ratio = NumeratorSim / DenominatorSim, 
+                   ID = paste(Individual, Trial))
         
+        # Making sure that subjects were matched between numerator and
+        # denominator
+        NumIDs <- paste(PKnumerator$individual$Individual, 
+                        PKnumerator$individual$Trial)
+        DenomIDs <- paste(PKdenominator$individual$Individual, 
+                          PKdenominator$individual$Trial)
+        
+        if(all(NumIDs %in% MyPKResults$ID) & all(DenomIDs %in% MyPKResults$ID) == FALSE){
+            warning("You do not appear to have perfectly matched subjects in your numerator and denominator simulations. Since you have requested calculations for a paired study design, we'll only use the subjects that are matched in both for making calculations. If you actually have an unpaired study design, please change `paired` to `FALSE` and try again.", 
+                    call. = FALSE)
+            
+            MyPKResults <- MyPKResults %>% filter(ID %in% intersect(NumIDs, DenomIDs))
+        }
         
         if(include_num_denom_columns == FALSE){
             MyPKResults <- MyPKResults %>% select(-NumeratorSim, -DenominatorSim)
@@ -489,98 +519,91 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         
         
     } else {
-        # unpaired study design
-        PKnum <- PKnumerator$aggregate %>% 
-            pivot_longer(cols = -Statistic, 
-                         names_to = "PKparameter", values_to = "ValueNum")
         
-        PKdenom <- PKdenominator$aggregate %>% 
-            pivot_longer(cols = -Statistic, 
-                         names_to = "PKparameter", values_to = "ValueDenom")
+        ## Making unpaired comparisons -----------------------------------------
         
-        suppressMessages(
-            PKRatios_mean <- left_join(PKnum, PKdenom) %>% 
-                filter(Statistic == switch(mean_type,
-                                           "geometric" = "Geometric Mean",
-                                           "arithmetic" = "Mean")) %>% 
-                mutate(Ratio__Mean = ValueNum / ValueDenom) %>% 
-                select(PKparameter, Ratio__Mean)
-        )
-        
-        suppressMessages(
-            PKRatios_cv <- left_join(
-                PKnum %>% 
-                    filter(Statistic %in% switch(mean_type,
-                                                 "geometric" = c("Geometric Mean", "Geometric CV"),
-                                                 "arithmetic" = c("Mean", "cv"))) %>% 
-                    mutate(Statistic = ifelse(str_detect(Statistic, "Mean"), "MeanNum", "CVNum")) %>% 
-                    pivot_wider(names_from = Statistic, values_from = ValueNum),
-                
-                PKdenom %>% 
-                    filter(Statistic %in% switch(mean_type,
-                                                 "geometric" = c("Geometric Mean", "Geometric CV"),
-                                                 "arithmetic" = c("Mean", "cv"))) %>% 
-                    mutate(Statistic = ifelse(str_detect(Statistic, "Mean"), "MeanDenom", "CVDenom")) %>% 
-                    pivot_wider(names_from = Statistic, values_from = ValueDenom)
-            ) %>% mutate(Ratio__CV = sqrt(CVNum^2 + CVDenom^2))
-        )
-        
-        suppressMessages(
-            PKRatios <- PKRatios_mean %>% left_join(PKRatios_cv) %>% 
-                mutate(Ratio__SD = Ratio__CV * Ratio__Mean, 
-                       Ratio__CI_l = Ratio__Mean - 
-                           qnorm(1-(1-conf_int)/2)*Ratio__SD/sqrt(nrow(PKnumerator$individual)), 
-                       Ratio__CI_u = Ratio__Mean + 
-                           qnorm(1-(1-conf_int)/2)*Ratio__SD/sqrt(nrow(PKnumerator$individual))) %>% 
-                select(PKparameter, matches("Ratio"))
-        )
-        
-        if(nrow(PKnumerator$individual) != nrow(PKdenominator$individual)){
-            warning("You have different numbers of individuals in your two simulations, and this function is simply not sophisticated enough statistically to calculate the confidence interval for the ratios when the sample size differs. You will get NA values for the upper and lower bounds of the confidence intervals for the ratios.", 
-                    call. = FALSE)
-            PKRatios <- PKRatios %>% 
-                mutate(Ratio__CI_l = NA, 
-                       Ratio__CI_u = NA)
+        # Using calculations recommended by Frederic Bois for the confidence
+        # interval. (Note to self: See email from March 3, 2023. -LSh)
+        geomratio_stats <- function(x_num, x_denom){
+            
+            # Log transforming individual data
+            logx_num <- log(x_num)
+            logx_denom <- log(x_denom)
+            
+            # Calculating the difference of the means of the log-transformed
+            # data; this is equivalent to the ratio of the geometric means,
+            # i.e., gm_mean(x1) / gm_mean(x2) = exp(mean(logx1) - mean(logx2))
+            LogGeomeanRatio <- mean(logx_num) - mean(logx_denom)
+            
+            # Variance of each vector
+            Var_num <- var(logx_num)/length(x_num)
+            Var_denom <- var(logx_denom)/length(x_denom)
+            
+            # Using that to calculate the variance of the ratio and then the
+            # standard deviation
+            Var_delta <- sum(Var_num, Var_denom)
+            SD_delta <- sqrt(Var_delta)
+            
+            CI_lower_delta <- LogGeomeanRatio - qnorm(1-(1-conf_int)/2)*SD_delta
+            CI_upper_delta <- LogGeomeanRatio + qnorm(1-(1-conf_int)/2)*SD_delta
+            
+            Out <- c("GeomeanRatio" = exp(LogGeomeanRatio), 
+                     "GeoRatio_CI_lower" = exp(CI_lower_delta),
+                     "GeoRatio_CI_upper" = exp(CI_upper_delta))
+            
+            return(Out)
+            
         }
+        
+        PKRatios <- PKnumerator$individual %>% 
+            pivot_longer(cols = -c(Individual, Trial), 
+                         names_to = "PKparameter", values_to = "Value") %>% 
+            mutate(NumDenom = "Num") %>% 
+            bind_rows(PKdenominator$individual %>% 
+                          pivot_longer(cols = -c(Individual, Trial), 
+                                       names_to = "PKparameter", values_to = "Value") %>% 
+                          mutate(NumDenom = "Denom")) %>% 
+            group_by(PKparameter) %>% 
+            summarize(Mean = geomratio_stats(x_num = Value[NumDenom == "Num"], 
+                                             x_denom = Value[NumDenom == "Denom"])[1], 
+                      CI_l = geomratio_stats(x_num = Value[NumDenom == "Num"], 
+                                             x_denom = Value[NumDenom == "Denom"])[2], 
+                      CI_u = geomratio_stats(x_num = Value[NumDenom == "Num"], 
+                                             x_denom = Value[NumDenom == "Denom"])[3])
         
         # Getting this into a form that matches form from paired option.
         MyPKResults <- PKRatios %>% 
             # select(PKparameter, matches("Ratio")) %>% 
             pivot_longer(cols = -PKparameter, 
-                         names_to = "Statistic", values_to = "Val") %>% 
-            mutate(Val = round_opt(Val, rounding)) %>% 
-            pivot_wider(names_from = PKparameter, values_from = Val) %>% 
-            filter(Statistic != "Ratio__SD") %>% 
-            separate(col = Statistic, into = c("ValType", "Statistic"), sep = "__") %>% 
-            pivot_longer(cols = -c("Statistic", "ValType"), 
-                         names_to = "Parameter", values_to = "Value") %>% 
-            mutate(Parameter = paste(Parameter, ValType)) %>% 
-            select(-ValType) %>% 
-            pivot_wider(names_from = Parameter, values_from = Value)
+                         names_to = "Statistic", values_to = "Value") %>% 
+            mutate(Value = round_opt(Value, rounding), 
+                   ValType = "Ratio", 
+                   PKparameter = paste(PKparameter, ValType))
         
         if(include_num_denom_columns){
             
-            # Earlier, had to change column names of denominator results for
-            # matching w/numerator results when joining data.frames. Now, need
-            # to change names back to what the values *actually are* so that
-            # things don't get any further confused.
-            PKdenom <- PKdenom %>% rename(PKparam_num = PKparameter) %>% 
-                left_join(Comparisons %>% select(PKparam_num, PKparam_denom), 
-                          by = "PKparam_num") %>% 
-                rename(PKparameter = PKparam_denom) %>% select(-PKparam_num)
-            
             suppressMessages(
                 MyPKResults <- MyPKResults %>% 
-                    left_join(
-                        PKnum %>% mutate(ValType = "NumeratorSim", 
-                                         ValueNum = round_opt(ValueNum, rounding)) %>% 
-                            rename(Value = ValueNum) %>% 
+                    bind_rows(
+                        PKnumerator$aggregate %>%
+                            pivot_longer(cols = -Statistic, 
+                                         names_to = "PKparameter", values_to = "Value") %>% 
+                            mutate(ValType = "NumeratorSim", 
+                                   Value = round_opt(Value, rounding)) %>% 
                             
                             bind_rows(
-                                PKdenom %>% 
+                                # Earlier, had to change column names of denominator results for
+                                # matching w/numerator results when joining data.frames. Now, need
+                                # to change names back to what the values *actually are* so that
+                                # things don't get any further confused.
+                                PKdenominator$aggregate %>%
+                                    pivot_longer(cols = -Statistic, 
+                                                 names_to = "PKparam_num", values_to = "Value") %>% 
+                                    left_join(Comparisons %>% select(PKparam_num, PKparam_denom), 
+                                              by = "PKparam_num") %>% 
+                                    rename(PKparameter = PKparam_denom) %>% select(-PKparam_num) %>% 
                                     mutate(ValType = "DenominatorSim", 
-                                           ValueDenom = round_opt(ValueDenom, rounding)) %>% 
-                                    rename(Value = ValueDenom)) %>% 
+                                           Value = round_opt(Value, rounding))) %>% 
                             
                             filter(Statistic %in% 
                                        switch(mean_type,
@@ -592,11 +615,11 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                    Statistic = sub("Geometric ", "", Statistic), 
                                    Statistic = recode(Statistic, 
                                                       "90% confidence interval around the geometric mean(lower limit)" = "CI_l", 
-                                                      "90% confidence interval around the geometric mean(upper limit)" = "CI_u")) %>% 
-                            select(-ValType) %>% 
-                            pivot_wider(names_from = PKparameter,
-                                        values_from = Value)
-                    ))
+                                                      "90% confidence interval around the geometric mean(upper limit)" = "CI_u"))) %>% 
+                    select(-ValType) %>% 
+                    pivot_wider(names_from = PKparameter,
+                                values_from = Value)
+            )
         }
     }
     
@@ -887,8 +910,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     }
     
     if(returnExpDetails){
-        Out[["ExpDetails_num"]] <- PKnumerator$ExpDetails
-        Out[["ExpDetails_denom"]] <- PKdenominator$ExpDetails
+        Out[["ExpDetails_num"]] <- Deets
+        Out[["ExpDetails_denom"]] <- Deets_denom
     }
     
     if(length(Out) == 1){
