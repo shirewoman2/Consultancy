@@ -340,10 +340,12 @@ pksummary_mult <- function(sim_data_files = NA,
              call. = FALSE)
     }
     
-    # If user has not included "xlsx" in file name, add that.
-    observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
-        paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
-               ".xlsx")
+    if(exists("observed_PKDF")){
+        # If user has not included "xlsx" in file name, add that.
+        observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
+            paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
+                   ".xlsx")
+    }
     
     # If user has not included "xlsx" in file name, add that.
     sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
@@ -446,7 +448,7 @@ pksummary_mult <- function(sim_data_files = NA,
                         tissue = k, 
                         observed_PK = switch(
                             as.character(exists("observed_PKDF", inherits = FALSE) &&
-                                             i %in% observed_PKDF$File), 
+                                         i %in% observed_PKDF$File), 
                             "TRUE" = observed_PKDF %>% filter(File == i), 
                             "FALSE" = NA),
                         PKparameters = PKparameters, 
@@ -528,13 +530,13 @@ pksummary_mult <- function(sim_data_files = NA,
         
         suppressMessages(
             MyPKResults <- MyPKResults %>% 
-                select(Statistic, 
-                       any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
-                                  left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
-                                  filter(complete.cases(SortOrder)) %>% 
-                                  arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
-                       everything()) %>% 
-                relocate(c(CompoundID, Tissue, File), .after = last_col())
+            select(Statistic, 
+                   any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
+                          left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
+                          filter(complete.cases(SortOrder)) %>% 
+                          arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
+                   everything()) %>% 
+            relocate(c(CompoundID, Tissue, File), .after = last_col())
         )
         
     } else {
@@ -677,6 +679,6 @@ pksummary_mult <- function(sim_data_files = NA,
     
     return(Out)
     
-}
+    }
 
 
