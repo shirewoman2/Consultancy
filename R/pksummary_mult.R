@@ -75,8 +75,9 @@
 #'   \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
 #'   suppresesor, but it's labeled as "Inhibitor 1" in the simulator,}
 #'   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation,}
-#'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}}
-#'   To specify multiple compounds, enclose the compound IDs with parentheses,
+#'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
+#'   \item{"all" for all possible compounds present in the simulations}} To
+#'   specify multiple compounds, enclose the compound IDs with parentheses,
 #'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
 #'   vector, or an Excel or csv file with observed PK parameters, supply the
@@ -309,6 +310,13 @@ pksummary_mult <- function(sim_data_files = NA,
     
     # Main body of function --------------------------------------------------
     
+    # If user did not supply specific files, then extract all the files in
+    # the current folder that end in "xlsx".
+    if(length(unique(sim_data_files)) == 1 && is.na(sim_data_files)){
+        sim_data_files <- list.files(pattern = "xlsx$")
+        sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+    }
+    
     ## Read obs data --------------------------------------------------------
     # Read in the observed_PK data if it's not already a data.frame. Note that
     # the class of observed_PK will be logical if left as NA.
@@ -318,23 +326,12 @@ pksummary_mult <- function(sim_data_files = NA,
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                          sheetName = "observed PK"))
         sim_data_files <- union(sim_data_files, observed_PKDF$File)
+        sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
         
-    } else {
-        # If user did not supply specific files, then extract all the files in
-        # the current folder that end in "xlsx".
-        if(length(unique(sim_data_files)) == 1 && is.na(sim_data_files)){
-            sim_data_files <- list.files(pattern = "xlsx$")
-            sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-        }
-    }
+    } 
     
     if("data.frame" %in% class(observed_PK)){
         observed_PKDF <- unique(observed_PK)
-        # If user has not included "xlsx" in file name, add that.
-        observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
-            paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
-                   ".xlsx")
-        
     }
     
     if(exists("observed_PKDF", inherits = FALSE) &&
@@ -342,6 +339,11 @@ pksummary_mult <- function(sim_data_files = NA,
         stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.", 
              call. = FALSE)
     }
+    
+    # If user has not included "xlsx" in file name, add that.
+    observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
+        paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
+               ".xlsx")
     
     # If user has not included "xlsx" in file name, add that.
     sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
