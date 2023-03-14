@@ -20,6 +20,7 @@ inductFit(
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
   vert_line = NA,
+  Imaxu_line = NA,
   num_sigfig = NA,
   graph_title = NA,
   graph_title_size = 14,
@@ -137,11 +138,16 @@ Numeric data should not be in quotes.)}
 \item{hline_foldinduct1}{TRUE or FALSE (default) on whether to include a
 dotted red line where the fold induction = 1.}
 
-\item{vert_line}{optionally include a dotted red line at some concentration,
-for example, 30*Imax,u (see p. 5 USFDA Guidance (2020) "In Vitro Drug
-Interaction Studies - Cytochrome P450 Enzyme and Transporter Mediated Drug
-Interactions"). Use a numeric value for the concentration you want or leave
+\item{vert_line}{optionally include a vertical dotted red line at some
+concentration. Use a numeric value for the concentration you want or leave
 as NA (default) for no vertical line.}
+
+\item{Imaxu_line}{optionally specify a value for 30*Imax,u (see p. 5 USFDA
+Guidance (2020) "In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme
+and Transporter Mediated Drug Interactions") and this will create red
+dotted line that goes up from the x axis at that concentration and then
+across to the y axis at the 2-fold change level. Use a numeric value for
+the concentration you want or leave as NA (default) for no line.}
 
 \item{num_sigfig}{optionally specify the number of significant figures you
 would like any output rounded to. If left as NA, no rounding will be
