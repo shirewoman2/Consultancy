@@ -8,17 +8,18 @@ inductFit(
   DF,
   conc_column = Concentration_uM,
   fold_change_column = FoldInduction,
-  model = "EmaxSlope",
+  donor_column = DonorID,
+  fitByDonor = TRUE,
+  model = "all",
   measurement = "mRNA",
   enzyme = "CYP3A4",
   drug = NA,
-  donor_column = DonorID,
-  fitByDonor = TRUE,
   weights = "1/y^2",
   omit = NA,
   color_set = "default",
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
+  vert_line = NA,
   num_sigfig = NA,
   graph_title = NA,
   graph_title_size = 14,
@@ -41,6 +42,12 @@ concentration data. This should be unquoted.}
 fold-change data, e.g., mRNA measurements or activity. This should be
 unquoted.}
 
+\item{donor_column}{the name of the column within DF that contains the donor
+IDs, unquoted}
+
+\item{fitByDonor}{TRUE (default) or FALSE for whether to fit the data by
+individual donor}
+
 \item{model}{which model(s) you would like to use. The four model options
   are: \describe{
 
@@ -61,7 +68,7 @@ unquoted.}
   The sigmoidal 3-parameter model is the \emph{only} model that determines
   Indmax instead of Emax!}
 
-  \item{"all"}{All 4 models will be fitted to the data.} }}
+  \item{"all" (default)}{All 4 models will be fitted to the data.} }}
 
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}
@@ -74,12 +81,6 @@ and captions in the Word document output.}
 unspecified, but supplying a value will include the drug name in the x-axis
 label on the graphs as well as the figure and table headings and captions
 in the Word document output.}
-
-\item{donor_column}{the name of the column within DF that contains the donor
-IDs, unquoted}
-
-\item{fitByDonor}{TRUE (default) or FALSE for whether to fit the data by
-individual donor}
 
 \item{weights}{weighting scheme to use for the regression. User may supply a
 numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
@@ -135,6 +136,12 @@ Numeric data should not be in quotes.)}
 
 \item{hline_foldinduct1}{TRUE or FALSE (default) on whether to include a
 dotted red line where the fold induction = 1.}
+
+\item{vert_line}{optionally include a dotted red line at some concentration,
+for example, 30*Imax,u (see p. 5 USFDA Guidance (2020) "In Vitro Drug
+Interaction Studies - Cytochrome P450 Enzyme and Transporter Mediated Drug
+Interactions"). Use a numeric value for the concentration you want or leave
+as NA (default) for no vertical line.}
 
 \item{num_sigfig}{optionally specify the number of significant figures you
 would like any output rounded to. If left as NA, no rounding will be

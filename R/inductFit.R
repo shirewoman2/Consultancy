@@ -47,7 +47,7 @@
 #'   The sigmoidal 3-parameter model is the \emph{only} model that determines
 #'   Indmax instead of Emax!}
 #'
-#'   \item{"all"}{All 4 models will be fitted to the data.} }
+#'   \item{"all" (default)}{All 4 models will be fitted to the data.} }
 #'
 #' @param measurement the type of measurement used. Options are "mRNA" or
 #'   "activity". This only affects the y axis labels on the output graph(s).
@@ -115,6 +115,11 @@
 #'   Numeric data should not be in quotes.)
 #' @param hline_foldinduct1 TRUE or FALSE (default) on whether to include a
 #'   dotted red line where the fold induction = 1.
+#' @param vert_line optionally include a dotted red line at some concentration,
+#'   for example, 30*Imax,u (see p. 5 USFDA Guidance (2020) "In Vitro Drug
+#'   Interaction Studies - Cytochrome P450 Enzyme and Transporter Mediated Drug
+#'   Interactions"). Use a numeric value for the concentration you want or leave
+#'   as NA (default) for no vertical line.
 #' @param num_sigfig optionally specify the number of significant figures you
 #'   would like any output rounded to. If left as NA, no rounding will be
 #'   performed.
@@ -172,17 +177,18 @@
 inductFit <- function(DF,
                       conc_column = Concentration_uM,
                       fold_change_column = FoldInduction,
-                      model = "EmaxSlope",
+                      donor_column = DonorID,
+                      fitByDonor = TRUE, 
+                      model = "all",
                       measurement = "mRNA",
                       enzyme = "CYP3A4", 
                       drug = NA,
-                      donor_column = DonorID,
-                      fitByDonor = TRUE, 
                       weights = "1/y^2", 
                       omit = NA,
                       color_set = "default",
                       y_axis_limits = NA,
                       hline_foldinduct1 = FALSE,
+                      vert_line = NA,
                       num_sigfig = NA, 
                       graph_title = NA,
                       graph_title_size = 14, 
@@ -510,10 +516,10 @@ inductFit <- function(DF,
             scale_shape_manual(values = c(19, 1)) +
             guides(shape = "none")
         
-        if(hline_foldinduct1){
-            G <- G +
-                geom_hline(yintercept = 1, color = "red", linetype = "dotted")
-        } 
+        # if(hline_foldinduct1){
+        #     G <- G +
+        #         geom_hline(yintercept = 1, color = "red", linetype = "dotted")
+        # } 
         
         G <- G +
             geom_point() +
@@ -571,6 +577,11 @@ inductFit <- function(DF,
                 G <- G +
                     geom_hline(yintercept = 1, color = "red", linetype = "dotted")
             }   
+            
+            if(complete.cases(vert_line)){
+                G <- G +
+                    geom_vline(xintercept = vert_line, color = "red", linetype = "dotted")
+            }
             
             G <- G + 
                 geom_point() +
@@ -662,6 +673,11 @@ inductFit <- function(DF,
                 G <- G +
                     geom_hline(yintercept = 1, color = "red", linetype = "dotted") 
                 
+            }
+            
+            if(complete.cases(vert_line)){
+                G <- G +
+                    geom_vline(xintercept = vert_line, color = "red", linetype = "dotted")
             }
             
             G <- G +
