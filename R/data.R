@@ -67,15 +67,7 @@
 #' scales::show_col(SimcypColors)
 "SimcypColors"
 
-#' Simcyp paths
-#'
-#' Paths for Simcyp's large-file store, SharePoint directory, and the specific
-#' folder on the large-file store for sharing R-related files
-#'
-#' @format A two-item list: \describe{ \item{LgFileDir}{the large-file store}
-#'   \item{SharePtDir}{the SharePoint directory} \item{RDir}{the folder on the
-#'   large-file store for sharing SimcypConsultancy R files}}
-"SimcypDir"
+
 
 #' Report input forms to be used in conjunction with
 #' \code{\link{getSectionInfo}} and \code{\link{pksummary_table}}
