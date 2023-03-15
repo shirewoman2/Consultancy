@@ -61,7 +61,7 @@ unquoted.}
   The sigmoidal 3-parameter model is the \emph{only} model that determines
   Indmax instead of Emax!}
 
-  \item{"all"}{All 4 models will be fitted to the data.} }}
+  \item{"all" (default)}{All 4 models will be fitted to the data.} }}
 
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}

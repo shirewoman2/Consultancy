@@ -47,7 +47,7 @@
 #'   The sigmoidal 3-parameter model is the \emph{only} model that determines
 #'   Indmax instead of Emax!}
 #'
-#'   \item{"all"}{All 4 models will be fitted to the data.} }
+#'   \item{"all" (default)}{All 4 models will be fitted to the data.} }
 #'
 #' @param measurement the type of measurement used. Options are "mRNA" or
 #'   "activity". This only affects the y axis labels on the output graph(s).
@@ -899,51 +899,16 @@ inductFit <- function(DF,
                 OutPath <- getwd()
             }
             
-            # Check for whether they're trying to save on SharePoint, which DOES
-            # NOT WORK. If they're trying to save to SharePoint, instead, save
-            # to their Documents folder.
-            
-            # Side regex note: The myriad \ in the "sub" call are necessary b/c
-            # \ is an escape character, and often the SharePoint and Large File
-            # Store directory paths start with \\\\.
-            if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
-                
-                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
-                                  "/Documents")
-                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
-                               OutPath,
-                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
-                        call. = FALSE)
-            }
-            
-            LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
-            
-            if(LFSPath){
-                # Create a temporary directory in the user's AppData/Local/Temp
-                # folder.
-                TempDir <- tempdir()
-                
-                # Upon exiting this function, delete that temporary directory.
-                on.exit(unlink(TempDir))
-                
-            }
-            
             FileName <- basename(save_output)
             
             rmarkdown::render(system.file("rmarkdown/templates/inductfit/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
-                              output_dir = switch(as.character(LFSPath), 
-                                                  "TRUE" = TempDir,
-                                                  "FALSE" = OutPath),
+                              output_dir = OutPath, 
                               output_file = FileName, 
                               quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
-            
-            if(LFSPath){
-                file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
-            }
             
         } else {
             # This is when they want a .csv file as output. 
