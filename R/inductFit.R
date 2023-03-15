@@ -2,18 +2,17 @@
 #'
 #' \code{inductFit} fits induction data -- either activity or mRNA expression --
 #' to one or all of four models for calculating Indmax or Emax, EC50, and, when
-#' appropriate, a slope. Like Howie's R script for fitting induction data
-#' ("Induction_fit_script_ver2.r"), by default, data are weighted by 1/y^2, but
-#' you can change that with the "weights" argument. \strong{Two important
-#' notes:} \itemize{\item{With the exception of the sigmoidal 3-parameter model,
-#' the fitted parameter describing maximal induction is Emax and \emph{not}
-#' Indmax, the parameter used in the Simcyp Simulator. Note that \strong{Indmax
-#' = Emax + 1}.} \item{One way in which this function differs from Howie's
-#' script is that no upper or lower bounds for parameter estimates are in use.
-#' This means that, if sufficient data to describe the curve do not exist, the
-#' function will fail to deliver any fitted parameters, which is meant to be a
-#' benefit but could be an annoyance depending on your perspective. Because this
-#' does not include those boundaries, you may get different results between this
+#' appropriate, a slope. \strong{Two important notes:} \itemize{\item{With the
+#' exception of the sigmoidal 3-parameter model, the fitted parameter describing
+#' maximal induction is Emax and \emph{not} Indmax, the parameter used in the
+#' Simcyp Simulator. Note that \strong{Indmax = Emax + 1}.} \item{If you're
+#' familiar with Howie's R script for fitting induction data
+#' ("Induction_fit_script_ver2.r"), one way in which this function differs is
+#' that no upper or lower bounds for parameter estimates are in use. This means
+#' that, if sufficient data to describe the curve do not exist, the function
+#' will fail to deliver any fitted parameters, which is meant to be a benefit
+#' but could be an annoyance depending on your perspective. Because this does
+#' not include those boundaries, you may get different results between this
 #' function and Howie's script.}}
 #'
 #' @param DF the data.frame containing induction data with a column for the drug
@@ -115,9 +114,29 @@
 #'   Numeric data should not be in quotes.)
 #' @param hline_foldinduct1 TRUE or FALSE (default) on whether to include a
 #'   dotted red line where the fold induction = 1.
-#' @param num_sigfig optionally specify the number of significant figures you
-#'   would like any output rounded to. If left as NA, no rounding will be
-#'   performed.
+#' @param vert_line optionally include a vertical dotted red line at some
+#'   concentration. Use a numeric value for the concentration you want or leave
+#'   as NA (default) for no vertical line.
+#' @param Imaxu_line optionally specify a value for 30*Imax,u (see p. 5 USFDA
+#'   Guidance (2020) "In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme
+#'   and Transporter Mediated Drug Interactions") and this will create red
+#'   dotted line that goes up from the x axis at that concentration and then
+#'   across to the y axis at the 2-fold change level. Use a numeric value for
+#'   the concentration you want or leave as NA (default) for no line.
+#' @param rounding option for what rounding to perform, if any. Options are:
+#'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
+#'   to Simcyp Consultancy Team standards: to three significant figures when the
+#'   value is < 100 or to the ones place if the value is >= 100. Please see the
+#'   function \code{\link{round_consultancy}}, which does the rounding here.}
+#'   \item{"none"}{No rounding will be performed.} \item{"significant X" where
+#'   "X" is a number}{Output will be rounded to X significant figures. "signif
+#'   X" also works fine.} \item{"round X" where "X" is a number}{Output will be
+#'   rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
+#'   will be rounded using the function \code{\link{round_consultancy}}, but
+#'   nothing will be rounded in the output R object. This can be useful when you
+#'   want to have nicely rounded and formatted output in a Word file but you
+#'   \emph{also} want to use the results from \code{calc_PK_ratios} to make
+#'   forest plots, which requires numbers that are \emph{not} rounded.}}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -172,18 +191,18 @@
 inductFit <- function(DF,
                       conc_column = Concentration_uM,
                       fold_change_column = FoldInduction,
-                      model = "EmaxSlope",
+                      donor_column = DonorID,
+                      fitByDonor = TRUE, 
+                      model = "all",
                       measurement = "mRNA",
                       enzyme = "CYP3A4", 
                       drug = NA,
-                      donor_column = DonorID,
-                      fitByDonor = TRUE, 
                       weights = "1/y^2", 
                       omit = NA,
                       color_set = "default",
                       y_axis_limits = NA,
                       hline_foldinduct1 = FALSE,
-                      num_sigfig = NA, 
+                      rounding = NA, 
                       graph_title = NA,
                       graph_title_size = 14, 
                       save_graph = NA,
@@ -484,49 +503,7 @@ inductFit <- function(DF,
                        Omit = FALSE)
         }
         
-        # Setting up facet labels for graphs
-        DF$Model_ch <- factor(DF$Model_ch,
-                              levels = c("Emax model", "Emax slope model", 
-                                         "sigmoidal 3-parameter model", 
-                                         "slope model"))
-        levels(DF$Model_ch) <- c(
-            expression(E[max]~model),
-            expression(E[max]~slope~model),
-            expression(sigmoidal~"3-parameter"~model),
-            expression(slope~model))
-        
-        Curve$Model_ch <- factor(Curve$Model_ch,
-                                 levels = c("Emax model", "Emax slope model", 
-                                            "sigmoidal 3-parameter model", 
-                                            "slope model"))
-        levels(Curve$Model_ch) <- c(
-            expression(E[max]~model),
-            expression(E[max]~slope~model),
-            expression(sigmoidal~"3-parameter"~model),
-            expression(slope~model))
-        
-        G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction, 
-                            shape = Omit)) +
-            scale_shape_manual(values = c(19, 1)) +
-            guides(shape = "none")
-        
-        if(hline_foldinduct1){
-            G <- G +
-                geom_hline(yintercept = 1, color = "red", linetype = "dotted")
-        } 
-        
-        G <- G +
-            geom_point() +
-            geom_line(data = Curve %>% 
-                          filter(complete.cases(FoldInduction)))
-        
-        if(model == "all"){
-            G <- G + facet_wrap(~ Model_ch, scales = "free", 
-                                labeller = label_parsed)
-        }
-        
         Out <- list("Fit" = IndFit,
-                    "Graph" = G,
                     "Curve" = Curve)
         
         return(Out)
@@ -567,10 +544,18 @@ inductFit <- function(DF,
             G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
                                 color = DonorID, shape = Omit))
             
+            GoodXLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$x.range
+            GoodYLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$y.range
+            
             if(hline_foldinduct1){
                 G <- G +
                     geom_hline(yintercept = 1, color = "red", linetype = "dotted")
             }   
+            
+            if(complete.cases(vert_line)){
+                G <- G +
+                    geom_vline(xintercept = vert_line, color = "red", linetype = "dotted")
+            }
             
             G <- G + 
                 geom_point() +
@@ -658,10 +643,28 @@ inductFit <- function(DF,
                 scale_shape_manual(values = c(19, 1)) +
                 guides(shape = "none")
             
+            GoodXLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$x.range
+            GoodYLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$y.range
+            
             if(hline_foldinduct1){
                 G <- G +
                     geom_hline(yintercept = 1, color = "red", linetype = "dotted") 
                 
+            }
+            
+            if(complete.cases(vert_line)){
+                G <- G +
+                    geom_vline(xintercept = vert_line, color = "red", linetype = "dotted")
+            }
+            
+            if(complete.cases(Imaxu_line)){
+                G <- G +
+                    geom_path(data = data.frame(
+                        Concentration_uM = c(Imaxu_line, Imaxu_line, 
+                                             10^GoodXLim[1]*0.95),
+                        FoldInduction = c(GoodYLim[1]*0.95, 2, 2),
+                        Omit = NA), 
+                        color = "red", linetype = "dotted")
             }
             
             G <- G +
@@ -735,6 +738,46 @@ inductFit <- function(DF,
                                names_from = term) %>% 
             arrange(Model)
         
+        
+        # Setting up facet labels for graphs
+        DF$Model_ch <- factor(DF$Model_ch,
+                              levels = c("Emax model", "Emax slope model",
+                                         "sigmoidal 3-parameter model",
+                                         "slope model"))
+        levels(DF$Model_ch) <- c(
+            expression(E[max]~model),
+            expression(E[max]~slope~model),
+            expression(sigmoidal~"3-parameter"~model),
+            expression(slope~model))
+        
+        Out$Curve$Model_ch <- factor(Out$Curve$Model_ch,
+                                     levels = c("Emax model", "Emax slope model",
+                                                "sigmoidal 3-parameter model",
+                                                "slope model"))
+        levels(Out$Curve$Model_ch) <- c(
+            expression(E[max]~model),
+            expression(E[max]~slope~model),
+            expression(sigmoidal~"3-parameter"~model),
+            expression(slope~model))
+        
+        G <- ggplot(DF, aes(x = Concentration_uM, y = FoldInduction,
+                            shape = Omit)) +
+            scale_shape_manual(values = c(19, 1)) +
+            guides(shape = "none") +
+            geom_point() +
+            geom_line(data = Out$Curve %>%
+                          filter(complete.cases(FoldInduction)))
+        
+        GoodXLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$x.range
+        GoodYLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$y.range
+        
+        
+        if(model == "all"){
+            G <- G + facet_wrap(~ Model_ch, scales = "free",
+                                labeller = label_parsed)
+        }
+        
+        Out[["Graph"]] <- G
     }
     
     # Making the final graph look nice --------------------------------------
@@ -746,6 +789,7 @@ inductFit <- function(DF,
                                 mid = unit(1.5,"mm"),
                                 long = unit(3,"mm")) +
             scale_x_log10() +
+            coord_cartesian(xlim = 10^GoodXLim, ylim = GoodYLim) +
             xlab(ifelse(complete.cases(drug), 
                         paste(drug, "concentration (μM)"), "Concentration (μM)")) +
             ylab(Ylab) +
@@ -922,11 +966,10 @@ inductFit <- function(DF,
         }
     }
     
-    if(complete.cases(num_sigfig)){
-        Out$Fit <- Out$Fit %>% 
-            mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")), 
-                          .fns = signif, digits = num_sigfig))
-    }
+    # Rounding as requested
+    Out$Fit <- Out$Fit %>% 
+        mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")), 
+                      .fns = round_opt, round_fun = rounding))
     
     return(Out)
     

@@ -8,18 +8,18 @@ inductFit(
   DF,
   conc_column = Concentration_uM,
   fold_change_column = FoldInduction,
-  model = "EmaxSlope",
+  donor_column = DonorID,
+  fitByDonor = TRUE,
+  model = "all",
   measurement = "mRNA",
   enzyme = "CYP3A4",
   drug = NA,
-  donor_column = DonorID,
-  fitByDonor = TRUE,
   weights = "1/y^2",
   omit = NA,
   color_set = "default",
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
-  num_sigfig = NA,
+  rounding = NA,
   graph_title = NA,
   graph_title_size = 14,
   save_graph = NA,
@@ -40,6 +40,12 @@ concentration data. This should be unquoted.}
 \item{fold_change_column}{the name of the column within DF that contains
 fold-change data, e.g., mRNA measurements or activity. This should be
 unquoted.}
+
+\item{donor_column}{the name of the column within DF that contains the donor
+IDs, unquoted}
+
+\item{fitByDonor}{TRUE (default) or FALSE for whether to fit the data by
+individual donor}
 
 \item{model}{which model(s) you would like to use. The four model options
   are: \describe{
@@ -74,12 +80,6 @@ and captions in the Word document output.}
 unspecified, but supplying a value will include the drug name in the x-axis
 label on the graphs as well as the figure and table headings and captions
 in the Word document output.}
-
-\item{donor_column}{the name of the column within DF that contains the donor
-IDs, unquoted}
-
-\item{fitByDonor}{TRUE (default) or FALSE for whether to fit the data by
-individual donor}
 
 \item{weights}{weighting scheme to use for the regression. User may supply a
 numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
@@ -136,9 +136,20 @@ Numeric data should not be in quotes.)}
 \item{hline_foldinduct1}{TRUE or FALSE (default) on whether to include a
 dotted red line where the fold induction = 1.}
 
-\item{num_sigfig}{optionally specify the number of significant figures you
-would like any output rounded to. If left as NA, no rounding will be
-performed.}
+\item{rounding}{option for what rounding to perform, if any. Options are:
+\describe{\item{NA or "Consultancy"}{All output will be rounded according
+to Simcyp Consultancy Team standards: to three significant figures when the
+value is < 100 or to the ones place if the value is >= 100. Please see the
+function \code{\link{round_consultancy}}, which does the rounding here.}
+\item{"none"}{No rounding will be performed.} \item{"significant X" where
+"X" is a number}{Output will be rounded to X significant figures. "signif
+X" also works fine.} \item{"round X" where "X" is a number}{Output will be
+rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
+will be rounded using the function \code{\link{round_consultancy}}, but
+nothing will be rounded in the output R object. This can be useful when you
+want to have nicely rounded and formatted output in a Word file but you
+\emph{also} want to use the results from \code{calc_PK_ratios} to make
+forest plots, which requires numbers that are \emph{not} rounded.}}}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph or set of graphs}
@@ -166,6 +177,17 @@ TO WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue,
 not an R issue. If you try to save on SharePoint, you will get a warning
 that R will save your file instead to your local (not OneDrive) Documents
 folder.}
+
+\item{vert_line}{optionally include a vertical dotted red line at some
+concentration. Use a numeric value for the concentration you want or leave
+as NA (default) for no vertical line.}
+
+\item{Imaxu_line}{optionally specify a value for 30*Imax,u (see p. 5 USFDA
+Guidance (2020) "In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme
+and Transporter Mediated Drug Interactions") and this will create red
+dotted line that goes up from the x axis at that concentration and then
+across to the y axis at the 2-fold change level. Use a numeric value for
+the concentration you want or leave as NA (default) for no line.}
 }
 \value{
 Returns a list of \describe{ \item{Fit}{the fitted parameters}
@@ -178,18 +200,17 @@ Returns a list of \describe{ \item{Fit}{the fitted parameters}
 \description{
 \code{inductFit} fits induction data -- either activity or mRNA expression --
 to one or all of four models for calculating Indmax or Emax, EC50, and, when
-appropriate, a slope. Like Howie's R script for fitting induction data
-("Induction_fit_script_ver2.r"), by default, data are weighted by 1/y^2, but
-you can change that with the "weights" argument. \strong{Two important
-notes:} \itemize{\item{With the exception of the sigmoidal 3-parameter model,
-the fitted parameter describing maximal induction is Emax and \emph{not}
-Indmax, the parameter used in the Simcyp Simulator. Note that \strong{Indmax
-= Emax + 1}.} \item{One way in which this function differs from Howie's
-script is that no upper or lower bounds for parameter estimates are in use.
-This means that, if sufficient data to describe the curve do not exist, the
-function will fail to deliver any fitted parameters, which is meant to be a
-benefit but could be an annoyance depending on your perspective. Because this
-does not include those boundaries, you may get different results between this
+appropriate, a slope. \strong{Two important notes:} \itemize{\item{With the
+exception of the sigmoidal 3-parameter model, the fitted parameter describing
+maximal induction is Emax and \emph{not} Indmax, the parameter used in the
+Simcyp Simulator. Note that \strong{Indmax = Emax + 1}.} \item{If you're
+familiar with Howie's R script for fitting induction data
+("Induction_fit_script_ver2.r"), one way in which this function differs is
+that no upper or lower bounds for parameter estimates are in use. This means
+that, if sufficient data to describe the curve do not exist, the function
+will fail to deliver any fitted parameters, which is meant to be a benefit
+but could be an annoyance depending on your perspective. Because this does
+not include those boundaries, you may get different results between this
 function and Howie's script.}}
 }
 \examples{
