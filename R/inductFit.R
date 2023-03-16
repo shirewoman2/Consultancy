@@ -120,9 +120,10 @@
 #' @param Imaxu_line optionally specify a value for 30*Imax,u (see p. 5 USFDA
 #'   Guidance (2020) "In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme
 #'   and Transporter Mediated Drug Interactions") and this will create red
-#'   dotted line that goes up from the x axis at that concentration and then
-#'   across to the y axis at the 2-fold change level. Use a numeric value for
-#'   the concentration you want or leave as NA (default) for no line.
+#'   dotted line that goes down from the top of the graph at that concentration
+#'   and then across to the y axis at the 2-fold change level. Points within
+#'   that upper left corner are a potential concern for induction. Use a numeric
+#'   value for the concentration you want or leave as NA (default) for no line.
 #' @param rounding option for what rounding to perform, if any. Options are:
 #'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
 #'   to Simcyp Consultancy Team standards: to three significant figures when the
@@ -512,6 +513,11 @@ inductFit <- function(DF,
     }
     
     # Fitting models to data -----------------------------------------------
+    
+    # RETURN TO THIS. This needs better organization to avoid duplicative code,
+    # especially since the Indmaxu_line option is only set up to work for some
+    # scenarios (I was too busy w/other things to get this working perfectly.)
+    
     if(fitByDonor){
         # fitting by donor here
         
@@ -663,8 +669,8 @@ inductFit <- function(DF,
                 G <- G +
                     geom_path(data = data.frame(
                         Concentration_uM = c(Imaxu_line, Imaxu_line, 
-                                             10^GoodXLim[1]*0.95),
-                        FoldInduction = c(GoodYLim[1]*0.95, 2, 2),
+                                             10^GoodXLim[1]*0.9),
+                        FoldInduction = c(GoodYLim[2]*1.1, 2, 2),
                         Omit = NA), 
                         color = "red", linetype = "dotted")
             }
@@ -782,32 +788,11 @@ inductFit <- function(DF,
         Out[["Graph"]] <- G
     }
     
-    # Making the final graph look nice --------------------------------------
-    
-    suppressWarnings(
-        Out$Graph <- Out$Graph +
-            annotation_logticks(sides = "b",
-                                short = unit(1.5,"mm"),
-                                mid = unit(1.5,"mm"),
-                                long = unit(3,"mm")) +
-            scale_x_log10() +
-            coord_cartesian(xlim = 10^GoodXLim, ylim = GoodYLim) +
-            xlab(ifelse(complete.cases(drug), 
-                        paste(drug, "concentration (μM)"), "Concentration (μM)")) +
-            ylab(Ylab) +
-            theme_consultancy() +
-            theme(panel.grid.minor.y = element_line(color = NA),
-                  panel.grid.minor.x = element_line(color = NA),
-                  panel.grid.major = element_line(colour = NA),
-                  panel.border = element_rect(color="black", fill=NA)
-            )
-    )
-    
     # Setting y axis limits ------------------------------------------------
     if(any(complete.cases(y_axis_limits))){
         Ylim <- y_axis_limits[1:2]
     } else {
-        Ylim <- range(DF$FoldInduction, na.rm = TRUE)
+        Ylim <- GoodYLim
     }
     
     PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
@@ -823,10 +808,10 @@ inductFit <- function(DF,
         slice(which.min(Ymax)) %>% pull(YBreaksToUse)
     
     YInterval    <- YBreaksToUse
-    YmaxRnd      <- ifelse(is.na(y_axis_limits[2]), 
+    YmaxRnd      <- ifelse(is.na(y_axis_limits[2]),
                            round_up_unit(Ylim[2], YInterval),
                            y_axis_limits[2])
-    YBreaks      <- seq(ifelse(is.na(y_axis_limits[1]), 
+    YBreaks      <- seq(ifelse(is.na(y_axis_limits[1]),
                                0, y_axis_limits[1]),
                         YmaxRnd, YInterval)                    # create labels at major points (not minor like in ct_plot b/c too busy for small plots like this, imo)
     YLabels      <- format(YBreaks, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
@@ -844,14 +829,18 @@ inductFit <- function(DF,
         }
     }
     
-    suppressWarnings(
-        Out$Graph <- Out$Graph + 
-            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits[1]), 
-                                                 0, y_axis_limits[1]),
-                                          YmaxRnd), 
-                               breaks = YBreaks,
-                               labels = YLabels)
-    )
+    ## !!! RETURN TO THIS. Need to set up things to work both for when user want
+    ## to set y axis limits AND when we're using GoodYLim to specify where the
+    ## red dotted line should go up to.
+    
+    # suppressWarnings(
+    #     Out$Graph <- Out$Graph + 
+    #         scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits[1]), 
+    #                                              0, y_axis_limits[1]),
+    #                                       YmaxRnd), 
+    #                            breaks = YBreaks,
+    #                            labels = YLabels)
+    # )
     
     if(complete.cases(graph_title)){
         Out$Graph <- Out$Graph + ggtitle(graph_title) +
@@ -910,6 +899,27 @@ inductFit <- function(DF,
             viridis::scale_color_viridis(discrete = TRUE) +
             viridis::scale_fill_viridis(discrete = TRUE)
     }
+    
+    # Making the final graph look nice --------------------------------------
+    
+    suppressWarnings(
+        Out$Graph <- Out$Graph +
+            annotation_logticks(sides = "b",
+                                short = unit(1.5,"mm"),
+                                mid = unit(1.5,"mm"),
+                                long = unit(3,"mm")) +
+            scale_x_log10() +
+            coord_cartesian(xlim = 10^GoodXLim, ylim = GoodYLim) +
+            xlab(ifelse(complete.cases(drug), 
+                        paste(drug, "concentration (μM)"), "Concentration (μM)")) +
+            ylab(Ylab) +
+            theme_consultancy() +
+            theme(panel.grid.minor.y = element_line(color = NA),
+                  panel.grid.minor.x = element_line(color = NA),
+                  panel.grid.major = element_line(colour = NA),
+                  panel.border = element_rect(color="black", fill=NA)
+            )
+    )
     
     # saving and formatting output ---------------------------------------------
     

@@ -145,9 +145,10 @@ as NA (default) for no vertical line.}
 \item{Imaxu_line}{optionally specify a value for 30*Imax,u (see p. 5 USFDA
 Guidance (2020) "In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme
 and Transporter Mediated Drug Interactions") and this will create red
-dotted line that goes up from the x axis at that concentration and then
-across to the y axis at the 2-fold change level. Use a numeric value for
-the concentration you want or leave as NA (default) for no line.}
+dotted line that goes down from the top of the graph at that concentration
+and then across to the y axis at the 2-fold change level. Points within
+that upper left corner are a potential concern for induction. Use a numeric
+value for the concentration you want or leave as NA (default) for no line.}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according
