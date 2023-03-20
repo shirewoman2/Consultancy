@@ -60,6 +60,7 @@ shinyServer(function(input, output, session) {
         shinyjs::toggle(id = "tissue_input", anim = TRUE, condition = input$tissue == 'other')
         shinyjs::toggle(id = "y_axis_limits_lin_input", anim = TRUE, condition = input$y_axis_limits_lin == 'defined')
         shinyjs::toggle(id = "y_axis_limits_log_input", anim = TRUE, condition = input$y_axis_limits_log == 'defined')
+        shinyjs::toggle(id = "fig_dim_input", anim = TRUE, condition = input$fig_dim_selection == 'defined')
         shinyjs::toggle(id = "line_type_input", anim = TRUE, condition = input$line_type == 'defined')
         shinyjs::toggle(id = "pad_x_axis_input", anim = TRUE, condition = input$pad_x_axis == 'specific')
         shinyjs::toggle(id = "pad_y_axis_input", anim = TRUE, condition = input$pad_y_axis == 'specific')
@@ -181,31 +182,51 @@ shinyServer(function(input, output, session) {
     })
     
     output$plotCONC_1 <- renderPlot({
+      
+      req(input$sim_output_file)
+      
+      if (input$output_location_selection == "path") {
+        output_directory <- input$output_path
+        output_directory <- gsub("\\\\", "/", output_directory) # change slash direction from Windows to R friendly
+        if (str_sub(output_directory, start = -1) == "/") {
+          output_directory <- str_sub(output_directory, start = 1, end = -2) }
+        output_directory<-paste(output_directory, "/", input$output_folder_name, sep="")
         
-        req(input$sim_output_file)
-
-        if (input$output_location_selection == "local") {
-            updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
-            od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
-            output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
-                                      "/", input$output_folder_name, sep = "")
-        } else if (input$output_location_selection == "lfs") {
-            output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
-        } else if (input$output_location_selection == "mwd") {
-          output_directory <- paste("C:/Users/", input$mwd_od_username, "/Certara/", input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
-        }
+      } else if (input$output_location_selection == "mwd") {
+        output_directory <- paste("C:/Users/", input$mwd_od_username, "/Certara/", input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
         
-        if (!dir.exists(output_directory)){
-            dir.create(file.path(output_directory))
-        }
-        
-        inFile <- input$sim_output_file
-        file_name <- inFile$name
-        file_name <- gsub(".xlsx", "", file_name)
-        
-        ggsave(filename = paste(output_directory, "/", file_name, ".png", sep=""), plot = generate_plot(), width = input$fig_width, height = input$fig_height, units = "cm", dpi = 600)
-        
-        generate_plot()
+      } else if (input$output_location_selection == "local") {
+        updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
+        od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
+        output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+                                  "/", input$output_folder_name, sep = "")
+      }
+      
+      if (!dir.exists(output_directory)){
+        dir.create(file.path(output_directory))
+      }
+      
+      inFile <- input$sim_output_file
+      file_name <- inFile$name
+      file_name <- gsub(".xlsx", "", file_name)
+      
+      if (input$fig_dim_selection == "auto" & input$linear_or_log == "both vertical") {
+        fig_height <- 16
+        fig_width <- 14
+      } else if (input$fig_dim_selection == "auto" & input$linear_or_log == "semi-log" | input$fig_dim_selection == "auto" & input$linear_or_log == "linear") {
+        fig_height <- 10
+        fig_width <- 14
+      } else if (input$fig_dim_selection == "auto" & input$linear_or_log == "both horizontal") {
+        fig_height <- 10
+        fig_width <- 28  
+      } else if (input$fig_dim_selection == "defined") {
+        fig_height <- input$fig_height
+        fig_width <- input$fig_width
+      }
+      
+      ggsave(filename = paste(output_directory, "/", file_name, ".png", sep=""), plot = generate_plot(), width = fig_width, height = fig_height, units = "cm", dpi = 600)
+      
+      generate_plot()
     })
     
     
@@ -313,7 +334,7 @@ shinyServer(function(input, output, session) {
             obs <- c("Observed", unlist(strsplit(input$obs_data,",")))
             obs_n <- as.numeric(unlist(strsplit(input$obs_data,",")))
             sim_n <- as.numeric(table_df[table_df$Statistic == "Simulated",2:ncol(table_df)])
-            so <- c("S/O", as.character(my_3sf(sim_n/obs_n)))
+            so <- c("S/O", as.character(sapply(sim_n/obs_n, my_3sf)))
             table_df <- rbind(table_df, obs, so, stringsAsFactors = FALSE)
             
             if(input$qc_check == TRUE) {
@@ -345,15 +366,21 @@ shinyServer(function(input, output, session) {
             
         }
         
-        if (input$output_location_selection == "local") {
-            updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
-            od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
-            output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
-                                      "/", input$output_folder_name, sep = "")
-        } else if (input$output_location_selection == "lfs") {
-            output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
+        if (input$output_location_selection == "path") {
+          output_directory <- input$output_path
+          output_directory <- gsub("\\\\", "/", output_directory) # change slash direction from Windows to R friendly
+          if (str_sub(output_directory, start = -1) == "/") {
+            output_directory <- str_sub(output_directory, start = 1, end = -2) }
+          output_directory<-paste(output_directory, "/", input$output_folder_name, sep="")
+          
         } else if (input$output_location_selection == "mwd") {
           output_directory <- paste("C:/Users/", input$mwd_od_username, "/Certara/", input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
+          
+        } else if (input$output_location_selection == "local") {
+          updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
+          od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
+          output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+                                    "/", input$output_folder_name, sep = "")
         }
         
         if (!dir.exists(output_directory)){
