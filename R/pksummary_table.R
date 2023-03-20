@@ -432,11 +432,20 @@ pksummary_table <- function(sim_data_file = NA,
         sectionInfo <- FALSE
         
         # If they supplied observed_PK, get sim_data_file from that. 
-        if(complete.cases(observed_PK[1]) && (class(observed_PK) == "character")){
+        if(any(complete.cases(observed_PK)) && (class(observed_PK) == "character")){
             observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                   "csv" = read.csv(observed_PK), 
                                   "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                            sheetName = "observed PK"))
+            
+            # If there's anything named anything like "File", use that for the
+            # "File" column. This is useful to deal with capitalization mismatches
+            # and also because, if the user saves the file as certain kinds of csv
+            # files, R has trouble importing and will add extra symbols to the 1st
+            # column name.
+            names(observed_PK)[str_detect(tolower(names(observed_PK)), "file")][1] <- 
+                "File"
+            
             
         } else if(class(observed_PK)[1] == "numeric"){ # This is when user has supplied a named numeric vector
             
@@ -570,7 +579,7 @@ pksummary_table <- function(sim_data_file = NA,
         # issue, revisit this. - LSh
         
         # Checking experimental details to only pull details that apply
-        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+        if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
             Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                        exp_details = "Summary tab")
         } else {

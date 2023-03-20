@@ -200,12 +200,10 @@ percentiles and, optionally, comparisons to observed data. This function
 automatically finds the correct tabs and the correct cells in a Simulator
 output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 see the notes at the bottom of this help file for how to supply observed data
-in a standardized fashion that this function can read.} \item{You can specify
-which compound (substrate, inhibitor 1, etc.) and which tissue (plasma,
-blood, or unbound versions of each) you want to get the PK data for.} \item{
-If the simulator output Excel file lives on SharePoint, you'll need to close
-it or this function will just keep running and not generate any output while
-it waits for access to the file.}}
+in a standardized fashion that this function can read.} \item{ If the
+simulator output Excel file lives on SharePoint, you'll need to close it or
+this function will just keep running and not generate any output while it
+waits for access to the file.}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up

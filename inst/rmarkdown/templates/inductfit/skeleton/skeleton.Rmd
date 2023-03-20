@@ -60,7 +60,7 @@ model_label <- switch(model,
 
 *Figure XXX. `r ifelse(model == "all", "Fits", "Fit")` of the `r model_label` to`r ifelse(is.na(enzyme), "", paste0(" ", enzyme))` `r measurement` fold-change data after incubations of human hepatocytes`r ifelse(complete.cases(drug), paste0(" with ", drug, "."), ".")`*
 
-```{r indFit_sum, fig.width = fig_width, fig.height = fig_height, fig.align = "center"}
+```{r indFit_sum, fig.width = fig_width, fig.height = fig_height}
 
 Out$Graph
 
@@ -117,7 +117,7 @@ AllFits <- AllFits %>%
     # Rounding as requested
     mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")), 
                   .fns = round_opt, 
-                  round_fun = ifelse(complete.cases(rounding) && rounding == "Word", 
+                  round_fun = ifelse(complete.cases(rounding) && rounding == "Word only", 
                                      "Consultancy", rounding)))
 
 MeanRows <- which(AllFits$DonorID == "mean")
