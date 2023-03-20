@@ -38,6 +38,7 @@ more space to the left side and 4\% more to the right side of the x axis.
 If you only specify one number, we'll assume that's the percent you want
 added to the left side.}
 }
+\value{
 a ggplot2 graph scale for the x axis (replaces scale_x_continuous in
   a graph)
 }

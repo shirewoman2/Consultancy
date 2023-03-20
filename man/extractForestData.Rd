@@ -41,6 +41,7 @@ output file. Useful for QCing.}
 quotes here, e.g., "My forest graph data.csv". If you leave off ".csv", it
 will still be saved as a csv file.}
 }
+\value{
 a data.frame of data to use for making forest plots
 }
 \description{

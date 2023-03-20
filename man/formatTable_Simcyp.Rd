@@ -77,6 +77,7 @@ SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
 try to save on SharePoint, you will get a warning that R will save your
 file instead to your local (not OneDrive) Documents folder.}
 }
+\value{
 a formatted table
 }
 \description{

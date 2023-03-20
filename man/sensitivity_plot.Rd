@@ -72,6 +72,7 @@ your local (not OneDrive) Documents folder.}
 
 \item{fig_width}{figure width in inches; default is 5}
 }
+\value{
 a ggplot2 graph
 }
 \description{

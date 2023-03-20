@@ -31,6 +31,7 @@ set_aesthet(
 
 \item{obs_color}{user-specified observed-data color}
 }
+\value{
 several objects to use with setting graph aesthetics
 }
 \description{

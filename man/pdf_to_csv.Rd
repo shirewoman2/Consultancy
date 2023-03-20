@@ -17,6 +17,7 @@ with one page at a time)}
 as "csv", the file name will be the pdf file name plus the page number
 requested. If set to NA, no file will be saved.}
 }
+\value{
 a data.frame of pdf table content
 }
 \description{

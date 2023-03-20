@@ -9,6 +9,7 @@ rainbow(ncolors)
 \arguments{
 \item{ncolors}{number of colors desired}
 }
+\value{
 a character vector of colors
 }
 \description{

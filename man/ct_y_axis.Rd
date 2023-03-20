@@ -40,6 +40,7 @@ extractConcTime}
 
 \item{time_range_relative}{relative time range}
 }
+\value{
 values to use for ct_plots
 }
 \description{

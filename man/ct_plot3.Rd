@@ -119,6 +119,7 @@ your Documents folder.}
 \item{...}{arguments that pass through to \code{\link{ct_plot}} or
 \code{\link{ct_plot_overlay}}}
 }
+\value{
 a set of 3 arranged ggplot2 graphs
 }
 \description{

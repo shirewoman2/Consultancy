@@ -246,6 +246,7 @@ percentiles.png". This is only used when \code{graph_arrangement =
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
 }
+\value{
 a set of arranged ggplot2 graphs and/or saved files of those graphs
 }
 \description{

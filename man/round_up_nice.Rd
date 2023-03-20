@@ -12,6 +12,7 @@ round_up_nice(x, nice = seq(1, 10, 0.1))
 \item{b}{the unit to round the number to (applies to
 \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)}
 }
+\value{
 a rounded number
 }
 \description{

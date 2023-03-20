@@ -6,6 +6,7 @@
 \usage{
 theme_consultancy(border = FALSE)
 }
+\value{
 a ggplot2 theme
 }
 \description{
