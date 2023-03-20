@@ -1,19 +1,8 @@
-##                                                                                                                   ^
-## You can run the application by clicking 'Run App' -----------------------------------------------------------------^
-######################################################################################################################
-
-## Load the required packages
-library(SimcypConsultancy)
-library(tidyverse)
-library(shiny)
-library(shinyjs)
-library(shinyFiles)
-library(ggplot2)
 
 ## Draw the user interface
 function(request) { fluidPage(
   
-  useShinyjs(),  # Include shinyjs
+  shinyjs::useShinyjs(),  # Include shinyjs
     
   tags$head(
     tags$style(".content {background-color: black;}"),
@@ -60,7 +49,7 @@ function(request) { fluidPage(
                                 div(id = "output_location_local",
                                     tags$h2(id="small-heading", "Select Directory:"),
                                     textInput("local_od_username", "Username:", value = "", width = NULL, placeholder = "e.g., 'hburt', 'lshireman' etc."),
-                                    shinyDirButton("shiny_output_dir_local", "Select folder to place outputs:",
+                                    shinyFiles::shinyDirButton("shiny_output_dir_local", "Select folder to place outputs:",
                                                    title = "Select Output Directory:", viewtype = "list")),
                                 
                                 br(),

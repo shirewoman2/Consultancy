@@ -1,13 +1,10 @@
 
 # Server code for Simcyp output analysis
 
-## Load the required packages
-# library(SimcypConsultancy)
-# library(tidyverse)
-# library(shiny)
-# library(shinyjs)
-# library(shinyFiles)
-# library(ggplot2)
+# Check whether tidyverse is loaded
+if("package:tidyverse" %in% search() == FALSE){
+  stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+}
 
 options(shiny.maxRequestSize=1000*1024^2)
 
@@ -37,7 +34,7 @@ shinyServer(function(input, output, session) {
       } else if (input$output_location_selection == "local") {
         updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
         od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
-        output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+        output_directory <- paste(shinyFiles::parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
                                   "/", input$output_folder_name, sep = "")
       }
       
@@ -198,7 +195,7 @@ shinyServer(function(input, output, session) {
       } else if (input$output_location_selection == "local") {
         updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
         od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
-        output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+        output_directory <- paste(shinyFiles::parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
                                   "/", input$output_folder_name, sep = "")
       }
       
@@ -379,7 +376,7 @@ shinyServer(function(input, output, session) {
         } else if (input$output_location_selection == "local") {
           updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
           od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
-          output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+          output_directory <- paste(shinyFiles::parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
                                     "/", input$output_folder_name, sep = "")
         }
         
