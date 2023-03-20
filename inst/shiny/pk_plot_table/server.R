@@ -153,7 +153,7 @@ shinyServer(function(input, output, session) {
                               tissue = tissue,
                               compoundToExtract = input$compound,
                               returnAggregateOrIndiv = c("aggregate", "individual"),
-                              expdetails = NA,
+                              existing_exp_details  = NA,
                               fromMultFunction = FALSE)
         
     
