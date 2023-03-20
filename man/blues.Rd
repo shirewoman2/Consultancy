@@ -9,6 +9,9 @@ blues(ncolors)
 \arguments{
 \item{ncolors}{number of colors desired}
 }
+\value{
+a character vector of colors
+}
 \description{
 \code{blues} is useful for getting a set of pretty blues for graphs. These
 blues come from the 4th through 9th blues from grDevices::blues9, just to

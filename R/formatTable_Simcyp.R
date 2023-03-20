@@ -61,7 +61,7 @@
 #'   try to save on SharePoint, you will get a warning that R will save your
 #'   file instead to your local (not OneDrive) Documents folder.
 #'
-#' @return
+#' @return a formatted table 
 #' @export
 #'
 #' @examples
@@ -125,6 +125,11 @@ formatTable_Simcyp <- function(DF,
              call. = FALSE)
     }
     
+    if("data.frame" %in% class(DF) == FALSE){
+        stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames, and it looks like you have supplied some other type of data.", 
+             call. = FALSE)
+    }
+    
     if(nrow(DF) == 0){
         stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
              call. = FALSE)
@@ -183,12 +188,22 @@ formatTable_Simcyp <- function(DF,
     FT <- FT %>% 
         
         # center the header row
-        flextable::align(align = "center", part = "header") %>% 
-        
-        # center the columns with numbers, i.e., the 2nd column through the
-        # penultimate column
-        flextable::align(align = "center", 
-                         j = ifelse(center_1st_column, 1, 2):ncol(DF)) %>%
+        flextable::align(align = "center", part = "header")
+    
+    # center the columns that contain numbers, i.e., the 2nd column through the
+    # penultimate column and optionally center the 1st column
+    if(center_1st_column == FALSE & ncol(DF) == 1){
+        FT <- FT %>% flextable::align(align = "left")
+    } else {
+        FT <- FT %>% 
+            flextable::align(align = "center", 
+                             j = switch(paste(center_1st_column, ncol(DF) > 1),
+                                        "TRUE TRUE" = 1:ncol(DF),
+                                        "TRUE FALSE" = 1:ncol(DF), 
+                                        "FALSE TRUE" = 2:ncol(DF)))
+    }
+    
+    FT <- FT %>% 
         
         # Set the font size
         flextable::fontsize(part = "all", size = fontsize) %>% 
@@ -315,51 +330,17 @@ formatTable_Simcyp <- function(DF,
             OutPath <- getwd()
         }
         
-        # Check for whether they're trying to save on SharePoint, which DOES
-        # NOT WORK. If they're trying to save to SharePoint, instead, save
-        # to their Documents folder.
-        
-        # Side regex note: The myriad \ in the "sub" call are necessary b/c
-        # \ is an escape character, and often the SharePoint and Large File
-        # Store directory paths start with \\\\.
-        if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
-            
-            OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
-                              "/Documents")
-            warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
-                           OutPath,
-                           ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
-                    call. = FALSE)
-        }
-        
-        LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
-        
-        if(LFSPath){
-            # Create a temporary directory in the user's AppData/Local/Temp
-            # folder.
-            TempDir <- tempdir()
-            
-            # Upon exiting this function, delete that temporary directory.
-            on.exit(unlink(TempDir))
-            
-        }
-        
         FileName <- basename(save_table)
         
         rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
                                       package="SimcypConsultancy"), 
-                          output_dir = switch(as.character(LFSPath), 
-                                              "TRUE" = TempDir,
-                                              "FALSE" = OutPath),
+                          output_dir = OutPath, 
                           output_file = FileName, 
                           quiet = TRUE)
         # Note: The "system.file" part of the call means "go to where the
         # package is installed, search for the file listed, and return its
         # full path.
         
-        if(LFSPath){
-            file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
-        }
     }
     
     return(FT)

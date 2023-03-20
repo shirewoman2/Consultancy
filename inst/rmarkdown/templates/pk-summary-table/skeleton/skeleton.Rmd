@@ -14,41 +14,105 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```
 
-```{r FigtextPKSummary}
+```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
-if(class(prettify_compound_names) == "logical" &&
-   # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
-   prettify_compound_names){
-    MySubstrate <- prettify_compound_name(Deets$Substrate)
-} else if(class(prettify_compound_names) == "character"){
-    MySubstrate <- prettify_compound_names["substrate"]
-} else {
-    MySubstrate <- Deets$Substrate
-}
+if(FromCalcPKRatios){
+    if(paired){
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    } else {
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    }
+} 
+
+```
+
+```{r FigtextPKSummary}
 
 Dose1included <- any(str_detect(PKToPull, "_dose1"))
 LastDoseincluded <- any(str_detect(PKToPull, "_last"))
 Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
 
-FigText2 <- ifelse(Dose1included & LastDoseincluded, 
-                   ifelse(Deets$DoseRoute_sub == "Oral", 
-                          "the first and multiple oral doses", 
-                          paste("the first and multiple", Deets$DoseRoute_sub, "doses")),
-                   ifelse(Dose1included, 
-                          ifelse(Deets$DoseRoute_sub == "Oral", 
-                                 "the first oral dose",
-                                 paste("the first", Deets$DoseRoute_sub, "dose")),
-                          ifelse(Deets$DoseRoute_sub == "Oral", 
-                                 "multiple oral doses", 
-                                 paste("multiple", Deets$DoseRoute_sub, "doses"))))
+MyCompoundID <- switch(compoundToExtract, 
+                       "substrate" = "Substrate",
+                       "primary metabolite 1" = "PrimaryMetabolite1",
+                       "primary metabolite 2" = "PrimaryMetabolite2",
+                       "secondary metabolite" = "SecondaryMetabolite",
+                       "inhibitor 1" = "Inhibitor1",
+                       "inhibitor 2" = "Inhibitor2",
+                       "inhibitor 1 metabolite" = "Inhibitor1Metabolite")
 
-FigText3 <- ifelse(any(complete.cases(MyEffector)),
+MyDosedCompound <- switch(compoundToExtract, 
+                          "substrate" = prettify_compound_name(Deets$Substrate),
+                          "primary metabolite 1" = prettify_compound_name(Deets$Substrate),
+                          "primary metabolite 2" = prettify_compound_name(Deets$Substrate),
+                          "secondary metabolite" = prettify_compound_name(Deets$Substrate),
+                          "inhibitor 1" = prettify_compound_name(Deets$Inhibitor1),
+                          "inhibitor 2" = prettify_compound_name(Deets$Inhibitor2),
+                          "inhibitor 1 metabolite" = prettify_compound_name(Deets$Inhibitor1))
+
+MyDoseRoute <- switch(compoundToExtract, 
+                      "substrate" = "DoseRoute_sub",
+                      "primary metabolite 1" = "DoseRoute_sub",
+                      "primary metabolite 2" = "DoseRoute_sub",
+                      "secondary metabolite" = "DoseRoute_sub",
+                      "inhibitor 1" = "DoseRoute_inhib",
+                      "inhibitor 2" = "DoseRoute_inhib2",
+                      "inhibitor 1 metabolite" = "DoseRoute_inhib1")
+
+MyDose <- switch(compoundToExtract, 
+                 "substrate" = "Dose_sub",
+                 "primary metabolite 1" = "Dose_sub",
+                 "primary metabolite 2" = "Dose_sub",
+                 "secondary metabolite" = "Dose_sub",
+                 "inhibitor 1" = "Dose_inhib",
+                 "inhibitor 2" = "Dose_inhib2",
+                 "inhibitor 1 metabolite" = "Dose_inhib")
+
+if(class(prettify_compound_names) == "logical" &&
+   # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
+   prettify_compound_names){
+    MyCompound <- prettify_compound_name(Deets[[MyCompoundID]])
+} else if(class(prettify_compound_names) == "character"){
+    MyCompound <- prettify_compound_names[compoundToExtract]
+} else {
+    MyCompound <- Deets[[MyCompoundID]]
+}
+
+FigText2 <- ifelse(Dose1included & LastDoseincluded, 
+                   ifelse(Deets[[MyDoseRoute]] == "Oral", 
+                          "the first and multiple oral doses", 
+                          paste("the first and multiple", Deets[[MyDoseRoute]], "doses")),
+                   ifelse(Dose1included, 
+                          ifelse(Deets[[MyDoseRoute]] == "Oral", 
+                                 "the first oral dose",
+                                 paste("the first", Deets[[MyDoseRoute]], "dose")),
+                          ifelse(Deets[[MyDoseRoute]] == "Oral", 
+                                 "multiple oral doses", 
+                                 paste("multiple", Deets[[MyDoseRoute]], "doses"))))
+
+FigText3 <- ifelse(any(complete.cases(MyEffector)) & 
+                       compoundToExtract %in% c("inhibitor 1", "inhibitor 2",
+                                         "inhibitor 1 metabolite" == FALSE),
                    paste0("with or without ", MyEffector, " "),
                    "")
 
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters for `r MySubstrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", MySubstrate)` `r FigText3`in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters for `r MyCompound` after `r FigText2` of `r paste(Deets[[MyDose]], "mg", MyDosedCompound)` `r FigText3`in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
 
 
 ```{r makeTablePKSummaryOutput}

@@ -12,6 +12,8 @@ round_unit(x, b)
 \item{b}{the unit to round the number to (applies to
 \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)}
 }
+a rounded number
+}
 \description{
 Round numbers to nice intervals with the following options: \describe{
 \item{round_up}{round up to the nearest power of 10} \item{round_down}{round

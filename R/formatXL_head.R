@@ -17,7 +17,7 @@
 #' formatXL_head(DF = iris, file = "test.xlsx", sheet = "iris1")
 #'
 #'
-#' @return
+#' @return saves a formatted Excel file 
 #' @export
 #'
 #'

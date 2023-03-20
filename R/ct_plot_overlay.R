@@ -82,11 +82,13 @@
 #'   lines for the 5th and 95th percentiles of the simulated data}
 #'
 #'   \item{"percentile ribbon"}{show an opaque line for the mean data and
-#'   transparent shading for the 5th to 95th percentiles. Note: You may
-#'   sometimes see some artifacts -- especially for semi-log plots -- where the
-#'   ribbon gets partly cut off. For arcane reasons we don't want to bore you
-#'   with here, we can't easily prevent this. To fix this, increase your y axis
-#'   limits for the semi-log plot.}}
+#'   transparent shading for the 5th to 95th percentiles. \strong{NOTE: There is
+#'   a known bug within RStudio that can cause filled semi-transparent areas
+#'   like you get with the "percentile ribbon" figure type to NOT get graphed
+#'   for certain versions of RStudio.} To get around this, within RStudio, go to
+#'   Tools --> Global Options --> General --> Graphics --> And then set
+#'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
+#'   higher-quality graphics anyway!}}
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -312,7 +314,7 @@
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). As with
 #'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
-#'   the bottom of your data, possible cutting a point in half. If you want a
+#'   the bottom of your data, possibly cutting a point in half. If you want a
 #'   \emph{specific} amount of y-axis padding, set this to a number; the default
 #'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
 #'   to the top of the y axis. If you only specify one number, padding is added
@@ -364,7 +366,7 @@
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
-#' @return
+#' @return a ggplot2 graphs or a set of arranged ggplot2 graphs
 #' @export
 #'
 #' @examples
@@ -636,8 +638,9 @@ call. = FALSE)
                 call. = FALSE)
         
         WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
-                               gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
-        color_labels[names(color_labels) %in% BadLabs] <- WarningLabel
+                               gsub(" - problem no. 1", "", 
+                                    paste(" - problem no.", 1:length(unique(ct_dataframe$File)))))
+        color_labels[which(names(color_labels) %in% BadLabs)] <- WarningLabel[1:length(BadLabs)]
         NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
         NewNames <- NewNames[complete.cases(NewNames)]
         names(color_labels)[which(names(color_labels) %in% BadLabs)] <- NewNames
@@ -1190,19 +1193,19 @@ call. = FALSE)
     
     # Setting up the y axis using the subfunction ct_y_axis
     YStuff <- ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
-              ADAM = ADAM, 
-              subsection_ADAM = switch(as.character(EnzPlot), 
-                                       "TRUE" = NA, 
-                                       "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
-              prettify_compound_names = prettify_compound_names,
-              EnzPlot = EnzPlot, 
-              time_range_relative = time_range_relative,
-              Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
-                  mutate(Time_orig = Time), 
-              pad_y_axis = pad_y_axis,
-              y_axis_limits_lin = y_axis_limits_lin, 
-              time_range = time_range,
-              y_axis_limits_log = y_axis_limits_log)
+                        ADAM = ADAM, 
+                        subsection_ADAM = switch(as.character(EnzPlot), 
+                                                 "TRUE" = NA, 
+                                                 "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
+                        prettify_compound_names = prettify_compound_names,
+                        EnzPlot = EnzPlot, 
+                        time_range_relative = time_range_relative,
+                        Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
+                            mutate(Time_orig = Time), 
+                        pad_y_axis = pad_y_axis,
+                        y_axis_limits_lin = y_axis_limits_lin, 
+                        time_range = time_range,
+                        y_axis_limits_log = y_axis_limits_log)
     
     ObsConcUnits <- YStuff$ObsConcUnits
     ylab <- YStuff$ylab
@@ -1220,7 +1223,7 @@ call. = FALSE)
     # Setting figure types and general aesthetics ------------------------------
     
     MyEffector <- unique(sim_dataframe$Inhibitor)
-    MyEffector <- fct_relevel(MyEffector, before = "none")
+    MyEffector <- fct_relevel(MyEffector, "none")
     MyEffector <- sort(MyEffector)
     
     # Making linetype_column and colorBy_column factor data. This will
@@ -1292,16 +1295,22 @@ call. = FALSE)
         NumShapes <- 1
     }
     
-    set_aesthet(line_type = linetypes, figure_type = figure_type,
-                MyEffector = MyEffector, 
-                compoundToExtract = switch(as.character(EnzPlot),
-                                           "TRUE" = "substrate", 
-                                           "FALSE" = unique(sim_dataframe$CompoundID)),
-                obs_shape = obs_shape, obs_color = obs_color,
-                obs_fill_trans = obs_fill_trans,
-                obs_line_trans = obs_line_trans,
-                # line_color is just a placeholder b/c not using it here.
-                line_color = NA)
+    AesthetStuff <- set_aesthet(line_type = linetypes, figure_type = figure_type,
+                                MyEffector = MyEffector, 
+                                compoundToExtract = switch(as.character(EnzPlot),
+                                                           "TRUE" = "substrate", 
+                                                           "FALSE" = unique(sim_dataframe$CompoundID)),
+                                obs_shape = obs_shape, obs_color = obs_color,
+                                obs_fill_trans = obs_fill_trans,
+                                obs_line_trans = obs_line_trans,
+                                # line_color is just a placeholder b/c not using it here.
+                                line_color = NA)
+    
+    line_type <- AesthetStuff$line_type
+    obs_shape <- AesthetStuff$obs_shape
+    obs_color <- AesthetStuff$obs_color
+    obs_fill_trans<- AesthetStuff$obs_fill_trans
+    obs_line_trans <- AesthetStuff$obs_line_trans
     
     if(length(obs_shape) < NumShapes){
         # This odd syntax will work both when obs_shape is a single value
@@ -1539,8 +1548,8 @@ call. = FALSE)
         }
         
         A <- A + scale_x_time(time_units = TimeUnits, 
-                                 x_axis_interval = x_axis_interval, 
-                                 pad_x_axis = pad_x_axis)
+                              x_axis_interval = x_axis_interval, 
+                              pad_x_axis = pad_x_axis)
         
     } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
         
@@ -1551,8 +1560,8 @@ call. = FALSE)
                                                 0, y_axis_limits_lin[1]),
                                          YmaxRnd)) +
                 scale_x_time(time_units = TimeUnits, 
-                                x_axis_interval = x_axis_interval, 
-                                pad_x_axis = pad_x_axis) +
+                             x_axis_interval = x_axis_interval, 
+                             pad_x_axis = pad_x_axis) +
                 facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
                                         AESCols["facet2"] == "<empty>"), 
                                   "TRUE FALSE" = vars(!!facet2_column),
@@ -1581,8 +1590,8 @@ call. = FALSE)
                                             0, y_axis_limits_lin[1]),
                                      YmaxRnd)) +
             scale_x_time(time_units = TimeUnits, 
-                            x_axis_interval = x_axis_interval, 
-                            pad_x_axis = pad_x_axis) +
+                         x_axis_interval = x_axis_interval, 
+                         pad_x_axis = pad_x_axis) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
         
         if(EnzPlot){
@@ -1815,10 +1824,11 @@ call. = FALSE)
                    Conc < Ylim_log[1]) %>% 
         pull(Conc)
     
-    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
+    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
+       linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
         warning(paste0("Some of your data are less than the lower y axis value of ",
                        Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this sometimes leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If this happens to your graph, please try setting the minimum value for the y axis to less than or equal to ",
-                       min(LowConc, na.rm = T), 
+                       signif(min(LowConc, na.rm = T), 3), 
                        ", the lowest value in your data."),
                 call. = FALSE)
     }
@@ -1918,52 +1928,16 @@ call. = FALSE)
                 OutPath <- getwd()
             }
             
-            # Check for whether they're trying to save on SharePoint, which DOES
-            # NOT WORK. If they're trying to save to SharePoint, instead, save
-            # to their Documents folder.
-            
-            # Side regex note: The myriad \ in the "sub" call are necessary b/c
-            # \ is an escape character, and often the SharePoint and Large File
-            # Store directory paths start with \\\\.
-            if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
-                
-                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
-                                  "/Documents")
-                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
-                               OutPath,
-                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
-                        call. = FALSE)
-            }
-            
-            LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
-            
-            if(LFSPath){
-                # Create a temporary directory in the user's AppData/Local/Temp
-                # folder.
-                TempDir <- tempdir()
-                
-                # Upon exiting this function, delete that temporary directory.
-                on.exit(unlink(TempDir))
-                
-            }
-            
             FileName <- basename(FileName)
             
             rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
-                              output_dir = switch(as.character(LFSPath), 
-                                                  "TRUE" = TempDir,
-                                                  "FALSE" = OutPath),
+                              output_dir = OutPath, 
                               output_file = FileName, 
                               quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
-            
-            if(LFSPath){
-                file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
-            }
-            
             
         } else {
             # This is when they want any kind of graphical file format.

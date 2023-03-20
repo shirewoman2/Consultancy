@@ -8,7 +8,7 @@
 #' @param min minimum value to use for breaks
 #' @param max maximum value to use for breaks
 #'
-#' @return
+#' @return a numeric vector
 #' @export
 #'
 #' @examples

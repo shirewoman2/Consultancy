@@ -11,7 +11,7 @@ extractConcTime(
   compoundToExtract = "substrate",
   returnAggregateOrIndiv = "both",
   adjust_obs_time = FALSE,
-  expdetails = NA,
+  existing_exp_details = NA,
   fromMultFunction = FALSE
 )
 }
@@ -39,8 +39,8 @@ blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
-"faeces", "gut tissue", "cumulative absorption", or "cumulative
-dissolution".}} Not case sensitive.}
+"faeces", "gut tissue", "cumulative absorption", "cumulative fraction
+released", or "cumulative dissolution".}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"substrate"
@@ -73,9 +73,12 @@ observed data was administered at the same time as the last dose in the
 simulated data. If FALSE, the observed data will start at whatever times
 are listed in the Excel file.}
 
-\item{expdetails}{If you have already run \code{extractExpDetails} to get all
-the details from the "Input Sheet", you can save some processing time by
-supplying it here, unquoted. If left as NA, this function will run
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+get all the details from the "Input Sheet" (e.g., when you ran
+extractExpDetails you said \code{exp_details = "Input Sheet"} or
+\code{exp_details = "all"}), you can save some processing time by supplying
+that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
 
@@ -120,8 +123,9 @@ A data.frame of concentration-time data with the following columns:
   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
   simulations), e.g., "undissolved compound", "free compound in lumen",
   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
-  compound", "luminal CLint", "cumulative fraction of compound dissolved" or
-  "cumulative fraction of compound absorbed".}
+  compound", "luminal CLint", "cumulative fraction of compound dissolved",
+  "cumulative fraction of compound released", or "cumulative fraction of
+  compound absorbed".}
 
   \item{Dose_num}{the dose number}
 

@@ -63,11 +63,13 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   transparent shading for the 5th to 95th percentiles of the simulated data,
   and open circles for the observed data. If an effector were present, the
   default is to show the data without the effector in blue and the data in
-  the presence of the effector in red. Note: You may sometimes see some
-  artifacts -- especially for semi-log plots -- where the ribbon gets partly
-  cut off. For arcane reasons we don't want to bore you with here, we can't
-  easily prevent this. However, a possible fix is to set your y axis limits
-  for the semi-log plot to be wider using \code{y_axis_limits_log}.}
+  the presence of the effector in red. \strong{NOTE: There is a known bug
+  within RStudio that causes filled semi-transparent areas like you get with
+  the "percentile ribbon" figure type to NOT get graphed for certain versions
+  of RStudio.} To get around this, within RStudio, go to Tools --> Global
+  Options --> General --> Graphics --> And then set "Graphics device:
+  backend" to "AGG". Honestly, this is a better option for higher-quality
+  graphics anyway!}
 
   \item{"means only"}{plots a black line for the mean data and, if an
   effector was modeled, a dashed line for the concentration-time data with
@@ -149,7 +151,7 @@ added to the left side.}
 \item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
 is TRUE, which includes some generally reasonable padding). As with
 \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
-the bottom of your data, possible cutting a point in half. If you want a
+the bottom of your data, possibly cutting a point in half. If you want a
 \emph{specific} amount of y-axis padding, set this to a number; the default
 is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
 to the top of the y axis. If you only specify one number, we'll assume

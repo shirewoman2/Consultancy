@@ -14,7 +14,7 @@
 #'   as "csv", the file name will be the pdf file name plus the page number
 #'   requested. If set to NA, no file will be saved.
 #'
-#' @return
+#' @return a data.frame of pdf table content
 #' @export
 #'
 #' @examples

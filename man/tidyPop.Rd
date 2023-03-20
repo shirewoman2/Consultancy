@@ -10,6 +10,8 @@ tidyPop(input_pop)
 \item{input_pop}{input population to tidy up; this has been designed to work
 with \code{\link{extractExpDetails}} with the output item named "Population"}
 }
+a tidied set of names for a simulated population
+}
 \description{
 \code{tidyPop}
 }

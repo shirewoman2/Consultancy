@@ -20,8 +20,33 @@ Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
 MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 
 ```
+```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters.*
+if(FromCalcPKRatios){
+    if(paired){
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    } else {
+        OptionalSection <- knitr::knit_child(
+            system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                        package="SimcypConsultancy"), 
+            envir = environment(), 
+            quiet = TRUE)
+        
+        cat(OptionalSection, sep = "\n")
+        
+    }
+} 
+
+```
+
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r str_comma(tissues)` PK parameters.*
 
 ```{r makeTablePKSummaryOutput}
 
@@ -52,7 +77,7 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
                           ""))
 
 AllFiles <- switch(
-    exists("sim_data_file_pairs", inherits = FALSE), 
+    as.character(exists("sim_data_file_pairs", inherits = FALSE)), 
     "TRUE" = # from calc_PK_ratios_mult
         str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
     

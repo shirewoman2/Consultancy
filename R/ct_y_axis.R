@@ -15,7 +15,7 @@
 #' @param pad_y_axis user-specified value for pad_y_axis
 #' @param time_range_relative relative time range
 #'
-#' @return
+#' @return values to use for ct_plots
 
 ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
                       y_axis_limits_lin, time_range,
@@ -78,7 +78,9 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                    "cumulative fraction of compound absorbed" =
                        paste0("Cumulative fraction of ", CompoundLab, " absorbed"), 
                    "cumulative fraction of compound dissolved" =
-                       paste0("Cumulative fraction of ", CompoundLab, " dissolved")) 
+                       paste0("Cumulative fraction of ", CompoundLab, " dissolved"), 
+                   "cumulative fraction of compound released" = 
+                       paste0("cumulative fraction of ", CompoundLab, " released")) 
         
         # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
         # so do NOT interchange them in the code.
@@ -104,7 +106,8 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
         
         if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
-                                  "cumulative fraction of compound dissolved")){
+                                  "cumulative fraction of compound dissolved", 
+                                  "cumulative fraction of compound released")){
             ylab <- bquote(bold(.(ylab1)))
             
         } else {
@@ -236,7 +239,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
         if(length(pad_y_axis) == 1){
             pad_y_num <- c(pad_y_num, 0)
         } else {
-            pad_y_axis <- pad_y_axis[1:2]
+            pad_y_num <- pad_y_axis[1:2]
         }
         
         pad_y_axis <- pad_y_num[1] != 0 # Making pad_y_axis logical again to work with code elsewhere

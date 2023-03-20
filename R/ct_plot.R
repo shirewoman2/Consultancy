@@ -55,11 +55,13 @@
 #'   transparent shading for the 5th to 95th percentiles of the simulated data,
 #'   and open circles for the observed data. If an effector were present, the
 #'   default is to show the data without the effector in blue and the data in
-#'   the presence of the effector in red. Note: You may sometimes see some
-#'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
-#'   cut off. For arcane reasons we don't want to bore you with here, we can't
-#'   easily prevent this. However, a possible fix is to set your y axis limits
-#'   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
+#'   the presence of the effector in red. \strong{NOTE: There is a known bug
+#'   within RStudio that causes filled semi-transparent areas like you get with
+#'   the "percentile ribbon" figure type to NOT get graphed for certain versions
+#'   of RStudio.} To get around this, within RStudio, go to Tools --> Global
+#'   Options --> General --> Graphics --> And then set "Graphics device:
+#'   backend" to "AGG". Honestly, this is a better option for higher-quality
+#'   graphics anyway!}
 #'
 #'   \item{"means only"}{plots a black line for the mean data and, if an
 #'   effector was modeled, a dashed line for the concentration-time data with
@@ -135,7 +137,7 @@
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). As with
 #'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
-#'   the bottom of your data, possible cutting a point in half. If you want a
+#'   the bottom of your data, possibly cutting a point in half. If you want a
 #'   \emph{specific} amount of y-axis padding, set this to a number; the default
 #'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
 #'   to the top of the y axis. If you only specify one number, we'll assume
@@ -221,7 +223,7 @@
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels. 
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param legend_label optionally indicate on the legend whether the effector is
 #'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
 #'   label in the legend for the line style and the shape. If left as the
@@ -774,12 +776,19 @@ ct_plot <- function(ct_dataframe = NA,
     obs_fill_trans_user <- obs_fill_trans
     obs_color_user <- obs_color_user
     
-    set_aesthet(line_type = line_type, figure_type = figure_type,
-                MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
-                obs_shape = obs_shape, obs_color = obs_color, 
-                obs_fill_trans = obs_fill_trans,
-                obs_line_trans = obs_line_trans,
-                line_color = line_color)
+    AesthetStuff <- set_aesthet(line_type = line_type, figure_type = figure_type,
+                                MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
+                                obs_shape = obs_shape, obs_color = obs_color, 
+                                obs_fill_trans = obs_fill_trans,
+                                obs_line_trans = obs_line_trans,
+                                line_color = line_color)
+    
+    line_type <- AesthetStuff$line_type
+    line_color <-  AesthetStuff$line_color
+    obs_shape <- AesthetStuff$obs_shape
+    obs_color <- AesthetStuff$obs_color
+    obs_fill_trans<- AesthetStuff$obs_fill_trans
+    obs_line_trans <- AesthetStuff$obs_line_trans
     
     # if(length(obs_color) > 1){
     #     obs_color <- obs_color[1]
@@ -1207,66 +1216,26 @@ ct_plot <- function(ct_dataframe = NA,
                 OutPath <- getwd()
             }
             
-            # Check for whether they're trying to save on SharePoint, which DOES
-            # NOT WORK. If they're trying to save to SharePoint, instead, save
-            # to their Documents folder.
-            
-            # Side regex note: The myriad \ in the "sub" call are necessary b/c
-            # \ is an escape character, and often the SharePoint and Large File
-            # Store directory paths start with \\\\.
-            if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
-                
-                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
-                                  "/Documents")
-                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
-                               OutPath,
-                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
-                        call. = FALSE)
-            }
-            
-            LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
-            
-            if(LFSPath){
-                # Create a temporary directory in the user's AppData/Local/Temp
-                # folder.
-                TempDir <- tempdir()
-                
-                # Upon exiting this function, delete that temporary directory.
-                on.exit(unlink(TempDir))
-                
-            }
-            
             FileName <- basename(FileName)
             
             if(EnzPlot){
                 rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",
                                               package="SimcypConsultancy"), 
-                                  output_dir = switch(as.character(LFSPath), 
-                                                      "TRUE" = TempDir,
-                                                      "FALSE" = OutPath),
+                                  output_dir = OutPath, 
                                   output_file = FileName, 
                                   quiet = TRUE)
-                
-                if(LFSPath){
-                    file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
-                }
                 
             } else {
                 
                 rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
                                               package="SimcypConsultancy"), 
-                                  output_dir = switch(as.character(LFSPath), 
-                                                      "TRUE" = TempDir,
-                                                      "FALSE" = OutPath),
+                                  output_dir = OutPath, 
                                   output_file = FileName, 
                                   quiet = TRUE)
                 # Note: The "system.file" part of the call means "go to where the
                 # package is installed, search for the file listed, and return its
                 # full path.
                 
-                if(LFSPath){
-                    file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
-                }
             }
             
         } else {

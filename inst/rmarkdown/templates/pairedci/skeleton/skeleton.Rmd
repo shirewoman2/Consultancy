@@ -1,0 +1,10 @@
+**A note on calculations:** The geometric means and confidence intervals for each PK parameter were calculated for a *paired study design*, meaning that the subjects in the numerator simulation were matched to the subjects in the denominator simulation. The calculations used the following steps:
+
+1. Calculate the ratio for each subject. 
+
+2. Calculate the mean and other any other requested statistics for the ratios. 
+
+Note that this order changes if the subjects are unpaired. In that scenario, the order of operations is to first calculate the mean of the parameter of interest for each simulation and then to calculate the ratio of those means. 
+
+**To summarize:** For paired data, calculate the mean of ratios. For unpaired data, calculate the ratio of means. 
+

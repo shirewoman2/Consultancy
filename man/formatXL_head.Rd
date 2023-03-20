@@ -16,6 +16,8 @@ data.frame if no other name is supplied.}
 }
 \value{
 This does not return any R objects; instead, it saves an Excel file.
+
+saves a formatted Excel file
 }
 \description{
 This function saves a data.frame to an Excel file with the header row in bold

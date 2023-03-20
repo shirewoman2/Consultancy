@@ -34,9 +34,7 @@
 #' @export
 #'
 #' @examples
-#' generateReportInputForm(paste0(SimcypDir$SharePtDir,
-#'              "Research/R working group/SimcypConsultancy function examples and instructions/pksummary_table examples/",
-#'              "Ultraconazole report input.xlsx"))
+#' generateReportInputForm("Ultraconazole report input.xlsx")
 #'
 #' 
 
@@ -50,11 +48,6 @@ generateReportInputForm <- function(filename){
     
     # Check for "\" b/c people will probably paste the path from Windows
     filename <- gsub("\\\\", "/", filename)
-    
-    # If people *did* copy and paste the full path and it includes the "https"
-    # part of the share point drive, that doesn't work well. Switch that.
-    filename <- sub("https:..s08sharepoint.certara.com.sites.consult.",
-                    SimcypDir$SharePtDir, filename)
     
     # If they didn't include ".xlsx" at the end, add that.
     filename <- ifelse(str_detect(filename, "xlsx$"), 

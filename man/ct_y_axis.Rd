@@ -40,6 +40,8 @@ extractConcTime}
 
 \item{time_range_relative}{relative time range}
 }
+values to use for ct_plots
+}
 \description{
 This function is specifically for setting options for the y axis in a
 concentration-time graph and is NOT meant to be called on its own.

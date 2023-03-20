@@ -73,11 +73,13 @@
 #'   transparent shading for the 5th to 95th percentiles of the simulated data,
 #'   and open circles for the observed data. If an effector were present, the
 #'   default is to show the data without the effector in blue and the data in
-#'   the presence of the effector in red. Note: You may sometimes see some
-#'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
-#'   cut off. For arcane reasons we don't want to bore you with here, we can't
-#'   easily prevent this. However, a possible fix is to set your y axis limits
-#'   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
+#'   the presence of the effector in red. \strong{NOTE: There is a known bug
+#'   within RStudio that can cause filled semi-transparent areas like you get
+#'   with the "percentile ribbon" figure type to NOT get graphed for certain
+#'   versions of RStudio.} To get around this, within RStudio, go to Tools -->
+#'   Global Options --> General --> Graphics --> And then set "Graphics device:
+#'   backend" to "AGG". Honestly, this is a better option for higher-quality
+#'   graphics anyway!}
 #'
 #'   \item{"means only"}{plots a black line for the mean data and, if an
 #'   effector was modeled, a dashed line for the concentration-time data with
@@ -136,7 +138,7 @@
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). As with
 #'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
-#'   the bottom of your data, possible cutting a point in half. If you want a
+#'   the bottom of your data, possibly cutting a point in half. If you want a
 #'   \emph{specific} amount of y-axis padding, set this to a number; the default
 #'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
 #'   to the top of the y axis. If you only specify one number, we'll assume
@@ -168,10 +170,10 @@
 #'   default NA when a legend is included and an effector is present, the label
 #'   in the legend will be "Inhibitor".
 #' @param graph_titles optionally specify titles to be used in the graphs and
-#'   specify the order in which the files are graphed or use "none" to have no
-#'   titles on your graphs. Input should be a named character vector of the
-#'   files in the order you would like and what you want to use for the title.
-#'   The file name must \emph{perfectly} match the file name listed in
+#'   specify the order in which the files are graphed or use "none" (default) to
+#'   have no titles on your graphs. Input should be a named character vector of
+#'   the files in the order you would like and what you want to use for the
+#'   title. The file name must \emph{perfectly} match the file name listed in
 #'   ct_dataframe or it won't be used. An example of how this might be
 #'   specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
 #'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
@@ -186,7 +188,7 @@
 #'   1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
 #'   example with the dataset MDZ_Keto.
 #' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels. 
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
@@ -215,7 +217,7 @@
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 8
 #'
-#' @return
+#' @return a set of arranged ggplot2 graphs and/or saved files of those graphs 
 #' @export
 #'
 #' @examples
@@ -257,7 +259,7 @@ ct_plot_mult <- function(ct_dataframe,
                          y_axis_label = NA,
                          legend_position = "none",
                          legend_label = NA, 
-                         graph_titles = NA,
+                         graph_titles = "none",
                          graph_title_size = 14,
                          graph_labels = TRUE,
                          save_graph = NA,
@@ -316,10 +318,10 @@ ct_plot_mult <- function(ct_dataframe,
         # missing ones, too.
         if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
             names(graph_titles)[is.na(names(graph_titles))] <-
-                DatasetCheck$GraphLabs[is.na(names(graph_titles))]
+                graph_titles[is.na(names(graph_titles))]
             
             names(graph_titles)[names(graph_titles) == ""] <-
-                DatasetCheck$GraphLabs[names(graph_titles) == ""]
+                graph_titles[names(graph_titles) == ""]
         }
         
         # Convert labels to file base names (this doesn't do anything to the
@@ -444,6 +446,11 @@ ct_plot_mult <- function(ct_dataframe,
                                        as.character(ct_dataframe$subsection_ADAM)))
     } else {
         ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
+    }
+    
+    # Dealing with scenario where user has specified a file name incorrectly
+    if(any(Order %in% names(ct_dataframe) == FALSE)){
+        Order <- Order[Order %in% names(ct_dataframe)]
     }
     
     for(i in Order){
@@ -577,51 +584,16 @@ ct_plot_mult <- function(ct_dataframe,
                     OutPath <- getwd()
                 }
                 
-                # Check for whether they're trying to save on SharePoint, which DOES
-                # NOT WORK. If they're trying to save to SharePoint, instead, save
-                # to their Documents folder.
-                
-                # Side regex note: The myriad \ in the "sub" call are necessary b/c
-                # \ is an escape character, and often the SharePoint and Large File
-                # Store directory paths start with \\\\.
-                if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
-                    
-                    OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
-                                      "/Documents")
-                    warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
-                                   OutPath,
-                                   ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
-                            call. = FALSE)
-                }
-                
-                LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
-                
-                if(LFSPath){
-                    # Create a temporary directory in the user's AppData/Local/Temp
-                    # folder.
-                    TempDir <- tempdir()
-                    
-                    # Upon exiting this function, delete that temporary directory.
-                    on.exit(unlink(TempDir))
-                    
-                }
-                
                 FileName <- basename(FileName)
                 
                 rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
                                               package="SimcypConsultancy"), 
-                                  output_dir = switch(as.character(LFSPath), 
-                                                      "TRUE" = TempDir,
-                                                      "FALSE" = OutPath),
+                                  output_dir = OutPath, 
                                   output_file = FileName, 
                                   quiet = TRUE)
                 # Note: The "system.file" part of the call means "go to where the
                 # package is installed, search for the file listed, and return its
                 # full path.
-                
-                if(LFSPath){
-                    file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
-                }
                 
             } else {
                 # This is when they want any kind of graphical file format.

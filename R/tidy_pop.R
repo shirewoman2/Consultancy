@@ -5,7 +5,7 @@
 #' @param input_pop input population to tidy up; this has been designed to work
 #'   with \code{\link{extractExpDetails}} with the output item named "Population"
 #'
-#' @return
+#' @return a tidied set of names for a simulated population 
 #' @export
 #'
 #' @examples

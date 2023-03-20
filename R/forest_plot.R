@@ -124,7 +124,10 @@
 #'   Jones 2022 CPT, doi 10.1002/psp4.12864}), "none" for no shading at all, or
 #'   a named character vector of the colors you want for each interaction level,
 #'   e.g., \code{color_set = c("insignificant" = "white", "weak" = "gray90",
-#'   "moderate" = "gray75", strong = "gray50")}
+#'   "moderate" = "gray75", strong = "gray50")}. The cutoff values listed match
+#'   those in "Clinical Drug Interaction Studies -- Cytochrome P450 Enzyme- and
+#'   Transporter-Mediated Drug Interactions: Guidance for industry", US Food and
+#'   Drug Administration Center for Drug Evaluation and Research, 2020, p. 19.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will

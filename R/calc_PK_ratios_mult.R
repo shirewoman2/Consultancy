@@ -13,15 +13,22 @@
 #'   see the arguments \code{sheet_PKparameters_num} and
 #'   \code{sheet_PKparameters_denom}.)
 #' @param paired TRUE (default) or FALSE for whether the study design is paired,
-#'   as in, the subjects are \emph{identical} between the two simulations. For
-#'   paired study designs, the order of operations is to calculate each
-#'   subject's ratio and then to calculate the mean of those ratios. For
-#'   unpaired study designs, the order of operations is to calculate the mean of
-#'   the parameter of interest for the numerator simulation and then divide it
-#'   by the mean of the parameter of interest for the denominator simulation.
-#'   \strong{A caveat for unpaired data:} We're checking on how best to
-#'   calculate the CV and confidence intervals for the unpaired data, so please
-#'   check our work before using those!
+#'   as in, the subjects are \emph{identical} between the two simulations.
+#'   \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
+#'   CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
+#'   study where each subject has a measurement without the effector of interest
+#'   and then has a second measurement \emph{with} the effector. The comparison
+#'   is for repeated measurements of the \emph{same subject}. An example of an
+#'   unpaired study design would be comparing healthy volunteers to subjects
+#'   with hepatic impairment because those are measurements on \emph{different}
+#'   subjects. For paired study designs, the order of operations is to calculate
+#'   each subject's mean ratio and then to calculate the mean of those ratios.
+#'   For unpaired study designs, the order of operations is to calculate the
+#'   mean for the numerator simulation and then divide it by the mean for the
+#'   denominator simulation. Would this be clearer if you could see the
+#'   mathematical equations? We agree but can't easily include equations in the
+#'   help file. However, if you run this and save the output to a Word file, the
+#'   equations will be included in the output.
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \describe{
 #'
@@ -156,7 +163,8 @@
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
-#' @return
+#' @return A list or a data.frame of PK data that optionally includes where the
+#'   data came from and data to use for making forest plots
 #' @export
 #'
 #' @examples
@@ -230,7 +238,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
     
     for(i in 1:nrow(sim_data_file_pairs)){
         # Including a progress message
-        print(paste0("Extracting data for file pair #", i))
+        message("Extracting data for file pair #", i)
         
         TEMP <- calc_PK_ratios(
             sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
@@ -261,21 +269,23 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
             File = paste(sim_data_file_pairs$Numerator[i], "/", 
                          sim_data_file_pairs$Denominator[i]), 
             Dose_sub = TEMP$ExpDetails_denom$Dose_sub, 
-            Dose_inhib = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
-                                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
-                                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
+            Dose_inhib = switch(as.character(
+                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
+                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
             Substrate = TEMP$ExpDetails_denom$Substrate, 
-            Inhibitor1 = switch(complete.cases(TEMP$ExpDetails_num$Inhibitor1), 
-                                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
-                                "FALSE" = TEMP$ExpDetails_num$Substrate), 
+            Inhibitor1 = switch(as.character(
+                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
+                "FALSE" = TEMP$ExpDetails_num$Substrate), 
             File_num = sim_data_file_pairs$Numerator[i], 
-            File_denom = sim_data_file_pairs$Denominator[i])
+            File_denom = sim_data_file_pairs$Denominator[i]) %>% 
+            left_join(MyTable[[i]], by = join_by(File))
         
         rm(TEMP)
     }
     
     MyPKResults <- bind_rows(MyTable)
-    
     
     # Setting the rounding option
     round_opt <- function(x, round_fun){
@@ -306,15 +316,19 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         return(Out)
     }
     
-    MyPKResults_out <- MyPKResults %>% 
+    # Rounding as requested and setting column order
+    MyPKResults <- MyPKResults %>% 
         mutate(across(.cols = where(is.numeric), 
-                      .fns = round_opt, round_fun = rounding)) %>% 
+                      .fns = round_opt, 
+                      round_fun = ifelse(complete.cases(rounding) & 
+                                             rounding == "Word only", 
+                                         "none", rounding))) %>% 
         select(-File, File)
     
     
     # Saving --------------------------------------------------------------
     
-    Out <- list(Table = MyPKResults_out)
+    Out <- list(Table = MyPKResults)
     
     
     if(complete.cases(save_table)){
@@ -323,7 +337,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
         if(complete.cases(rounding) && rounding == "Word only"){
             MyPKResults <- MyPKResults %>% 
                 mutate(across(.cols = where(is.numeric), 
-                              .fns = round_opt, round_fun = rounding)) %>% 
+                              .fns = round_opt, round_fun = "Consultancy")) %>% 
                 select(-File, File)
         } 
         
@@ -370,55 +384,21 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                 OutPath <- getwd()
             }
             
-            # Check for whether they're trying to save on SharePoint, which DOES
-            # NOT WORK. If they're trying to save to SharePoint, instead, save
-            # to their Documents folder.
-            
-            # Side regex note: The myriad \ in the "sub" call are necessary b/c
-            # \ is an escape character, and often the SharePoint and Large File
-            # Store directory paths start with \\\\.
-            if(str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$SharePtDir)){
-                
-                OutPath <- paste0("C:/Users/", Sys.info()[["user"]], 
-                                  "/Documents")
-                warning(paste0("You have attempted to use this function to save a Word file to SharePoint, and Microsoft permissions do not allow this. We will attempt to save the ouptut to your Documents folder, which we think should be ", 
-                               OutPath,
-                               ". Please copy the output to the folder you originally requested or try saving locally or on the Large File Store."), 
-                        call. = FALSE)
-            }
-            
-            LFSPath <- str_detect(sub("\\\\\\\\", "//", OutPath), SimcypDir$LgFileDir)
-            
-            if(LFSPath){
-                # Create a temporary directory in the user's AppData/Local/Temp
-                # folder.
-                TempDir <- tempdir()
-                
-                # Upon exiting this function, delete that temporary directory.
-                on.exit(unlink(TempDir))
-                
-            }
-            
             FileName <- basename(save_table)
             
             # Storing some objects so they'll work with the markdown file
             PKToPull <- PKparameters
             MeanType <- mean_type
+            FromCalcPKRatios <- TRUE
             
             rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
-                              output_dir = switch(as.character(LFSPath), 
-                                                  "TRUE" = TempDir,
-                                                  "FALSE" = OutPath),
+                              output_dir = OutPath, 
                               output_file = FileName, 
                               quiet = TRUE)
             # Note: The "system.file" part of the call means "go to where the
             # package is installed, search for the file listed, and return its
             # full path.
-            
-            if(LFSPath){
-                file.copy(file.path(TempDir, FileName), OutPath, overwrite = TRUE)
-            }
             
         } else {
             # This is when they want a .csv file as output. In this scenario,
@@ -433,16 +413,20 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
     }
     
     if(extract_forest_data){
+        
         StatNames <- unique(MyPKResults$Statistic[
-            str_detect(MyPKResults$Statistic, "Mean Ratio|CI")])
+            str_detect(MyPKResults$Statistic, "Mean Ratio|CI|^Simulated$")])
         names(StatNames) <- StatNames
-        StatNames[which(str_detect(StatNames, "Ratio"))] <- "GMR"
+        StatNames[which(str_detect(StatNames, "Ratio|^Simulated$"))] <- "GMR"
         StatNames[which(str_detect(StatNames, "CI - Lower"))] <- "CI90_lo"
         StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI90_hi"
         
-        FD <- MyPKResults %>% select(Statistic, File, matches(" / ")) %>% 
-            filter(str_detect(Statistic, "Ratio|Lower|Upper")) %>% 
-            pivot_longer(cols = -c("Statistic", "File"), 
+        FD <- bind_rows(ForestInfo) %>% 
+            select(File, Statistic, Substrate, Dose_sub, Inhibitor1, Dose_inhib,
+                   matches(" / ")) %>% 
+            filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
+            pivot_longer(cols = -c("Statistic", "File", "Dose_sub", "Dose_inhib", 
+                                   "Substrate", "Inhibitor1"), 
                          names_to = "Parameter1", 
                          values_to = "Value") %>% 
             mutate(
@@ -454,22 +438,23 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                           collapse = "|")), 
                 Parameter = paste(Parameter, Statistic, sep = "__"), 
                 Parameter = sub("_dose1", "_ratio_dose1", Parameter), 
-                Parameter = sub("_last", "_ratio_last", Parameter))%>% 
+                Parameter = sub("_last", "_ratio_last", Parameter)) %>% 
             select(-Parameter1, -Statistic) %>% 
             filter(str_detect(Parameter, "AUCinf|AUCt|Cmax"))
+        
         if(nrow(FD) == 0){
             warning("The PK parameters selected don't work for forest plots, which can only take PK parameters for AUCinf, AUCtau, and Cmax for dose 1 or the last dose. We cannot return any forest-plot data.", 
                     call. = FALSE)
             FD <- data.frame()
+            
         } else {
+            
             suppressMessages(
                 FD <-  FD %>% 
                     pivot_wider(names_from = Parameter, values_from = Value) %>% 
-                    left_join(bind_rows(ForestInfo)) %>% 
                     select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                            everything())
             )
-            
         }
         
         Out[["ForestData"]] <- FD

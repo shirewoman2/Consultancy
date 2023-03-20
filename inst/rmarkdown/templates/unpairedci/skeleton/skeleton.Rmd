@@ -1,0 +1,21 @@
+**A note on calculations:** The geometric means and confidence intervals for each PK parameter were calculated for an *unpaired study design*, meaning that the subjects in the numerator simulation were not matched to the subjects in the denominator simulation. The calculations used the following steps:
+
+1. Calculate the mean of log-transformed data for each set of values $$\mu_\text{numerator}=mean(ln(\text{numerator sim values}))$$ and $$\mu_\text{denominator}=mean(ln(\text{denominator sim values}))$$
+
+2. The geometric mean ratio is the exponential of the difference $$\text{geometric mean ratio} = e^{\mu_\text{numerator} - \mu_\text{denominator}} $$
+
+3. Calculate the variance of the ratio $$ \text{variance of the log-transformed ratio} = \frac{Var(ln(\text{numerator sim values}))}{N_{\text{numerator sim}}} +$$ $$\frac{Var(ln(\text{denominator sim values}))}{N_{\text{denominator sim}}} $$
+where N is the number of subjects in that simulation and variance (Var) is calculated as $$Var(X) = \frac{1}{n} \sum_{i=1}^n (x_i - \mu)^2 $$ 
+
+4. Calculate the Student's t distribution critical value for a significance level of `r conf_int * 100`% (&alpha; = `r 1 - conf_int`).  $$t_{1 - \frac{\alpha}{2}} = `r round(qnorm(1-(1-conf_int)/2), 2)`$$
+
+5. Using this critical value, calculate the log-transformed confidence level as $$\text{log-transformed `r conf_int * 100`% CI} = (\mu_\text{numerator} - \mu_\text{denominator}) \pm$$ $$t_{1 - \frac{\sigma}{2}} \times \sqrt{\text{variance of the log-transformed ratio}}$$
+
+6. Return the values to normal (not log-transformed) space by taking the exponential. $$ \text{`r conf_int * 100`% CI} = e^{\text{log-transformed `r conf_int * 100`% CI}}$$
+
+Note that this order changes if the subjects are paired. In that scenario, the order of operations is to first calculate the ratios and then calculate any statistics on that set of ratios. 
+
+**To summarize:** For paired data, calculate the mean of ratios. For unpaired data, calculate the ratio of means.  
+
+
+

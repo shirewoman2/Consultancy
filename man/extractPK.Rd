@@ -8,7 +8,9 @@ extractPK(
   sim_data_file,
   PKparameters = "AUC tab",
   sheet = NA,
+  compoundToExtract = "substrate",
   tissue = "plasma",
+  existing_exp_details = NA,
   returnAggregateOrIndiv = "aggregate",
   includeTrialInfo = TRUE,
   returnExpDetails = FALSE,
@@ -29,6 +31,11 @@ in quotes}
 
   \item{"Absorption tab"}{only those parameters on the "Absorption" or
   "Overall Fa Fg" tab}
+
+  \item{"Regional ADAM"}{regional fraction absorbed and fraction metabolized
+  from intestinal segments; only applies to ADAM models where the tab
+  "Regional ADAM Fractions (Sub)" is included in the Excel file and currently
+  only applies to substrate}
 
   \item{a vector of any combination of specific, individual parameters, each
   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
@@ -51,9 +58,27 @@ last dose, this function will work best if this is left as NA. Also, since
 we don't know which dose these data were for, you'll see that the output
 parameter names do not include the suffixes "_last" or "_dose1".}
 
+\item{compoundToExtract}{For which compound do you want to extract
+PK data? Options are: \itemize{\item{"substrate"
+(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+inducer, inhibitor, activator, or suppresesor, but it's labeled as
+"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+metabolite of inhibitor 1}}}
+
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
+Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+blood".}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+get all the details from the "Input Sheet" (e.g., when you ran
+extractExpDetails you said \code{exp_details = "Input Sheet"} or
+\code{exp_details = "all"}), you can save some processing time by supplying
+that object here, unquoted. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
 
 \item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
 parameters? Options are "aggregate", "individual", or "both". For aggregate
@@ -98,7 +123,7 @@ parameters, but it's on our to-do list.
 sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"
 extractPK(sim_data_file)
 extractPK(sim_data_file, PKparameters = "Absorption tab")
-extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
+extractPK(sim_data_file, PKparameters = c("AUCinf_dose1", "Cmax_dose1"))
 
 
 }

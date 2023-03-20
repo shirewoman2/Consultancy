@@ -1,0 +1,4 @@
+name: pairedCI
+description: >
+   Calculation of confidence intervals for paired data
+create_dir: FALSE

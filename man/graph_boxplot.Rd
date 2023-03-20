@@ -100,6 +100,9 @@ means the file will not be automatically saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 4}
 }
+\value{
+a ggplot2 graph
+}
 \description{
 \code{graph_boxplot} takes as input a data.frame of numeric values and the
 categories those values are in and creates boxplots of those data. Options

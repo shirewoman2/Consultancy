@@ -139,6 +139,11 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
     
+    # If they didn't include ".xlsx" at the end, add that.
+    sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE] <-
+        paste0(sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE], 
+               ".xlsx")
+    
     # Making sure that all the files exist before attempting to pull data
     if(any(file.exists(sim_data_files) == FALSE)){
         MissingSimFiles <- sim_data_files[
@@ -254,7 +259,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
     # Removing anything that was all NA's if that's what user requested
     if(omit_all_missing){
         Keep <- 
-            Out %>% summarize(across(.fns = function(.) all(is.na(.)))) %>% 
+            Out %>% summarize(across(.cols = everything(),
+                                     .fns = function(.) all(is.na(.)))) %>% 
             pivot_longer(cols = -File, names_to = "ColName", values_to = "Val") %>% 
             filter(Val == FALSE) %>% pull(ColName)
         

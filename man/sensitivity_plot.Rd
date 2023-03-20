@@ -72,6 +72,8 @@ your local (not OneDrive) Documents folder.}
 
 \item{fig_width}{figure width in inches; default is 5}
 }
+a ggplot2 graph
+}
 \description{
 Doesn't detect units yet. Would need to check that sheet names are consistent
 b/c I bet they're not. Would like to add options for axis breaks and limits

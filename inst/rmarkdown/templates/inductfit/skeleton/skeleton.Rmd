@@ -112,22 +112,25 @@ AllFits <- AllFits %>%
     mutate(Model = case_when(Model == "Emax" ~ "Emax", 
                              Model == "EmaxSlope" ~ "Emax slope", 
                              Model == "Sig3Param" ~ "sigmoidal 3-parameter", 
-                             Model == "slope" ~ "slope"))
-
-if(complete.cases(num_sigfig)){
-    AllFits <- AllFits %>% 
-        mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")), 
-                      .fns = signif, digits = num_sigfig))
-}
+                             Model == "slope" ~ "slope")) %>% 
+    
+    # Rounding as requested
+    mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")), 
+                  .fns = round_opt, 
+                  round_fun = ifelse(complete.cases(rounding) && rounding == "Word only", 
+                                     "Consultancy", rounding)))
 
 MeanRows <- which(AllFits$DonorID == "mean")
 
 if(model == "all"){
     AllFits <- AllFits %>% 
-        formatTable_Simcyp(shading_column = Model) 
+        formatTable_Simcyp(shading_column = Model, 
+                           bold_cells = list(c(0, NA)), 
+                           center_1st_column = TRUE) 
 } else {
     AllFits <- AllFits %>% 
-        formatTable_Simcyp() 
+        formatTable_Simcyp(bold_cells = list(c(0, NA)), 
+                           center_1st_column = TRUE) 
 }
 
 AllFits %>% 

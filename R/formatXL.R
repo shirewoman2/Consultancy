@@ -136,7 +136,7 @@
 #'                                                 wrapping = TRUE))))
 #'
 #'
-#' @return
+#' @return saves a formatted Excel file 
 #' @export
 #'
 #' 

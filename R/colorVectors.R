@@ -6,7 +6,7 @@
 #'
 #' @param ncolors number of colors desired
 #'
-#' @return
+#' @return a character vector of colors
 #' @export
 #'
 #' @examples
@@ -33,7 +33,7 @@ rainbow <- function(ncolors){
 #'
 #' @param ncolors number of colors desired
 #'
-#' @return
+#' @return a character vector of colors
 #' @export
 #'
 #' @examples
@@ -59,7 +59,7 @@ blueGreens <- function(ncolors){
 #'
 #' @param ncolors number of colors desired
 #'
-#' @return
+#' @return a character vector of colors
 #' @export
 #'
 #' @examples

@@ -29,6 +29,11 @@
 #'   \item{"Absorption tab"}{only those parameters on the "Absorption" or
 #'   "Overall Fa Fg" tab}
 #'
+#'   \item{"Regional ADAM"}{regional fraction absorbed and fraction metabolized
+#'   from intestinal segments; only applies to ADAM models where the tab
+#'   "Regional ADAM Fractions (Sub)" is included in the Excel file and currently
+#'   only applies to substrate}
+#'
 #'   \item{a vector of any combination of specific, individual parameters, each
 #'   surrounded by quotes and encapsulated with \code{c(...)}}{An example:
 #'   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
@@ -41,9 +46,25 @@
 #'   for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
 #'   This has NOT been as well tested, though, so be sure to check that you're
 #'   getting what you expected!
+#' @param compoundToExtract For which compound do you want to extract
+#'   PK data? Options are: \itemize{\item{"substrate"
+#'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+#'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+#'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
+#'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+#'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+#'   metabolite of inhibitor 1}}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'   tested).
+#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+#'   blood".
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+#'   get all the details from the "Input Sheet" (e.g., when you ran
+#'   extractExpDetails you said \code{exp_details = "Input Sheet"} or
+#'   \code{exp_details = "all"}), you can save some processing time by supplying
+#'   that object here, unquoted. If left as NA, this function will run
+#'   \code{extractExpDetails} behind the scenes to figure out some information
+#'   about your experimental set up.
 #' @param returnAggregateOrIndiv return aggregate (default) and/or individual PK
 #'   parameters? Options are "aggregate", "individual", or "both". For aggregate
 #'   data, values are pulled from simulator output -- not calculated -- and the
@@ -76,13 +97,15 @@
 #' sim_data_file <- "../Example simulator output MD + inhibitor.xlsx"
 #' extractPK(sim_data_file)
 #' extractPK(sim_data_file, PKparameters = "Absorption tab")
-#' extractPK(sim_data_file, PKparameters = "AUCinf_dose1")
+#' extractPK(sim_data_file, PKparameters = c("AUCinf_dose1", "Cmax_dose1"))
 #'
 #' 
 extractPK <- function(sim_data_file,
                       PKparameters = "AUC tab",
                       sheet = NA,
+                      compoundToExtract = "substrate",
                       tissue = "plasma",
+                      existing_exp_details = NA, 
                       returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
                       returnExpDetails = FALSE, 
@@ -137,39 +160,200 @@ extractPK <- function(sim_data_file,
              call. = FALSE)
     }
     
+    tissue <- tolower(tissue)
+    if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
+        warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+                call. = FALSE)
+        tissue <- "plasma"
+    }
+    
     
     # Main body of function ---------------------------------------------------
+    
+    # NOTE TO CODERS: This function calls on the data object AllPKParameters to
+    # figure out which regex to use for which PK parameter. In AllPKParameters,
+    # the sheet listed is "AUC" when it's a parameter that we're searching for
+    # on a tab named "AUC", "AUC_SD", or "AUC_CI", which apparently only exists
+    # with simulator versions earlier than V22 and even then does not *always*
+    # exist. The "AUC" tab has a very specific format that DIFFERS from the more
+    # generic PK tab layouts, so this matters! extractPK will call on the
+    # unexported internal function extractAUCtab to get the data requested. 
+    
+    # By contrast, when the sheet listed is "AUC0", that's only for first-dose
+    # data, and the structure of that Excel tab is the more generic layout of PK
+    # data like in, e.g., "Int AUC 1st(Sub)(CPlasma)" or a similarly named tab.
+    # Similarly, when the sheet is listed in AllPKParameters as "AUCX", that's a
+    # tab that could be for a last dose or for a user-specified interval, but
+    # its layout will be similar to the AUC0 layout, so extractPK will still
+    # call on the internal function extractAUCXtab to get the requested info.
+    
+    # To add new PK parameters to extract, you should be able to just add them
+    # to AllPKParameters, following the examples for other PK parameters as far
+    # as what to put in each column. This is TRICKY for the AUC tab b/c you have
+    # to check things in multiple rows to make sure you're extracting the
+    # correct cells. Once you've added the new parameters to AllPKParameters,
+    # save that RData object when you save the package, and then extractPK
+    # *should* be able to find them. At least, I *hope* it will work that
+    # simply! -LSh
+    
     
     if(returnAggregateOrIndiv[1] == "both"){
         returnAggregateOrIndiv <- c("aggregate", "individual")
     }
     
-    # Determining the name of the tab that contains PK data for the last dose
-    # of the substrate (not the inhibitor... at least, not at this point).
-    Tab_last <- SheetNames[str_detect(SheetNames, "AUC(t)?[1-9]{1,1}[0-9]{0,}") &
-                               !str_detect(SheetNames, "Inh")]
-    LastDoseNum <- as.numeric(str_extract(Tab_last, "[0-9]{1,}"))
-    # It's the highest dose number and it can't be 0 b/c that's dose 1.
-    LastDoseNum <- suppressWarnings(max(LastDoseNum[LastDoseNum != 0]))
-    # If LastDoseNum is now "-Inf" b/c it was all zeroes in the previous line but
-    # there *is* a tab with "t" in the name, e.g., AUCt0(Sub)(CPlasma), then use
-    # that one.
-    Tab_last <- paste0("AUC(t)?", as.numeric(str_extract(Tab_last, "[0-9]{1,}")[1]),
-                       "(_CI)?\\(Sub\\)\\(C",
-                       str_to_title(tissue), 
-                       "|AUC", LastDoseNum, "\\(Sub\\)\\(C", str_to_title(tissue))
-    Tab_last <- SheetNames[which(str_detect(SheetNames, Tab_last))][1]
-    if(LastDoseNum == -Inf && length(Tab_last) == 0 | is.na(Tab_last)){
-        if(any(str_detect(SheetNames, "AUCt[0-9]{1,}") &
-               !str_detect(SheetNames, "Inh"))){
-            Tab_last <- SheetNames[str_detect(SheetNames, "AUCt[1-9]{1,1}[0-9]{0,}") &
-                                       !str_detect(SheetNames, "Inh")]
-        } else if(any(str_detect(SheetNames, "AUC last"))){
-            # Tab name could include "last" instead of a number, e.g., "Int AUC
-            # last_CI(Sub)(CPlasma)"
-            Tab_last <- SheetNames[str_detect(SheetNames, "AUC last")][1]
+    # Checking experimental details to only pull details that apply
+    if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+        Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                   exp_details = "Summary tab")
+    } else {
+        Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                        "TRUE" = existing_exp_details, 
+                        "FALSE" = deannotateDetails(existing_exp_details))
+        
+        if("data.frame" %in% class(Deets)){
+            Deets <- Deets %>% filter(File == sim_data_file)
+            
+            if(nrow(Deets == 0)){
+                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                           exp_details = "Summary tab")
+            }
+        }
+    }
+    
+    # We need to know the dosing regimen for whatever compound they
+    # requested, but, if the compoundID is inhibitor 2, then that's listed
+    # on the input tab, and we'll need to extract exp details for that, too.
+    if("inhibitor 2" %in% compoundToExtract){
+        DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
+                                             exp_details = "Input Sheet")
+        Deets <- c(as.list(Deets), DeetsInputSheet)
+    }
+    
+    # extractExpDetails will check whether the Excel file provided was, in
+    # fact, a Simulator output file and return a list of length 0 if not.
+    # Checking for that here.
+    if(length(Deets) == 0){
+        # warning(paste0("The file ", sim_data_file, 
+        #                " is not a Simulator output file and will be skipped."))
+        return(list())
+    }
+    
+    # version <= 20: Has "AUC" tab for each compound that was integrated. Sheet
+    # names are harder to decipher: AUC0 is 1st dose, but last dose will be on
+    # whichever AUC tab has the highest number for that compoundID. AUC tab for
+    # compounds than substrate will be labeled as, e.g., "AUC(Inh 1)". AUCinf is
+    # ONLY found on AUC tab.
+    
+    # version == 21: Has "AUC" tab. Sheet names are "1st" or "last" for 1st or
+    # last dose, respectively. AUC tab for compounds than substrate will be
+    # labeled as, e.g., "AUC(Inh 1)". AUCinf is ONLY found on AUC tab.
+    
+    # verison >= 22: No AUC tab. Sheet names are "1st" or "last" for 1st or
+    # last dose, respectively. 
+    
+    Tab_AUC <- switch(
+        compoundToExtract, 
+        "substrate" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?$")][1],
+        "primary metabolite 1" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Sub Pri Met1\\)$")][1],
+        "primary metabolite 2" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Sub Pri Met2\\)$")][1],
+        "secondary metabolite" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Sub Sec Met\\)$")][1],
+        "inhibitor 1" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 1\\)$")][1],
+        "inhibitor 2" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 2\\)$")][1],
+        "inhibitor 1 metabolite" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 1 Met\\)$")][1])
+    
+    if(Deets$Species != "human" & compoundToExtract == "substrate"){
+        # If it's from Simcyp Discovery, there's only one AUC sheet and
+        # it's either for the only dose in a SD sim or the last dose for
+        # a MD sim. Not sure about the regular Simcyp Animal, though. 
+        Tab_AUC <- SheetNames[which(str_detect(SheetNames, "AUC"))]
+    }
+    
+    SimV21plus <- as.numeric(str_extract(Deets$SimulatorVersion, "[0-9]{2}")) >= 21
+    
+    if(SimV21plus){
+        Tab_first <- SheetNames[
+            str_detect(SheetNames, 
+                       paste0("Int AUC 1st", 
+                              switch(compoundToExtract,
+                                     "substrate" = "\\(Sub\\)", 
+                                     "primary metabolite 1" = "\\(Sub Met\\)",
+                                     "primary metabolite 2" = "\\(Sub Met2\\)",
+                                     "secondary metabolite" = "\\(Sub SM\\)", 
+                                     "inhibitor 1" = "\\(Inh 1\\)",
+                                     "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                     "inhibitor 2" = "\\(Inh 2\\)"), 
+                              switch(tissue, 
+                                     "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                     "unbound plasma" = "\\(CuPlasma",
+                                     "blood" = "\\(CBlood", 
+                                     "unbound blood" = "\\(CuBlood")))][1]
+        
+        Tab_last <- SheetNames[
+            str_detect(SheetNames, 
+                       paste0("Int AUC last", 
+                              switch(compoundToExtract,
+                                     "substrate" = "\\(Sub\\)", 
+                                     "primary metabolite 1" = "\\(Sub Met\\)",
+                                     "primary metabolite 2" = "\\(Sub Met2\\)",
+                                     "secondary metabolite" = "\\(Sub SM\\)", 
+                                     "inhibitor 1" = "\\(Inh 1\\)",
+                                     "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                     "inhibitor 2" = "\\(Inh 2\\)"), 
+                              switch(tissue, 
+                                     "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                     "unbound plasma" = "\\(CuPlasma",
+                                     "blood" = "\\(CBlood", 
+                                     "unbound blood" = "\\(CuBlood")))][1]
+        
+    } else {
+        
+        Tab_first <- SheetNames[
+            str_detect(SheetNames, 
+                       paste0("AUC0(_SD|_CI)?", 
+                              switch(compoundToExtract,
+                                     "substrate" = "\\(Sub\\)", 
+                                     "primary metabolite 1" = "\\(Sub Met\\)",
+                                     "primary metabolite 2" = "\\(Sub Met2\\)",
+                                     "secondary metabolite" = "\\(Sub SM\\)", 
+                                     "inhibitor 1" = "\\(Inh 1\\)",
+                                     "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                     "inhibitor 2" = "\\(Inh 2\\)"), 
+                              switch(tissue, 
+                                     "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                     "unbound plasma" = "\\(CuPlasma",
+                                     "blood" = "\\(CBlood", 
+                                     "unbound blood" = "\\(CuBlood")))][1]
+        
+        # Determining the name of the tab that contains PK data for the last
+        # dose. This will create a vector of ALL the AUC tabs for that tissue
+        # and compound and we'll narrow down to the exact one we want next.
+        Tab_last_check <- SheetNames[
+            str_detect(SheetNames, 
+                       paste0("AUC(t)?[1-9]{1,}(_SD|_CI)?", 
+                              switch(compoundToExtract,
+                                     "substrate" = "\\(Sub\\)", 
+                                     "primary metabolite 1" = "\\(Sub Met\\)",
+                                     "primary metabolite 2" = "\\(Sub Met2\\)",
+                                     "secondary metabolite" = "\\(Sub SM\\)", 
+                                     "inhibitor 1" = "\\(Inh 1\\)",
+                                     "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                     "inhibitor 2" = "\\(Inh 2\\)"), 
+                              switch(tissue, 
+                                     "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                     "unbound plasma" = "\\(CuPlasma",
+                                     "blood" = "\\(CBlood", 
+                                     "unbound blood" = "\\(CuBlood")))]
+        
+        if(length(Tab_last_check) > 0){
+            LastDoseNum <- data.frame(Tab_last = Tab_last_check) %>% 
+                mutate(DoseNum = as.numeric(str_extract(Tab_last, "[0-9]{1,}"))) %>% 
+                # It's the highest dose number and it can't be 0 b/c that's dose 1.
+                filter(DoseNum == max(DoseNum) & DoseNum != 0)
+            Tab_last <- LastDoseNum$Tab_last
         } else {
-            Tab_last <- NA
+            # If there was no Tab_last found but there *is* a tab with "t0" in
+            # the name, e.g., AUCt0(Sub)(CPlasma), then use that one.
+            Tab_last <- Tab_last_check[str_detect(Tab_last_check, "t0")]
         }
     }
     
@@ -183,7 +367,7 @@ extractPK <- function(sim_data_file,
     if(complete.cases(sheet)){
         PKparameters <- "all"
         # Checking formatting of the user-defined sheet b/c it's sometimes set up
-        # the same was as the AUC tab and thus requires special fiddling.
+        # the same way as the AUC tab and thus requires special fiddling.
         XL <- suppressMessages(
             readxl::read_excel(path = sim_data_file, sheet = sheet,
                                col_names = FALSE))
@@ -198,59 +382,44 @@ extractPK <- function(sim_data_file,
         }
         
     } else {
-        
         UserAUC <- FALSE
-    }
-    
-    if(tolower(PKparameters_orig[1]) == "auc tab" & 
-       "AUC" %in% SheetNames == FALSE & 
-       any(c("AUC0(Sub)(CPlasma)") %in% SheetNames) & # This HAD AUCt0(Sub)(CPlasma) as an option, but I'm removing it b/c it looks like that is a steady-state tab, not dose 1!
-       is.na(sheet)){ 
-        Sheet <- intersect(c("AUC0(Sub)(CPlasma)"), SheetNames)[1]
-        
-        warning(paste0("You requested all the parameters from the 'AUC' sheet, but that sheet is not present in ",
-                       sim_data_file, ". However, the tab ", Sheet, 
-                       " *is* present; all PK parameters will be extracted from that sheet."),
-                call. = FALSE)
-        
-        PKparameters <- "AUC0"
     }
     
     ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
         pull(PKparameter) %>% unique()
     
-    ParamAbsorption <- AllPKParameters %>% filter(Sheet %in% c("Absorption", "Overall Fa Fg")) %>% 
+    ParamAbsorption <- AllPKParameters %>% filter(Sheet %in% c("Absorption",
+                                                               "Overall Fa Fg")) %>% 
+        pull(PKparameter) %>% unique()
+    
+    ParamRegADAM <- AllPKParameters %>% filter(Sheet %in% c("Regional ADAM Fractions (Sub)")) %>% 
         pull(PKparameter) %>% unique()
     
     ParamAUC0 <- AllPKParameters %>% filter(Sheet == "AUC0") %>% 
         pull(PKparameter) %>% unique()
     
-    ParamAUCX <- AllPKParameters %>% filter(Sheet == "AUCX") %>% 
+    ParamAUClast <- AllPKParameters %>% filter(Sheet == "AUCX") %>% 
         pull(PKparameter) %>% unique()
     
     ParamCLTSS <- AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
         pull(PKparameter) %>% unique()
     
-    if(tolower(PKparameters[1]) == "all"){
-        PKparameters <- unique(c(ParamAbsorption, ParamAUC, ParamAUC0,
-                                 ParamAUCX, ParamCLTSS))
+    PKparameters <- 
+        switch(tolower(PKparameters[1]), 
+               "all" = unique(c(ParamAbsorption, ParamAUC, ParamAUC0,
+                                ParamAUClast, ParamCLTSS)), 
+               "auc tab" = unique(c(ParamAUC, ParamAUC0, ParamAUClast)),
+               "absorption tab" = ParamAbsorption,
+               "auc0" = ParamAUC0, # This will happen if user requests PKparameters = "AUC" but "AUC" tab is not present but a tab for AUC0 *is*.
+               "regional adam" = ParamRegADAM)
+    
+    # Checking whether the user had supplied a vector of specific parameters
+    # rather than a parameter set name and using those if so.
+    if(is.null(PKparameters) & any(complete.cases(PKparameters_orig))){
+        PKparameters <- PKparameters_orig
     }
     
-    if(tolower(PKparameters[1]) == "auc tab"){
-        PKparameters <- ParamAUC
-    }
-    
-    if(tolower(PKparameters[1]) == "absorption tab"){
-        PKparameters <- ParamAbsorption
-    }
-    
-    if(tolower(PKparameters[1]) == "auc0"){
-        # This will happen if user requests PKparameters = "AUC" but "AUC" tab
-        # is not present but a tab for AUC0 *is*.
-        PKparameters <- ParamAUC0
-    }
-    
-    # Allowing for flexibility in case. Get the lower-case version of whatever
+    # Allowing for flexibility in case: Get the lower-case version of whatever
     # PKparameters user specified and match them to the correct PKparameters in
     # AllPKParameters.
     PKparameters <- AllPKParameters %>%
@@ -265,9 +434,7 @@ extractPK <- function(sim_data_file,
                 call. = FALSE)
     }
     
-    # Checking experimental details to only pull details that apply
-    Deets <- extractExpDetails(sim_data_file, exp_details = "Summary tab")
-    
+    # Filtering out irrelevant PK
     if(Deets$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
@@ -282,21 +449,40 @@ extractPK <- function(sim_data_file,
                              AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenEffectorPresent == FALSE]]
     }
     
-    if(Deets$Regimen_sub == "Single Dose"){
+    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
+                          "primary metabolite 2", "secondary metabolite") &
+        Deets$Regimen_sub == "Single Dose") |
+       (complete.cases(Deets$Inhibitor1) && 
+        compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
+        && Deets$Regimen_inhib == "Single Dose") |
+       (complete.cases(Deets$Inhibitor2) &&
+        compoundToExtract %in% c("inhibitor 2") && 
+        Deets$Regimen_inhib2 == "Single Dose")){
+        
         PKparameters <- 
             PKparameters[PKparameters %in% 
-                             AllPKParameters$PKparameter[AllPKParameters$AppliesToSingleDose == TRUE]]
+                             AllPKParameters$PKparameter[
+                                 AllPKParameters$AppliesToSingleDose == TRUE]]
     }
     
     # If it was a multiple-dose regimen, then the AUC tab will not include
-    # certain parameters that WILL be able to be pulled from the AUC0 tab.
-    # NOTE: I am NOT removing "AUCinf_ratio_dose1" from this list b/c it is
-    # not available when the regimen is MD (at least, nowhere I've found in
-    # the output). By NOT removing it, there will be a warning to the user
-    # that that parameter was not found. Also, I'm removing some parameters
-    # that are not completely clearly and unequivocably labeled so that they
-    # can be pulled from sheets where they *are* so labeled.
-    if(Deets$Regimen_sub == "Multiple Dose"){
+    # certain parameters that WILL be able to be pulled from the AUC0 tab. NOTE:
+    # I am NOT removing "AUCinf_ratio_dose1" from this list b/c it is not
+    # available when the regimen is MD (at least, nowhere I've found in the
+    # output). By NOT removing it, there will be a warning to the user that that
+    # parameter was not found. Also, I'm removing some parameters that are not
+    # completely clearly and unequivocably labeled so that they can be pulled
+    # from sheets where they *are* so labeled. 
+    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
+                          "primary metabolite 2", "secondary metabolite") &
+        Deets$Regimen_sub == "Multiple Dose") |
+       (complete.cases(Deets$Inhibitor1) && 
+        compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
+        && Deets$Regimen_inhib == "Multiple Dose") |
+       (complete.cases(Deets$Inhibitor2) &&
+        compoundToExtract %in% c("inhibitor 2") && 
+        Deets$Regimen_inhib2 == "Multiple Dose")){
+        
         ParamAUC <- setdiff(ParamAUC,
                             c("AUCt_ratio_dose1", "AUCt_dose1", 
                               "AUCt_dose1_withInhib",
@@ -304,10 +490,10 @@ extractPK <- function(sim_data_file,
                               "Cmax_ratio_dose1", "tmax_dose1"))
     }
     
-    PKparameters <- intersect(PKparameters, AllPKParameters$PKparameter)
     if(length(PKparameters) == 0){
-        stop("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.",
-             call. = FALSE)
+        warning("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.",
+                call. = FALSE)
+        return(list())
     }
     
     # For the special cases when the user specified a sheet and did not leave
@@ -332,131 +518,192 @@ extractPK <- function(sim_data_file,
                             Note = as.character(NA))
     
     
-    # Pulling data from "AUC" sheet or a user-specified sheet formatted that way ------------------------------------------
+    # Pulling data from "AUC" sheet ------------------------------------------
     
-    # Need to pull these parameters if either a) they requested a set of
-    # parameters rather than asking for a set of parameters by sheet name (AUC
-    # or Absorption tabs), did not specify an input sheet, and some of those
-    # parameters are present on the AUC tab or b) the user requested the "AUC
-    # tab" for PK parameters and either "AUC", "AUC_CI", or "AUC_SD" are among
-    # the sheets in the file.
-    if(UserAUC | (is.na(sheet) && 
-                  # a)
-                  ((any(PKparameters %in% ParamAUC) & 
-                    PKparameters_orig[1] != "Absorption tab") |
-                   
-                   # b)
-                   (PKparameters_orig[1] == "AUC tab" & 
-                    any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames))))){
+    # Need to pull these parameters if either a) they requested a vector of
+    # parameters rather than a set and some of those parameters are present on
+    # the AUC tab or b) the user requested the "AUC tab" for PK parameters and
+    # either "AUC", "AUC_CI", or "AUC_SD" are among the sheets in the file.
+    if(length(Tab_AUC) > 0 && complete.cases(Tab_AUC)){
         
         PKparameters_AUC <- intersect(PKparameters, ParamAUC)
         
-        # Error catching
-        if(Deets$Species == "human" && 
-           any(c("AUC", "AUC_CI", "AUC_SD") %in% SheetNames) == FALSE){
-            if(length(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0,
-                                              ParamAUCX, ParamCLTSS))) > 0){
-                
-                if(all(PKparameters %in% c(ParamAbsorption, ParamAUC0,
-                                           ParamAUCX, ParamCLTSS) == FALSE)){
-                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
-                                   sim_data_file, " to extract the PK parameters ",
-                                   sub("and", "or", 
-                                       str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
-                                   ". None of these parameters can be extracted."),
-                            call. = FALSE)
-                    return(list())
-                } else {
-                    warning(paste0("The sheet 'AUC', 'AUC_CI' or 'AUC_SD' must be present in the Excel simulated data file ",
-                                   sim_data_file, " to extract the PK parameters ",
-                                   sub("and", "or", 
-                                       str_comma(setdiff(PKparameters, c(ParamAbsorption, ParamAUC0, ParamAUCX, ParamCLTSS)))),
-                                   ". None of these parameters can be extracted."),
-                            call. = FALSE)
-                    return(list())
-                }
-            }
-            
+        if(UserAUC){ 
+            AUC_xl <- XL
         } else {
+            AUC_xl <- suppressMessages(
+                readxl::read_excel(path = sim_data_file, 
+                                   # If the user requested the "AUC" tab for PK
+                                   # parameters, it's ok to use the tab "AUC_CI"
+                                   # if "AUC" is not present.
+                                   sheet = Tab_AUC,
+                                   col_names = FALSE))
+        }
+        
+        # Finding the last row of the individual data
+        EndRow_ind <- which(AUC_xl$...2 == "Statistics")
+        
+        if(length(EndRow_ind) == 0){
+            # Using "warning" instead of "stop" here b/c I want this to be
+            # able to pass through to other functions.
+            warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                           sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
+                    call. = FALSE)
             
-            # Determining which sheet to read
-            SheetAUC <- ifelse("AUC" %in% SheetNames == FALSE, 
-                               ifelse("AUC_CI" %in% SheetNames == FALSE, 
-                                      "AUC_SD", "AUC_CI"), "AUC")
-            if(Deets$Species != "human"){
-                # If it's from Simcyp Discovery, there's only one AUC sheet and
-                # it's either for the only dose in a SD sim or the last dose for
-                # a MD sim. Not sure about the regular Simcyp Animal, though. 
-                SheetAUC <- SheetNames[which(str_detect(SheetNames, "AUC"))]
+            return(list())
+            
+        } 
+        
+        EndRow_ind <- max(which(complete.cases(AUC_xl$...2[1:(EndRow_ind-1)])))
+        
+        # REMOVE the columns for the un-requested tissues ENTIRELY. I think this
+        # will be easier to code. -LSh
+        ColStart <- c("plasma" = which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1], 
+                      "unbound plasma" = which(str_detect(t(AUC_xl[1, ]), "CuPlasma"))[1], 
+                      "blood" = which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1], 
+                      "unbound blood" = which(str_detect(t(AUC_xl[1, ]), "CuBlood"))[1])
+        ColStart <- sort(ColStart)
+        if(is.na(ColStart[tissue])){
+            # Using "warning" instead of "stop" here b/c I want this to be
+            # able to pass through to other functions.
+            warning(paste0("You requested PK parameters for ", 
+                           tissue, ", but that does not appear to be included in your output, so no PK data can be returned.", 
+                           call. = FALSE))
+            return(list())
+        }
+        
+        if(length(ColStart) > 1){
+            ColEnd <- ColStart
+            ColEnd[1:(length(ColStart)-1)] <- as.numeric(ColStart[2:length(ColStart)] - 1)
+            ColEnd[length(ColStart)] <- which(is.na(t(AUC_xl[3,])))[1] - 1
+        } else {
+            ColEnd <- which(is.na(t(AUC_xl[3,])))[1] - 1
+            names(ColEnd) <- tissue
+        }
+        
+        AUC_xl <- AUC_xl[, c(1, 2, ColStart[tissue]:ColEnd[tissue])]
+        
+        # Finding the aggregate data rows 
+        StartRow_agg <- which(AUC_xl$...2 == "Statistics") + 2
+        EndRow_agg <- which(is.na(AUC_xl$...2))
+        EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+        EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl), EndRow_agg)
+        
+        # Looping through parameters and extracting values
+        for(i in PKparameters_AUC){
+            
+            # Using regex to find the correct column. See
+            # data(AllPKParameters) for all the possible parameters as well
+            # as what regular expressions are being searched for each. For
+            # the AUC tab specifically, you also have to make sure that
+            # you're looking under the correct subheading, so that's what
+            # the column in "AllPKParameters" called "AUC_StartColText" is
+            # looking for.
+            ToDetect <- AllPKParameters %>% 
+                filter(Sheet == "AUC" & PKparameter == i) %>% 
+                select(PKparameter, SearchText, AUCtab_StartColText)
+            
+            if(Deets$Species != "human" & i == "HalfLife_dose1"){
+                ToDetect <- data.frame(PKparameter = "HalfLife_dose1", 
+                                       SearchText = "t 1/2 ", 
+                                       AUCtab_StartColText = "^AUC.*integrated from")
             }
             
-            # Reading the sheet for AUC tab results
-            if(UserAUC){
-                AUC_xl <- XL
-                SheetAUC <- sheet
+            # Figuring out which rows to search for which text
+            IndexRow <- which(AUC_xl$...1 == "Index")
+            
+            # Looking for the correct subheading 
+            StartCol <- which(str_detect(as.vector(t(
+                AUC_xl[IndexRow - 1, ])), 
+                ToDetect$AUCtab_StartColText))[1]
+            
+            if(length(StartCol) == 0){
+                StartCol <- 1
+            }
+            
+            # Find the last column for this particular subheading
+            EndCol <- which(complete.cases(as.vector(t(
+                AUC_xl[IndexRow - 1, ]))))
+            EndCol <- EndCol[EndCol > StartCol][1] - 1
+            EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
+            
+            if(is.na(StartCol)){
+                # If the subheading can't be found, then this parameter
+                # isn't on the AUC tab (or, at least, we can't currently
+                # find it). Removing that parameter from the parameters to
+                # extract from the AUC tab.
+                PKparameters_AUC <- PKparameters_AUC[!PKparameters_AUC == i]
+                ColNum <- NA
             } else {
-                AUC_xl <- suppressMessages(
-                    readxl::read_excel(path = sim_data_file, 
-                                       # If the user requested the "AUC" tab for PK
-                                       # parameters, it's ok to use the tab "AUC_CI"
-                                       # if "AUC" is not present.
-                                       sheet = SheetAUC,
-                                       col_names = FALSE))
-            }
-            
-            # Finding the last row of the individual data
-            EndRow_ind <- which(AUC_xl$...2 == "Statistics")
-            
-            if(length(EndRow_ind) == 0){
-                # Using "warning" instead of "stop" here b/c I want this to be
-                # able to pass through to other functions and just skip any
-                # files that aren't simulator output.
-                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
-                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
-                        call. = FALSE)
-                return(list())
-            } 
-            
-            EndRow_ind <- max(which(complete.cases(AUC_xl$...2[1:(EndRow_ind-1)])))
-            
-            # If tissue is blood, REMOVE the plasma columns entirely. I
-            # think this will be easier to code. -LSh
-            if(tissue == "blood"){
-                PlasmaCols <- c(which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1]:
-                                    (which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1] -1))
-                if(length(PlasmaCols) > 0){
-                    AUC_xl <- AUC_xl[, -PlasmaCols]
-                }
-            }
-            
-            # Finding the aggregate data rows 
-            StartRow_agg <- which(AUC_xl$...2 == "Statistics") + 2
-            EndRow_agg <- which(is.na(AUC_xl$...2))
-            EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl), EndRow_agg)
-            
-            # Looping through parameters and extracting values
-            for(i in PKparameters_AUC){
                 
-                # Using regex to find the correct column. See
-                # data(AllPKParameters) for all the possible parameters as well
-                # as what regular expressions are being searched for each. For
-                # the AUC tab specifically, you also have to make sure that
-                # you're looking under the correct subheading, so that's what
-                # the column in "AllPKParameters" called "AUC_StartColText" is
-                # looking for.
+                # If the subheading CAN be found, look for the regular
+                # expression specific to this parameter i. Since there are
+                # often more than one column with the same title, we only
+                # want the 1st one. (The second would be for the wrong
+                # tissue, e.g., blood when user asked for plasma.)
+                PossCol <- StartCol:EndCol
+                ColNum <- PossCol[
+                    which(str_detect(as.vector(t(
+                        AUC_xl[IndexRow, PossCol])),
+                        ToDetect$SearchText) &
+                            !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
+                
+            }
+            
+            if(length(ColNum) == 0 | is.na(ColNum)){
+                if(any(PKparameters_orig %in% c("all", "AUC tab")) == FALSE){
+                    warning(paste0("The column with information for ", i,
+                                   " on the tab 'AUC' cannot be found in the file ", 
+                                   sim_data_file, "."), 
+                            call. = FALSE)
+                }
+                suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
+                PKparameters_AUC <- setdiff(PKparameters_AUC, i)
+                next
+            }
+            
+            suppressWarnings(
+                Out_ind[[i]] <- AUC_xl[(IndexRow + 1):EndRow_ind, ColNum] %>%
+                    pull(1) %>% as.numeric
+            )
+            
+            DataCheck <- DataCheck %>%
+                bind_rows(data.frame(PKparam = i, 
+                                     Tab = Tab_AUC,
+                                     StartColText = ToDetect$AUCtab_StartColText,
+                                     SearchText = ToDetect$SearchText,
+                                     Column = ColNum - 2 + # "-2" accounts for index and trial columns
+                                         ColStart[tissue] - 1, # "-1" accounts for the 1st column being 1 and not 0
+                                     StartRow_agg = StartRow_agg,
+                                     EndRow_agg = EndRow_agg,
+                                     StartRow_ind = IndexRow + 1,
+                                     EndRow_ind = EndRow_ind,
+                                     Note = paste("StartColText is looking in row", IndexRow - 1)))
+            
+            if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
+                # Simulator sometimes can't extrapolate to infinity well and
+                # you end up with NA values. If this happens, then AUCinf is
+                # NOT reliable and we SHOULD NOT use aggregated measures of
+                # it b/c they don't include all the data! Instead, pull
+                # AUCtau as well and give user a warning.
+                NewParam <- ifelse(str_detect(i, "dose1"), 
+                                   sub("inf", "t", i), sub("inf", "tau", i))
+                warning(paste0("For the file ", sim_data_file, 
+                               ", the parameter ", i, 
+                               " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
+                               NewParam, " will be returned to use in place of ",
+                               i, " as you deem appropriate."),
+                        call. = FALSE)
+                
+                PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
+                
+                suppressWarnings(rm(StartCol, EndCol, ColNum, ToDetect))
+                
                 ToDetect <- AllPKParameters %>% 
-                    filter(Sheet == "AUC" & PKparameter == i) %>% 
+                    filter(Sheet == "AUC" & PKparameter == NewParam) %>% 
                     select(PKparameter, SearchText, AUCtab_StartColText)
                 
-                if(Deets$Species != "human" & i == "HalfLife_dose1"){
-                    ToDetect <- data.frame(PKparameter = "HalfLife_dose1", 
-                                           SearchText = "t 1/2 ", 
-                                           AUCtab_StartColText = "^AUC.*integrated from")
-                }
-                
-                # Figuring out which rows to search for which text
-                IndexRow <- which(AUC_xl$...1 == "Index")
+                # !!! STARTING HERE, ALL TEXT IS SAME AS MAIN CODE ABOVE.
                 
                 # Looking for the correct subheading 
                 StartCol <- which(str_detect(as.vector(t(
@@ -497,171 +744,76 @@ extractPK <- function(sim_data_file,
                 }
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    warning(paste0("The column with information for ", i,
-                                   " on the tab 'AUC' cannot be found in the file ", 
-                                   sim_data_file, "."), 
-                            call. = FALSE)
+                    if(PKparameters_orig %in% c("all", "AUC tab") == FALSE){
+                        warning(paste0("The column with information for ", i,
+                                       " on the tab 'AUC' cannot be found in the file ", 
+                                       sim_data_file, "."), 
+                                call. = FALSE)
+                    }
                     suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                     next
                 }
                 
+                # !!! ENDING HERE FOR TEXT BEING SAME AS MAIN CODE. TEXT BELOW HERE
+                # IS NO LONGER SAME AS MAIN CODE ABOVE.
                 suppressWarnings(
-                    Out_ind[[i]] <- AUC_xl[(IndexRow + 1):EndRow_ind, ColNum] %>%
+                    Out_ind[[NewParam]] <- AUC_xl[(IndexRow+1):EndRow_ind, ColNum] %>%
                         pull(1) %>% as.numeric
                 )
                 
-                if(checkDataSource){
-                    DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i, 
-                                             Tab = SheetAUC,
-                                             StartColText = ToDetect$AUCtab_StartColText,
-                                             SearchText = ToDetect$SearchText,
-                                             Column = ifelse(tissue == "plasma", 
-                                                             ColNum, 
-                                                             ColNum + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
-                                             StartRow_agg = StartRow_agg,
-                                             EndRow_agg = EndRow_agg,
-                                             StartRow_ind = IndexRow + 1,
-                                             EndRow_ind = EndRow_ind,
-                                             Note = paste("StartColText is looking in row", IndexRow - 1)))
-                }
+                suppressWarnings(
+                    Out_agg[[NewParam]] <- AUC_xl[StartRow_agg:EndRow_agg,
+                                                  ColNum] %>%
+                        pull(1) %>% as.numeric()
+                )
+                names(Out_agg[[NewParam]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
+                    pull(1)
                 
-                if(any(is.na(Out_ind[[i]]) & str_detect(i, "inf"))){
-                    # Simulator sometimes can't extrapolate to infinity well and
-                    # you end up with NA values. If this happens, then AUCinf is
-                    # NOT reliable and we SHOULD NOT use aggregated measures of
-                    # it b/c they don't include all the data! Instead, pull
-                    # AUCtau as well and give user a warning.
-                    NewParam <- ifelse(str_detect(i, "dose1"), 
-                                       sub("inf", "t", i), sub("inf", "tau", i))
-                    warning(paste0("For the file ", sim_data_file, 
-                                   ", the parameter ", i, 
-                                   " included some NA values, meaning that the Simulator had trouble extrapolating to infinity. No aggregate data will be returned for this parameter, and the parameter ", 
-                                   NewParam, " will be returned to use in place of ",
-                                   i, " as you deem appropriate."),
-                            call. = TRUE)
-                    
-                    PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
-                    
-                    suppressWarnings(rm(StartCol, EndCol, ColNum, ToDetect))
-                    
-                    ToDetect <- AllPKParameters %>% 
-                        filter(Sheet == "AUC" & PKparameter == NewParam) %>% 
-                        select(PKparameter, SearchText, AUCtab_StartColText)
-                    
-                    # !!! STARTING HERE, ALL TEXT IS SAME AS MAIN CODE ABOVE.
-                    
-                    # Looking for the correct subheading 
-                    StartCol <- which(str_detect(as.vector(t(
-                        AUC_xl[IndexRow - 1, ])), 
-                        ToDetect$AUCtab_StartColText))[1]
-                    
-                    if(length(StartCol) == 0){
-                        StartCol <- 1
-                    }
-                    
-                    # Find the last column for this particular subheading
-                    EndCol <- which(complete.cases(as.vector(t(
-                        AUC_xl[IndexRow - 1, ]))))
-                    EndCol <- EndCol[EndCol > StartCol][1] - 1
-                    EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
-                    
-                    if(is.na(StartCol)){
-                        # If the subheading can't be found, then this parameter
-                        # isn't on the AUC tab (or, at least, we can't currently
-                        # find it). Removing that parameter from the parameters to
-                        # extract from the AUC tab.
-                        PKparameters_AUC <- PKparameters_AUC[!PKparameters_AUC == i]
-                        ColNum <- NA
-                    } else {
-                        
-                        # If the subheading CAN be found, look for the regular
-                        # expression specific to this parameter i. Since there are
-                        # often more than one column with the same title, we only
-                        # want the 1st one. (The second would be for the wrong
-                        # tissue, e.g., blood when user asked for plasma.)
-                        PossCol <- StartCol:EndCol
-                        ColNum <- PossCol[
-                            which(str_detect(as.vector(t(
-                                AUC_xl[IndexRow, PossCol])),
-                                ToDetect$SearchText) &
-                                    !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
-                        
-                    }
-                    
-                    if(length(ColNum) == 0 | is.na(ColNum)){
-                        warning(paste0("The column with information for ", i,
-                                       " on the tab 'AUC' cannot be found in the file ", 
-                                       sim_data_file, "."), 
-                                call. = FALSE)
-                        suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
-                        PKparameters_AUC <- setdiff(PKparameters_AUC, i)
-                        next
-                    }
-                    
-                    # !!! ENDING HERE. TEXT BELOW HERE IS NO LONGER SAME AS MAIN
-                    # CODE ABOVE.
-                    suppressWarnings(
-                        Out_ind[[NewParam]] <- AUC_xl[(IndexRow+1):EndRow_ind, ColNum] %>%
-                            pull(1) %>% as.numeric
-                    )
-                    
-                    suppressWarnings(
-                        Out_agg[[NewParam]] <- AUC_xl[StartRow_agg:EndRow_agg,
-                                                      ColNum] %>%
-                            pull(1) %>% as.numeric()
-                    )
-                    names(Out_agg[[NewParam]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
-                        pull(1)
-                    
-                    if(checkDataSource){
-                        DataCheck <- DataCheck %>%
-                            bind_rows(data.frame(PKparam = NewParam, 
-                                                 Tab = SheetAUC,
-                                                 StartColText = ToDetect$AUCtab_StartColText,
-                                                 SearchText = ToDetect$SearchText,
-                                                 Column = ifelse(tissue == "plasma", 
-                                                                 ColNum, 
-                                                                 ColNum + max(PlasmaCols) - 2), # accounting for the fact that I removed plasma columns from the spreadsheet. 
-                                                 StartRow_agg = StartRow_agg,
-                                                 EndRow_agg = EndRow_agg,
-                                                 StartRow_ind = IndexRow + 1,
-                                                 EndRow_ind = EndRow_ind,
-                                                 Note = paste("StartColText is looking in row", IndexRow - 1)))
-                    }
-                    
-                    suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
-                    
-                } else {
-                    
-                    # At this point in the code is where we're back to the
-                    # scenario where there were no NA values for extrapolating
-                    # to infinity.
-                    
-                    suppressWarnings(
-                        Out_agg[[i]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum] %>%
-                            pull(1) %>% as.numeric()
-                    )
-                    names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
-                        pull(1)
-                }
+                DataCheck <- DataCheck %>%
+                    bind_rows(data.frame(PKparam = NewParam, 
+                                         Tab = Tab_AUC,
+                                         StartColText = ToDetect$AUCtab_StartColText,
+                                         SearchText = ToDetect$SearchText,
+                                         Column = ColNum - 2 + # "-2" accounts for index and trial columns
+                                             ColStart[tissue] - 1, # "-1" accounts for the 1st column being 1 and not 0
+                                         StartRow_agg = StartRow_agg,
+                                         EndRow_agg = EndRow_agg,
+                                         StartRow_ind = IndexRow + 1,
+                                         EndRow_ind = EndRow_ind,
+                                         Note = paste("StartColText is looking in row", IndexRow - 1)))
                 
                 suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
+                
+            } else {
+                
+                # At this point in the code is where we're back to the
+                # scenario where there were no NA values for extrapolating
+                # to infinity.
+                
+                suppressWarnings(
+                    Out_agg[[i]] <- AUC_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                        pull(1) %>% as.numeric()
+                )
+                names(Out_agg[[i]]) <- AUC_xl[StartRow_agg:EndRow_agg, 2] %>%
+                    pull(1)
             }
             
-            if(includeTrialInfo){
-                # Subject and trial info
-                SubjTrial_AUC <- AUC_xl[(IndexRow + 1):EndRow_ind, 1:2] %>%
-                    rename("Individual" = ...1, "Trial" = ...2)
-                
-                Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
-                                             as.data.frame(Out_ind[PKparameters_AUC]))
-            }
+            suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
         }
+        
+        if(includeTrialInfo & length(PKparameters_AUC) > 0){
+            # Subject and trial info
+            SubjTrial_AUC <- AUC_xl[(IndexRow + 1):EndRow_ind, 1:2] %>%
+                rename("Individual" = ...1, "Trial" = ...2)
+            
+            Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
+                                         as.data.frame(Out_ind[PKparameters_AUC]))
+        }
+        
     }
     
-    # Pulling data from AUC0 tab -------------------------
+    # Pulling dose 1 data NOT present on AUC tab ------------------------------
     PKparameters_AUC0 <- intersect(PKparameters, ParamAUC0)
     
     # Some PK parameters show up on multiple sheets. No need to pull
@@ -673,219 +825,112 @@ extractPK <- function(sim_data_file,
         PKparameters_AUC0 <- intersect("A", "B")
     }
     
-    if(length(PKparameters_AUC0) > 0 &
+    if(length(PKparameters_AUC0) > 0 & complete.cases(Tab_first) &
        (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
-        PKparameters_orig[1] == "AUC tab" & "AUC" %in% SheetNames == FALSE)){
+        PKparameters_orig[1] == "AUC tab" & "AUC" %in% SheetNames == FALSE |
+        PKparameters_orig[1] == "AUC tab" & compoundToExtract != "substrate")){
         # Error catching
-        if(any(str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
-            # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")
-            # is actually NOT for the 1st dose but for the 1st user-defined
-            # interval! Do NOT use that tab unless/until we do something further
-            # to check which dosing interval the data are for, e.g., read the
-            # top line that says "something something integrated from time A to
-            # time B".
-            
-            warning(paste0("A sheet with a name like 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
-                           sub("and", "or", str_comma(PKparameters_AUC0)),
-                           ". None of these parameters can be extracted."),
-                    call. = FALSE)
-        } else {
-            
-            Sheet <- SheetNames[str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")][1]
-            
-            AUC0_xl <- suppressMessages(
-                readxl::read_excel(path = sim_data_file, sheet = Sheet,
-                                   col_names = FALSE))
-            
-            # Finding the last row of the individual data
-            EndRow_ind <- which(AUC0_xl$...2 == "Statistics") - 3
-            
-            if(length(EndRow_ind) == 0){
-                # Using "warning" instead of "stop" here b/c I want this to be
-                # able to pass through to other functions and just skip any
-                # files that aren't simulator output.
-                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
-                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
-                        call. = FALSE)
-                return(list())
-            } 
-            
-            # Finding the aggregate data rows 
-            StartRow_agg <- which(AUC0_xl$...2 == "Statistics") + 2
-            EndRow_agg <- which(is.na(AUC0_xl$...2))
-            EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC0_xl), EndRow_agg)
-            
-            # Looping through parameters and extracting values
-            for(i in PKparameters_AUC0){
-                
-                # Using regex to find the correct column. See
-                # data(AllPKParameters) for all the possible parameters as well
-                # as what regular expressions are being searched for each. 
-                ToDetect <- AllPKParameters %>% 
-                    filter(Sheet == "AUC0" & PKparameter == i) %>% 
-                    select(PKparameter, SearchText)
-                
-                # Looking for the regular expression specific to this parameter
-                # i. 
-                ColNum <- which(str_detect(as.vector(t(AUC0_xl[2, ])),
-                                           ToDetect$SearchText))
-                
-                if(length(ColNum) == 0 | is.na(ColNum)){
-                    warning(paste0("The column with information for ", i,
-                                   " on the tab for the dose 1 AUC cannot be found in the file ", 
-                                   sim_data_file, "."), 
-                            call. = FALSE)
-                    suppressMessages(rm(ToDetect, ColNum))
-                    PKparameters_AUC0 <- setdiff(PKparameters_AUC0, i)
-                    next
-                }
-                
-                suppressWarnings(
-                    Out_ind[[i]] <- AUC0_xl[3:EndRow_ind, ColNum] %>%
-                        pull(1) %>% as.numeric
-                )
-                
-                suppressWarnings(
-                    Out_agg[[i]] <- AUC0_xl[StartRow_agg:EndRow_agg, ColNum] %>%
-                        pull(1) %>% as.numeric()
-                )
-                names(Out_agg[[i]]) <- AUC0_xl[StartRow_agg:EndRow_agg, 2] %>%
-                    pull(1)
-                
-                if(checkDataSource){
-                    DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i, 
-                                             Tab = Sheet,
-                                             SearchText = ToDetect$SearchText,
-                                             Column = ColNum, 
-                                             StartRow_agg = StartRow_agg,
-                                             EndRow_agg = EndRow_agg,
-                                             StartRow_ind = 3,
-                                             EndRow_ind = EndRow_ind))
-                }
-            }   
-            
-            if(includeTrialInfo){
-                # Subject and trial info
-                SubjTrial_AUC0 <- AUC0_xl[3:EndRow_ind, 1:2] %>%
-                    rename("Individual" = ...1, "Trial" = ...2)
-                
-                Out_ind[["AUC0tab"]] <- cbind(SubjTrial_AUC0,
-                                              as.data.frame(Out_ind[PKparameters_AUC0]))
-            }
-            
-            suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
-        }
+        # if(any(str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
+        #     # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")
+        #     # is actually NOT for the 1st dose but for the 1st user-defined
+        #     # interval! Do NOT use that tab unless/until we do something further
+        #     # to check which dosing interval the data are for, e.g., read the
+        #     # top line that says "something something integrated from time A to
+        #     # time B".
+        #     
+        #     warning(paste0("A sheet with a name like 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
+        #                    sub("and", "or", str_comma(PKparameters_AUC0)),
+        #                    ". None of these parameters can be extracted."),
+        #             call. = FALSE)
+        # } else {
+        
+        Out_AUC0 <- extractAUCXtab(PKparameters = PKparameters_AUC0, 
+                                   PKparameters_orig = PKparameters_orig,
+                                   sim_data_file = sim_data_file,
+                                   Sheet = Tab_first, 
+                                   PKset = "AUC0",
+                                   UserSpecified = FALSE,
+                                   Deets = Deets, 
+                                   DataCheck = DataCheck,
+                                   includeTrialInfo = includeTrialInfo)
+        
+        DataCheck <- DataCheck %>% bind_rows(Out_AUC0$DataCheck)
+        Out_agg <- c(Out_agg, Out_AUC0$Out_agg)
+        Out_ind <- c(Out_ind, Out_AUC0$Out_ind)
+        
     }
     
     
-    # Pulling data from AUCX sheet ----------------------------
-    PKparameters_AUCX <- intersect(PKparameters, ParamAUCX)
+    # Pulling last-dose data NOT present on AUC tab ------------------------------
+    PKparameters_AUClast <- intersect(PKparameters, ParamAUClast)
     
     # Some PK parameters show up on multiple sheets. No need to pull
     # those here if they've already been pulled from another sheet.
-    PKparameters_AUCX <- setdiff(PKparameters_AUCX, names(Out_agg))
+    PKparameters_AUClast <- setdiff(PKparameters_AUClast, names(Out_agg))
     
     if(complete.cases(sheet)){
         # How do you set something to have length 0? Hacking it for now.
-        PKparameters_AUCX <- intersect("A", "B")
+        PKparameters_AUClast <- intersect("A", "B")
     }
     
-    if(length(PKparameters_AUCX) > 0 &
-       PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
+    if(length(PKparameters_AUClast) > 0 && complete.cases(Tab_last) &
+       PKparameters_orig[1] %in% c("Regional ADAM", "Absorption tab") == FALSE){
         
-        # Error catching
-        if(length(Tab_last) == 0 | is.na(Tab_last)){
-            warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
-                           str_c(PKparameters_AUCX, collapse = ", "),
-                           ". None of these parameters can be extracted."),
-                    call. = FALSE)
-        } else {
-            
-            AUCX_xl <- suppressMessages(
-                readxl::read_excel(path = sim_data_file, sheet = Tab_last,
-                                   col_names = FALSE))
-            
-            # Finding the last row of the individual data
-            EndRow_ind <- which(AUCX_xl$...2 == "Statistics") - 3
-            
-            if(length(EndRow_ind) == 0){
-                # Using "warning" instead of "stop" here b/c I want this to be
-                # able to pass through to other functions and just skip any
-                # files that aren't simulator output.
-                warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
-                        call. = FALSE)
-                return(list())
-            } 
-            
-            # Finding the aggregate data rows 
-            StartRow_agg <- which(AUCX_xl$...2 == "Statistics") + 2
-            EndRow_agg <- which(is.na(AUCX_xl$...2))
-            EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUCX_xl), EndRow_agg)
-            
-            # Looping through parameters and extracting values
-            for(i in PKparameters_AUCX){
-                
-                # Using regex to find the correct column. See
-                # data(AllPKParameters) for all the possible parameters as well
-                # as what regular expressions are being searched for each. 
-                ToDetect <- AllPKParameters %>% 
-                    filter(Sheet == "AUCX" & PKparameter == i) %>% 
-                    select(PKparameter, SearchText)
-                
-                # Looking for the regular expression specific to this parameter
-                # i. 
-                ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
-                                           ToDetect$SearchText))
-                
-                if(length(ColNum) == 0 | is.na(ColNum)){
-                    warning(paste0("The column with information for ", i,
-                                   " on the tab for the last dose cannot be found in the file ", 
-                                   sim_data_file, "."), 
-                            call. = FALSE)
-                    suppressMessages(rm(ToDetect, ColNum))
-                    PKparameters_AUCX <- setdiff(PKparameters_AUCX, i)
-                    next
-                }
-                
-                suppressWarnings(
-                    Out_ind[[i]] <- AUCX_xl[3:EndRow_ind, ColNum] %>%
-                        pull(1) %>% as.numeric
-                )
-                
-                suppressWarnings(
-                    Out_agg[[i]] <- AUCX_xl[StartRow_agg:EndRow_agg, ColNum] %>%
-                        pull(1) %>% as.numeric()
-                )
-                names(Out_agg[[i]]) <- AUCX_xl[StartRow_agg:EndRow_agg, 2] %>%
-                    pull(1)
-                
-                if(checkDataSource){
-                    DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i, 
-                                             Tab = Tab_last,
-                                             SearchText = ToDetect$SearchText,
-                                             Column = ColNum, 
-                                             StartRow_agg = StartRow_agg,
-                                             EndRow_agg = EndRow_agg,
-                                             StartRow_ind = 3,
-                                             EndRow_ind = EndRow_ind))
-                }
-            }   
-            
-            if(includeTrialInfo){
-                # Subject and trial info
-                SubjTrial_AUCX <- AUCX_xl[3:EndRow_ind, 1:2] %>%
-                    rename("Individual" = ...1, "Trial" = ...2)
-                
-                Out_ind[["AUC0tab"]] <- cbind(SubjTrial_AUCX,
-                                              as.data.frame(Out_ind[PKparameters_AUCX]))
-            }
-            
-            suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
-        }
+        # # Error catching
+        # if(length(Tab_last) == 0 | is.na(Tab_last)){
+        #     warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
+        #                    str_c(PKparameters_AUClast, collapse = ", "),
+        #                    ". None of these parameters can be extracted."),
+        #             call. = FALSE)
+        # } else {
+        
+        Out_AUClast <- extractAUCXtab(PKparameters = PKparameters_AUClast, 
+                                      PKparameters_orig = PKparameters_orig,
+                                      sim_data_file = sim_data_file,
+                                      Sheet = Tab_last, 
+                                      PKset = "AUClast",
+                                      UserSpecified = FALSE,
+                                      Deets = Deets, 
+                                      DataCheck = DataCheck,
+                                      includeTrialInfo = includeTrialInfo)
+        
+        DataCheck <- DataCheck %>% bind_rows(Out_AUClast$DataCheck)
+        Out_agg <- c(Out_agg, Out_AUClast$Out_agg)
+        Out_ind <- c(Out_ind, Out_AUClast$Out_ind)
+        
+    }
+    
+    # Pulling parameters from a user-specified sheet --------------------------
+    if(complete.cases(sheet) & UserAUC == FALSE && 
+       sheet %in% SheetNames){
+        
+        # Not specifying which dose these parameters are for b/c we don't know.
+        # Only pulling whatever AUC, Cmax, etc. are available.
+        PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
+        # Some parameters are not going to be present, so removing those. 
+        PKparameters <- PKparameters[
+            !PKparameters %in% c("fa_sub", "fa_inhib",
+                                 "ka_sub", "ka_inhib",
+                                 "tlag_sub", "tlag_inhib",
+                                 "CLinf", "CLinf_withInhib",
+                                 "CL_hepatic", "CLpo",
+                                 "F_sub", "F_inhib", "fg_sub", "fg_inhib",
+                                 "fh_sub", "fh_inhib")]
+        
+        Out_AUCX <- extractAUCXtab(PKparameters = PKparameters, 
+                                   PKparameters_orig = PKparameters_orig,
+                                   sim_data_file = sim_data_file,
+                                   Sheet = sheet, 
+                                   PKset = "AUCX",
+                                   UserSpecified = TRUE,
+                                   Deets = Deets, 
+                                   DataCheck = DataCheck,
+                                   includeTrialInfo = includeTrialInfo)
+        
+        DataCheck <- DataCheck %>% bind_rows(Out_AUCX$DataCheck)
+        Out_agg <- c(Out_agg, Out_AUCX$Out_agg)
+        Out_ind <- c(Out_ind, Out_AUCX$Out_ind)
+        
     }
     
     # Pulling data from the "Absorption" sheet -----------------------------------
@@ -953,10 +998,12 @@ extractPK <- function(sim_data_file,
                         ToDetect$SearchText)) + StartCol - 1
                     
                     if(length(ColNum) == 0 | is.na(ColNum)){
-                        warning(paste0("The column with information for ", i,
-                                       " on the tab `Overall Fa Fg` cannot be found in the file ", 
-                                       sim_data_file, "."), 
-                                call. = FALSE)
+                        if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+                            warning(paste0("The column with information for ", i,
+                                           " on the tab `Overall Fa Fg` cannot be found in the file ", 
+                                           sim_data_file, "."), 
+                                    call. = FALSE)
+                        }
                         suppressMessages(rm(ToDetect, ColNum))
                         PKparameters_Abs_ADAM <- setdiff(PKparameters_Abs_ADAM, i)
                         next
@@ -987,7 +1034,7 @@ extractPK <- function(sim_data_file,
                     }
                 }
                 
-                if(includeTrialInfo){
+                if(includeTrialInfo & length(PKparameters_Abs_ADAM) > 0){
                     # Subject and trial info
                     SubjTrial_Abs <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), 1:2] %>%
                         rename("Individual" = ...1, "Trial" = ...2)
@@ -1031,10 +1078,12 @@ extractPK <- function(sim_data_file,
                         ToDetect$SearchText)) + StartCol - 1
                     
                     if(length(ColNum) == 0 | is.na(ColNum)){
-                        warning(paste0("The column with information for ", i,
-                                       " on the tab 'Absorption' cannot be found in the file ", 
-                                       sim_data_file, "."), 
-                                call. = FALSE)
+                        if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+                            warning(paste0("The column with information for ", i,
+                                           " on the tab 'Absorption' cannot be found in the file ", 
+                                           sim_data_file, "."), 
+                                    call. = FALSE)
+                        }
                         suppressMessages(rm(ToDetect, ColNum))
                         PKparameters_Abs <- setdiff(PKparameters_Abs, i)
                         next
@@ -1058,7 +1107,7 @@ extractPK <- function(sim_data_file,
                     }
                 }
                 
-                if(includeTrialInfo){
+                if(includeTrialInfo & length(PKparameters_Abs) > 0){
                     # Subject and trial info
                     SubjTrial_Abs <- Abs_xl[10:nrow(Abs_xl), 1:2] %>%
                         rename("Individual" = ...1, "Trial" = ...2)
@@ -1231,10 +1280,12 @@ extractPK <- function(sim_data_file,
                                            ToDetect$SearchText))
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    warning(paste0("The column with information for ", i,
-                                   " on the tab 'Clearance Trials SS' cannot be found in the file ", 
-                                   sim_data_file, "."), 
-                            call. = FALSE)
+                    if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+                        warning(paste0("The column with information for ", i,
+                                       " on the tab 'Clearance Trials SS' cannot be found in the file ", 
+                                       sim_data_file, "."), 
+                                call. = FALSE)
+                    }
                     suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
@@ -1258,7 +1309,7 @@ extractPK <- function(sim_data_file,
                 }
             }   
             
-            if(includeTrialInfo){
+            if(includeTrialInfo & length(PKparameters_CLTSS) > 0){
                 # Subject and trial info
                 SubjTrial_CLTSS <- CLTSS_xl[2:nrow(CLTSS_xl), 1:2] %>%
                     rename("Individual" = ...1, "Trial" = ...2)
@@ -1293,10 +1344,12 @@ extractPK <- function(sim_data_file,
                                             ToDetect$SearchText))
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){
-                    warning(paste0("The column with information for ", i,
-                                   " on the tab 'Clearance Trials SS' cannot be found in the file ", 
-                                   sim_data_file, "."), 
-                            call. = FALSE)
+                    if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+                        warning(paste0("The column with information for ", i,
+                                       " on the tab 'Clearance Trials SS' cannot be found in the file ", 
+                                       sim_data_file, "."), 
+                                call. = FALSE)
+                    }
                     suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
                     PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, i)
                     next
@@ -1329,128 +1382,121 @@ extractPK <- function(sim_data_file,
         }
     }
     
-    # Pulling parameters from a user-specified sheet --------------------------
-    if(complete.cases(sheet) & UserAUC == FALSE){
-        
-        # WARNING: I have NOT written this to work for aggregate values that
-        # are listed anywhere but right below all the individual values.
-        # That's just b/c I'm not sure where to look for aggregate values in
-        # that situation.
-        if("aggregate" %in% returnAggregateOrIndiv &
-           str_detect(sheet, "AUC") == FALSE){
-            warning(paste0("This function has not (yet) been set up to extract aggregate PK data from the sheet ",
-                           sheet, ". It can extract individual data only."),
+    # Pulling data from RegADAM tab -------------------------
+    PKparameters_RegADAM <- intersect(PKparameters, ParamRegADAM)
+    
+    # Some PK parameters show up on multiple sheets. No need to pull
+    # those here if they've already been pulled from another sheet.
+    PKparameters_RegADAM <- setdiff(PKparameters_RegADAM, names(Out_agg))
+    
+    if(complete.cases(sheet)){
+        # How do you set something to have length 0? Hacking it for now.
+        PKparameters_RegADAM <- intersect("A", "B")
+    }
+    
+    if(length(PKparameters_RegADAM) > 0){
+        # Error catching
+        if("Regional ADAM Fractions (Sub)" %in% SheetNames == FALSE){
+            warning(paste0("The sheet `Regional ADAM Fractions (Sub)` must be present in the Excel simulated data file to extract the PK parameters ",
+                           sub("and", "or", str_comma(PKparameters_RegADAM)),
+                           ". None of these parameters can be extracted."),
                     call. = FALSE)
-        }
-        
-        # Reading in the sheet up higher in the script now, so this is commented
-        # out.
-        # XL <- suppressMessages(
-        #     readxl::read_excel(path = sim_data_file, sheet = sheet,
-        #                        col_names = FALSE))
-        
-        HeaderRow <- which(XL$...1 == "Index")[1]
-        EndRow_ind <- which(is.na(XL$...1))
-        
-        if(length(EndRow_ind) == 0){
-            # Using "warning" instead of "stop" here b/c I want this to be
-            # able to pass through to other functions and just skip any
-            # files that aren't simulator output.
-            warning("It appears that you don't have any aggregate data in your simulator output file; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.",
-                    call. = FALSE)
-            return(list())
-        } 
-        
-        EndRow_ind <- min(EndRow_ind[EndRow_ind > HeaderRow]) - 1
-        
-        StartRow_agg <- which(XL$...2 == "Statistics") + 2
-        EndRow_agg <- which(is.na(XL$...2))
-        EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-        EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(XL), EndRow_agg)
-        
-        # Not specifying which dose these parameters are for b/c we don't know.
-        # Only pulling whatever AUC, Cmax, etc. are available.
-        PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
-        # Some parameters are not going to be present, so removing those. 
-        PKparameters <- PKparameters[
-            !PKparameters %in% c("fa_sub", "fa_inhib",
-                                 "ka_sub", "ka_inhib",
-                                 "tlag_sub", "tlag_inhib",
-                                 "CLinf", "CLinf_withInhib",
-                                 "CL_hepatic", "CLpo",
-                                 "F_sub", "F_inhib", "fg_sub", "fg_inhib",
-                                 "fh_sub", "fh_inhib")]
-        
-        # Looping through parameters and extracting values
-        for(i in PKparameters){
+        } else {
             
-            # Using regex to find the correct column. See
-            # data(AllPKParameters) for all the possible parameters as well
-            # as what regular expressions are being searched for each. 
-            ToDetect <- AllPKParameters %>% 
-                mutate(PKparameter = sub("_dose1|_last", "", PKparameter)) %>% 
-                filter(PKparameter == i) %>% 
-                select(PKparameter, SearchText) %>% unique()
+            Sheet <- "Regional ADAM Fractions (Sub)"
             
-            # Looking for the regular expression specific to this parameter
-            # i. 
-            ColNum <- which(str_detect(as.vector(t(XL[HeaderRow, ])),
-                                       ToDetect$SearchText))
+            RegADAM_xl <- suppressMessages(
+                readxl::read_excel(path = sim_data_file, sheet = Sheet,
+                                   col_names = FALSE))
             
-            if(length(ColNum) == 0 || is.na(ColNum)){
+            # Finding the last row of the individual data
+            StartRow_ind <- ifelse(complete.cases(RegADAM_xl[1, 1]) &&
+                                       str_detect(RegADAM_xl[1, 1], "Fa greater than 1"), 
+                                   4, 3)
+            EndRow_ind <- which(is.na(RegADAM_xl$...2[StartRow_ind:nrow(RegADAM_xl)]))[1] +
+                StartRow_ind - 2
+            
+            if(length(EndRow_ind) == 0){
+                # Using "warning" instead of "stop" here b/c I want this to be
+                # able to pass through to other functions and just skip any
+                # files that aren't simulator output.
+                warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                               sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
+                        call. = FALSE)
+                return(list())
+            } 
+            
+            # Finding the aggregate data rows 
+            StartRow_agg <- which(RegADAM_xl$...2 == "Statistics") + 2
+            EndRow_agg <- which(is.na(RegADAM_xl$...2))
+            EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+            EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(RegADAM_xl), EndRow_agg)
+            
+            # Looping through parameters and extracting values
+            for(i in PKparameters_RegADAM){
                 
-                # Adding a condition for checking whether user requested a set of
-                # parameters b/c we don't really need the warning if they did.
-                # They'll get what they get! :-D
-                if(any(PKparameters_orig %in% c("all", "AUC tab", "Absorption tab")) == FALSE){
-                    warning(paste0("The column with information for ", i,
-                                   " on the tab ", sheet, " cannot be found in the file ", 
-                                   sim_data_file, "."), 
-                            call. = FALSE)
+                # Using regex to find the correct column. See
+                # data(AllPKParameters) for all the possible parameters as well
+                # as what regular expressions are being searched for each. 
+                ToDetect <- AllPKParameters %>% 
+                    filter(Sheet == "Regional ADAM Fractions (Sub)" & PKparameter == i) %>% 
+                    select(PKparameter, SearchText)
+                
+                # Looking for the regular expression specific to this parameter
+                # i. 
+                ColNum <- which(str_detect(as.vector(t(RegADAM_xl[StartRow_ind - 1, ])),
+                                           ToDetect$SearchText))
+                # fa values 1st, fm values 2nd for this sheet
+                ColNum <- ifelse(str_detect(i, "fa"), ColNum[1], ColNum[2])
+                
+                if(length(ColNum) == 0 | is.na(ColNum)){
+                    if(PKparameters_orig %in% c("all", "Regional ADAM") == FALSE){
+                        warning(paste0("The column with information for ", i,
+                                       " on the tab `Regional ADAM Fractions (Sub)` cannot be found in the file ", 
+                                       sim_data_file, "."), 
+                                call. = FALSE)
+                    }
+                    suppressMessages(rm(ToDetect, ColNum))
+                    PKparameters_RegADAM <- setdiff(PKparameters_RegADAM, i)
+                    next
                 }
-                suppressMessages(rm(ToDetect, ColNum))
-                PKparameters <- setdiff(PKparameters, i)
-                next
+                
+                suppressWarnings(
+                    Out_ind[[i]] <- RegADAM_xl[StartRow_ind:EndRow_ind, ColNum] %>%
+                        pull(1) %>% as.numeric
+                )
+                
+                suppressWarnings(
+                    Out_agg[[i]] <- RegADAM_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                        pull(1) %>% as.numeric()
+                )
+                names(Out_agg[[i]]) <- RegADAM_xl[StartRow_agg:EndRow_agg, 2] %>%
+                    pull(1)
+                
+                if(checkDataSource){
+                    DataCheck <- DataCheck %>%
+                        bind_rows(data.frame(PKparam = i, 
+                                             Tab = Sheet,
+                                             SearchText = ToDetect$SearchText,
+                                             Column = ColNum, 
+                                             StartRow_agg = StartRow_agg,
+                                             EndRow_agg = EndRow_agg,
+                                             StartRow_ind = StartRow_ind,
+                                             EndRow_ind = EndRow_ind))
+                }
+            }   
+            
+            if(includeTrialInfo & length(PKparameters_RegADAM) > 0){
+                # Subject and trial info
+                SubjTrial_RegADAM <- RegADAM_xl[StartRow_ind:EndRow_ind, 1:2] %>%
+                    rename("Individual" = ...1, "Trial" = ...2)
+                
+                Out_ind[["RegADAMtab"]] <- cbind(SubjTrial_RegADAM,
+                                                 as.data.frame(Out_ind[PKparameters_RegADAM]))
             }
             
-            suppressWarnings(
-                Out_ind[[i]] <- XL[(HeaderRow+1):EndRow_ind, ColNum] %>%
-                    pull(1) %>% as.numeric
-            )
-            
-            suppressWarnings(
-                Out_agg[[i]] <- XL[StartRow_agg:EndRow_agg, ColNum] %>%
-                    pull(1) %>% as.numeric()
-            )
-            names(Out_agg[[i]]) <- XL[StartRow_agg:EndRow_agg, 2] %>%
-                pull(1)
-            
-            if(checkDataSource){
-                DataCheck <- DataCheck %>%
-                    bind_rows(data.frame(PKparam = i, 
-                                         Tab = sheet,
-                                         SearchText = ToDetect$SearchText,
-                                         Column = ColNum, 
-                                         StartRow_agg = StartRow_agg,
-                                         EndRow_agg = EndRow_agg,
-                                         StartRow_ind = HeaderRow+1,
-                                         EndRow_ind = EndRow_ind))
-            }
-        }   
-        
-        if(includeTrialInfo){
-            # Subject and trial info
-            IndexCol <- which(str_detect(as.character(XL[HeaderRow, ]),
-                                         "^Index"))
-            SubjTrial_XL <- XL[(HeaderRow + 1):EndRow_ind, IndexCol:(IndexCol + 1)]
-            names(SubjTrial_XL) <- c("Individual", "Trial")
-            
-            Out_ind[["Xtab"]] <- cbind(SubjTrial_XL,
-                                       as.data.frame(Out_ind[PKparameters]))
+            suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
         }
-        
-        suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, HeaderRow,
-                            IndexCol))
     }
     
     

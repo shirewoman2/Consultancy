@@ -15,7 +15,7 @@
 #' @param b the unit to round the number to (applies to
 #'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
-#' @return
+#' @return a rounded number
 #' @export
 #'
 #' @examples
@@ -59,7 +59,7 @@ round_up      <- function(x) {
 #' @param b the unit to round the number to (applies to
 #'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
-#' @return
+#' @return a rounded number
 #' @export
 #'
 #' @examples
@@ -96,7 +96,7 @@ round_down    <- function(x) 10^floor(log10(x))
 #' @param b the unit to round the number to (applies to
 #'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
-#' @return
+#' @return a rounded number
 #' @export
 #'
 #' @examples
@@ -142,7 +142,7 @@ round_up_nice <- function(x, nice=seq(1, 10, 0.1)) {    # function to round up t
 #' @param b the unit to round the number to (applies to
 #'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
-#' @return
+#' @return a rounded number
 #' @export
 #'
 #' @examples
@@ -194,7 +194,7 @@ round_up_unit <- function(x, b) { # round x up to nearest b
 #' @param b the unit to round the number to (applies to
 #'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
-#' @return
+#' @return a rounded number
 #' @export
 #'
 #' @examples
@@ -249,7 +249,7 @@ round_down_unit <- function(x, b) { # round x down to nearest b
 #' @param b the unit to round the number to (applies to
 #'   \code{\link{round_up_unit}} and \code{\link{round_down_unit}} only)
 #'
-#' @return
+#' @return a rounded number
 #' @export
 #'
 #' @examples

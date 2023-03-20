@@ -6,6 +6,8 @@
 \usage{
 theme_consultancy(border = FALSE)
 }
+a ggplot2 theme
+}
 \description{
 \code{theme_consultancy} sets the following: \itemize{ \item{Plot background
 is white; this includes the background for the legend and any facets and
