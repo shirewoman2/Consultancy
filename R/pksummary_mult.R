@@ -6,12 +6,10 @@
 #' automatically finds the correct tabs and the correct cells in a Simulator
 #' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
-#' in a standardized fashion that this function can read.} \item{You can specify
-#' which compound (substrate, inhibitor 1, etc.) and which tissue (plasma,
-#' blood, or unbound versions of each) you want to get the PK data for.} \item{
-#' If the simulator output Excel file lives on SharePoint, you'll need to close
-#' it or this function will just keep running and not generate any output while
-#' it waits for access to the file.}}
+#' in a standardized fashion that this function can read.} \item{ If the
+#' simulator output Excel file lives on SharePoint, you'll need to close it or
+#' this function will just keep running and not generate any output while it
+#' waits for access to the file.}}
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame of the observed PK
@@ -325,8 +323,17 @@ pksummary_mult <- function(sim_data_files = NA,
                                 "csv" = read.csv(observed_PK), 
                                 "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                          sheetName = "observed PK"))
+        # If there's anything named anything like "File", use that for the
+        # "File" column. This is useful to deal with capitalization mismatches
+        # and also because, if the user saves the file as certain kinds of csv
+        # files, R has trouble importing and will add extra symbols to the 1st
+        # column name.
+        names(observed_PKDF)[str_detect(tolower(names(observed_PKDF)), "file")][1] <- 
+            "File"
+        
         sim_data_files <- union(sim_data_files, observed_PKDF$File)
         sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
+        
         
     } 
     
@@ -381,7 +388,7 @@ pksummary_mult <- function(sim_data_files = NA,
         message(paste("Extracting data from", i))
         
         # Getting summary data for the simulation(s)
-        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+        if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
             Deets <- extractExpDetails(i, exp_details = "Summary tab")
         } else {
             Deets <- switch(as.character("File" %in% names(existing_exp_details)), 

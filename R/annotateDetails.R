@@ -528,7 +528,7 @@ annotateDetails <- function(Deets,
             }
         } else {
             # This is when they have requested individual details.
-            Out <- filter(Detail %in% detail_set)
+            Out <- Out %>% filter(Detail %in% detail_set)
         }
         
         # Removing unnecessary compounds.

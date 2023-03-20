@@ -7,11 +7,7 @@ Maintainer: The package maintainer <laura.shireman@certara.com>
 Description: This package is meant to be a collection of useful and standardized
     reporting tools for the Simcyp Consultancy Team. 
 Imports:
-      tidyverse,
-      flextable, 
-      readxl,
-      xlsx,
-      stringr
+      tidyverse
 License: none
 Encoding: UTF-8
 LazyData: true
