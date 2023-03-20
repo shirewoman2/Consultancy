@@ -46,25 +46,22 @@ function(request) { fluidPage(
                          column(6,
                                 tags$h2(id="big-heading", "Output:"),
                                 br(),
-                                selectInput("output_location_selection", "Output Location:", c("Local (i.e. C: drive, Onedrive/Documents)" = "local", 
-                                                                                               "Large File Store" = "lfs", 
-                                                                                               "Modelling Directory" = "mwd"),
+                                selectInput("output_location_selection", "Output Location:", c("Folder path" = "path", "Modelling Working Directory" = "mwd",
+                                                                                               "Local (i.e. C: drive, Onedrive/Documents)" = "local"),
                                             selected = NULL, multiple = FALSE, selectize = TRUE, width = NULL, size = NULL),
+                                
+                                div(id = "output_location_path", 
+                                    textInput("output_path", "Enter folder path", value = "", width = NULL, placeholder = "copy and paste folder name")),
+                                
+                                div(id = "output_location_mwd",
+                                    textInput("mwd_od_username", "Username:", value = "", width = NULL, placeholder = "e.g., 'hburt', 'lshireman' etc."),
+                                    textInput("mwd_dir", "Modelling Working Directory Name:", value = "", width = NULL, placeholder = "e.g., 'PBPKConsultTEST4'")),
                                 
                                 div(id = "output_location_local",
                                     tags$h2(id="small-heading", "Select Directory:"),
                                     textInput("local_od_username", "Username:", value = "", width = NULL, placeholder = "e.g., 'hburt', 'lshireman' etc."),
                                     shinyDirButton("shiny_output_dir_local", "Select folder to place outputs:",
                                                    title = "Select Output Directory:", viewtype = "list")),
-                                
-                                div(id = "output_location_lfs", 
-                                    selectInput("lfs_folder", 
-                                                "Select Large File Store Directory",
-                                                choices = list.dirs(path = "//certara/data/sites/SHF/Consult", full.names = FALSE, recursive = FALSE))),
-                                
-                                div(id = "output_location_mwd",
-                                    textInput("mwd_od_username", "Username:", value = "", width = NULL, placeholder = "e.g., 'hburt', 'lshireman' etc."),
-                                    textInput("mwd_dir", "Modelling Working Directory Name:", value = "", width = NULL, placeholder = "e.g., 'PBPKConsultTEST4'")),
                                 
                                 br(),
                                 textInput("output_folder_name", "Sub-Folder Name (or path):", value = "Consultancy_Shiny_App_Outputs", width = NULL, placeholder = "e.g., 'Consultancy_Shiny_App_Outputs'"),
@@ -86,8 +83,9 @@ function(request) { fluidPage(
                                                                  selected = NULL, multiple = FALSE, selectize = TRUE, width = NULL, size = NULL),
                                                      
                                                      selectInput("compound", "Compound to Extract", c("Substrate" = "substrate", "Inhibitor 1" = "inhibitor 1", "Inhibitor 2" = "inhibitor 2", 
-                                                                                                      "Primary Metabolite 1" = "primary metabolite 1", "Primary Metabolite 2" = "primary metabolite 2", 
-                                                                                                      "Secondary Metabolite" = "secondary metabolite"),
+                                                                                                      "Primary Metabolite 1" = "primary metabolite 1", "Primary Metabolite 2" = "primary metabolite 2", "Inhibitor 1 metabolite" = "inhibitor 1 metabolite",
+                                                                                                      "Secondary Metabolite" = "secondary metabolite",
+                                                                                                      "Conjugated Protein" = "conjugated protein", "Total Protein" = "total protein", "Released Payload" = "released payload"),
                                                                  selected = NULL, multiple = FALSE, selectize = TRUE, width = NULL, size = NULL),
                                                      checkboxInput("obs_data_file_option", label =("Define observed data file"), value = FALSE),
                                                      

@@ -23,28 +23,34 @@ shinyServer(function(input, output, session) {
     }
     
     observe({
-
-        if (input$output_location_selection == "local") {
-            updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
-            od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
-            output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
-                                      "/", input$output_folder_name, sep = "")
-        } else if (input$output_location_selection == "lfs") {
-            output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
-        } else if (input$output_location_selection == "mwd") {
-            output_directory <- paste("C:/Users/", input$mwd_od_username, input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
-        }
+      
+      if (input$output_location_selection == "path") {
+        output_directory <- input$output_path
+        output_directory <- gsub("\\\\", "/", output_directory) # change slash direction from Windows to R friendly
+        if (str_sub(output_directory, start = -1) == "/") {
+          output_directory <- str_sub(output_directory, start = 1, end = -2) }
+        output_directory<-paste(output_directory, "/", input$output_folder_name, sep="")
         
-        output$output_folder_name <- renderText({
-            output_directory
-        })
-        # print(output_directory)
+      } else if (input$output_location_selection == "mwd") {
+        output_directory <- paste("C:/Users/", input$mwd_od_username, "/Certara/", input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
+        
+      } else if (input$output_location_selection == "local") {
+        updateDirChooseLocal(input$shiny_output_dir_local, input$local_od_username)
+        od_root <- paste("C:/Users/", input$local_od_username, "/OneDrive - Certara/Documents", sep = "")
+        output_directory <- paste(parseDirPath(roots=c("OneDrive-Documents" = od_root, "C:" = "C:"), input$shiny_output_dir_local),
+                                  "/", input$output_folder_name, sep = "")
+      }
+      
+      output$output_folder_name <- renderText({
+        output_directory
+      })
+      # print(output_directory)
     })
     
     observe({
         shinyjs::toggle(id = "output_location_local", anim = TRUE, condition = input$output_location_selection == 'local')
         shinyjs::toggle(id = "output_location_mwd", anim = TRUE, condition = input$output_location_selection == 'mwd')
-        shinyjs::toggle(id = "output_location_lfs", anim = TRUE, condition = input$output_location_selection == 'lfs')
+        shinyjs::toggle(id = "output_location_path", anim = TRUE, condition = input$output_location_selection == 'path')
     })
     
     observe({
@@ -186,7 +192,7 @@ shinyServer(function(input, output, session) {
         } else if (input$output_location_selection == "lfs") {
             output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
         } else if (input$output_location_selection == "mwd") {
-            output_directory <- paste("C:/Users/", input$mwd_od_username, input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
+          output_directory <- paste("C:/Users/", input$mwd_od_username, "/Certara/", input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
         }
         
         if (!dir.exists(output_directory)){
@@ -347,7 +353,7 @@ shinyServer(function(input, output, session) {
         } else if (input$output_location_selection == "lfs") {
             output_directory <- paste("//certara/data/sites/SHF/Consult/", input$lfs_folder, "/", input$output_folder_name, sep="")
         } else if (input$output_location_selection == "mwd") {
-            output_directory <- paste("C:/Users/", input$mwd_od_username, input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
+          output_directory <- paste("C:/Users/", input$mwd_od_username, "/Certara/", input$mwd_dir, " - Modelling Working Directory/", input$output_folder_name, sep="")
         }
         
         if (!dir.exists(output_directory)){
