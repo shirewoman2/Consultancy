@@ -10,11 +10,15 @@ pdf_to_csv(pdf_file, page, save_csv = "csv")
 \item{pdf_file}{the pdf file you want to read, in quotes, e.g.,
 \code{pdf_file = "Table data that I want to graph but is in pdf form.pdf"}}
 
-\item{page}{page number of the pdf you want to read (this function only works
-with one page at a time)}
+\item{page}{page number(s) of the pdf you want to read as a numeric vector.
+For example, to read page 10, use \code{page = 10}. To read pages 1, 3, and
+5 and put them into a single csv file: \code{page = c(1, 3, 5)}. To read
+pages 9 through 12: \code{page = 9:12}. If you use multiple pages, keep in
+mind that, if the columns don't line up well in the pdf, they also won't
+line up well in the output csv file.}
 
 \item{save_csv}{optionally specify a file name for saving the output. If left
-as "csv", the file name will be the pdf file name plus the page number
+as "csv", the file name will be the pdf file name plus the 1st page number
 requested. If set to NA, no file will be saved.}
 }
 \value{

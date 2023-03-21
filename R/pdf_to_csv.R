@@ -8,10 +8,14 @@
 #'
 #' @param pdf_file the pdf file you want to read, in quotes, e.g.,
 #'   \code{pdf_file = "Table data that I want to graph but is in pdf form.pdf"}
-#' @param page page number of the pdf you want to read (this function only works
-#'   with one page at a time)
+#' @param page page number(s) of the pdf you want to read as a numeric vector.
+#'   For example, to read page 10, use \code{page = 10}. To read pages 1, 3, and
+#'   5 and put them into a single csv file: \code{page = c(1, 3, 5)}. To read
+#'   pages 9 through 12: \code{page = 9:12}. If you use multiple pages, keep in
+#'   mind that, if the columns don't line up well in the pdf, they also won't
+#'   line up well in the output csv file.
 #' @param save_csv optionally specify a file name for saving the output. If left
-#'   as "csv", the file name will be the pdf file name plus the page number
+#'   as "csv", the file name will be the pdf file name plus the 1st page number
 #'   requested. If set to NA, no file will be saved.
 #'
 #' @return a data.frame of pdf table content
@@ -40,38 +44,50 @@ pdf_to_csv <- function(pdf_file,
         pdf_file <- paste0(pdf_file, ".pdf")
     }
     
-    if(length(page) > 1){
-        warning("The function pdf_to_csv can only accommodate one page at a time (at least for now), and you have supplied more than one value. We'll only use the first value.", 
-                call. = FALSE)
-        page <- page[1]
-    }
+    # if(length(page) > 1){
+    #     warning("The function pdf_to_csv can only accommodate one page at a time (at least for now), and you have supplied more than one value. We'll only use the first value.", 
+    #             call. = FALSE)
+    #     page <- page[1]
+    # }
     
-    if(class(page) != "numeric" | is.na(page)){
-        if(is.na(as.numeric(page))){
-            stop("You must supply a numeric value for the page.", 
-                 call. = FALSE)
-        }
+    # Ignore any NA values in the page numbers.
+    page <- page[complete.cases(page)]
+    
+    if(class(page) != "integer" | all(is.na(page))){
+        stop("You must supply a numeric value for the page.", 
+             call. = FALSE)
         page <- as.numeric(page)
     }
     
     # Main body of function -------------------------------------------------
-    Out <- pdftools::pdf_data(pdf_file)[[page]] %>% 
-        arrange(y, x) %>%                        #sort in reading order
-        mutate(group = cumsum(!lag(space, default = 0))) %>%  #identify text with spaces and paste
-        group_by(group) %>% 
-        summarise(x = first(x),
-                  y = first(y),
-                  text = paste(text, collapse = " ")) %>% 
-        group_by(y) %>% 
-        mutate(colno = row_number()) %>%         #add column numbers for table data 
-        ungroup() %>% 
-        select(text, colno, y) %>% 
-        pivot_wider(names_from = colno, values_from = text) %>% #pivot into table format
-        select(-y)
+    readPage <- function(singlepage){
+        Out <- pdftools::pdf_data(pdf_file)[[singlepage]] %>% 
+            arrange(y, x) %>%                        #sort in reading order
+            mutate(group = cumsum(!lag(space, default = 0))) %>%  #identify text with spaces and paste
+            group_by(group) %>% 
+            summarise(x = first(x),
+                      y = first(y),
+                      text = paste(text, collapse = " ")) %>% 
+            group_by(y) %>% 
+            mutate(colno = row_number()) %>%         #add column numbers for table data 
+            ungroup() %>% 
+            select(text, colno, y) %>% 
+            pivot_wider(names_from = colno, values_from = text) %>% #pivot into table format
+            select(-y)
+        names(Out) <- paste0("Col", 1:ncol(Out))
+        return(Out)
+    }
+    
+    Pages <- list()
+    for(i in page){
+        Pages[[i]] <- readPage(i)
+    }
+    
+    Out <- bind_rows(Pages)
     
     # Check whether they just supplied "csv" for output file name
     if(str_detect(sub("\\.", "", save_csv), "^csv$")){
-        save_csv <- sub("\\.?pdf", paste0(" - pg ", page, ".csv"), pdf_file)
+        save_csv <- sub("\\.?pdf", paste0(" - pg ", page[1], ".csv"), pdf_file)
         
     } else {
         # If they supplied something other than just "csv", then check whether
