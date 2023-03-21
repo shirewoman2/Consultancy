@@ -241,21 +241,21 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     
     # Checking experimental details to only pull details that apply
     if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-        Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
+        existing_exp_details <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                           sim_data_file_denominator), 
                                         exp_details = "Summary tab", 
                                         annotate_output = FALSE)
     } else {
-        Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+        existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
                         "TRUE" = existing_exp_details, 
                         "FALSE" = deannotateDetails(existing_exp_details))
         
-        if("data.frame" %in% class(Deets)){
-            Deets <- Deets %>% filter(File %in% c(sim_data_file_numerator, 
+        if("data.frame" %in% class(existing_exp_details)){
+            existing_exp_details <- existing_exp_details %>% filter(File %in% c(sim_data_file_numerator, 
                                                   sim_data_file_denominator))
             
-            if(nrow(Deets != 2)){
-                Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
+            if(nrow(existing_exp_details != 2)){
+                existing_exp_details <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                                   sim_data_file_denominator), 
                                                 exp_details = "Summary tab", 
                                                 annotate_output = FALSE)
@@ -269,7 +269,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                  tissue = tissue,
                                  PKparameters = Comparisons$PKparam_num, 
                                  sheet = sheet_PKparameters_num,
-                                 existing_exp_details = Deets,
+                                 existing_exp_details = existing_exp_details,
                                  returnAggregateOrIndiv = "both",
                                  returnExpDetails = FALSE) 
     )
@@ -280,16 +280,16 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                    tissue = tissue,
                                    PKparameters = Comparisons$PKparam_denom, 
                                    sheet = sheet_PKparameters_denom,
-                                   existing_exp_details = Deets,
+                                   existing_exp_details = existing_exp_details,
                                    returnExpDetails = FALSE,
                                    returnAggregateOrIndiv = "both")
     )
     
     # RETURN TO THIS LATER. We could add code to check and compare them for file
     # 2 to make absolutely sure they match when they should. Future plan... For
-    # now, using the numerator Deets as the default.
-    Deets_denom <- Deets %>% filter(File == sim_data_file_denominator)
-    Deets <- Deets %>% filter(File == sim_data_file_numerator)
+    # now, using the numerator existing_exp_details as the default.
+    existing_exp_details_denom <- existing_exp_details %>% filter(File == sim_data_file_denominator)
+    existing_exp_details <- existing_exp_details %>% filter(File == sim_data_file_numerator)
     
     # If user specified the sheet, then they're likely to get both AUCt and
     # AUCtau as well as CLt and CLtau b/c extractPK doesn't know what dose
@@ -392,19 +392,19 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     #     PKnumerator$aggregate %>% 
     #         rename(Conc = i) %>% 
     #         mutate(CompoundID = compoundToExtract, 
-    #                Conc_units = Deets$Units_Cmax, 
+    #                Conc_units = existing_exp_details$Units_Cmax, 
     #                Time = 1, Time_units = "hours"),
     #     goodunits = list("Conc_units" = adjust_conc_units, 
     #                      "Time_units" = "hours"), 
     #     MW = c(compoundToExtract = 
     #                switch(compoundToExtract, 
-    #                       "substrate" = Deets$MW_sub, 
-    #                       "primary metabolite 1" = Deets$MW_met1, 
-    #                       "primary metabolite 2" = Deets$MW_met2, 
-    #                       "secondary metabolite" = Deets$MW_secmet, 
-    #                       "inhibitor 1" = Deets$MW_inhib, 
-    #                       "inhibitor 2" = Deets$MW_inhib2, 
-    #                       "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
+    #                       "substrate" = existing_exp_details$MW_sub, 
+    #                       "primary metabolite 1" = existing_exp_details$MW_met1, 
+    #                       "primary metabolite 2" = existing_exp_details$MW_met2, 
+    #                       "secondary metabolite" = existing_exp_details$MW_secmet, 
+    #                       "inhibitor 1" = existing_exp_details$MW_inhib, 
+    #                       "inhibitor 2" = existing_exp_details$MW_inhib2, 
+    #                       "inhibitor 1 metabolite" = existing_exp_details$MW_inhib1met)))
     # MyPKResults_all$aggregate[, i] <- TEMP$Conc
     # rm(TEMP)
     
@@ -702,10 +702,10 @@ calc_PK_ratios <- function(sim_data_file_numerator,
         PrettyCol <- PrettyCol %>% pull(GoodCol)
         
         # Adjusting units as needed.
-        PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
-        PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
-        PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
-        PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
+        PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", existing_exp_details$Units_AUC, ")"), PrettyCol)
+        PrettyCol <- sub("\\(L/h\\)", paste0("(", existing_exp_details$Units_CL, ")"), PrettyCol)
+        PrettyCol <- sub("\\(ng/mL\\)", paste0("(", existing_exp_details$Units_Cmax, ")"), PrettyCol)
+        PrettyCol <- sub("\\(h\\)", paste0("(", existing_exp_details$Units_tmax, ")"), PrettyCol)
         
         # Just making absolutely sure that the order of columns matches
         MyPKResults <- MyPKResults[, c("Statistic", names(MyPKResults)[
@@ -718,8 +718,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     }
     
     # Checking on possible effectors to prettify
-    MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-                    Deets$Inhibitor2)
+    MyEffector <- c(existing_exp_details$Inhibitor1, existing_exp_details$Inhibitor1Metabolite, 
+                    existing_exp_details$Inhibitor2)
     if(length(MyEffector) > 0){
         MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
         MyEffector <- ifelse(MyEffector == "", NA, MyEffector)
@@ -844,8 +844,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
     }
     
     if(returnExpDetails){
-        Out[["ExpDetails_num"]] <- Deets
-        Out[["ExpDetails_denom"]] <- Deets_denom
+        Out[["ExpDetails_num"]] <- existing_exp_details
+        Out[["ExpDetails_denom"]] <- existing_exp_details_denom
     }
     
     if(length(Out) == 1){

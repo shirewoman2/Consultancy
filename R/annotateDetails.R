@@ -18,18 +18,17 @@
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}
 #' @param template_sim optionally include a specific file name -- it must be one
-#'   of the files included in the object you supply for
-#'   \code{existing_exp_details} -- that can be used as a template simulation to
-#'   compare all the other simulations to. Any details in any simulations that
-#'   do NOT match the template simulation details will be highlighted in red if
-#'   you save the output to an Excel file using \code{save_output}.
-#'   \strong{NOTE:} If you use a template simulation, we \emph{strongly
-#'   recommend} you also set \code{compoundID} to be only the compound ID you
-#'   want, e.g., \code{compoundID = "substrate"} and/or set the compound name to
-#'   be only the compound you want, e.g., \code{compound = "midaz"} (this will
-#'   match any compound names that include the letters "midaz" and is NOT case
-#'   sensitive), and set \code{show_compound_col = FALSE}. This will result in a
-#'   much clearer Excel file.
+#'   of the files included in the object you supply for \code{existing_exp_details} -- that can
+#'   be used as a template simulation to compare all the other simulations to.
+#'   Any details in any simulations that do NOT match the template simulation
+#'   details will be highlighted in red if you save the output to an Excel file
+#'   using \code{save_output}. \strong{NOTE:} If you use a template simulation,
+#'   we \emph{strongly recommend} you also set \code{compoundID} to be only the
+#'   compound ID you want, e.g., \code{compoundID = "substrate"} and/or set the
+#'   compound name to be only the compound you want, e.g., \code{compound =
+#'   "midaz"} (this will match any compound names that include the letters
+#'   "midaz" and is NOT case sensitive), and set \code{show_compound_col =
+#'   FALSE}. This will result in a much clearer Excel file.
 #' @param show_compound_col TRUE (default), FALSE, or "concatenate" for whether
 #'   to include in the results the column "Compound", which is the compound's
 #'   specific name in each simulation. Why would you ever omit this? If you have

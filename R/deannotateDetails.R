@@ -6,7 +6,7 @@
 #' rows for each experimental detail to having rows for each file and columns
 #' for each detail.
 #'
-#' @param Deets the annotated output from \code{extractExpDetails} or
+#' @param existing_exp_details the annotated output from \code{extractExpDetails} or
 #'   \code{extractExpDetails_mult} where the argument "annotate_details" was set
 #'   to TRUE or the output from \code{annotateDetails}
 #' @param apply_class TRUE (default) or FALSE for whether to set the class of
@@ -23,12 +23,12 @@
 #' Deannotated <- deannotateDetails(Annotated)
 #' 
 
-deannotateDetails <- function(Deets, 
+deannotateDetails <- function(existing_exp_details, 
                               apply_class = TRUE){
     
-    FileOrder <- names(Deets)[str_detect(names(Deets), "xlsx")]
+    FileOrder <- names(existing_exp_details)[str_detect(names(existing_exp_details), "xlsx")]
     
-    CompoundNames <- Deets %>% 
+    CompoundNames <- existing_exp_details %>% 
         select(any_of(c("Compound", "CompoundID")), matches("xlsx$")) %>% 
         pivot_longer(cols = !any_of(c("Compound", "CompoundID")),
                      names_to = "File", values_to = "Value") %>%
@@ -36,7 +36,7 @@ deannotateDetails <- function(Deets,
         select(File, Compound, CompoundID) %>% unique() %>% 
         mutate(File = factor(File, levels = FileOrder))
     
-    Deets <- Deets %>% 
+    existing_exp_details <- existing_exp_details %>% 
         select(-any_of(c("SimulatorSection", "Sheet", "Notes",
                          "CompoundID", "Compound",
                          "All files have this value for this compound ID and compound",
@@ -58,7 +58,7 @@ deannotateDetails <- function(Deets,
     
     if(apply_class){
         suppressWarnings(suppressMessages(
-            Deets <- Deets %>% 
+            existing_exp_details <- existing_exp_details %>% 
                 mutate(across(.cols = any_of(AllExpDetails %>% 
                                                  filter(Class == "numeric") %>% pull(Detail)), 
                               .fns = as.numeric), 
@@ -67,11 +67,11 @@ deannotateDetails <- function(Deets,
         ))
     }
     
-    Deets <- Deets %>% mutate(File = factor(File, levels = FileOrder)) %>% 
+    existing_exp_details <- existing_exp_details %>% mutate(File = factor(File, levels = FileOrder)) %>% 
         arrange(File) %>% 
         mutate(File = as.character(File))
     
-    return(Deets)
+    return(existing_exp_details)
     
 }
 

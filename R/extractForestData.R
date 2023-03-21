@@ -106,7 +106,7 @@ extractForestData <- function(sim_data_files = NA,
     }
     
     Forest_l <- list()
-    Deets <- list()
+    existing_exp_details <- list()
     DataCheck <- list()
     
     for(i in sim_data_files){
@@ -134,7 +134,7 @@ extractForestData <- function(sim_data_files = NA,
         }
         
         Forest_l[[i]] <- temp$aggregate %>% mutate(File = i)
-        Deets[[i]] <- as.data.frame(temp$ExpDetails) %>% mutate(File = i)
+        existing_exp_details[[i]] <- as.data.frame(temp$ExpDetails) %>% mutate(File = i)
         if(checkDataSource){
             DataCheck[[i]] <- temp$QC
         }
@@ -148,47 +148,47 @@ extractForestData <- function(sim_data_files = NA,
     }
     
     # Need to check for custom dosing regimens or things get mucked up.
-    CustDos_sub <- sapply(Deets, FUN = function(x) class(x$Dose_sub)) == "character"
-    CustDos_inhib <- sapply(Deets, FUN = function(x) class(x$Dose_inhib)) == "character"
+    CustDos_sub <- sapply(existing_exp_details, FUN = function(x) class(x$Dose_sub)) == "character"
+    CustDos_inhib <- sapply(existing_exp_details, FUN = function(x) class(x$Dose_inhib)) == "character"
     
     if(any(CustDos_sub)){
         
         warning(paste("A custom dosing regimen was used for the substrate for the files", 
-                      names(Deets)[which(CustDos_sub)], 
+                      names(existing_exp_details)[which(CustDos_sub)], 
                       "so that dose amount and dose interval will be set to NA in the extracted forest-plot data."), 
                 call. = FALSE)
         
         for(i in which(CustDos_sub)){
-            Deets[[i]]$Dose_sub <- as.numeric(NA)
-            Deets[[i]]$DoseInt_sub <- as.numeric(NA)
-            Deets[[i]] <- unique(Deets[[i]])
+            existing_exp_details[[i]]$Dose_sub <- as.numeric(NA)
+            existing_exp_details[[i]]$DoseInt_sub <- as.numeric(NA)
+            existing_exp_details[[i]] <- unique(existing_exp_details[[i]])
         }
     }
     
     if(any(CustDos_inhib)){
         warning(paste("A custom dosing regimen was used for the effector for the files", 
-                      names(Deets)[which(CustDos_inhib)], 
+                      names(existing_exp_details)[which(CustDos_inhib)], 
                       "so that dose amount and dose interval will be set to NA in the extracted forest-plot data."), 
                 call. = FALSE)
         
         for(i in which(CustDos_inhib)){
-            Deets[[i]]$Dose_inhib <- as.numeric(NA)
-            Deets[[i]]$DoseInt_inhib <- as.numeric(NA)
-            Deets[[i]] <- unique(Deets[[i]])
+            existing_exp_details[[i]]$Dose_inhib <- as.numeric(NA)
+            existing_exp_details[[i]]$DoseInt_inhib <- as.numeric(NA)
+            existing_exp_details[[i]] <- unique(existing_exp_details[[i]])
         }
     }
     
-    Deets <- bind_rows(Deets) %>% 
+    existing_exp_details <- bind_rows(existing_exp_details) %>% 
         select(File, everything()) %>% arrange(File)
     
-    if(any(is.na(Deets$Inhibitor1))){
+    if(any(is.na(existing_exp_details$Inhibitor1))){
         warning(paste0("Forest plots only work for comparing PK parameters with vs. without an effector present, and the files ", 
-                       Deets %>% filter(is.na(Inhibitor1)) %>% pull(File) %>% str_comma, 
+                       existing_exp_details %>% filter(is.na(Inhibitor1)) %>% pull(File) %>% str_comma, 
                        " did not have an effector present. These files will not be included in the output data."))
         
-        Deets <- Deets %>% filter(complete.cases(Inhibitor1))
-        if(checkDataSource){DataCheck <- DataCheck %>% filter(File %in% Deets$File)}
-        Forest_l <- Forest_l[names(Forest_l)[names(Forest_l) %in% Deets$File]]
+        existing_exp_details <- existing_exp_details %>% filter(complete.cases(Inhibitor1))
+        if(checkDataSource){DataCheck <- DataCheck %>% filter(File %in% existing_exp_details$File)}
+        Forest_l <- Forest_l[names(Forest_l)[names(Forest_l) %in% existing_exp_details$File]]
     }
     
     Forest <- bind_rows(Forest_l)
@@ -215,7 +215,7 @@ extractForestData <- function(sim_data_files = NA,
             mutate(ID = paste(PKparam, Stat, sep = "__")) %>% 
             select(-Stat, -PKparam) %>% 
             pivot_wider(names_from = ID, values_from = Value) %>% 
-            left_join(Deets %>% select(File, Substrate, Dose_sub, Inhibitor1, 
+            left_join(existing_exp_details %>% select(File, Substrate, Dose_sub, Inhibitor1, 
                                        Dose_inhib)) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                    any_of(ColNames)) %>% unique()

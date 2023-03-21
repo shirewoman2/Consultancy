@@ -173,23 +173,23 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
         
         # Getting summary data for the simulation(s)
         if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
-            Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
+            existing_exp_details <- extractExpDetails(ff, exp_details = "Input Sheet")
         } else {
-            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+            existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
                             "TRUE" = existing_exp_details, 
                             "FALSE" = deannotateDetails(existing_exp_details)) 
             
-            if("data.frame" %in% class(Deets)){
-                Deets <- Deets %>% filter(File == sim_data_file)
+            if("data.frame" %in% class(existing_exp_details)){
+                existing_exp_details <- existing_exp_details %>% filter(File == sim_data_file)
                 
-                if(nrow(Deets == 0)){
-                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                if(nrow(existing_exp_details == 0)){
+                    existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
                                                exp_details = "Input Sheet")
                 }
             }
         }
         
-        if(length(Deets) == 0){
+        if(length(existing_exp_details) == 0){
             # Using "warning" instead of "stop" here b/c I want this to be able to
             # pass through to other functions and just skip any files that
             # aren't simulator output.
@@ -217,7 +217,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                     enzyme = k,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                    existing_exp_details = Deets)
+                    existing_exp_details = existing_exp_details)
                 
             } # end of enzyme k loop
             
@@ -236,8 +236,8 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
             MultData[[ff]] <- MultData[[ff]] %>% mutate(File = ff)
         }
         
-        # MUST remove Deets or you can get the wrong info for each file!!!
-        rm(Deets) 
+        # MUST remove existing_exp_details or you can get the wrong info for each file!!!
+        rm(existing_exp_details) 
         
     } # end of file ff loop
     

@@ -561,9 +561,9 @@ pksummary_table <- function(sim_data_file = NA,
         MeanType <- ifelse(is.na(MeanType), "geometric", MeanType)
         GMR_mean_type <- sectionInfo$ObsData$GMR_mean_type
         if(is.null(GMR_mean_type)){GMR_mean_type <- MeanType}
-        Deets <- sectionInfo
-        EffectorPresent <- complete.cases(Deets$Inhibitor1)
-        DoseRegimen <- Deets$Regimen_sub
+        existing_exp_details <- sectionInfo
+        EffectorPresent <- complete.cases(existing_exp_details$Inhibitor1)
+        DoseRegimen <- existing_exp_details$Regimen_sub
         
     } else {
         
@@ -580,18 +580,18 @@ pksummary_table <- function(sim_data_file = NA,
         
         # Checking experimental details to only pull details that apply
         if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+            existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
                                        exp_details = "Summary tab")
         } else {
-            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+            existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
                             "TRUE" = existing_exp_details, 
                             "FALSE" = deannotateDetails(existing_exp_details))
             
-            if("data.frame" %in% class(Deets)){
-                Deets <- Deets %>% filter(File == sim_data_file)
+            if("data.frame" %in% class(existing_exp_details)){
+                existing_exp_details <- existing_exp_details %>% filter(File == sim_data_file)
                 
-                if(nrow(Deets == 0)){
-                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                if(nrow(existing_exp_details == 0)){
+                    existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
                                                exp_details = "Summary tab")
                 }
             }
@@ -603,31 +603,31 @@ pksummary_table <- function(sim_data_file = NA,
         if("inhibitor 2" %in% compoundToExtract){
             DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
                                                  exp_details = "Input Sheet")
-            Deets <- c(as.list(Deets), DeetsInputSheet)
+            existing_exp_details <- c(as.list(existing_exp_details), DeetsInputSheet)
         }
         
         # extractExpDetails will check whether the Excel file provided was, in
         # fact, a Simulator output file and return a list of length 0 if not.
         # Checking for that here.
-        if(length(Deets) == 0){
+        if(length(existing_exp_details) == 0){
             # warning(paste0("The file ", sim_data_file, 
             #                " is not a Simulator output file and will be skipped."))
             return(list())
         }
         
-        EffectorPresent <- complete.cases(Deets$Inhibitor1)
+        EffectorPresent <- complete.cases(existing_exp_details$Inhibitor1)
         DoseRegimen <- switch(compoundToExtract, 
-                              "substrate" = Deets$Regimen_sub,
-                              "primary metabolite 1" = Deets$Regimen_sub,
-                              "primary metabolite 2" = Deets$Regimen_sub,
-                              "secondary metabolite" = Deets$Regimen_sub,
-                              "inhibitor 1" = Deets$Regimen_inhib,
-                              "inhibitor 2" = Deets$Regimen_inhib2,
-                              "inhibitor 1 metabolite" = Deets$Regimen_inhib)
+                              "substrate" = existing_exp_details$Regimen_sub,
+                              "primary metabolite 1" = existing_exp_details$Regimen_sub,
+                              "primary metabolite 2" = existing_exp_details$Regimen_sub,
+                              "secondary metabolite" = existing_exp_details$Regimen_sub,
+                              "inhibitor 1" = existing_exp_details$Regimen_inhib,
+                              "inhibitor 2" = existing_exp_details$Regimen_inhib2,
+                              "inhibitor 1 metabolite" = existing_exp_details$Regimen_inhib)
     }
     
     # Checking that the file is, indeed, a simulator output file.
-    if(length(Deets) == 0){
+    if(length(existing_exp_details) == 0){
         # Using "warning" instead of "stop" here b/c I want this to be able to
         # pass through to other functions and just skip any files that
         # aren't simulator output.
@@ -637,7 +637,7 @@ pksummary_table <- function(sim_data_file = NA,
         return(list())
     }
     
-    if(Deets$PopRepSim == "Yes"){
+    if(existing_exp_details$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
@@ -716,7 +716,7 @@ pksummary_table <- function(sim_data_file = NA,
     }
     
     # If there was no effector, then don't pull any interaction info
-    if(is.na(Deets$Inhibitor1)){
+    if(is.na(existing_exp_details$Inhibitor1)){
         EffParam <- AllPKParameters %>%
             filter(AppliesOnlyWhenEffectorPresent == TRUE) %>%
             pull(PKparameter)
@@ -768,7 +768,7 @@ pksummary_table <- function(sim_data_file = NA,
     if(complete.cases(adjust_conc_units)){
         # Only adjusting AUC and Cmax values and not adjusting time portion of
         # units -- only conc.
-        if(Deets$Units_Cmax != adjust_conc_units){
+        if(existing_exp_details$Units_Cmax != adjust_conc_units){
             ColsToChange <- names(MyPKResults_all$aggregate)[
                 str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax")
             ]
@@ -778,19 +778,19 @@ pksummary_table <- function(sim_data_file = NA,
                     MyPKResults_all$aggregate %>% 
                         rename(Conc = i) %>% 
                         mutate(CompoundID = compoundToExtract, 
-                               Conc_units = Deets$Units_Cmax, 
+                               Conc_units = existing_exp_details$Units_Cmax, 
                                Time = 1, Time_units = "hours"),
                     goodunits = list("Conc_units" = adjust_conc_units, 
                                      "Time_units" = "hours"), 
                     MW = c(compoundToExtract = 
                                switch(compoundToExtract, 
-                                      "substrate" = Deets$MW_sub, 
-                                      "primary metabolite 1" = Deets$MW_met1, 
-                                      "primary metabolite 2" = Deets$MW_met2, 
-                                      "secondary metabolite" = Deets$MW_secmet, 
-                                      "inhibitor 1" = Deets$MW_inhib, 
-                                      "inhibitor 2" = Deets$MW_inhib2, 
-                                      "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
+                                      "substrate" = existing_exp_details$MW_sub, 
+                                      "primary metabolite 1" = existing_exp_details$MW_met1, 
+                                      "primary metabolite 2" = existing_exp_details$MW_met2, 
+                                      "secondary metabolite" = existing_exp_details$MW_secmet, 
+                                      "inhibitor 1" = existing_exp_details$MW_inhib, 
+                                      "inhibitor 2" = existing_exp_details$MW_inhib2, 
+                                      "inhibitor 1 metabolite" = existing_exp_details$MW_inhib1met)))
                 MyPKResults_all$aggregate[, i] <- TEMP$Conc
                 rm(TEMP)
                 
@@ -798,27 +798,27 @@ pksummary_table <- function(sim_data_file = NA,
                     MyPKResults_all$individual %>% 
                         rename(Conc = i) %>% 
                         mutate(CompoundID = compoundToExtract, 
-                               Conc_units = Deets$Units_Cmax, 
+                               Conc_units = existing_exp_details$Units_Cmax, 
                                Time = 1, Time_units = "hours"),
                     goodunits = list("Conc_units" = adjust_conc_units, 
                                      "Time_units" = "hours"), 
                     MW = c(compoundToExtract = 
                                switch(compoundToExtract, 
-                                      "substrate" = Deets$MW_sub, 
-                                      "primary metabolite 1" = Deets$MW_met1, 
-                                      "primary metabolite 2" = Deets$MW_met2, 
-                                      "secondary metabolite" = Deets$MW_secmet, 
-                                      "inhibitor 1" = Deets$MW_inhib, 
-                                      "inhibitor 2" = Deets$MW_inhib2, 
-                                      "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
+                                      "substrate" = existing_exp_details$MW_sub, 
+                                      "primary metabolite 1" = existing_exp_details$MW_met1, 
+                                      "primary metabolite 2" = existing_exp_details$MW_met2, 
+                                      "secondary metabolite" = existing_exp_details$MW_secmet, 
+                                      "inhibitor 1" = existing_exp_details$MW_inhib, 
+                                      "inhibitor 2" = existing_exp_details$MW_inhib2, 
+                                      "inhibitor 1 metabolite" = existing_exp_details$MW_inhib1met)))
                 MyPKResults_all$individual[, i] <- TEMP$Conc
                 rm(TEMP)
                 
             }
             
-            # Need to change units in Deets now to match.
-            Deets$Units_AUC <- sub(Deets$Units_Cmax, adjust_conc_units, Deets$Units_AUC)
-            Deets$Units_Cmax <- adjust_conc_units
+            # Need to change units in existing_exp_details now to match.
+            existing_exp_details$Units_AUC <- sub(existing_exp_details$Units_Cmax, adjust_conc_units, existing_exp_details$Units_AUC)
+            existing_exp_details$Units_Cmax <- adjust_conc_units
         }
     }
     
@@ -1137,13 +1137,13 @@ pksummary_table <- function(sim_data_file = NA,
                 pivot_wider(names_from = Parameter, values_from = Value) %>% 
                 mutate(File = sim_data_file, 
                        Substrate = switch(compoundToExtract, 
-                                          "substrate" = Deets$Substrate, 
-                                          "primary metabolite 1" = Deets$PrimaryMetabolite1, 
-                                          "primary metabolite 2" = Deets$PrimaryMetabolite2, 
-                                          "secondary metabolite" = Deets$SecondaryMetabolite), 
-                       Dose_sub = Deets$Dose_sub, 
-                       Inhibitor1 = Deets$Inhibitor1, 
-                       Dose_inhib = Deets$Dose_inhib) %>% 
+                                          "substrate" = existing_exp_details$Substrate, 
+                                          "primary metabolite 1" = existing_exp_details$PrimaryMetabolite1, 
+                                          "primary metabolite 2" = existing_exp_details$PrimaryMetabolite2, 
+                                          "secondary metabolite" = existing_exp_details$SecondaryMetabolite), 
+                       Dose_sub = existing_exp_details$Dose_sub, 
+                       Inhibitor1 = existing_exp_details$Inhibitor1, 
+                       Dose_inhib = existing_exp_details$Dose_inhib) %>% 
                 select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                        everything())
             
@@ -1318,18 +1318,18 @@ pksummary_table <- function(sim_data_file = NA,
         }
         
         if(complete.cases(adjust_conc_units)){
-            PrettyCol <- gsub(Deets$Units_Cmax,  adjust_conc_units, PrettyCol)
+            PrettyCol <- gsub(existing_exp_details$Units_Cmax,  adjust_conc_units, PrettyCol)
         }
         
         # Adjusting units as needed.
-        PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
-        PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
-        PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
-        PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
+        PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", existing_exp_details$Units_AUC, ")"), PrettyCol)
+        PrettyCol <- sub("\\(L/h\\)", paste0("(", existing_exp_details$Units_CL, ")"), PrettyCol)
+        PrettyCol <- sub("\\(ng/mL\\)", paste0("(", existing_exp_details$Units_Cmax, ")"), PrettyCol)
+        PrettyCol <- sub("\\(h\\)", paste0("(", existing_exp_details$Units_tmax, ")"), PrettyCol)
         PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
         
-        MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-                        Deets$Inhibitor2)
+        MyEffector <- c(existing_exp_details$Inhibitor1, existing_exp_details$Inhibitor1Metabolite, 
+                        existing_exp_details$Inhibitor2)
         
         if(any(complete.cases(MyEffector))){
             MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])

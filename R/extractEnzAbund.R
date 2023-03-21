@@ -115,24 +115,24 @@ extractEnzAbund <- function(sim_data_file,
     
     # Getting summary data for the simulation(s)
     if("logical" %in% class(existing_exp_details) == FALSE){
-        Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+        existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
                         "TRUE" = existing_exp_details, 
                         "FALSE" = deannotateDetails(existing_exp_details))
         
-        if("data.frame" %in% class(Deets)){
-            Deets <- Deets %>% filter(File == sim_data_file)
+        if("data.frame" %in% class(existing_exp_details)){
+            existing_exp_details <- existing_exp_details %>% filter(File == sim_data_file)
             
-            if(nrow(Deets == 0)){
-                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+            if(nrow(existing_exp_details == 0)){
+                existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
                                            exp_details = "Input Sheet")
             }
         }
         
     } else {
-        Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+        existing_exp_details <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
-    if(Deets$PopRepSim == "Yes"){
+    if(existing_exp_details$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
@@ -642,47 +642,47 @@ extractEnzAbund <- function(sim_data_file,
     # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when
     # the user requests a specific dose.
     MyIntervals <- 
-        c("substrate" = Deets$DoseInt_sub,
-          "primary metabolite 1" = Deets$DoseInt_sub,
-          "primary metabolite 2" = Deets$DoseInt_sub,
-          "secondary metabolite" = Deets$DoseInt_sub,
-          "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
-                                 NA, Deets$DoseInt_inhib),
-          "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
-                                            NA, Deets$DoseInt_inhib),
-          "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
-                                 NA, Deets$DoseInt_inhib2))
+        c("substrate" = existing_exp_details$DoseInt_sub,
+          "primary metabolite 1" = existing_exp_details$DoseInt_sub,
+          "primary metabolite 2" = existing_exp_details$DoseInt_sub,
+          "secondary metabolite" = existing_exp_details$DoseInt_sub,
+          "inhibitor 1" = ifelse(is.null(existing_exp_details$DoseInt_inhib),
+                                 NA, existing_exp_details$DoseInt_inhib),
+          "inhibitor 1 metabolite" = ifelse(is.null(existing_exp_details$DoseInt_inhib),
+                                            NA, existing_exp_details$DoseInt_inhib),
+          "inhibitor 2" = ifelse(is.null(existing_exp_details$DoseInt_inhib2),
+                                 NA, existing_exp_details$DoseInt_inhib2))
     
     MyStartTimes <- 
-        c("substrate" = Deets$StartHr_sub,
-          "primary metabolite 1" = Deets$StartHr_sub,
-          "primarymetabolite 2" = Deets$StartHr_sub,
-          "secondary metabolite" = Deets$StartHr_sub,
-          "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                 Deets$StartHr_inhib),
-          "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
-                                 Deets$StartHr_inhib2),
-          "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                            Deets$StartHr_inhib))
+        c("substrate" = existing_exp_details$StartHr_sub,
+          "primary metabolite 1" = existing_exp_details$StartHr_sub,
+          "primarymetabolite 2" = existing_exp_details$StartHr_sub,
+          "secondary metabolite" = existing_exp_details$StartHr_sub,
+          "inhibitor 1" = ifelse(is.null(existing_exp_details$StartHr_inhib), NA,
+                                 existing_exp_details$StartHr_inhib),
+          "inhibitor 2" = ifelse(is.null(existing_exp_details$StartHr_inhib2), NA,
+                                 existing_exp_details$StartHr_inhib2),
+          "inhibitor 1 metabolite" = ifelse(is.null(existing_exp_details$StartHr_inhib), NA,
+                                            existing_exp_details$StartHr_inhib))
     
     MyMaxDoseNum <- 
-        c("substrate" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                               1, Deets$NumDoses_sub),
-          "primary metabolite 1" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                                          1, Deets$NumDoses_sub),
-          "primarymetabolite 2" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                                         1, Deets$NumDoses_sub),
-          "secondary metabolite" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                                          1, Deets$NumDoses_sub),
-          "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                 ifelse(Deets$Regimen_inhib == "Single Dose", 
-                                        1, Deets$NumDoses_inhib)),
-          "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
-                                 ifelse(Deets$Regimen_inhib2 == "Single Dose", 
-                                        1, Deets$NumDoses_inhib2)),
-          "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                            ifelse(Deets$Regimen_inhib == "Single Dose", 
-                                                   1, Deets$NumDoses_inhib)))
+        c("substrate" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
+                               1, existing_exp_details$NumDoses_sub),
+          "primary metabolite 1" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
+                                          1, existing_exp_details$NumDoses_sub),
+          "primarymetabolite 2" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
+                                         1, existing_exp_details$NumDoses_sub),
+          "secondary metabolite" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
+                                          1, existing_exp_details$NumDoses_sub),
+          "inhibitor 1" = ifelse(is.null(existing_exp_details$NumDoses_inhib), NA,
+                                 ifelse(existing_exp_details$Regimen_inhib == "Single Dose", 
+                                        1, existing_exp_details$NumDoses_inhib)),
+          "inhibitor 2" = ifelse(is.null(existing_exp_details$NumDoses_inhib2), NA,
+                                 ifelse(existing_exp_details$Regimen_inhib2 == "Single Dose", 
+                                        1, existing_exp_details$NumDoses_inhib2)),
+          "inhibitor 1 metabolite" = ifelse(is.null(existing_exp_details$NumDoses_inhib), NA,
+                                            ifelse(existing_exp_details$Regimen_inhib == "Single Dose", 
+                                                   1, existing_exp_details$NumDoses_inhib)))
     
     # Converting data to numeric while also retaining names
     suppressWarnings(
@@ -737,10 +737,10 @@ extractEnzAbund <- function(sim_data_file,
                                        ifelse(TimeSinceDose1_inhib2 < 0, 0, 1), DoseNum_inhib2))
     
     # # Checking for any custom dosing
-    # if(any(str_detect(names(Deets), "CustomDosing"))){
+    # if(any(str_detect(names(existing_exp_details), "CustomDosing"))){
     #     CDCompounds <-
     #         data.frame(CompoundSuffix = 
-    #                        str_extract(names(Deets)[str_detect(names(Deets),
+    #                        str_extract(names(existing_exp_details)[str_detect(names(existing_exp_details),
     #                                                            "CustomDosing")],
     #                                    "_sub|_inhib(2)?")) %>% 
     #         mutate(CompoundID = recode(CompoundSuffix, "_sub" = "substrate", 
@@ -752,7 +752,7 @@ extractEnzAbund <- function(sim_data_file,
     #     
     #     for(j in CDCompounds$CompoundID){
     #         Dosing[[j]] <-
-    #             Deets[[paste0("CustomDosing", 
+    #             existing_exp_details[[paste0("CustomDosing", 
     #                           CDCompounds$CompoundSuffix[CDCompounds$CompoundID == j])]] %>% 
     #             mutate(CompoundID = CDCompounds$CompoundID[CDCompounds$CompoundID == j])
     #         
@@ -824,8 +824,8 @@ extractEnzAbund <- function(sim_data_file,
     }
     
     # Noting exactly what the effectors were
-    AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
-                      Deets$Inhibitor1Metabolite)
+    AllEffectors <- c(existing_exp_details$Inhibitor1, existing_exp_details$Inhibitor2,
+                      existing_exp_details$Inhibitor1Metabolite)
     AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
     
     # Finalizing, tidying, selecting only useful columns
@@ -834,7 +834,7 @@ extractEnzAbund <- function(sim_data_file,
                File = sim_data_file,
                Inhibitor = ifelse(EffectorPresent,
                                   AllEffectors, "none"), 
-               Substrate = Deets$Substrate) %>%
+               Substrate = existing_exp_details$Substrate) %>%
         arrange(across(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",
                                 "Individual", "Trial", "Time")))) %>%
         select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",

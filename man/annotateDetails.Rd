@@ -5,7 +5,7 @@
 \title{Annotate Simcyp Simulator experimental details}
 \usage{
 annotateDetails(
-  Deets,
+  existing_exp_details,
   template_sim = NA,
   compoundID = NA,
   compound = NA,
@@ -18,11 +18,11 @@ annotateDetails(
 )
 }
 \arguments{
-\item{Deets}{output from \code{\link{extractExpDetails}} or
+\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}}}
 
 \item{template_sim}{optionally include a specific file name -- it must be one
-of the files included in the object you supply for \code{Deets} -- that can
+of the files included in the object you supply for \code{existing_exp_details} -- that can
 be used as a template simulation to compare all the other simulations to.
 Any details in any simulations that do NOT match the template simulation
 details will be highlighted in red if you save the output to an Excel file
@@ -165,22 +165,22 @@ also help make things less overwhelming and easier to find.
 }
 \examples{
 
-annotateDetails(Deets = MDZdetails)
+annotateDetails(existing_exp_details = MDZdetails)
 
 # Get annotated details regarding absorption.
-annotateDetails(Deets = MDZdetails, simulator_section = "absorption")
+annotateDetails(existing_exp_details = MDZdetails, simulator_section = "absorption")
 
 # Get annotated details on whatever was used as inhibitor 1
-annotateDetails(Deets = MDZdetails, compoundID = "inhibitor 1")
+annotateDetails(existing_exp_details = MDZdetails, compoundID = "inhibitor 1")
 
 # Get annotated details for any compounds with "midaz" or "keto" in the name.
-annotateDetails(Deets = MDZdetails, compound = "midaz|keto")
+annotateDetails(existing_exp_details = MDZdetails, compound = "midaz|keto")
 
 # Get (most of) the details to put into a table of simulation inputs:
-annotateDetails(Deets = MDZdetails, detail_set = "Simcyp inputs")
+annotateDetails(existing_exp_details = MDZdetails, detail_set = "Simcyp inputs")
 
 # Combine multiple options to get just a few specific details:
-annotateDetails(Deets = MDZdetails,
+annotateDetails(existing_exp_details = MDZdetails,
             simulator_section = "absorption",
             compound = "midaz|keto",
             compoundID = "substrate")
