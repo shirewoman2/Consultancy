@@ -1,34 +1,35 @@
 #' Annotate Simcyp Simulator experimental details
 #'
-#' \code{annotateDetails} converts output from either
-#' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
-#' a long data.frame and adds to that data.frame columns for
-#' \enumerate{\item{which compound the information pertains to (substrate,
-#' inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
-#' found in (physchem, absorption, distribution, etc.),} \item{notes describing
-#' what the detail is, and} \item{which sheet in the Excel file the information
-#' was pulled from.}} It will also optionally filter the data to return only
-#' specifically requested information. \strong{A recent change as of Jan. 2023:}
-#' There are now \emph{so many} possible details that it can be overwhelming to
-#' get all of them! For that reason, we changed the default setting for
-#' \code{omit_all_missing} to be TRUE so that, if there are only NA values for
-#' all the files you're annotating, that detail will be dropped. If you still
-#' get a \emph{ton} of information all at once, we recommend looking at just one
-#' compound at a time. You can set the \code{compoundID} argument to just the
-#' compound ID you want -- "substrate", "inhibitor 1", etc. -- or set the
-#' \code{compound} argument to just the compound you want -- "midazolam" or
-#' "Client Drug X" -- and that will also help make things less overwhelming and
-#' easier to find.
+#' \code{annotateDetails} uses output from either
+#' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}},
+#' formats it into a long data.frame, adds columns for \enumerate{\item{which
+#' compound the information pertains to (substrate, inhibitor, etc.),}
+#' \item{which section of the Simcyp Simulator this detail is found in
+#' (physchem, absorption, distribution, etc.),} \item{notes describing what the
+#' detail is, and} \item{which sheet in the Excel file the information was
+#' pulled from.}} It will also optionally filter the data to return only
+#' specifically requested information. If you find yourself overwhelmed at the
+#' amount of information, we recommend looking at just one compound at a time.
+#' You can set the \code{compoundID} argument to just the compound ID you want
+#' -- "substrate", "inhibitor 1", etc. -- or set the \code{compound} argument to
+#' just the compound you want -- "midazolam" or "Client Drug X" -- and that will
+#' also help make things less overwhelming and easier to find.
 #'
-#' \emph{Nota bene:} When you initially extracted your simulation experimental
-#' details, if you set \code{annotate_output = TRUE} and \code{show_compound_col
-#' = "concatenate"}, please understand that you cannot go backwards here and
-#' un-concatenate the compound names because, once we combine everything, we
-#' don't know which piece of data belonged to which compound. You'll still get
-#' concatenated compound names in the output.
-#'
-#' @param Deets output from \code{\link{extractExpDetails}} or
+#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}
+#' @param template_sim optionally include a specific file name -- it must be one
+#'   of the files included in the object you supply for
+#'   \code{existing_exp_details} -- that can be used as a template simulation to
+#'   compare all the other simulations to. Any details in any simulations that
+#'   do NOT match the template simulation details will be highlighted in red if
+#'   you save the output to an Excel file using \code{save_output}.
+#'   \strong{NOTE:} If you use a template simulation, we \emph{strongly
+#'   recommend} you also set \code{compoundID} to be only the compound ID you
+#'   want, e.g., \code{compoundID = "substrate"} and/or set the compound name to
+#'   be only the compound you want, e.g., \code{compound = "midaz"} (this will
+#'   match any compound names that include the letters "midaz" and is NOT case
+#'   sensitive), and set \code{show_compound_col = FALSE}. This will result in a
+#'   much clearer Excel file.
 #' @param show_compound_col TRUE (default), FALSE, or "concatenate" for whether
 #'   to include in the results the column "Compound", which is the compound's
 #'   specific name in each simulation. Why would you ever omit this? If you have
@@ -101,7 +102,6 @@
 #'   "Elimination", "Interaction", "Phys Chem and Blood Binding", "Population",
 #'   "Transport", or "Trial Design". Not case sensitive. If you want more than
 #'   one, enclose them with \code{c(...)}.
-#'
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 #'   details.xlsx". If you leave off the file extension, it will be saved as a
@@ -138,28 +138,29 @@
 #'
 #' @examples
 #'
-#' annotateDetails(Deets = MDZdetails)
+#' annotateDetails(existing_exp_details = MDZdetails)
 #'
 #' # Get annotated details regarding absorption.
-#' annotateDetails(Deets = MDZdetails, simulator_section = "absorption")
+#' annotateDetails(existing_exp_details = MDZdetails, simulator_section = "absorption")
 #'
 #' # Get annotated details on whatever was used as inhibitor 1
-#' annotateDetails(Deets = MDZdetails, compoundID = "inhibitor 1")
+#' annotateDetails(existing_exp_details = MDZdetails, compoundID = "inhibitor 1")
 #'
 #' # Get annotated details for any compounds with "midaz" or "keto" in the name.
-#' annotateDetails(Deets = MDZdetails, compound = "midaz|keto")
+#' annotateDetails(existing_exp_details = MDZdetails, compound = "midaz|keto")
 #'
 #' # Get (most of) the details to put into a table of simulation inputs:
-#' annotateDetails(Deets = MDZdetails, detail_set = "Simcyp inputs")
+#' annotateDetails(existing_exp_details = MDZdetails, detail_set = "Simcyp inputs")
 #'
 #' # Combine multiple options to get just a few specific details:
-#' annotateDetails(Deets = MDZdetails,
+#' annotateDetails(existing_exp_details = MDZdetails,
 #'             simulator_section = "absorption",
 #'             compound = "midaz|keto",
 #'             compoundID = "substrate")
 #'
 #' 
-annotateDetails <- function(Deets,
+annotateDetails <- function(existing_exp_details,
+                            template_sim = NA,
                             compoundID = NA, 
                             compound = NA,
                             detail_set = NA, 
@@ -202,9 +203,9 @@ annotateDetails <- function(Deets,
     simulator_section_orig <- simulator_section
     simulator_section <- str_c(unique(tolower(simulator_section)), collapse = " ")
     
-    if("Substrate" %in% names(Deets) == FALSE & 
+    if("Substrate" %in% names(existing_exp_details) == FALSE & 
        (show_compound_col == TRUE | show_compound_col == "concatenate") & 
-       "Compound" %in% names(Deets) == FALSE){
+       "Compound" %in% names(existing_exp_details) == FALSE){
         warning(paste0("You set show_compound_col to ", show_compound_col,
                        ", but you appear to have already run annotateDetails on these data with show_compound_col = FALSE. This column no longer exists in your data, so we can't show it."), 
                 call. = FALSE)
@@ -212,26 +213,40 @@ annotateDetails <- function(Deets,
         compound <- NA
     }
     
-    # Formatting as needed ---------------------------------------------------
-    if(class(Deets)[1] == "list"){
-        # This is when the output is the default list from extractExpDetails
-        Deets <- as.data.frame(Deets)
+    # Checking input for template_sim 
+    template_sim <- template_sim[complete.cases(template_sim)]
+    if(length(template_sim) > 1){
+        warning("You can only enter one value for `template_sim` and you've entered more. We'll only use the first one as a template simulation.", 
+                call. = FALSE)
     }
     
-    PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(Deets))
+    if(str_detect(template_sim, "xlsx") == FALSE){
+        template_sim <- paste0(template_sim, ".xlsx")
+    }
+    
+    # We'll check whether that file was included once we've re-formatted existing_exp_details
+    
+    
+    # Formatting as needed ---------------------------------------------------
+    if(class(existing_exp_details)[1] == "list"){
+        # This is when the output is the default list from extractExpDetails
+        existing_exp_details <- as.data.frame(existing_exp_details)
+    }
+    
+    PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))
     
     if(PrevAnnotated){
         
-        Deets <- deannotateDetails(Deets, apply_class = FALSE)
+        existing_exp_details <- deannotateDetails(existing_exp_details, apply_class = FALSE)
         
-    } else if("File" %in% names(Deets) == FALSE){
-        Deets$File <- paste("unknown file", 1:nrow(Deets))
-        FileOrder <- Deets$File
-        Deets <- Deets %>% 
+    } else if("File" %in% names(existing_exp_details) == FALSE){
+        existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
+        FileOrder <- existing_exp_details$File
+        existing_exp_details <- existing_exp_details %>% 
             mutate(File = factor(File, levels = FileOrder))
     }
     
-    Out <- Deets %>% 
+    Out <- existing_exp_details %>% 
         mutate(across(.cols = everything(), .fns = as.character)) %>% 
         pivot_longer(cols = -File,
                      names_to = "Detail", 
@@ -245,66 +260,74 @@ annotateDetails <- function(Deets,
                                       CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
-    # If the model was not ADAM, Deets will include a bunch of irrelevant
+    # Checking whether template sim was included in File
+    if(template_sim %in% existing_exp_details$File == FALSE){
+        warning(paste0("Your template simulation file, `", 
+                       template_sim, 
+                       "`, was not included in the object you supplied for `existing_exp_details`. We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim`.", 
+                       call. = FALSE))
+    }
+    
+    # If the model was not ADAM, existing_exp_details will include a bunch of irrelevant
     # details. Removing those if none of the models for that compound ID were
     # ADAM. NOTE TO SELF: There must be a better way to do this that doesn't
     # require so much copying and pasting!
-    if("Abs_model_sub" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+    if("Abs_model_sub" %in% names(existing_exp_details) &&
+       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
         Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
                                     filter(CompoundID == "substrate" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-
-    if("Abs_model_inhib" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+    
+    if("Abs_model_inhib" %in% names(existing_exp_details) &&
+       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
         Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
                                     filter(CompoundID == "inhibitor 1" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-
-    if("Abs_model_inhib2" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+    
+    if("Abs_model_inhib2" %in% names(existing_exp_details) &&
+       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
         Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
                                     filter(CompoundID == "inhibitor 2" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-
-    if("Abs_model_met1" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+    
+    if("Abs_model_met1" %in% names(existing_exp_details) &&
+       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
         Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
                                     filter(CompoundID == "primary metabolite 1" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-
-    if("Abs_model_met2" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+    
+    if("Abs_model_met2" %in% names(existing_exp_details) &&
+       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
         Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
                                     filter(CompoundID == "primary metabolite 2" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-
-    if("Abs_model_secmet" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+    
+    if("Abs_model_secmet" %in% names(existing_exp_details) &&
+       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
         Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
                                     filter(CompoundID == "secondary metabolite" &
                                                ADAMParameter == TRUE) %>%
                                     pull(Detail)) == FALSE)
     }
-
-    if("Abs_model_inhib1met" %in% names(Deets) &&
-       any(Deets$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+    
+    if("Abs_model_inhib1met" %in% names(existing_exp_details) &&
+       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
         Out <- Out %>%
             filter(Detail %in% (AllExpDetails %>%
                                     filter(CompoundID == "inhibitor 1 metabolite" &
@@ -369,23 +392,6 @@ annotateDetails <- function(Deets,
                         "Compound", "Detail")), everything()) %>% 
         arrange(SimulatorSection, Detail)
     
-    if(class(show_compound_col) == "logical"){
-        if(show_compound_col == FALSE){
-            Out <- Out %>% select(-Compound)
-        }
-    } else if(show_compound_col == "concatenate"){
-        AllCompounds <- Out %>% select(Compound, CompoundID) %>% 
-            filter(complete.cases(CompoundID)) %>% 
-            group_by(CompoundID) %>% 
-            summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
-        
-        suppressMessages(
-            Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
-                select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
-                       File, Value))
-    }
-    
-    
     # Filtering as requested -----------------------------------------
     
     # Need everything to be in long format and then will pivot back to wide at
@@ -400,7 +406,7 @@ annotateDetails <- function(Deets,
     
     ## compound -------------------------------------------------------------
     if(complete.cases(compound)){
-        Out <- Out %>% filter(str_detect(tolower(Compound), compound))
+        Out <- Out %>% filter(str_detect(tolower(Compound), {{compound}}))
     }
     
     ## simulator_section --------------------------------------------------
@@ -563,6 +569,22 @@ annotateDetails <- function(Deets,
         }
     }
     
+    # Removing compound column if they don't want it
+    if(class(show_compound_col) == "logical"){
+        if(show_compound_col == FALSE){
+            Out <- Out %>% select(-Compound)
+        }
+    } else if(show_compound_col == "concatenate"){
+        AllCompounds <- Out %>% select(Compound, CompoundID) %>% 
+            filter(complete.cases(CompoundID)) %>% 
+            group_by(CompoundID) %>% 
+            summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
+        
+        suppressMessages(
+            Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
+                select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
+                       File, Value))
+    }
     
     # find_matching_details --------------------------------------------------------
     
@@ -599,13 +621,21 @@ annotateDetails <- function(Deets,
         )
     }
     
-    Out <- Out %>% 
-        select(any_of(c("SimulatorSection", "Sheet", "Notes",
-                        "CompoundID", "Compound", "Detail", 
-                        "UniqueVal")), 
-               everything())
-    
-    if("UniqueVal" %in% names(Out)){
+    if(complete.cases(template_sim)){
+        Out <- Out %>% 
+            select(-UniqueVal) %>% 
+            select(any_of(c("SimulatorSection", "Sheet", "Notes",
+                            "CompoundID", "Compound", "Detail")), 
+                   template_sim,
+                   everything())
+        
+    } else if("UniqueVal" %in% names(Out)){
+        Out <- Out %>% 
+            select(any_of(c("SimulatorSection", "Sheet", "Notes",
+                            "CompoundID", "Compound", "Detail", 
+                            "UniqueVal")), 
+                   everything())
+        
         if("Compound" %in% names(Out)){
             Out <- Out %>% 
                 mutate(ToOmit = complete.cases(CompoundID) & 
@@ -616,7 +646,7 @@ annotateDetails <- function(Deets,
             Out <- Out %>% 
                 rename("All files have this value for this compound ID" = UniqueVal)
         }
-    }
+    }  
     
     # Removing anything that was all NA's if that's what user requested
     if(omit_all_missing){
@@ -642,23 +672,83 @@ annotateDetails <- function(Deets,
             Ext <- "csv"
         }
         
-        switch(Ext, 
-               "csv" = write.csv(Out, FileName, row.names = F), 
-               "xlsx" = formatXL(
-                   Out, FileName, sheet = "Simulation experimental details",
-                   styles = list(
-                       list(columns = which(names(Out) == "Notes"), 
-                            textposition = list(wrapping = TRUE)),
-                       list(rows = 0, font = list(bold = TRUE),
-                            textposition = list(alignment = "middle",
-                                                wrapping = TRUE)), 
-                       list(columns = which(str_detect(names(Out), "All files have this value")),
-                            fill = "#E7F3FF"), 
-                       list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
-                            font = list(bold = TRUE), 
-                            textposition = list(alignment = "middle",
-                                                wrapping = TRUE), 
-                            fill = "#E7F3FF"))))
+        if(Ext == "csv"){
+            write.csv(Out, FileName, row.names = F)
+        } else if(Ext == "xlsx"){
+            if(is.na(template_sim)){
+                # This is when there is no template simulation, but we are
+                # including a column noting when a given value was the same for
+                # all simulations.
+                formatXL(
+                    Out, FileName, sheet = "Simulation experimental details",
+                    styles = list(
+                        list(columns = which(names(Out) == "Notes"), 
+                             textposition = list(wrapping = TRUE)),
+                        list(rows = 0, font = list(bold = TRUE),
+                             textposition = list(alignment = "middle",
+                                                 wrapping = TRUE)), 
+                        list(columns = which(str_detect(names(Out), "All files have this value")),
+                             fill = "#E7F3FF"), 
+                        list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
+                             font = list(bold = TRUE), 
+                             textposition = list(alignment = "middle",
+                                                 wrapping = TRUE), 
+                             fill = "#E7F3FF")))
+            } else {
+                # This is when there IS a template simulation. Formatting to
+                # highlight in red all the places where things differ.
+                
+                TSim <- paste("TEMPLATE SIMULATION -", template_sim)
+                names(Out)[names(Out) == template_sim] <- TSim
+                
+                # Checking whether things match
+                Diffs <- list()
+                MyStyles <- list()
+                NontempFiles <- setdiff(AllFiles, template_sim)
+                
+                for(i in 1:length(NontempFiles)){
+                    Diffs[[i]] <- 
+                        list(columns = which(names(Out) == NontempFiles[i]),
+                             rows = which(Out[ , NontempFiles[i]] != Out[, TSim] |
+                                              (complete.cases(Out[ , NontempFiles[i]]) &
+                                                   is.na(Out[, TSim])) |
+                                              (is.na(Out[ , NontempFiles[i]]) & 
+                                                   complete.cases(Out[, TSim]))), 
+                             fill = "#FFC7CE", 
+                             font = list(color = "#9B030C"))
+                }
+                
+                MyStyles[[1]] <- 
+                    # wrapping text in the notes column since it's sometimes long
+                    list(columns = which(names(Out) == "Notes"), 
+                         textposition = list(wrapping = TRUE))
+                
+                MyStyles[[2]] <- 
+                    # making header row bold and centered
+                    list(rows = 0, font = list(bold = TRUE),
+                         textposition = list(alignment = "middle",
+                                             wrapping = TRUE))
+                
+                # making the template sim column blue
+                MyStyles[[3]] <- 
+                    list(columns = which(str_detect(names(Out), template_sim)),
+                         fill = "#E7F3FF")
+                
+                MyStyles[[4]] <- 
+                    list(columns = which(str_detect(names(Out), template_sim)),
+                         rows = 0, font = list(bold = TRUE), 
+                         textposition = list(alignment = "middle",
+                                             wrapping = TRUE), 
+                         fill = "#E7F3FF")
+                
+                MyStyles <- append(MyStyles, Diffs)
+                
+                formatXL(
+                    Out, FileName, sheet = "Simulation experimental details",
+                    styles = MyStyles)
+                
+            }
+        }
     }
     
     return(Out)

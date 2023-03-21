@@ -6,6 +6,7 @@
 \usage{
 annotateDetails(
   Deets,
+  template_sim = NA,
   compoundID = NA,
   compound = NA,
   detail_set = NA,
@@ -19,6 +20,19 @@ annotateDetails(
 \arguments{
 \item{Deets}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}}}
+
+\item{template_sim}{optionally include a specific file name -- it must be one
+of the files included in the object you supply for \code{Deets} -- that can
+be used as a template simulation to compare all the other simulations to.
+Any details in any simulations that do NOT match the template simulation
+details will be highlighted in red if you save the output to an Excel file
+using \code{save_output}. \strong{NOTE:} If you use a template simulation,
+we \emph{strongly recommend} you also set \code{compoundID} to be only the
+compound ID you want, e.g., \code{compoundID = "substrate"} and/or set the
+compound name to be only the compound you want, e.g., \code{compound =
+"midaz"} (this will match any compound names that include the letters
+"midaz" and is NOT case sensitive), and set \code{show_compound_col =
+FALSE}. This will result in a much clearer Excel file.}
 
 \item{compoundID}{optionally supply one or more of "substrate", "primary
 metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
@@ -134,33 +148,20 @@ Returns a data.frame of simulation experimental details including the
   experimental details for each file will show up in their own columns}}
 }
 \description{
-\code{annotateDetails} converts output from either
-\code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
-a long data.frame and adds to that data.frame columns for
-\enumerate{\item{which compound the information pertains to (substrate,
-inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
-found in (physchem, absorption, distribution, etc.),} \item{notes describing
-what the detail is, and} \item{which sheet in the Excel file the information
-was pulled from.}} It will also optionally filter the data to return only
-specifically requested information. \strong{A recent change as of Jan. 2023:}
-There are now \emph{so many} possible details that it can be overwhelming to
-get all of them! For that reason, we changed the default setting for
-\code{omit_all_missing} to be TRUE so that, if there are only NA values for
-all the files you're annotating, that detail will be dropped. If you still
-get a \emph{ton} of information all at once, we recommend looking at just one
-compound at a time. You can set the \code{compoundID} argument to just the
-compound ID you want -- "substrate", "inhibitor 1", etc. -- or set the
-\code{compound} argument to just the compound you want -- "midazolam" or
-"Client Drug X" -- and that will also help make things less overwhelming and
-easier to find.
-}
-\details{
-\emph{Nota bene:} When you initially extracted your simulation experimental
-details, if you set \code{annotate_output = TRUE} and \code{show_compound_col
-= "concatenate"}, please understand that you cannot go backwards here and
-un-concatenate the compound names because, once we combine everything, we
-don't know which piece of data belonged to which compound. You'll still get
-concatenated compound names in the output.
+\code{annotateDetails} uses output from either
+\code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}},
+formats it into a long data.frame, adds columns for \enumerate{\item{which
+compound the information pertains to (substrate, inhibitor, etc.),}
+\item{which section of the Simcyp Simulator this detail is found in
+(physchem, absorption, distribution, etc.),} \item{notes describing what the
+detail is, and} \item{which sheet in the Excel file the information was
+pulled from.}} It will also optionally filter the data to return only
+specifically requested information. If you find yourself overwhelmed at the
+amount of information, we recommend looking at just one compound at a time.
+You can set the \code{compoundID} argument to just the compound ID you want
+-- "substrate", "inhibitor 1", etc. -- or set the \code{compound} argument to
+just the compound you want -- "midazolam" or "Client Drug X" -- and that will
+also help make things less overwhelming and easier to find.
 }
 \examples{
 
