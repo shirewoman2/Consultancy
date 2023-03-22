@@ -220,7 +220,7 @@ annotateDetails <- function(existing_exp_details,
                 call. = FALSE)
     }
     
-    if(str_detect(template_sim, "xlsx") == FALSE){
+    if(complete.cases(template_sim) && str_detect(template_sim, "xlsx") == FALSE){
         template_sim <- paste0(template_sim, ".xlsx")
     }
     
@@ -264,8 +264,9 @@ annotateDetails <- function(existing_exp_details,
     if(template_sim %in% existing_exp_details$File == FALSE){
         warning(paste0("Your template simulation file, `", 
                        template_sim, 
-                       "`, was not included in the object you supplied for `existing_exp_details`. We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim`.", 
-                       call. = FALSE))
+                       "`, was not included in the object you supplied for `existing_exp_details`. We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim`."), 
+                       call. = FALSE)
+        template_sim <- NA
     }
     
     # If the model was not ADAM, existing_exp_details will include a bunch of irrelevant
@@ -350,11 +351,14 @@ annotateDetails <- function(existing_exp_details,
                                       Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite")) %>% 
         rename("Compound" = Value) %>% 
         filter(complete.cases(Compound) & complete.cases(CompoundID)) %>%
-        select(-Detail)
+        select(-Detail) %>% 
+        mutate(CompoundNameID = paste(File, CompoundID))
     
     suppressMessages(
         Out <- Out %>% 
             arrange(File) %>% 
+            mutate(CompoundNameID = paste(File, CompoundID)) %>% 
+            filter(CompoundNameID %in% CompoundNames$CompoundNameID) %>% 
             left_join(ExpDetailDefinitions, by = c("Detail", "CompoundID")) %>% 
             # Finding some artifacts from row binding output from both of
             # extractExpDetails and extractExpDetails_mult. I think this should
@@ -370,7 +374,9 @@ annotateDetails <- function(existing_exp_details,
     
     suppressMessages(
         Out <- Out %>% 
-            left_join(CompoundNames))
+            left_join(CompoundNames) %>% 
+            select(-CompoundNameID)
+    )
     
     # Metabolism and interaction parameters won't match input details, so
     # adding which sheet they came from and what simulator section they
@@ -499,10 +505,13 @@ annotateDetails <- function(existing_exp_details,
                                      pull(Detail)) | SimulatorSection %in%
                                c("Elimination", "Interaction", "Transporters")) %>%
                     mutate(CompoundID = factor(CompoundID, 
-                                               levels = c("Substrate", "PrimaryMetabolite1", 
-                                                          "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                                          "Inhibitor1", "Inhibitor2", 
-                                                          "Inhibitor1Metabolite"))) %>% 
+                                               levels = c("substrate", 
+                                                          "primary metabolite 1", 
+                                                          "primary metabolite 2",
+                                                          "secondary metabolite", 
+                                                          "inhibitor 1", 
+                                                          "inhibitor 2", 
+                                                          "inhibitor 1 metabolite"))) %>% 
                     arrange(CompoundID) %>% 
                     mutate(Detail = factor(
                         Detail,
@@ -602,6 +611,18 @@ annotateDetails <- function(existing_exp_details,
         pivot_wider(names_from = File, 
                     values_from = Value)
     
+    # Need to check again whether template_sim is included b/c it might not be
+    # any more if the user has filtered results for a specific compound ID that
+    # doesn't exist in template_sim.
+    if(complete.cases(template_sim) & template_sim %in% names(Out) == FALSE){
+        warning(paste0("Your template simulation file, `", 
+                       template_sim, 
+                       "`, was originally included in the object you supplied for `existing_exp_details`, but that particular simulation didn't have any of the combination of details or compound IDs or compounds that you requested we filter the results by. We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim`."), 
+                call. = FALSE)
+        
+        template_sim <- NA
+    }
+    
     if(length(AllFiles) > 1){
         # Checking for details that are the SAME across all files
         AllSame <- Out %>% 
@@ -628,6 +649,9 @@ annotateDetails <- function(existing_exp_details,
                             "CompoundID", "Compound", "Detail")), 
                    template_sim,
                    everything())
+        
+        TSim <- paste("TEMPLATE SIMULATION -", template_sim)
+        names(Out)[names(Out) == template_sim] <- TSim
         
     } else if("UniqueVal" %in% names(Out)){
         Out <- Out %>% 
@@ -697,9 +721,6 @@ annotateDetails <- function(existing_exp_details,
             } else {
                 # This is when there IS a template simulation. Formatting to
                 # highlight in red all the places where things differ.
-                
-                TSim <- paste("TEMPLATE SIMULATION -", template_sim)
-                names(Out)[names(Out) == template_sim] <- TSim
                 
                 # Checking whether things match
                 Diffs <- list()
