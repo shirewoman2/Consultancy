@@ -5,10 +5,10 @@
 \title{De-annotate a data.frame of experimental details that was previously
 annotated}
 \usage{
-deannotateDetails(existing_exp_details, apply_class = TRUE)
+deannotateDetails(Deets, apply_class = TRUE)
 }
 \arguments{
-\item{existing_exp_details}{the annotated output from \code{extractExpDetails} or
+\item{Deets}{the annotated output from \code{extractExpDetails} or
 \code{extractExpDetails_mult} where the argument "annotate_details" was set
 to TRUE or the output from \code{annotateDetails}}
 

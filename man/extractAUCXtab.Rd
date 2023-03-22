@@ -12,7 +12,7 @@ extractAUCXtab(
   Sheet,
   PKset,
   UserSpecified,
-  existing_exp_details,
+  Deets,
   DataCheck,
   includeTrialInfo
 )
@@ -30,7 +30,7 @@ parameters like in extractPK is not acceptable here)}
 \item{UserSpecified}{TRUE or FALSE for whether this was a user-specified
 sheet, in which case we don't know which dose it is}
 
-\item{existing_exp_details}{output from running extractExpDetails on the provided
+\item{Deets}{output from running extractExpDetails on the provided
 sim_data_file}
 
 \item{DataCheck}{DataCheck data.frame}

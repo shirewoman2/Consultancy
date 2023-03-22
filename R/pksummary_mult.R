@@ -389,17 +389,17 @@ pksummary_mult <- function(sim_data_files = NA,
         
         # Getting summary data for the simulation(s)
         if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-            existing_exp_details <- extractExpDetails(i, exp_details = "Summary tab")
+            Deets <- extractExpDetails(i, exp_details = "Summary tab")
         } else {
-            existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
+            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                             "TRUE" = existing_exp_details, 
                             "FALSE" = deannotateDetails(existing_exp_details)) 
             
-            if("data.frame" %in% class(existing_exp_details)){
-                existing_exp_details <- existing_exp_details %>% filter(File == i)
+            if("data.frame" %in% class(Deets)){
+                Deets <- Deets %>% filter(File == i)
                 
-                if(nrow(existing_exp_details) == 0){
-                    existing_exp_details <- extractExpDetails(sim_data_file = i, 
+                if(nrow(Deets) == 0){
+                    Deets <- extractExpDetails(sim_data_file = i, 
                                                exp_details = "Summary tab")
                 }
             }
@@ -411,11 +411,11 @@ pksummary_mult <- function(sim_data_files = NA,
         if("inhibitor 2" %in% compoundsToExtract){
             DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
                                                  exp_details = "Input Sheet")
-            existing_exp_details <- c(as.list(existing_exp_details), DeetsInputSheet)
+            Deets <- c(as.list(Deets), DeetsInputSheet)
         }
         
         # Checking that the file is, indeed, a simulator output file.
-        if(length(existing_exp_details) == 0){
+        if(length(Deets) == 0){
             # Using "warning" instead of "stop" here b/c I want this to be able to
             # pass through to other functions and just skip any files that
             # aren't simulator output.
@@ -426,13 +426,13 @@ pksummary_mult <- function(sim_data_files = NA,
         }
         
         # Only include compounds that are actually present.
-        AllPossCompounds <- c("substrate" = existing_exp_details$Substrate, 
-                              "primary metabolite 1" = existing_exp_details$PrimaryMetabolite1, 
-                              "primary metabolite 2" = existing_exp_details$PrimaryMetabolite2, 
-                              "secondary metabolite" = existing_exp_details$SecondaryMetabolite, 
-                              "inhibitor 1" = existing_exp_details$Inhibitor1, 
-                              "inhibitor 2" = existing_exp_details$Inhibitor2, 
-                              "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1Metabolite)
+        AllPossCompounds <- c("substrate" = Deets$Substrate, 
+                              "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                              "primary metabolite 2" = Deets$PrimaryMetabolite2, 
+                              "secondary metabolite" = Deets$SecondaryMetabolite, 
+                              "inhibitor 1" = Deets$Inhibitor1, 
+                              "inhibitor 2" = Deets$Inhibitor2, 
+                              "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
         AllPossCompounds <- names(AllPossCompounds[complete.cases(AllPossCompounds)])
         
         if(any(compoundsToExtract_orig == "all")){
@@ -461,7 +461,7 @@ pksummary_mult <- function(sim_data_files = NA,
                         PKparameters = PKparameters, 
                         PKorder = PKorder, 
                         sheet_PKparameters = sheet_PKparameters, 
-                        existing_exp_details = existing_exp_details,
+                        existing_exp_details = Deets,
                         mean_type = mean_type,
                         includeCV = includeCV,
                         includeRange = includeRange,

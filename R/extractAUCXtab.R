@@ -8,7 +8,7 @@
 #' @param PKset which set of PK parameters to use. Options: AUC0, AUClast, AUCX
 #' @param UserSpecified TRUE or FALSE for whether this was a user-specified
 #'   sheet, in which case we don't know which dose it is
-#' @param existing_exp_details output from running extractExpDetails on the provided
+#' @param Deets output from running extractExpDetails on the provided
 #'   sim_data_file
 #' @param includeTrialInfo TRUE or FALSE
 #' @param DataCheck DataCheck data.frame
@@ -24,7 +24,7 @@ extractAUCXtab <- function(PKparameters,
                            Sheet, 
                            PKset,
                            UserSpecified,
-                           existing_exp_details, 
+                           Deets, 
                            DataCheck,
                            includeTrialInfo){
     

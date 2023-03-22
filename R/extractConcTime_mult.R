@@ -439,23 +439,23 @@ extractConcTime_mult <- function(sim_data_files = NA,
         
         # Getting summary data for the simulation(s)
         if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-            existing_exp_details <- extractExpDetails(ff, exp_details = "Input Sheet")
+            Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
         } else {
-            existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
+            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                             "TRUE" = existing_exp_details, 
                             "FALSE" = deannotateDetails(existing_exp_details)) 
             
-            if("data.frame" %in% class(existing_exp_details)){
-                existing_exp_details <- existing_exp_details %>% filter(File == sim_data_file)
+            if("data.frame" %in% class(Deets)){
+                Deets <- Deets %>% filter(File == sim_data_file)
                 
-                if(nrow(existing_exp_details == 0)){
-                    existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+                if(nrow(Deets == 0)){
+                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                                exp_details = "Input Sheet")
                 }
             }
         }
         
-        if(length(existing_exp_details) == 0){
+        if(length(Deets) == 0){
             # Using "warning" instead of "stop" here b/c I want this to be able to
             # pass through to other functions and just skip any files that
             # aren't simulator output.
@@ -466,15 +466,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
         }
         
         # Names of compounds requested for checking whether the data exist
-        CompoundCheck <- c("substrate" = existing_exp_details$Substrate,
-                           "inhibitor 1" = existing_exp_details$Inhibitor1,
-                           "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1Metabolite,
-                           "inhibitor 2" = existing_exp_details$Inhibitor2,
-                           "primary metabolite 1" = existing_exp_details$PrimaryMetabolite1,
-                           "primary metabolite 2" = existing_exp_details$PrimaryMetabolite2,
-                           "secondary metabolite" = existing_exp_details$SecondaryMetabolite)
+        CompoundCheck <- c("substrate" = Deets$Substrate,
+                           "inhibitor 1" = Deets$Inhibitor1,
+                           "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite,
+                           "inhibitor 2" = Deets$Inhibitor2,
+                           "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                           "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                           "secondary metabolite" = Deets$SecondaryMetabolite)
         
-        if(existing_exp_details$ADCSimulation){
+        if(Deets$ADCSimulation){
             CompoundCheck <- c(CompoundCheck, 
                                "conjugated protein" = "conjugated protein", 
                                "total protein" = "total protein", 
@@ -533,7 +533,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
                     fromMultFunction = TRUE, 
-                    existing_exp_details = existing_exp_details %>% filter(File == ff))
+                    existing_exp_details = Deets %>% filter(File == ff))
                 
                 # When the particular combination of compound and tissue is not
                 # available in that file, extractConcTime will return an empty
@@ -608,7 +608,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             tissue = j,
                             returnAggregateOrIndiv = returnAggregateOrIndiv, 
                             fromMultFunction = TRUE, 
-                            existing_exp_details = existing_exp_details)
+                            existing_exp_details = Deets)
                     
                     # When the particular combination of compound and
                     # tissue is not available in that file,
@@ -622,13 +622,13 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             MultData[[ff]][[j]][[k]] %>%
                             mutate(File = ff)
                         
-                        MolWts <- c("substrate" = existing_exp_details$MW_sub, 
-                                    "primary metabolite 1" = existing_exp_details$MW_met1, 
-                                    "primary metabolite 2" = existing_exp_details$MW_met2,
-                                    "secondary metabolite" = existing_exp_details$MW_secmet,
-                                    "inhibitor 1"= existing_exp_details$MW_inhib,
-                                    "inhibitor 2" = existing_exp_details$MW_inhib2,
-                                    "inhibitor 1 metabolite" = existing_exp_details$MW_inhib1met)
+                        MolWts <- c("substrate" = Deets$MW_sub, 
+                                    "primary metabolite 1" = Deets$MW_met1, 
+                                    "primary metabolite 2" = Deets$MW_met2,
+                                    "secondary metabolite" = Deets$MW_secmet,
+                                    "inhibitor 1"= Deets$MW_inhib,
+                                    "inhibitor 2" = Deets$MW_inhib2,
+                                    "inhibitor 1 metabolite" = Deets$MW_inhib1met)
                         
                         
                         MultData[[ff]][[j]][[k]] <-
@@ -647,8 +647,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
         
         MultData[[ff]] <- bind_rows(MultData[[ff]])
         
-        # MUST remove existing_exp_details or you can get the wrong info for each file!!!
-        rm(existing_exp_details, CompoundCheck, compoundsToExtract_n, MyObsFile) 
+        # MUST remove Deets or you can get the wrong info for each file!!!
+        rm(Deets, CompoundCheck, compoundsToExtract_n, MyObsFile) 
         
     }
     

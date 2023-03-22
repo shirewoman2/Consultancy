@@ -203,18 +203,18 @@ extractPK <- function(sim_data_file,
     
     # Checking experimental details to only pull details that apply
     if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
-        existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+        Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                    exp_details = "Summary tab")
     } else {
-        existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
+        Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                         "TRUE" = existing_exp_details, 
                         "FALSE" = deannotateDetails(existing_exp_details))
         
-        if("data.frame" %in% class(existing_exp_details)){
-            existing_exp_details <- existing_exp_details %>% filter(File == sim_data_file)
+        if("data.frame" %in% class(Deets)){
+            Deets <- Deets %>% filter(File == sim_data_file)
             
-            if(nrow(existing_exp_details == 0)){
-                existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+            if(nrow(Deets == 0)){
+                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                            exp_details = "Summary tab")
             }
         }
@@ -226,13 +226,13 @@ extractPK <- function(sim_data_file,
     if("inhibitor 2" %in% compoundToExtract){
         DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
                                              exp_details = "Input Sheet")
-        existing_exp_details <- c(as.list(existing_exp_details), DeetsInputSheet)
+        Deets <- c(as.list(Deets), DeetsInputSheet)
     }
     
     # extractExpDetails will check whether the Excel file provided was, in
     # fact, a Simulator output file and return a list of length 0 if not.
     # Checking for that here.
-    if(length(existing_exp_details) == 0){
+    if(length(Deets) == 0){
         # warning(paste0("The file ", sim_data_file, 
         #                " is not a Simulator output file and will be skipped."))
         return(list())
@@ -261,14 +261,14 @@ extractPK <- function(sim_data_file,
         "inhibitor 2" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 2\\)$")][1],
         "inhibitor 1 metabolite" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 1 Met\\)$")][1])
     
-    if(existing_exp_details$Species != "human" & compoundToExtract == "substrate"){
+    if(Deets$Species != "human" & compoundToExtract == "substrate"){
         # If it's from Simcyp Discovery, there's only one AUC sheet and
         # it's either for the only dose in a SD sim or the last dose for
         # a MD sim. Not sure about the regular Simcyp Animal, though. 
         Tab_AUC <- SheetNames[which(str_detect(SheetNames, "AUC"))]
     }
     
-    SimV21plus <- as.numeric(str_extract(existing_exp_details$SimulatorVersion, "[0-9]{2}")) >= 21
+    SimV21plus <- as.numeric(str_extract(Deets$SimulatorVersion, "[0-9]{2}")) >= 21
     
     if(SimV21plus){
         Tab_first <- SheetNames[
@@ -435,7 +435,7 @@ extractPK <- function(sim_data_file,
     }
     
     # Filtering out irrelevant PK
-    if(existing_exp_details$PopRepSim == "Yes"){
+    if(Deets$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
@@ -443,7 +443,7 @@ extractPK <- function(sim_data_file,
         return(list())
     }
     
-    if(is.na(existing_exp_details$Inhibitor1)){
+    if(is.na(Deets$Inhibitor1)){
         PKparameters <- 
             PKparameters[PKparameters %in% 
                              AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenEffectorPresent == FALSE]]
@@ -451,13 +451,13 @@ extractPK <- function(sim_data_file,
     
     if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
                           "primary metabolite 2", "secondary metabolite") &
-        existing_exp_details$Regimen_sub == "Single Dose") |
-       (complete.cases(existing_exp_details$Inhibitor1) && 
+        Deets$Regimen_sub == "Single Dose") |
+       (complete.cases(Deets$Inhibitor1) && 
         compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
-        && existing_exp_details$Regimen_inhib == "Single Dose") |
-       (complete.cases(existing_exp_details$Inhibitor2) &&
+        && Deets$Regimen_inhib == "Single Dose") |
+       (complete.cases(Deets$Inhibitor2) &&
         compoundToExtract %in% c("inhibitor 2") && 
-        existing_exp_details$Regimen_inhib2 == "Single Dose")){
+        Deets$Regimen_inhib2 == "Single Dose")){
         
         PKparameters <- 
             PKparameters[PKparameters %in% 
@@ -475,13 +475,13 @@ extractPK <- function(sim_data_file,
     # from sheets where they *are* so labeled. 
     if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
                           "primary metabolite 2", "secondary metabolite") &
-        existing_exp_details$Regimen_sub == "Multiple Dose") |
-       (complete.cases(existing_exp_details$Inhibitor1) && 
+        Deets$Regimen_sub == "Multiple Dose") |
+       (complete.cases(Deets$Inhibitor1) && 
         compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
-        && existing_exp_details$Regimen_inhib == "Multiple Dose") |
-       (complete.cases(existing_exp_details$Inhibitor2) &&
+        && Deets$Regimen_inhib == "Multiple Dose") |
+       (complete.cases(Deets$Inhibitor2) &&
         compoundToExtract %in% c("inhibitor 2") && 
-        existing_exp_details$Regimen_inhib2 == "Multiple Dose")){
+        Deets$Regimen_inhib2 == "Multiple Dose")){
         
         ParamAUC <- setdiff(ParamAUC,
                             c("AUCt_ratio_dose1", "AUCt_dose1", 
@@ -603,7 +603,7 @@ extractPK <- function(sim_data_file,
                 filter(Sheet == "AUC" & PKparameter == i) %>% 
                 select(PKparameter, SearchText, AUCtab_StartColText)
             
-            if(existing_exp_details$Species != "human" & i == "HalfLife_dose1"){
+            if(Deets$Species != "human" & i == "HalfLife_dose1"){
                 ToDetect <- data.frame(PKparameter = "HalfLife_dose1", 
                                        SearchText = "t 1/2 ", 
                                        AUCtab_StartColText = "^AUC.*integrated from")
@@ -850,7 +850,7 @@ extractPK <- function(sim_data_file,
                                    Sheet = Tab_first, 
                                    PKset = "AUC0",
                                    UserSpecified = FALSE,
-                                   existing_exp_details = existing_exp_details, 
+                                   Deets = Deets, 
                                    DataCheck = DataCheck,
                                    includeTrialInfo = includeTrialInfo)
         
@@ -890,7 +890,7 @@ extractPK <- function(sim_data_file,
                                       Sheet = Tab_last, 
                                       PKset = "AUClast",
                                       UserSpecified = FALSE,
-                                      existing_exp_details = existing_exp_details, 
+                                      Deets = Deets, 
                                       DataCheck = DataCheck,
                                       includeTrialInfo = includeTrialInfo)
         
@@ -923,7 +923,7 @@ extractPK <- function(sim_data_file,
                                    Sheet = sheet, 
                                    PKset = "AUCX",
                                    UserSpecified = TRUE,
-                                   existing_exp_details = existing_exp_details, 
+                                   Deets = Deets, 
                                    DataCheck = DataCheck,
                                    includeTrialInfo = includeTrialInfo)
         
@@ -953,7 +953,7 @@ extractPK <- function(sim_data_file,
                            str_c(PKparameters_Abs, collapse = ", "),
                            ". None of these parameters can be extracted."),
                     call. = FALSE)
-        } else if(existing_exp_details$Species != "human"){
+        } else if(Deets$Species != "human"){
             warning("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet.", 
                     call. = FALSE)
         } else {
@@ -1645,10 +1645,10 @@ extractPK <- function(sim_data_file,
     
     if(returnExpDetails){
         if(class(Out)[1] == "list"){
-            Out[["ExpDetails"]] <- existing_exp_details
+            Out[["ExpDetails"]] <- Deets
         } else {
             Out <- list(Out)
-            Out[[2]] <- existing_exp_details
+            Out[[2]] <- Deets
             names(Out) <- c(returnAggregateOrIndiv, "ExpDetails")
         }
     }

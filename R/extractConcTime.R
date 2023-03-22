@@ -265,27 +265,27 @@ extractConcTime <- function(sim_data_file,
     
     # Getting summary data for the simulation(s)
     if(fromMultFunction | ("logical" %in% class(existing_exp_details) == FALSE)){
-        existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
+        Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                         "TRUE" = existing_exp_details, 
                         "FALSE" = deannotateDetails(existing_exp_details))
         
-        if("data.frame" %in% class(existing_exp_details)){
-            existing_exp_details <- existing_exp_details %>% filter(File == sim_data_file)
+        if("data.frame" %in% class(Deets)){
+            Deets <- Deets %>% filter(File == sim_data_file)
             
-            if(nrow(existing_exp_details == 0)){
-                existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+            if(nrow(Deets == 0)){
+                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                            exp_details = "Input Sheet")
             }
         }
         
     } else {
-        existing_exp_details <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+        Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
     } 
     
     # # Checking that the file is, indeed, a simulator output file. <-- This is
     # # redundant b/c we need to check sheet names anyway, so that's where we're
     # # checking that it's a simulator output file.
-    # if(length(existing_exp_details) == 0){
+    # if(length(Deets) == 0){
     #     # Using "warning" instead of "stop" here b/c I want this to be able to
     #     # pass through to other functions and just skip any files that
     #     # aren't simulator output.
@@ -295,7 +295,7 @@ extractConcTime <- function(sim_data_file,
     #     return(list())
     # }
     
-    if(existing_exp_details$PopRepSim == "Yes"){
+    if(Deets$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
@@ -303,11 +303,11 @@ extractConcTime <- function(sim_data_file,
     }
     
     # Noting whether this was animal data
-    Animal <- str_detect(tolower(existing_exp_details$Species), "monkey|rat|mouse|dog|beagle")
+    Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
     Animal <- ifelse(is.na(Animal), FALSE, Animal)
     
     # Effector present?
-    EffectorPresent <- complete.cases(existing_exp_details$Inhibitor1)
+    EffectorPresent <- complete.cases(Deets$Inhibitor1)
     if(EffectorPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor")) &
        fromMultFunction == FALSE){
         # Note: Asking for a non-existant effector from the mult function will
@@ -315,18 +315,18 @@ extractConcTime <- function(sim_data_file,
         stop("There are no inhibitor data in the simulator output file supplied. Please either submit a different output file or request concentration-time data for a substrate or metabolite.",
              call. = FALSE)
     }
-    AllEffectors <- c(existing_exp_details$Inhibitor1, existing_exp_details$Inhibitor2,
-                      existing_exp_details$Inhibitor1Metabolite)
+    AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
+                      Deets$Inhibitor1Metabolite)
     AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
     
     # Noting all compounds present
-    AllCompounds <- c("substrate" = existing_exp_details$Substrate,
-                      "primary metabolite 1" = existing_exp_details$PrimaryMetabolite1, 
-                      "primary metabolite 2" = existing_exp_details$PrimaryMetabolite2,
-                      "secondary metabolite" = existing_exp_details$SecondaryMetabolite,
-                      "inhibitor 1" = existing_exp_details$Inhibitor1,
-                      "inhibitor 2" = existing_exp_details$Inhibitor2,
-                      "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1Metabolite)
+    AllCompounds <- c("substrate" = Deets$Substrate,
+                      "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                      "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                      "secondary metabolite" = Deets$SecondaryMetabolite,
+                      "inhibitor 1" = Deets$Inhibitor1,
+                      "inhibitor 2" = Deets$Inhibitor2,
+                      "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
     AllCompounds <- AllCompounds[complete.cases(AllCompounds)]
     AllCompoundsID <- names(AllCompounds)
     
@@ -336,9 +336,9 @@ extractConcTime <- function(sim_data_file,
     # match both "EFFECTOR1" and "EFFECTOR1METABOLITE".
     Eff_DF <- data.frame(CompoundID = c("inhibitor 1", "inhibitor 2",
                                         "inhibitor 1 metabolite"),
-                         Compound = c(existing_exp_details$Inhibitor1,
-                                      existing_exp_details$Inhibitor2,
-                                      existing_exp_details$Inhibitor1Metabolite), 
+                         Compound = c(Deets$Inhibitor1,
+                                      Deets$Inhibitor2,
+                                      Deets$Inhibitor1Metabolite), 
                          COMPOUND = c("EFFECTOR1INHIB", "EFFECTOR2", 
                                       "EFFECTOR1MET"))
     COMPOUND_regex <- str_c(Eff_DF %>% filter(complete.cases(Compound)) %>%
@@ -517,46 +517,46 @@ extractConcTime <- function(sim_data_file,
     # If "interaction" or "Csys" or other similar strings are part of the name
     # of any of the compounds, that messes up the regex. Substituting to
     # standardize the compound names.
-    sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", existing_exp_details$Substrate),
+    sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Substrate),
                             "SUBSTRATE", sim_data_xl$...1)
     
-    if(complete.cases(existing_exp_details$PrimaryMetabolite1)){
-        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", existing_exp_details$PrimaryMetabolite1),
+    if(complete.cases(Deets$PrimaryMetabolite1)){
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite1),
                                 "PRIMET1", sim_data_xl$...1)
     } else if("primary metabolite 1" %in% compoundToExtract){
         compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 1")
     }
     
-    if(complete.cases(existing_exp_details$PrimaryMetabolite2)){
-        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", existing_exp_details$PrimaryMetabolite2),
+    if(complete.cases(Deets$PrimaryMetabolite2)){
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite2),
                                 "PRIMET2", sim_data_xl$...1)
     } else if("primary metabolite 2" %in% compoundToExtract){
         compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 2")
     }
     
-    if(complete.cases(existing_exp_details$SecondaryMetabolite)){
-        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", existing_exp_details$SecondaryMetabolite),
+    if(complete.cases(Deets$SecondaryMetabolite)){
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$SecondaryMetabolite),
                                 "SECMET", sim_data_xl$...1)
     } else if("secondary metabolite" %in% compoundToExtract){
         compoundToExtract <- setdiff(compoundToExtract, "secondary metabolite")
     }
     
-    if(complete.cases(existing_exp_details$Inhibitor1)){
-        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", existing_exp_details$Inhibitor1),
+    if(complete.cases(Deets$Inhibitor1)){
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1),
                                 "EFFECTOR1INHIB", sim_data_xl$...1)
     } else if("inhibitor 1" %in% compoundToExtract){
         compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1")
     }
     
-    if(complete.cases(existing_exp_details$Inhibitor2)){
-        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", existing_exp_details$Inhibitor2),
+    if(complete.cases(Deets$Inhibitor2)){
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor2),
                                 "EFFECTOR2", sim_data_xl$...1)
     } else if("inhibitor 2" %in% compoundToExtract){
         compoundToExtract <- setdiff(compoundToExtract, "inhibitor 2")
     }
     
-    if(complete.cases(existing_exp_details$Inhibitor1Metabolite)){
-        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", existing_exp_details$Inhibitor1Metabolite),
+    if(complete.cases(Deets$Inhibitor1Metabolite)){
+        sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1Metabolite),
                                 "EFFECTOR1MET", sim_data_xl$...1)
     } else if("inhibitor 1 metabolite" %in% compoundToExtract){
         compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1 metabolite")
@@ -686,32 +686,32 @@ extractConcTime <- function(sim_data_file,
         
         MyCompound <- 
             switch(paste(m, TissueType),
-                   "substrate systemic" = existing_exp_details$Substrate,
-                   "substrate tissue" = existing_exp_details$Substrate,
-                   "inhibitor 1 systemic" = existing_exp_details$Inhibitor1,
-                   "inhibitor 1 tissue" = existing_exp_details$Inhibitor1,
-                   "inhibitor 2 systemic" = existing_exp_details$Inhibitor2,
-                   "inhibitor 2 tissue" = existing_exp_details$Inhibitor2,
-                   "inhibitor 1 metabolite systemic" = existing_exp_details$Inhibitor1Metabolite,
-                   "inhibitor 2 systemic" = existing_exp_details$Inhibitor2,
-                   "inhibitor 2 tissue" = existing_exp_details$Inhibitor2,
-                   "primary metabolite 1 systemic" = existing_exp_details$PrimaryMetabolite1,
-                   "primary metabolite 2 systemic" = existing_exp_details$PrimaryMetabolite2,
-                   "secondary metabolite systemic" = existing_exp_details$SecondaryMetabolite,
-                   "primary metabolite 1 tissue" = existing_exp_details$PrimaryMetabolite1,
-                   "primary metabolite 2 tissue" = existing_exp_details$PrimaryMetabolite2,
-                   "secondary metabolite tissue" = existing_exp_details$SecondaryMetabolite,
+                   "substrate systemic" = Deets$Substrate,
+                   "substrate tissue" = Deets$Substrate,
+                   "inhibitor 1 systemic" = Deets$Inhibitor1,
+                   "inhibitor 1 tissue" = Deets$Inhibitor1,
+                   "inhibitor 2 systemic" = Deets$Inhibitor2,
+                   "inhibitor 2 tissue" = Deets$Inhibitor2,
+                   "inhibitor 1 metabolite systemic" = Deets$Inhibitor1Metabolite,
+                   "inhibitor 2 systemic" = Deets$Inhibitor2,
+                   "inhibitor 2 tissue" = Deets$Inhibitor2,
+                   "primary metabolite 1 systemic" = Deets$PrimaryMetabolite1,
+                   "primary metabolite 2 systemic" = Deets$PrimaryMetabolite2,
+                   "secondary metabolite systemic" = Deets$SecondaryMetabolite,
+                   "primary metabolite 1 tissue" = Deets$PrimaryMetabolite1,
+                   "primary metabolite 2 tissue" = Deets$PrimaryMetabolite2,
+                   "secondary metabolite tissue" = Deets$SecondaryMetabolite,
                    # inhibitor 1 metabolite concs aren't available in
                    # tissues, are they? Giving the user the Inhibitor
                    # instead b/c I don't think they are.
-                   "inhibitor 1 metabolite tissue" = existing_exp_details$Inhibitor1) %>%
+                   "inhibitor 1 metabolite tissue" = Deets$Inhibitor1) %>%
             as.character()
         
         if(CompoundType == "ADC"){
             MyCompound <- switch(m, 
-                                 "total protein" = paste("total", existing_exp_details$Substrate),
-                                 "conjugated protein" = paste("conjugated", existing_exp_details$Substrate),
-                                 "released payload" = existing_exp_details$PrimaryMetabolite1)
+                                 "total protein" = paste("total", Deets$Substrate),
+                                 "conjugated protein" = paste("conjugated", Deets$Substrate),
+                                 "released payload" = Deets$PrimaryMetabolite1)
         } 
         
         if(EffectorPresent){
@@ -755,7 +755,7 @@ extractConcTime <- function(sim_data_file,
                 # If this is a tissue, NumCheck will have length 0
                 if(length(NumCheck) == 0){
                     NumCheck <- "Inh 1"
-                    names(NumCheck) <- existing_exp_details$Inhibitor1
+                    names(NumCheck) <- Deets$Inhibitor1
                 }
                 
                 rm(temp, TimeRow, FirstBlank, NamesToCheck)
@@ -1579,19 +1579,19 @@ extractConcTime <- function(sim_data_file,
         
         # Setting up some names of observed data for use later
         ObsCompounds <-
-            c("substrate" = existing_exp_details$Substrate,
-              "inhibitor 1" = existing_exp_details$Inhibitor1, 
-              "inhibitor 2" = existing_exp_details$Inhibitor2, 
-              "primary metabolite 1" = existing_exp_details$PrimaryMetabolite1,
-              "primary metabolite 2" = existing_exp_details$PrimaryMetabolite2,
-              "secondary metabolite" = existing_exp_details$SecondaryMetabolite,
-              "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1Metabolite)
+            c("substrate" = Deets$Substrate,
+              "inhibitor 1" = Deets$Inhibitor1, 
+              "inhibitor 2" = Deets$Inhibitor2, 
+              "primary metabolite 1" = Deets$PrimaryMetabolite1,
+              "primary metabolite 2" = Deets$PrimaryMetabolite2,
+              "secondary metabolite" = Deets$SecondaryMetabolite,
+              "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
         
         if(CompoundType == "ADC"){
             ObsCompounds <- c(ObsCompounds, 
-                              "conjugated protein" = paste("conjugated", existing_exp_details$Substrate),
-                              "total protein" = paste("total", existing_exp_details$Substrate), 
-                              "released payload" = existing_exp_details$PrimaryMetabolite1)
+                              "conjugated protein" = paste("conjugated", Deets$Substrate),
+                              "total protein" = paste("total", Deets$Substrate), 
+                              "released payload" = Deets$PrimaryMetabolite1)
         }
         
         AllEffectors_comma <- ifelse(length(AllEffectors) == 0,
@@ -1695,10 +1695,10 @@ extractConcTime <- function(sim_data_file,
                                                                      all(AllCompoundsID == "substrate"),
                                                                  MyCompound, "UNKNOWN"), 
                                                ObsFile = NA,
-                                               Species = ifelse(is.na(existing_exp_details$Species), 
+                                               Species = ifelse(is.na(Deets$Species), 
                                                                 "human", 
                                                                 sub("sim-", "", 
-                                                                    tolower(existing_exp_details$Species))),
+                                                                    tolower(Deets$Species))),
                                                Time_units = SimTimeUnits,
                                                Conc_units = SimConcUnits) %>%
                                         select(-ID, -Indiv_code) %>% 
@@ -1777,14 +1777,14 @@ extractConcTime <- function(sim_data_file,
         }
         
         DosingScenario <- switch(m,
-                                 "substrate" = existing_exp_details$Regimen_sub,
-                                 "primary metabolite 1" = existing_exp_details$Regimen_sub,
-                                 "primary metabolite 2" = existing_exp_details$Regimen_sub,
-                                 "secondary metabolite" = existing_exp_details$Regimen_sub,
-                                 "inhibitor 1" = existing_exp_details$Regimen_inhib,
-                                 "inhibitor 2" = existing_exp_details$Regimen_inhib2,
-                                 "inhibitor 1 metabolite" = existing_exp_details$Regimen_inhib)
-        DosingScenario <- ifelse(CompoundType == "ADC", existing_exp_details$Regimen_sub, DosingScenario)
+                                 "substrate" = Deets$Regimen_sub,
+                                 "primary metabolite 1" = Deets$Regimen_sub,
+                                 "primary metabolite 2" = Deets$Regimen_sub,
+                                 "secondary metabolite" = Deets$Regimen_sub,
+                                 "inhibitor 1" = Deets$Regimen_inhib,
+                                 "inhibitor 2" = Deets$Regimen_inhib2,
+                                 "inhibitor 1 metabolite" = Deets$Regimen_inhib)
+        DosingScenario <- ifelse(CompoundType == "ADC", Deets$Regimen_sub, DosingScenario)
         
         if(adjust_obs_time & DosingScenario == "Multiple Dose" &
            exists("obs_data", inherits = FALSE)){
@@ -1793,8 +1793,8 @@ extractConcTime <- function(sim_data_file,
             # data to match would be the *last* dose. Adjusting the time for the
             # obs data if the user requested that.
             
-            DoseFreq <- existing_exp_details[["DoseInt_sub"]]
-            NumDoses <- existing_exp_details[["NumDoses_sub"]]
+            DoseFreq <- Deets[["DoseInt_sub"]]
+            NumDoses <- Deets[["NumDoses_sub"]]
             LastDoseTime <- DoseFreq * (NumDoses - 1)
             obs_data <- obs_data %>% mutate(Time = Time + LastDoseTime)
         }
@@ -1807,9 +1807,9 @@ extractConcTime <- function(sim_data_file,
     if("aggregate" %in% returnAggregateOrIndiv){
         Data[["agg"]] <- bind_rows(sim_data_mean) %>%
             mutate(Simulated = TRUE, 
-                   Species = ifelse(is.na(existing_exp_details$Species), 
+                   Species = ifelse(is.na(Deets$Species), 
                                     "human", 
-                                    tolower(sub("Sim-", "", existing_exp_details$Species)))) %>%
+                                    tolower(sub("Sim-", "", Deets$Species)))) %>%
             arrange(Trial, Time)
     }
     
@@ -1818,9 +1818,9 @@ extractConcTime <- function(sim_data_file,
             mutate(Simulated = TRUE,
                    Individual = as.character(Individual),
                    Trial = as.character(Trial), 
-                   Species = ifelse(is.na(existing_exp_details$Species), 
+                   Species = ifelse(is.na(Deets$Species), 
                                     "human", 
-                                    tolower(sub("Sim-", "", existing_exp_details$Species)))) %>%
+                                    tolower(sub("Sim-", "", Deets$Species)))) %>%
             arrange(Individual, Time)
     }
     
@@ -1848,49 +1848,49 @@ extractConcTime <- function(sim_data_file,
     # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when
     # the user requests a specific dose.
     MyIntervals <- 
-        c("substrate" = existing_exp_details$DoseInt_sub,
-          "primary metabolite 1" = existing_exp_details$DoseInt_sub,
-          "primary metabolite 2" = existing_exp_details$DoseInt_sub,
-          "secondary metabolite" = existing_exp_details$DoseInt_sub,
-          "inhibitor 1" = ifelse(is.null(existing_exp_details$DoseInt_inhib),
-                                 NA, existing_exp_details$DoseInt_inhib),
-          "inhibitor 1 metabolite" = ifelse(is.null(existing_exp_details$DoseInt_inhib),
-                                            NA, existing_exp_details$DoseInt_inhib),
-          "inhibitor 2" = ifelse(is.null(existing_exp_details$DoseInt_inhib2),
-                                 NA, existing_exp_details$DoseInt_inhib2), 
+        c("substrate" = Deets$DoseInt_sub,
+          "primary metabolite 1" = Deets$DoseInt_sub,
+          "primary metabolite 2" = Deets$DoseInt_sub,
+          "secondary metabolite" = Deets$DoseInt_sub,
+          "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
+                                 NA, Deets$DoseInt_inhib),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
+                                            NA, Deets$DoseInt_inhib),
+          "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
+                                 NA, Deets$DoseInt_inhib2), 
           "UNKNOWN" = NA)
     
     MyStartTimes <- 
-        c("substrate" = existing_exp_details$StartHr_sub,
-          "primary metabolite 1" = existing_exp_details$StartHr_sub,
-          "primarymetabolite 2" = existing_exp_details$StartHr_sub,
-          "secondary metabolite" = existing_exp_details$StartHr_sub,
-          "inhibitor 1" = ifelse(is.null(existing_exp_details$StartHr_inhib), NA,
-                                 existing_exp_details$StartHr_inhib),
-          "inhibitor 2" = ifelse(is.null(existing_exp_details$StartHr_inhib2), NA,
-                                 existing_exp_details$StartHr_inhib2),
-          "inhibitor 1 metabolite" = ifelse(is.null(existing_exp_details$StartHr_inhib), NA,
-                                            existing_exp_details$StartHr_inhib), 
+        c("substrate" = Deets$StartHr_sub,
+          "primary metabolite 1" = Deets$StartHr_sub,
+          "primarymetabolite 2" = Deets$StartHr_sub,
+          "secondary metabolite" = Deets$StartHr_sub,
+          "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                 Deets$StartHr_inhib),
+          "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
+                                 Deets$StartHr_inhib2),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
+                                            Deets$StartHr_inhib), 
           "UNKNOWN" = NA)
     
     MyMaxDoseNum <- 
-        c("substrate" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                               1, existing_exp_details$NumDoses_sub),
-          "primary metabolite 1" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                                          1, existing_exp_details$NumDoses_sub),
-          "primarymetabolite 2" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                                         1, existing_exp_details$NumDoses_sub),
-          "secondary metabolite" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                                          1, existing_exp_details$NumDoses_sub),
-          "inhibitor 1" = ifelse(is.null(existing_exp_details$NumDoses_inhib), NA,
-                                 ifelse(existing_exp_details$Regimen_inhib == "Single Dose", 
-                                        1, existing_exp_details$NumDoses_inhib)),
-          "inhibitor 2" = ifelse(is.null(existing_exp_details$NumDoses_inhib2), NA,
-                                 ifelse(existing_exp_details$Regimen_inhib2 == "Single Dose", 
-                                        1, existing_exp_details$NumDoses_inhib2)),
-          "inhibitor 1 metabolite" = ifelse(is.null(existing_exp_details$NumDoses_inhib), NA,
-                                            ifelse(existing_exp_details$Regimen_inhib == "Single Dose", 
-                                                   1, existing_exp_details$NumDoses_inhib)), 
+        c("substrate" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                               1, Deets$NumDoses_sub),
+          "primary metabolite 1" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                          1, Deets$NumDoses_sub),
+          "primarymetabolite 2" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                         1, Deets$NumDoses_sub),
+          "secondary metabolite" = ifelse(Deets$Regimen_sub == "Single Dose", 
+                                          1, Deets$NumDoses_sub),
+          "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                 ifelse(Deets$Regimen_inhib == "Single Dose", 
+                                        1, Deets$NumDoses_inhib)),
+          "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
+                                 ifelse(Deets$Regimen_inhib2 == "Single Dose", 
+                                        1, Deets$NumDoses_inhib2)),
+          "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
+                                            ifelse(Deets$Regimen_inhib == "Single Dose", 
+                                                   1, Deets$NumDoses_inhib)), 
           "UNKNOWN" = NA)
     
     # Converting data to numeric while also retaining names
@@ -1917,10 +1917,10 @@ extractConcTime <- function(sim_data_file,
                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
     
     # Checking for any custom dosing
-    if(any(str_detect(names(existing_exp_details), "CustomDosing"))){
+    if(any(str_detect(names(Deets), "CustomDosing"))){
         CDCompounds <-
             data.frame(CompoundSuffix = 
-                           str_extract(names(existing_exp_details)[str_detect(names(existing_exp_details),
+                           str_extract(names(Deets)[str_detect(names(Deets),
                                                                "CustomDosing")],
                                        "_sub|_inhib(2)?")) %>% 
             mutate(CompoundID = recode(CompoundSuffix, "_sub" = "substrate", 
@@ -1936,7 +1936,7 @@ extractConcTime <- function(sim_data_file,
                 
                 # message(paste("CDCompounds$CompoundID j =", j))
                 Dosing[[j]] <-
-                    existing_exp_details[[paste0("CustomDosing", 
+                    Deets[[paste0("CustomDosing", 
                                   CDCompounds$CompoundSuffix[CDCompounds$CompoundID == j])]] %>% 
                     mutate(CompoundID = CDCompounds$CompoundID[CDCompounds$CompoundID == j])
                 

@@ -44,10 +44,10 @@ getSectionInfo <- function(report_input_file = NA,
         sim_data_file <- paste0(dirname(report_input_file), "/", sim_data_file)
     }
     
-    existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file)
+    Deets <- extractExpDetails(sim_data_file = sim_data_file)
     
     # Checking whether DDI involved.
-    DDI <- any(complete.cases(c(existing_exp_details$Inhibitor1, existing_exp_details$Inhibitor2)))    
+    DDI <- any(complete.cases(c(Deets$Inhibitor1, Deets$Inhibitor2)))    
     
     if(DDI){
         
@@ -90,23 +90,23 @@ getSectionInfo <- function(report_input_file = NA,
     }
     
     # Tidying up the names used for populations so that they look nice in report
-    Population <- tidyPop(existing_exp_details$Population)
-    NumSimSubj <- existing_exp_details[["NumSubjTrial"]] * existing_exp_details[["NumTrials"]]
-    DoseFreq <- switch(as.character(existing_exp_details[["DoseInt_sub"]]),
+    Population <- tidyPop(Deets$Population)
+    NumSimSubj <- Deets[["NumSubjTrial"]] * Deets[["NumTrials"]]
+    DoseFreq <- switch(as.character(Deets[["DoseInt_sub"]]),
                        "12" = "BID",
                        "24" = "QD",
                        "8" = "TID",
                        "Single Dose" = "single dose", 
                        "custom dosing" = "custom dosing")
-    DoseFreq <- ifelse(is.na(existing_exp_details[["DoseInt_sub"]]), "single dose", DoseFreq)
+    DoseFreq <- ifelse(is.na(Deets[["DoseInt_sub"]]), "single dose", DoseFreq)
     
     if(DDI){
         
-        existing_exp_details[["Inhibitor1"]] <- prettify_compound_name(existing_exp_details[["Inhibitor1"]])
-        existing_exp_details[["Inhibitor2"]] <- prettify_compound_name(existing_exp_details[["Inhibitor2"]])
+        Deets[["Inhibitor1"]] <- prettify_compound_name(Deets[["Inhibitor1"]])
+        Deets[["Inhibitor2"]] <- prettify_compound_name(Deets[["Inhibitor2"]])
         
-        if(length(existing_exp_details[["DoseInt_inhib"]]) > 0){
-            DoseFreq_inhib <- switch(as.character(existing_exp_details[["DoseInt_inhib"]]),
+        if(length(Deets[["DoseInt_inhib"]]) > 0){
+            DoseFreq_inhib <- switch(as.character(Deets[["DoseInt_inhib"]]),
                                      "12" = "BID",
                                      "24" = "QD",
                                      "8" = "TID",
@@ -118,10 +118,10 @@ getSectionInfo <- function(report_input_file = NA,
         
         # Days inhibitor was administered
         StartDoseDay_inhib <- as.numeric(sub("Day ", "",
-                                             str_split(existing_exp_details[["StartDayTime_inhib"]], ", ")[[1]][1]))
+                                             str_split(Deets[["StartDayTime_inhib"]], ", ")[[1]][1]))
         
         LastDoseDay_inhib <-
-            (existing_exp_details[["DoseInt_inhib"]] * existing_exp_details[["NumDoses_inhib"]])/24
+            (Deets[["DoseInt_inhib"]] * Deets[["NumDoses_inhib"]])/24
         
     } else {
         DoseFreq_inhib <- NA
@@ -132,10 +132,10 @@ getSectionInfo <- function(report_input_file = NA,
     # Day substrate was administered
     StartDoseDay_sub <-
         as.numeric(sub("Day ", "",
-                       str_split(existing_exp_details[["StartDayTime_sub"]], ", ")[[1]][1]))
+                       str_split(Deets[["StartDayTime_sub"]], ", ")[[1]][1]))
     
     # Putting everything together
-    sectionInfo <- c(existing_exp_details, Population,
+    sectionInfo <- c(Deets, Population,
                      "sim_data_file" = sim_data_file,
                      "NumSimSubj" = NumSimSubj,
                      "DoseFreq" = DoseFreq,
