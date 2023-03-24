@@ -246,60 +246,72 @@ extractObsConcTime <- function(obs_data_file){
     obs_data <- obs_data_xl[(HeaderRowNum+1):nrow(obs_data_xl),
                             1:length(MainColNames)]
     
+    # Figuring version of simulator b/c col names differ based on that
     if(Animal){
+        SimVersion <- "animal"
         names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting", 
                              "DoseAmount", "InfDuration", "Weight_kg")
         obs_data$SmokingStatus <- NA
         obs_data$Species <- tolower(as.character(
             obs_data_xl[MetaRowNum+1, which(MetaRow == "Species")]))
         
-    } else {
-        if(any(str_detect(MainColNames, "Period"), na.rm = TRUE)){
-            if(any(str_detect(MainColNames, "Placenta"), na.rm = TRUE)){
-                # v21
+    } else if(any(str_detect(MainColNames, "Period"), na.rm = TRUE)){
+        if(any(str_detect(MainColNames, "SD/SE"), na.rm = TRUE)){   
+            SimVersion <- "V22"
+            
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                 "SD_SE",
+                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "InfDuration", "InjectionSite",
+                                 "Period", "Age", "Weight_kg",
+                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus", "GestationalAge_wk", 
+                                 "PlacentaVol_L", "FetalWt_kg")
+        } else if(any(str_detect(MainColNames, "Placenta"), na.rm = TRUE)){
+            SimVersion <- "V21"
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "InfDuration", "Period", "Age", "Weight_kg",
+                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus", "GestationalAge_wk", 
+                                 "PlacentaVol_L", "FetalWt_kg")
+            
+        } else {
+            SimVersion <- "V20"
+            if(any(str_detect(MainColNames, "Gestational Age"))){
                 names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
                                      "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
                                      "InfDuration", "Period", "Age", "Weight_kg",
                                      "Height_cm", "Sex", "SerumCreatinine_umolL",
                                      "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
                                      "SmokingStatus", "GestationalAge_wk", 
-                                     "PlacentaVol_L", "FetalWt_kg")
+                                     "FetalWt_kg")
                 
             } else {
-                # V20
-                if(any(str_detect(MainColNames, "Gestational Age"))){
-                    names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                         "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                                         "InfDuration", "Period", "Age", "Weight_kg",
-                                         "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                         "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                         "SmokingStatus", "GestationalAge_wk", 
-                                         "FetalWt_kg")
-                    
-                } else {
-                    
-                    # v19
-                    names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                         "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                                         "InfDuration", "Period", "Age", "Weight_kg",
-                                         "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                         "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                         "SmokingStatus")
-                }
+                
+                SimVersion <- "V19"
+                names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                                     "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                     "InfDuration", "Period", "Age", "Weight_kg",
+                                     "Height_cm", "Sex", "SerumCreatinine_umolL",
+                                     "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                     "SmokingStatus")
             }
-        } else {
-            # pre V19 
-            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
-                                 "InfDuration", "Age", "Weight_kg",
-                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                 "SmokingStatus")
-            
         }
+    } else {
+        SimVersion <- "preV19"
+        names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
+                             "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                             "InfDuration", "Age", "Weight_kg",
+                             "Height_cm", "Sex", "SerumCreatinine_umolL",
+                             "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                             "SmokingStatus")
         
-        obs_data$Species <- "human"
     }
+    
+    obs_data$Species <- "human"
     
     obs_data <- obs_data %>%
         filter(complete.cases(DVID)) %>%
