@@ -834,6 +834,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
             }
             
             MultObsData <- bind_rows(MultObsData)
+            MultObsData <- match_units(DF_to_adjust = MultObsData,
+                                       goodunits = list("Conc_units" = conc_units_to_use,
+                                                        "Time_units" = time_units_to_use))
         }
         
         ct_dataframe <- bind_rows(ct_dataframe, MultObsData)
