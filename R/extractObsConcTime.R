@@ -319,6 +319,7 @@ extractObsConcTime <- function(obs_data_file){
         mutate(CompoundID_obsfile = CompoundCode[as.character(DVID)],
                CompoundID = ObsCompoundIDs[CompoundID_obsfile],
                Inhibitor = ObsEffectors[CompoundID_obsfile],
+               Simulated = FALSE,
                Tissue = Tissue[CompoundID_obsfile],
                ObsFile = obs_data_file,
                SmokingStatus = Smoke[SmokingStatus],

@@ -447,13 +447,9 @@ pksummary_table <- function(sim_data_file = NA,
                 "File"
             
             
-        } else if(class(observed_PK)[1] == "numeric"){ # This is when user has supplied a named numeric vector
+        } else if("data.frame" %in% class(observed_PK) == FALSE){ # This is when user has supplied a named numeric vector
             
-            # Converting named vector to data.frame b/c everything else is set
-            # up as a data.frame.
-            if(class(observed_PK)[1] == "numeric"){
-                observed_PK <- as.data.frame(t(observed_PK))
-            }
+            observed_PK <- as.data.frame(t(observed_PK))
         }
     }
     
@@ -461,6 +457,41 @@ pksummary_table <- function(sim_data_file = NA,
     # either was a data.frame at the outset, it has been created by reading an
     # Excel or csv file for observed data, or it came from a report input form.
     if("data.frame" %in% class(observed_PK)){
+        
+        # Reshape to wide format if necessary
+        if(all(c("PKparameter", "Value") %in% names(observed_PK))){
+            observed_PK <- observed_PK %>% 
+                select(any_of(c("File", "PKparameter", "Value"))) %>%  # Return to this later to add options for including variability
+                # Only keeping parameters that we've set up data extraction for,
+                # and only keeping complete.cases of obs data
+                filter(PKparameter %in% AllPKParameters$PKparameter &
+                           complete.cases(Value))
+            
+            if("File" %in% names(observed_PK)){
+                observed_PK <- observed_PK %>% filter(str_detect(File, sim_data_file)) # ok for user to drop file extension; this should still work
+            } else {
+                # If File is not in the column names, then assume that it's the
+                # same as sim_data_file anyway.
+                observed_PK$File <- sim_data_file
+            }
+            
+            # Checking that they haven't provided more than one value for a
+            # given PK parameter for this sim_data_file. If they have, we don't
+            # know which observed data to compare.
+            ObsFileCheck <- observed_PK %>% 
+                unique() %>% group_by(File, PKparameter) %>% 
+                summarize(NVals = n())
+            
+            if(any(ObsFileCheck$NVals > 1)){
+                warning("You have supplied more than one value for a given PK parameter for this simulator output file, so we don't know which one to use. We will not be able to include observed data in your table.", 
+                        call. = FALSE)
+                observed_PK <- data.frame()
+            } else {
+                observed_PK <- observed_PK %>% 
+                    pivot_wider(names_from = PKparameter, 
+                                values_from = Value)   
+            }
+        }
         
         # There should be only 1 row in observed_PK, so removing any extras.
         if("File" %in% names(observed_PK) & nrow(observed_PK) > 1 & 
@@ -525,8 +556,16 @@ pksummary_table <- function(sim_data_file = NA,
         
         # If user provided observed PK, then make sure those PK parameters are
         # included in the PK to extract.
-        PKparameters <- unique(union(PKparameters, names(MyObsPK)))
+        PKparameters <- sort(unique(union(PKparameters, names(MyObsPK))))
         
+    }
+    
+    # From here down, function is set up for PKparameters to be a data.frame or,
+    # if the user did not provide observed PK, then a logical. Setting that for
+    # when something went wrong with the data they supplied for observed PK,
+    # making the observed PK data.frame just have a single column, "File".
+    if(ncol(observed_PK) == 1){
+        observed_PK <- NA
     }
     
     # If user specified PKorder, then use *either* PKparameters OR observed PK
@@ -665,9 +704,12 @@ pksummary_table <- function(sim_data_file = NA,
         if("logical" %in% class(sectionInfo)){ # sectionInfo is logical if they did not supply a report input form
             if("data.frame" %in% class(observed_PK)){
                 # If user supplies an observed file, then pull the parameters
-                # they want to match. If user specified "_first" instead of
-                # "_dose1", make that work, too.
-                PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
+                # they want to match. 
+                if("")
+                    
+                    # If user specified "_first" instead of "_dose1", make that
+                    # work, too.
+                    PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
                 
             } else {
                 # If the user didn't specify an observed file, didn't list
