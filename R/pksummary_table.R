@@ -447,7 +447,7 @@ pksummary_table <- function(sim_data_file = NA,
                 "File"
             
             
-        } else if("data.frame" %in% class(observed_PK) == FALSE){ # This is when user has supplied a named numeric vector
+        } else if("numeric" %in% class(observed_PK)){ # This is when user has supplied a named numeric vector
             
             observed_PK <- as.data.frame(t(observed_PK))
         }
@@ -564,7 +564,8 @@ pksummary_table <- function(sim_data_file = NA,
     # if the user did not provide observed PK, then a logical. Setting that for
     # when something went wrong with the data they supplied for observed PK,
     # making the observed PK data.frame just have a single column, "File".
-    if(ncol(observed_PK) == 1){
+    if("data.frame" %in% class(observed_PK) &&
+       ncol(observed_PK) == 1){
         observed_PK <- NA
     }
     
