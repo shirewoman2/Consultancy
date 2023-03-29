@@ -19,6 +19,8 @@ inductFit(
   color_set = "default",
   y_axis_limits = NA,
   hline_foldinduct1 = FALSE,
+  vert_line = NA,
+  Imaxu_line = NA,
   rounding = NA,
   graph_title = NA,
   graph_title_size = 14,
@@ -136,6 +138,18 @@ Numeric data should not be in quotes.)}
 \item{hline_foldinduct1}{TRUE or FALSE (default) on whether to include a
 dotted red line where the fold induction = 1.}
 
+\item{vert_line}{optionally include a vertical dotted red line at some
+concentration. Use a numeric value for the concentration you want or leave
+as NA (default) for no vertical line.}
+
+\item{Imaxu_line}{optionally specify a value for 30*Imax,u (see p. 5 USFDA
+Guidance (2020) "In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme
+and Transporter Mediated Drug Interactions") and this will create red
+dotted line that goes down from the top of the graph at that concentration
+and then across to the y axis at the 2-fold change level. Points within
+that upper left corner are a potential concern for induction. Use a numeric
+value for the concentration you want or leave as NA (default) for no line.}
+
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according
 to Simcyp Consultancy Team standards: to three significant figures when the
@@ -177,17 +191,6 @@ TO WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue,
 not an R issue. If you try to save on SharePoint, you will get a warning
 that R will save your file instead to your local (not OneDrive) Documents
 folder.}
-
-\item{vert_line}{optionally include a vertical dotted red line at some
-concentration. Use a numeric value for the concentration you want or leave
-as NA (default) for no vertical line.}
-
-\item{Imaxu_line}{optionally specify a value for 30*Imax,u (see p. 5 USFDA
-Guidance (2020) "In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme
-and Transporter Mediated Drug Interactions") and this will create red
-dotted line that goes up from the x axis at that concentration and then
-across to the y axis at the 2-fold change level. Use a numeric value for
-the concentration you want or leave as NA (default) for no line.}
 }
 \value{
 Returns a list of \describe{ \item{Fit}{the fitted parameters}
