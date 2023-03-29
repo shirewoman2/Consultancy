@@ -694,7 +694,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             }
             
             for(ff in setdiff(bind_rows(ObsAssign) %>% pull(ObsFile),
-                              unique(ct_dataframe$ObsFile))){
+                              unique(MultData$ObsFile))){
                 MultObsData[[ff]] <- extractObsConcTime(ff)
             }
         }
@@ -722,7 +722,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # compound IDs match the simulated data. We're going to assume that the
             # dose timings are the same as in the simulated data.
             ObsCompoundID <- MultObsData %>% pull(CompoundID) %>% unique()
-            SimDoseInfo <- bind_rows(ct_dataframe, MultData) %>%
+            SimDoseInfo <- MultData %>%
                 filter(CompoundID %in% ObsCompoundID) %>% 
                 group_by(CompoundID, Inhibitor, DoseInt, DoseNum) %>% 
                 summarize(TimeRounded = round(min(Time)))
@@ -789,16 +789,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     
                     if(all(is.na(SimDoseInfo_list[[i]]$DoseInt)) &&
                        nrow(SimDoseInfo_list[[i]]) == 1){
-                        # This is when it was a single dose and there was only one
-                        # dosing time: t = 0. If there's more than 1 row here for
-                        # SimDoseInfo_list[[i]], then everything was single dose but
-                        # dosing started at different times. Not setting DoseNum
-                        # here then b/c that's tricky to figure out which start time
-                        # matches which observed file and not sure it's worth the
-                        # time trying to figure it out. For the other scenario, when
-                        # there's only one start time, setting dose number to 1 for
-                        # any times after dose administration and to 0 for any time
-                        # before then.
+                        # This is when it was a single dose and there was only
+                        # one dosing time: t = 0. If there's more than 1 row
+                        # here for SimDoseInfo_list[[i]], then everything was
+                        # single dose but dosing started at different times. Not
+                        # setting DoseNum here then b/c that's tricky to figure
+                        # out which start time matches which observed file and
+                        # not sure it's worth the time trying to figure it out.
+                        # For the other scenario, when there's only one start
+                        # time, setting dose number to 1 for any times after
+                        # dose administration and to 0 for any time before then.
                         DoseTime <- SimDoseInfo_list[[i]]$TimeRounded
                         MultObsData[[i]] <- MultObsData[[i]] %>% 
                             mutate(DoseNum = ifelse(Time >= {{DoseTime}}, 1, 0))
@@ -810,11 +810,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             summarize(NumScenarios = n()) %>% pull(NumScenarios)
                         
                         if(all(NumScenarios == 1)){
-                            # This is the scenario when there were multiple doses. The
-                            # dosing interval doesn't have to be the same each time (ok
-                            # if it's custom dosing), but there must be only one value
-                            # for TimeRounded for each DoseNum for us to be able to
-                            # assign which observed data went with which dose number.
+                            # This is the scenario when there were multiple
+                            # doses. The dosing interval doesn't have to be the
+                            # same each time (ok if it's custom dosing), but
+                            # there must be only one value for TimeRounded for
+                            # each DoseNum for us to be able to assign which
+                            # observed data went with which dose number.
                             
                             Check <- SimDoseInfo_list[[i]] %>% group_by(DoseNum) %>% 
                                 summarise(SingleDoseTime = n() == 1)
@@ -856,11 +857,33 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
         }
         
+        # If there were only one observed file and it wasn't named with a
+        # specific simulated file, then it presumably should go with ALL the sim
+        # files that we just extracted, so setting that file for "ObsFile" in
+        # the simulated data.
+        if(length(obs_to_sim_assignment) == 1 &
+           is.null(names(obs_to_sim_assignment))){
+            MultData$ObsFile <- obs_to_sim_assignment
+            
+            # For the simulated files we just added, adding one copy of observed
+            # data per File that doesn't already have it. Note that this only
+            # happens if there was only one file listed for
+            # obs_to_sim_assignment. 
+            MultObsData <- MultData %>% select(File, ObsFile) %>% unique() %>% 
+                left_join(MultObsData, by = join_by(ObsFile),
+                          multiple = "all")
+            
+            # MultObsData <- calc_dosenumber(MultObsData, 
+            #                                existing_exp_details = Deets)
+            
+        }
+        
         ct_dataframe <- bind_rows(ct_dataframe, MultObsData)
         
     }
     
     # all data together -------------------------------------------------
+    
     ct_dataframe <- bind_rows(ct_dataframe, MultData) %>% 
         select(-any_of(c("ID", "Breaks"))) %>% 
         arrange(across(any_of(c("File", "Compound", "Inhibitor", "Simulated",
