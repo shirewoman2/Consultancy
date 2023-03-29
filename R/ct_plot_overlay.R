@@ -1590,6 +1590,7 @@ call. = FALSE)
                                             0, y_axis_limits_lin[1]),
                                      YmaxRnd)) +
             scale_x_time(time_units = TimeUnits, 
+                         time_range = time_range_relative,
                          x_axis_interval = x_axis_interval, 
                          pad_x_axis = pad_x_axis) +
             facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 

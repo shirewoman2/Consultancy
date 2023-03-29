@@ -74,21 +74,6 @@
 #'   sheet in the Excel file the information was pulled from. Please see
 #'   \code{annotateDetails} for ways to sift through and organize this output to
 #'   find what you need.
-#' @param show_compound_col TRUE, FALSE, or "concatenate" (default) for whether
-#'   to include in the results the column "Compound", which is the compound's
-#'   specific name in each simulation. Why would you ever omit this? If you have
-#'   a compound with a slightly different name across multiple simulations,
-#'   e.g., "DrugX" and "Drug X", and "Drug X - reduced Ki", you'll get a new row
-#'   for every possible combination of "Compound" and "Detail", which might not
-#'   make for easy comparisons. For example, a Ki value for "DrugX" will be in
-#'   one row and the same Ki value for "Drug X" will be on a separate row. Try
-#'   setting this to TRUE when you have similarly named compounds that really
-#'   should be compared and see how that compares to the default. If you set
-#'   this to "concatenate", you'll get all the possible compound names together;
-#'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
-#'   as the compound.
-#' @param omit_all_missing TRUE (default) or FALSE for whether to omit a detail
-#'   if the values are NA for all files
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 #'   details.xlsx". If you leave off the file extension, it will be saved as a
@@ -114,8 +99,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    existing_exp_details = "none", 
                                    overwrite = FALSE,
                                    annotate_output = TRUE,
-                                   show_compound_col = TRUE,
-                                   omit_all_missing = TRUE, 
                                    save_output = NA, 
                                    ...){
     
@@ -185,7 +168,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             
             if(overwrite == FALSE){
                 sim_data_files_topull <- unique(setdiff(sim_data_files, 
-                                                 existing_exp_details$File))
+                                                        existing_exp_details$File))
             } else {
                 sim_data_files_topull <- unique(sim_data_files)
                 existing_exp_details <- existing_exp_details %>%
@@ -256,25 +239,10 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         Out <- bind_rows(Out, existing_exp_details)
     }
     
-    # Removing anything that was all NA's if that's what user requested
-    if(omit_all_missing){
-        Keep <- 
-            Out %>% summarize(across(.cols = everything(),
-                                     .fns = function(.) all(is.na(.)))) %>% 
-            pivot_longer(cols = -File, names_to = "ColName", values_to = "Val") %>% 
-            filter(Val == FALSE) %>% pull(ColName)
-        
-        Out <- Out[, c("File", Keep)]
-    }
-    
     if(annotate_output){
         Out <- annotateDetails(Out, 
-                               show_compound_col = show_compound_col, 
-                               save_output = NA, 
-                               omit_all_missing = omit_all_missing)
-    }
-    
-    if(complete.cases(save_output)){
+                               save_output = save_output)
+    } else if(complete.cases(save_output)){
         FileName <- save_output
         if(str_detect(FileName, "\\.")){
             # Making sure they've got a good extension
@@ -290,23 +258,9 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         
         switch(Ext, 
                "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
-               "xlsx" = formatXL(
-                   as.data.frame(Out), 
-                   FileName, 
-                   sheet = "Simulation experimental details",
-                   styles = list(
-                       list(columns = which(names(Out) == "Notes"), 
-                            textposition = list(wrapping = TRUE)),
-                       list(rows = 0, font = list(bold = TRUE),
-                            textposition = list(alignment = "middle",
-                                                wrapping = TRUE)), 
-                       list(columns = which(str_detect(names(Out), "All files have this value")),
-                            fill = "#E7F3FF"), 
-                       list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
-                            font = list(bold = TRUE), 
-                            textposition = list(alignment = "middle",
-                                                wrapping = TRUE), 
-                            fill = "#E7F3FF"))))
+               "xlsx" = formatXL_head(as.data.frame(Out), 
+                                      FileName, 
+                                      sheet = "Simulation experimental details"))
     }
     
     return(Out)

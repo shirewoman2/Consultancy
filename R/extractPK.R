@@ -854,6 +854,9 @@ extractPK <- function(sim_data_file,
                                    DataCheck = DataCheck,
                                    includeTrialInfo = includeTrialInfo)
         
+        names(Out_AUC0$Out_ind)[which(names(Out_AUC0$Out_ind) == "AUCXtab")] <- 
+            "AUC0tab"
+        
         DataCheck <- DataCheck %>% bind_rows(Out_AUC0$DataCheck)
         Out_agg <- c(Out_agg, Out_AUC0$Out_agg)
         Out_ind <- c(Out_ind, Out_AUC0$Out_ind)
@@ -893,6 +896,9 @@ extractPK <- function(sim_data_file,
                                       Deets = Deets, 
                                       DataCheck = DataCheck,
                                       includeTrialInfo = includeTrialInfo)
+        
+        names(Out_AUClast$Out_ind)[which(names(Out_AUClast$Out_ind) == "AUCXtab")] <- 
+            "AUClasttab"
         
         DataCheck <- DataCheck %>% bind_rows(Out_AUClast$DataCheck)
         Out_agg <- c(Out_agg, Out_AUClast$Out_agg)
