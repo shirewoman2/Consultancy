@@ -214,8 +214,8 @@ annotateDetails <- function(existing_exp_details,
     }
     
     # Checking input for template_sim 
-    template_sim <- template_sim[complete.cases(template_sim)]
     if(length(template_sim) > 1){
+        template_sim <- template_sim[complete.cases(template_sim)]
         warning("You can only enter one value for `template_sim` and you've entered more. We'll only use the first one as a template simulation.", 
                 call. = FALSE)
     }
@@ -261,7 +261,8 @@ annotateDetails <- function(existing_exp_details,
                                       CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
     
     # Checking whether template sim was included in File
-    if(template_sim %in% existing_exp_details$File == FALSE){
+    if(complete.cases(template_sim) &&
+       template_sim %in% existing_exp_details$File == FALSE){
         warning(paste0("Your template simulation file, `", 
                        template_sim, 
                        "`, was not included in the object you supplied for `existing_exp_details`. We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim`."), 
