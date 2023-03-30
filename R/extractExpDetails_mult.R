@@ -263,6 +263,10 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                       sheet = "Simulation experimental details"))
     }
     
+    if(nrow(Out) == 0){
+        stop("It was not possible to extract any simulation experimental details.")
+    }
+    
     return(Out)
 }
 
