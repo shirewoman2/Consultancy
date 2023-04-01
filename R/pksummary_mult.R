@@ -77,19 +77,10 @@
 #'   \item{"all" for all possible compounds present in the simulations}} To
 #'   specify multiple compounds, enclose the compound IDs with parentheses,
 #'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}
-#' @param observed_PK (optional) If you have a data.frame, a named numeric
-#'   vector, or an Excel or csv file with observed PK parameters, supply the
-#'   full file name in quotes or the data.frame or vector here, and the
-#'   simulated-to-observed mean ratios will be calculated. If you supply an
-#'   Excel file, R will be looking to read a tab named "observed PK". The
-#'   supplied data.frame or file \emph{must} include columns for the simulator
-#'   output Excel file (title this "File") and each of the PK parameters you
-#'   would like to compare, and those column names \emph{must} be among the PK
-#'   parameter options listed in \code{PKParameterDefinitions}. If you would
-#'   like the output table to include the observed data CV for any of the
-#'   parameters, add "_CV" to the end of the parameter name, e.g.,
-#'   "AUCinf_dose1_CV". Please see the "Example" section of this help file for
-#'   examples of how to set this up.
+#' @param tissues For which tissue(s) would you like the PK parameters to be
+#'   pulled? Options are any combination of "plasma" (default), "unbound
+#'   plasma", "blood", or "unbound blood". For multiple tissues, enclose them
+#'   with parentheses, e.g., \code{tissues = c("blood", "plasma")}
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. \itemize{
 #'
@@ -115,20 +106,13 @@
 #'   inhibitor or effector -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
-#'   and higher X\% confidence interval or X percentiles. Similarly, if you
+#'   and higher confidence interval or percentiles. Similarly, if you
 #'   request trial means, the values for tmax will be the range of medians for
 #'   the trials rather than the range of means.}}
 #'
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
 #'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
-#' @param existing_exp_details If you have already run
-#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
-#'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
-#'   "Input Sheet"} or \code{exp_details = "all"}), you can save some processing
-#'   time by supplying that object here, unquoted. If left as NA, this function
-#'   will run \code{extractExpDetails} behind the scenes to figure out some
-#'   information about your experimental set up.
 #' @param PKorder Would you like the order of the PK parameters to be the the
 #'   order specified in the Consultancy Report Template (default), or would you
 #'   like the order to match the order you specified with the argument
@@ -136,10 +120,38 @@
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
-#' @param tissues For which tissue(s) would you like the PK parameters to be
-#'   pulled? Options are any combination of "plasma" (default), "unbound
-#'   plasma", "blood", or "unbound blood". For multiple tissues, enclose them
-#'   with parentheses, e.g., \code{tissues = c("blood", "plasma")}
+#' @param observed_PK (optional) If you have a data.frame, a named numeric
+#'   vector, or an Excel or csv file with observed PK parameters, supply the
+#'   full file name in quotes or supply the unquoted name of the the data.frame
+#'   or vector here, and the simulated-to-observed mean ratios will be
+#'   calculated. If you supply an Excel file, R will be looking to read a tab
+#'   named \emph{exactly} "observed PK". The supplied data.frame or file
+#'   \emph{must} be set up in one of two possible ways: \itemize{
+#'
+#'   \item{Columns for each of the PK parameters you would like to compare, and those
+#'   column names \emph{must} be among the PK parameter options listed in
+#'   \code{PKParameterDefinitions}. If you would like the output table to
+#'   include the observed data CV for any of the parameters, add "_CV" to the
+#'   end of the parameter name, e.g., "AUCinf_dose1_CV".}
+#'
+#'   \item{A column titled "PKparameter" and a column titled "Value". (It's fine if
+#'   there are other columns as well.) All the items in the column "PKparameter"
+#'   \emph{must} be among the PK parameter options listed in
+#'   \code{PKParameterDefinitions}.}}
+#'
+#'   Additionally, if you have more than one set of PK parameters, you must
+#'   include a column titled "File" that lists which simulator output file
+#'   should be compared to that observed data. If there's only one set of PK
+#'   parameters, you can omit the column "File" and the PK data will be compared
+#'   to ALL the simulated files included in \code{sim_data_files}. Please see
+#'   the "Example" section of this help file for examples of how to set this up.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
+#'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
+#'   "Input Sheet"} or \code{exp_details = "all"}), you can save some processing
+#'   time by supplying that object here, unquoted. If left as NA, this function
+#'   will run \code{extractExpDetails} behind the scenes to figure out some
+#'   information about your experimental set up.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
 #' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
@@ -343,8 +355,40 @@ pksummary_mult <- function(sim_data_files = NA,
     
     if(exists("observed_PKDF", inherits = FALSE) &&
        "File" %in% names(observed_PKDF) == FALSE){
-        stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.", 
-             call. = FALSE)
+        
+        # If there is only one value for each PK parameter, then use that set of
+        # PK data to compare to ALL of the simulated data.
+        if(any(names(observed_PKDF) %in% AllPKParameters$PKparameter)){
+            if(nrow(observed_PKDF) == 1){
+                observed_PKDF <- bind_cols(observed_PKDF, "File" = sim_data_files)
+            } else {
+                # If there is more than one value for each PK parameter, though,
+                # then we don't know what to compare. Give an error message and
+                # omit the S/O rows.
+                warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
+                        call. = FALSE)
+                observed_PKDF <- NULL
+            }
+        } else {
+            # Checking for unique PK parameters
+            Check <- observed_PKDF %>% select(PKparameter, Value) %>% 
+                unique() %>% group_by(PKparameter) %>% 
+                summarize(N = n())
+            if(any(Check$N > 1)){
+                # If there is more than one value for each PK parameter, though,
+                # then we don't know what to compare. Give an error message and
+                # omit the S/O rows.
+                warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
+                        call. = FALSE)
+                observed_PKDF <- NULL
+            } else {
+                observed_PKDF <- observed_PKDF %>% 
+                    left_join(expand_grid(PKparameter = unique(observed_PKDF$PKparameter), 
+                                          File = sim_data_files), 
+                              by = "PKparameter",
+                              multiple = "all")
+            }
+        }
     }
     
     if(exists("observed_PKDF")){
@@ -455,7 +499,7 @@ pksummary_mult <- function(sim_data_files = NA,
                         tissue = k, 
                         observed_PK = switch(
                             as.character(exists("observed_PKDF", inherits = FALSE) &&
-                                         i %in% observed_PKDF$File), 
+                                             i %in% observed_PKDF$File), 
                             "TRUE" = observed_PKDF %>% filter(File == i), 
                             "FALSE" = NA),
                         PKparameters = PKparameters, 
@@ -537,13 +581,13 @@ pksummary_mult <- function(sim_data_files = NA,
         
         suppressMessages(
             MyPKResults <- MyPKResults %>% 
-            select(Statistic, 
-                   any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
-                          left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
-                          filter(complete.cases(SortOrder)) %>% 
-                          arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
-                   everything()) %>% 
-            relocate(c(CompoundID, Tissue, File), .after = last_col())
+                select(Statistic, 
+                       any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
+                                  left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
+                                  filter(complete.cases(SortOrder)) %>% 
+                                  arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
+                       everything()) %>% 
+                relocate(c(CompoundID, Tissue, File), .after = last_col())
         )
         
     } else {
@@ -651,6 +695,6 @@ pksummary_mult <- function(sim_data_files = NA,
     
     return(Out)
     
-    }
+}
 
 

@@ -76,7 +76,7 @@ with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
   inhibitor or effector -- will not be included.}
 
   \item{tmax will be listed as median, min, and max rather than mean, lower
-  and higher X\% confidence interval or X percentiles. Similarly, if you
+  and higher confidence interval or percentiles. Similarly, if you
   request trial means, the values for tmax will be the range of medians for
   the trials rather than the range of means.}}
 
@@ -94,18 +94,30 @@ pulled from a specific tab in the simulator output file, list that tab
 here. Most of the time, this should be left as NA.}
 
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
-vector, or an Excel or csv file with observed PK parameters, supply the
-full file name in quotes or the data.frame or vector here, and the
-simulated-to-observed mean ratios will be calculated. If you supply an
-Excel file, R will be looking to read a tab named "observed PK". The
-supplied data.frame or file \emph{must} include columns for the simulator
-output Excel file (title this "File") and each of the PK parameters you
-would like to compare, and those column names \emph{must} be among the PK
-parameter options listed in \code{PKParameterDefinitions}. If you would
-like the output table to include the observed data CV for any of the
-parameters, add "_CV" to the end of the parameter name, e.g.,
-"AUCinf_dose1_CV". Please see the "Example" section of this help file for
-examples of how to set this up.}
+  vector, or an Excel or csv file with observed PK parameters, supply the
+  full file name in quotes or supply the unquoted name of the the data.frame
+  or vector here, and the simulated-to-observed mean ratios will be
+  calculated. If you supply an Excel file, R will be looking to read a tab
+  named \emph{exactly} "observed PK". The supplied data.frame or file
+  \emph{must} be set up in one of two possible ways: \itemize{
+
+  \item{Columns for each of the PK parameters you would like to compare, and those
+  column names \emph{must} be among the PK parameter options listed in
+  \code{PKParameterDefinitions}. If you would like the output table to
+  include the observed data CV for any of the parameters, add "_CV" to the
+  end of the parameter name, e.g., "AUCinf_dose1_CV".}
+
+  \item{A column titled "PKparameter" and a column titled "Value". (It's fine if
+  there are other columns as well.) All the items in the column "PKparameter"
+  \emph{must} be among the PK parameter options listed in
+  \code{PKParameterDefinitions}.}}
+
+  Additionally, if you have more than one set of PK parameters, you must
+  include a column titled "File" that lists which simulator output file
+  should be compared to that observed data. If there's only one set of PK
+  parameters, you can omit the column "File" and the PK data will be compared
+  to ALL the simulated files included in \code{sim_data_files}. Please see
+  the "Example" section of this help file for examples of how to set this up.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
