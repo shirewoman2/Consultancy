@@ -543,7 +543,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                     tissue = j,
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
                     fromMultFunction = TRUE, 
-                    existing_exp_details = Deets %>% filter(File == ff))
+                    existing_exp_details = as.data.frame(Deets) %>% filter(File == ff))
                 
                 # When the particular combination of compound and tissue is not
                 # available in that file, extractConcTime will return an empty
