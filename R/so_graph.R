@@ -79,20 +79,23 @@ so_graph <- function(PKtable,
                 call. = FALSE)
     }
     
-    if(is.na(PKparameters)){
+    if(any(is.na(PKparameters))){
         PKparameters <- names(PKtable)
         PKparameters <- PKparameters[!str_detect(PKparameters, "Statistic|File")]
     }
     
     # Main body of function --------------------------------------------------
-    SO <- PKtable %>% 
-        filter(Statistic %in% c("Simulated", "Observed")) %>%
-        unique() %>% 
-        pivot_longer(names_to = "PrettifiedNames", 
-                     values_to = "Value", 
-                     cols = c(-File, -Statistic)) %>% 
-        mutate(Value = as.numeric(Value),
-               PrettifiedNames = sub("with .* ", "with effector ", PrettifiedNames))
+    suppressWarnings(
+        SO <- PKtable %>% 
+            filter(Statistic %in% c("Simulated", "Observed")) %>%
+            unique() %>% 
+            pivot_longer(names_to = "PrettifiedNames", 
+                         values_to = "Value", 
+                         cols = c(-File, -Statistic)) %>% 
+            mutate(Value = as.numeric(Value),
+                   PrettifiedNames = sub("with .* ", "with effector ", PrettifiedNames)) %>% 
+            filter(complete.cases(Value))
+    )
     
     # Checking whether PK parameters are, in fact, prettified
     if(any(str_detect(SO$PrettifiedNames, " "))){
@@ -108,7 +111,7 @@ so_graph <- function(PKtable,
     SO <- SO %>% 
         pivot_wider(names_from = Statistic, values_from = Value) %>% 
         filter(complete.cases(Observed) & 
-                   PrettifiedNames %in% {{PKparameters}})
+                   PKparameter %in% {{PKparameters}})
     
     Fold1.5_upper <- data.frame(Observed = 10^seq(-3, 6, length.out = 100)) %>% 
         mutate(LimitName = "upper", 
