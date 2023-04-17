@@ -24,7 +24,8 @@
 #'   come from the tab with the same name as the population simulated)}
 #'
 #'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
-#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet}
+#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
+#'   design information}
 #'
 #'   \item{"all"}{Extract all possible parameters (default). This is the slowest
 #'   option in terms of processing time because it must read multiple Excel
@@ -227,6 +228,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         }
     }
     
+    # Binding and organizing
     Out <- bind_rows(MyDeets)
     
     if(AnyExistingDeets){
@@ -238,6 +240,10 @@ extractExpDetails_mult <- function(sim_data_files = NA,
         
         Out <- bind_rows(Out, existing_exp_details)
     }
+    
+    # Sorting to help organize output
+    Out <- Out %>% 
+        select(File, sort(setdiff(names(Out), "File")))
     
     if(annotate_output){
         Out <- annotateDetails(Out, 

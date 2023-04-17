@@ -81,8 +81,9 @@
 #'   \item{"population tab"}{details about the population used (data come from
 #'   the tab with the same name as the population simulated)}
 #'
-#'   \item{"Simcyp inputs"}{the details that you normally fill out on the
-#'   "Simcyp inputs (and QC)" tab of a compound data sheet}
+#'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
+#'   design information}
 #'
 #'   \item{"all"}{all possible details}
 #'
@@ -266,7 +267,7 @@ annotateDetails <- function(existing_exp_details,
         warning(paste0("Your template simulation file, `", 
                        template_sim, 
                        "`, was not included in the object you supplied for `existing_exp_details`. We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim`."), 
-                       call. = FALSE)
+                call. = FALSE)
         template_sim <- NA
     }
     
@@ -494,7 +495,7 @@ annotateDetails <- function(existing_exp_details,
                                 "BPratio", "fu", "BindingProtein", "Abs_model",
                                 "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
                                 "Qgut", "fu_gut", "ka", "fa", "tlag",
-                                "ModelType", "VssPredMeth", "Vss_input",
+                                "DistributionModel", "VssPredMeth", "Vss_input",
                                 "kp_scalar", "kin_sac", "kout_sac",
                                 "Vsac", "CLint", "CLrenal")
                 
@@ -502,9 +503,11 @@ annotateDetails <- function(existing_exp_details,
                     filter(Detail %in%
                                c("Substrate", "PrimaryMetabolite1", 
                                  "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                 AllExpDetails %>% filter(complete.cases(CDSInputMatch)) %>%
+                                 AllExpDetails %>% 
+                                     filter(complete.cases(CDSInputMatch)) %>%
                                      pull(Detail)) | SimulatorSection %in%
-                               c("Elimination", "Interaction", "Transporters")) %>%
+                               c("Elimination", "Interaction", "Transporters", 
+                                 "Trial Design")) %>%
                     mutate(CompoundID = factor(CompoundID, 
                                                levels = c("substrate", 
                                                           "primary metabolite 1", 
@@ -526,9 +529,9 @@ annotateDetails <- function(existing_exp_details,
                                                        "_inhib2", "_inhib1met"), 
                                                      each = length(CDSdetails))),
                                           unique(Out$Detail))))) %>%
-                    # Yes, this is taking multiple steps to get the factors in the
-                    # correct order; I'm not sure of a more concise way to do this
-                    # that will still accomplish what I want. -LSh
+                    # Yes, this is taking multiple steps to get the factors in
+                    # the correct order; I'm not sure of a more concise way to
+                    # do this that will still accomplish what I want. -LSh
                     arrange(CompoundID, Detail) %>% 
                     mutate(Detail = factor(Detail, levels = unique(Detail))) %>% 
                     filter(complete.cases(Value))
@@ -681,6 +684,10 @@ annotateDetails <- function(existing_exp_details,
         Out <- Out %>% filter(AllNA == FALSE) %>% select(-AllNA)
     }
     
+    # Sorting to help organize output
+    Out <- Out %>% 
+        arrange(across(any_of(c("SimulatorSection", "Detail", 
+                                "CompoundID", "Compound"))))
     
     # Saving ---------------------------------------------------------------
     if(complete.cases(save_output)){

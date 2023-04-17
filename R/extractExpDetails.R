@@ -17,7 +17,8 @@
 #'   come from the tab with the same name as the population simulated)}
 #'
 #'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
-#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet}
+#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
+#'   design information}
 #'
 #'   \item{"all"}{Extract all possible parameters}
 #'
@@ -106,7 +107,8 @@ extractExpDetails <- function(sim_data_file,
     
     # Cleaning up possible problems w/how exp_details by tab might be inputted
     if(str_detect(tolower(exp_details[1]), "summary")){exp_details <- "Summary tab"}
-    if(str_detect(tolower(exp_details[1]), "input")){exp_details <- "Input sheet"}
+    if(str_detect(tolower(exp_details[1]), "input") &
+       !str_detect(tolower(exp_details[1]), "simcyp")){exp_details <- "Input sheet"}
     if(str_detect(tolower(exp_details[1]), "population")){exp_details <- "population tab"}
     
     # Noting exp_details requested for later
@@ -146,17 +148,20 @@ extractExpDetails <- function(sim_data_file,
         exp_details <- PopDeets$Deet
     }
     
-    if(exp_details_input[1] == "Simcyp inputs"){
-        exp_details <- c("Substrate", "Inhibitor1",
-                         paste0(rep(each = 2, 
-                                    c("MW", "logP", "CompoundType", "pKa1", "pKa2",
-                                      "BPratio", "fu", "Abs_model", 
-                                      "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
-                                      "Qgut", "fu_gut", "ka", "fa", "tlag",
-                                      "ModelType", "VssPredMeth", "Vss_input",
-                                      "kp_scalar", "kin_sac", "kout_sac",
-                                      "Vsac", "CLint", "CLrenal", "Interaction")), 
-                                c("_sub", "_inhib")))
+    if(tolower(exp_details_input[1]) == "simcyp inputs"){
+        exp_details <- sort(unique(
+            c("Substrate", "Inhibitor1",
+              paste0(rep(each = 2, 
+                         c("MW", "logP", "CompoundType", "pKa1", "pKa2",
+                           "BPratio", "fu", "Abs_model", 
+                           "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
+                           "Qgut", "fu_gut", "ka", "fa", "tlag",
+                           "DistributionModel", "VssPredMeth", "Vss_input",
+                           "kp_scalar", "kin_sac", "kout_sac",
+                           "Vsac", "CLint", "CLrenal", "Interaction")), 
+                     c("_sub", "_inhib")), 
+              AllExpDetails %>% filter(SimulatorSection == "Trial Design") %>% 
+                  pull(Detail))))
     }
     
     # Need to note original exp_details requested b/c I'm adding to it if
@@ -185,10 +190,11 @@ extractExpDetails <- function(sim_data_file,
     if(any(exp_details %in% AllExpDetails$Detail == FALSE)){
         Problem <- str_comma(setdiff(exp_details,
                                      AllExpDetails$Detail))
-        stop(paste0("These study details are not among the possible options: ",
-                    Problem,
-                    ". The study details to extract must be among the options listed. Please enter 'data(ExpDetailDefinitions)' into the console for all options."),
-             call. = FALSE)
+        warning(paste0("These study details are not among the possible options: ",
+                       Problem,
+                       ", so they will be omitted. Please enter 'data(ExpDetailDefinitions)' into the console for all options."),
+                call. = FALSE)
+        exp_details <- intersect(exp_details, AllExpDetails$Detail)
     }
     
     if(length(exp_details) == 0){
@@ -330,17 +336,17 @@ extractExpDetails <- function(sim_data_file,
         
         if(is.null(Out$Regimen_inhib) == FALSE && 
            (complete.cases(Out$Inhibitor1) & 
-                           complete.cases(Out$Regimen_inhib)) && 
-                           (Out$Regimen_inhib == "Multiple Dose" & 
-                            Out$NumDoses_inhib == 1)){
+            complete.cases(Out$Regimen_inhib)) && 
+           (Out$Regimen_inhib == "Multiple Dose" & 
+            Out$NumDoses_inhib == 1)){
             Out$Regimen_inhib <- "Single Dose" 
         }
         
         if(is.null(Out$Regimen_inhib2) == FALSE && 
            (complete.cases(Out$Inhibitor2) & 
-                           complete.cases(Out$Regimen_inhib2)) && 
-                           (Out$Regimen_inhib2 == "Multiple Dose" &
-                            Out$NumDoses_inhib2 == 1)){
+            complete.cases(Out$Regimen_inhib2)) && 
+           (Out$Regimen_inhib2 == "Multiple Dose" &
+            Out$NumDoses_inhib2 == 1)){
             Out$Regimen_inhib2 <- "Single Dose" 
         }
     }
@@ -1235,15 +1241,15 @@ extractExpDetails <- function(sim_data_file,
     
     if(is.null(Out$Regimen_inhib1) == FALSE && 
        (complete.cases(Out$Inhibitor1) & 
-                       complete.cases(Out$Regimen_inhib1) && 
-                       (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1))){
+        complete.cases(Out$Regimen_inhib1) && 
+        (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1))){
         Out$Regimen_inhib1 <- "Single Dose" 
     }
     
     if(is.null(Out$Regimen_inhib2) == FALSE && 
        (complete.cases(Out$Inhibitor2) & 
-                       complete.cases(Out$Regimen_inhib2) && 
-                       (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1))){
+        complete.cases(Out$Regimen_inhib2) && 
+        (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1))){
         Out$Regimen_inhib2 <- "Single Dose" 
     }
     

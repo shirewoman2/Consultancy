@@ -59,8 +59,9 @@ here, e.g., \code{compound = "midaz|keto"} to find any compound with either
   \item{"population tab"}{details about the population used (data come from
   the tab with the same name as the population simulated)}
 
-  \item{"Simcyp inputs"}{the details that you normally fill out on the
-  "Simcyp inputs (and QC)" tab of a compound data sheet}
+  \item{"Simcyp inputs"}{Extract all the details that you normally fill out
+  on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
+  design information}
 
   \item{"all"}{all possible details}
 
