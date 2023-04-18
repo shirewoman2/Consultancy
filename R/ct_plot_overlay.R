@@ -1827,10 +1827,7 @@ call. = FALSE)
     
     if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
        linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
-        warning(paste0("Some of your data are less than the lower y axis value of ",
-                       Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this sometimes leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If this happens to your graph, please try setting the minimum value for the y axis to less than or equal to ",
-                       signif(min(LowConc, na.rm = T), 3), 
-                       ", the lowest value in your data."),
+        warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
                 call. = FALSE)
     }
     

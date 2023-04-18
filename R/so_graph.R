@@ -81,7 +81,14 @@ so_graph <- function(PKtable,
     
     if(any(is.na(PKparameters))){
         PKparameters <- names(PKtable)
-        PKparameters <- PKparameters[!str_detect(PKparameters, "Statistic|File")]
+        
+        # Need to get the un-prettified names here
+        PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
+            left_join(AllPKParameters %>% select(PrettifiedNames, PKparameter) %>% 
+                          unique(), 
+                      by = join_by(PrettifiedNames)) %>% 
+            filter(complete.cases(PKparameter)) %>% 
+            pull(PKparameter)
     }
     
     # Main body of function --------------------------------------------------
@@ -170,7 +177,16 @@ so_graph <- function(PKtable,
         BoundColors <- color_set[1:2]
     }
     
-    
+    # It's possible to have both CLt_dose1 and CLinf_dose1 and they're labeled
+    # the same way in PKexpressions. Adjusting for that scenario.
+    if(all(c("CLinf_dose1", "CLt_dose1") %in% PKparameters)){
+        PKexpressions[["CLinf_dose1"]] <- 
+            expression(atop(Dose ~ 1 ~ CL ~ "(L/h)", 
+                            paste("CL as dose/AUCinf")))
+        PKexpressions[["CLt_dose1"]] <- 
+            expression(atop(Dose ~ 1 ~ CL ~ "(L/h)", 
+                            paste("CL as dose/AUCt")))
+    }
     
     G <- list()
     SO <- split(SO, f = SO$PKparameter)
