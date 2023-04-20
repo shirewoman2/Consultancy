@@ -395,7 +395,14 @@ annotateDetails <- function(existing_exp_details,
                Sheet = ifelse(str_detect(Detail, "^Transport"), 
                               "Input Sheet", Sheet),
                SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
-                                         "Transporters", SimulatorSection)) %>% 
+                                         "Transporters", SimulatorSection), 
+               SimulatorSection = factor(SimulatorSection, 
+                                         levels = c("Phys Chem and Blood Binding", 
+                                                    "Absorption",
+                                                    "Distribution",
+                                                    "Elimination",
+                                                    "Interaction",
+                                                    "Trial Design"))) %>% 
         select(any_of(c("SimulatorSection", "Sheet", "Notes", "CompoundID",
                         "Compound", "Detail")), everything()) %>% 
         arrange(SimulatorSection, Detail)
