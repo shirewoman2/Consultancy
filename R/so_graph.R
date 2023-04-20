@@ -227,17 +227,22 @@ so_graph <- function(PKtable,
                              fill = BoundColors[2], alpha = 0.2)
         }
         
+        MaxMinRatio <- range(c(SO[[i]]$Observed, SO[[i]]$Simulated))
+        MaxMinRatio <- MaxMinRatio[2] / MaxMinRatio[1]
+        
+        if(MaxMinRatio > 100){
+            MajBreaks <- 10^(-3:6)
+            MinBreaks <- rep(1:9)*rep(10^(-3:6), each = 9)
+        } else {
+            MajBreaks <- c(10^(-3:6),
+                           3*10^(-3:6),
+                           5*10^(-3:6))
+            MinBreaks <- rep(1:9)*rep(10^(-3:6), each = 9)
+        }
+        
         G[[i]] <- G[[i]] + geom_point(size = 2) +
-            scale_y_log10(
-                breaks = c(10^(-3:6),
-                           3*10^(-3:6),
-                           5*10^(-3:6)),
-                minor_breaks = rep(1:9)*rep(10^(-3:6), each = 9)) +
-            scale_x_log10(
-                breaks = c(10^(-3:6),
-                           3*10^(-3:6),
-                           5*10^(-3:6)),
-                minor_breaks = rep(1:9)*rep(10^(-3:6), each = 9)) +
+            scale_y_log10(breaks = MajBreaks, minor_breaks = MinBreaks) +
+            scale_x_log10(breaks = MajBreaks, minor_breaks = MinBreaks) +
             coord_cartesian(xlim = Limits, ylim = Limits) + # this causes the shading to disappear for Guest curves. no idea why, but I think it's a bug w/coord_cartesian.
             ggtitle(PKexpressions[[i]]) +
             theme_bw() +
@@ -248,7 +253,6 @@ so_graph <- function(PKtable,
                   axis.title.x.top = element_text(margin = margin(0, 0, 2.75, 0)),
                   axis.title.y = element_text(margin = margin(0, 2.75, 0, 0)),
                   axis.title.y.right = element_text(margin = margin(0, 0, 0, 2.75)))
-        
     }
     
     if(length(G) == 1){
