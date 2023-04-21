@@ -15,6 +15,9 @@ inductFit(
   enzyme = "CYP3A4",
   drug = NA,
   weights = "1/y^2",
+  bounds_Emax = NA,
+  bounds_EC50 = NA,
+  bounds_slope = NA,
   omit = NA,
   color_set = "default",
   y_axis_limits = NA,
@@ -87,6 +90,18 @@ in the Word document output.}
 numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
 "1/y" or "1/y^2" (default). Be careful that you don't have any infinite
 values or this will fail!}
+
+\item{bounds_Emax}{upper and lower boundaries for fitting Indmax or Emax,
+specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
+boundaries}
+
+\item{bounds_EC50}{upper and lower boundaries for fitting IndC50 or EC50,
+specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
+boundaries}
+
+\item{bounds_slope}{upper and lower boundaries for fitting the slope,
+specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
+boundaries}
 
 \item{omit}{An index of which, if any, samples to omit from regression(s).
 These samples will be depicted as open circles in the graph but will not be
