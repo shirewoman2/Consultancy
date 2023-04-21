@@ -65,13 +65,22 @@
 #'   values or this will fail!
 #' @param bounds_Emax upper and lower boundaries for fitting Indmax or Emax,
 #'   specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
-#'   boundaries
+#'   boundaries. If you only want to specify an upper limit, set the first
+#'   number to \code{-Inf} and the second number to that value. If you only want
+#'   to specify a lower limit, set the first number to that value and the second
+#'   number to \code{Inf}.
 #' @param bounds_EC50 upper and lower boundaries for fitting IndC50 or EC50,
 #'   specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
-#'   boundaries
+#'   boundaries. If you only want to specify an upper limit, set the first
+#'   number to \code{-Inf} and the second number to that value. If you only want
+#'   to specify a lower limit, set the first number to that value and the second
+#'   number to \code{Inf}.
 #' @param bounds_slope upper and lower boundaries for fitting the slope,
 #'   specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
-#'   boundaries
+#'   boundaries. If you only want to specify an upper limit, set the first
+#'   number to \code{-Inf} and the second number to that value. If you only want
+#'   to specify a lower limit, set the first number to that value and the second
+#'   number to \code{Inf}.
 #' @param omit An index of which, if any, samples to omit from regression(s).
 #'   These samples will be depicted as open circles in the graph but will not be
 #'   included in the regression. An example of acceptable input where, say, you
