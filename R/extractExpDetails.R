@@ -418,6 +418,7 @@ extractExpDetails <- function(sim_data_file,
         InputDeets$NameCol <- ColLocations[InputDeets$NameColDetect]
         InputDeets$ValueCol <- InputDeets$NameCol + 1
         
+        ## Main set of parameters -----------------------------------------
         # sub function for finding correct cell
         pullValue <- function(deet){
             
@@ -480,6 +481,8 @@ extractExpDetails <- function(sim_data_file,
             }
         }
         
+        
+        ## Some overall simulation details -----------------------------------
         # Checking whether this was an ADC sim. 
         Out[["ADCSimulation"]] <- 
             str_detect(as.character(InputTab[, 1]), 
@@ -489,7 +492,7 @@ extractExpDetails <- function(sim_data_file,
         Out[["SimulatorVersion"]] <- str_extract(as.character(InputTab[3, 1]),
                                                  "Version [12][0-9]")
         
-        # Pulling CL info
+        ## Pulling CL info ----------------------------------------------------
         MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
         
         if(length(MyInputDeets2) > 0){
@@ -687,7 +690,7 @@ extractExpDetails <- function(sim_data_file,
             }
         }
         
-        # Pulling interaction info
+        ## Pulling interaction info -------------------------------------------
         MyInputDeets3 <- MyInputDeets[str_detect(MyInputDeets, "Interaction_")]
         
         if(length(MyInputDeets3) > 0){
@@ -706,7 +709,7 @@ extractExpDetails <- function(sim_data_file,
                 # "interaction", but "interaction" hasn't always been
                 # listed in the output files I've found.
                 IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
-                                                    pull(), "Ind max|^Ki |^MBI"))[1] - 1
+                                                    pull(), "Ind max|Ind slope|^Ki |^MBI"))[1] - 1
                 
                 if(complete.cases(IntRowStart)){
                     
@@ -723,33 +726,60 @@ extractExpDetails <- function(sim_data_file,
                         NextInt <- IntRows[which(IntRows == i) + 1] - 1
                         NextInt <- ifelse(i == IntRows[length(IntRows)],
                                           nrow(InputTab), NextInt)
-                        ThisIntRows <- i:(c(NextEmptyCell, NextInt)[
-                            which.min(c(NextEmptyCell, NextInt))])
+                        ThisIntRows <- i:(c(NextEmptyCell, NextInt)[which.min(c(NextEmptyCell, NextInt))])
                         
-                        # induction
-                        IndMax <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
-                                                   "Ind max"))
-                        if(length(IndMax) > 0){
+                        # Induction
+                        IndParam1stRow <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
+                                                   "Ind max|Ind Slope"))
+                        if(length(IndParam1stRow) > 0){
+                            IndModelCheck <- list(str_detect(t(InputTab[ThisIntRows, 1]), "Ind max"), 
+                                                  str_detect(t(InputTab[ThisIntRows, 1]), "Ind Slope"), 
+                                                  str_detect(t(InputTab[ThisIntRows, 1]), "Ind( )?C50"), 
+                                                  str_detect(t(InputTab[ThisIntRows, 1]), "fu inc"), 
+                                                  str_detect(t(InputTab[ThisIntRows, 1]), "\u03B3"))
+                            IndModelCheck <- sapply(IndModelCheck, FUN = function(x) which(x == TRUE))
+                            # Note: I can't seem to get regex to work for
+                            # detecting a Greek character; I figured that the
+                            # Hill coefficient gamma is the only time that an
+                            # induction parameter name is only going to be one
+                            # character long.
+                            
                             suppressWarnings(
                                 Out[[paste0(
                                     paste("IndMax", Enzyme,
                                           sep = "_"), Suffix)]] <-
-                                    as.numeric(InputTab[ThisIntRows[IndMax], NameCol + 1])
+                                    as.numeric(InputTab[ThisIntRows[IndModelCheck[[1]][1]], NameCol + 1])
+                            )
+                            
+                            suppressWarnings(
+                                Out[[paste0(
+                                    paste("IndSlope", Enzyme,
+                                          sep = "_"), Suffix)]] <-
+                                    as.numeric(InputTab[ThisIntRows[IndModelCheck[[2]][1]], NameCol + 1])
                             )
                             
                             suppressWarnings(
                                 Out[[paste0(
                                     paste("IndC50", Enzyme,
                                           sep = "_"), Suffix)]] <-
-                                    as.numeric(InputTab[ThisIntRows[IndMax+3], NameCol + 1])
+                                    as.numeric(InputTab[ThisIntRows[IndModelCheck[[3]][1]], NameCol + 1])
                             )
                             
                             suppressWarnings(
                                 Out[[paste0(
                                     paste("Ind_fu_inc", Enzyme,
                                           sep = "_"), Suffix)]] <-
-                                    as.numeric(InputTab[ThisIntRows[IndMax+5], NameCol + 1])
+                                    as.numeric(InputTab[ThisIntRows[IndModelCheck[[4]][1]], NameCol + 1])
                             )
+                            
+                            suppressWarnings(
+                                Out[[paste0(
+                                    paste("Ind_gamma", Enzyme,
+                                          sep = "_"), Suffix)]] <-
+                                    as.numeric(InputTab[ThisIntRows[IndModelCheck[[5]][1]], NameCol + 1])
+                            )
+                         
+                            rm(IndModelCheck)   
                         }
                         
                         # competitive inhibition
@@ -816,7 +846,7 @@ extractExpDetails <- function(sim_data_file,
                         }
                         
                         rm(Enzyme, NextEmptyCell, NextInt,
-                           ThisIntRows, IndMax, Ki, MBI)
+                           ThisIntRows, IndParam1stRow, Ki, MBI)
                     }
                 }
                 
@@ -824,7 +854,7 @@ extractExpDetails <- function(sim_data_file,
             }
         }
         
-        # Dealing with StartDayTime_x
+        ## Dealing with StartDayTime_x --------------------------------------
         MyInputDeets4 <- MyInputDeets[str_detect(MyInputDeets, "^StartDayTime")]
         
         if(length(MyInputDeets4) > 0){
@@ -857,7 +887,7 @@ extractExpDetails <- function(sim_data_file,
         }
         
         
-        # Transport parameters
+        ## Transport parameters -----------------------------------------------
         MyInputDeets5 <- MyInputDeets[str_detect(MyInputDeets, "Transport_")]
         MyInputDeets5 <- InputDeets %>% 
             filter(Deet %in% MyInputDeets5 & complete.cases(NameCol)) %>%
