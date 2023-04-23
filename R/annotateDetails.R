@@ -228,7 +228,7 @@ annotateDetails <- function(existing_exp_details,
     # We'll check whether that file was included once we've re-formatted existing_exp_details
     
     
-    # Formatting as needed ---------------------------------------------------
+    # Getting things set up ---------------------------------------------------
     if(class(existing_exp_details)[1] == "list"){
         # This is when the output is the default list from extractExpDetails
         existing_exp_details <- as.data.frame(existing_exp_details)
@@ -360,7 +360,7 @@ annotateDetails <- function(existing_exp_details,
         Out <- Out %>% 
             arrange(File) %>% 
             mutate(CompoundNameID = paste(File, CompoundID)) %>% 
-            filter(CompoundNameID %in% CompoundNames$CompoundNameID) %>% 
+            filter(CompoundNameID %in% CompoundNames$CompoundNameID | is.na(CompoundID)) %>% 
             left_join(ExpDetailDefinitions, by = c("Detail", "CompoundID")) %>% 
             # Finding some artifacts from row binding output from both of
             # extractExpDetails and extractExpDetails_mult. I think this should
@@ -371,7 +371,9 @@ annotateDetails <- function(existing_exp_details,
             summarize(Sheet = str_comma(Sheet, conjunction = "or")) %>% 
             mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
                                       Detail == "SimDuration", 
-                                  "Summary", Sheet)) %>% 
+                                  "Summary", Sheet),
+                   SimulatorSection = case_when(Sheet == "population" ~ "Population", 
+                                                TRUE ~ SimulatorSection)) %>% 
             ungroup())
     
     suppressMessages(
@@ -382,27 +384,63 @@ annotateDetails <- function(existing_exp_details,
     
     # Metabolism and interaction parameters won't match input details, so
     # adding which sheet they came from and what simulator section they
-    # were.
+    # were. Also adding some notes explaining what detail is.
     Out <- Out %>% unique() %>% 
-        mutate(Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
-                              "Input Sheet", Sheet), 
-               SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
-                                         "Elimination", SimulatorSection), 
-               Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
-                              "Input Sheet", Sheet),
-               SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
-                                         "Interaction", SimulatorSection), 
-               Sheet = ifelse(str_detect(Detail, "^Transport"), 
-                              "Input Sheet", Sheet),
-               SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
-                                         "Transporters", SimulatorSection), 
-               SimulatorSection = factor(SimulatorSection, 
-                                         levels = c("Phys Chem and Blood Binding", 
-                                                    "Absorption",
-                                                    "Distribution",
-                                                    "Elimination",
-                                                    "Interaction",
-                                                    "Trial Design"))) %>% 
+        mutate(
+            # Elimination details
+            Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
+                           "Input Sheet", Sheet), 
+            SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
+                                      "Elimination", SimulatorSection), 
+            
+            # Interaction details
+            Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                           "Input Sheet", Sheet),
+            SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+                                      "Interaction", SimulatorSection), 
+            
+            # Transport details   
+            Sheet = ifelse(str_detect(Detail, "^Transport"), 
+                           "Input Sheet", Sheet),
+            SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
+                                      "Transporters", SimulatorSection), 
+            
+            # Adding some notes
+            Notes = case_when(
+                str_detect(Detail, "CLadditional_InVivo") ~ paste("Additional in vivo clearance for", CompoundID),
+                str_detect(Detail, "CLbiliary_InVivoCL") ~ paste("Additional in vivo biliary clearance for", CompoundID),
+                str_detect(Detail, "CLint_AddHLM") ~ paste("Addtional HLM CLint for", CompoundID),
+                str_detect(Detail, "CLint_biliary") ~ paste("Additional biliary CLint for", CompoundID),
+                str_detect(Detail, "CLint_CYP|CLint_UGT") ~ paste("Additional", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "CLint for", CompoundID),
+                str_detect(Detail, "CLiv_InVivo") ~ paste("In vivo CLiv for", CompoundID),
+                str_detect(Detail, "CLpo_InVivo") ~ paste("In vivo CLpo for", CompoundID),
+                str_detect(Detail, "fu_mic") ~ paste("fu,mic for", str_extract(Detail, "CYP[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID),
+                str_detect(Detail, "fu_mic") ~ paste("fu,mic for", str_extract(Detail, "UGT[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID),
+                str_detect(Detail, "Ki_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "competitive inhibition constant for", CompoundID), 
+                str_detect(Detail, "Km_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "Km for", CompoundID), 
+                str_detect(Detail, "Vmax_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "Vmax for", CompoundID), 
+                str_detect(Detail, "MBI_fu_mic") ~ paste("fu,mic for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
+                str_detect(Detail, "MBI_Kapp") ~ paste("Kapp for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
+                str_detect(Detail, "MBI_kinact") ~ paste("kinact for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
+                TRUE ~ Notes),
+            
+            # Setting factors for sorting
+            SimulatorSection = factor(SimulatorSection, 
+                                      levels = c("Phys Chem and Blood Binding", 
+                                                 "Absorption",
+                                                 "Distribution",
+                                                 "Elimination",
+                                                 "Interaction",
+                                                 "Trial Design", 
+                                                 "Population")),
+            CompoundID = factor(CompoundID, 
+                                levels = c("substrate", 
+                                           "primary metabolite 1", 
+                                           "primary metabolite 2",
+                                           "secondary metabolite", 
+                                           "inhibitor 1", 
+                                           "inhibitor 2", 
+                                           "inhibitor 1 metabolite"))) %>% 
         select(any_of(c("SimulatorSection", "Sheet", "Notes", "CompoundID",
                         "Compound", "Detail")), everything()) %>% 
         arrange(SimulatorSection, Detail)
@@ -493,101 +531,93 @@ annotateDetails <- function(existing_exp_details,
     
     ## detail_set -------------------------------------------------------------
     
-    if(all(complete.cases(detail_set))){
+    if(any(complete.cases(detail_set))){
         
-        if(length(detail_set) == 1){
-            if(tolower(detail_set) == "simcyp inputs"){
-                
-                CDSdetails <- c("MW", "logP", "CompoundType", "pKa1", "pKa2",
-                                "BPratio", "fu", "BindingProtein", "Abs_model",
-                                "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
-                                "Qgut", "fu_gut", "ka", "fa", "tlag",
-                                "DistributionModel", "VssPredMeth", "Vss_input",
-                                "kp_scalar", "kin_sac", "kout_sac",
-                                "Vsac", "CLint", "CLrenal")
-                
-                Out <- Out %>%
-                    filter(Detail %in%
-                               c("Substrate", "PrimaryMetabolite1", 
-                                 "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                 AllExpDetails %>% 
-                                     filter(complete.cases(CDSInputMatch)) %>%
-                                     pull(Detail)) | SimulatorSection %in%
-                               c("Elimination", "Interaction", "Transporters", 
-                                 "Trial Design")) %>%
-                    mutate(CompoundID = factor(CompoundID, 
-                                               levels = c("substrate", 
-                                                          "primary metabolite 1", 
-                                                          "primary metabolite 2",
-                                                          "secondary metabolite", 
-                                                          "inhibitor 1", 
-                                                          "inhibitor 2", 
-                                                          "inhibitor 1 metabolite"))) %>% 
-                    arrange(CompoundID) %>% 
-                    mutate(Detail = factor(
-                        Detail,
-                        levels = unique(c("Substrate", "PrimaryMetabolite1", 
-                                          "PrimaryMetabolite2", "SecondaryMetabolite", 
-                                          "Inhibitor1", "Inhibitor2", 
-                                          "Inhibitor1Metabolite", 
-                                          paste0(rep(CDSdetails, 7), 
-                                                 rep(c("_sub", "_met1", "_met2", 
-                                                       "_secmet", "_inhib", 
-                                                       "_inhib2", "_inhib1met"), 
-                                                     each = length(CDSdetails))),
-                                          unique(Out$Detail))))) %>%
-                    # Yes, this is taking multiple steps to get the factors in
-                    # the correct order; I'm not sure of a more concise way to
-                    # do this that will still accomplish what I want. -LSh
-                    arrange(CompoundID, Detail) %>% 
-                    mutate(Detail = factor(Detail, levels = unique(Detail))) %>% 
-                    filter(complete.cases(Value))
-                
-            } else if(str_detect(tolower(detail_set), "summary")){
-                Out <- Out %>% filter(Sheet == "Summary")
-                
-            } else if(str_detect(tolower(detail_set), "input")){
-                Out <- Out %>% filter(Sheet == "Input Sheet")
-                
-            } else if(str_detect(tolower(detail_set), "population")){
-                Out <- Out %>% filter(Sheet == "population")
-            }
-        } else {
-            # This is when they have requested individual details.
-            Out <- Out %>% filter(Detail %in% detail_set)
+        DetailSet <- c()
+        
+        if("simcyp inputs" %in% tolower(detail_set)){
+            
+            DetailSet <- c(
+                DetailSet, 
+                "MW", "logP", "CompoundType", "pKa1", "pKa2", "BPratio", 
+                "fu", "BindingProtein", "Abs_model", "Papp_Caco", "Papp_MDCK",
+                "Papp_calibrator", "Qgut", "fu_gut", "ka", "fa", "tlag",
+                "DistributionModel", "VssPredMeth", "Vss_input", "kp_scalar",
+                "kin_sac", "kout_sac", "Vsac", "CLint", "CLrenal", 
+                "Substrate", "PrimaryMetabolite1", "PrimaryMetabolite2",
+                "SecondaryMetabolite", "Inhibitor1", "Inhibitor2", 
+                "Inhibitor1Metabolite",
+                (AllExpDetails %>%
+                     filter(complete.cases(CDSInputMatch)) %>%
+                     pull(Detail)), 
+                Out %>% filter(SimulatorSection %in%
+                                   c("Elimination", "Interaction",
+                                     "Transporters", "Trial Design")) %>%
+                    pull(Detail))
         }
         
-        # Removing unnecessary compounds.
-        if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib$")) %>%
-                     pull(Value)))){
-            Out <- Out %>% filter(!str_detect(Detail, "_inhib$|Inhibitor1$"))
+        if(any(str_detect(tolower(detail_set), "summary"))){
+            DetailSet <- c(DetailSet, 
+                           Out %>% filter(Sheet == "Summary") %>% pull(Detail))
         }
         
-        if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib2")) %>%
-                     pull(Value)))){
-            Out <- Out %>% filter(!str_detect(Detail, "_inhib2|Inhibitor2"))
+        if(any(str_detect(tolower(detail_set), "input sheet"))){
+            DetailSet <- c(DetailSet, 
+                           Out %>% filter(Sheet == "Input Sheet") %>% pull(Detail))
         }
         
-        if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib1met")) %>%
-                     pull(Value)))){
-            Out <- Out %>% filter(!str_detect(Detail, "_inhib1met|Inhibitor1Metabolite"))
+        if(any(str_detect(tolower(detail_set), "population"))){
+            DetailSet <- c(DetailSet, 
+                           Out %>% filter(Sheet == "population") %>% pull(Detail))
         }
         
-        if(all(is.na(Out %>% filter(str_detect(Detail, "_met1")) %>%
-                     pull(Value)))){
-            Out <- Out %>% filter(!str_detect(Detail, "_met1|PrimaryMetabolite1"))
-        }
+        # This is when they have requested individual details.
+        DetailSet <- unique(c(DetailSet, setdiff(detail_set, DetailSet)))
         
-        if(all(is.na(Out %>% filter(str_detect(Detail, "_met2")) %>%
-                     pull(Value)))){
-            Out <- Out %>% filter(!str_detect(Detail, "_met2|PrimaryMetabolite2"))
-        }
-        
-        if(all(is.na(Out %>% filter(str_detect(Detail, "_secmet")) %>%
-                     pull(Value)))){
-            Out <- Out %>% filter(!str_detect(Detail, "_secmet|SecondaryMetabolite"))
-        }
+        Out <- Out %>% filter(Detail %in% DetailSet)
     }
+    
+    
+    # find_matching_details --------------------------------------------------------
+    
+    if(complete.cases(find_matching_details)){
+        Out <- Out %>% 
+            filter(str_detect(Detail, find_matching_details))
+    }
+    
+    
+    # Cleaning up and removing unnecessary info ----------------------------
+    # Removing unnecessary compounds.
+    if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib$")) %>%
+                 pull(Value)))){
+        Out <- Out %>% filter(!str_detect(Detail, "_inhib$|Inhibitor1$"))
+    }
+    
+    if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib2")) %>%
+                 pull(Value)))){
+        Out <- Out %>% filter(!str_detect(Detail, "_inhib2|Inhibitor2"))
+    }
+    
+    if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib1met")) %>%
+                 pull(Value)))){
+        Out <- Out %>% filter(!str_detect(Detail, "_inhib1met|Inhibitor1Metabolite"))
+    }
+    
+    if(all(is.na(Out %>% filter(str_detect(Detail, "_met1")) %>%
+                 pull(Value)))){
+        Out <- Out %>% filter(!str_detect(Detail, "_met1|PrimaryMetabolite1"))
+    }
+    
+    if(all(is.na(Out %>% filter(str_detect(Detail, "_met2")) %>%
+                 pull(Value)))){
+        Out <- Out %>% filter(!str_detect(Detail, "_met2|PrimaryMetabolite2"))
+    }
+    
+    if(all(is.na(Out %>% filter(str_detect(Detail, "_secmet")) %>%
+                 pull(Value)))){
+        Out <- Out %>% filter(!str_detect(Detail, "_secmet|SecondaryMetabolite"))
+    }
+    
     
     # Removing compound column if they don't want it
     if(class(show_compound_col) == "logical"){
@@ -604,13 +634,6 @@ annotateDetails <- function(existing_exp_details,
             Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
                 select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
                        File, Value))
-    }
-    
-    # find_matching_details --------------------------------------------------------
-    
-    if(complete.cases(find_matching_details)){
-        Out <- Out %>% 
-            filter(str_detect(Detail, find_matching_details))
     }
     
     
@@ -693,8 +716,8 @@ annotateDetails <- function(existing_exp_details,
     
     # Sorting to help organize output
     Out <- Out %>% 
-        arrange(across(any_of(c("SimulatorSection", "Detail", 
-                                "CompoundID", "Compound"))))
+        arrange(across(any_of(c("SimulatorSection", "CompoundID", "Detail", 
+                                "Compound"))))
     
     # Saving ---------------------------------------------------------------
     if(complete.cases(save_output)){
