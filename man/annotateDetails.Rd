@@ -6,12 +6,13 @@
 \usage{
 annotateDetails(
   existing_exp_details,
-  template_sim = NA,
   compoundID = NA,
   compound = NA,
+  template_sim = NA,
+  show_only_diff_from_template = FALSE,
+  simulator_section = NA,
   detail_set = NA,
   find_matching_details = NA,
-  simulator_section = NA,
   show_compound_col = TRUE,
   omit_all_missing = TRUE,
   save_output = NA
@@ -20,6 +21,23 @@ annotateDetails(
 \arguments{
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}}}
+
+\item{compoundID}{optionally supply one or more of "substrate", "primary
+metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
+1", "inhibitor 2", or "inhibitor 1 metabolite" to return information
+\emph{only} on that/those compound(s). Remember to contain more than one
+compound ID with \code{c(...)}.}
+
+\item{compound}{optionally supply a specific compound name or part of a
+specific compound name to get all possible compounds that match that and
+\emph{only} compounds that match that. Regular expressions are acceptable
+here, e.g., \code{compound = "midaz|keto"} to find any compound with either
+"midaz" or "keto" in the name. Not case sensitive. If you request only
+information on a specific compound, we will assume what what you care about
+is the set of parameters used for that compound and not whether that
+compound was the substrate or the inhibitor. This will change the output
+somewhat because we won't include the column "CompoundID" and we will
+concatenate all the possible compound names in the column "Compound".}
 
 \item{template_sim}{optionally include a specific file name -- it must be one
 of the files included in the object you supply for
@@ -35,17 +53,17 @@ match any compound names that include the letters "midaz" and is NOT case
 sensitive), and set \code{show_compound_col = FALSE}. This will result in a
 much clearer Excel file.}
 
-\item{compoundID}{optionally supply one or more of "substrate", "primary
-metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
-1", "inhibitor 2", or "inhibitor 1 metabolite" to return information
-\emph{only} on that/those compound(s). Remember to contain more than one
-compound ID with \code{c(...)}.}
+\item{show_only_diff_from_template}{TRUE or FALSE (default) to show only the
+details that differ from the template simulation, which reduces the number
+of rows in your output and can make it easier to find what has changed
+between simulations}
 
-\item{compound}{optionally supply a specific compound name or part of a
-specific compound name to get all possible compounds that match that and
-\emph{only} compounds that match that. Regular expressions are acceptable
-here, e.g., \code{compound = "midaz|keto"} to find any compound with either
-"midaz" or "keto" in the name. Not case sensitive.}
+\item{simulator_section}{optionally supply a specific simulator section or
+sections from which to find simulation experimental details and then return
+\emph{only} those details. Options are "Absorption", "Distribution",
+"Elimination", "Interaction", "Phys Chem and Blood Binding", "Population",
+"Transport", or "Trial Design". Not case sensitive. If you want more than
+one, enclose them with \code{c(...)}.}
 
 \item{detail_set}{optionally supply a set of details to return \emph{only}
   those details. Options are the same as the ones listed as possibilities for
@@ -90,13 +108,6 @@ here, e.g., \code{compound = "midaz|keto"} to find any compound with either
   = "^CLint.*CYP3A.*sub$"} to find all details that start with "CLint", then,
   somewhere in the name, include "CYP3A", and then end with "sub" (for
   "substrate"). Case sensitive.}
-
-\item{simulator_section}{optionally supply a specific simulator section or
-sections from which to find simulation experimental details and then return
-\emph{only} those details. Options are "Absorption", "Distribution",
-"Elimination", "Interaction", "Phys Chem and Blood Binding", "Population",
-"Transport", or "Trial Design". Not case sensitive. If you want more than
-one, enclose them with \code{c(...)}.}
 
 \item{show_compound_col}{TRUE (default), FALSE, or "concatenate" for whether
 to include in the results the column "Compound", which is the compound's

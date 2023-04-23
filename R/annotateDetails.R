@@ -30,6 +30,10 @@
 #'   match any compound names that include the letters "midaz" and is NOT case
 #'   sensitive), and set \code{show_compound_col = FALSE}. This will result in a
 #'   much clearer Excel file.
+#' @param show_only_diff_from_template TRUE or FALSE (default) to show only the
+#'   details that differ from the template simulation, which reduces the number
+#'   of rows in your output and can make it easier to find what has changed
+#'   between simulations
 #' @param show_compound_col TRUE (default), FALSE, or "concatenate" for whether
 #'   to include in the results the column "Compound", which is the compound's
 #'   specific name in each simulation. Why would you ever omit this? If you have
@@ -54,7 +58,12 @@
 #'   specific compound name to get all possible compounds that match that and
 #'   \emph{only} compounds that match that. Regular expressions are acceptable
 #'   here, e.g., \code{compound = "midaz|keto"} to find any compound with either
-#'   "midaz" or "keto" in the name. Not case sensitive.
+#'   "midaz" or "keto" in the name. Not case sensitive. If you request only
+#'   information on a specific compound, we will assume what what you care about
+#'   is the set of parameters used for that compound and not whether that
+#'   compound was the substrate or the inhibitor. This will change the output
+#'   somewhat because we won't include the column "CompoundID" and we will
+#'   concatenate all the possible compound names in the column "Compound".
 #' @param find_matching_details optionally supply a string of text to search for
 #'   in the column "Detail". Regular expressions are supported here, so use,
 #'   e.g., \itemize{
@@ -161,12 +170,13 @@
 #'
 #' 
 annotateDetails <- function(existing_exp_details,
-                            template_sim = NA,
                             compoundID = NA, 
                             compound = NA,
+                            template_sim = NA,
+                            show_only_diff_from_template = FALSE,
+                            simulator_section = NA, 
                             detail_set = NA, 
                             find_matching_details = NA,
-                            simulator_section = NA, 
                             show_compound_col = TRUE,
                             omit_all_missing = TRUE, 
                             save_output = NA){
@@ -223,6 +233,12 @@ annotateDetails <- function(existing_exp_details,
     
     if(complete.cases(template_sim) && str_detect(template_sim, "xlsx") == FALSE){
         template_sim <- paste0(template_sim, ".xlsx")
+    }
+    
+    if(show_only_diff_from_template & is.na(template_sim)){
+        warning("You requested that we only show you differences from the template simulation, but you haven't specified which file to use as the template. We don't know what details to show you, so we'll set `show_only_diff_from_template` to be FALSE.", 
+                call. = FALSE)
+        show_only_diff_from_template <- FALSE
     }
     
     # We'll check whether that file was included once we've re-formatted existing_exp_details
@@ -388,9 +404,9 @@ annotateDetails <- function(existing_exp_details,
     Out <- Out %>% unique() %>% 
         mutate(
             # Elimination details
-            Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
+            Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
                            "Input Sheet", Sheet), 
-            SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CLint|^CLadd|^CLbiliary|^CLiv|^CLrenal|^CLpo"), 
+            SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
                                       "Elimination", SimulatorSection), 
             
             # Interaction details
@@ -454,12 +470,19 @@ annotateDetails <- function(existing_exp_details,
     ## compoundID ---------------------------------------------------------------
     if(any(complete.cases(compoundID))){
         
-        Out <- Out %>% filter(CompoundID %in% sort(unique(compoundID)))
+        Out <- Out %>% filter(CompoundID %in% sort(unique(compoundID)) |
+                                  is.na(CompoundID))
     }
     
     ## compound -------------------------------------------------------------
     if(complete.cases(compound)){
-        Out <- Out %>% filter(str_detect(tolower(Compound), {{compound}}))
+        Out <- Out %>% filter(str_detect(tolower(Compound), {{compound}}) |
+                                  is.na(Compound)) %>% 
+            mutate(Notes = str_trim(gsub("(for|of) (the )?(substrate|primary metabolite 1|primary metabolite 2|secondary metabolite|inhibitor 1|inhibitor 2|inhibitor 1 metabolite)",
+                                         "", Notes)), 
+                   Detail = sub("_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$|_inhib1met$", 
+                                "", Detail))
+        show_compound_col <- "concatenate"
     }
     
     ## simulator_section --------------------------------------------------
@@ -625,15 +648,23 @@ annotateDetails <- function(existing_exp_details,
             Out <- Out %>% select(-Compound)
         }
     } else if(show_compound_col == "concatenate"){
-        AllCompounds <- Out %>% select(Compound, CompoundID) %>% 
-            filter(complete.cases(CompoundID)) %>% 
-            group_by(CompoundID) %>% 
-            summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
-        
-        suppressMessages(
-            Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
-                select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
-                       File, Value))
+        if(complete.cases(compound)){
+            AllCompounds <- str_comma(sort(unique(Out$Compound)), conjunction = "or")
+            Out <- Out %>% mutate(Compound = ifelse(complete.cases(Compound), 
+                                                    AllCompounds, NA)) %>% 
+                select(SimulatorSection, Sheet, Notes, Compound, Detail,
+                       File, Value)
+        } else {
+            AllCompounds <- Out %>% select(Compound, CompoundID) %>% 
+                filter(complete.cases(CompoundID)) %>% 
+                group_by(CompoundID) %>% 
+                summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
+            
+            suppressMessages(
+                Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
+                    select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
+                           File, Value))
+        }
     }
     
     
@@ -695,11 +726,16 @@ annotateDetails <- function(existing_exp_details,
                    everything())
         
         if("Compound" %in% names(Out)){
-            Out <- Out %>% 
-                mutate(ToOmit = complete.cases(CompoundID) & 
-                           is.na(Compound)) %>% 
-                filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
-                rename("All files have this value for this compound ID and compound" = UniqueVal)
+            if(complete.cases(compound)){
+                Out <- Out %>% 
+                    rename("All files have this value for this compound" = UniqueVal)
+            } else {
+                Out <- Out %>% 
+                    mutate(ToOmit = complete.cases(CompoundID) & 
+                               is.na(Compound)) %>% 
+                    filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
+                    rename("All files have this value for this compound ID and compound" = UniqueVal)
+            }
         } else {
             Out <- Out %>% 
                 rename("All files have this value for this compound ID" = UniqueVal)
@@ -718,6 +754,33 @@ annotateDetails <- function(existing_exp_details,
     Out <- Out %>% 
         arrange(across(any_of(c("SimulatorSection", "CompoundID", "Detail", 
                                 "Compound"))))
+    
+    # Checking for differences from template sim
+    if(complete.cases(template_sim)){
+        Diffs <- list()
+        MyStyles <- list()
+        NontempFiles <- setdiff(AllFiles, template_sim)
+        
+        for(i in 1:length(NontempFiles)){
+            Diffs[[i]] <- 
+                list(columns = which(names(Out) == NontempFiles[i]),
+                     rows = which(Out[ , NontempFiles[i]] != Out[, TSim] |
+                                      (complete.cases(Out[ , NontempFiles[i]]) &
+                                           is.na(Out[, TSim])) |
+                                      (is.na(Out[ , NontempFiles[i]]) & 
+                                           complete.cases(Out[, TSim]))), 
+                     fill = "#FFC7CE", 
+                     font = list(color = "#9B030C"))
+        }
+    }
+    
+    # Only showing differences from template sim if that's what user requested
+    if(show_only_diff_from_template){
+        RowsWithDiffs <- lapply(Diffs, FUN = function(x) x[["rows"]])
+        RowsWithDiffs <- sort(unique(unlist(RowsWithDiffs)))
+        Out <- Out[RowsWithDiffs, ]
+    }
+    
     
     # Saving ---------------------------------------------------------------
     if(complete.cases(save_output)){
@@ -759,23 +822,6 @@ annotateDetails <- function(existing_exp_details,
             } else {
                 # This is when there IS a template simulation. Formatting to
                 # highlight in red all the places where things differ.
-                
-                # Checking whether things match
-                Diffs <- list()
-                MyStyles <- list()
-                NontempFiles <- setdiff(AllFiles, template_sim)
-                
-                for(i in 1:length(NontempFiles)){
-                    Diffs[[i]] <- 
-                        list(columns = which(names(Out) == NontempFiles[i]),
-                             rows = which(Out[ , NontempFiles[i]] != Out[, TSim] |
-                                              (complete.cases(Out[ , NontempFiles[i]]) &
-                                                   is.na(Out[, TSim])) |
-                                              (is.na(Out[ , NontempFiles[i]]) & 
-                                                   complete.cases(Out[, TSim]))), 
-                             fill = "#FFC7CE", 
-                             font = list(color = "#9B030C"))
-                }
                 
                 MyStyles[[1]] <- 
                     # wrapping text in the notes column since it's sometimes long
