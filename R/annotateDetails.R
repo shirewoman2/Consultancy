@@ -90,9 +90,13 @@
 #'   \item{"population tab"}{details about the population used (data come from
 #'   the tab with the same name as the population simulated)}
 #'
-#'   \item{"Simcyp inputs"}{Extract all the details that you normally fill out
-#'   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
-#'   design information}
+#'   \item{"Simcyp inputs"}{all the details that you normally fill out on the
+#'   "Simcyp inputs (and QC)" tab of a compound data sheet plus trial design
+#'   information}
+#'
+#'   \item{"Methods"}{all the details that show up in the methods section of a
+#'   report: number of trials, number of individuals simulated, population,
+#'   percent female, age range, dose amount and regimen}
 #'
 #'   \item{"all"}{all possible details}
 #'
@@ -577,6 +581,13 @@ annotateDetails <- function(existing_exp_details,
                                    c("Elimination", "Interaction",
                                      "Transporters", "Trial Design")) %>%
                     pull(Detail))
+        }
+        
+        if(any(str_detect(tolower(detail_set), "methods"))){
+            DetailSet <- c(DetailSet, "NumTrials", "NumSubjTrial", "PercFemale", 
+                           "Age_min", "Age_max", "NumDoses", "Regimen", 
+                           "Inhibitor1", "Inhibitor2", "SimDuration", 
+                           "StartDayTime")
         }
         
         if(any(str_detect(tolower(detail_set), "summary"))){
