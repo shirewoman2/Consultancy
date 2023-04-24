@@ -526,7 +526,8 @@ ct_plot_mult <- function(ct_dataframe,
                     annotateDetails(existing_exp_details %>% 
                                         filter(File == unique(ct_dataframe[[i]]$File)), 
                                     detail_set = "Methods") %>% 
-                        select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)))
+                        select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
+                    shading_column = Detail)
         }
         
         rm(Title_i)
