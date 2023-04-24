@@ -234,6 +234,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                        " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
                        str_comma(paste0("`", PossCmpd, "`"))), 
                 call. = FALSE)
+        compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
     }
     
     if(any(complete.cases(obs_data_files))){
