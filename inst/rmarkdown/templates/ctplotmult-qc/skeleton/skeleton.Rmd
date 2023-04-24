@@ -1,0 +1,14 @@
+
+# QC info
+
+```{r QCtable}
+
+formatTable_Simcyp(annotateDetails(existing_exp_details %>% 
+                                       filter(File %in% unique(ct_dataframe$File)), 
+                                   detail_set = "Methods") %>% 
+                       select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)))
+
+
+```
+
+

@@ -55,6 +55,15 @@
 #'   need to specify anything for \code{save_graph}. (In fact, anything you
 #'   specify for \code{save_graph} will be ignored.)
 #'
+#' @param qc_graphs TRUE or FALSE (default) on whether to create a second copy
+#'   of the graphical file(s) where the left panel shows the original graphs and
+#'   the right panel shows information about the file used to get the data and
+#'   the trial design. This works MUCH faster when you have already used
+#'   \code{\link{extractExpDetails_mult}} to get information about how your
+#'   simulation or simulations were set up and supply that object to the
+#'   argument \code{existing_exp_details}.
+#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
+#'   \code{\link{extractExpDetails_mult}}
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -217,7 +226,7 @@
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 8
 #'
-#' @return a set of arranged ggplot2 graphs and/or saved files of those graphs 
+#' @return a set of arranged ggplot2 graphs and/or saved files of those graphs
 #' @export
 #'
 #' @examples
@@ -246,6 +255,8 @@
 ct_plot_mult <- function(ct_dataframe, 
                          obs_to_sim_assignment = NA,
                          graph_arrangement = "all together", 
+                         qc_graphs = FALSE, 
+                         existing_exp_details = NA,
                          figure_type = "percentiles",
                          mean_type = "arithmetic",
                          linear_or_log = "semi-log",
@@ -282,7 +293,7 @@ ct_plot_mult <- function(ct_dataframe,
     
     # main body of function -----------------------------------------------
     
-    # Setting up ct_dataframe
+    ## Setting up ct_dataframe ----------------------------------------------
     ct_dataframe <- ct_dataframe %>% 
         mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
                                         "none", subsection_ADAM),
@@ -300,7 +311,7 @@ ct_plot_mult <- function(ct_dataframe,
         DatasetCheck$GraphLabs <- DatasetCheck$File
     }
     
-    # Setting up graph titles and order
+    ## Setting up graph titles and order --------------------------------------
     if(length(graph_titles) > 1 && any(complete.cases(graph_titles))){
         
         # If they have named some graph_titles but not all, fix that.
@@ -351,12 +362,22 @@ ct_plot_mult <- function(ct_dataframe,
         names(graph_titles_all) <- graph_titles_all
     }
     
-    # Dealing with observed data. This is the scenario when any observed data
-    # exist AND *either* any of the observed data are missing a value for File
-    # *or* there are any values for obs_to_sim_assignment.
+    # Much easier to deal with things if we've got base file names in
+    # ct_dataframe. Taking care of that here as well as setting factor levels
+    # for graph titles.
+    ct_dataframe <- ct_dataframe %>% 
+        mutate(File_bn = basename(File), 
+               # Set the sort order in the data
+               GraphLabs = factor(GraphLabs, levels = names(graph_titles_all)))
+    
+    ## observed data ---------------------------------------------------------
+    
     if(any(ct_dataframe$Simulated == FALSE) & 
        (any(is.na(ct_dataframe$File[ct_dataframe$Simulated == FALSE])) |
         any(complete.cases(obs_to_sim_assignment)))){
+        # This is the scenario when any observed data exist AND *either* any of
+        # the observed data are missing a value for File *or* there are any
+        # values for obs_to_sim_assignment.
         
         ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
         ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
@@ -400,14 +421,10 @@ ct_plot_mult <- function(ct_dataframe,
         ct_dataframe <- ct_dataframe %>% bind_rows(ObsCT)
     }
     
-    # Much easier to deal with things if we've got base file names in
-    # ct_dataframe. Taking care of that here.
-    ct_dataframe <- ct_dataframe %>% 
-        mutate(File_bn = basename(File), 
-               # Set the sort order in the data
-               GraphLabs = factor(GraphLabs, levels = names(graph_titles_all)))
     
+    ## Making graphs ---------------------------------------------------------
     AllGraphs <- list()
+    QCGraphs <- list()
     
     if(is.na(graph_titles[1])){
         
@@ -502,16 +519,55 @@ ct_plot_mult <- function(ct_dataframe,
                     ..., # comment this when developing
                     graph_title_size = graph_title_size)
         
+        if(qc_graphs){
+            
+            QCGraphs[[i]] <- 
+                formatTable_Simcyp(
+                    annotateDetails(existing_exp_details %>% 
+                                        filter(File == unique(ct_dataframe[[i]]$File)), 
+                                    detail_set = "Methods") %>% 
+                        select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)))
+        }
+        
         rm(Title_i)
     }
     
     if(graph_labels){
-        labels <- "AUTO"
+        labels <- LETTERS[1:length(AllGraphs)]
     } else {
         labels <- NULL
     }
     
-    if(graph_arrangement != "separate files"){
+    if(graph_arrangement == "separate files"){
+        
+        for(i in names(AllGraphs)){
+            
+            Filename <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
+                               ifelse(complete.cases(file_suffix),
+                                      paste0(" - ", file_suffix), ""), ".png")
+            
+            if(any(duplicated(DatasetCheck$File))){
+                Split_i <- str_split(i, pattern = "\\.")[[1]]
+                Filename <- paste0(Split_i[3], " ", Split_i[4], " ",
+                                   ifelse(Split_i[5] == "none", "", 
+                                          paste0(" subsection ADAM ", Split_i[5])),
+                                   Filename)
+            } 
+            
+            ggsave(Filename, 
+                   height = fig_height, width = fig_width, dpi = 600, 
+                   plot = AllGraphs[[i]])
+            
+            if(qc_graphs){
+                ggsave(sub("\\.png", " - QC.png", Filename), 
+                       height = fig_height, width = fig_width * 2, dpi = 600, 
+                       plot = ggpubr::ggarrange(plotlist = list(AllGraphs[[i]],
+                                                                flextable::gen_grob(QCGraphs[[i]])), 
+                                                nrow = 1))
+            }
+        }
+    } else {
+        # This is when the user does NOT want separate files
         
         # Checking on number of columns and rows requested
         if(graph_arrangement == "all together"){
@@ -548,7 +604,6 @@ ct_plot_mult <- function(ct_dataframe,
                                   labels = labels, 
                                   font.label = list(size = graph_title_size),
                                   align = "hv"))
-            
         } else {
             Out <- suppressWarnings(
                 ggpubr::ggarrange(plotlist = AllGraphs, 
@@ -559,6 +614,27 @@ ct_plot_mult <- function(ct_dataframe,
                                   labels = labels, 
                                   font.label = list(size = graph_title_size),
                                   align = "hv"))
+        }
+        
+        if(qc_graphs){
+            
+            MyPlots <- c(AllGraphs, 
+                         lapply(QCGraphs, FUN = function(x) flextable::gen_grob(x)))
+            
+            suppressWarnings(
+                Out_QC <- ggpubr::ggarrange(plotlist = MyPlots,
+                                            labels = rep(labels, 2),
+                                            font.label = list(size = graph_title_size))
+            )
+            
+            # Having trouble getting the arrangement to match main graphs            
+            # Out_QC <- suppressWarnings(
+            #     cowplot::plot_grid(plotlist = MyPlots, 
+            #                        byrow = FALSE, 
+            #                        labels = "AUTO",
+            #                        font.label = list(size = graph_title_size)))
+            # )
+            
         }
         
         if(complete.cases(save_graph)){
@@ -601,31 +677,21 @@ ct_plot_mult <- function(ct_dataframe,
                        plot = Out)
                 
             }
+            
+            if(qc_graphs){
+                ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
+                       height = fig_height * 2, width = fig_width, dpi = 600, 
+                       plot = Out_QC)
+            }
         }
         
-        return(Out)
-        
-    } else {
-        
-        for(i in names(AllGraphs)){
-            
-            Filename <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
-                               ifelse(complete.cases(file_suffix),
-                                      paste0(" - ", file_suffix), ""), ".png")
-            
-            if(any(duplicated(DatasetCheck$File))){
-                Split_i <- str_split(i, pattern = "\\.")[[1]]
-                Filename <- paste0(Split_i[3], " ", Split_i[4], " ",
-                                   ifelse(Split_i[5] == "none", "", 
-                                          paste0(" subsection ADAM ", Split_i[5])),
-                                   Filename)
-            } 
-            
-            ggsave(Filename, 
-                   height = fig_height, width = fig_width, dpi = 600, 
-                   plot = AllGraphs[[i]])
+        if(qc_graphs){
+            return(list("graph" = Out, 
+                        "QC graph" = Out_QC))
+        } else {
+            return(Out)
         }
     }
-    
 }
+
 

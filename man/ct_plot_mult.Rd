@@ -8,6 +8,8 @@ ct_plot_mult(
   ct_dataframe,
   obs_to_sim_assignment = NA,
   graph_arrangement = "all together",
+  qc_graphs = FALSE,
+  existing_exp_details = NA,
   figure_type = "percentiles",
   mean_type = "arithmetic",
   linear_or_log = "semi-log",
@@ -65,6 +67,17 @@ attention to the position of commas and quotes there!}
   own graph file, named to match the Simulator output file name and you don't
   need to specify anything for \code{save_graph}. (In fact, anything you
   specify for \code{save_graph} will be ignored.)}
+
+\item{qc_graphs}{TRUE or FALSE (default) on whether to create a second copy
+of the graphical file(s) where the left panel shows the original graphs and
+the right panel shows information about the file used to get the data and
+the trial design. This works MUCH faster when you have already used
+\code{\link{extractExpDetails_mult}} to get information about how your
+simulation or simulations were set up and supply that object to the
+argument \code{existing_exp_details}.}
+
+\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
+\code{\link{extractExpDetails_mult}}}
 
 \item{figure_type}{type of figure to plot. Options are:
 
