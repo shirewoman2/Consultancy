@@ -20,6 +20,13 @@
 #'   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
 #'   design information}
 #'
+#'   \item{"workspace"}{Extract an extremely limited set of details directly
+#'   from the Simcyp Simulator workspace files. The set of possible details may
+#'   be viewed by entering \code{view(AllWorkspaceDetails)} in the console. This
+#'   \emph{only} works if the workspace file name perfectly matches the Excel
+#'   results file name and is located in the same folder. Otherwise, this step
+#'   in the data extraction will be skipped. UNDER CONSTRUCTION.}
+#'
 #'   \item{"all"}{Extract all possible parameters}
 #'
 #'   \item{a string of the specific parameters you want, each in quotes and
@@ -730,7 +737,7 @@ extractExpDetails <- function(sim_data_file,
                         
                         # Induction
                         IndParam1stRow <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
-                                                   "Ind max|Ind Slope"))
+                                                           "Ind max|Ind Slope"))
                         if(length(IndParam1stRow) > 0){
                             IndModelCheck <- list(str_detect(t(InputTab[ThisIntRows, 1]), "Ind max"), 
                                                   str_detect(t(InputTab[ThisIntRows, 1]), "Ind Slope"), 
@@ -778,7 +785,7 @@ extractExpDetails <- function(sim_data_file,
                                           sep = "_"), Suffix)]] <-
                                     as.numeric(InputTab[ThisIntRows[IndModelCheck[[5]][1]], NameCol + 1])
                             )
-                         
+                            
                             rm(IndModelCheck)   
                         }
                         
@@ -1057,8 +1064,6 @@ extractExpDetails <- function(sim_data_file,
         }
     }
     
-    
-    
     # Pulling details from the population tab -------------------------------
     MyPopDeets <- intersect(exp_details, PopDeets$Deet)
     # If all of the details are from one of the other sheets, then don't
@@ -1163,6 +1168,26 @@ extractExpDetails <- function(sim_data_file,
             Out[[i]] <- pullValue(i)
         }
     }
+    
+    # Pulling from workspace file -------------------------------------------
+    if(any(c("workspace", "all") %in% exp_details_input)){
+        
+        # Checking that the workspace file is available. 
+        if(sub("xlsx$", "wksz", sim_data_file) %in% list.files(pattern = "wksz$")){
+            
+            TEMP <- extractExpDetails_XML(
+                sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
+                compoundsToExtract = "all",
+                exp_details = "all") %>% as.list()
+            
+            Out <- c(Out, TEMP)
+            
+        }
+        
+        rm(TEMP)
+        
+    }
+    
     
     # Calculated details & data cleanup ----------------------------------------
     if("StartHr_sub" %in% exp_details && 

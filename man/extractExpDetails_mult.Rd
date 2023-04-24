@@ -38,6 +38,14 @@ skipped.}
   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
   design information}
 
+  \item{"workspace"}{Extract an extremely limited set of details directly
+  from the Simcyp Simulator workspace files. The set of possible details may
+  be viewed by entering \code{view(AllWorkspaceDetails)} in the console. This
+  \emph{only} works when each workspace file name perfectly matches its
+  corresponding Excel results file name and is located in the same folder.
+  Otherwise, this step in the data extraction will be skipped. UNDER
+  CONSTRUCTION.}
+
   \item{"all"}{Extract all possible parameters (default). This is the slowest
   option in terms of processing time because it must read multiple Excel
   tabs.}

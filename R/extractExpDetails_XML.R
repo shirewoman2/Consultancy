@@ -43,6 +43,15 @@
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 #'   details.xlsx". If you leave off the file extension, it will be saved as a
 #'   csv file.
+#'   
+#' @return Returns a data.frame of the experimental details
+#' @export
+#'
+#' @examples
+#' 
+#' # None yet
+#' 
+
 
 
 extractExpDetails_XML <- function(sim_workspace_files,
@@ -158,7 +167,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                        DeetInfo$Level4]][[
                                            DeetInfo$Level5]]))
                     
-                    DeetValue <- switch(DeetInfo$DataClass, 
+                    DeetValue <- switch(DeetInfo$Class, 
                                         "numeric" = as.numeric(DeetValue), 
                                         "character" = as.character(DeetValue))
                     
@@ -197,7 +206,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                DeetInfo$Level2]][[DeetInfo$Level3]][[DeetInfo$Level4]][[
                                    DeetInfo$Level5]]))
                 
-                DeetValue <- switch(DeetInfo$DataClass, 
+                DeetValue <- switch(DeetInfo$Class, 
                                     "numeric" = as.numeric(DeetValue), 
                                     "character" = as.character(DeetValue))
                 

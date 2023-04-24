@@ -30,6 +30,13 @@ in quotes}
   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
   design information}
 
+  \item{"workspace"}{Extract an extremely limited set of details directly
+  from the Simcyp Simulator workspace files. The set of possible details may
+  be viewed by entering \code{view(AllWorkspaceDetails)} in the console. This
+  \emph{only} works if the workspace file name perfectly matches the Excel
+  results file name and is located in the same folder. Otherwise, this step
+  in the data extraction will be skipped. UNDER CONSTRUCTION.}
+
   \item{"all"}{Extract all possible parameters}
 
   \item{a string of the specific parameters you want, each in quotes and

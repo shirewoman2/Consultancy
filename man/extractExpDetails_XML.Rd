@@ -53,9 +53,17 @@ file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 details.xlsx". If you leave off the file extension, it will be saved as a
 csv file.}
 }
+\value{
+Returns a data.frame of the experimental details
+}
 \description{
 \code{extractExpDetails_XML} takes a character vector of Simcyp Simulator
 workspaces -- or all the workspace files in the current directory if no files
 are specified -- and collects experimental details for the simulations into a
 single table. It optionally saves that table to a csv or Excel file.
+}
+\examples{
+
+# None yet
+
 }
