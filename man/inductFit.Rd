@@ -11,6 +11,7 @@ inductFit(
   donor_column = DonorID,
   fitByDonor = TRUE,
   model = "all",
+  graph_mean_of_fits = FALSE,
   measurement = "mRNA",
   enzyme = "CYP3A4",
   drug = NA,
@@ -73,6 +74,13 @@ individual donor}
   Indmax instead of Emax!}
 
   \item{"all" (default)}{All 4 models will be fitted to the data.} }}
+
+\item{graph_mean_of_fits}{TRUE or FALSE (default) for whether to graph a line
+representing the mean of all donors' fitted parameters. Please note that
+this is NOT line showing the model fitted to the mean data; instead, this
+is the mean of all the donors individually fitted parameters. This only
+applies when \code{fitByDonor = TRUE}. If \code{graph_mean_of_fits =
+FALSE}, graph will show a line for each donor's fitted parameters.}
 
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}
