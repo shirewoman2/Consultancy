@@ -642,12 +642,8 @@ extractPK <- function(sim_data_file,
                 # want the 1st one. (The second would be for the wrong
                 # tissue, e.g., blood when user asked for plasma.)
                 PossCol <- StartCol:EndCol
-                ColNum <- PossCol[
-                    which(str_detect(as.vector(t(
-                        AUC_xl[IndexRow, PossCol])),
-                        ToDetect$SearchText) &
-                            !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
-                
+                ColNum <- PossCol[which(str_detect(as.vector(t(
+                        AUC_xl[IndexRow, PossCol])), ToDetect$SearchText))][1]
             }
             
             if(length(ColNum) == 0 | is.na(ColNum)){
@@ -735,12 +731,8 @@ extractPK <- function(sim_data_file,
                     # want the 1st one. (The second would be for the wrong
                     # tissue, e.g., blood when user asked for plasma.)
                     PossCol <- StartCol:EndCol
-                    ColNum <- PossCol[
-                        which(str_detect(as.vector(t(
-                            AUC_xl[IndexRow, PossCol])),
-                            ToDetect$SearchText) &
-                                !str_detect(as.vector(t(AUC_xl[3, PossCol])), "%")) ][1]
-                    
+                    ColNum <- PossCol[which(str_detect(as.vector(t(
+                       AUC_xl[IndexRow, PossCol])), ToDetect$SearchText))][1]
                 }
                 
                 if(length(ColNum) == 0 | is.na(ColNum)){

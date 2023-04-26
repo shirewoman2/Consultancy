@@ -1182,10 +1182,8 @@ extractExpDetails <- function(sim_data_file,
             
             Out <- c(Out, TEMP)
             
+            rm(TEMP)
         }
-        
-        rm(TEMP)
-        
     }
     
     
