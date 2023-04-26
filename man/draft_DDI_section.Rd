@@ -164,7 +164,7 @@ something like this if you're including effector metabolites:
 \item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
 simulation, so "TRUE" means that the client's drug was the victim. The only
 thing this affects is the sentence in the template report text "Performance
-verification of the XXX model is provided in Appendix B – Performance
+verification of the XXX model is provided in Appendix B - Performance
 Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
 victim DDI simulation, then this sentence will replace "XXX" with the name
 of the effector. If not, it will replace "XXX" with the name of the
