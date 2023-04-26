@@ -124,7 +124,7 @@ suppressMessages(
     PKToPull <- data.frame(
         PrettifiedNames = sub(as.character(prettify_compound_names["effector"]),
                               "effector", names(PKsum$Table))) %>% 
-        left_join(AllPKParameters) %>% 
+        left_join(AllPKParameters, multiple = "all") %>% 
         filter(complete.cases(PKparameter)) %>% pull(PKparameter)
 )
 

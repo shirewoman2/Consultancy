@@ -1,13 +1,54 @@
 Figure XXX. Simulated hepatic `r enzyme` levels during the dosing of `r MySubstrate` in the presence and absence of `r MyEffector` to `r tidyPop(exp_detail_data$Population)$Population`. 
 
-```{r EnzymeAbundancePlot, fig.width = 5, fig.height = 3, echo=FALSE}
+```{r EnzymeAbundancePlot1}
 
-suppressMessages(enz_plot(sim_enz_dataframe = sim_enz_dataframe, 
-                          figure_type = figure_type_enz,
-                          time_range = time_range_enz,
-                          x_axis_interval = x_axis_interval_enz,
-                          y_axis_label = y_axis_label_enz,
-                          linear_or_log = linear_or_log_enz))
+TEMP_EA <- sim_enz_dataframe %>% filter(sim_data_file == {{sim_data_file}}) %>% 
+   unique()
+Scenario <- paste(
+   # Num enzymes
+   as.character(length(unique(TEMP_EA$Enzyme)) > 1), 
+   # Num tissues
+   as.character(length(unique(TEMP_EA$Tissue)) > 1))
+
+
+```
+
+
+```{r EnzymeAbundancePlot2, fig.width = 5, fig.height = ifelse(str_detect(Scenario, "TRUE"), 5, 3), echo=FALSE}
+
+switch(Scenario, 
+       "TRUE TRUE" = suppressMessages(
+          enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
+                           facet1_column = Enzyme, facet2_column = Tissue,
+                           figure_type = figure_type_enz,
+                           time_range = time_range_enz,
+                           x_axis_interval = x_axis_interval_enz,
+                           y_axis_label = y_axis_label_enz,
+                           linear_or_log = linear_or_log_enz)),
+       "TRUE FALSE" = suppressMessages(
+          enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
+                           facet1_column = Enzyme,
+                           figure_type = figure_type_enz,
+                           time_range = time_range_enz,
+                           x_axis_interval = x_axis_interval_enz,
+                           y_axis_label = y_axis_label_enz,
+                           linear_or_log = linear_or_log_enz)),
+       "FALSE TRUE" = suppressMessages(
+          enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
+                           facet1_column = Tissue,
+                           figure_type = figure_type_enz,
+                           time_range = time_range_enz,
+                           x_axis_interval = x_axis_interval_enz,
+                           y_axis_label = y_axis_label_enz,
+                           linear_or_log = linear_or_log_enz)), 
+       "FALSE FALSE" = suppressMessages(
+          enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
+                           figure_type = figure_type_enz,
+                           time_range = time_range_enz,
+                           x_axis_interval = x_axis_interval_enz,
+                           y_axis_label = y_axis_label_enz,
+                           linear_or_log = linear_or_log_enz))
+       )
 
 ```
 
