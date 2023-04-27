@@ -564,6 +564,11 @@ pksummary_mult <- function(sim_data_files = NA,
     
     MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = length) > 0])
     OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = length) > 0])
+    # Need to deal with possible character data for custom dosing before row
+    # binding for FD
+    suppressWarnings(
+       FD <- map(FD, .f = function(x) x %>% mutate(across(.cols = c("Dose_sub", "Dose_inhib"), 
+                                                          .fns = as.numeric))))
     FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
     
     if(extract_forest_data & # NOT SURE THIS IS NECESSARY
