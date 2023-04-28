@@ -41,13 +41,21 @@ if(class(prettify_compound_names) == "logical" &&
 prettify_compound_names <- c("substrate" = as.character(MySubstrate), 
                              "effector" = as.character(MyEffector))
 
-SDMD_sub_txt <- ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", 
-                       switch(exp_detail_data$DoseRoute_sub, 
-                              "Oral" = "multiple oral doses", 
-                              "IV" = "multiple IV doses"),
-                       switch(exp_detail_data$DoseRoute_sub, 
-                              "Oral" = "a single oral dose",
-                              "IV" = "a single IV dose"))
+SDMD_sub_txt <- paste(switch(exp_detail_data$Regimen_sub, 
+                       "custom dosing" = "multiple", 
+                       "Multiple Dose" = "multiple", 
+                       "Single Dose" = "a single"), 
+                      
+                      switch(exp_detail_data$DoseRoute_sub, 
+                             "custom dosing" = "CUSTOM DOSING - CHECK THIS", 
+                             "Oral" = "oral", 
+                             "IV" = "IV"), 
+                      
+                      switch(exp_detail_data$Regimen_sub, 
+                       "custom dosing" = "doses", 
+                       "Multiple Dose" = "doses", 
+                       "Single Dose" = "dose")
+                      )
 
 DoseFreq_sub <- ifelse(exp_detail_data$Regimen_sub == "Multiple Dose", 
                        ifelse(exp_detail_data$DoseInt_sub == 12, 
@@ -55,13 +63,23 @@ DoseFreq_sub <- ifelse(exp_detail_data$Regimen_sub == "Multiple Dose",
                               ifelse(exp_detail_data$DoseInt_sub == 24, "QD", "OTHER REGIMEN")),
                        "")
 
-SDMD_inhib_txt <- ifelse(complete.cases(exp_detail_data$DoseInt_inhib), 
-                         switch(exp_detail_data$DoseRoute_inhib, 
-                                "Oral" = "multiple oral doses", 
-                                "IV" = "multiple IV doses"),
-                         switch(exp_detail_data$DoseRoute_inhib, 
-                                "Oral" = "a single oral dose",
-                                "IV" = "a single IV dose"))
+
+SDMD_inhib_txt <- paste(switch(exp_detail_data$Regimen_inhib, 
+                             "custom dosing" = "multiple", 
+                             "Multiple Dose" = "multiple", 
+                             "Single Dose" = "a single"), 
+                      
+                      switch(exp_detail_data$DoseRoute_inhib, 
+                             "custom dosing" = "CUSTOM DOSING - CHECK THIS", 
+                             "Oral" = "oral", 
+                             "IV" = "IV"), 
+                      
+                      switch(exp_detail_data$Regimen_inhib, 
+                             "custom dosing" = "doses", 
+                             "Multiple Dose" = "doses", 
+                             "Single Dose" = "dose")
+)
+
 DoseFreq_inhib <- ifelse(complete.cases(exp_detail_data$DoseInt_inhib), 
                          ifelse(exp_detail_data$DoseInt_inhib == 12, 
                                 "BID", 
@@ -125,7 +143,8 @@ suppressMessages(
         PrettifiedNames = sub(as.character(prettify_compound_names["effector"]),
                               "effector", names(PKsum$Table))) %>% 
         left_join(AllPKParameters, multiple = "all") %>% 
-        filter(complete.cases(PKparameter)) %>% pull(PKparameter)
+        filter(complete.cases(PKparameter) & 
+                  !str_detect(PKparameter, "PercExtrap")) %>% pull(PKparameter)
 )
 
 Dose1included <- any(str_detect(PKToPull, "_dose1"))
@@ -152,6 +171,9 @@ MeanTypePK <- ifelse(is.na(mean_type_PK), "geometric", mean_type_PK)
 
 MyPKResults <- PKsum$Table
 
+
+
+
 ```
 
 
@@ -160,6 +182,9 @@ MyPKResults <- PKsum$Table
 ```{r makeTablePKSummaryOutput}
 
 TableSubHead <- as.data.frame(t(names(MyPKResults)))
+
+
+
 names(MyPKResults) <- paste0("V", 1:ncol(MyPKResults))
 
 FT <- flextable::flextable(MyPKResults) %>%

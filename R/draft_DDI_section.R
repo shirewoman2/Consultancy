@@ -388,15 +388,17 @@ draft_DDI_section <- function(sim_data_file,
         if(PrevAnnotated){
             exp_detail_data <- deannotateDetails(exp_detail_data)
         } 
-        exp_detail_data <- exp_detail_data %>% filter(File == sim_data_file)
     }
     
     # Checking for parameters we'll need in exp_detail_data
     if(all(c("DoseRoute_sub", "Age_min", "Regimen_sub") %in%
            names(exp_detail_data)) == FALSE){
-        stop("It appears that, when you generated `exp_detail_data`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. Please re-extract the simulation experimental details using extractExpDetails or extractExpDetails_mult and set `exp_details = 'all'` and then try running draft_DDI_section again.", 
+        warning("It appears that, when you generated `exp_detail_data`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. We will re-extract the simulation experimental details using extractExpDetails and set `exp_details = 'all'`.", 
              call. = FALSE)
+       exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all")
     }
+    
+    exp_detail_data <- exp_detail_data %>% filter(File == sim_data_file)
     
     if(is.na(exp_detail_data$Inhibitor1)){
         stop("You do not appear to have an effector present in this simulation. This function is for drafting DDI methods and results only.", 
@@ -420,7 +422,7 @@ draft_DDI_section <- function(sim_data_file,
     if(include_enz_plot & class(sim_enz_dataframe)[1] == "logical"){
         sim_enz_dataframe <- extractEnzAbund(sim_data_file = sim_data_file,
                                              enzyme = enzyme, 
-                                             tissue = "liver")
+                                             tissue = c("liver", "gut"))
     }
     
     ## knitting ----------------------------------------------------------
