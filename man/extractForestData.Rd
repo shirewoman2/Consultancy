@@ -8,6 +8,9 @@ extractForestData(
   sim_data_files = NA,
   PKparameters = c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", "Cmax_ratio_dose1",
     "AUCtau_ratio_last", "Cmax_ratio_last"),
+  compoundToExtract = "substrate",
+  tissue = "plasma",
+  existing_exp_details = NA,
   sheet = NA,
   checkDataSource = TRUE,
   save_output = NA
@@ -24,6 +27,23 @@ and the last dose simulated. Input must be among "AUCinf_ratio_dose1",
 "AUCt_ratio_dose1", "Cmax_ratio_dose1", "AUCtau_ratio_last", or
 "Cmax_ratio_last". List them in the order you'd like the columns to appear
 in the output.}
+
+\item{compoundToExtract}{For which compound do you want to extract PK data?
+Options are: \itemize{\item{"substrate" (default),} \item{"primary
+metabolite 1",} \item{"primary metabolite 2", or} \item{"secondary
+metabolite"}}}
+
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+blood".}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} in all the files included to get all
+the details from the "Input Sheet" (e.g., when you ran extractExpDetails
+you said \code{exp_details = "Input Sheet"} or \code{exp_details = "all"}),
+you can save some processing time by supplying that object here, unquoted.
+If left as NA, this function will run \code{extractExpDetails} behind the
+scenes to figure out some information about your experimental set up.}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
 pull the PK data, in quotes; for example, specify the tab where you have a
@@ -45,11 +65,10 @@ will still be saved as a csv file.}
 a data.frame of data to use for making forest plots
 }
 \description{
-\code{extractForestData} automatically extract the data needed for generating
-forest plots from Simulator output files and format it for using the forest
-plot shiny app. This will take some time to run since it needs to open
-multiple Excel files. NB: This has only been set up to work with geometric
-means so far.
+\code{extractForestData} automatically extracts data for generating forest
+plots from Simulator output files and formats them for use with
+\code{\link{forest_plot}} or the forest plot shiny app. This will take some
+time to run since it needs to open multiple Excel files.
 }
 \examples{
 

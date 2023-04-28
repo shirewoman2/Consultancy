@@ -1,10 +1,9 @@
 #' Extract pertinent data from Simulator output files for creating forest plots
 #'
-#' \code{extractForestData} automatically extract the data needed for generating
-#' forest plots from Simulator output files and format it for using the forest
-#' plot shiny app. This will take some time to run since it needs to open
-#' multiple Excel files. NB: This has only been set up to work with geometric
-#' means so far.
+#' \code{extractForestData} automatically extracts data for generating forest
+#' plots from Simulator output files and formats them for use with
+#' \code{\link{forest_plot}} or the forest plot shiny app. This will take some
+#' time to run since it needs to open multiple Excel files.
 #'
 #' @param sim_data_files a character vector of simulator output files; leaving
 #'   this as the default NA will extract forest data from all simulator files in
@@ -15,6 +14,20 @@
 #'   "AUCt_ratio_dose1", "Cmax_ratio_dose1", "AUCtau_ratio_last", or
 #'   "Cmax_ratio_last". List them in the order you'd like the columns to appear
 #'   in the output.
+#' @param compoundToExtract For which compound do you want to extract PK data?
+#'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
+#'   metabolite 1",} \item{"primary metabolite 2", or} \item{"secondary
+#'   metabolite"}}
+#' @param tissue For which tissue would you like the PK parameters to be pulled?
+#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+#'   blood".
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} in all the files included to get all
+#'   the details from the "Input Sheet" (e.g., when you ran extractExpDetails
+#'   you said \code{exp_details = "Input Sheet"} or \code{exp_details = "all"}),
+#'   you can save some processing time by supplying that object here, unquoted.
+#'   If left as NA, this function will run \code{extractExpDetails} behind the
+#'   scenes to figure out some information about your experimental set up.
 #' @param sheet optionally specify the name of the sheet where you'd like to
 #'   pull the PK data, in quotes; for example, specify the tab where you have a
 #'   user-defined AUC integration. \emph{Note:} Unless you want a very specific
@@ -43,6 +56,9 @@ extractForestData <- function(sim_data_files = NA,
                                                "Cmax_ratio_dose1", 
                                                "AUCtau_ratio_last", 
                                                "Cmax_ratio_last"), 
+                              compoundToExtract = "substrate",
+                              tissue = "plasma",
+                              existing_exp_details = NA, 
                               sheet = NA, 
                               checkDataSource = TRUE, 
                               save_output = NA){
@@ -115,7 +131,10 @@ extractForestData <- function(sim_data_files = NA,
         suppressWarnings(
             temp <- extractPK(sim_data_file = i, 
                               PKparameters = PKparameters, 
+                              tissue = tissue, 
+                              compoundToExtract = compoundToExtract,
                               sheet = sheet,
+                              existing_exp_details = existing_exp_details, 
                               includeTrialInfo = FALSE,
                               returnExpDetails = TRUE,
                               returnAggregateOrIndiv = "aggregate", 
@@ -144,7 +163,7 @@ extractForestData <- function(sim_data_files = NA,
     
     if(checkDataSource){
         DataCheck <- bind_rows(DataCheck) %>% 
-            select(File, everything()) %>% arrange(File, PKparam)
+            select(File, everything()) %>% arrange(File, PKparameter)
     }
     
     # Need to check for custom dosing regimens or things get mucked up.
@@ -155,7 +174,7 @@ extractForestData <- function(sim_data_files = NA,
         
         warning(paste("A custom dosing regimen was used for the substrate for the files", 
                       names(Deets)[which(CustDos_sub)], 
-                      "so that dose amount and dose interval will be set to NA in the extracted forest-plot data."), 
+                      "so the dose amount and dose interval will be set to NA in those extracted forest-plot data."), 
                 call. = FALSE)
         
         for(i in which(CustDos_sub)){
@@ -168,7 +187,7 @@ extractForestData <- function(sim_data_files = NA,
     if(any(CustDos_inhib)){
         warning(paste("A custom dosing regimen was used for the effector for the files", 
                       names(Deets)[which(CustDos_inhib)], 
-                      "so that dose amount and dose interval will be set to NA in the extracted forest-plot data."), 
+                      "so the dose amount and dose interval will be set to NA in those extracted forest-plot data."), 
                 call. = FALSE)
         
         for(i in which(CustDos_inhib)){
@@ -182,7 +201,7 @@ extractForestData <- function(sim_data_files = NA,
         select(File, everything()) %>% arrange(File)
     
     if(any(is.na(Deets$Inhibitor1))){
-        warning(paste0("Forest plots only work for comparing PK parameters with vs. without an effector present, and the files ", 
+        warning(paste0("The functions `extractForestData` and `forest_plot` have been set up for comparing PK parameters with vs. without an effector present, and the files ", 
                        Deets %>% filter(is.na(Inhibitor1)) %>% pull(File) %>% str_comma, 
                        " did not have an effector present. These files will not be included in the output data."))
         
@@ -191,34 +210,48 @@ extractForestData <- function(sim_data_files = NA,
         Forest_l <- Forest_l[names(Forest_l)[names(Forest_l) %in% Deets$File]]
     }
     
-    Forest <- bind_rows(Forest_l)
-    
     if(complete.cases(sheet)){
         PKparameters <- sub("_last|_dose1", "", PKparameters)
         names(Forest) <- sub("_last|_dose1", "", names(Forest))
     }
     
-    ColNames <- data.frame(PKparam = PKparameters) %>% 
-        expand_grid(Stat = c("GMR", "CI90_lo", "CI90_hi")) %>% 
-        mutate(Cols = paste(PKparam, Stat, sep = "__")) %>% 
-        pull(Cols)
+    # Setting things up for getting the correct information from Deets
+    Deets <- Deets %>% 
+        mutate(VictimCompound = switch(compoundToExtract, 
+                                       "substrate" = Substrate, 
+                                       "primary metabolite 1" = PrimaryMetabolite1, 
+                                       "primary metabolite 2" = PrimaryMetabolite2, 
+                                       "secondary metabolite" = SecondaryMetabolite), 
+               PerpCompound = case_when(is.na(Inhibitor2) ~ Inhibitor1,
+                                        complete.cases(Inhibitor2) ~ paste(Inhibitor1, "and", Inhibitor2)))
     
     suppressMessages(
-         Forest <- Forest %>% 
-            mutate(Stat = recode(Statistic, "Geometric Mean" = "GMR",
-                                 "90% confidence interval around the geometric mean(lower limit)" = "CI90_lo", 
-                                 "90% confidence interval around the geometric mean(upper limit)" = "CI90_hi")) %>% 
+        Forest <- bind_rows(Forest_l) %>% 
+            mutate(Stat = case_match(Statistic, 
+                                     "Geometric Mean" ~ "GeoMean",
+                                     "Mean" ~ "Mean", 
+                                     "Median" ~ "Median",
+                                     "90% confidence interval around the geometric mean(lower limit)" ~ "CI90_Lower", 
+                                     "90% confidence interval around the geometric mean(upper limit)" ~ "CI90_Upper", 
+                                     "95% confidence interval around the geometric mean(lower limit)" ~ "CI95_Lower",
+                                     "95% confidence interval around the geometric mean(upper limit)" ~ "CI95_Upper",
+                                     "5th centile" ~ "Centile5th_Lower", 
+                                     "95th centile" ~ "Centile95th_Upper", 
+                                     "Min Val" ~ "Min", 
+                                     "Max Val" ~ "Max", 
+                                     "cv" ~ "ArithCV", 
+                                     "Geometric CV" ~ "GeoCV", 
+                                     "Std Dev" ~ "SD", 
+                                     .default = Statistic)) %>% 
             select(-Statistic) %>% 
             pivot_longer(cols = -c(File, Stat), 
-                         names_to = "PKparam", values_to = "Value") %>% 
-            filter(Stat %in% c("GMR", "CI90_lo", "CI90_hi")) %>% 
-            mutate(ID = paste(PKparam, Stat, sep = "__")) %>% 
-            select(-Stat, -PKparam) %>% 
-            pivot_wider(names_from = ID, values_from = Value) %>% 
-            left_join(Deets %>% select(File, Substrate, Dose_sub, Inhibitor1, 
+                         names_to = "PKparameter", values_to = "Value") %>% 
+            pivot_wider(names_from = Stat, values_from = Value) %>% 
+            mutate(Tissue = tissue, CompoundID = compoundToExtract) %>% 
+            left_join(Deets %>% select(File, VictimCompound, Dose_sub, PerpCompound, 
                                        Dose_inhib)) %>% 
-            select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
-                   any_of(ColNames)) %>% unique()
+            select(File, VictimCompound, CompoundID, Dose_sub, 
+                   PerpCompound, Dose_inhib, Tissue, everything()) %>% unique()
     )
     
     if(complete.cases(save_output)){
