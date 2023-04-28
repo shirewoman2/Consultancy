@@ -2,7 +2,7 @@ Figure XXX. Simulated hepatic `r enzyme` levels during the dosing of `r MySubstr
 
 ```{r EnzymeAbundancePlot1}
 
-TEMP_EA <- sim_enz_dataframe %>% filter(sim_data_file == {{sim_data_file}}) %>% 
+TEMP_EA <- sim_enz_dataframe %>% filter(File == {{sim_data_file}}) %>% 
    unique()
 Scenario <- paste(
    # Num enzymes
@@ -20,6 +20,7 @@ switch(Scenario,
        "TRUE TRUE" = suppressMessages(
           enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
                            facet1_column = Enzyme, facet2_column = Tissue,
+                           linetype_column = Inhibitor,
                            figure_type = figure_type_enz,
                            time_range = time_range_enz,
                            x_axis_interval = x_axis_interval_enz,
@@ -28,6 +29,7 @@ switch(Scenario,
        "TRUE FALSE" = suppressMessages(
           enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
                            facet1_column = Enzyme,
+                           linetype_column = Inhibitor,
                            figure_type = figure_type_enz,
                            time_range = time_range_enz,
                            x_axis_interval = x_axis_interval_enz,
@@ -36,6 +38,7 @@ switch(Scenario,
        "FALSE TRUE" = suppressMessages(
           enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
                            facet1_column = Tissue,
+                           linetype_column = Inhibitor,
                            figure_type = figure_type_enz,
                            time_range = time_range_enz,
                            x_axis_interval = x_axis_interval_enz,
@@ -44,6 +47,7 @@ switch(Scenario,
        "FALSE FALSE" = suppressMessages(
           enz_plot_overlay(sim_enz_dataframe = TEMP_EA, 
                            figure_type = figure_type_enz,
+                           linetype_column = Inhibitor,
                            time_range = time_range_enz,
                            x_axis_interval = x_axis_interval_enz,
                            y_axis_label = y_axis_label_enz,
