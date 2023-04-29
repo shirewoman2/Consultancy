@@ -1168,15 +1168,17 @@ pksummary_table <- function(sim_data_file = NA,
       } else {
          
          FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
-                                         Stat %in% c("geomean", "CI90_low", "CI90_high"))
+                                         Stat %in% c("geomean", "mean",
+                                                     "CI90_low", "CI90_high"))
          
          FD <- FD %>% 
             mutate(Stat = recode(Stat, "geomean" = "GMR",
+                                 "mean" = "AMR",
                                  "CI90_low" = "CI90_lo", 
                                  "CI90_high" = "CI90_hi"),
                    Parameter = paste(PKParam, Stat, sep = "__")) %>% 
             select(-PKParam, -Stat, -SorO) %>% 
-            filter(str_detect(Parameter, "AUCinf_[^Perc]|AUCt|Cmax")) %>% 
+            filter(str_detect(Parameter, "AUCinf_[^P]|AUCt|Cmax")) %>% 
             pivot_wider(names_from = Parameter, values_from = Value) %>% 
             mutate(File = sim_data_file, 
                    Substrate = switch(compoundToExtract, 
