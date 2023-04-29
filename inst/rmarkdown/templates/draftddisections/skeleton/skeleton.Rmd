@@ -136,15 +136,16 @@ PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file),
                          includeCV = includeCV,
                          includeConfInt = includeConfInt,
                          includeTrialMeans = includeTrialMeans,
-                         prettify_compound_names = prettify_compound_names)
+                         prettify_compound_names = prettify_compound_names) 
 
 suppressMessages(
     PKToPull <- data.frame(
         PrettifiedNames = sub(as.character(prettify_compound_names["effector"]),
-                              "effector", names(PKsum$Table))) %>% 
-        left_join(AllPKParameters, multiple = "all") %>% 
-        filter(complete.cases(PKparameter) & 
-                  !str_detect(PKparameter, "PercExtrap")) %>% pull(PKparameter)
+                              "effector", names(PKsum$Table))) %>%
+        left_join(AllPKParameters, multiple = "all") %>%
+        filter(complete.cases(PKparameter) &
+                  !str_detect(PKparameter, "PercExtrap")) %>% pull(PKparameter) %>%
+       unique()
 )
 
 Dose1included <- any(str_detect(PKToPull, "_dose1"))
@@ -171,8 +172,38 @@ MeanTypePK <- ifelse(is.na(mean_type_PK), "geometric", mean_type_PK)
 
 MyPKResults <- PKsum$Table
 
-
-
+# If not all the pk parameters were able to be pulled, then we get trouble when
+# formatting the table in the next chunk. Adding columns with blank values if
+# they're not there.
+if(ncol(MyPKResults) != 7){
+   PKWeShouldHave <- switch(exp_detail_data$Regimen_sub, 
+                       "Multiple Dose" = c("AUCtau_last","Cmax_last", 
+                                           "AUCtau_last_withInhib", "Cmax_last_withInhib", 
+                                         "AUCtau_ratio_last", "Cmax_ratio_last"),
+                       "Single Dose" = c("AUCinf_dose1", "Cmax_dose1", 
+                                         "AUCinf_dose1_withInhib", "Cmax_dose1_withInhib", 
+                                         "AUCinf_ratio_dose1", "Cmax_ratio_dose1"))
+   MissingPK <- setdiff(PKWeShouldHave, PKToPull)
+   ToAdd <- as.data.frame(matrix(NA, nrow = nrow(MyPKResults), ncol = length(MissingPK)))
+   names(ToAdd) <- MissingPK
+   
+   MyPKResults <- bind_cols(MyPKResults, ToAdd)
+   
+   # Getting the right order of columns
+   TempNames <- data.frame(
+      PrettifiedNames1 = names(MyPKResults), 
+      PrettifiedNames = sub(as.character(prettify_compound_names["effector"]),
+                                         "effector", names(MyPKResults))) %>%
+      left_join(AllPKParameters, multiple = "all", by = join_by(PrettifiedNames)) %>%
+      mutate(PKparameter = ifelse(is.na(PKparameter), PrettifiedNames, PKparameter)) %>% 
+      select(PrettifiedNames1, PKparameter) %>% unique() %>% 
+      mutate(PKparameter = factor(PKparameter, levels = c("Statistic", 
+                                                          PKWeShouldHave))) %>% 
+      arrange(PKparameter)
+   
+   MyPKResults <- MyPKResults[, TempNames$PrettifiedNames1]
+   
+}
 
 ```
 
@@ -182,12 +213,11 @@ MyPKResults <- PKsum$Table
 ```{r makeTablePKSummaryOutput}
 
 TableSubHead <- as.data.frame(t(names(MyPKResults)))
-
-
-
 names(MyPKResults) <- paste0("V", 1:ncol(MyPKResults))
 
-FT <- flextable::flextable(MyPKResults) %>%
+FT <- flextable::flextable(MyPKResults %>% 
+                              mutate(Statistic = ifelse(V1 == "Simulated", 
+                                                        paste(str_to_title(MeanTypePK), "mean"), V1))) %>%
     flextable::delete_part(part = "header") %>%
     flextable::add_header(V1 = "",
                           V2 = str_to_title(MySubstrate),
@@ -281,6 +311,8 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
 ```
 
 *Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r basename(sim_data_file)`* 
+
+`r ifelse(exists("PKWeShouldHave", inherits = FALSE), "WARNING: There were problems extracting some PK values, e.g., problems with extrapolation to infinity. Please check your results.", "")`
 
 
 ```{r ctplotheading}

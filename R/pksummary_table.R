@@ -868,11 +868,11 @@ pksummary_table <- function(sim_data_file = NA,
    # If they requested AUCinf but there was trouble with that extrapolation,
    # AUCinf won't be present in the data but AUCt will be. Check for that and
    # change PKToPull to reflect that change.
-   if(any(str_detect(PKToPull, "AUCinf_[^Perc]")) & 
+   if(any(str_detect(PKToPull, "AUCinf_[^P]")) & 
       (("data.frame" %in% class(MyPKResults_all[[1]]) & 
-        any(str_detect(names(MyPKResults_all[[1]]), "AUCinf_[^Perc]")) == FALSE) |
+        any(str_detect(names(MyPKResults_all[[1]]), "AUCinf_[^P]")) == FALSE) |
        ("data.frame" %in% class(MyPKResults_all[[1]]) == FALSE &
-        !str_detect(names(MyPKResults_all)[1], "AUCinf_[^Perc]")))){
+        !str_detect(names(MyPKResults_all)[1], "AUCinf_[^P]")))){
       warning(paste0("AUCinf included NA values in the file `", 
                      sim_data_file, 
                      "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate."),
