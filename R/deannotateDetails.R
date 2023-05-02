@@ -38,7 +38,7 @@ deannotateDetails <- function(existing_exp_details,
         mutate(File = factor(File, levels = FileOrder))
     
     existing_exp_details <- existing_exp_details %>% 
-        select(-any_of(c("SimulatorSection", "Sheet", "Notes",
+        select(!any_of(c("SimulatorSection", "Sheet", "Notes",
                          "CompoundID", "Compound",
                          "All files have this value for this compound ID and compound",
                          "All files have this value for this compound ID"))) %>% 
@@ -53,7 +53,7 @@ deannotateDetails <- function(existing_exp_details,
         # NA values should mostly come out in the wash, I think, but there
         # is a risk that we'll lose some NA values that should be included.
         # I think that's an acceptable risk. - LSh
-        filter(complete.cases(Value)) %>% 
+        filter(complete.cases(Value)) %>% unique() %>% 
         pivot_wider(names_from = Detail, values_from = Value) %>% 
         mutate(File = factor(File, levels = FileOrder))
     
