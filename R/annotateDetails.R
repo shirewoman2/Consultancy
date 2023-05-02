@@ -258,7 +258,8 @@ annotateDetails <- function(existing_exp_details,
     
     if(PrevAnnotated){
         
-        existing_exp_details <- deannotateDetails(existing_exp_details, apply_class = FALSE)
+        existing_exp_details <- deannotateDetails(existing_exp_details, 
+                                                  apply_class = FALSE)
         
     } else if("File" %in% names(existing_exp_details) == FALSE){
         existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))

@@ -520,7 +520,13 @@ ct_plot_mult <- function(ct_dataframe,
                     graph_title_size = graph_title_size)
         
         if(qc_graphs){
-            
+           
+           PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))
+           
+           if(PrevAnnotated){
+              existing_exp_details <- deannotateDetails(existing_exp_details)
+           }
+           
             QCGraphs[[i]] <- 
                 formatTable_Simcyp(
                     annotateDetails(existing_exp_details %>% 
@@ -542,17 +548,17 @@ ct_plot_mult <- function(ct_dataframe,
     if(graph_arrangement == "separate files"){
         
         for(i in names(AllGraphs)){
-            
             Filename <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
                                ifelse(complete.cases(file_suffix),
                                       paste0(" - ", file_suffix), ""), ".png")
             
             if(any(duplicated(DatasetCheck$File))){
-                Split_i <- str_split(i, pattern = "\\.")[[1]]
-                Filename <- paste0(Split_i[3], " ", Split_i[4], " ",
-                                   ifelse(Split_i[5] == "none", "", 
-                                          paste0(" subsection ADAM ", Split_i[5])),
-                                   Filename)
+               Split_i <- str_split(sub("\\.xlsx", "", basename(i)), pattern = "\\.")[[1]]
+               Filename <- paste0(Split_i[3], " ", Split_i[4], " ",
+                                  ifelse(is.na(Split_i[5]) | Split_i[5] == "none",
+                                         "", 
+                                         paste0(" subsection ADAM ", Split_i[5])),
+                                  Filename)
             } 
             
             ggsave(Filename, 
