@@ -481,7 +481,7 @@ annotateDetails <- function(existing_exp_details,
    
    ## compound -------------------------------------------------------------
    if(complete.cases(compound)){
-      Out <- Out %>% filter(str_detect(tolower(Compound), {{compound}}) |
+      Out <- Out %>% filter(str_detect(tolower(Compound), tolower({{compound}})) |
                                is.na(Compound)) %>% 
          mutate(Notes = str_trim(gsub("(for|of) (the )?(substrate|primary metabolite 1|primary metabolite 2|secondary metabolite|inhibitor 1|inhibitor 2|inhibitor 1 metabolite)",
                                       "", Notes)), 
