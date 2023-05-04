@@ -14,6 +14,7 @@ draft_DDI_section(
   includeCV = FALSE,
   includeConfInt = TRUE,
   includeTrialMeans = FALSE,
+  concatVariability = FALSE,
   tissue = "plasma",
   fontsize = 11,
   mean_type_PK = "geometric",
@@ -126,6 +127,13 @@ limit)").}
 \item{includeTrialMeans}{TRUE or FALSE (default) for whether to include the
 range of trial means for a given parameter. Note: This is calculated from
 individual values rather than being pulled directly from the output.}
+
+\item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
+the variability. If "TRUE", the output will be formatted into a single row
+and listed as the lower confidence interval or percentile to the upper CI
+or percentile, e.g., "2400 to 2700". Please note that the current
+SimcypConsultancy template lists one row for each of the upper and lower
+values, so this should be set to FALSE for official reports.}
 
 \item{tissue}{the tissue to use for extracting PK data and for graphing.
 Options are "plasma" (default) or "blood".}
