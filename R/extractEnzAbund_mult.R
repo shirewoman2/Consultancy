@@ -252,18 +252,19 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                         "Time_units", "DoseNum_sub", "DoseNum_inhib1", 
                         "DoseNum_inhib2", "File")))
     
-    if(any(complete.cases(Deets$Inhibitor2)) &&
-       all(is.na(sim_enz_dataframe$DoseNum_inhib2))){
-        sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib2)
+    if("DoseNum_inhib1" %in% names(sim_enz_dataframe) && 
+       all(is.na(sim_enz_dataframe$DoseNum_inhib1))){
+       sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib1)
     }
     
-    if(any(complete.cases(Deets$Inhibitor1)) &&
-       all(is.na(sim_enz_dataframe$DoseNum_inhib1))){
-        sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib1)
+    if("DoseNum_inhib2" %in% names(sim_enz_dataframe) && 
+       all(is.na(sim_enz_dataframe$DoseNum_inhib2))){
+       sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib2)
     }
+    
+    
     
     return(sim_enz_dataframe)
-    
     
 }
 
