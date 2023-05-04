@@ -83,7 +83,7 @@ one, enclose them with \code{c(...)}.}
 
   \item{"Methods"}{all the details that show up in the methods section of a
   report: number of trials, number of individuals simulated, population,
-  percent female, age range, dose amount and regimen}
+  percent female, age range, dose amount and regimen, etc.}
 
   \item{"all"}{all possible details}
 
