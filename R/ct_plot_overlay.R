@@ -1827,8 +1827,8 @@ call. = FALSE)
     
     if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
        linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
-        warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
-                call. = FALSE)
+       warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
+               call. = FALSE)
     }
     
     if(EnzPlot){

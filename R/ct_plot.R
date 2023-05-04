@@ -217,13 +217,13 @@
 #' @param line_width optionally specify how thick to make the lines. Acceptable
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
 #'   give you an idea of where to start.
-#' @param hline_position numerical position(s) of any horizontal lines on the
-#'   graph. The default is NA to have no lines, and good syntax if you \emph{do}
-#'   want lines would be, for example, \code{hline_position = 10} to have a
-#'   horizontal line at 10 ng/mL (or whatever your concentration units are) or
-#'   \code{hline_position = c(10, 100, 1000)} to have horizontal lines at each
-#'   of those y values. Examples of where this might be useful would be to
-#'   indicate a toxicity threshold, a target Cmin, or the lower limit of
+#' @param hline_position numerical position(s) of any horizontal lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{hline_position = 10} to
+#'   have a horizontal line at 10 ng/mL (or whatever your concentration units
+#'   are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+#'   at each of those y values. Examples of where this might be useful would be
+#'   to indicate a toxicity threshold, a target Cmin, or the lower limit of
 #'   quantification for the assay used to generate the concentration-time data.
 #' @param hline_style the line color and type to use for any horizontal lines
 #'   that you add to the graph with \code{hline_position}. Default is "red
@@ -231,13 +231,13 @@
 #'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
-#' @param vline_position numerical position(s) of any vertical lines on the
-#'   graph. The default is NA to have no lines, and good syntax if you \emph{do}
-#'   want lines would be, for example, \code{vline_position = 12} to have a
-#'   vertical line at 12 h or \code{vline_position = seq(from = 0, to = 168, by
-#'   = 24)} to have horizontal lines every 24 hours for one week. Examples of
-#'   where this might be useful would be indicating dosing times or maybe the
-#'   time at which some other drug was started or stopped.
+#' @param vline_position numerical position(s) of any vertical lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{vline_position = 12} to
+#'   have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+#'   168, by = 24)} to have horizontal lines every 24 hours for one week.
+#'   Examples of where this might be useful would be indicating dosing times or
+#'   the time at which some other drug was started or stopped.
 #' @param vline_style the line color and type to use for any vertical lines that
 #'   you add to the graph with \code{vline_position}. Default is "red dotted",
 #'   but any combination of 1) a color in R and 2) a named linetype is
@@ -390,938 +390,987 @@ ct_plot <- function(ct_dataframe = NA,
                     save_graph = NA,
                     fig_height = 6,
                     fig_width = 5){
-    
-    # Error catching ----------------------------------------------------------
-    
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
-             call. = FALSE)
-    }
-    
-    if(nrow(ct_dataframe) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
-             call. = FALSE)
-    }
-    
-    if(length(sort(unique(ct_dataframe$File))) > 1){
-        stop(paste0("The ct_plot function is for graphing only one simulator file at a time, but you have ",
-                    length(sort(unique(ct_dataframe$File))), 
-                    " simulator files. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
-             call. = FALSE)
-    }
-    
-    if(length(sort(unique(ct_dataframe$Tissue))) > 1){
-        stop(paste0("The ct_plot function is for graphing only one tissue at a time, but you have ",
-                    length(sort(unique(ct_dataframe$Tissue))), 
-                    " tissues. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
-             call. = FALSE)
-    }
-    
-    # Noting whether this is an enzyme-abundance plot b/c some options change
-    # then.
-    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
-    
-    # Checking whether user tried to include obs data directly from simulator
-    # output for a simulation that included anything other than substrate in
-    # plasma.
-    if(EnzPlot == FALSE && any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
-        return(
-            ggplot(data.frame(Problem = 1, DataFail = 1), 
-                   aes(y = Problem, x = DataFail)) +
-                xlab("Please check the help file for extractConcTime") +
-                theme(axis.title.x = element_text(size = 14, color = "red", 
-                                                  face = "italic")) +
-                annotate(geom = "text", x = 1, y = 1, size = 8,
-                         color = "red", 
-                         label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
-        )
-    }
-    
-    if(EnzPlot == FALSE && length(sort(unique(ct_dataframe$CompoundID))) > 1){
-        stop(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
-                    length(sort(unique(ct_dataframe$CompoundID))), 
-                    " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
-             call. = FALSE)
-    }
-    
-    # If user wants feces, use the British spelling even if they entered the
-    # American spelling.
-    if(str_detect(subsection_ADAM, "feces")){
-        subsection_ADAM <- sub("feces", "faeces", subsection_ADAM)
-    }
-    
-    if(length(obs_color) > 1){
-        warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
-                call. = FALSE)
-        obs_color <- obs_color[1]
-    }
-    
-    # Making most character arguments lower case to avoid case sensitivity
-    figure_type <- tolower(figure_type) # LOWER CASE ONLY FROM HERE DOWN.
-    mean_type <- tolower(mean_type)
-    legend_position <- tolower(legend_position)
-    linear_or_log <- tolower(linear_or_log)
-    if(str_detect(linear_or_log, "horiz") & str_detect(linear_or_log, "vert")){
-        linear_or_log <- "horizontal and vertical"
-    }
-    
-    if(length(figure_type) != 1 |
-       figure_type %in% c("trial means", "percentiles", "trial percentiles",
-                          "freddy", "means only", "overlay", 
-                          "percentile ribbon", "percentile ribbons", 
-                          "ribbon") == FALSE){
-        stop("The only acceptable options for figure_type are 'trial means', 'percentiles', 'percentile ribbon', 'means only', or 'Freddy'.",
-             call. = FALSE)
-    }
-    
-    if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
-       ("CompoundID" %in% names(ct_dataframe) && length(unique(ct_dataframe$CompoundID)) > 1)){
-        stop("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
-    }
-    
-    if(length(unique(ct_dataframe$Inhibitor)) > 2){
-        stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
-    }
-    
-    # If user wanted hline or vline added, check that they have specified
-    # argument correctly.
-    HLineAES <- str_split(hline_style, pattern = " ")[[1]]
-    if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
-       warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
-               call. = FALSE)
-       HLineAES <- c("red", "dotted")
-    }
-    
-    VLineAES <- str_split(vline_style, pattern = " ")[[1]]
-    if(length(VLineAES) < 2 & any(complete.cases(vline_position))){
-       warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
-               call. = FALSE)
-       VLineAES <- c("red", "dotted")
-    }
-    # This doesn't check that they've specified legit colors or linetypes, but
-    # I'm hoping that ggplot2 errors will cover that.
-    
-    
-    # Main body of function --------------------------------------------------
-    
-    # Noting user's original preferences for a few things
-    obs_line_trans_user <- obs_line_trans
-    obs_fill_trans_user <- obs_fill_trans
-    obs_color_user <- obs_color
-    obs_shape_user <- obs_shape
-    
-    # If user had already filtered ct_dataframe to include only the ADAM data
-    # they wanted, the subsection_ADAM column might not include the default
-    # value for subsection_ADAM. In that case, just switch to the subsection
-    # that *was* included and make the plot.
-    
-    ADAMoptions <- c("dissolved compound", "undissolved compound",
-                     "enterocyte concentration",
-                     "free compound in lumen", "total compound in lumen",
-                     "Heff", "absorption rate",
-                     "unreleased compound in faeces", 
-                     "luminal CLint", 
-                     "dissolution rate of solid state", 
-                     "cumulative fraction of compound absorbed", 
-                     "cumulative fraction of compound dissolved")
-    
-    if(EnzPlot == FALSE && 
-       (subsection_ADAM == "free compound in lumen" & 
-        length(unique(ct_dataframe$subsection_ADAM)) == 1 && 
-        unique(ct_dataframe$subsection_ADAM) %in% ADAMoptions)){
-        subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
-    }
-    
-    MyMeanType <- ct_dataframe %>%
-        filter(Trial %in% c("geomean", "mean", "median")) %>% 
-        pull(Trial) %>% unique() %>% 
-        factor(levels = c("mean", "geomean", "median")) %>% 
-        sort()
-    
-    if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
-              "median" = "median") %in% ct_dataframe$Trial == FALSE){
-        
-        warning(paste0("You requested the ", 
-                       switch(mean_type, "arithmetic" = "arithmetic means",
-                              "geometric" = "geometric means", 
-                              "median" = "medians"), 
-                       ", but those are not included in your data. Instead, the ",
-                       ifelse(MyMeanType[1] == "mean", 
-                              "arithmetic mean", MyMeanType[1]),
-                       "s will be used."),
-                call. = FALSE)
-        MyMeanType <- MyMeanType[1] %>% as.character()
-        
-    } else {
-        MyMeanType <- switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
-                             "median" = "median")
-    }
-    
-    Data <- ct_dataframe %>% 
-        # Making sure we only have one summary aggregate measurement
-        filter(! Trial %in% setdiff(c("mean", "geomean", "median"), 
-                                    MyMeanType))
-    
-    # Set compoundToExtract to whatever compound was included.
-    compoundToExtract <- ifelse(EnzPlot, unique(Data$Enzyme), 
-                                unique(Data$CompoundID))
-    if(EnzPlot){
-        Data <- Data %>% mutate(CompoundID = Enzyme) %>%
-            rename(Conc = Abundance) %>%
-            mutate(Simulated = TRUE,
-                   Compound = Enzyme, 
-                   # putting "conc" into decimal format b/c it works better with
-                   # using percents on y axis labels
-                   Conc = Conc / 100) 
-        
-        # Since the y axis is now scaled by 1/100, need to also scale y axis
-        # limits.
-        y_axis_limits_lin <- y_axis_limits_lin / 100
-        y_axis_limits_log <- y_axis_limits_log / 100
-        
-    }
-    
-    # Noting whether the tissue was from an ADAM model
-    ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
-                                       "jejunum II", "ileum I", "ileum II",
-                                       "ileum III", "ileum IV", "colon", 
-                                       "faeces", "cumulative absorption", 
-                                       "cumulative dissolution") &&
-        EnzPlot == FALSE
-    
-    # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
-    if(any(ADAM)){
-        
-        if(length(subsection_ADAM) > 1){
-            stop(paste0("You can only enter one option for the concentration type for ADAM-model tissues. Please set subsection_ADAM to one of ",
-                        str_comma(paste0("`", ADAMoptions, "`"), conjunction = "or"), 
-                        "."),
-                 call. = FALSE)
-        }
-        
-        if(subsection_ADAM %in% ADAMoptions == FALSE){
-            stop(paste0("The concentration type you requested, `", subsection_ADAM,
-                        "``, is not one of the options. Please set this value to one of ",
-                        str_comma(paste0("`", ADAMoptions, "`"), conjunction = "or"), 
-                        "."),
-                 call. = FALSE)
-        }
-        
-        Data <- Data %>% filter(subsection_ADAM == {{subsection_ADAM}})
-        
-        if(nrow(Data) == 0){
-            stop(paste0("You appear to have ADAM-model data, and you requested `", 
-                        subsection_ADAM, 
-                        "` for the subsection_ADAM argument, but that type is not present in ct_dataframe. The type(s) of ADAM data available in ct_dataframe is/are ", 
-                        str_comma(paste0("`", unique(ct_dataframe$subsection_ADAM), "`")),
-                        ". Please set the argument `subsection_ADAM` to one of these values."),
-                 call. = FALSE)
-        }
-        
-    }   
-    
-    # Error catching now that we've figured out which subsection_ADAM they want
-    if("Conc_units" %in% names(Data) && length(unique(Data$Conc_units)) > 1){
-        stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
-    }
-    
-    # You can't graph trial means if you didn't extract the individual data
-    # (this is one of the rare instances where we DO calculate things rather
-    # than pulling directly from the simulator output), so issuing an error if
-    # that's the case.
-    if(figure_type %in% c("trial means", "freddy") &
-       suppressWarnings(length(sort(as.numeric(
-           as.character(unique(Data$Trial)))))) == 0){
-        warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.",
-                call. = FALSE)
-    }
-    
-    # Setting up the x axis using the subfunction ct_x_axis
-    XStuff <- ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
-                        x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
-                        compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
-    xlab <- XStuff$xlab
-    Data <- XStuff$Data # Is this necessary??
-    time_range <- XStuff$time_range
-    time_range_relative <- XStuff$time_range_relative
-    t0 <- XStuff$t0
-    TimeUnits <- XStuff$TimeUnits
-    
-    # Dealing with possible inhibitor 1 data ---------------------------------
-    # Adding a grouping variable to data and also making the inhibitor 1 name
-    # prettier for the graphs.
-    MyEffector <- unique(Data$Inhibitor) %>% as.character()
-    MyEffector <- MyEffector[!MyEffector == "none"]
-    
-    if(length(MyEffector) > 0 && complete.cases(MyEffector)){
-        
-        Data <- Data %>%
-            mutate(CompoundIsEffector = Compound == MyEffector,
-                   Inhibitor = as.character(ifelse(is.na(Inhibitor),
-                                                   "none", Inhibitor)))
-        
-        if(class(prettify_compound_names) == "logical" &&
-           prettify_compound_names){
-            MyEffector <- prettify_compound_name(MyEffector)
-        }
-        
-        if(class(prettify_compound_names) == "character"){
-            MyEffector <- prettify_compound_names["inhibitor"]
-        }
-        
-        Data <- 
-            Data %>%
-            mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
-                   Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
-                   Group = paste(Compound, Inhibitor, Trial)) %>%
-            select(-CompoundIsEffector)
-    }
-    
-    # Error catching for when user specifies linetype, color or shape and
-    # doesn't include enough values when effector present
-    if(complete.cases(obs_shape[1]) && length(MyEffector) > 0 &&
-       complete.cases(MyEffector) &&
-       compoundToExtract != "inhibitor 1" &&
-       length(complete.cases(obs_shape)) < 2){
-        warning("There is an inhibitor or effector present, but you have specified only one shape for the observed data. The same shape will be used for both.",
-                call. = FALSE)
-        obs_shape <- rep(obs_shape, 2)
-    }
-    
-    if(complete.cases(line_color[1]) && length(MyEffector) > 0 &&
-       complete.cases(MyEffector) &&
-       compoundToExtract != "inhibitor 1" &&
-       length(complete.cases(line_color)) < 2){
-        warning("There is an inhibitor or effector present, but you have specified only one line color. The same line color will be used for both.",
-                call. = FALSE)
-        line_color <- rep(line_color, 2)
-    }
-    
-    if(complete.cases(line_type[1]) && length(MyEffector) > 0 &&
-       complete.cases(MyEffector) &&
-       compoundToExtract != "inhibitor 1" &&
-       length(complete.cases(line_type)) < 2){
-        warning("There is an inhibitor or effector present, but you have specified only one line type. The same line type will be used for both.",
-                call. = FALSE)
-        line_type <- rep(line_type, 2)
-    }
-    
-    # Always want "none" to be the 1st item on the legend, and we need there
-    # to be some value present for "Inhibitor" for function to work correctly.
-    Data <- Data %>%
-        mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
-    if(length(MyEffector) > 0){
-        Data <- Data %>%
-            mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
-    }
-    
-    # Setting up data.frames to graph ---------------------------------------
-    # Separating the data by type and calculating trial means
-    suppressMessages(
-        sim_data_trial <- Data %>%
-            filter(Simulated == TRUE &
-                       Trial %in% c("mean", "geomean", "per5", "per95", 
-                                    "per10", "per90", "median") == FALSE) %>%
-            group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
-                                     "Simulated", "Trial", "Group",
-                                     "Time", "Time_orig",
-                                     "Time_units", "Conc_units")))) %>%
-            summarize(Conc = switch(mean_type, 
-                                    "arithmetic" = mean(Conc, na.rm = T),
-                                    "geometric" = gm_mean(Conc, na.rm = T),
-                                    "median" = median(Conc, na.rm = T))) %>%
-            ungroup() %>% 
-            mutate(Group = paste(Compound, Inhibitor, Trial))
-    )
-    
-    sim_data_mean <- Data %>%
-        filter(Simulated == TRUE  &
-                   Trial %in% c(MyMeanType, "per5", "per95")) %>%
-        mutate(Group = paste(Compound, Inhibitor, Trial))
-    
-    # Setting up observed data per user input -------------------------------
-    
-    obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
-        mutate(Group = paste(Compound, Inhibitor, Trial))
-    
-    # If the user set obs_color to "none", then they must not want to include
-    # observed data in the graph. Set nrow to 0 in that case.
-    if(complete.cases(obs_color) && obs_color == "none"){
-        obs_data <- obs_data %>% filter(Trial == "mango") # hack to keep all the column names just in case
-    }
-    
-    if(showBLQ == FALSE){
-        obs_data <- obs_data %>% 
-            mutate(Conc = ifelse(Conc <= 0 & Time > 0,
-                                 NA, Conc)) %>% 
-            filter(complete.cases(Conc)) 
-    }
-    
-    # Checking whether there are multiple observations at each time point. If
-    # so, user should probably be using figure_type = "percentiles" and, if not,
-    # user should probably be using figure_type = "trial means", and Hannah
-    # would like user to get a warning about that.
-    suppressMessages(
-        check <- obs_data %>% group_by(CompoundID, Inhibitor, Time) %>% 
-            summarize(N = n())
-    )
-    
-    if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
-        warning(paste0("You have requested a figure type of '", 
-                       figure_type, 
-                       "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
-                call. = FALSE)
-    }
-    
-    if(nrow(obs_data) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
-                                                                    "percentile ribbon", "ribbon")){
-        warning(paste0("You have requested a figure type of '", 
-                       figure_type, 
-                       "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
-                call. = FALSE)
-    }
-    
-    
-    # Setting up the y axis using the subfunction ct_y_axis -------------------
-    
-    # Setting Y axis limits for both linear and semi-log plots
-    if(figure_type == "trial means") {
-        Ylim_data <- bind_rows(sim_data_trial, obs_data)
-    } else if(str_detect(figure_type, "percentiles|freddy|ribbon")) {
-        Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
-    } else if(figure_type == "means only") {
-        Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
-    }
-    
-    if(nrow(Ylim_data) == 0){
-        Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
-    }
-    
-    YStuff <- ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
-                        EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-                        Ylim_data = Ylim_data, 
-                        prettify_compound_names = prettify_compound_names,
-                        pad_y_axis = pad_y_axis,
-                        y_axis_limits_lin = y_axis_limits_lin, 
-                        time_range = time_range,
-                        y_axis_limits_log = y_axis_limits_log)
-    
-    ObsConcUnits <- YStuff$ObsConcUnits
-    ylab <- YStuff$ylab
-    YLabels <- YStuff$YLabels
-    YLogLabels <- YStuff$YLogLabels
-    YBreaks <- YStuff$YBreaks
-    YLogBreaks <- YStuff$YLogBreaks
-    Ylim_log <- YStuff$Ylim_log
-    YmaxRnd <- YStuff$YmaxRnd
-    pad_y_num <- YStuff$pad_y_num
-    pad_y_axis <- YStuff$pad_y_axis
-    
-    
-    # Figure types ---------------------------------------------------------
-    
-    obs_line_trans_user <- obs_line_trans
-    obs_fill_trans_user <- obs_fill_trans
-    obs_color_user <- obs_color_user
-    
-    AesthetStuff <- set_aesthet(line_type = line_type, figure_type = figure_type,
-                                MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
-                                obs_shape = obs_shape, obs_color = obs_color, 
-                                obs_fill_trans = obs_fill_trans,
-                                obs_line_trans = obs_line_trans,
-                                line_color = line_color)
-    
-    line_type <- AesthetStuff$line_type
-    line_color <-  AesthetStuff$line_color
-    obs_shape <- AesthetStuff$obs_shape
-    obs_color <- AesthetStuff$obs_color
-    obs_fill_trans<- AesthetStuff$obs_fill_trans
-    obs_line_trans <- AesthetStuff$obs_line_trans
-    
-    # if(length(obs_color) > 1){
-    #     obs_color <- obs_color[1]
-    # }
-    
-    # Warning for a figure type that's not recommended
-    
-    # Is this a graph showing substate +/- effector?
-    Eff_plusminus <- length(MyEffector) > 0 &&  complete.cases(MyEffector[1]) &&
-        MyEffector[1] != "none" &
-        compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                 "inhibitor 1 metabolite") == FALSE
-    if(Eff_plusminus & EnzPlot == FALSE & figure_type != "means only"){
-        # This is when there is an effector present and the graph is of the
-        # substrate or a substrate metabolite
-        warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
-                call. = FALSE)
-    }
-    
-    
-    ## figure_type: trial means -----------------------------------------------------------
-    if(figure_type == "trial means"){
-        
-        NumTrials <- length(unique(sim_data_trial$Trial))
-        AlphaToUse <- ifelse(complete.cases(line_transparency),
-                             line_transparency,
-                             ifelse(NumTrials > 10, 0.05, 0.2))
-        
-        A <- ggplot(sim_data_trial,
-                    aes(x = Time, y = Conc, group = Group,
-                        linetype = Inhibitor, shape = Inhibitor,
-                        color = Inhibitor, fill = Inhibitor)) +
-            geom_line(alpha = AlphaToUse,
+   
+   # Error catching ----------------------------------------------------------
+   
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+           call. = FALSE)
+   }
+   
+   if(nrow(ct_dataframe) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+           call. = FALSE)
+   }
+   
+   if(length(sort(unique(ct_dataframe$File))) > 1){
+      stop(paste0("The ct_plot function is for graphing only one simulator file at a time, but you have ",
+                  length(sort(unique(ct_dataframe$File))), 
+                  " simulator files. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+           call. = FALSE)
+   }
+   
+   if(length(sort(unique(ct_dataframe$Tissue))) > 1){
+      stop(paste0("The ct_plot function is for graphing only one tissue at a time, but you have ",
+                  length(sort(unique(ct_dataframe$Tissue))), 
+                  " tissues. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+           call. = FALSE)
+   }
+   
+   # Noting whether this is an enzyme-abundance plot b/c some options change
+   # then.
+   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+   
+   # Checking whether user tried to include obs data directly from simulator
+   # output for a simulation that included anything other than substrate in
+   # plasma.
+   if(EnzPlot == FALSE && any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
+      return(
+         ggplot(data.frame(Problem = 1, DataFail = 1), 
+                aes(y = Problem, x = DataFail)) +
+            xlab("Please check the help file for extractConcTime") +
+            theme(axis.title.x = element_text(size = 14, color = "red", 
+                                              face = "italic")) +
+            annotate(geom = "text", x = 1, y = 1, size = 8,
+                     color = "red", 
+                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+      )
+   }
+   
+   if(EnzPlot == FALSE && length(sort(unique(ct_dataframe$CompoundID))) > 1){
+      stop(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
+                  length(sort(unique(ct_dataframe$CompoundID))), 
+                  " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+           call. = FALSE)
+   }
+   
+   # If user wants feces, use the British spelling even if they entered the
+   # American spelling.
+   if(str_detect(subsection_ADAM, "feces")){
+      subsection_ADAM <- sub("feces", "faeces", subsection_ADAM)
+   }
+   
+   if(length(obs_color) > 1){
+      warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
+              call. = FALSE)
+      obs_color <- obs_color[1]
+   }
+   
+   # Making most character arguments lower case to avoid case sensitivity
+   figure_type <- tolower(figure_type) # LOWER CASE ONLY FROM HERE DOWN.
+   mean_type <- tolower(mean_type)
+   legend_position <- tolower(legend_position)
+   linear_or_log <- tolower(linear_or_log)
+   if(str_detect(linear_or_log, "horiz") & str_detect(linear_or_log, "vert")){
+      linear_or_log <- "horizontal and vertical"
+   }
+   
+   if(length(figure_type) != 1 |
+      figure_type %in% c("trial means", "percentiles", "trial percentiles",
+                         "freddy", "means only", "overlay", 
+                         "percentile ribbon", "percentile ribbons", 
+                         "ribbon") == FALSE){
+      warning("The only acceptable options for figure_type are `trial means`, `percentiles`, `percentile ribbon`, `means only`, or `Freddy`. We'll set your graph type to `percentiles` for now.",
+              call. = FALSE)
+      figure_type <- "percentiles"
+   }
+   
+   # Setting figure type to be exactly what it should be
+   figure_type <- ifelse(str_detect(figure_type, "percentile") &
+                            !str_detect(figure_type, "ribbon"),
+                         "percentiles", figure_type)
+   figure_type <- ifelse(str_detect(figure_type, "ribbon"), 
+                         "percentile ribbon", figure_type)
+   
+   if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
+      ("CompoundID" %in% names(ct_dataframe) && length(unique(ct_dataframe$CompoundID)) > 1)){
+      stop("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+   }
+   
+   if(length(unique(ct_dataframe$Inhibitor)) > 2){
+      stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+   }
+   
+   # If user wanted hline or vline added, check that they have specified
+   # argument correctly.
+   HLineAES <- str_split(hline_style, pattern = " ")[[1]]
+   if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
+      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+              call. = FALSE)
+      HLineAES <- c("red", "dotted")
+   }
+   
+   VLineAES <- str_split(vline_style, pattern = " ")[[1]]
+   if(length(VLineAES) < 2 & any(complete.cases(vline_position))){
+      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+              call. = FALSE)
+      VLineAES <- c("red", "dotted")
+   }
+   # This doesn't check that they've specified legit colors or linetypes, but
+   # I'm hoping that ggplot2 errors will cover that.
+   
+   
+   # Main body of function --------------------------------------------------
+   
+   # Noting user's original preferences for a few things
+   obs_line_trans_user <- obs_line_trans
+   obs_fill_trans_user <- obs_fill_trans
+   obs_color_user <- obs_color
+   obs_shape_user <- obs_shape
+   
+   # If user had already filtered ct_dataframe to include only the ADAM data
+   # they wanted, the subsection_ADAM column might not include the default
+   # value for subsection_ADAM. In that case, just switch to the subsection
+   # that *was* included and make the plot.
+   
+   ADAMoptions <- c("dissolved compound", "undissolved compound",
+                    "enterocyte concentration",
+                    "free compound in lumen", "total compound in lumen",
+                    "Heff", "absorption rate",
+                    "unreleased compound in faeces", 
+                    "luminal CLint", 
+                    "dissolution rate of solid state", 
+                    "cumulative fraction of compound absorbed", 
+                    "cumulative fraction of compound dissolved")
+   
+   if(EnzPlot == FALSE && 
+      (subsection_ADAM == "free compound in lumen" & 
+       length(unique(ct_dataframe$subsection_ADAM)) == 1 && 
+       unique(ct_dataframe$subsection_ADAM) %in% ADAMoptions)){
+      subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+   }
+   
+   MyMeanType <- ct_dataframe %>%
+      filter(Trial %in% c("geomean", "mean", "median")) %>% 
+      pull(Trial) %>% unique() %>% 
+      factor(levels = c("mean", "geomean", "median")) %>% 
+      sort()
+   
+   if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
+             "median" = "median") %in% ct_dataframe$Trial == FALSE){
+      
+      warning(paste0("You requested the ", 
+                     switch(mean_type, "arithmetic" = "arithmetic means",
+                            "geometric" = "geometric means", 
+                            "median" = "medians"), 
+                     ", but those are not included in your data. Instead, the ",
+                     ifelse(MyMeanType[1] == "mean", 
+                            "arithmetic mean", MyMeanType[1]),
+                     "s will be used."),
+              call. = FALSE)
+      MyMeanType <- MyMeanType[1] %>% as.character()
+      
+   } else {
+      MyMeanType <- switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
+                           "median" = "median")
+   }
+   
+   Data <- ct_dataframe %>% 
+      # Making sure we only have one summary aggregate measurement
+      filter(! Trial %in% setdiff(c("mean", "geomean", "median"), 
+                                  MyMeanType))
+   
+   # Set compoundToExtract to whatever compound was included.
+   compoundToExtract <- ifelse(EnzPlot, unique(Data$Enzyme), 
+                               unique(Data$CompoundID))
+   if(EnzPlot){
+      Data <- Data %>% mutate(CompoundID = Enzyme) %>%
+         rename(Conc = Abundance) %>%
+         mutate(Simulated = TRUE,
+                Compound = Enzyme, 
+                # putting "conc" into decimal format b/c it works better with
+                # using percents on y axis labels
+                Conc = Conc / 100) 
+      
+      # Since the y axis is now scaled by 1/100, need to also scale y axis
+      # limits.
+      y_axis_limits_lin <- y_axis_limits_lin / 100
+      y_axis_limits_log <- y_axis_limits_log / 100
+      
+   }
+   
+   # Noting whether the tissue was from an ADAM model
+   ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+                                      "jejunum II", "ileum I", "ileum II",
+                                      "ileum III", "ileum IV", "colon", 
+                                      "faeces", "cumulative absorption", 
+                                      "cumulative dissolution") &&
+      EnzPlot == FALSE
+   
+   # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
+   if(any(ADAM)){
+      
+      if(length(subsection_ADAM) > 1){
+         stop(paste0("You can only enter one option for the concentration type for ADAM-model tissues. Please set subsection_ADAM to one of ",
+                     str_comma(paste0("`", ADAMoptions, "`"), conjunction = "or"), 
+                     "."),
+              call. = FALSE)
+      }
+      
+      if(subsection_ADAM %in% ADAMoptions == FALSE){
+         stop(paste0("The concentration type you requested, `", subsection_ADAM,
+                     "``, is not one of the options. Please set this value to one of ",
+                     str_comma(paste0("`", ADAMoptions, "`"), conjunction = "or"), 
+                     "."),
+              call. = FALSE)
+      }
+      
+      Data <- Data %>% filter(subsection_ADAM == {{subsection_ADAM}})
+      
+      if(nrow(Data) == 0){
+         stop(paste0("You appear to have ADAM-model data, and you requested `", 
+                     subsection_ADAM, 
+                     "` for the subsection_ADAM argument, but that type is not present in ct_dataframe. The type(s) of ADAM data available in ct_dataframe is/are ", 
+                     str_comma(paste0("`", unique(ct_dataframe$subsection_ADAM), "`")),
+                     ". Please set the argument `subsection_ADAM` to one of these values."),
+              call. = FALSE)
+      }
+      
+   }   
+   
+   # Error catching now that we've figured out which subsection_ADAM they want
+   if("Conc_units" %in% names(Data) && length(unique(Data$Conc_units)) > 1){
+      stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+   }
+   
+   # You can't graph trial means if you didn't extract the individual data
+   # (this is one of the rare instances where we DO calculate things rather
+   # than pulling directly from the simulator output), so issuing an error if
+   # that's the case.
+   if(figure_type %in% c("trial means", "freddy") &
+      suppressWarnings(length(sort(as.numeric(
+         as.character(unique(Data$Trial)))))) == 0){
+      warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.",
+              call. = FALSE)
+   }
+   
+   # Setting up the x axis using the subfunction ct_x_axis
+   XStuff <- ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
+                       x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
+                       compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
+   xlab <- XStuff$xlab
+   Data <- XStuff$Data # Is this necessary??
+   time_range <- XStuff$time_range
+   time_range_relative <- XStuff$time_range_relative
+   t0 <- XStuff$t0
+   TimeUnits <- XStuff$TimeUnits
+   
+   # Dealing with possible inhibitor 1 data ---------------------------------
+   # Adding a grouping variable to data and also making the inhibitor 1 name
+   # prettier for the graphs.
+   MyEffector <- unique(Data$Inhibitor) %>% as.character()
+   MyEffector <- MyEffector[!MyEffector == "none"]
+   
+   if(length(MyEffector) > 0 && complete.cases(MyEffector)){
+      
+      Data <- Data %>%
+         mutate(CompoundIsEffector = Compound == MyEffector,
+                Inhibitor = as.character(ifelse(is.na(Inhibitor),
+                                                "none", Inhibitor)))
+      
+      if(class(prettify_compound_names) == "logical" &&
+         prettify_compound_names){
+         MyEffector <- prettify_compound_name(MyEffector)
+      }
+      
+      if(class(prettify_compound_names) == "character"){
+         MyEffector <- prettify_compound_names["inhibitor"]
+      }
+      
+      Data <- 
+         Data %>%
+         mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
+                Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
+                Group = paste(Compound, Inhibitor, Trial)) %>%
+         select(-CompoundIsEffector)
+   }
+   
+   # Error catching for when user specifies linetype, color or shape and
+   # doesn't include enough values when effector present
+   if(complete.cases(obs_shape[1]) && length(MyEffector) > 0 &&
+      complete.cases(MyEffector) &&
+      compoundToExtract != "inhibitor 1" &&
+      length(complete.cases(obs_shape)) < 2){
+      warning("There is an inhibitor or effector present, but you have specified only one shape for the observed data. The same shape will be used for both.",
+              call. = FALSE)
+      obs_shape <- rep(obs_shape, 2)
+   }
+   
+   if(complete.cases(line_color[1]) && length(MyEffector) > 0 &&
+      complete.cases(MyEffector) &&
+      compoundToExtract != "inhibitor 1" &&
+      length(complete.cases(line_color)) < 2){
+      warning("There is an inhibitor or effector present, but you have specified only one line color. The same line color will be used for both.",
+              call. = FALSE)
+      line_color <- rep(line_color, 2)
+   }
+   
+   if(complete.cases(line_type[1]) && length(MyEffector) > 0 &&
+      complete.cases(MyEffector) &&
+      compoundToExtract != "inhibitor 1" &&
+      length(complete.cases(line_type)) < 2){
+      warning("There is an inhibitor or effector present, but you have specified only one line type. The same line type will be used for both.",
+              call. = FALSE)
+      line_type <- rep(line_type, 2)
+   }
+   
+   # Always want "none" to be the 1st item on the legend, and we need there
+   # to be some value present for "Inhibitor" for function to work correctly.
+   Data <- Data %>%
+      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
+   if(length(MyEffector) > 0){
+      Data <- Data %>%
+         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
+   }
+   
+   # Setting up data.frames to graph ---------------------------------------
+   # Separating the data by type and calculating trial means
+   suppressMessages(
+      sim_data_trial <- Data %>%
+         filter(Simulated == TRUE &
+                   Trial %in% c("mean", "geomean", "per5", "per95", 
+                                "per10", "per90", "median") == FALSE) %>%
+         group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
+                                  "Simulated", "Trial", "Group",
+                                  "Time", "Time_orig",
+                                  "Time_units", "Conc_units")))) %>%
+         summarize(Conc = switch(mean_type, 
+                                 "arithmetic" = mean(Conc, na.rm = T),
+                                 "geometric" = gm_mean(Conc, na.rm = T),
+                                 "median" = median(Conc, na.rm = T))) %>%
+         ungroup() %>% 
+         mutate(Group = paste(Compound, Inhibitor, Trial))
+   )
+   
+   sim_data_mean <- Data %>%
+      filter(Simulated == TRUE  &
+                Trial %in% c(MyMeanType, "per5", "per95")) %>%
+      mutate(Group = paste(Compound, Inhibitor, Trial))
+   
+   # Setting up observed data per user input -------------------------------
+   
+   obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
+      mutate(Group = paste(Compound, Inhibitor, Trial))
+   
+   # If the user set obs_color to "none", then they must not want to include
+   # observed data in the graph. Set nrow to 0 in that case.
+   if(complete.cases(obs_color) && obs_color == "none"){
+      obs_data <- obs_data %>% filter(Trial == "mango") # hack to keep all the column names just in case
+   }
+   
+   if(showBLQ == FALSE){
+      obs_data <- obs_data %>% 
+         mutate(Conc = ifelse(Conc <= 0 & Time > 0,
+                              NA, Conc)) %>% 
+         filter(complete.cases(Conc)) 
+   }
+   
+   # Checking whether there are multiple observations at each time point. If
+   # so, user should probably be using figure_type = "percentiles" and, if not,
+   # user should probably be using figure_type = "trial means", and Hannah
+   # would like user to get a warning about that.
+   suppressMessages(
+      check <- obs_data %>% group_by(CompoundID, Inhibitor, Time) %>% 
+         summarize(N = n())
+   )
+   
+   if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
+      warning(paste0("You have requested a figure type of '", 
+                     figure_type, 
+                     "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
+              call. = FALSE)
+   }
+   
+   if(nrow(obs_data) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
+                                                                   "percentile ribbon", "ribbon")){
+      warning(paste0("You have requested a figure type of '", 
+                     figure_type, 
+                     "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
+              call. = FALSE)
+   }
+   
+   
+   # Setting up the y axis using the subfunction ct_y_axis -------------------
+   
+   # Setting Y axis limits for both linear and semi-log plots
+   if(figure_type == "trial means") {
+      Ylim_data <- bind_rows(sim_data_trial, obs_data)
+   } else if(str_detect(figure_type, "percentiles|freddy|ribbon")) {
+      Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
+   } else if(figure_type == "means only") {
+      Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
+   }
+   
+   if(nrow(Ylim_data) == 0){
+      Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
+   }
+   
+   YStuff <- ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
+                       EnzPlot = EnzPlot, time_range_relative = time_range_relative,
+                       Ylim_data = Ylim_data, 
+                       prettify_compound_names = prettify_compound_names,
+                       pad_y_axis = pad_y_axis,
+                       y_axis_limits_lin = y_axis_limits_lin, 
+                       time_range = time_range,
+                       y_axis_limits_log = y_axis_limits_log)
+   
+   ObsConcUnits <- YStuff$ObsConcUnits
+   ylab <- YStuff$ylab
+   YLabels <- YStuff$YLabels
+   YLogLabels <- YStuff$YLogLabels
+   YBreaks <- YStuff$YBreaks
+   YLogBreaks <- YStuff$YLogBreaks
+   Ylim_log <- YStuff$Ylim_log
+   YmaxRnd <- YStuff$YmaxRnd
+   pad_y_num <- YStuff$pad_y_num
+   pad_y_axis <- YStuff$pad_y_axis
+   
+   
+   # Figure types ---------------------------------------------------------
+   
+   obs_line_trans_user <- obs_line_trans
+   obs_fill_trans_user <- obs_fill_trans
+   obs_color_user <- obs_color_user
+   
+   AesthetStuff <- set_aesthet(line_type = line_type, figure_type = figure_type,
+                               MyEffector = MyEffector, compoundToExtract = compoundToExtract, 
+                               obs_shape = obs_shape, obs_color = obs_color, 
+                               obs_fill_trans = obs_fill_trans,
+                               obs_line_trans = obs_line_trans,
+                               line_color = line_color)
+   
+   line_type <- AesthetStuff$line_type
+   line_color <-  AesthetStuff$line_color
+   obs_shape <- AesthetStuff$obs_shape
+   obs_color <- AesthetStuff$obs_color
+   obs_fill_trans<- AesthetStuff$obs_fill_trans
+   obs_line_trans <- AesthetStuff$obs_line_trans
+   
+   # if(length(obs_color) > 1){
+   #     obs_color <- obs_color[1]
+   # }
+   
+   # Warning for a figure type that's not recommended
+   
+   # Is this a graph showing substate +/- effector?
+   Eff_plusminus <- length(MyEffector) > 0 &&  complete.cases(MyEffector[1]) &&
+      MyEffector[1] != "none" &
+      compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                               "inhibitor 1 metabolite") == FALSE
+   if(Eff_plusminus & EnzPlot == FALSE & figure_type != "means only"){
+      # This is when there is an effector present and the graph is of the
+      # substrate or a substrate metabolite
+      warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+              call. = FALSE)
+   }
+   
+   ## Setting up ggplot and aes bases for the graph -----------------------
+   
+   if(figure_type == "percentile ribbon"){
+      RibbonDF <- sim_data_mean %>% select(-Group, -Individual) %>% 
+         pivot_wider(names_from = Trial, values_from = Conc) %>% 
+         rename("MyMean" = {MyMeanType})
+   }
+   
+   A <- switch(figure_type, 
+               "trial means" = ggplot(sim_data_trial,
+                                      aes(x = Time, y = Conc, group = Group,
+                                          linetype = Inhibitor, shape = Inhibitor,
+                                          color = Inhibitor, fill = Inhibitor)),
+               "percentiles" = ggplot(sim_data_mean %>%
+                                         filter(Trial %in% c("per5", "per95")) %>%
+                                         mutate(Group = paste(Group, Trial)),
+                                      aes(x = Time, y = Conc,
+                                          linetype = Inhibitor, shape = Inhibitor,
+                                          color = Inhibitor, fill = Inhibitor, 
+                                          group = Group)),
+               "percentile ribbon" = ggplot(RibbonDF, 
+                                            aes(x = Time, y = MyMean, 
+                                                ymin = per5, ymax = per95, 
+                                                linetype = Inhibitor, shape = Inhibitor,
+                                                color = Inhibitor, fill = Inhibitor)), 
+               "freddy" = 
+                  switch(as.character(Eff_plusminus), 
+                         "TRUE" = ggplot(data = sim_data_mean %>%
+                                            filter(Trial == MyMeanType),
+                                         aes(x = Time, y = Conc, group = Group,
+                                             linetype = Inhibitor, shape = Inhibitor,
+                                             color = Inhibitor, fill = Inhibitor)), 
+                         "FALSE" = ggplot(sim_data_trial,
+                                          aes(x = Time, y = Conc, group = Trial,
+                                              linetype = Inhibitor, shape = Inhibitor,
+                                              color = Inhibitor, fill = Inhibitor))), 
+               "means only" = ggplot(sim_data_mean %>%
+                                        filter(Trial == MyMeanType), 
+                                     aes(x = Time, y = Conc,
+                                         linetype = Inhibitor, shape = Inhibitor, 
+                                         color = Inhibitor, fill = Inhibitor)))
+   
+   # Adding optional horizontal line(s)
+   if(any(complete.cases(hline_position))){
+      A <- A + geom_hline(yintercept = hline_position, 
+                          color = HLineAES[1], linetype = HLineAES[2])
+   }
+   
+   # Adding optional vertical line(s)
+   if(any(complete.cases(vline_position))){
+      A <- A + geom_vline(xintercept = vline_position, 
+                          color = VLineAES[1], linetype = VLineAES[2])
+   }
+   
+   
+   ## figure_type: trial means -----------------------------------------------------------
+   if(figure_type == "trial means"){
+      
+      NumTrials <- length(unique(sim_data_trial$Trial))
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency,
+                           ifelse(NumTrials > 10, 0.05, 0.2))
+      
+      A <- A +
+         # A <- ggplot(sim_data_trial,
+         #             aes(x = Time, y = Conc, group = Group,
+         #                 linetype = Inhibitor, shape = Inhibitor,
+         #                 color = Inhibitor, fill = Inhibitor)) +
+         geom_line(alpha = AlphaToUse,
+                   lwd = ifelse(is.na(line_width), 1, line_width)) +
+         geom_line(data = sim_data_mean %>%
+                      filter(Trial == MyMeanType),
+                   lwd = ifelse(is.na(line_width), 1, line_width))
+   }
+   
+   ## figure_type: percentiles ----------------------------------------------------------
+   if(figure_type == "percentiles"){
+      # graphs with 95th percentiles
+      
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency, 0.25)
+      
+      A <- A +
+         # A <- ggplot(sim_data_mean %>%
+         #                filter(Trial %in% c("per5", "per95")) %>%
+         #                mutate(Group = paste(Group, Trial)),
+         #             aes(x = Time, y = Conc,
+         #                 linetype = Inhibitor, shape = Inhibitor,
+         #                 color = Inhibitor, fill = Inhibitor, 
+         #                 group = Group)) +
+         geom_line(alpha = AlphaToUse,
+                   lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+         geom_line(data = sim_data_mean %>%
+                      filter(Trial == MyMeanType),
+                   lwd = ifelse(is.na(line_width), 1, line_width))
+      
+   }
+   
+   ## figure_type: percentile ribbon ----------------------------------------------------------
+   if(str_detect(figure_type, "ribbon")){
+      # graphs with 95th percentiles as transparent ribbons 
+      
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency, 0.25)
+      
+      A <- A +
+         # A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, 
+         #                           ymin = per5, ymax = per95, 
+         #                           linetype = Inhibitor, shape = Inhibitor,
+         #                           color = Inhibitor, fill = Inhibitor)) +
+         geom_ribbon(alpha = AlphaToUse, color = NA) +
+         geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
+      
+   }
+   
+   ## figure_type: Freddy --------------------------------------------------------------
+   if(figure_type == "freddy"){
+      
+      NumTrials <- length(unique(sim_data_trial$Trial))
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency,
+                           ifelse(NumTrials > 10, 0.05, 0.25))
+      
+      
+      # This figure type does things differently based on whether the graph is
+      # of a compound alone or a compound +/- an effector. 
+      if(Eff_plusminus){
+         # This is when there is an effector present and the graph is of the
+         # substrate or a substrate metabolite
+         
+         ## linear plot
+         A <- A +
+            # A <- ggplot(data = sim_data_mean %>%
+            #                filter(Trial == MyMeanType),
+            #             aes(x = Time, y = Conc, group = Group,
+            #                 linetype = Inhibitor, shape = Inhibitor,
+            #                 color = Inhibitor, fill = Inhibitor)) +
+            geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
+            geom_line(data = sim_data_mean %>%
+                         filter(Trial %in% c("per5", "per95")),
+                      alpha = AlphaToUse, 
+                      lwd = ifelse(is.na(line_width), 1, line_width))
+         
+      } else {
+         # This is when there is no effector present or the graph is of the
+         # effector or an effector metabolite.
+         
+         ## linear plot
+         A <- A +
+            # A <- ggplot(sim_data_trial,
+            #             aes(x = Time, y = Conc, group = Trial,
+            #                 linetype = Inhibitor, shape = Inhibitor,
+            #                 color = Inhibitor, fill = Inhibitor)) +
+            geom_line(alpha = AlphaToUse, 
                       lwd = ifelse(is.na(line_width), 1, line_width)) +
             geom_line(data = sim_data_mean %>%
-                          filter(Trial == MyMeanType),
-                      lwd = ifelse(is.na(line_width), 1, line_width))
-    }
-    
-    ## figure_type: percentiles ----------------------------------------------------------
-    if(str_detect(figure_type, "percentile") &&
-       !str_detect(figure_type, "ribbon")){
-        # graphs with 95th percentiles
-        
-        AlphaToUse <- ifelse(complete.cases(line_transparency),
-                             line_transparency, 0.25)
-        
-        A <- ggplot(sim_data_mean %>%
-                        filter(Trial %in% c("per5", "per95")) %>%
-                        mutate(Group = paste(Group, Trial)),
-                    aes(x = Time, y = Conc,
-                        linetype = Inhibitor, shape = Inhibitor,
-                        color = Inhibitor, fill = Inhibitor, 
-                        group = Group)) +
-            geom_line(alpha = AlphaToUse,
-                      lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+                         filter(Trial == MyMeanType),
+                      lwd = ifelse(is.na(line_width), 1, line_width)) +
             geom_line(data = sim_data_mean %>%
-                          filter(Trial == MyMeanType),
-                      lwd = ifelse(is.na(line_width), 1, line_width))
-        
-    }
-    
-    ## figure_type: percentile ribbon ----------------------------------------------------------
-    if(str_detect(figure_type, "ribbon")){
-        # graphs with 95th percentiles as transparent ribbons 
-        
-        AlphaToUse <- ifelse(complete.cases(line_transparency),
-                             line_transparency, 0.25)
-        
-        RibbonDF <- sim_data_mean %>% select(-Group, -Individual) %>% 
-            pivot_wider(names_from = Trial, values_from = Conc) %>% 
-            rename("MyMean" = {MyMeanType})
-        
-        A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, 
-                                  ymin = per5, ymax = per95, 
-                                  linetype = Inhibitor, shape = Inhibitor,
-                                  color = Inhibitor, fill = Inhibitor)) +
-            geom_ribbon(alpha = AlphaToUse, color = NA) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
-        
-    }
-    
-    ## figure_type: Freddy --------------------------------------------------------------
-    if(figure_type == "freddy"){
-        
-        NumTrials <- length(unique(sim_data_trial$Trial))
-        AlphaToUse <- ifelse(complete.cases(line_transparency),
-                             line_transparency,
-                             ifelse(NumTrials > 10, 0.05, 0.25))
-        
-        
-        # This figure type does things differently based on whether the graph is
-        # of a compound alone or a compound +/- an effector. 
-        if(Eff_plusminus){
-            # This is when there is an effector present and the graph is of the
-            # substrate or a substrate metabolite
-            
-            ## linear plot
-            A <- ggplot(data = sim_data_mean %>%
-                            filter(Trial == MyMeanType),
-                        aes(x = Time, y = Conc, group = Group,
-                            linetype = Inhibitor, shape = Inhibitor,
-                            color = Inhibitor, fill = Inhibitor)) +
-                geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
-                geom_line(data = sim_data_mean %>%
-                              filter(Trial %in% c("per5", "per95")),
-                          alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 1, line_width))
-            
-        } else {
-            # This is when there is no effector present or the graph is of the
-            # effector or an effector metabolite.
-            
-            ## linear plot
-            A <- ggplot(sim_data_trial,
-                        aes(x = Time, y = Conc, group = Trial,
-                            linetype = Inhibitor, shape = Inhibitor,
-                            color = Inhibitor, fill = Inhibitor)) +
-                geom_line(alpha = AlphaToUse, 
-                          lwd = ifelse(is.na(line_width), 1, line_width)) +
-                geom_line(data = sim_data_mean %>%
-                              filter(Trial == MyMeanType),
-                          lwd = ifelse(is.na(line_width), 1, line_width)) +
-                geom_line(data = sim_data_mean %>%
-                              filter(Trial %in% c("per5", "per95")),
-                          linetype = line_type[2],
-                          color = line_color[2])
-        }
-    }
-    
-    ## figure_type: means only -----------------------------------------------------------
-    if(figure_type == "means only"){
-        
-        A <- ggplot(sim_data_mean %>%
-                        filter(Trial == MyMeanType),
-                    aes(x = Time, y = Conc,
-                        linetype = Inhibitor, shape = Inhibitor, 
-                        color = Inhibitor, fill = Inhibitor)) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
-    }
-    
-    # Setting colors, linetypes, etc. -------------------------------------
-    
-    # Naming the linetypes, colors, fills, and shapes b/c otherwise having
-    # trouble with order changing between when lines are plotted and when
-    # observed data are added. I think this is a ggplot2 bug.
-    if(length(unique(Data$Inhibitor)) > 1){
-        names(line_type) <- levels(Data$Inhibitor)
-        names(line_color) <- levels(Data$Inhibitor)
-    } else {
-        names(line_type) <- unique(Data$Inhibitor)
-        names(line_color) <- unique(Data$Inhibitor)
-    }
-    
-    A <- A +
-        scale_linetype_manual(values = line_type) +
-        scale_color_manual(values = line_color) +
-        scale_fill_manual(values = line_color)
-    
-    # Adding optional horizontal line(s)
-    if(any(complete.cases(hline_position))){
-       A <- A + geom_hline(yintercept = hline_position, 
-                           color = HLineAES[1], linetype = HLineAES[2])
-    }
-    
-    # Adding optional vertical line(s)
-    if(any(complete.cases(vline_position))){
-       A <- A + geom_vline(xintercept = vline_position, 
-                           color = VLineAES[1], linetype = VLineAES[2])
-    }
-    
-    # Observed data ---------------------------------------------------------
-    
-    if(nrow(obs_data) > 0){
-        
-        MapObsData <- is.na(obs_color_user) & figure_type != "freddy"
-        
-        A <- addObsPoints(obs_data = obs_data, 
-                          A = A, 
-                          # Needed the argument AES for ct_plot_overlay, but
-                          # it's only ever going to be "linetype" for ct_plot.
-                          AES = "linetype", 
-                          obs_shape = obs_shape,
-                          obs_shape_user = obs_shape_user,
-                          obs_size = obs_size, 
-                          obs_color = obs_color,
-                          obs_color_user = obs_color_user,
-                          obs_line_trans = obs_line_trans,
-                          obs_line_trans_user = obs_line_trans_user,
-                          obs_fill_trans = obs_fill_trans,
-                          obs_fill_trans_user = obs_fill_trans_user,
-                          figure_type = figure_type,
-                          MapObsData = MapObsData, 
-                          LegCheck = TRUE)
-    }
-    
-    # Applying aesthetics ------------------------------------------------
-    ## Making linear graph -------------------------------------------------
-    
-    if(nrow(obs_data) == 0){
-        A <- A + guides(shape = "none")
-    }
-    
-    if(str_detect(figure_type, "ribbon")){
-        # There's a known glitch w/ggplot2 with coord_cartesian and
-        # geom_ribbon. Hacking around that.
-        A <- A +
-            scale_x_time(time_range = time_range_relative, 
-                         pad_x_axis = pad_x_axis)
-        
-        if(EnzPlot){
-            A <- A +
-                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                     0, y_axis_limits_lin[1]),
-                                              YmaxRnd), 
-                                   labels = scales::percent,
-                                   expand = expansion(mult = pad_y_num))    
-        } else {
-            A <- A +
-                scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                     0, y_axis_limits_lin[1]),
-                                              YmaxRnd), 
-                                   breaks = YBreaks,
-                                   labels = YLabels,
-                                   expand = expansion(mult = pad_y_num)) 
-        }
-        
-    } else {
-        A <- A +
-            coord_cartesian(xlim = time_range_relative, 
-                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                            0, y_axis_limits_lin[1]),
-                                     YmaxRnd)) +
-            scale_x_time(time_range = time_range_relative, 
-                         pad_x_axis = pad_x_axis)
-        
-        if(EnzPlot){
-            A <- A +
-                scale_y_continuous(labels = scales::percent,
-                                   expand = expansion(mult = pad_y_num))    
-        } else {
-            A <- A +
-                scale_y_continuous(breaks = YBreaks,
-                                   labels = YLabels,
-                                   expand = expansion(mult = pad_y_num)) 
-        }
-    }
-    
-    if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
-       (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
-        ylab <- y_axis_label
-    }
-    
-    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
-       (class(x_axis_label) == "expression" && length(x_axis_label) > 0)){
-        xlab <- x_axis_label
-    }
-    
-    A <- A +
-        labs(x = xlab, y = ylab,
-             linetype = ifelse(complete.cases(legend_label),
-                               legend_label, "Inhibitor"),
-             shape = ifelse(complete.cases(legend_label),
-                            legend_label, "Inhibitor"),
-             color = ifelse(complete.cases(legend_label), 
-                            legend_label, "Inhibitor"),
-             fill = ifelse(complete.cases(legend_label), 
-                           legend_label, "Inhibitor")) +
-        theme_consultancy()
-    
-    
-    # If the user didn't want the legend or if the graph is of an effector,
-    # remove legend.
-    if(legend_position == "none" | compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                                            "inhibitor 1 metabolite")){
-        A <- A + theme(legend.position = "none")
-    } else {
-        # Otherwise, make the legend a little wider to actually show any dashes
-        A <- A + theme(legend.position = legend_position, 
-                       legend.key.width = unit(2, "lines"))
-    }
-    
-    ## Making semi-log graph ------------------------------------------------
-    
-    if(EnzPlot){
-        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
-                                               Time > 0 &
-                                               Abundance < Ylim_log[1]) %>% 
-            pull(Abundance) 
-    } else {
-        LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
-                                               Time > 0 &
-                                               Conc < Ylim_log[1]) %>% 
-            pull(Conc)
-    }
-    
-    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon")){
-        warning(paste0("Some of your data are less than the lower y axis value of ",
-                       Ylim_log[1], ". When plotting a figure type of `percentile ribbon`, this sometimes leads to the ribbon being disjointed or disappearing entirely and isn't something the SimcypConsultancy package controls. If you see this, please try setting the minimum value for the y axis to less than or equal to ",
-                       min(LowConc, na.rm = T), 
-                       ", the lowest value in your data."),
-                call. = FALSE)
-    }
-    
-    B <- suppressWarnings(suppressMessages(
-        A + coord_cartesian(xlim = time_range_relative, 
-                            ylim = Ylim_log)))
-    
-    if(EnzPlot){
-        B <- suppressWarnings(suppressMessages(
-            B + scale_y_log10(labels = scales::percent,
-                              expand = expansion(mult = pad_y_num))))
-    } else {
-        B <- suppressWarnings(suppressMessages(
-            B + scale_y_log10(breaks = YLogBreaks,
-                              labels = YLogLabels,
-                              expand = expansion(mult = pad_y_num))))
-    }
-    
-    if(graph_labels){
-        labels <- "AUTO"
-    } else {
-        labels <- NULL
-    }
-    
-    # both plots together, aligned vertically
-    if(compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                "inhibitor 1 metabolite")){
-        AB <- suppressWarnings(
+                         filter(Trial %in% c("per5", "per95")),
+                      linetype = line_type[2],
+                      color = line_color[2])
+      }
+   }
+   
+   ## figure_type: means only -----------------------------------------------------------
+   if(figure_type == "means only"){
+      
+      A <- A +
+         # A <- ggplot(sim_data_mean %>%
+         #                filter(Trial == MyMeanType),
+         #             aes(x = Time, y = Conc,
+         #                 linetype = Inhibitor, shape = Inhibitor, 
+         #                 color = Inhibitor, fill = Inhibitor)) +
+         geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+   }
+   
+   # Setting colors, linetypes, etc. -------------------------------------
+   
+   # Naming the linetypes, colors, fills, and shapes b/c otherwise having
+   # trouble with order changing between when lines are plotted and when
+   # observed data are added. I think this is a ggplot2 bug.
+   if(length(unique(Data$Inhibitor)) > 1){
+      names(line_type) <- levels(Data$Inhibitor)
+      names(line_color) <- levels(Data$Inhibitor)
+   } else {
+      names(line_type) <- unique(Data$Inhibitor)
+      names(line_color) <- unique(Data$Inhibitor)
+   }
+   
+   A <- A +
+      scale_linetype_manual(values = line_type) +
+      scale_color_manual(values = line_color) +
+      scale_fill_manual(values = line_color)
+   
+   # Observed data ---------------------------------------------------------
+   
+   if(nrow(obs_data) > 0){
+      
+      MapObsData <- is.na(obs_color_user) & figure_type != "freddy"
+      
+      A <- addObsPoints(obs_data = obs_data, 
+                        A = A, 
+                        # Needed the argument AES for ct_plot_overlay, but
+                        # it's only ever going to be "linetype" for ct_plot.
+                        AES = "linetype", 
+                        obs_shape = obs_shape,
+                        obs_shape_user = obs_shape_user,
+                        obs_size = obs_size, 
+                        obs_color = obs_color,
+                        obs_color_user = obs_color_user,
+                        obs_line_trans = obs_line_trans,
+                        obs_line_trans_user = obs_line_trans_user,
+                        obs_fill_trans = obs_fill_trans,
+                        obs_fill_trans_user = obs_fill_trans_user,
+                        figure_type = figure_type,
+                        MapObsData = MapObsData, 
+                        LegCheck = TRUE)
+   }
+   
+   # Applying aesthetics ------------------------------------------------
+   ## Making linear graph -------------------------------------------------
+   
+   if(nrow(obs_data) == 0){
+      A <- A + guides(shape = "none")
+   }
+   
+   if(str_detect(figure_type, "ribbon")){
+      # There's a known glitch w/ggplot2 with coord_cartesian and
+      # geom_ribbon. Hacking around that.
+      A <- A +
+         scale_x_time(time_range = time_range_relative, 
+                      pad_x_axis = pad_x_axis)
+      
+      if(EnzPlot){
+         A <- A +
+            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                 0, y_axis_limits_lin[1]),
+                                          YmaxRnd), 
+                               labels = scales::percent,
+                               expand = expansion(mult = pad_y_num))    
+      } else {
+         A <- A +
+            scale_y_continuous(limits = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                 0, y_axis_limits_lin[1]),
+                                          YmaxRnd), 
+                               breaks = YBreaks,
+                               labels = YLabels,
+                               expand = expansion(mult = pad_y_num)) 
+      }
+      
+   } else {
+      A <- A +
+         coord_cartesian(xlim = time_range_relative, 
+                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                         0, y_axis_limits_lin[1]),
+                                  YmaxRnd)) +
+         scale_x_time(time_range = time_range_relative, 
+                      pad_x_axis = pad_x_axis)
+      
+      if(EnzPlot){
+         A <- A +
+            scale_y_continuous(labels = scales::percent,
+                               expand = expansion(mult = pad_y_num))    
+      } else {
+         A <- A +
+            scale_y_continuous(breaks = YBreaks,
+                               labels = YLabels,
+                               expand = expansion(mult = pad_y_num)) 
+      }
+   }
+   
+   if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
+      (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
+      ylab <- y_axis_label
+   }
+   
+   if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
+      (class(x_axis_label) == "expression" && length(x_axis_label) > 0)){
+      xlab <- x_axis_label
+   }
+   
+   A <- A +
+      labs(x = xlab, y = ylab,
+           linetype = ifelse(complete.cases(legend_label),
+                             legend_label, "Inhibitor"),
+           shape = ifelse(complete.cases(legend_label),
+                          legend_label, "Inhibitor"),
+           color = ifelse(complete.cases(legend_label), 
+                          legend_label, "Inhibitor"),
+           fill = ifelse(complete.cases(legend_label), 
+                         legend_label, "Inhibitor")) +
+      theme_consultancy()
+   
+   
+   # If the user didn't want the legend or if the graph is of an effector,
+   # remove legend.
+   if(legend_position == "none" | compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                                           "inhibitor 1 metabolite")){
+      A <- A + theme(legend.position = "none")
+   } else {
+      # Otherwise, make the legend a little wider to actually show any dashes
+      A <- A + theme(legend.position = legend_position, 
+                     legend.key.width = unit(2, "lines"))
+   }
+   
+   ## Making semi-log graph ------------------------------------------------
+   
+   if(EnzPlot){
+      LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                            Time > 0 &
+                                            Abundance < Ylim_log[1]) %>% 
+         pull(Abundance) 
+   } else {
+      LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
+                                            Time > 0 &
+                                            Conc < Ylim_log[1]) %>% 
+         pull(Conc)
+   }
+   
+   if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
+      linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
+      warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
+              call. = FALSE)
+   }
+   
+   B <- suppressWarnings(suppressMessages(
+      A + coord_cartesian(xlim = time_range_relative, 
+                          ylim = Ylim_log)))
+   
+   if(EnzPlot){
+      B <- suppressWarnings(suppressMessages(
+         B + scale_y_log10(labels = scales::percent,
+                           expand = expansion(mult = pad_y_num))))
+   } else {
+      B <- suppressWarnings(suppressMessages(
+         B + scale_y_log10(breaks = YLogBreaks,
+                           labels = YLogLabels,
+                           expand = expansion(mult = pad_y_num))))
+   }
+   
+   if(graph_labels){
+      labels <- "AUTO"
+   } else {
+      labels <- NULL
+   }
+   
+   # both plots together, aligned vertically
+   if(compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                               "inhibitor 1 metabolite")){
+      AB <- suppressWarnings(
+         ggpubr::ggarrange(A, B, ncol = 1, 
+                           labels = labels, 
+                           font.label = list(size = graph_title_size),
+                           align = "v")
+      )
+      
+      ABhoriz <- suppressWarnings(
+         ggpubr::ggarrange(A, B, ncol = 2, 
+                           labels = labels, 
+                           font.label = list(size = graph_title_size),
+                           align = "hv")
+      )
+      
+   } else {
+      # If the user didn't want the legend or if the graph is of Inhibitor1,
+      # remove legend.
+      if(legend_position == "none" | 
+         compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
+                                  "inhibitor 1 metabolite")){
+         AB <- suppressWarnings(
             ggpubr::ggarrange(A, B, ncol = 1, 
                               labels = labels, 
                               font.label = list(size = graph_title_size),
-                              align = "v")
-        )
-        
-        ABhoriz <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 2, 
+                              legend = "none", align = "hv"))
+         
+         ABhoriz <- suppressWarnings(
+            ggpubr::ggarrange(A, B, ncol = 2,  
                               labels = labels, 
                               font.label = list(size = graph_title_size),
-                              align = "hv")
-        )
-        
-    } else {
-        # If the user didn't want the legend or if the graph is of Inhibitor1,
-        # remove legend.
-        if(legend_position == "none" | 
-           compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
-                                    "inhibitor 1 metabolite")){
-            AB <- suppressWarnings(
-                ggpubr::ggarrange(A, B, ncol = 1, 
-                                  labels = labels, 
-                                  font.label = list(size = graph_title_size),
-                                  legend = "none", align = "hv"))
+                              legend = "none", align = "hv"))
+      } else {
+         AB <- suppressWarnings(
+            ggpubr::ggarrange(A, B, ncol = 1,  
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
+                              common.legend = TRUE, legend = legend_position,
+                              align = "hv"))
+         
+         ABhoriz <- suppressWarnings(
+            ggpubr::ggarrange(A, B, ncol = 2,  
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
+                              common.legend = TRUE, legend = legend_position,
+                              align = "hv"))
+      }
+   }
+   
+   if(complete.cases(graph_title)){
+      A <- A + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+      B <- B + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+      AB <- ggpubr::annotate_figure(
+         AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+                                     face = "bold", size = graph_title_size))
+      ABhoriz <- ggpubr::annotate_figure(
+         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
+                                          face = "bold", size = graph_title_size))
+   }
+   
+   Out <- switch(linear_or_log, 
+                 "linear" = A,
+                 "semi-log" = B,
+                 "log" = B,
+                 "both" = AB, 
+                 "both vertical" = AB,
+                 "both horizontal" = ABhoriz, 
+                 "horizontal and vertical" = AB)
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
+   
+   
+   
+   # Saving -----------------------------------------------------------------
+   
+   if(complete.cases(save_graph)){
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg", "docx"), 
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+         Ext <- "png"
+      }
+      
+      if(Ext == "docx"){
+         
+         if(linear_or_log == "horizontal and vertical"){
+            # Saving the horizontal version as a png file and the vertical
+            # version as a Word file lower down in this section of the
+            # script.
+            ggsave(sub(paste0("\\.", Ext), " - horizontal.png", FileName), 
+                   plot = ABhoriz, height = fig_height, width = fig_width, dpi = 600)
+         }
+         
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         if(EnzPlot){
+            rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = FileName, 
+                              quiet = TRUE)
             
-            ABhoriz <- suppressWarnings(
-                ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = labels, 
-                                  font.label = list(size = graph_title_size),
-                                  legend = "none", align = "hv"))
-        } else {
-            AB <- suppressWarnings(
-                ggpubr::ggarrange(A, B, ncol = 1,  
-                                  labels = labels, 
-                                  font.label = list(size = graph_title_size),
-                                  common.legend = TRUE, legend = legend_position,
-                                  align = "hv"))
+         } else {
             
-            ABhoriz <- suppressWarnings(
-                ggpubr::ggarrange(A, B, ncol = 2,  
-                                  labels = labels, 
-                                  font.label = list(size = graph_title_size),
-                                  common.legend = TRUE, legend = legend_position,
-                                  align = "hv"))
-        }
-    }
-    
-    if(complete.cases(graph_title)){
-        A <- A + ggtitle(graph_title) +
-            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
-        B <- B + ggtitle(graph_title) +
-            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
-        AB <- ggpubr::annotate_figure(
-            AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
-                                        face = "bold", size = graph_title_size))
-        ABhoriz <- ggpubr::annotate_figure(
-            ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
-                                             face = "bold", size = graph_title_size))
-    }
-    
-    Out <- switch(linear_or_log, 
-                  "linear" = A,
-                  "semi-log" = B,
-                  "log" = B,
-                  "both" = AB, 
-                  "both vertical" = AB,
-                  "both horizontal" = ABhoriz, 
-                  "horizontal and vertical" = AB)
-    
-    if(length(Out) == 1){
-        Out <- Out[[1]]
-    }
-    
-    
-    
-    # Saving -----------------------------------------------------------------
-    
-    if(complete.cases(save_graph)){
-        FileName <- save_graph
-        if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-            FileName <- sub(paste0(".", Ext), "", FileName)
-            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg", "docx"), 
-                          Ext, "png")
-            FileName <- paste0(FileName, ".", Ext)
-        } else {
-            FileName <- paste0(FileName, ".png")
-            Ext <- "png"
-        }
-        
-        if(Ext == "docx"){
+            rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = FileName, 
+                              quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
             
-            if(linear_or_log == "horizontal and vertical"){
-                # Saving the horizontal version as a png file and the vertical
-                # version as a Word file lower down in this section of the
-                # script.
-                ggsave(sub(paste0("\\.", Ext), " - horizontal.png", FileName), 
-                       plot = ABhoriz, height = fig_height, width = fig_width, dpi = 600)
-            }
-            
-            # This is when they want a Word file as output
-            OutPath <- dirname(FileName)
-            
-            if(OutPath == "."){
-                OutPath <- getwd()
-            }
-            
-            FileName <- basename(FileName)
-            
-            if(EnzPlot){
-                rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",
-                                              package="SimcypConsultancy"), 
-                                  output_dir = OutPath, 
-                                  output_file = FileName, 
-                                  quiet = TRUE)
-                
-            } else {
-                
-                rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
-                                              package="SimcypConsultancy"), 
-                                  output_dir = OutPath, 
-                                  output_file = FileName, 
-                                  quiet = TRUE)
-                # Note: The "system.file" part of the call means "go to where the
-                # package is installed, search for the file listed, and return its
-                # full path.
-                
-            }
-            
-        } else {
-            # This is when they want any kind of graphical file format.
-            if(linear_or_log %in% c("both", "both vertical")){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                       plot = AB)
-            } else if(linear_or_log == "both horizontal"){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                       plot = ABhoriz)
-            } else if(linear_or_log == "linear"){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                       plot = A)
-            } else if(str_detect(linear_or_log, "log")){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                       plot = B)
-            } else if(linear_or_log == "horizontal and vertical"){
-                ggsave(sub(paste0("\\.", Ext), paste0(" - vertical.", Ext), FileName), 
-                       plot = AB, height = 6, width = 5, dpi = 600)
-                ggsave(sub(paste0("\\.", Ext), paste0(" - horizontal.", Ext), FileName), 
-                       plot = ABhoriz, height = fig_height, width = fig_width, dpi = 600)
-            }
-        }
-    }
-    
-    return(Out)
+         }
+         
+      } else {
+         # This is when they want any kind of graphical file format.
+         if(linear_or_log %in% c("both", "both vertical")){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                   plot = AB)
+         } else if(linear_or_log == "both horizontal"){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = ABhoriz)
+         } else if(linear_or_log == "linear"){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = A)
+         } else if(str_detect(linear_or_log, "log")){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = B)
+         } else if(linear_or_log == "horizontal and vertical"){
+            ggsave(sub(paste0("\\.", Ext), paste0(" - vertical.", Ext), FileName), 
+                   plot = AB, height = 6, width = 5, dpi = 600)
+            ggsave(sub(paste0("\\.", Ext), paste0(" - horizontal.", Ext), FileName), 
+                   plot = ABhoriz, height = fig_height, width = fig_width, dpi = 600)
+         }
+      }
+   }
+   
+   return(Out)
 }
 
 
