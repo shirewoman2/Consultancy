@@ -217,6 +217,33 @@
 #' @param line_width optionally specify how thick to make the lines. Acceptable
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
 #'   give you an idea of where to start.
+#' @param hline_position numerical position(s) of any horizontal lines on the
+#'   graph. The default is NA to have no lines, and good syntax if you \emph{do}
+#'   want lines would be, for example, \code{hline_position = 10} to have a
+#'   horizontal line at 10 ng/mL (or whatever your concentration units are) or
+#'   \code{hline_position = c(10, 100, 1000)} to have horizontal lines at each
+#'   of those y values. Examples of where this might be useful would be to
+#'   indicate a toxicity threshold, a target Cmin, or the lower limit of
+#'   quantification for the assay used to generate the concentration-time data.
+#' @param hline_style the line color and type to use for any horizontal lines
+#'   that you add to the graph with \code{hline_position}. Default is "red
+#'   dotted", but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
+#' @param vline_position numerical position(s) of any vertical lines on the
+#'   graph. The default is NA to have no lines, and good syntax if you \emph{do}
+#'   want lines would be, for example, \code{vline_position = 12} to have a
+#'   vertical line at 12 h or \code{vline_position = seq(from = 0, to = 168, by
+#'   = 24)} to have horizontal lines every 24 hours for one week. Examples of
+#'   where this might be useful would be indicating dosing times or maybe the
+#'   time at which some other drug was started or stopped.
+#' @param vline_style the line color and type to use for any vertical lines that
+#'   you add to the graph with \code{vline_position}. Default is "red dotted",
+#'   but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
@@ -349,6 +376,10 @@ ct_plot <- function(ct_dataframe = NA,
                     line_transparency = NA,
                     line_color = NA,
                     line_width = NA,
+                    hline_position = NA, 
+                    hline_style = "red dotted", 
+                    vline_position = NA, 
+                    vline_style = "red dotted",
                     legend_position = "none", 
                     legend_label = NA,
                     prettify_compound_names = TRUE,
@@ -452,6 +483,24 @@ ct_plot <- function(ct_dataframe = NA,
     if(length(unique(ct_dataframe$Inhibitor)) > 2){
         stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
     }
+    
+    # If user wanted hline or vline added, check that they have specified
+    # argument correctly.
+    HLineAES <- str_split(hline_style, pattern = " ")[[1]]
+    if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
+       warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+               call. = FALSE)
+       HLineAES <- c("red", "dotted")
+    }
+    
+    VLineAES <- str_split(vline_style, pattern = " ")[[1]]
+    if(length(VLineAES) < 2 & any(complete.cases(vline_position))){
+       warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+               call. = FALSE)
+       VLineAES <- c("red", "dotted")
+    }
+    # This doesn't check that they've specified legit colors or linetypes, but
+    # I'm hoping that ggplot2 errors will cover that.
     
     
     # Main body of function --------------------------------------------------
@@ -948,6 +997,17 @@ ct_plot <- function(ct_dataframe = NA,
         scale_color_manual(values = line_color) +
         scale_fill_manual(values = line_color)
     
+    # Adding optional horizontal line(s)
+    if(any(complete.cases(hline_position))){
+       A <- A + geom_hline(yintercept = hline_position, 
+                           color = HLineAES[1], linetype = HLineAES[2])
+    }
+    
+    # Adding optional vertical line(s)
+    if(any(complete.cases(vline_position))){
+       A <- A + geom_vline(xintercept = vline_position, 
+                           color = VLineAES[1], linetype = VLineAES[2])
+    }
     
     # Observed data ---------------------------------------------------------
     
