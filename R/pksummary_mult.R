@@ -106,9 +106,9 @@
 #'   inhibitor or effector -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
-#'   and higher confidence interval or percentiles. Similarly, if you
-#'   request trial means, the values for tmax will be the range of medians for
-#'   the trials rather than the range of means.}}
+#'   and higher confidence interval or percentiles. Similarly, if you request
+#'   trial means, the values for tmax will be the range of medians for the
+#'   trials rather than the range of means.}}
 #'
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
@@ -128,15 +128,15 @@
 #'   named \emph{exactly} "observed PK". The supplied data.frame or file
 #'   \emph{must} be set up in one of two possible ways: \itemize{
 #'
-#'   \item{Columns for each of the PK parameters you would like to compare, and those
-#'   column names \emph{must} be among the PK parameter options listed in
+#'   \item{Columns for each of the PK parameters you would like to compare, and
+#'   those column names \emph{must} be among the PK parameter options listed in
 #'   \code{PKParameterDefinitions}. If you would like the output table to
 #'   include the observed data CV for any of the parameters, add "_CV" to the
 #'   end of the parameter name, e.g., "AUCinf_dose1_CV".}
 #'
-#'   \item{A column titled "PKparameter" and a column titled "Value". (It's fine if
-#'   there are other columns as well.) All the items in the column "PKparameter"
-#'   \emph{must} be among the PK parameter options listed in
+#'   \item{A column titled "PKparameter" and a column titled "Value". (It's fine
+#'   if there are other columns as well.) All the items in the column
+#'   "PKparameter" \emph{must} be among the PK parameter options listed in
 #'   \code{PKParameterDefinitions}.}}
 #'
 #'   Additionally, if you have more than one set of PK parameters, you must
@@ -194,6 +194,15 @@
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
+#' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
+#'   yellow the cells on the source Excel file where the data came from. This
+#'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
+#'   the output with \code{save_table}. \strong{Note from LSh:} For reasons that
+#'   I honestly do not know, highlighting the cells on the various AUC tabs from
+#'   R also causes the Simcyp watermark and blue background to disappear from
+#'   the "Summary" tab, "Input Sheet", and the tab with the population
+#'   information. These tabs do remain protected (you can't  change anything on
+#'   them), but you should be aware that watermark and blue background changes.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -253,6 +262,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
                            checkDataSource = TRUE, 
+                           highlightExcel = FALSE,
                            save_table = NA, 
                            fontsize = 11, 
                            ...){
@@ -679,7 +689,76 @@ pksummary_mult <- function(sim_data_files = NA,
       }
       
       if(checkDataSource){
-         write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
+         
+         if(complete.cases(save_table)){
+            
+            write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
+            
+            if(highlightExcel){
+               # Need to convert letter name of column back to a number
+               XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
+               
+               # Determining which stats we'll need to highlight
+               StatsToHighlight <- switch(MeanType, 
+                                          "arithmetic" = "mean", 
+                                          "geometric" = "geomean")
+               if(includeConfInt){
+                  StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
+               }
+               
+               if(includeCV){
+                  StatsToHighlight <- c(StatsToHighlight, 
+                                        switch(MeanType, 
+                                               "arithmetic" = "CV", 
+                                               "geometric" = "GCV"))
+               }
+               
+               if(includePerc){
+                  StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
+               }
+               
+               if(includeRange){
+                  StatsToHighlight <- c(StatsToHighlight, "min", "max")
+               }
+               
+               # Setting up the cell style to use
+               ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
+                                   halign = "center", valign = "center", 
+                                   border = "TopBottomLeftRight",
+                                   borderStyle = "hair")
+               
+               for(k in unique(OutQC$File)){
+                  # Loading the workbook so that we can highlight things
+                  wb <- openxlsx::loadWorkbook(k)
+                  
+                  for(i in unique(OutQC$Tab)){
+                     
+                     ToHighlight <- OutQC %>% filter(File == k & Tab == i) %>% 
+                        ungroup() %>% 
+                        select(File, Tab, any_of(StatsToHighlight)) %>% 
+                        pivot_longer(cols = -c("File", "Tab"), 
+                                     names_to = "Stat", values_to = "Cell") %>% 
+                        mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
+                               Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
+                     ToHighlight$Column <- as.numeric(sapply(
+                        ToHighlight$Column, FUN = function(x) which(XLCols == x)))
+                     
+                     # Applying the highlighting to the workbook
+                     for(j in 1:nrow(ToHighlight)){
+                        addStyle(wb, sheet = i, style = ToQC,
+                                 rows = ToHighlight$Row[j], 
+                                 cols = ToHighlight$Column[j])
+                     }
+                     
+                     rm(ToHighlight)
+                  }
+                  
+                  saveWorkbook(wb, file = k, overwrite = TRUE)
+                  
+                  rm(wb)
+               }
+            }
+         }
       }
       
       if(extract_forest_data){

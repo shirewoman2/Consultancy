@@ -27,6 +27,7 @@ pksummary_table(
   prettify_compound_names = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
+  highlightExcel = FALSE,
   save_table = NA,
   fontsize = 11
 )
@@ -205,9 +206,17 @@ with only one simulation isn't terribly informative.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
-simulator output file. If this is TRUE \emph{and} you are saving the output
-with \code{save_table}, this will additionally highlight in yellow the
-cells on the source Excel file where the data came from. Useful for QCing.}
+simulator output file. Useful for QCing.}
+
+\item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
+yellow the cells on the source Excel file where the data came from. This
+\emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
+the output with \code{save_table}. \strong{Note from LSh:} For reasons that
+I honestly do not know, highlighting the cells on the various AUC tabs from
+R also causes the Simcyp watermark and blue background to disappear from
+the "Summary" tab, "Input Sheet", and the tab with the population
+information. These tabs do remain protected (you can't  change anything on
+them), but you should be aware that watermark and blue background changes.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

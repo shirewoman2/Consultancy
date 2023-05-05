@@ -24,6 +24,7 @@ pksummary_mult(
   prettify_columns = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
+  highlightExcel = FALSE,
   save_table = NA,
   fontsize = 11,
   ...
@@ -76,9 +77,9 @@ with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
   inhibitor or effector -- will not be included.}
 
   \item{tmax will be listed as median, min, and max rather than mean, lower
-  and higher confidence interval or percentiles. Similarly, if you
-  request trial means, the values for tmax will be the range of medians for
-  the trials rather than the range of means.}}
+  and higher confidence interval or percentiles. Similarly, if you request
+  trial means, the values for tmax will be the range of medians for the
+  trials rather than the range of means.}}
 
   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
@@ -101,15 +102,15 @@ here. Most of the time, this should be left as NA.}
   named \emph{exactly} "observed PK". The supplied data.frame or file
   \emph{must} be set up in one of two possible ways: \itemize{
 
-  \item{Columns for each of the PK parameters you would like to compare, and those
-  column names \emph{must} be among the PK parameter options listed in
+  \item{Columns for each of the PK parameters you would like to compare, and
+  those column names \emph{must} be among the PK parameter options listed in
   \code{PKParameterDefinitions}. If you would like the output table to
   include the observed data CV for any of the parameters, add "_CV" to the
   end of the parameter name, e.g., "AUCinf_dose1_CV".}
 
-  \item{A column titled "PKparameter" and a column titled "Value". (It's fine if
-  there are other columns as well.) All the items in the column "PKparameter"
-  \emph{must} be among the PK parameter options listed in
+  \item{A column titled "PKparameter" and a column titled "Value". (It's fine
+  if there are other columns as well.) All the items in the column
+  "PKparameter" \emph{must} be among the PK parameter options listed in
   \code{PKParameterDefinitions}.}}
 
   Additionally, if you have more than one set of PK parameters, you must
@@ -179,6 +180,16 @@ only work for simulations that included an effector.}
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
+
+\item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
+yellow the cells on the source Excel file where the data came from. This
+\emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
+the output with \code{save_table}. \strong{Note from LSh:} For reasons that
+I honestly do not know, highlighting the cells on the various AUC tabs from
+R also causes the Simcyp watermark and blue background to disappear from
+the "Summary" tab, "Input Sheet", and the tab with the population
+information. These tabs do remain protected (you can't  change anything on
+them), but you should be aware that watermark and blue background changes.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

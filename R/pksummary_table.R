@@ -247,9 +247,16 @@
 #'   with only one simulation isn't terribly informative.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
-#'   simulator output file. If this is TRUE \emph{and} you are saving the output
-#'   with \code{save_table}, this will additionally highlight in yellow the
-#'   cells on the source Excel file where the data came from. Useful for QCing.
+#'   simulator output file. Useful for QCing.
+#' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
+#'   yellow the cells on the source Excel file where the data came from. This
+#'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
+#'   the output with \code{save_table}. \strong{Note from LSh:} For reasons that
+#'   I honestly do not know, highlighting the cells on the various AUC tabs from
+#'   R also causes the Simcyp watermark and blue background to disappear from
+#'   the "Summary" tab, "Input Sheet", and the tab with the population
+#'   information. These tabs do remain protected (you can't  change anything on
+#'   them), but you should be aware that watermark and blue background changes.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -264,7 +271,7 @@
 #'   assume you want it to be ".csv". While the main PK table data will be in
 #'   whatever file format you requested, if you set \code{checkDataSource =
 #'   TRUE}, the QC data will be in a csv file on its own and will have "- QC"
-#'   added to the end of the file name. 
+#'   added to the end of the file name.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
@@ -321,6 +328,7 @@ pksummary_table <- function(sim_data_file = NA,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
+                            highlightExcel = FALSE,
                             save_table = NA, 
                             fontsize = 11){
    
@@ -1515,19 +1523,14 @@ pksummary_table <- function(sim_data_file = NA,
       Out[["QC"]] <- OutQC
       
       if(complete.cases(save_table)){
-         # Need to convert letter name of column back to a number
-         XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
          
-         # Loading the workbook so that we can highlight things
-         wb <- openxlsx::loadWorkbook(sim_data_file)
+         write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
          
-         # Setting up the cell style to use
-         ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
-                             halign = "center", valign = "center", 
-                             border = "TopBottomLeftRight",
-                             borderStyle = "hair")
-         
-         for(i in unique(OutQC$Tab)){
+         if(highlightExcel){
+            # Need to convert letter name of column back to a number
+            XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
+            
+            # Determining which stats we'll need to highlight
             StatsToHighlight <- switch(MeanType, 
                                        "arithmetic" = "mean", 
                                        "geometric" = "geomean")
@@ -1550,25 +1553,37 @@ pksummary_table <- function(sim_data_file = NA,
                StatsToHighlight <- c(StatsToHighlight, "min", "max")
             }
             
-            ToHighlight <- OutQC %>% filter(Tab == i) %>% ungroup() %>% 
-               select(File, Tab, any_of(StatsToHighlight)) %>% 
-               pivot_longer(cols = -c("File", "Tab"), 
-                            names_to = "Stat", values_to = "Cell") %>% 
-               mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
-                      Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
-            ToHighlight$Column <- as.numeric(sapply(
-               ToHighlight$Column, FUN = function(x) which(XLCols == x)))
+            # Setting up the cell style to use
+            ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
+                                halign = "center", valign = "center", 
+                                border = "TopBottomLeftRight",
+                                borderStyle = "hair")
             
-            # Applying the highlighting to the workbook
-            for(j in 1:nrow(ToHighlight)){
-               addStyle(wb, sheet = i, style = ToQC,
-                        rows = ToHighlight$Row[j], 
-                        cols = ToHighlight$Column[j])
+            # Loading the workbook so that we can highlight things
+            wb <- openxlsx::loadWorkbook(sim_data_file)
+            
+            for(i in unique(OutQC$Tab)){
+               ToHighlight <- OutQC %>% filter(Tab == i) %>% ungroup() %>% 
+                  select(File, Tab, any_of(StatsToHighlight)) %>% 
+                  pivot_longer(cols = -c("File", "Tab"), 
+                               names_to = "Stat", values_to = "Cell") %>% 
+                  mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
+                         Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
+               ToHighlight$Column <- as.numeric(sapply(
+                  ToHighlight$Column, FUN = function(x) which(XLCols == x)))
+               
+               # Applying the highlighting to the workbook
+               for(j in 1:nrow(ToHighlight)){
+                  addStyle(wb, sheet = i, style = ToQC,
+                           rows = ToHighlight$Row[j], 
+                           cols = ToHighlight$Column[j])
+               }
+               
+               rm(ToHighlight)
             }
+            
+            saveWorkbook(wb, file = sim_data_file, overwrite = TRUE)
          }
-         
-         saveWorkbook(wb, file = sim_data_file, overwrite = TRUE)
-         write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
       }
    }
    
