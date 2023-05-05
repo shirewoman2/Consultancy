@@ -237,17 +237,19 @@
 #'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
-#'   the same time. This only applies when the compound to extract is
-#'   the substrate or a substrate metabolite. If set to TRUE, this will return a list that includes data
-#'   formatted for use with the function \code{\link{forest_plot}}. Since the
-#'   \code{\link{forest_plot}} function only works with simulations with
-#'   effectors (at least, for now), this will only work for simulations that
-#'   included an effector. This is probably most useful for the
-#'   \code{\link{pksummary_mult}} function since a forest plot with only one
-#'   simulation isn't terribly informative.
+#'   the same time. This only applies when the compound to extract is the
+#'   substrate or a substrate metabolite. If set to TRUE, this will return a
+#'   list that includes data formatted for use with the function
+#'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
+#'   only works with simulations with effectors (at least, for now), this will
+#'   only work for simulations that included an effector. This is probably most
+#'   useful for the \code{\link{pksummary_mult}} function since a forest plot
+#'   with only one simulation isn't terribly informative.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
-#'   simulator output file. Useful for QCing.
+#'   simulator output file. If this is TRUE \emph{and} you are saving the output
+#'   with \code{save_table}, this will additionally highlight in yellow the
+#'   cells on the source Excel file where the data came from. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -262,10 +264,7 @@
 #'   assume you want it to be ".csv". While the main PK table data will be in
 #'   whatever file format you requested, if you set \code{checkDataSource =
 #'   TRUE}, the QC data will be in a csv file on its own and will have "- QC"
-#'   added to the end of the file name. \strong{WARNING:} SAVING TO WORD DOES
-#'   NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an R
-#'   issue. If you try to save on SharePoint, you will get a warning that R will
-#'   save your file to your local (not OneDrive) Documents folder instead.
+#'   added to the end of the file name. 
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
@@ -1515,7 +1514,60 @@ pksummary_table <- function(sim_data_file = NA,
    if(checkDataSource){
       Out[["QC"]] <- OutQC
       
-      if(complete.cases(save_table)){ 
+      if(complete.cases(save_table)){
+         # Need to convert letter name of column back to a number
+         XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
+         
+         # Loading the workbook so that we can highlight things
+         wb <- openxlsx::loadWorkbook(sim_data_file)
+         
+         # Setting up the cell style to use
+         ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
+                             halign = "center", valign = "center", 
+                             border = "TopBottomLeftRight",
+                             borderStyle = "hair")
+         
+         for(i in unique(OutQC$Tab)){
+            StatsToHighlight <- switch(MeanType, 
+                                       "arithmetic" = "mean", 
+                                       "geometric" = "geomean")
+            if(includeConfInt){
+               StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
+            }
+            
+            if(includeCV){
+               StatsToHighlight <- c(StatsToHighlight, 
+                                     switch(MeanType, 
+                                            "arithmetic" = "CV", 
+                                            "geometric" = "GCV"))
+            }
+            
+            if(includePerc){
+               StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
+            }
+            
+            if(includeRange){
+               StatsToHighlight <- c(StatsToHighlight, "min", "max")
+            }
+            
+            ToHighlight <- OutQC %>% filter(Tab == i) %>% ungroup() %>% 
+               select(File, Tab, any_of(StatsToHighlight)) %>% 
+               pivot_longer(cols = -c("File", "Tab"), 
+                            names_to = "Stat", values_to = "Cell") %>% 
+               mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
+                      Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
+            ToHighlight$Column <- as.numeric(sapply(
+               ToHighlight$Column, FUN = function(x) which(XLCols == x)))
+            
+            # Applying the highlighting to the workbook
+            for(j in 1:nrow(ToHighlight)){
+               addStyle(wb, sheet = i, style = ToQC,
+                        rows = ToHighlight$Row[j], 
+                        cols = ToHighlight$Column[j])
+            }
+         }
+         
+         saveWorkbook(wb, file = sim_data_file, overwrite = TRUE)
          write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
       }
    }

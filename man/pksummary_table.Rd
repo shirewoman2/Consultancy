@@ -194,18 +194,20 @@ c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
-the same time. This only applies when the compound to extract is
-the substrate or a substrate metabolite. If set to TRUE, this will return a list that includes data
-formatted for use with the function \code{\link{forest_plot}}. Since the
-\code{\link{forest_plot}} function only works with simulations with
-effectors (at least, for now), this will only work for simulations that
-included an effector. This is probably most useful for the
-\code{\link{pksummary_mult}} function since a forest plot with only one
-simulation isn't terribly informative.}
+the same time. This only applies when the compound to extract is the
+substrate or a substrate metabolite. If set to TRUE, this will return a
+list that includes data formatted for use with the function
+\code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
+only works with simulations with effectors (at least, for now), this will
+only work for simulations that included an effector. This is probably most
+useful for the \code{\link{pksummary_mult}} function since a forest plot
+with only one simulation isn't terribly informative.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
-simulator output file. Useful for QCing.}
+simulator output file. If this is TRUE \emph{and} you are saving the output
+with \code{save_table}, this will additionally highlight in yellow the
+cells on the source Excel file where the data came from. Useful for QCing.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
@@ -221,10 +223,7 @@ just "csv" for the file name but you leave off the file extension, we'll
 assume you want it to be ".csv". While the main PK table data will be in
 whatever file format you requested, if you set \code{checkDataSource =
 TRUE}, the QC data will be in a csv file on its own and will have "- QC"
-added to the end of the file name. \strong{WARNING:} SAVING TO WORD DOES
-NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue, not an R
-issue. If you try to save on SharePoint, you will get a warning that R will
-save your file to your local (not OneDrive) Documents folder instead.}
+added to the end of the file name.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
