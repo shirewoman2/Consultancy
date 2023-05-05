@@ -587,6 +587,7 @@ ct_plot <- function(ct_dataframe = NA,
       # limits.
       y_axis_limits_lin <- y_axis_limits_lin / 100
       y_axis_limits_log <- y_axis_limits_log / 100
+      hline_position <- hline_position / 100
       
    }
    

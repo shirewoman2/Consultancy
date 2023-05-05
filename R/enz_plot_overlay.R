@@ -222,6 +222,31 @@
 #'   applies when you have requested a semi-log plot with \code{linear_or_log}.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
+#' @param hline_position numerical position(s) of any horizontal lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{hline_position = 100} to
+#'   have a horizontal line at 100 percent of the baseline enzyme abundance or
+#'   \code{hline_position = c(50, 100, 200)} to have horizontal lines at each of
+#'   those y values.
+#' @param hline_style the line color and type to use for any horizontal lines
+#'   that you add to the graph with \code{hline_position}. Default is "red
+#'   dotted", but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
+#' @param vline_position numerical position(s) of any vertical lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{vline_position = 12} to
+#'   have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+#'   168, by = 24)} to have horizontal lines every 24 hours for one week.
+#'   Examples of where this might be useful would be indicating dosing times or
+#'   the time at which some other drug was started or stopped.
+#' @param vline_style the line color and type to use for any vertical lines that
+#'   you add to the graph with \code{vline_position}. Default is "red dotted",
+#'   but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
@@ -254,9 +279,9 @@
 #' @examples
 #' enz_plot_overlay(sim_enz_dataframe = bind_rows(CYP3A4_gut, CYP3A4_liver),
 #'                  colorBy_column = Tissue, linetype_column = Inhibitor)
-#' 
-#' 
-#' 
+#'
+#'
+#'
 #' 
 enz_plot_overlay <- function(sim_enz_dataframe,
                              mean_type = "arithmetic",
@@ -284,6 +309,10 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                              y_axis_limits_lin = NA,
                              y_axis_limits_log = NA, 
                              y_axis_label = NA,
+                             hline_position = NA, 
+                             hline_style = "red dotted", 
+                             vline_position = NA, 
+                             vline_style = "red dotted",
                              graph_labels = TRUE,
                              graph_title = NA,
                              graph_title_size = 14, 
@@ -291,57 +320,61 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                              save_graph = NA,
                              fig_height = 6,
                              fig_width = 5){
-    
-    facet1_column <- rlang::enquo(facet1_column)
-    facet2_column <- rlang::enquo(facet2_column)
-    colorBy_column <- rlang::enquo(colorBy_column)
-    linetype_column <- rlang::enquo(linetype_column)
-    
-    Out <- ct_plot_overlay(ct_dataframe = sim_enz_dataframe,
-                           # NSE trouble: not enquo alone, not quo, not
-                           # substitute, but enquo plus !! here
-                           colorBy_column = !!colorBy_column,
-                           linetype_column = !!linetype_column,
-                           facet1_column = !!facet1_column,
-                           facet2_column = !!facet2_column,
-                           obs_to_sim_assignment = NA,
-                           mean_type = mean_type,
-                           figure_type = figure_type, 
-                           linear_or_log = linear_or_log,
-                           color_labels = color_labels, 
-                           legend_label_color = legend_label_color,
-                           color_set = color_set,
-                           obs_shape = NA,
-                           obs_color = NA,
-                           obs_size = NA,
-                           obs_fill_trans = NA, 
-                           obs_line_trans = NA, 
-                           linetypes = linetypes,
-                           line_width = line_width,
-                           legend_label_linetype = legend_label_linetype,
-                           facet_ncol = facet_ncol, 
-                           facet_nrow = facet_nrow,
-                           floating_facet_scale = floating_facet_scale,
-                           facet_spacing = facet_spacing,
-                           time_range = time_range, 
-                           x_axis_interval = x_axis_interval,
-                           x_axis_label = x_axis_label,
-                           pad_x_axis = pad_x_axis,
-                           pad_y_axis = pad_y_axis,
-                           y_axis_limits_lin = y_axis_limits_lin,
-                           y_axis_limits_log = y_axis_limits_log, 
-                           y_axis_label = y_axis_label,
-                           graph_labels = graph_labels,
-                           graph_title = graph_title,
-                           graph_title_size = graph_title_size, 
-                           legend_position = legend_position,
-                           prettify_compound_names = TRUE,
-                           save_graph = save_graph,
-                           fig_height = fig_height,
-                           fig_width = fig_width)
-    
-    return(Out)
-    
+   
+   facet1_column <- rlang::enquo(facet1_column)
+   facet2_column <- rlang::enquo(facet2_column)
+   colorBy_column <- rlang::enquo(colorBy_column)
+   linetype_column <- rlang::enquo(linetype_column)
+   
+   Out <- ct_plot_overlay(ct_dataframe = sim_enz_dataframe,
+                          # NSE trouble: not enquo alone, not quo, not
+                          # substitute, but enquo plus !! here
+                          colorBy_column = !!colorBy_column,
+                          linetype_column = !!linetype_column,
+                          facet1_column = !!facet1_column,
+                          facet2_column = !!facet2_column,
+                          obs_to_sim_assignment = NA,
+                          mean_type = mean_type,
+                          figure_type = figure_type, 
+                          linear_or_log = linear_or_log,
+                          color_labels = color_labels, 
+                          legend_label_color = legend_label_color,
+                          color_set = color_set,
+                          obs_shape = NA,
+                          obs_color = NA,
+                          obs_size = NA,
+                          obs_fill_trans = NA, 
+                          obs_line_trans = NA, 
+                          linetypes = linetypes,
+                          line_width = line_width,
+                          legend_label_linetype = legend_label_linetype,
+                          facet_ncol = facet_ncol, 
+                          facet_nrow = facet_nrow,
+                          floating_facet_scale = floating_facet_scale,
+                          facet_spacing = facet_spacing,
+                          time_range = time_range, 
+                          x_axis_interval = x_axis_interval,
+                          x_axis_label = x_axis_label,
+                          pad_x_axis = pad_x_axis,
+                          pad_y_axis = pad_y_axis,
+                          y_axis_limits_lin = y_axis_limits_lin,
+                          y_axis_limits_log = y_axis_limits_log, 
+                          y_axis_label = y_axis_label,
+                          hline_position = hline_position, 
+                          hline_style = hline_style, 
+                          vline_position = vline_position, 
+                          vline_style = vline_style,
+                          graph_labels = graph_labels,
+                          graph_title = graph_title,
+                          graph_title_size = graph_title_size, 
+                          legend_position = legend_position,
+                          prettify_compound_names = TRUE,
+                          save_graph = save_graph,
+                          fig_height = fig_height,
+                          fig_width = fig_width)
+   
+   return(Out)
+   
 }
 
 

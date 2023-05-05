@@ -838,6 +838,13 @@ call. = FALSE)
       sim_dataframe <- ct_dataframe
       
       obs_dataframe <- data.frame()
+      
+      # Since the y axis is now scaled by 1/100, need to also scale y axis
+      # limits.
+      y_axis_limits_lin <- y_axis_limits_lin / 100
+      y_axis_limits_log <- y_axis_limits_log / 100
+      hline_position <- hline_position / 100
+      
    } else {
       # for conc-time data
       ct_dataframe <- ct_dataframe %>%

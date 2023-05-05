@@ -125,6 +125,31 @@
 #' @param line_width optionally specify how thick to make the lines. Acceptable
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
 #'   give you an idea of where to start.
+#' @param hline_position numerical position(s) of any horizontal lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{hline_position = 100} to
+#'   have a horizontal line at 100 percent of the baseline enzyme abundance or
+#'   \code{hline_position = c(50, 100, 200)} to have horizontal lines at each of
+#'   those y values.
+#' @param hline_style the line color and type to use for any horizontal lines
+#'   that you add to the graph with \code{hline_position}. Default is "red
+#'   dotted", but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
+#' @param vline_position numerical position(s) of any vertical lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{vline_position = 12} to
+#'   have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+#'   168, by = 24)} to have horizontal lines every 24 hours for one week.
+#'   Examples of where this might be useful would be indicating dosing times or
+#'   the time at which some other drug was started or stopped.
+#' @param vline_style the line color and type to use for any vertical lines that
+#'   you add to the graph with \code{vline_position}. Default is "red dotted",
+#'   but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
@@ -224,6 +249,10 @@ enz_plot <- function(sim_enz_dataframe,
                      line_transparency = NA,
                      line_color = NA,
                      line_width = NA,
+                     hline_position = NA, 
+                     hline_style = "red dotted", 
+                     vline_position = NA, 
+                     vline_style = "red dotted",
                      legend_position = "none", 
                      legend_label = NA,
                      prettify_compound_names = TRUE,
@@ -233,71 +262,75 @@ enz_plot <- function(sim_enz_dataframe,
                      save_graph = NA,
                      fig_height = 4, 
                      fig_width = 6){
-    
-    # Error catching ----------------------------------------------------------
-    
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
-    
-    # Observed data are not included for enzyme-abundance plots, so remove that
-    # regular option for time_range.
-    if(complete.cases(time_range) && str_detect(time_range, "all obs")){
-        warning("Since there are no observed data for enzyme abundance, the option for time_range of `all observed` does not work for the function enz_plot. The full time range will be used.", 
-                call. = FALSE)
-        time_range = NA
-    }
-    
-    # If the supplied sim_enz_dataframe includes both colon and small intestine
-    # data but the user did not explicitly call on the argument "gut_tissue",
-    # give a warning that the colon tissue will be plotted.
-    if(hasArg("gut_tissue") == FALSE & length(unique(sim_enz_dataframe$Tissue)) > 1){
-        warning("The supplied data include enzyme abundance levels for both colon and small intestine. By default, the abundance levels in colon will be shown. Set the argument `gut_tissue` to `small intestine` if that's not what you would like.", 
-                call. = FALSE)
-    }
-    
-    
-    # main body of function -----------------------------------------------
-    
-    Data <- sim_enz_dataframe
-    
-    if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
-        Data <- Data %>% filter(Tissue == gut_tissue)
-    }
-    
-    # Tell the user what they're plotting.
-    message(paste0("Graphing enzyme abundance levels for ", 
-                   unique(Data$Enzyme), " in ",
-                   unique(Data$Tissue), "."))
-    
-    ct_plot(ct_dataframe = Data, 
-            figure_type = figure_type,
-            mean_type = mean_type, 
-            time_range = time_range,
-            x_axis_interval = x_axis_interval,
-            pad_x_axis = pad_x_axis,
-            pad_y_axis = pad_y_axis,
-            adjust_obs_time = adjust_obs_time,
-            y_axis_limits_lin = y_axis_limits_lin,
-            y_axis_limits_log = y_axis_limits_log,
-            y_axis_label = y_axis_label,
-            line_type = line_type,
-            line_transparency = line_transparency,
-            line_color = line_color,
-            line_width = line_width,
-            legend_position = legend_position, 
-            legend_label = legend_label,
-            prettify_compound_names = prettify_compound_names,
-            linear_or_log = linear_or_log,
-            graph_labels = graph_labels,
-            graph_title = graph_title, 
-            graph_title_size = graph_title_size, 
-            save_graph = save_graph, 
-            fig_height = fig_height, 
-            fig_width = fig_width,
-            # arguments that don't apply to enz_plots:
-            obs_color = NA, obs_shape = NA, showBLQ = FALSE, 
-            t0 = "simulation start")
+   
+   # Error catching ----------------------------------------------------------
+   
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Observed data are not included for enzyme-abundance plots, so remove that
+   # regular option for time_range.
+   if(complete.cases(time_range) && str_detect(time_range, "all obs")){
+      warning("Since there are no observed data for enzyme abundance, the option for time_range of `all observed` does not work for the function enz_plot. The full time range will be used.", 
+              call. = FALSE)
+      time_range = NA
+   }
+   
+   # If the supplied sim_enz_dataframe includes both colon and small intestine
+   # data but the user did not explicitly call on the argument "gut_tissue",
+   # give a warning that the colon tissue will be plotted.
+   if(hasArg("gut_tissue") == FALSE & length(unique(sim_enz_dataframe$Tissue)) > 1){
+      warning("The supplied data include enzyme abundance levels for both colon and small intestine. By default, the abundance levels in colon will be shown. Set the argument `gut_tissue` to `small intestine` if that's not what you would like.", 
+              call. = FALSE)
+   }
+   
+   
+   # main body of function -----------------------------------------------
+   
+   Data <- sim_enz_dataframe
+   
+   if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
+      Data <- Data %>% filter(Tissue == gut_tissue)
+   }
+   
+   # Tell the user what they're plotting.
+   message(paste0("Graphing enzyme abundance levels for ", 
+                  unique(Data$Enzyme), " in ",
+                  unique(Data$Tissue), "."))
+   
+   ct_plot(ct_dataframe = Data, 
+           figure_type = figure_type,
+           mean_type = mean_type, 
+           time_range = time_range,
+           x_axis_interval = x_axis_interval,
+           pad_x_axis = pad_x_axis,
+           pad_y_axis = pad_y_axis,
+           adjust_obs_time = adjust_obs_time,
+           y_axis_limits_lin = y_axis_limits_lin,
+           y_axis_limits_log = y_axis_limits_log,
+           y_axis_label = y_axis_label,
+           line_type = line_type,
+           line_transparency = line_transparency,
+           line_color = line_color,
+           line_width = line_width,
+           hline_position = hline_position, 
+           hline_style = hline_style, 
+           vline_position = vline_position, 
+           vline_style = vline_style,
+           legend_position = legend_position, 
+           legend_label = legend_label,
+           prettify_compound_names = prettify_compound_names,
+           linear_or_log = linear_or_log,
+           graph_labels = graph_labels,
+           graph_title = graph_title, 
+           graph_title_size = graph_title_size, 
+           save_graph = save_graph, 
+           fig_height = fig_height, 
+           fig_width = fig_width,
+           # arguments that don't apply to enz_plots:
+           obs_color = NA, obs_shape = NA, showBLQ = FALSE, 
+           t0 = "simulation start")
 }
 
