@@ -493,7 +493,7 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # If user wanted hline or vline added, check that they have specified
-   # argument correctly.
+   # argument correctly and set up the character vector of preferences.
    HLineAES <- str_split(hline_style, pattern = " ")[[1]]
    if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
       warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 

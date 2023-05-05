@@ -330,6 +330,33 @@
 #'   applies when you have requested a semi-log plot with \code{linear_or_log}.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
+#' @param hline_position numerical position(s) of any horizontal lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{hline_position = 10} to
+#'   have a horizontal line at 10 ng/mL (or whatever your concentration units
+#'   are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+#'   at each of those y values. Examples of where this might be useful would be
+#'   to indicate a toxicity threshold, a target Cmin, or the lower limit of
+#'   quantification for the assay used to generate the concentration-time data.
+#' @param hline_style the line color and type to use for any horizontal lines
+#'   that you add to the graph with \code{hline_position}. Default is "red
+#'   dotted", but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
+#' @param vline_position numerical position(s) of any vertical lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{vline_position = 12} to
+#'   have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+#'   168, by = 24)} to have horizontal lines every 24 hours for one week.
+#'   Examples of where this might be useful would be indicating dosing times or
+#'   the time at which some other drug was started or stopped.
+#' @param vline_style the line color and type to use for any vertical lines that
+#'   you add to the graph with \code{vline_position}. Default is "red dotted",
+#'   but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
@@ -423,6 +450,10 @@ ct_plot_overlay <- function(ct_dataframe,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
                             y_axis_label = NA,
+                            hline_position = NA, 
+                            hline_style = "red dotted", 
+                            vline_position = NA, 
+                            vline_style = "red dotted",
                             graph_labels = TRUE,
                             graph_title = NA,
                             graph_title_size = 14, 
@@ -431,1538 +462,1645 @@ ct_plot_overlay <- function(ct_dataframe,
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5){
-    
-    # Error catching ---------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
-             call. = FALSE)
-    }
-    
-    if(nrow(ct_dataframe) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
-             call. = FALSE)
-    }
-    
-    # Checking whether this is an enzyme abundance plot
-    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
-    
-    # Checking for more than one tissue or ADAM data type b/c there's only one y
-    # axis and it should have only one concentration type.
-    if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
-        stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
+   
+   # Error catching ---------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+           call. = FALSE)
+   }
+   
+   if(nrow(ct_dataframe) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+           call. = FALSE)
+   }
+   
+   # Checking whether this is an enzyme abundance plot
+   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+   
+   # Checking for more than one tissue or ADAM data type b/c there's only one y
+   # axis and it should have only one concentration type.
+   if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
+      stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
 ", deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
 call. = FALSE)
-    }
-    
-    if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
-        stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:
+   }
+   
+   if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
+      stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:
 ", deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
 call. = FALSE)
-    }
-    
-    if(length(obs_color) > 1){
-        warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
-                call. = FALSE)
-        obs_color <- obs_color[1]
-    }
-    
-    # Cleaning up figure_type for the whole rest of the function
-    if(str_detect(figure_type, "percentile") & !str_detect(figure_type, "ribbon")){
-        figure_type <- "percentiles"
-    } else if(str_detect(figure_type, "ribbon")){
-        figure_type <- "percentile ribbon"
-    }
-    
-    # Checking for acceptable input
-    if(figure_type %in% c("means only", "percentiles", "percentile ribbon") == FALSE){
-        warning(paste0("The value used for `figure_type` was `", 
-                       figure_type,
-                       "`, but only the only acceptable options are `means only`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used."),
-                call. = FALSE)
-        figure_type <- "means only"
-    }
-    
-    if(class(prettify_compound_names) != "logical" && 
-       any(tolower(names(prettify_compound_names)) %in% 
-           c("substrate", "inhibitor", "inhibitor 1", "primary metabolite 1", 
-             "primary metabolite 2", "secondary metabolite", "inhibitor 2", 
-             "inhibitor 1 metabolite"))){
-        warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_effector_names` to TRUE but will not be able to use the specific names you provided.",
-                call. = FALSE)
-        prettify_compound_names <- TRUE
-    }
-    
-    # Checking whether user tried to include obs data directly from simulator
-    # output for a simulation that included anything other than substrate in
-    # plasma.
-    if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
-        return(
-            ggplot(data.frame(Problem = 1, DataFail = 1), 
-                   aes(y = Problem, x = DataFail)) +
-                xlab("Please check the help file for extractConcTime") +
-                theme(axis.title.x = element_text(size = 14, color = "red", 
-                                                  face = "italic")) +
-                annotate(geom = "text", x = 1, y = 1, size = 8,
-                         color = "red", 
-                         label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
-        )
-    }
-    
-    
-    # Main body of function -------------------------------------------------
-    
-    # Noting user's original preferences for a few things
-    obs_line_trans_user <- obs_line_trans
-    obs_fill_trans_user <- obs_fill_trans
-    obs_color_user <- obs_color
-    obs_shape_user <- obs_shape
-    
-    # Prettifying compound names before doing anything else 
-    if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
-        if(prettify_compound_names){
-            if(EnzPlot){ 
-                ct_dataframe <- ct_dataframe %>% 
-                    mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
-            } else {
-                ct_dataframe <- ct_dataframe %>% 
-                    mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
-                           Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
-            }
-        } 
-        # If prettify_compound_names is FALSE, then don't do anything.
-        
-    } else {
-        # This is when the user has requested specific value for prettifying. 
-        if(EnzPlot){ 
-            # Any compounds that the user omitted from prettify_compound_names
-            # should be added to that and kept as their original values.
-            MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
-                                    names(prettify_compound_names))
-            OrigPrettyNames <- prettify_compound_names
-            prettify_compound_names <- c(prettify_compound_names, MissingNames)
-            if(length(MissingNames) > 0){
-                names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-                    MissingNames
-            }
+   }
+   
+   if(length(obs_color) > 1){
+      warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
+              call. = FALSE)
+      obs_color <- obs_color[1]
+   }
+   
+   # Cleaning up figure_type for the whole rest of the function
+   if(str_detect(figure_type, "percentile") & !str_detect(figure_type, "ribbon")){
+      figure_type <- "percentiles"
+   } else if(str_detect(figure_type, "ribbon")){
+      figure_type <- "percentile ribbon"
+   }
+   
+   # Checking for acceptable input
+   if(figure_type %in% c("means only", "percentiles", "percentile ribbon") == FALSE){
+      warning(paste0("The value used for `figure_type` was `", 
+                     figure_type,
+                     "`, but only the only acceptable options are `means only`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used."),
+              call. = FALSE)
+      figure_type <- "means only"
+   }
+   
+   if(class(prettify_compound_names) != "logical" && 
+      any(tolower(names(prettify_compound_names)) %in% 
+          c("substrate", "inhibitor", "inhibitor 1", "primary metabolite 1", 
+            "primary metabolite 2", "secondary metabolite", "inhibitor 2", 
+            "inhibitor 1 metabolite"))){
+      warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_effector_names` to TRUE but will not be able to use the specific names you provided.",
+              call. = FALSE)
+      prettify_compound_names <- TRUE
+   }
+   
+   # Checking whether user tried to include obs data directly from simulator
+   # output for a simulation that included anything other than substrate in
+   # plasma.
+   if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
+      return(
+         ggplot(data.frame(Problem = 1, DataFail = 1), 
+                aes(y = Problem, x = DataFail)) +
+            xlab("Please check the help file for extractConcTime") +
+            theme(axis.title.x = element_text(size = 14, color = "red", 
+                                              face = "italic")) +
+            annotate(geom = "text", x = 1, y = 1, size = 8,
+                     color = "red", 
+                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+      )
+   }
+   
+   # If user wanted hline or vline added, check that they have specified
+   # argument correctly and set up the character vector of preferences.
+   HLineAES <- str_split(hline_style, pattern = " ")[[1]]
+   if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
+      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+              call. = FALSE)
+      HLineAES <- c("red", "dotted")
+   }
+   
+   VLineAES <- str_split(vline_style, pattern = " ")[[1]]
+   if(length(VLineAES) < 2 & any(complete.cases(vline_position))){
+      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+              call. = FALSE)
+      VLineAES <- c("red", "dotted")
+   }
+   # This doesn't check that they've specified legit colors or linetypes, but
+   # I'm hoping that ggplot2 errors will cover that.
+   
+   
+   # Main body of function -------------------------------------------------
+   
+   # Noting user's original preferences for a few things
+   obs_line_trans_user <- obs_line_trans
+   obs_fill_trans_user <- obs_fill_trans
+   obs_color_user <- obs_color
+   obs_shape_user <- obs_shape
+   
+   # Prettifying compound names before doing anything else 
+   if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
+      if(prettify_compound_names){
+         if(EnzPlot){ 
+            ct_dataframe <- ct_dataframe %>% 
+               mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+         } else {
+            ct_dataframe <- ct_dataframe %>% 
+               mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
+                      Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
+         }
+      } 
+      # If prettify_compound_names is FALSE, then don't do anything.
+      
+   } else {
+      # This is when the user has requested specific value for prettifying. 
+      if(EnzPlot){ 
+         # Any compounds that the user omitted from prettify_compound_names
+         # should be added to that and kept as their original values.
+         MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
+                                 names(prettify_compound_names))
+         OrigPrettyNames <- prettify_compound_names
+         prettify_compound_names <- c(prettify_compound_names, MissingNames)
+         if(length(MissingNames) > 0){
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+               MissingNames
+         }
+         
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(Inhibitor = prettify_compound_names[Inhibitor])
+      } else {
+         MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
+                                               ct_dataframe$Inhibitor))), 
+                                 names(prettify_compound_names))
+         MissingNames <- MissingNames[!MissingNames == "none"]
+         OrigPrettyNames <- prettify_compound_names
+         prettify_compound_names <- c(prettify_compound_names, MissingNames)
+         if(length(MissingNames) > 0){
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+               MissingNames
+         }
+         
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(Compound = prettify_compound_names[Compound], 
+                   Inhibitor = prettify_compound_names[Inhibitor])
+      }
+   }
+   
+   # Unless the user specifically set the levels for the Inhibitor column, we
+   # always want "none" to be the 1st item on the legend for that, and we need
+   # there to be some value present for "Inhibitor" for function to work
+   # correctly.
+   ct_dataframe <- ct_dataframe %>%
+      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
+   
+   MyEffector <- unique(ct_dataframe$Inhibitor) %>% as.character()
+   MyEffector <- MyEffector[!MyEffector == "none"]
+   
+   if(length(MyEffector) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
+      ct_dataframe <- ct_dataframe %>%
+         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
+   }
+   
+   # Things will be more consistent and easier to code if Individual is a
+   # factor and is not NA. Adjusting that as needed.
+   if(any(is.na(ct_dataframe$Individual))){
+      ct_dataframe <- ct_dataframe %>%
+         mutate(Individual = ifelse(is.na(Individual), 
+                                    Trial, Individual))
+   }
+   
+   if("Individual" %in% names(ct_dataframe) &&
+      class(ct_dataframe$Individual) != "factor"){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(Individual = as.factor(Individual))
+   }
+   
+   # Setting things up for nonstandard evaluation ----------------------------
+   
+   facet1_column <- rlang::enquo(facet1_column)
+   facet2_column <- rlang::enquo(facet2_column)
+   colorBy_column <- rlang::enquo(colorBy_column)
+   linetype_column <- rlang::enquo(linetype_column)
+   
+   # I *would* be doing this whole function with nonstandard evaluation except
+   # that I CANNOT figure out how to use NSE to redefine a user-supplied
+   # column, so I'm going to have to rename all of them. This makes the rest of
+   # checking and developing this function easier, too, though.
+   
+   # ct_dataframe <- ct_dataframe %>%
+   #     mutate(colorBy_column = ifelse(as_label(colorBy_column) == "<empty>", NA, {{colorBy_column}}),
+   #            FC1 = ifelse(as_label(facet1_column) == "<empty>", NA, {{facet1_column}}),
+   #            FC2 = ifelse(as_label(facet2_column) == "<empty>", NA, {{facet2_column}}))
+   
+   ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
+   
+   # If user filled in color_labels but not colorBy_column, give a warning.
+   if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
+      warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.")
+   }
+   
+   # If user filled in linetype_labels but not linetype_column, give a warning.
+   if(as_label(linetype_column) == "<empty>" & any(complete.cases(linetype_labels))){
+      warning("You have specified something for `linetype_labels` but nothing for `linetype_column`. Since R doesn't know which column contains the data to use for your linetype labels, they will be ignored.")
+   }
+   
+   # If the color labels don't match the files available, give a warning.
+   if(as_label(colorBy_column) != "<empty>" && 
+      any(complete.cases(color_labels)) && 
+      all(names(color_labels) %in% sort(unique(ct_dataframe[, as_label(colorBy_column)]))) == FALSE){
+      BadLabs <- setdiff(names(color_labels), unique(ct_dataframe[, as_label(colorBy_column)]))
+      
+      warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
+                     as_label(colorBy_column), 
+                     ". This will mess up the colors on your graph unless that's fixed. Specifically, the following values are not present in the column ",
+                     as_label(colorBy_column), ": ", 
+                     str_comma(BadLabs)), 
+              call. = FALSE)
+      
+      WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
+                             gsub(" - problem no. 1", "", 
+                                  paste(" - problem no.", 1:length(unique(ct_dataframe$File)))))
+      color_labels[which(names(color_labels) %in% BadLabs)] <- WarningLabel[1:length(BadLabs)]
+      NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
+      NewNames <- NewNames[complete.cases(NewNames)]
+      names(color_labels)[which(names(color_labels) %in% BadLabs)] <- NewNames
+      rm(NewNames, BadLabs, WarningLabel)
+   }
+   
+   # If the linetype labels don't match the files available, give a warning.
+   if(as_label(linetype_column) != "<empty>" && 
+      any(complete.cases(linetype_labels)) && 
+      all(names(linetype_labels) %in% sort(unique(ct_dataframe[, as_label(linetype_column)]))) == FALSE){
+      BadLabs <- setdiff(names(linetype_labels), unique(ct_dataframe[, as_label(linetype_column)]))
+      
+      warning(paste0("The labels you supplied for `linetype_labels` are not all present in the column ", 
+                     as_label(linetype_column), 
+                     ". This will mess up the linetypes on your graph unless that's fixed. Specifically, the following values are not present in the column ",
+                     as_label(linetype_column), ": ", 
+                     str_comma(BadLabs)), 
+              call. = FALSE)
+      
+      WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
+                             gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
+      linetype_labels[names(linetype_labels) %in% BadLabs] <- WarningLabel
+      NewNames <- setdiff(unique(ct_dataframe[, as_label(linetype_column)]), names(linetype_labels))
+      NewNames <- NewNames[complete.cases(NewNames)]
+      names(linetype_labels)[which(names(linetype_labels) %in% BadLabs)] <- NewNames
+      rm(NewNames, BadLabs, WarningLabel)
+   }
+   
+   if(as_label(colorBy_column) != "<empty>"){
+      ct_dataframe <- ct_dataframe %>%
+         mutate(colorBy_column = {{colorBy_column}})
+      
+      if(class(ct_dataframe$colorBy_column) == "numeric"){
+         Levels <- sort(unique(ct_dataframe$colorBy_column))
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(colorBy_column = factor(colorBy_column, levels = Levels))
+      }
+   }
+   
+   if(as_label(linetype_column) != "<empty>"){
+      ct_dataframe <- ct_dataframe %>%
+         mutate(linetype_column = {{linetype_column}})
+      
+      if(class(ct_dataframe$linetype_column) == "numeric"){
+         Levels <- sort(unique(ct_dataframe$linetype_column))
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(linetype_column = factor(linetype_column, levels = Levels))
+      }
+   }
+   
+   if(as_label(facet1_column) != "<empty>"){
+      
+      ct_dataframe <- ct_dataframe %>%
+         mutate(FC1 = {{facet1_column}})
+      
+      if(length(unique(ct_dataframe$FC1)) == 1){
+         warning(paste0("You requested the column `", 
+                        as_label(facet1_column), 
+                        "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                 call. = FALSE)
+      }
+   }
+   
+   if(as_label(facet2_column) != "<empty>"){
+      ct_dataframe <- ct_dataframe %>%
+         mutate(FC2 = {{facet2_column}})
+      
+      if(length(unique(ct_dataframe$FC2)) == 1){
+         warning(paste0("You requested the column `", 
+                        as_label(facet2_column), 
+                        "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                 call. = FALSE)
+      }
+   }
+   
+   # Noting whether the tissue was from an ADAM model
+   ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+                                                  "jejunum II", "ileum I", "ileum II",
+                                                  "ileum III", "ileum IV", "colon", 
+                                                  "faeces", "gut tissue",
+                                                  "cumulative absorption", 
+                                                  "cumulative dissolution")) &
+      EnzPlot == FALSE
+   
+   if(length(time_range) == 1 && complete.cases(time_range[1]) &&
+      !str_detect(time_range, "dose|last obs|all obs")){
+      if(complete.cases(time_range)){
+         warning("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.",
+                 call. = FALSE)
+         time_range <- NA
+      }
+   } else {
+      if(length(time_range) > 2){
+         warning("You have specified more than 2 values for the time range, which only calls for a start time and an end time. Only the 1st two values you listed will be used for the time range.",
+                 call. = FALSE)
+         time_range <- time_range[1:2]
+      } 
+      
+      if(class(time_range) != "numeric" && complete.cases(time_range[1]) &&
+         !str_detect(time_range, "dose|last obs|all obs")){
+         warning("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used.",
+                 call. = FALSE)
+         time_range <- NA
+      }
+   }
+   
+   MyMeanType <- ct_dataframe %>%
+      filter(Trial %in% c("geomean", "mean", "median")) %>% 
+      pull(Trial) %>% unique() %>% 
+      factor(levels = c("mean", "geomean", "median")) %>% 
+      sort()
+   
+   if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
+             "median" = "median") %in% ct_dataframe$Trial == FALSE){
+      
+      warning(paste0("You requested the ", 
+                     switch(mean_type, "arithmetic" = "arithmetic means",
+                            "geometric" = "geometric means", 
+                            "median" = "medians"), 
+                     ", but those are not included in your data. Instead, the ",
+                     ifelse(MyMeanType[1] == "mean", 
+                            "arithmetic mean", MyMeanType[1]),
+                     "s will be used."),
+              call. = FALSE)
+      MyMeanType <- MyMeanType[1] %>% as.character()
+      mean_type <-  switch(MyMeanType,
+                           "mean" = "arithmetic", 
+                           "geomean" = "geometric",
+                           "median" = "median")
+      
+   } else {
+      
+      MyMeanType <- switch(mean_type, "arithmetic" = "mean",
+                           "geometric" = "geomean",
+                           "median" = "median")
+      
+   }
+   
+   if(EnzPlot){ 
+      # for enzyme abundance data
+      ct_dataframe <- ct_dataframe %>%
+         mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor), 
+                Abundance = Abundance / 100) %>% 
+         rename(Conc = Abundance)
+      
+      sim_dataframe <- ct_dataframe
+      
+      obs_dataframe <- data.frame()
+   } else {
+      # for conc-time data
+      ct_dataframe <- ct_dataframe %>%
+         mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
+                CompoundID = factor(CompoundID,
+                                    levels = c("substrate", "primary metabolite 1",
+                                               "primary metabolite 2", "secondary metabolite",
+                                               "inhibitor 1", "inhibitor 1 metabolite", 
+                                               "inhibitor 2"))) 
+      
+      if(all(complete.cases(ct_dataframe$DoseNum))){
+         # If it's dose number 0, remove those rows so that we'll show only the
+         # parts we want when facetting and user wants scales to float freely.
+         ct_dataframe <- ct_dataframe %>% 
+            filter(DoseNum != 0 | Simulated == FALSE)
+      }
+      
+      sim_dataframe <- ct_dataframe %>%
+         filter(Simulated == TRUE &
+                   Trial %in% 
+                   switch(figure_type, 
+                          "means only" = MyMeanType, 
+                          "percentiles" = c(MyMeanType, "per5", "per95"),
+                          "percentile ribbon" = c(MyMeanType, "per5", "per95")))
+      
+      obs_dataframe <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
+         mutate(Trial = {MyMeanType})
+   }
+   
+   # If the user set obs_color to "none", then they must not want to include
+   # observed data in the graph. Set nrow to 0 in that case.
+   if(complete.cases(obs_color) && obs_color == "none"){
+      obs_dataframe <- filter(Trial == "mango") # hack to keep all the column names just in case
+   }
+   
+   # Not mapping observed data to a column if File was originally NA for all
+   # and that's what colorBy_column is or that's what linetype_column is. Also
+   # not mapping if user has specified obs_color.
+   MapObsFile_color <- nrow(obs_dataframe) > 0 && 
+      as_label(colorBy_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
+   MapObsFile_line <- nrow(obs_dataframe) > 0 && 
+      as_label(linetype_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
+   MapObsData <- ifelse(nrow(obs_dataframe) > 0 &&
+                           ("File" %in% c(as_label(colorBy_column), as_label(linetype_column)) &
+                               all(is.na(obs_dataframe$File))) | complete.cases(obs_color_user),
+                        FALSE, TRUE)
+   
+   # Setting this up so that observed data will be shown for all Files
+   if(nrow(obs_dataframe) > 0 && 
+      "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
+                    as_label(facet2_column), as_label(linetype_column)) &&
+      all(is.na(obs_dataframe$File))){
+      
+      ToAdd <- expand_grid(ObsFile = unique(obs_dataframe$ObsFile), 
+                           File = unique(sim_dataframe$File))
+      suppressMessages(
+         obs_dataframe <- obs_dataframe %>% select(-File) %>% 
+            left_join(ToAdd) %>% 
+            mutate(Group = paste(File, Trial, Tissue, CompoundID,
+                                 Compound, Inhibitor)))
+      
+      if(as_label(colorBy_column) == "File"){
+         obs_dataframe <- obs_dataframe %>% 
+            mutate(colorBy_column = File)
+      }
+      
+      if(as_label(linetype_column) == "File"){
+         obs_dataframe <- obs_dataframe %>% 
+            mutate(linetype_column = File)
+      }
+   } 
+   
+   # Dealing with the fact that the observed data will list the inhibitor as
+   # "inhibitor" unless the user changes it, but that sim data will list its
+   # name
+   if(nrow(obs_dataframe) > 0 & any(obs_dataframe$Inhibitor == "inhibitor")){
+      sim_dataframe <- sim_dataframe %>% 
+         mutate(Inhibitor = as.character(Inhibitor),
+                Inhibitor = ifelse(Inhibitor == "none",
+                                   Inhibitor, "inhibitor"),
+                Inhibitor = factor(Inhibitor, levels = c("none", "inhibitor")))
+   }
+   
+   # Now that all columns in both sim and obs data are filled in whenever they
+   # need to be, setting factors for color_labels. 
+   if(complete.cases(color_labels[1])){
+      simcheck <- sim_dataframe %>% 
+         filter(colorBy_column %in% names(color_labels)) %>% 
+         select(colorBy_column) %>% unique() %>% pull()
+      obscheck <- obs_dataframe %>% 
+         filter(colorBy_column %in% names(color_labels)) %>% 
+         select(colorBy_column) %>% unique() %>% pull()
+      
+      if(length(sort(unique(c(simcheck, obscheck)))) > 
+         length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column])){
+         warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
+                        as_label(colorBy_column), 
+                        "' will be used as labels instead."),
+                 call. = FALSE)
+         color_labels <- NA
+      } else {
+         if(length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column]) == 0 |
+            length(sort(unique(c(simcheck, obscheck)))) == 0){
+            warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
+                           as_label(colorBy_column), ". The specified labels cannot be used."),
+                    call. = FALSE)  
+         } else {
             
-            ct_dataframe <- ct_dataframe %>% 
-                mutate(Inhibitor = prettify_compound_names[Inhibitor])
-        } else {
-            MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
-                                                  ct_dataframe$Inhibitor))), 
-                                    names(prettify_compound_names))
-            MissingNames <- MissingNames[!MissingNames == "none"]
-            OrigPrettyNames <- prettify_compound_names
-            prettify_compound_names <- c(prettify_compound_names, MissingNames)
-            if(length(MissingNames) > 0){
-                names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-                    MissingNames
-            }
+            sim_dataframe <- sim_dataframe %>% 
+               mutate(colorBy_column = color_labels[colorBy_column], 
+                      colorBy_column = factor(colorBy_column, levels = color_labels))
             
-            ct_dataframe <- ct_dataframe %>% 
-                mutate(Compound = prettify_compound_names[Compound], 
-                       Inhibitor = prettify_compound_names[Inhibitor])
-        }
-    }
-    
-    # Unless the user specifically set the levels for the Inhibitor column, we
-    # always want "none" to be the 1st item on the legend for that, and we need
-    # there to be some value present for "Inhibitor" for function to work
-    # correctly.
-    ct_dataframe <- ct_dataframe %>%
-        mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
-    
-    MyEffector <- unique(ct_dataframe$Inhibitor) %>% as.character()
-    MyEffector <- MyEffector[!MyEffector == "none"]
-    
-    if(length(MyEffector) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
-        ct_dataframe <- ct_dataframe %>%
-            mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
-    }
-    
-    # Things will be more consistent and easier to code if Individual is a
-    # factor and is not NA. Adjusting that as needed.
-    if(any(is.na(ct_dataframe$Individual))){
-        ct_dataframe <- ct_dataframe %>%
-            mutate(Individual = ifelse(is.na(Individual), 
-                                       Trial, Individual))
-    }
-    
-    if("Individual" %in% names(ct_dataframe) &&
-       class(ct_dataframe$Individual) != "factor"){
-        ct_dataframe <- ct_dataframe %>% 
-            mutate(Individual = as.factor(Individual))
-    }
-    
-    # Setting things up for nonstandard evaluation ----------------------------
-    
-    facet1_column <- rlang::enquo(facet1_column)
-    facet2_column <- rlang::enquo(facet2_column)
-    colorBy_column <- rlang::enquo(colorBy_column)
-    linetype_column <- rlang::enquo(linetype_column)
-    
-    # I *would* be doing this whole function with nonstandard evaluation except
-    # that I CANNOT figure out how to use NSE to redefine a user-supplied
-    # column, so I'm going to have to rename all of them. This makes the rest of
-    # checking and developing this function easier, too, though.
-    
-    # ct_dataframe <- ct_dataframe %>%
-    #     mutate(colorBy_column = ifelse(as_label(colorBy_column) == "<empty>", NA, {{colorBy_column}}),
-    #            FC1 = ifelse(as_label(facet1_column) == "<empty>", NA, {{facet1_column}}),
-    #            FC2 = ifelse(as_label(facet2_column) == "<empty>", NA, {{facet2_column}}))
-    
-    ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
-    
-    # If user filled in color_labels but not colorBy_column, give a warning.
-    if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
-        warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.")
-    }
-    
-    # If user filled in linetype_labels but not linetype_column, give a warning.
-    if(as_label(linetype_column) == "<empty>" & any(complete.cases(linetype_labels))){
-        warning("You have specified something for `linetype_labels` but nothing for `linetype_column`. Since R doesn't know which column contains the data to use for your linetype labels, they will be ignored.")
-    }
-    
-    # If the color labels don't match the files available, give a warning.
-    if(as_label(colorBy_column) != "<empty>" && 
-       any(complete.cases(color_labels)) && 
-       all(names(color_labels) %in% sort(unique(ct_dataframe[, as_label(colorBy_column)]))) == FALSE){
-        BadLabs <- setdiff(names(color_labels), unique(ct_dataframe[, as_label(colorBy_column)]))
-        
-        warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
-                       as_label(colorBy_column), 
-                       ". This will mess up the colors on your graph unless that's fixed. Specifically, the following values are not present in the column ",
-                       as_label(colorBy_column), ": ", 
-                       str_comma(BadLabs)), 
-                call. = FALSE)
-        
-        WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
-                               gsub(" - problem no. 1", "", 
-                                    paste(" - problem no.", 1:length(unique(ct_dataframe$File)))))
-        color_labels[which(names(color_labels) %in% BadLabs)] <- WarningLabel[1:length(BadLabs)]
-        NewNames <- setdiff(unique(ct_dataframe[, as_label(colorBy_column)]), names(color_labels))
-        NewNames <- NewNames[complete.cases(NewNames)]
-        names(color_labels)[which(names(color_labels) %in% BadLabs)] <- NewNames
-        rm(NewNames, BadLabs, WarningLabel)
-    }
-    
-    # If the linetype labels don't match the files available, give a warning.
-    if(as_label(linetype_column) != "<empty>" && 
-       any(complete.cases(linetype_labels)) && 
-       all(names(linetype_labels) %in% sort(unique(ct_dataframe[, as_label(linetype_column)]))) == FALSE){
-        BadLabs <- setdiff(names(linetype_labels), unique(ct_dataframe[, as_label(linetype_column)]))
-        
-        warning(paste0("The labels you supplied for `linetype_labels` are not all present in the column ", 
-                       as_label(linetype_column), 
-                       ". This will mess up the linetypes on your graph unless that's fixed. Specifically, the following values are not present in the column ",
-                       as_label(linetype_column), ": ", 
-                       str_comma(BadLabs)), 
-                call. = FALSE)
-        
-        WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
-                               gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
-        linetype_labels[names(linetype_labels) %in% BadLabs] <- WarningLabel
-        NewNames <- setdiff(unique(ct_dataframe[, as_label(linetype_column)]), names(linetype_labels))
-        NewNames <- NewNames[complete.cases(NewNames)]
-        names(linetype_labels)[which(names(linetype_labels) %in% BadLabs)] <- NewNames
-        rm(NewNames, BadLabs, WarningLabel)
-    }
-    
-    if(as_label(colorBy_column) != "<empty>"){
-        ct_dataframe <- ct_dataframe %>%
-            mutate(colorBy_column = {{colorBy_column}})
-        
-        if(class(ct_dataframe$colorBy_column) == "numeric"){
-            Levels <- sort(unique(ct_dataframe$colorBy_column))
-            ct_dataframe <- ct_dataframe %>% 
-                mutate(colorBy_column = factor(colorBy_column, levels = Levels))
-        }
-    }
-    
-    if(as_label(linetype_column) != "<empty>"){
-        ct_dataframe <- ct_dataframe %>%
-            mutate(linetype_column = {{linetype_column}})
-        
-        if(class(ct_dataframe$linetype_column) == "numeric"){
-            Levels <- sort(unique(ct_dataframe$linetype_column))
-            ct_dataframe <- ct_dataframe %>% 
-                mutate(linetype_column = factor(linetype_column, levels = Levels))
-        }
-    }
-    
-    if(as_label(facet1_column) != "<empty>"){
-        
-        ct_dataframe <- ct_dataframe %>%
-            mutate(FC1 = {{facet1_column}})
-        
-        if(length(unique(ct_dataframe$FC1)) == 1){
-            warning(paste0("You requested the column `", 
-                           as_label(facet1_column), 
-                           "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
-                    call. = FALSE)
-        }
-    }
-    
-    if(as_label(facet2_column) != "<empty>"){
-        ct_dataframe <- ct_dataframe %>%
-            mutate(FC2 = {{facet2_column}})
-        
-        if(length(unique(ct_dataframe$FC2)) == 1){
-            warning(paste0("You requested the column `", 
-                           as_label(facet2_column), 
-                           "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
-                    call. = FALSE)
-        }
-    }
-    
-    # Noting whether the tissue was from an ADAM model
-    ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
-                                                   "jejunum II", "ileum I", "ileum II",
-                                                   "ileum III", "ileum IV", "colon", 
-                                                   "faeces", "gut tissue",
-                                                   "cumulative absorption", 
-                                                   "cumulative dissolution")) &
-        EnzPlot == FALSE
-    
-    if(length(time_range) == 1 && complete.cases(time_range[1]) &&
-       !str_detect(time_range, "dose|last obs|all obs")){
-        if(complete.cases(time_range)){
-            warning("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.",
-                    call. = FALSE)
-            time_range <- NA
-        }
-    } else {
-        if(length(time_range) > 2){
-            warning("You have specified more than 2 values for the time range, which only calls for a start time and an end time. Only the 1st two values you listed will be used for the time range.",
-                    call. = FALSE)
-            time_range <- time_range[1:2]
-        } 
-        
-        if(class(time_range) != "numeric" && complete.cases(time_range[1]) &&
-           !str_detect(time_range, "dose|last obs|all obs")){
-            warning("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used.",
-                    call. = FALSE)
-            time_range <- NA
-        }
-    }
-    
-    MyMeanType <- ct_dataframe %>%
-        filter(Trial %in% c("geomean", "mean", "median")) %>% 
-        pull(Trial) %>% unique() %>% 
-        factor(levels = c("mean", "geomean", "median")) %>% 
-        sort()
-    
-    if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
-              "median" = "median") %in% ct_dataframe$Trial == FALSE){
-        
-        warning(paste0("You requested the ", 
-                       switch(mean_type, "arithmetic" = "arithmetic means",
-                              "geometric" = "geometric means", 
-                              "median" = "medians"), 
-                       ", but those are not included in your data. Instead, the ",
-                       ifelse(MyMeanType[1] == "mean", 
-                              "arithmetic mean", MyMeanType[1]),
-                       "s will be used."),
-                call. = FALSE)
-        MyMeanType <- MyMeanType[1] %>% as.character()
-        mean_type <-  switch(MyMeanType,
-                             "mean" = "arithmetic", 
-                             "geomean" = "geometric",
-                             "median" = "median")
-        
-    } else {
-        
-        MyMeanType <- switch(mean_type, "arithmetic" = "mean",
-                             "geometric" = "geomean",
-                             "median" = "median")
-        
-    }
-    
-    if(EnzPlot){ 
-        # for enzyme abundance data
-        ct_dataframe <- ct_dataframe %>%
-            mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor), 
-                   Abundance = Abundance / 100) %>% 
-            rename(Conc = Abundance)
-        
-        sim_dataframe <- ct_dataframe
-        
-        obs_dataframe <- data.frame()
-    } else {
-        # for conc-time data
-        ct_dataframe <- ct_dataframe %>%
-            mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
-                   CompoundID = factor(CompoundID,
-                                       levels = c("substrate", "primary metabolite 1",
-                                                  "primary metabolite 2", "secondary metabolite",
-                                                  "inhibitor 1", "inhibitor 1 metabolite", 
-                                                  "inhibitor 2"))) 
-        
-        if(all(complete.cases(ct_dataframe$DoseNum))){
-            # If it's dose number 0, remove those rows so that we'll show only the
-            # parts we want when facetting and user wants scales to float freely.
-            ct_dataframe <- ct_dataframe %>% 
-                filter(DoseNum != 0 | Simulated == FALSE)
-        }
-        
-        sim_dataframe <- ct_dataframe %>%
-            filter(Simulated == TRUE &
-                       Trial %in% 
-                       switch(figure_type, 
-                              "means only" = MyMeanType, 
-                              "percentiles" = c(MyMeanType, "per5", "per95"),
-                              "percentile ribbon" = c(MyMeanType, "per5", "per95")))
-        
-        obs_dataframe <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
-            mutate(Trial = {MyMeanType})
-    }
-    
-    # If the user set obs_color to "none", then they must not want to include
-    # observed data in the graph. Set nrow to 0 in that case.
-    if(complete.cases(obs_color) && obs_color == "none"){
-        obs_dataframe <- filter(Trial == "mango") # hack to keep all the column names just in case
-    }
-    
-    # Not mapping observed data to a column if File was originally NA for all
-    # and that's what colorBy_column is or that's what linetype_column is. Also
-    # not mapping if user has specified obs_color.
-    MapObsFile_color <- nrow(obs_dataframe) > 0 && 
-        as_label(colorBy_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
-    MapObsFile_line <- nrow(obs_dataframe) > 0 && 
-        as_label(linetype_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
-    MapObsData <- ifelse(nrow(obs_dataframe) > 0 &&
-                             ("File" %in% c(as_label(colorBy_column), as_label(linetype_column)) &
-                                  all(is.na(obs_dataframe$File))) | complete.cases(obs_color_user),
-                         FALSE, TRUE)
-    
-    # Setting this up so that observed data will be shown for all Files
-    if(nrow(obs_dataframe) > 0 && 
-       "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
-                     as_label(facet2_column), as_label(linetype_column)) &&
-       all(is.na(obs_dataframe$File))){
-        
-        ToAdd <- expand_grid(ObsFile = unique(obs_dataframe$ObsFile), 
-                             File = unique(sim_dataframe$File))
-        suppressMessages(
-            obs_dataframe <- obs_dataframe %>% select(-File) %>% 
-                left_join(ToAdd) %>% 
-                mutate(Group = paste(File, Trial, Tissue, CompoundID,
-                                     Compound, Inhibitor)))
-        
-        if(as_label(colorBy_column) == "File"){
             obs_dataframe <- obs_dataframe %>% 
-                mutate(colorBy_column = File)
-        }
-        
-        if(as_label(linetype_column) == "File"){
+               mutate(colorBy_column = color_labels[colorBy_column], 
+                      colorBy_column = factor(colorBy_column, levels = color_labels))
+         }
+      }
+   }
+   
+   # Now that all columns in both sim and obs data are filled in whenever they
+   # need to be, setting factors for linetype_labels. 
+   if(complete.cases(linetype_labels[1])){
+      simcheck <- sim_dataframe %>% 
+         filter(linetype_column %in% names(linetype_labels)) %>% 
+         select(linetype_column) %>% unique() %>% pull()
+      obscheck <- obs_dataframe %>% 
+         filter(linetype_column %in% names(linetype_labels)) %>% 
+         select(linetype_column) %>% unique() %>% pull()
+      
+      if(length(sort(unique(c(simcheck, obscheck)))) > 
+         length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column])){
+         warning(paste0("You have not included enough labels for the linetypes in the legend. The values in '",
+                        as_label(linetype_column), 
+                        "' will be used as labels instead."),
+                 call. = FALSE)
+         linetype_labels <- NA
+      } else {
+         if(length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column]) == 0 |
+            length(sort(unique(c(simcheck, obscheck)))) == 0){
+            warning(paste0("There is some kind of mismatch between the linetype labels provided and the values actually present in ",
+                           as_label(linetype_column), ". The specified labels cannot be used."),
+                    call. = FALSE)  
+         } else {
+            
+            sim_dataframe <- sim_dataframe %>% 
+               mutate(linetype_column = linetype_labels[linetype_column], 
+                      linetype_column = factor(linetype_column, levels = linetype_labels))
+            
             obs_dataframe <- obs_dataframe %>% 
-                mutate(linetype_column = File)
-        }
-    } 
-    
-    # Dealing with the fact that the observed data will list the inhibitor as
-    # "inhibitor" unless the user changes it, but that sim data will list its
-    # name
-    if(nrow(obs_dataframe) > 0 & any(obs_dataframe$Inhibitor == "inhibitor")){
-        sim_dataframe <- sim_dataframe %>% 
-            mutate(Inhibitor = as.character(Inhibitor),
-                   Inhibitor = ifelse(Inhibitor == "none",
-                                      Inhibitor, "inhibitor"),
-                   Inhibitor = factor(Inhibitor, levels = c("none", "inhibitor")))
-    }
-    
-    # Now that all columns in both sim and obs data are filled in whenever they
-    # need to be, setting factors for color_labels. 
-    if(complete.cases(color_labels[1])){
-        simcheck <- sim_dataframe %>% 
-            filter(colorBy_column %in% names(color_labels)) %>% 
-            select(colorBy_column) %>% unique() %>% pull()
-        obscheck <- obs_dataframe %>% 
-            filter(colorBy_column %in% names(color_labels)) %>% 
-            select(colorBy_column) %>% unique() %>% pull()
-        
-        if(length(sort(unique(c(simcheck, obscheck)))) > 
-           length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column])){
-            warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
-                           as_label(colorBy_column), 
-                           "' will be used as labels instead."),
-                    call. = FALSE)
-            color_labels <- NA
-        } else {
-            if(length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column]) == 0 |
-               length(sort(unique(c(simcheck, obscheck)))) == 0){
-                warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
-                               as_label(colorBy_column), ". The specified labels cannot be used."),
-                        call. = FALSE)  
-            } else {
-                
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(colorBy_column = color_labels[colorBy_column], 
-                           colorBy_column = factor(colorBy_column, levels = color_labels))
-                
-                obs_dataframe <- obs_dataframe %>% 
-                    mutate(colorBy_column = color_labels[colorBy_column], 
-                           colorBy_column = factor(colorBy_column, levels = color_labels))
-            }
-        }
-    }
-    
-    # Now that all columns in both sim and obs data are filled in whenever they
-    # need to be, setting factors for linetype_labels. 
-    if(complete.cases(linetype_labels[1])){
-        simcheck <- sim_dataframe %>% 
-            filter(linetype_column %in% names(linetype_labels)) %>% 
-            select(linetype_column) %>% unique() %>% pull()
-        obscheck <- obs_dataframe %>% 
-            filter(linetype_column %in% names(linetype_labels)) %>% 
-            select(linetype_column) %>% unique() %>% pull()
-        
-        if(length(sort(unique(c(simcheck, obscheck)))) > 
-           length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column])){
-            warning(paste0("You have not included enough labels for the linetypes in the legend. The values in '",
-                           as_label(linetype_column), 
-                           "' will be used as labels instead."),
-                    call. = FALSE)
-            linetype_labels <- NA
-        } else {
-            if(length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column]) == 0 |
-               length(sort(unique(c(simcheck, obscheck)))) == 0){
-                warning(paste0("There is some kind of mismatch between the linetype labels provided and the values actually present in ",
-                               as_label(linetype_column), ". The specified labels cannot be used."),
-                        call. = FALSE)  
-            } else {
-                
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(linetype_column = linetype_labels[linetype_column], 
-                           linetype_column = factor(linetype_column, levels = linetype_labels))
-                
-                obs_dataframe <- obs_dataframe %>% 
-                    mutate(linetype_column = linetype_labels[linetype_column], 
-                           linetype_column = factor(linetype_column, levels = linetype_labels))
-            }
-        }
-    }
-    
-    # Not sure how I'm going to relabel the facets, actually. Commenting this
-    # out for now.
-    
-    # if(complete.cases(facet1_labels[1])){
-    #     simcheck <- sim_dataframe %>% 
-    #         filter(FC1 %in% names(facet1_labels)) %>% 
-    #         select(FC1) %>% unique() %>% pull()
-    #     obscheck <- obs_dataframe %>% 
-    #         filter(FC1 %in% names(facet1_labels)) %>% 
-    #         select(FC1) %>% unique() %>% pull()
-    #     
-    #     if(length(sort(unique(c(simcheck, obscheck)))) > 
-    #        length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1])){
-    #         warning(paste0("You have not included enough labels for number of unique values in ", 
-    #                        as_label(FC1), 
-    #                        ". The values will be used as labels instead."))
-    #         facet1_labels <- NA
-    #     } else {
-    #         if(length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1]) == 0 |
-    #            length(sort(unique(c(simcheck, obscheck)))) == 0){
-    #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-    #                            as_label(FC1), ". The specified labels cannot be used."))  
-    #             
-    #             facet1_labels <- NA
-    #         } 
-    #     } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
-    # }
-    # 
-    # if(complete.cases(facet2_labels[1])){
-    #     simcheck <- sim_dataframe %>% 
-    #         filter(FC2 %in% names(facet2_labels)) %>% 
-    #         select(FC2) %>% unique() %>% pull()
-    #     obscheck <- obs_dataframe %>% 
-    #         filter(FC2 %in% names(facet2_labels)) %>% 
-    #         select(FC2) %>% unique() %>% pull()
-    #     
-    #     if(length(sort(unique(c(simcheck, obscheck)))) > 
-    #        length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2])){
-    #         warning(paste0("You have not included enough labels for number of unique values in ", 
-    #                        as_label(FC2), 
-    #                        ". The values will be used as labels instead."))
-    #         
-    #         facet2_labels <- NA
-    #         
-    #     } else {
-    #         if(length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2]) == 0 |
-    #            length(sort(unique(c(simcheck, obscheck)))) == 0){
-    #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-    #                            as_label(FC2), ". The specified labels cannot be used."))  
-    #             
-    #             facet2_labels <- NA
-    #         }
-    #     }
-    # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
-    
-    AESCols <- c("color" = as_label(colorBy_column), 
-                 "linetype" = as_label(linetype_column),
-                 "facet1" = as_label(facet1_column), 
-                 "facet2" = as_label(facet2_column))
-    UniqueAES <- AESCols[which(AESCols != "<empty>")]
-    
-    AES <- names(AESCols[1:2])[!AESCols == "<empty>"]
-    AES <- str_c(AES[complete.cases(AES)], collapse = "-")
-    AES <- ifelse(AES == "" | is.na(AES), "none", AES)
-    
-    # If user didn't map linetype column but did specify more than one obs
-    # shape, give them a warning that we'll only use the 1st shape specified b/c
-    # we don't know what column to use to determine the shapes of the points.
-    if(str_detect(AES, "linetype") == FALSE && complete.cases(obs_shape[1]) &&
-       length(obs_shape) > 1){
-        warning("You have specified multiple shapes to use for the observed data, but you have not said which column should determine what the shapes of the observed data should be. Since the shape is set by the same column that sets the line types, you can set this with the `linetype_column` argument. For now, only the 1st shape you specified will be used.", 
-                call. = FALSE)
-    }
-    
-    
-    if(AESCols["color"] == "Individual"){
-        # For ease of coding below, need to drop levels from obs data for
-        # Individual here and then tweak them a few lines down.
-        obs_dataframe <-
-            obs_dataframe %>% mutate(Individual = droplevels(Individual))
-        
-        # If the user wants to color by Individual, presumably they want the
-        # observed data to be colored by individual but still want the simulated
-        # data to be black or gray. To deal with this, need to make a separate
-        # column for individual observed data and will have to set the levels to the
-        # obs individuals plus "simulated" to get things to be colored correctly and
-        # show up in the legend correctly.
-        ct_dataframe <- ct_dataframe %>% 
-            mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
-                   SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                            "simulated")),
-                   colorBy_column = SubjectID)
-        sim_dataframe <- sim_dataframe %>% 
-            mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
-                   SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                            "simulated")),
-                   colorBy_column = SubjectID)
-        obs_dataframe <- obs_dataframe %>% 
-            mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
-                   SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                            "simulated")),
-                   colorBy_column = SubjectID)
-    }
-    
-    # RETURN TO THIS
-    # # Need to check whether linetype or colorBy column was File b/c then we also
-    # # need to set linetype or colorBy column in obs data. However, if there was
-    # # only one observed data file for all the simulated data, then we do NOT
-    # # want to change things b/c they're already set up correctly at this point.
-    # if(str_detect(AES, "linetype") &&
-    #    AESCols["linetype"] == "File" & MapObsFile_line == FALSE){
-    #     obs_dataframe <- obs_dataframe %>% 
-    #         mutate(linetype_column = File)
-    # }
-    # 
-    # if(str_detect(AES, "color") &&
-    #    AESCols["color"] == "File" & MapObsFile_color == FALSE){
-    #     obs_dataframe <- obs_dataframe %>% 
-    #         mutate(colorBy_column = File)
-    # }
-    
-    # Checking whether small intestine and colon abundances are identical. 
-    if(EnzPlot){
-        Check <- sim_dataframe %>% 
-            pivot_wider(names_from = Tissue, values_from = Conc)
-        
-        if(all(c("colon", "small intestine") %in% names(Check)) &&
-           all(Check$colon == Check$`small intestine`, na.rm = TRUE)){
-            warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
-                    "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
+               mutate(linetype_column = linetype_labels[linetype_column], 
+                      linetype_column = factor(linetype_column, levels = linetype_labels))
+         }
+      }
+   }
+   
+   # Not sure how I'm going to relabel the facets, actually. Commenting this
+   # out for now.
+   
+   # if(complete.cases(facet1_labels[1])){
+   #     simcheck <- sim_dataframe %>% 
+   #         filter(FC1 %in% names(facet1_labels)) %>% 
+   #         select(FC1) %>% unique() %>% pull()
+   #     obscheck <- obs_dataframe %>% 
+   #         filter(FC1 %in% names(facet1_labels)) %>% 
+   #         select(FC1) %>% unique() %>% pull()
+   #     
+   #     if(length(sort(unique(c(simcheck, obscheck)))) > 
+   #        length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1])){
+   #         warning(paste0("You have not included enough labels for number of unique values in ", 
+   #                        as_label(FC1), 
+   #                        ". The values will be used as labels instead."))
+   #         facet1_labels <- NA
+   #     } else {
+   #         if(length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1]) == 0 |
+   #            length(sort(unique(c(simcheck, obscheck)))) == 0){
+   #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
+   #                            as_label(FC1), ". The specified labels cannot be used."))  
+   #             
+   #             facet1_labels <- NA
+   #         } 
+   #     } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
+   # }
+   # 
+   # if(complete.cases(facet2_labels[1])){
+   #     simcheck <- sim_dataframe %>% 
+   #         filter(FC2 %in% names(facet2_labels)) %>% 
+   #         select(FC2) %>% unique() %>% pull()
+   #     obscheck <- obs_dataframe %>% 
+   #         filter(FC2 %in% names(facet2_labels)) %>% 
+   #         select(FC2) %>% unique() %>% pull()
+   #     
+   #     if(length(sort(unique(c(simcheck, obscheck)))) > 
+   #        length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2])){
+   #         warning(paste0("You have not included enough labels for number of unique values in ", 
+   #                        as_label(FC2), 
+   #                        ". The values will be used as labels instead."))
+   #         
+   #         facet2_labels <- NA
+   #         
+   #     } else {
+   #         if(length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2]) == 0 |
+   #            length(sort(unique(c(simcheck, obscheck)))) == 0){
+   #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
+   #                            as_label(FC2), ". The specified labels cannot be used."))  
+   #             
+   #             facet2_labels <- NA
+   #         }
+   #     }
+   # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
+   
+   AESCols <- c("color" = as_label(colorBy_column), 
+                "linetype" = as_label(linetype_column),
+                "facet1" = as_label(facet1_column), 
+                "facet2" = as_label(facet2_column))
+   UniqueAES <- AESCols[which(AESCols != "<empty>")]
+   
+   AES <- names(AESCols[1:2])[!AESCols == "<empty>"]
+   AES <- str_c(AES[complete.cases(AES)], collapse = "-")
+   AES <- ifelse(AES == "" | is.na(AES), "none", AES)
+   
+   # If user didn't map linetype column but did specify more than one obs
+   # shape, give them a warning that we'll only use the 1st shape specified b/c
+   # we don't know what column to use to determine the shapes of the points.
+   if(str_detect(AES, "linetype") == FALSE && complete.cases(obs_shape[1]) &&
+      length(obs_shape) > 1){
+      warning("You have specified multiple shapes to use for the observed data, but you have not said which column should determine what the shapes of the observed data should be. Since the shape is set by the same column that sets the line types, you can set this with the `linetype_column` argument. For now, only the 1st shape you specified will be used.", 
+              call. = FALSE)
+   }
+   
+   
+   if(AESCols["color"] == "Individual"){
+      # For ease of coding below, need to drop levels from obs data for
+      # Individual here and then tweak them a few lines down.
+      obs_dataframe <-
+         obs_dataframe %>% mutate(Individual = droplevels(Individual))
+      
+      # If the user wants to color by Individual, presumably they want the
+      # observed data to be colored by individual but still want the simulated
+      # data to be black or gray. To deal with this, need to make a separate
+      # column for individual observed data and will have to set the levels to the
+      # obs individuals plus "simulated" to get things to be colored correctly and
+      # show up in the legend correctly.
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+                SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
+                                                         "simulated")),
+                colorBy_column = SubjectID)
+      sim_dataframe <- sim_dataframe %>% 
+         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+                SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
+                                                         "simulated")),
+                colorBy_column = SubjectID)
+      obs_dataframe <- obs_dataframe %>% 
+         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+                SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
+                                                         "simulated")),
+                colorBy_column = SubjectID)
+   }
+   
+   # RETURN TO THIS
+   # # Need to check whether linetype or colorBy column was File b/c then we also
+   # # need to set linetype or colorBy column in obs data. However, if there was
+   # # only one observed data file for all the simulated data, then we do NOT
+   # # want to change things b/c they're already set up correctly at this point.
+   # if(str_detect(AES, "linetype") &&
+   #    AESCols["linetype"] == "File" & MapObsFile_line == FALSE){
+   #     obs_dataframe <- obs_dataframe %>% 
+   #         mutate(linetype_column = File)
+   # }
+   # 
+   # if(str_detect(AES, "color") &&
+   #    AESCols["color"] == "File" & MapObsFile_color == FALSE){
+   #     obs_dataframe <- obs_dataframe %>% 
+   #         mutate(colorBy_column = File)
+   # }
+   
+   # Checking whether small intestine and colon abundances are identical. 
+   if(EnzPlot){
+      Check <- sim_dataframe %>% 
+         pivot_wider(names_from = Tissue, values_from = Conc)
+      
+      if(all(c("colon", "small intestine") %in% names(Check)) &&
+         all(Check$colon == Check$`small intestine`, na.rm = TRUE)){
+         warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
+                 "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
                     MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
                     ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)
 Replace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.",
 call. = FALSE)
+         
+         sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
+            mutate(Tissue = ifelse(Tissue == "small intestine", 
+                                   "colon and small intestine", Tissue))
+         
+         if("color" %in% names(AESCols)[AESCols == "Tissue"]){
+            sim_dataframe <- sim_dataframe %>% 
+               mutate(colorBy_column = Tissue)
+         }
+         
+         if("linetype" %in% names(AESCols)[AESCols == "Tissue"]){
+            sim_dataframe <- sim_dataframe %>% 
+               mutate(linetype_column = Tissue)
+         }
+         
+         if("facet1" %in% names(AESCols)[AESCols == "Tissue"]){
+            sim_dataframe <- sim_dataframe %>% 
+               mutate(FC1 = Tissue)
+         }
+         
+         if("facet2" %in% names(AESCols)[AESCols == "Tissue"]){
+            sim_dataframe <- sim_dataframe %>% 
+               mutate(FC2 = Tissue)
+         }
+         
+      }
+   }
+   
+   MyUniqueData <- sim_dataframe %>% 
+      filter(Trial == MyMeanType) %>% 
+      select(any_of(union(UniqueAES, 
+                          c("File", "Tissue", "CompoundID", "Compound", "Enzyme", "Inhibitor")))) %>% 
+      unique()
+   
+   UniqueGroups1 <- sim_dataframe %>% 
+      summarize(across(.cols = any_of(union(UniqueAES, 
+                                            c("File", "Tissue", "CompoundID",
+                                              "Compound", "Inhibitor"))),
+                       .fns = function(x) length(unique(x)))) 
+   
+   UniqueGroups <- UniqueGroups1 %>% 
+      t() %>% as.data.frame() %>% 
+      mutate(MyCols = rownames(.)) %>% 
+      filter(V1 > 1) %>% pull(MyCols)
+   
+   
+   # If there are only 2 groups for the colorBy_column and color_set was set to
+   # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
+   # aethetically pleasing.
+   if(as_label(colorBy_column) != "<empty>" &&
+      UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
+      color_set[1] == "default"){
+      color_set <- "Brewer set 1"
+   }
+   
+   # Trying to give an indication to user about what data sets are present
+   # compared to how many aesthetics have been specified. Basically trying to
+   # get them to notice whether they've adequately clarified which dataset is
+   # which in the graph.
+   
+   UniqueGroups <- ifelse(length(UniqueGroups) == 0, 
+                          "none other than time and concentration", str_comma(sort(UniqueGroups)))
+   message(paste("Columns that vary in your data:", UniqueGroups))
+   message(paste("Graphing aesthetics you've assigned:", 
+                 ifelse(length(UniqueAES) == 0, 
+                        "none", 
+                        str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")")))))
+   
+   # If there are multiple values in linetype_column but user has only listed
+   # the default "solid" for linetypes, then warn the user that they might want
+   # to specify more line types.
+   if(as_label(linetype_column) != "<empty>" && 
+      as_label(colorBy_column) != as_label(linetype_column) &&
+      length(unique(sim_dataframe$linetype_column)) > 1 & 
+      length(unique(linetypes)) == 1){
+      warning(paste0("There are ", length(unique(sim_dataframe$linetype_column)),
+                     " unique values in the column ", as_label(linetype_column),
+                     ", but you have only requested ", 
+                     length(unique(linetypes)), " linetype(s): ", 
+                     str_comma(unique(linetypes)), 
+                     ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'."),
+              call. = FALSE)
+   }
+   
+   # Some of the options inherited from ct_plot depend on there being just one
+   # compound that the user is plotting. Using whatever is the compoundID that
+   # has the base level for the factor. <--- This may not be necessary, now
+   # that I think about it further...
+   if(EnzPlot){
+      AnchorCompound <- "substrate"
+   } else {
+      AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
+         mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
+         filter(CompoundLevel == min(CompoundLevel)) %>% 
+         pull(CompoundID) %>% as.character()
+   }
+   
+   # Setting up the x axis using the subfunction ct_x_axis
+   XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
+                       time_range = time_range, 
+                       t0 = "simulation start",
+                       x_axis_interval = x_axis_interval,
+                       pad_x_axis = pad_x_axis,
+                       compoundToExtract = AnchorCompound, 
+                       EnzPlot = EnzPlot)
+   
+   xlab <- XStuff$xlab
+   Data <- XStuff$Data # Is this necessary??
+   time_range <- XStuff$time_range
+   time_range_relative <- XStuff$time_range_relative
+   t0 <- XStuff$t0
+   TimeUnits <- XStuff$TimeUnits
+   
+   # Setting up the y axis using the subfunction ct_y_axis
+   YStuff <- ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
+                       ADAM = ADAM, 
+                       subsection_ADAM = switch(as.character(EnzPlot), 
+                                                "TRUE" = NA, 
+                                                "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
+                       prettify_compound_names = prettify_compound_names,
+                       EnzPlot = EnzPlot, 
+                       time_range_relative = time_range_relative,
+                       Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
+                          mutate(Time_orig = Time), 
+                       pad_y_axis = pad_y_axis,
+                       y_axis_limits_lin = y_axis_limits_lin, 
+                       time_range = time_range,
+                       y_axis_limits_log = y_axis_limits_log)
+   
+   ObsConcUnits <- YStuff$ObsConcUnits
+   ylab <- YStuff$ylab
+   YLabels <- YStuff$YLabels
+   YLogLabels <- YStuff$YLogLabels
+   YBreaks <- YStuff$YBreaks
+   YLogBreaks <- YStuff$YLogBreaks
+   Ylim_log <- YStuff$Ylim_log
+   YmaxRnd <- YStuff$YmaxRnd
+   pad_y_num <- YStuff$pad_y_num
+   pad_y_axis <- YStuff$pad_y_axis
+   
+   
+   
+   # Setting figure types and general aesthetics ------------------------------
+   
+   MyEffector <- unique(sim_dataframe$Inhibitor)
+   MyEffector <- fct_relevel(MyEffector, "none")
+   MyEffector <- sort(MyEffector)
+   
+   # Making linetype_column and colorBy_column factor data. This will
+   # prevent errors w/mapping to color b/c ggplot expects only categorical data
+   # for scale_color_manual, and, if the user supplies something that looks
+   # like a number for the colorBy_column (e.g., a numerical SubjectID), it
+   # will give the error message that a continuous value was supplied to a
+   # discrete scale.
+   if(as_label(linetype_column) != "<empty>" &&
+      class(sim_dataframe$linetype_column) != "factor"){
+      
+      sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
+      obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
+   }
+   
+   if(as_label(colorBy_column) != "<empty>" &&
+      class(sim_dataframe$colorBy_column) != "factor"){
+      
+      sim_dataframe$colorBy_column <- as.factor(sim_dataframe$colorBy_column)
+      obs_dataframe$colorBy_column <- as.factor(obs_dataframe$colorBy_column)
+   }
+   
+   # Taking care of linetypes and, along with that, obs_shape as needed
+   if(as_label(linetype_column) != "<empty>"){
+      NumLT <- length(sort(unique(sim_dataframe$linetype_column)))
+   } else {
+      NumLT <- 1
+   }
+   
+   if(NumLT == 1){
+      linetypes = "solid"
+   } else if(NumLT < length(linetypes)){
+      linetypes = linetypes[1:NumLT] 
+   } else if(NumLT > length(linetypes)){
+      warning(paste("There are", NumLT,
+                    "unique values in the column you have specified for the line types, but you have only specified", 
+                    length(linetypes), 
+                    "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph."), 
+              call. = FALSE)
+      linetypes = rep(linetypes, 100)[1:NumLT]
+   } 
+   
+   if(as_label(linetype_column) != "<empty>"){
+      
+      # If the original data.frame included levels for linetype_column, then
+      # use those levels. Otherwise, make "none" the base level since most of
+      # the time, this will be used for the column "Inhibitor".
+      if(class(sim_dataframe$linetype_column) != "factor"){
+         if("none" %in% unique(sim_dataframe$linetype_column)){
+            sim_dataframe <- sim_dataframe %>% 
+               mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
             
-            sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
-                mutate(Tissue = ifelse(Tissue == "small intestine", 
-                                       "colon and small intestine", Tissue))
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(linetype_column = factor(linetype_column, 
+                                               levels = c(levels(sim_dataframe$linetype_column), 
+                                                          setdiff(obs_dataframe$linetype_column, 
+                                                                  sim_dataframe$linetype_column))))
+         } else {
+            sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
+            obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
+         }
+      }
+   }
+   
+   if(str_detect(AES, "linetype")){
+      NumShapes <- length(sort(unique(c(sim_dataframe$linetype_column,
+                                        obs_dataframe$linetype_column))))
+   } else {
+      NumShapes <- 1
+   }
+   
+   AesthetStuff <- set_aesthet(line_type = linetypes, figure_type = figure_type,
+                               MyEffector = MyEffector, 
+                               compoundToExtract = switch(as.character(EnzPlot),
+                                                          "TRUE" = "substrate", 
+                                                          "FALSE" = unique(sim_dataframe$CompoundID)),
+                               obs_shape = obs_shape, obs_color = obs_color,
+                               obs_fill_trans = obs_fill_trans,
+                               obs_line_trans = obs_line_trans,
+                               # line_color is just a placeholder b/c not using it here.
+                               line_color = NA)
+   
+   line_type <- AesthetStuff$line_type
+   obs_shape <- AesthetStuff$obs_shape
+   obs_color <- AesthetStuff$obs_color
+   obs_fill_trans<- AesthetStuff$obs_fill_trans
+   obs_line_trans <- AesthetStuff$obs_line_trans
+   
+   if(length(obs_shape) < NumShapes){
+      # This odd syntax will work both when obs_shape is a single value
+      # and when it is multiple values.
+      obs_shape <- rep(obs_shape, NumShapes)[1:NumShapes] 
+   } else if(length(obs_shape) < NumShapes){
+      obs_shape <- obs_shape[1:NumShapes] 
+   }
+   
+   ## Setting up ggplot and aes bases for the graph -----------------------
+   
+   if(figure_type == "percentile ribbon"){
+      
+      RibbonDF <-  sim_dataframe %>% 
+         filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                   # Ribbons don't work if any of the data are clipped on
+                   # the x axis
+                   Time >= time_range_relative[1] &
+                   Time <= time_range_relative[2]) %>% 
+         unique() %>% 
+         select(-any_of(c("Group", "Individual"))) %>% 
+         pivot_wider(names_from = Trial, values_from = Conc)
+      names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+   }
+   
+   A <- switch(
+      figure_type, 
+      "means only" = ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
+                            switch(AES, 
+                                   "color-linetype" = aes(x = Time, y = Conc, 
+                                                          color = colorBy_column, 
+                                                          fill = colorBy_column,
+                                                          linetype = linetype_column, 
+                                                          group = Group, 
+                                                          shape = linetype_column),
+                                   "color" = aes(x = Time, y = Conc, 
+                                                 color = colorBy_column, 
+                                                 fill = colorBy_column,
+                                                 group = Group), 
+                                   "linetype" = aes(x = Time, y = Conc, 
+                                                    linetype = linetype_column, 
+                                                    group = Group, shape = linetype_column),
+                                   "none" = aes(x = Time, y = Conc,
+                                                group = Group))), 
+      "percentiles" = ggplot(sim_dataframe %>%
+                                filter(Trial %in% c("per5", "per95")) %>%
+                                mutate(Group = paste(Group, Trial)),
+                             switch(AES, 
+                                    "color-linetype" = aes(x = Time, y = Conc,
+                                                           color = colorBy_column,
+                                                           fill = colorBy_column,
+                                                           linetype = linetype_column,
+                                                           group = Group,
+                                                           shape = linetype_column),
+                                    "color" = aes(x = Time, y = Conc, 
+                                                  color = colorBy_column, 
+                                                  fill = colorBy_column,
+                                                  group = Group), 
+                                    "linetype" = aes(x = Time, y = Conc,
+                                                     linetype = linetype_column,
+                                                     group = Group, 
+                                                     shape = linetype_column),
+                                    "none" = aes(x = Time, y = Conc,
+                                                 group = Group))), 
+      "percentile ribbon" = ggplot(RibbonDF, 
+                                   switch(AES, 
+                                          "color-linetype" = aes(x = Time, y = MyMean, 
+                                                                 ymin = per5, ymax = per95, 
+                                                                 shape = linetype_column,
+                                                                 color = colorBy_column, 
+                                                                 fill = colorBy_column, 
+                                                                 linetype = linetype_column),
+                                          "linetype" = aes(x = Time, y = MyMean, 
+                                                           ymin = per5, ymax = per95, 
+                                                           linetype = linetype_column),
+                                          "color" = aes(x = Time, y = MyMean, 
+                                                        ymin = per5, ymax = per95, 
+                                                        color = colorBy_column, 
+                                                        fill = colorBy_column), 
+                                          "none" = aes(x = Time, y = MyMean, 
+                                                       ymin = per5, ymax = per95)))
+   )
+   
+   # Adding optional horizontal line(s)
+   if(any(complete.cases(hline_position))){
+      A <- A + geom_hline(yintercept = hline_position, 
+                          color = HLineAES[1], linetype = HLineAES[2])
+   }
+   
+   # Adding optional vertical line(s)
+   if(any(complete.cases(vline_position))){
+      A <- A + geom_vline(xintercept = vline_position, 
+                          color = VLineAES[1], linetype = VLineAES[2])
+   }
+   
+   
+   ## Figure type: means only ---------------------------------------------
+   if(figure_type == "means only"){
+      
+      A <- A + 
+         # A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
+         #             switch(AES, 
+         #                    "color-linetype" = aes(x = Time, y = Conc, 
+         #                                           color = colorBy_column, 
+         #                                           fill = colorBy_column,
+         #                                           linetype = linetype_column, 
+         #                                           group = Group, 
+         #                                           shape = linetype_column),
+         #                    "color" = aes(x = Time, y = Conc, 
+         #                                  color = colorBy_column, 
+         #                                  fill = colorBy_column,
+      #                                  group = Group), 
+      #                    "linetype" = aes(x = Time, y = Conc, 
+      #                                     linetype = linetype_column, 
+      #                                     group = Group, shape = linetype_column),
+      #                    "none" = aes(x = Time, y = Conc,
+      #                                 group = Group))) +
+      geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
+                show.legend = AESCols["color"] != "Individual")
+      
+   }
+   
+   ## Figure type: percentiles ---------------------------------------------
+   
+   if(figure_type == "percentiles"){
+      
+      A <- A +
+         # A <- ggplot(sim_dataframe %>%
+         #                 filter(Trial %in% c("per5", "per95")) %>%
+         #                 mutate(Group = paste(Group, Trial)),
+         #             switch(AES, 
+         #                    "color-linetype" = aes(x = Time, y = Conc,
+         #                                           color = colorBy_column,
+         #                                           fill = colorBy_column,
+         #                                           linetype = linetype_column,
+         #                                           group = Group,
+         #                                           shape = linetype_column),
+         #                    "color" = aes(x = Time, y = Conc, 
+      #                                  color = colorBy_column, 
+      #                                  fill = colorBy_column,
+      #                                  group = Group), 
+      #                    "linetype" = aes(x = Time, y = Conc,
+      #                                     linetype = linetype_column,
+      #                                     group = Group, 
+      #                                     shape = linetype_column),
+      #                    "none" = aes(x = Time, y = Conc,
+      #                                 group = Group))) +
+      geom_line(alpha = 0.25,
+                lwd = ifelse(is.na(line_width), 0.8, line_width), 
+                show.legend = AESCols["color"] != "Individual") +
+         geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
+                   lwd = ifelse(is.na(line_width), 1, line_width), 
+                   show.legend = AESCols["color"] != "Individual")
+   }
+   
+   ## Figure type: ribbon --------------------------------------------------
+   if(figure_type == "percentile ribbon"){
+      
+      # RibbonDF <-  sim_dataframe %>% 
+      #     filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+      #                # Ribbons don't work if any of the data are clipped on
+      #                # the x axis
+      #                Time >= time_range_relative[1] &
+      #                Time <= time_range_relative[2]) %>% 
+      #     unique() %>% 
+      #     select(-any_of(c("Group", "Individual"))) %>% 
+      #     pivot_wider(names_from = Trial, values_from = Conc)
+      # names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+      
+      A <- A + 
+         # A <- ggplot(RibbonDF, 
+         #             switch(AES, 
+         #                    "color-linetype" = aes(x = Time, y = MyMean, 
+         #                                           ymin = per5, ymax = per95, 
+         #                                           shape = linetype_column,
+         #                                           color = colorBy_column, 
+         #                                           fill = colorBy_column, 
+         #                                           linetype = linetype_column),
+         #                    "linetype" = aes(x = Time, y = MyMean, 
+         #                                     ymin = per5, ymax = per95, 
+         #                                     linetype = linetype_column),
+      #                    "color" = aes(x = Time, y = MyMean, 
+      #                                  ymin = per5, ymax = per95, 
+      #                                  color = colorBy_column, 
+      #                                  fill = colorBy_column), 
+      #                    "none" = aes(x = Time, y = MyMean, 
+      #                                 ymin = per5, ymax = per95))) +
+      geom_ribbon(alpha = 0.25, color = NA, 
+                  show.legend = AESCols["color"] != "Individual") +
+         geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
+                   show.legend = AESCols["color"] != "Individual") 
+      
+   }
+   
+   # Observed data -----------------------------------------------
+   
+   if(nrow(obs_dataframe) > 0){
+      
+      # Checking whether to show obs data points in the legend. If the
+      # column that is mapped to color or linetype has more than one item,
+      # then show this in the legend. 
+      LegCheck <- c(AESCols["color"], AESCols["linetype"])
+      LegCheck <- LegCheck[LegCheck != "<empty>"]
+      # If there's more than one unique value in whatever is in the color
+      # or linetype column or the Inhibitor column, then include it
+      if(length(LegCheck) == 0){
+         LegCheck <- FALSE 
+      } else if(length(LegCheck == 1)){
+         LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
+      } else {
+         LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
+      }
+      
+      # Need to assign File to correct obs data. At this point, obs_dataframe WILL
+      # have values for File if the user wanted the observed data to be
+      # assigned to ALL the sim files. 
+      if(all(is.na(obs_dataframe$File))){
+         if(any(complete.cases(obs_to_sim_assignment))){
+            # If the user *did* specify values for obs_data_assignment, then use
+            # those for File.
             
-            if("color" %in% names(AESCols)[AESCols == "Tissue"]){
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(colorBy_column = Tissue)
-            }
+            # Making sure that the split pattern will work in case the user omitted
+            # spaces.
+            obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
+            ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
             
-            if("linetype" %in% names(AESCols)[AESCols == "Tissue"]){
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(linetype_column = Tissue)
-            }
-            
-            if("facet1" %in% names(AESCols)[AESCols == "Tissue"]){
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(FC1 = Tissue)
-            }
-            
-            if("facet2" %in% names(AESCols)[AESCols == "Tissue"]){
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(FC2 = Tissue)
-            }
-            
-        }
-    }
-    
-    MyUniqueData <- sim_dataframe %>% 
-        filter(Trial == MyMeanType) %>% 
-        select(any_of(union(UniqueAES, 
-                            c("File", "Tissue", "CompoundID", "Compound", "Enzyme", "Inhibitor")))) %>% 
-        unique()
-    
-    UniqueGroups1 <- sim_dataframe %>% 
-        summarize(across(.cols = any_of(union(UniqueAES, 
-                                              c("File", "Tissue", "CompoundID",
-                                                "Compound", "Inhibitor"))),
-                         .fns = function(x) length(unique(x)))) 
-    
-    UniqueGroups <- UniqueGroups1 %>% 
-        t() %>% as.data.frame() %>% 
-        mutate(MyCols = rownames(.)) %>% 
-        filter(V1 > 1) %>% pull(MyCols)
-    
-    
-    # If there are only 2 groups for the colorBy_column and color_set was set to
-    # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
-    # aethetically pleasing.
-    if(as_label(colorBy_column) != "<empty>" &&
-       UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
-       color_set[1] == "default"){
-        color_set <- "Brewer set 1"
-    }
-    
-    # Trying to give an indication to user about what data sets are present
-    # compared to how many aesthetics have been specified. Basically trying to
-    # get them to notice whether they've adequately clarified which dataset is
-    # which in the graph.
-    
-    UniqueGroups <- ifelse(length(UniqueGroups) == 0, 
-                           "none other than time and concentration", str_comma(sort(UniqueGroups)))
-    message(paste("Columns that vary in your data:", UniqueGroups))
-    message(paste("Graphing aesthetics you've assigned:", 
-                  ifelse(length(UniqueAES) == 0, 
-                         "none", 
-                         str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")")))))
-    
-    # If there are multiple values in linetype_column but user has only listed
-    # the default "solid" for linetypes, then warn the user that they might want
-    # to specify more line types.
-    if(as_label(linetype_column) != "<empty>" && 
-       as_label(colorBy_column) != as_label(linetype_column) &&
-       length(unique(sim_dataframe$linetype_column)) > 1 & 
-       length(unique(linetypes)) == 1){
-        warning(paste0("There are ", length(unique(sim_dataframe$linetype_column)),
-                       " unique values in the column ", as_label(linetype_column),
-                       ", but you have only requested ", 
-                       length(unique(linetypes)), " linetype(s): ", 
-                       str_comma(unique(linetypes)), 
-                       ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'."),
-                call. = FALSE)
-    }
-    
-    # Some of the options inherited from ct_plot depend on there being just one
-    # compound that the user is plotting. Using whatever is the compoundID that
-    # has the base level for the factor. <--- This may not be necessary, now
-    # that I think about it further...
-    if(EnzPlot){
-        AnchorCompound <- "substrate"
-    } else {
-        AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
-            mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
-            filter(CompoundLevel == min(CompoundLevel)) %>% 
-            pull(CompoundID) %>% as.character()
-    }
-    
-    # Setting up the x axis using the subfunction ct_x_axis
-    XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
-                        time_range = time_range, 
-                        t0 = "simulation start",
-                        x_axis_interval = x_axis_interval,
-                        pad_x_axis = pad_x_axis,
-                        compoundToExtract = AnchorCompound, 
-                        EnzPlot = EnzPlot)
-    
-    xlab <- XStuff$xlab
-    Data <- XStuff$Data # Is this necessary??
-    time_range <- XStuff$time_range
-    time_range_relative <- XStuff$time_range_relative
-    t0 <- XStuff$t0
-    TimeUnits <- XStuff$TimeUnits
-    
-    # Setting up the y axis using the subfunction ct_y_axis
-    YStuff <- ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
-                        ADAM = ADAM, 
-                        subsection_ADAM = switch(as.character(EnzPlot), 
-                                                 "TRUE" = NA, 
-                                                 "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
-                        prettify_compound_names = prettify_compound_names,
-                        EnzPlot = EnzPlot, 
-                        time_range_relative = time_range_relative,
-                        Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
-                            mutate(Time_orig = Time), 
-                        pad_y_axis = pad_y_axis,
-                        y_axis_limits_lin = y_axis_limits_lin, 
-                        time_range = time_range,
-                        y_axis_limits_log = y_axis_limits_log)
-    
-    ObsConcUnits <- YStuff$ObsConcUnits
-    ylab <- YStuff$ylab
-    YLabels <- YStuff$YLabels
-    YLogLabels <- YStuff$YLogLabels
-    YBreaks <- YStuff$YBreaks
-    YLogBreaks <- YStuff$YLogBreaks
-    Ylim_log <- YStuff$Ylim_log
-    YmaxRnd <- YStuff$YmaxRnd
-    pad_y_num <- YStuff$pad_y_num
-    pad_y_axis <- YStuff$pad_y_axis
-    
-    
-    
-    # Setting figure types and general aesthetics ------------------------------
-    
-    MyEffector <- unique(sim_dataframe$Inhibitor)
-    MyEffector <- fct_relevel(MyEffector, "none")
-    MyEffector <- sort(MyEffector)
-    
-    # Making linetype_column and colorBy_column factor data. This will
-    # prevent errors w/mapping to color b/c ggplot expects only categorical data
-    # for scale_color_manual, and, if the user supplies something that looks
-    # like a number for the colorBy_column (e.g., a numerical SubjectID), it
-    # will give the error message that a continuous value was supplied to a
-    # discrete scale.
-    if(as_label(linetype_column) != "<empty>" &&
-       class(sim_dataframe$linetype_column) != "factor"){
-        
-        sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
-        obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
-    }
-    
-    if(as_label(colorBy_column) != "<empty>" &&
-       class(sim_dataframe$colorBy_column) != "factor"){
-        
-        sim_dataframe$colorBy_column <- as.factor(sim_dataframe$colorBy_column)
-        obs_dataframe$colorBy_column <- as.factor(obs_dataframe$colorBy_column)
-    }
-    
-    # Taking care of linetypes and, along with that, obs_shape as needed
-    if(as_label(linetype_column) != "<empty>"){
-        NumLT <- length(sort(unique(sim_dataframe$linetype_column)))
-    } else {
-        NumLT <- 1
-    }
-    
-    if(NumLT == 1){
-        linetypes = "solid"
-    } else if(NumLT < length(linetypes)){
-        linetypes = linetypes[1:NumLT] 
-    } else if(NumLT > length(linetypes)){
-        warning(paste("There are", NumLT,
-                      "unique values in the column you have specified for the line types, but you have only specified", 
-                      length(linetypes), 
-                      "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph."), 
-                call. = FALSE)
-        linetypes = rep(linetypes, 100)[1:NumLT]
-    } 
-    
-    if(as_label(linetype_column) != "<empty>"){
-        
-        # If the original data.frame included levels for linetype_column, then
-        # use those levels. Otherwise, make "none" the base level since most of
-        # the time, this will be used for the column "Inhibitor".
-        if(class(sim_dataframe$linetype_column) != "factor"){
-            if("none" %in% unique(sim_dataframe$linetype_column)){
-                sim_dataframe <- sim_dataframe %>% 
-                    mutate(linetype_column = forcats::fct_relevel(linetype_column, "none"))
-                
-                obs_dataframe <- obs_dataframe %>% 
-                    mutate(linetype_column = factor(linetype_column, 
-                                                    levels = c(levels(sim_dataframe$linetype_column), 
-                                                               setdiff(obs_dataframe$linetype_column, 
-                                                                       sim_dataframe$linetype_column))))
+            if(all(sapply(ObsAssign, length) == 1)){
+               obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
             } else {
-                sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
-                obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
+               obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
+               
+               for(j in 1:length(ObsAssign)){
+                  FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
+                                            File = ObsAssign[[j]])
+                  suppressMessages(
+                     obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
+                  )
+                  rm(FileAssign)
+               }
+               obs_dataframe <- bind_rows(obs_dataframe)
             }
-        }
-    }
-    
-    if(str_detect(AES, "linetype")){
-        NumShapes <- length(sort(unique(c(sim_dataframe$linetype_column,
-                                          obs_dataframe$linetype_column))))
-    } else {
-        NumShapes <- 1
-    }
-    
-    AesthetStuff <- set_aesthet(line_type = linetypes, figure_type = figure_type,
-                                MyEffector = MyEffector, 
-                                compoundToExtract = switch(as.character(EnzPlot),
-                                                           "TRUE" = "substrate", 
-                                                           "FALSE" = unique(sim_dataframe$CompoundID)),
-                                obs_shape = obs_shape, obs_color = obs_color,
-                                obs_fill_trans = obs_fill_trans,
-                                obs_line_trans = obs_line_trans,
-                                # line_color is just a placeholder b/c not using it here.
-                                line_color = NA)
-    
-    line_type <- AesthetStuff$line_type
-    obs_shape <- AesthetStuff$obs_shape
-    obs_color <- AesthetStuff$obs_color
-    obs_fill_trans<- AesthetStuff$obs_fill_trans
-    obs_line_trans <- AesthetStuff$obs_line_trans
-    
-    if(length(obs_shape) < NumShapes){
-        # This odd syntax will work both when obs_shape is a single value
-        # and when it is multiple values.
-        obs_shape <- rep(obs_shape, NumShapes)[1:NumShapes] 
-    } else if(length(obs_shape) < NumShapes){
-        obs_shape <- obs_shape[1:NumShapes] 
-    }
-    
-    ## Figure type: means only ---------------------------------------------
-    if(figure_type == "means only"){
-        
-        A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = Conc, 
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column,
-                                                  linetype = linetype_column, 
-                                                  group = Group, 
-                                                  shape = linetype_column),
-                           "color" = aes(x = Time, y = Conc, 
-                                         color = colorBy_column, 
-                                         fill = colorBy_column,
-                                         group = Group), 
-                           "linetype" = aes(x = Time, y = Conc, 
-                                            linetype = linetype_column, 
-                                            group = Group, shape = linetype_column),
-                           "none" = aes(x = Time, y = Conc,
-                                        group = Group))) +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
-                      show.legend = AESCols["color"] != "Individual")
-        
-    }
-    
-    ## Figure type: percentiles ---------------------------------------------
-    
-    if(figure_type == "percentiles"){
-        
-        A <- ggplot(sim_dataframe %>%
-                        filter(Trial %in% c("per5", "per95")) %>%
-                        mutate(Group = paste(Group, Trial)),
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = Conc,
-                                                  color = colorBy_column,
-                                                  fill = colorBy_column,
-                                                  linetype = linetype_column,
-                                                  group = Group,
-                                                  shape = linetype_column),
-                           "color" = aes(x = Time, y = Conc, 
-                                         color = colorBy_column, 
-                                         fill = colorBy_column,
-                                         group = Group), 
-                           "linetype" = aes(x = Time, y = Conc,
-                                            linetype = linetype_column,
-                                            group = Group, 
-                                            shape = linetype_column),
-                           "none" = aes(x = Time, y = Conc,
-                                        group = Group))) +
-            geom_line(alpha = 0.25,
-                      lwd = ifelse(is.na(line_width), 0.8, line_width), 
-                      show.legend = AESCols["color"] != "Individual") +
-            geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
-                      lwd = ifelse(is.na(line_width), 1, line_width), 
-                      show.legend = AESCols["color"] != "Individual")
-    }
-    
-    ## Figure type: ribbon --------------------------------------------------
-    if(str_detect(figure_type, "ribbon")){
-        
-        
-        RibbonDF <-  sim_dataframe %>% 
-            filter(Trial %in% c({MyMeanType}, "per5", "per95") &
-                       # Ribbons don't work if any of the data are clipped on
-                       # the x axis
-                       Time >= time_range_relative[1] &
-                       Time <= time_range_relative[2]) %>% 
-            unique() %>% 
-            select(-any_of(c("Group", "Individual"))) %>% 
-            pivot_wider(names_from = Trial, values_from = Conc)
-        names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
-        
-        A <- ggplot(RibbonDF, 
-                    switch(AES, 
-                           "color-linetype" = aes(x = Time, y = MyMean, 
-                                                  ymin = per5, ymax = per95, 
-                                                  shape = linetype_column,
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column, 
-                                                  linetype = linetype_column),
-                           "linetype" = aes(x = Time, y = MyMean, 
-                                            ymin = per5, ymax = per95, 
-                                            linetype = linetype_column),
-                           "color" = aes(x = Time, y = MyMean, 
-                                         ymin = per5, ymax = per95, 
-                                         color = colorBy_column, 
-                                         fill = colorBy_column), 
-                           "none" = aes(x = Time, y = MyMean, 
-                                        ymin = per5, ymax = per95))) +
-            geom_ribbon(alpha = 0.25, color = NA, 
-                        show.legend = AESCols["color"] != "Individual") +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
-                      show.legend = AESCols["color"] != "Individual") 
-        
-    }
-    
-    # Observed data -----------------------------------------------
-    
-    if(nrow(obs_dataframe) > 0){
-        
-        # Checking whether to show obs data points in the legend. If the
-        # column that is mapped to color or linetype has more than one item,
-        # then show this in the legend. 
-        LegCheck <- c(AESCols["color"], AESCols["linetype"])
-        LegCheck <- LegCheck[LegCheck != "<empty>"]
-        # If there's more than one unique value in whatever is in the color
-        # or linetype column or the Inhibitor column, then include it
-        if(length(LegCheck) == 0){
-            LegCheck <- FALSE 
-        } else if(length(LegCheck == 1)){
-            LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
-        } else {
-            LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
-        }
-        
-        # Need to assign File to correct obs data. At this point, obs_dataframe WILL
-        # have values for File if the user wanted the observed data to be
-        # assigned to ALL the sim files. 
-        if(all(is.na(obs_dataframe$File))){
-            if(any(complete.cases(obs_to_sim_assignment))){
-                # If the user *did* specify values for obs_data_assignment, then use
-                # those for File.
-                
-                # Making sure that the split pattern will work in case the user omitted
-                # spaces.
-                obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
-                ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
-                
-                if(all(sapply(ObsAssign, length) == 1)){
-                    obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
-                } else {
-                    obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
-                    
-                    for(j in 1:length(ObsAssign)){
-                        FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
-                                                  File = ObsAssign[[j]])
-                        suppressMessages(
-                            obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
-                        )
-                        rm(FileAssign)
-                    }
-                    obs_dataframe <- bind_rows(obs_dataframe)
-                }
-            }
-            
-        } else {
-            # If there are some assignments for File but some missing, just warn
-            # the user about that b/c it's not clear how to assign the ones that
-            # are missing.
-            if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
-                warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
-                        call. = FALSE)
-                obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
-            }
-        }
-        
-        A <- addObsPoints(obs_data = obs_dataframe, 
-                          A = A, 
-                          AES = AES,
-                          obs_shape = obs_shape,
-                          obs_shape_user = obs_shape_user,
-                          obs_size = obs_size, 
-                          obs_color = obs_color,
-                          obs_color_user = obs_color_user,
-                          obs_line_trans = obs_line_trans,
-                          obs_line_trans_user = obs_line_trans_user,
-                          obs_fill_trans = obs_fill_trans,
-                          obs_fill_trans_user = obs_fill_trans_user,
-                          figure_type = figure_type,
-                          MapObsData = MapObsData, 
-                          LegCheck = LegCheck)
-    }
-    
-    
-    # Making linear graph --------------------------------------------------------
-    
-    if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
-       (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
-        ylab <- y_axis_label
-    }
-    
-    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
-       (class(x_axis_label) == "expression" && length(x_axis_label) > 0)){
-        xlab <- x_axis_label
-    }
-    
-    A <-  A +
-        xlab(xlab) +
-        ylab(ylab) +
-        theme_consultancy() +
-        theme(panel.border = element_rect(color = "black", fill = NA)) # KEEP THIS
-    
-    # Error catching
-    if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
-       AESCols["facet1"] == "<empty>" & AESCols["facet2"] == "<empty>"){
-        warning("You have specified the number of columns and/or rows you want in your facetted graph, but you have not specified *how* you want to break up the data. Please set a value for either `facet1_column` or `facet2_column` to do that. For now, the graph will not be facetted.", 
-                call. = FALSE)
-        facet_ncol <- NA
-        facet_nrow <- NA
-    }
-    
-    if(floating_facet_scale){
-        
-        strip.position <- ifelse(complete.cases(facet_ncol) && 
-                                     facet_ncol == 1 & is.na(facet_nrow), 
-                                 "right", "top")
-        
-        A <- A + 
-            facet_wrap(vars(!!facet1_column, !!facet2_column), 
-                       scales = "free", 
-                       ncol = switch(as.character(is.na(facet_ncol)),
-                                     "TRUE" = NULL, 
-                                     "FALSE" = facet_ncol),
-                       nrow = switch(as.character(is.na(facet_nrow)),
-                                     "TRUE" = NULL, 
-                                     "FALSE" = facet_nrow), 
-                       strip.position = strip.position)
-        
-        if(EnzPlot){
-            A <- A +
-                scale_y_continuous(expand = expansion(mult = pad_y_num),
-                                   labels = scales::percent)
-        } else {
-            A <- A +
-                scale_y_continuous(expand = expansion(mult = pad_y_num))
-        }
-        
-        A <- A + scale_x_time(time_units = TimeUnits, 
-                              x_axis_interval = x_axis_interval, 
-                              pad_x_axis = pad_x_axis)
-        
-    } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
-        
-        suppressWarnings(
-            A <- A +
-                coord_cartesian(xlim = time_range_relative, 
-                                ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                0, y_axis_limits_lin[1]),
-                                         YmaxRnd)) +
-                scale_x_time(time_units = TimeUnits, 
-                             x_axis_interval = x_axis_interval, 
-                             pad_x_axis = pad_x_axis) +
-                facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
-                                        AESCols["facet2"] == "<empty>"), 
-                                  "TRUE FALSE" = vars(!!facet2_column),
-                                  "FALSE TRUE" = vars(!!facet1_column),
-                                  "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
-                           ncol = switch(as.character(is.na(facet_ncol)), "TRUE" = NULL, "FALSE" = facet_ncol), 
-                           nrow = switch(as.character(is.na(facet_nrow)), "TRUE" = NULL, "FALSE" = facet_nrow))
-        )
-        
-        if(EnzPlot){
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(labels = scales::percent,
-                                       expand = expansion(mult = pad_y_num)) 
-            ))
-        } else {
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(breaks = YBreaks, labels = YLabels,
-                                       expand = expansion(mult = pad_y_num)) 
-            ))
-        }
-        
-    } else {
-        A <- A +
+         }
+         
+      } else {
+         # If there are some assignments for File but some missing, just warn
+         # the user about that b/c it's not clear how to assign the ones that
+         # are missing.
+         if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
+            warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
+                    call. = FALSE)
+            obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
+         }
+      }
+      
+      A <- addObsPoints(obs_data = obs_dataframe, 
+                        A = A, 
+                        AES = AES,
+                        obs_shape = obs_shape,
+                        obs_shape_user = obs_shape_user,
+                        obs_size = obs_size, 
+                        obs_color = obs_color,
+                        obs_color_user = obs_color_user,
+                        obs_line_trans = obs_line_trans,
+                        obs_line_trans_user = obs_line_trans_user,
+                        obs_fill_trans = obs_fill_trans,
+                        obs_fill_trans_user = obs_fill_trans_user,
+                        figure_type = figure_type,
+                        MapObsData = MapObsData, 
+                        LegCheck = LegCheck)
+   }
+   
+   
+   # Making linear graph --------------------------------------------------------
+   
+   if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
+      (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
+      ylab <- y_axis_label
+   }
+   
+   if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
+      (class(x_axis_label) == "expression" && length(x_axis_label) > 0)){
+      xlab <- x_axis_label
+   }
+   
+   A <-  A +
+      xlab(xlab) +
+      ylab(ylab) +
+      theme_consultancy() +
+      theme(panel.border = element_rect(color = "black", fill = NA)) # KEEP THIS
+   
+   # Error catching
+   if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
+      AESCols["facet1"] == "<empty>" & AESCols["facet2"] == "<empty>"){
+      warning("You have specified the number of columns and/or rows you want in your facetted graph, but you have not specified *how* you want to break up the data. Please set a value for either `facet1_column` or `facet2_column` to do that. For now, the graph will not be facetted.", 
+              call. = FALSE)
+      facet_ncol <- NA
+      facet_nrow <- NA
+   }
+   
+   if(floating_facet_scale){
+      
+      strip.position <- ifelse(complete.cases(facet_ncol) && 
+                                  facet_ncol == 1 & is.na(facet_nrow), 
+                               "right", "top")
+      
+      A <- A + 
+         facet_wrap(vars(!!facet1_column, !!facet2_column), 
+                    scales = "free", 
+                    ncol = switch(as.character(is.na(facet_ncol)),
+                                  "TRUE" = NULL, 
+                                  "FALSE" = facet_ncol),
+                    nrow = switch(as.character(is.na(facet_nrow)),
+                                  "TRUE" = NULL, 
+                                  "FALSE" = facet_nrow), 
+                    strip.position = strip.position)
+      
+      if(EnzPlot){
+         A <- A +
+            scale_y_continuous(expand = expansion(mult = pad_y_num),
+                               labels = scales::percent)
+      } else {
+         A <- A +
+            scale_y_continuous(expand = expansion(mult = pad_y_num))
+      }
+      
+      A <- A + scale_x_time(time_units = TimeUnits, 
+                            x_axis_interval = x_axis_interval, 
+                            pad_x_axis = pad_x_axis)
+      
+   } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
+      
+      suppressWarnings(
+         A <- A +
             coord_cartesian(xlim = time_range_relative, 
                             ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
                                             0, y_axis_limits_lin[1]),
                                      YmaxRnd)) +
             scale_x_time(time_units = TimeUnits, 
-                         time_range = time_range_relative,
                          x_axis_interval = x_axis_interval, 
                          pad_x_axis = pad_x_axis) +
-            facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
-        
-        if(EnzPlot){
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(labels = scales::percent,
-                                       expand = expansion(mult = pad_y_num))
-            ))
-        } else {
-            A <- suppressWarnings(suppressMessages(
-                A + scale_y_continuous(breaks = YBreaks,
-                                       labels = YLabels,
-                                       expand = expansion(mult = pad_y_num))
-            ))
-        }
-    }
-    
-    # Colors, linetypes, & legends -------------------------------------------
-    
-    if(AES %in% c("color", "color-linetype")){
-        
-        # Calculating the number of colors needed
-        
-        # If the user requests the column Individual for colorBy_column, they
-        # most likely want each observed individual to be a different color but
-        # the aggregate simulated data to be the usual colors (black or gray).
-        # NumColorsNeeded should only include the obs data in that scenario.
-        if(AESCols["color"] == "Individual"){
-            NumColorsNeeded <- obs_dataframe %>% 
-                pull(colorBy_column) %>% unique() %>% length()
-        } else {
-            NumColorsNeeded <-
-                ifelse(MapObsData,
-                       bind_rows(sim_dataframe, obs_dataframe) %>% 
-                           pull(colorBy_column) %>% unique() %>% length(),
-                       sim_dataframe %>% 
-                           pull(colorBy_column) %>% unique() %>% length())
+            facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
+                                    AESCols["facet2"] == "<empty>"), 
+                              "TRUE FALSE" = vars(!!facet2_column),
+                              "FALSE TRUE" = vars(!!facet1_column),
+                              "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
+                       ncol = switch(as.character(is.na(facet_ncol)), "TRUE" = NULL, "FALSE" = facet_ncol), 
+                       nrow = switch(as.character(is.na(facet_nrow)), "TRUE" = NULL, "FALSE" = facet_nrow))
+      )
+      
+      if(EnzPlot){
+         A <- suppressWarnings(suppressMessages(
+            A + scale_y_continuous(labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num)) 
+         ))
+      } else {
+         A <- suppressWarnings(suppressMessages(
+            A + scale_y_continuous(breaks = YBreaks, labels = YLabels,
+                                   expand = expansion(mult = pad_y_num)) 
+         ))
+      }
+      
+   } else {
+      A <- A +
+         coord_cartesian(xlim = time_range_relative, 
+                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                         0, y_axis_limits_lin[1]),
+                                  YmaxRnd)) +
+         scale_x_time(time_units = TimeUnits, 
+                      time_range = time_range_relative,
+                      x_axis_interval = x_axis_interval, 
+                      pad_x_axis = pad_x_axis) +
+         facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
+      
+      if(EnzPlot){
+         A <- suppressWarnings(suppressMessages(
+            A + scale_y_continuous(labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))
+         ))
+      } else {
+         A <- suppressWarnings(suppressMessages(
+            A + scale_y_continuous(breaks = YBreaks,
+                                   labels = YLabels,
+                                   expand = expansion(mult = pad_y_num))
+         ))
+      }
+   }
+   
+   # Colors, linetypes, & legends -------------------------------------------
+   
+   if(AES %in% c("color", "color-linetype")){
+      
+      # Calculating the number of colors needed
+      
+      # If the user requests the column Individual for colorBy_column, they
+      # most likely want each observed individual to be a different color but
+      # the aggregate simulated data to be the usual colors (black or gray).
+      # NumColorsNeeded should only include the obs data in that scenario.
+      if(AESCols["color"] == "Individual"){
+         NumColorsNeeded <- obs_dataframe %>% 
+            pull(colorBy_column) %>% unique() %>% length()
+      } else {
+         NumColorsNeeded <-
+            ifelse(MapObsData,
+                   bind_rows(sim_dataframe, obs_dataframe) %>% 
+                      pull(colorBy_column) %>% unique() %>% length(),
+                   sim_dataframe %>% 
+                      pull(colorBy_column) %>% unique() %>% length())
+         
+      }
+      
+      # If there's only one unique value in the colorBy_column, then make that
+      # item black.
+      if(length(sort(unique(c(sim_dataframe$colorBy_column, 
+                              obs_dataframe$colorBy_column)))) == 1){
+         A <- A + scale_color_manual(values = "black") +
+            scale_fill_manual(values = "black")
+      } else {
+         
+         # This is when the user wants specific user-specified colors rather
+         # that one of the pre-made sets.
+         if(length(color_set) > 1){
             
-        }
-        
-        # If there's only one unique value in the colorBy_column, then make that
-        # item black.
-        if(length(sort(unique(c(sim_dataframe$colorBy_column, 
-                                obs_dataframe$colorBy_column)))) == 1){
-            A <- A + scale_color_manual(values = "black") +
-                scale_fill_manual(values = "black")
-        } else {
-            
-            # This is when the user wants specific user-specified colors rather
-            # that one of the pre-made sets.
-            if(length(color_set) > 1){
-                
-                # If they supply a named character vector whose values are not
-                # present in the data, convert it to an unnamed character vector.
-                if(is.null(names(color_set)) == FALSE && 
-                   all(unique(sim_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
-                    warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                                   as_label(colorBy_column),
-                                   " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                                   as_label(colorBy_column), "."), 
-                            call. = FALSE)
-                    
-                    MyColors <- as.character(color_set)
-                } else if(length(color_set) < NumColorsNeeded){
-                    warning(paste("There are", NumColorsNeeded,
-                                  "unique values in the column you have specified for the colors, but you have only specified", 
-                                  length(color_set), 
-                                  "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
-                            call. = FALSE)
-                    
-                    MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
-                } else {
-                    MyColors <- color_set
-                }
-                
+            # If they supply a named character vector whose values are not
+            # present in the data, convert it to an unnamed character vector.
+            if(is.null(names(color_set)) == FALSE && 
+               all(unique(sim_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+               warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
+                              as_label(colorBy_column),
+                              " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                              as_label(colorBy_column), "."), 
+                       call. = FALSE)
+               
+               MyColors <- as.character(color_set)
+            } else if(length(color_set) < NumColorsNeeded){
+               warning(paste("There are", NumColorsNeeded,
+                             "unique values in the column you have specified for the colors, but you have only specified", 
+                             length(color_set), 
+                             "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
+                       call. = FALSE)
+               
+               MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
             } else {
-                
-                # NOTE: For no reason I can discern, if the user has observed
-                # data that should be all one color but then uses scale_color_X
-                # where x is anything except "manual", the observed points
-                # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
-                # setting the colors needed and then using scale_color_manual
-                # instead of scale_color_x. -LSh
-                
-                color_set <- ifelse(str_detect(tolower(color_set), 
-                                               "default|brewer.*2|set.*2"), 
-                                    "set2", color_set)
-                color_set <- ifelse(str_detect(tolower(color_set),
-                                               "brewer.*1|set.*1"), 
-                                    "set1", color_set)
-                
-                
-                suppressWarnings(
-                    MyColors <- 
-                        switch(
-                            color_set,
-                            # Using "Dark2" b/c "Set2" is just really,
-                            # really light.
-                            "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
-                                1:NumColorsNeeded], 
-                            "blue-green" = blueGreens(NumColorsNeeded),
-                            "blues" = blues(NumColorsNeeded),
-                            "rainbow" = rainbow(NumColorsNeeded),
-                            "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
-                                1:NumColorsNeeded],
-                            "Tableau" = ggthemes::tableau_color_pal(
-                                palette = "Tableau 10")(NumColorsNeeded),
-                            "viridis" = viridis::viridis_pal()(NumColorsNeeded))
-                )
-                # NB: For the RColorBrewer palettes, the minimum number of
-                # colors you can get is 3. Since sometimes we might only want 1
-                # or 2 colors, though, we have to add the [1:NumColorsNeeded]
-                # bit.
-                
-                if(any(is.na(MyColors))){
-                    warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.", 
-                            call. = FALSE)
-                    
-                    MyColors <- rainbow(NumColorsNeeded)
-                }
+               MyColors <- color_set
             }
             
-            if(MapObsFile_color){
-                names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                              arrange(colorBy_column) %>% 
-                                              pull(colorBy_column))
-            } else if(length(color_set) == 1){
-                if(AESCols["color"] == "Individual"){
-                    # Figuring out all the colorBy_column values
-                    AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                         pull(colorBy_column))
-                    
-                    MyColors <- c(MyColors, "black")
-                    names(MyColors) <- levels(ct_dataframe$colorBy_column)
-                    
-                } else {
-                    # This is when the colors are NOT set by the observed file
-                    # AND the user hasn't supplied a named character vector for
-                    # how to assign the colors AND the colors are not assigned
-                    # to the individual subject.
-                    names(MyColors) <- levels(sim_dataframe$colorBy_column)
-                }
-            }
+         } else {
+            
+            # NOTE: For no reason I can discern, if the user has observed
+            # data that should be all one color but then uses scale_color_X
+            # where x is anything except "manual", the observed points
+            # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
+            # setting the colors needed and then using scale_color_manual
+            # instead of scale_color_x. -LSh
+            
+            color_set <- ifelse(str_detect(tolower(color_set), 
+                                           "default|brewer.*2|set.*2"), 
+                                "set2", color_set)
+            color_set <- ifelse(str_detect(tolower(color_set),
+                                           "brewer.*1|set.*1"), 
+                                "set1", color_set)
+            
             
             suppressWarnings(
-                A <-  A + scale_color_manual(values = MyColors) +
-                    scale_fill_manual(values = MyColors)
+               MyColors <- 
+                  switch(
+                     color_set,
+                     # Using "Dark2" b/c "Set2" is just really,
+                     # really light.
+                     "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
+                        1:NumColorsNeeded], 
+                     "blue-green" = blueGreens(NumColorsNeeded),
+                     "blues" = blues(NumColorsNeeded),
+                     "rainbow" = rainbow(NumColorsNeeded),
+                     "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
+                        1:NumColorsNeeded],
+                     "Tableau" = ggthemes::tableau_color_pal(
+                        palette = "Tableau 10")(NumColorsNeeded),
+                     "viridis" = viridis::viridis_pal()(NumColorsNeeded))
             )
-        }
-    }
-    
-    # Specifying linetypes
-    A <- A + scale_linetype_manual(values = linetypes)
-    
-    # Adding legend label for color and linetype as appropriate
-    if(complete.cases(legend_label_color)){
-        if(legend_label_color == "none"){    
-            A <- A + labs(color = NULL, fill = NULL)
-        } else {
-            A <- A + labs(color = legend_label_color, 
-                          fill = legend_label_color)
-        }
-    } else {
-        # This is when no legend_label_color has been specified.
-        if(complete.cases(color_labels[1])){
-            # If user did not request a label on the legend for color but DID
-            # set any of the color labels, that means that the legend label for
-            # color probably should NOT be the same as the column title. Do not
-            # include a legend label for color in that scenario.
-            A <- A + labs(color = NULL, fill = NULL)
-        } else if(AES %in% c("color", "color-linetype")){
-            # However, if they did not include anything for legend_label_color
-            # but there *is* a column that is mapped to color, then they
-            # probably do want the title for colors on the legend to be the same
-            # as the colorBy_column name.
-            A <- A + labs(color = as_label(colorBy_column), 
-                          fill = as_label(colorBy_column))
-        } 
-        
-        # None of these conditions are met when 1) they did NOT set anything for the
-        # legend_label_color, 2) they did not specify any alternative label
-        # for each value in the colorBy_column for the legend, and 3) the
-        # specified aesthetics do NOT include color or linetype.
-        
-    }
-    
-    if(complete.cases(legend_label_linetype) && 
-       legend_label_linetype == "none"){
-        A <- A + labs(linetype = NULL)
-    } else if(as_label(linetype_column) != "<empty>"){
-        A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
-                                        "TRUE" = legend_label_linetype,
-                                        "FALSE" = as_label(linetype_column)), 
-                      shape = switch(as.character(complete.cases(legend_label_linetype)), 
-                                     "TRUE" = legend_label_linetype,
-                                     "FALSE" = as_label(linetype_column)))
-        
-        if(any(linetypes != "solid")){
-            # When the linetype is dashed (or possibly some other user-specified
-            # line type that I'm not even considering), then the legend glyph
-            # often cuts off the 2nd dash and it's unclear how solid vs. dashed
-            # lines differ in the legend. Fixing that here.
-            A <- A + theme(legend.key.width = unit(2, "lines"))
-        }
-    }
-    
-    ## Adding spacing between facets if requested
-    if(complete.cases(facet_spacing)){
-        A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
-    }
-    
-    # If any of the items in the legend have length = 1, don't show that in the
-    # legend.
-    if(AES %in% c("linetype", "color-linetype") &&
-       (length(unique(sim_dataframe$linetype_column)) == 1 | 
-        length(unique(linetypes)) == 1)){
-        A <- A + guides(linetype = "none") 
-    }
-    
-    if(AES %in% c("color", "color-linetype") &&
-       length(unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                     pull(colorBy_column))) == 1){
-        A <- A + guides(color = "none", fill = "none")
-    }
-    
-    ## Making semi-log graph ------------------------------------------------
-    
-    LowConc <- bind_rows(sim_dataframe, obs_dataframe) %>%
-        filter(Trial %in% c("mean", "per5", "per95") &
-                   Time > 0 &
-                   Conc < Ylim_log[1]) %>% 
-        pull(Conc)
-    
-    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
-       linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
-       warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
-               call. = FALSE)
-    }
-    
-    if(EnzPlot){
-        B <- suppressMessages(suppressWarnings(
-            A + scale_y_log10(labels = scales::percent, 
-                              expand = expansion(mult = pad_y_num)) +
-                switch(as.character(floating_facet_scale), 
-                       "TRUE" = coord_cartesian(ylim = Ylim_log), 
-                       "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                                 xlim = time_range_relative))
-        ))
-    } else {
-        B <- suppressMessages(suppressWarnings(
-            A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
-                              expand = expansion(mult = pad_y_num)) +
-                switch(as.character(floating_facet_scale), 
-                       "TRUE" = coord_cartesian(ylim = Ylim_log), 
-                       "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                                 xlim = time_range_relative))
-        ))
-    }
-    
-    if(complete.cases(legend_position)){
-        A <- A + theme(legend.position = legend_position)  
-        B <- B + theme(legend.position = legend_position)
-    }    
-    
-    if(graph_labels){
-        labels <- "AUTO"
-    } else {
-        labels <- NULL
-    }
-    
-    # both plots together, aligned vertically
-    AB <- suppressWarnings(
-        ggpubr::ggarrange(A, B, ncol = 1, 
-                          labels = labels, 
-                          font.label = list(size = graph_title_size),
-                          common.legend = TRUE, align = "hv", 
-                          legend = ifelse(is.na(legend_position), 
-                                          "right", legend_position))
-    )
-    
-    # both plots together, aligned horizontally
-    ABhoriz <- suppressWarnings(
-        ggpubr::ggarrange(A, B, ncol = 2, 
-                          labels = labels, 
-                          font.label = list(size = graph_title_size),
-                          common.legend = TRUE, align = "hv", 
-                          legend = ifelse(is.na(legend_position), 
-                                          "bottom", legend_position))
-    )
-    
-    if(complete.cases(graph_title)){
-        A <- A + ggtitle(graph_title) +
-            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
-        B <- B + ggtitle(graph_title) +
-            theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
-        AB <- ggpubr::annotate_figure(
-            AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
-                                        face = "bold", size = graph_title_size))
-        ABhoriz <- ggpubr::annotate_figure(
-            ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
-                                             face = "bold", size = graph_title_size))
-    }
-    
-    Out <- switch(linear_or_log, 
-                  "linear" = A,
-                  "semi-log" = B,
-                  "log" = B,
-                  "both" = AB, 
-                  "both vertical" = AB,
-                  "both horizontal" = ABhoriz)
-    
-    if(complete.cases(save_graph)){
-        FileName <- save_graph
-        if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-            FileName <- sub(paste0(".", Ext), "", FileName)
-            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg", "docx"), 
-                          Ext, "png")
-            FileName <- paste0(FileName, ".", Ext)
-        } else {
-            FileName <- paste0(FileName, ".png")
-            Ext <- "png"
-        }
-        
-        if(Ext == "docx"){
+            # NB: For the RColorBrewer palettes, the minimum number of
+            # colors you can get is 3. Since sometimes we might only want 1
+            # or 2 colors, though, we have to add the [1:NumColorsNeeded]
+            # bit.
             
-            # This is when they want a Word file as output
-            OutPath <- dirname(FileName)
-            if(OutPath == "."){
-                OutPath <- getwd()
+            if(any(is.na(MyColors))){
+               warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.", 
+                       call. = FALSE)
+               
+               MyColors <- rainbow(NumColorsNeeded)
             }
-            
-            FileName <- basename(FileName)
-            
-            rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
-                                          package="SimcypConsultancy"), 
-                              output_dir = OutPath, 
-                              output_file = FileName, 
-                              quiet = TRUE)
-            # Note: The "system.file" part of the call means "go to where the
-            # package is installed, search for the file listed, and return its
-            # full path.
-            
-        } else {
-            # This is when they want any kind of graphical file format.
-            if(linear_or_log %in% c("both", "both vertical")){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                       plot = AB)
+         }
+         
+         if(MapObsFile_color){
+            names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                                         arrange(colorBy_column) %>% 
+                                         pull(colorBy_column))
+         } else if(length(color_set) == 1){
+            if(AESCols["color"] == "Individual"){
+               # Figuring out all the colorBy_column values
+               AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                                   pull(colorBy_column))
+               
+               MyColors <- c(MyColors, "black")
+               names(MyColors) <- levels(ct_dataframe$colorBy_column)
+               
+            } else {
+               # This is when the colors are NOT set by the observed file
+               # AND the user hasn't supplied a named character vector for
+               # how to assign the colors AND the colors are not assigned
+               # to the individual subject.
+               names(MyColors) <- levels(sim_dataframe$colorBy_column)
             }
-            
-            if(linear_or_log %in% c("both horizontal")){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                       plot = ABhoriz)
-            }
-            
-            if(linear_or_log == "linear"){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                       plot = A)
-            }
-            
-            if(str_detect(linear_or_log, "log")){
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                       plot = B)
-            }
-        }
-    }
-    
-    return(Out)
-    
+         }
+         
+         suppressWarnings(
+            A <-  A + scale_color_manual(values = MyColors) +
+               scale_fill_manual(values = MyColors)
+         )
+      }
+   }
+   
+   # Specifying linetypes
+   A <- A + scale_linetype_manual(values = linetypes)
+   
+   # Adding legend label for color and linetype as appropriate
+   if(complete.cases(legend_label_color)){
+      if(legend_label_color == "none"){    
+         A <- A + labs(color = NULL, fill = NULL)
+      } else {
+         A <- A + labs(color = legend_label_color, 
+                       fill = legend_label_color)
+      }
+   } else {
+      # This is when no legend_label_color has been specified.
+      if(complete.cases(color_labels[1])){
+         # If user did not request a label on the legend for color but DID
+         # set any of the color labels, that means that the legend label for
+         # color probably should NOT be the same as the column title. Do not
+         # include a legend label for color in that scenario.
+         A <- A + labs(color = NULL, fill = NULL)
+      } else if(AES %in% c("color", "color-linetype")){
+         # However, if they did not include anything for legend_label_color
+         # but there *is* a column that is mapped to color, then they
+         # probably do want the title for colors on the legend to be the same
+         # as the colorBy_column name.
+         A <- A + labs(color = as_label(colorBy_column), 
+                       fill = as_label(colorBy_column))
+      } 
+      
+      # None of these conditions are met when 1) they did NOT set anything for the
+      # legend_label_color, 2) they did not specify any alternative label
+      # for each value in the colorBy_column for the legend, and 3) the
+      # specified aesthetics do NOT include color or linetype.
+      
+   }
+   
+   if(complete.cases(legend_label_linetype) && 
+      legend_label_linetype == "none"){
+      A <- A + labs(linetype = NULL)
+   } else if(as_label(linetype_column) != "<empty>"){
+      A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
+                                      "TRUE" = legend_label_linetype,
+                                      "FALSE" = as_label(linetype_column)), 
+                    shape = switch(as.character(complete.cases(legend_label_linetype)), 
+                                   "TRUE" = legend_label_linetype,
+                                   "FALSE" = as_label(linetype_column)))
+      
+      if(any(linetypes != "solid")){
+         # When the linetype is dashed (or possibly some other user-specified
+         # line type that I'm not even considering), then the legend glyph
+         # often cuts off the 2nd dash and it's unclear how solid vs. dashed
+         # lines differ in the legend. Fixing that here.
+         A <- A + theme(legend.key.width = unit(2, "lines"))
+      }
+   }
+   
+   ## Adding spacing between facets if requested
+   if(complete.cases(facet_spacing)){
+      A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
+   }
+   
+   # If any of the items in the legend have length = 1, don't show that in the
+   # legend.
+   if(AES %in% c("linetype", "color-linetype") &&
+      (length(unique(sim_dataframe$linetype_column)) == 1 | 
+       length(unique(linetypes)) == 1)){
+      A <- A + guides(linetype = "none") 
+   }
+   
+   if(AES %in% c("color", "color-linetype") &&
+      length(unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                    pull(colorBy_column))) == 1){
+      A <- A + guides(color = "none", fill = "none")
+   }
+   
+   ## Making semi-log graph ------------------------------------------------
+   
+   LowConc <- bind_rows(sim_dataframe, obs_dataframe) %>%
+      filter(Trial %in% c("mean", "per5", "per95") &
+                Time > 0 &
+                Conc < Ylim_log[1]) %>% 
+      pull(Conc)
+   
+   if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
+      linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
+      warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
+              call. = FALSE)
+   }
+   
+   if(EnzPlot){
+      B <- suppressMessages(suppressWarnings(
+         A + scale_y_log10(labels = scales::percent, 
+                           expand = expansion(mult = pad_y_num)) +
+            switch(as.character(floating_facet_scale), 
+                   "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                   "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                             xlim = time_range_relative))
+      ))
+   } else {
+      B <- suppressMessages(suppressWarnings(
+         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
+                           expand = expansion(mult = pad_y_num)) +
+            switch(as.character(floating_facet_scale), 
+                   "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                   "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                             xlim = time_range_relative))
+      ))
+   }
+   
+   if(complete.cases(legend_position)){
+      A <- A + theme(legend.position = legend_position)  
+      B <- B + theme(legend.position = legend_position)
+   }    
+   
+   if(graph_labels){
+      labels <- "AUTO"
+   } else {
+      labels <- NULL
+   }
+   
+   # both plots together, aligned vertically
+   AB <- suppressWarnings(
+      ggpubr::ggarrange(A, B, ncol = 1, 
+                        labels = labels, 
+                        font.label = list(size = graph_title_size),
+                        common.legend = TRUE, align = "hv", 
+                        legend = ifelse(is.na(legend_position), 
+                                        "right", legend_position))
+   )
+   
+   # both plots together, aligned horizontally
+   ABhoriz <- suppressWarnings(
+      ggpubr::ggarrange(A, B, ncol = 2, 
+                        labels = labels, 
+                        font.label = list(size = graph_title_size),
+                        common.legend = TRUE, align = "hv", 
+                        legend = ifelse(is.na(legend_position), 
+                                        "bottom", legend_position))
+   )
+   
+   if(complete.cases(graph_title)){
+      A <- A + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+      B <- B + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+      AB <- ggpubr::annotate_figure(
+         AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+                                     face = "bold", size = graph_title_size))
+      ABhoriz <- ggpubr::annotate_figure(
+         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
+                                          face = "bold", size = graph_title_size))
+   }
+   
+   Out <- switch(linear_or_log, 
+                 "linear" = A,
+                 "semi-log" = B,
+                 "log" = B,
+                 "both" = AB, 
+                 "both vertical" = AB,
+                 "both horizontal" = ABhoriz)
+   
+   if(complete.cases(save_graph)){
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg", "docx"), 
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+         Ext <- "png"
+      }
+      
+      if(Ext == "docx"){
+         
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_dir = OutPath, 
+                           output_file = FileName, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+      } else {
+         # This is when they want any kind of graphical file format.
+         if(linear_or_log %in% c("both", "both vertical")){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                   plot = AB)
+         }
+         
+         if(linear_or_log %in% c("both horizontal")){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                   plot = ABhoriz)
+         }
+         
+         if(linear_or_log == "linear"){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = A)
+         }
+         
+         if(str_detect(linear_or_log, "log")){
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = B)
+         }
+      }
+   }
+   
+   return(Out)
+   
 }
 
 
