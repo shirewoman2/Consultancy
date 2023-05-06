@@ -175,7 +175,7 @@ so_graph <- function(PKtable,
                                 "fill", "lines")
    
    if(boundary_indicator == "fill" & length(boundary_color_set) == 1 & 
-      !str_detect(boundary_color_set, " ")){
+      !any(str_detect(boundary_color_set, " "))){
       warning("You have requested only one color for the fill, which means you'll only see a shaded rectangle for the 2-fold boundary. If you would also like to see the 1.5-fold or Guest-curve boundary, please add a second color.", 
               call. = FALSE)
    }
@@ -378,7 +378,6 @@ so_graph <- function(PKtable,
                     call. = FALSE)
             
             MyColors <- rep(point_color_set, 100)[1:NumColorsNeeded]
-            
          }
       }
       
@@ -400,7 +399,7 @@ so_graph <- function(PKtable,
          NumShapesNeeded <- length(sort(unique(SO$point_shape_column)))
          
          if(NumShapesNeeded == 1){
-            MyShapes <- 16
+            MyShapes <- point_shape[1]
          } else {
             if(length(point_shape) < NumShapesNeeded){
                # This odd syntax will work both when point_shape is a single value
@@ -425,56 +424,26 @@ so_graph <- function(PKtable,
          
          round_up(max(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)))
       
-      G[[i]] <- switch(paste(
-         as_label(point_color_column) != "<empty>",
-         as_label(point_shape_column) != "<empty>"),
-         
-         # User has NOT specified anything for point shape or color
-         "FALSE FALSE" = ggplot(SO[[i]], aes(x = Observed, y = Simulated)), 
-         
-         # User has specified a column for point color
-         "TRUE FALSE" = ggplot(SO[[i]], aes(x = Observed, y = Simulated, 
-                                            color = point_color_column)) + 
-            scale_color_manual(values = MyColors), 
-         
-         # User has specified a column for point shape
-         "FALSE TRUE" = 
-            switch(as.character(any(is.na(point_shape))), 
-                   "TRUE" = ggplot(SO[[i]], aes(x = Observed, y = Simulated, 
-                                                shape = point_shape_column)), 
-                   "FALSE" = ggplot(SO[[i]], aes(x = Observed, y = Simulated, 
-                                                 shape = point_shape_column)) +
-                      scale_shape_manual(values = MyShapes)),
-         
-         # User has specified both color and point shape columns
-         "TRUE TRUE" = 
-            switch(as.character(any(is.na(point_shape))), 
-                   "TRUE" = ggplot(SO[[i]], aes(x = Observed, y = Simulated, 
-                                                color = point_color_column, 
-                                                shape = point_shape_column)) +
-                      scale_color_manual(values = MyColors), 
-                   "FALSE" = ggplot(SO[[i]], aes(x = Observed, y = Simulated, 
-                                                 color = point_color_column, 
-                                                 shape = point_shape_column)) +
-                      scale_color_manual(values = MyColors) +
-                      scale_shape_manual(values = MyShapes))
-      )
-      
-      G[[i]] <- G[[i]] +
-         geom_line(data = Unity, linetype = "dashed", color = "black",
+      G[[i]] <- ggplot()  +
+         geom_line(data = Unity, aes(x = Observed, y = Simulated),
+                   linetype = "dashed", color = "black",
                    linewidth = boundary_line_width)
       
       if(str_detect(boundary_indicator, "line")){
          G[[i]] <- G[[i]] + 
-            geom_line(data = Fold2_upper, color = BoundColors[1], linewidth = boundary_line_width) +
-            geom_line(data = Fold2_lower, color = BoundColors[1], linewidth = boundary_line_width) +
+            geom_line(data = Fold2_upper, aes(x = Observed, y = Simulated),
+                      color = BoundColors[1], linewidth = boundary_line_width) +
+            geom_line(data = Fold2_lower, aes(x = Observed, y = Simulated),
+                      color = BoundColors[1], linewidth = boundary_line_width) +
             geom_line(data = switch(as.character(str_detect(i, "ratio")), 
                                     "TRUE" = GuestCurve_upper,
-                                    "FALSE" = Fold1.5_upper), 
+                                    "FALSE" = Fold1.5_upper),
+                      aes(x = Observed, y = Simulated),
                       color = BoundColors[2], linewidth = boundary_line_width) +
             geom_line(data = switch(as.character(str_detect(i, "ratio")), 
                                     "TRUE" = GuestCurve_lower, 
                                     "FALSE" = Fold1.5_lower),
+                      aes(x = Observed, y = Simulated),
                       color = BoundColors[2], linewidth = boundary_line_width) 
       }
       
@@ -482,11 +451,13 @@ so_graph <- function(PKtable,
          G[[i]] <- G[[i]] +
             geom_polygon(data = switch(as.character(str_detect(i, "ratio")), 
                                        "TRUE" = Poly2xGuest, 
-                                       "FALSE" = Poly2x), 
+                                       "FALSE" = Poly2x),
+                         aes(x = Observed, y = Simulated),
                          fill = BoundColors[1], alpha = 0.2) +
             geom_polygon(data = switch(as.character(str_detect(i, "ratio")),
                                        "TRUE" = Poly1.5xGuest,
                                        "FALSE" = Poly1.5x), 
+                         aes(x = Observed, y = Simulated),
                          fill = BoundColors[2], alpha = 0.2)
       }
       
@@ -503,8 +474,59 @@ so_graph <- function(PKtable,
          MinBreaks <- rep(1:9)*rep(10^(-3:6), each = 9)
       }
       
+      G[[i]] <- 
+         switch(paste(
+            as_label(point_color_column) != "<empty>",
+            as_label(point_shape_column) != "<empty>"),
+            
+            # User has NOT specified anything for point shape or color
+            "FALSE FALSE" = G[[i]] + 
+               geom_point(data = SO[[i]],
+                          aes(x = Observed, y = Simulated), 
+                          size = ifelse(is.na(point_size), 2, point_size)), 
+            
+            # User has specified a column for point color
+            "TRUE FALSE" = G[[i]] +
+               geom_point(data = SO[[i]],
+                          aes(x = Observed, y = Simulated, 
+                              color = point_color_column),
+                          size = ifelse(is.na(point_size), 2, point_size)) + 
+               scale_color_manual(values = MyColors), 
+            
+            # User has specified a column for point shape
+            "FALSE TRUE" = 
+               switch(as.character(any(is.na(point_shape))), 
+                      "TRUE" = G[[i]] +
+                         geom_point(data = SO[[i]],
+                                    aes(x = Observed, y = Simulated, 
+                                        shape = point_shape_column),
+                                    size = ifelse(is.na(point_size), 2, point_size)), 
+                      "FALSE" = G[[i]] +
+                         geom_point(data = SO[[i]],
+                                    aes(x = Observed, y = Simulated, 
+                                        shape = point_shape_column),
+                                    size = ifelse(is.na(point_size), 2, point_size)) +
+                         scale_shape_manual(values = MyShapes)),
+            
+            # User has specified both color and point shape columns
+            "TRUE TRUE" = 
+               switch(as.character(any(is.na(point_shape))), 
+                      "TRUE" = G[[i]] +
+                         geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
+                                                        color = point_color_column, 
+                                                        shape = point_shape_column),
+                                    size = ifelse(is.na(point_size), 2, point_size)) +
+                         scale_color_manual(values = MyColors), 
+                      "FALSE" = G[[i]] + 
+                         geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
+                                                        color = point_color_column, 
+                                                        shape = point_shape_column),
+                                    size = ifelse(is.na(point_size), 2, point_size)) +
+                         scale_color_manual(values = MyColors) +
+                         scale_shape_manual(values = MyShapes))
+         )
+      
       G[[i]] <- G[[i]] + 
-         geom_point(size = ifelse(is.na(point_size), 2, point_size)) +
          scale_y_log10(breaks = MajBreaks, minor_breaks = MinBreaks) +
          scale_x_log10(breaks = MajBreaks, minor_breaks = MinBreaks) +
          coord_cartesian(xlim = Limits, ylim = Limits) + # this causes the shading to disappear for Guest curves. no idea why, but I think it's a bug w/coord_cartesian.
