@@ -555,15 +555,15 @@ so_graph <- function(PKtable,
       }
       
       if(as_label(point_shape_column) != "<empty>"){
-         if(complete.cases(legend_label_point_color)){
-            if(legend_label_point_color == "none"){    
+         if(complete.cases(legend_label_point_shape)){
+            if(legend_label_point_shape == "none"){    
                G[[i]] <- G[[i]] + labs(shape = NULL)
             } else {
-               G[[i]] <- G[[i]] + labs(shape = legend_label_point_color)
+               G[[i]] <- G[[i]] + labs(shape = legend_label_point_shape)
             }
          } else {
-            # This is when no legend_label_point_color has been specified.
-            G[[i]] <- G[[i]] + labs(shape = as_label(point_color_column))
+            # This is when no legend_label_point_shape has been specified.
+            G[[i]] <- G[[i]] + labs(shape = as_label(point_shape_column))
          } 
       }
    }
