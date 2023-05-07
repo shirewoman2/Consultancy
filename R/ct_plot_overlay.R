@@ -377,6 +377,14 @@
 #'   guesses about what a prettier compound name should be. An example of
 #'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 #'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
+#' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
+#'   the graph where the left panel shows the original graph and the right panel
+#'   shows information about the simulation trial design. This works MUCH faster
+#'   when you have already used \code{\link{extractExpDetails_mult}} to get
+#'   information about how your simulation or simulations were set up and supply
+#'   that object to the argument \code{existing_exp_details}.
+#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
+#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   The nice thing about saving to Word is that the figure title and caption
@@ -459,6 +467,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             graph_title_size = 14, 
                             legend_position = NA,
                             prettify_compound_names = TRUE,
+                            qc_graph = FALSE,
+                            existing_exp_details = NA,
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5){
@@ -557,6 +567,31 @@ call. = FALSE)
    }
    # This doesn't check that they've specified legit colors or linetypes, but
    # I'm hoping that ggplot2 errors will cover that.
+   
+   # Getting experimental details if they didn't supply them and want to have a
+   # QC graph
+   if(qc_graph == TRUE){
+      
+      if("logical" %in% class(existing_exp_details)){ 
+         Deets <- extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                         exp_details = "all", 
+                                         annotate_output = FALSE)
+      } else {
+         
+         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                         "TRUE" = existing_exp_details, 
+                         "FALSE" = deannotateDetails(existing_exp_details))
+         
+         Deets <- as.data.frame(Deets) %>% filter(unique(ct_dataframe$File) %in% File)
+         
+         if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
+            Deets <- extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                            exp_details = "all", 
+                                            annotate_output = FALSE, 
+                                            existing_exp_details = Deets)
+         }
+      }
+   }
    
    
    # Main body of function -------------------------------------------------
@@ -2048,6 +2083,25 @@ call. = FALSE)
                  "both vertical" = AB,
                  "both horizontal" = ABhoriz)
    
+   if(qc_graph){
+      
+      QCTable <- formatTable_Simcyp(
+         annotateDetails(as.data.frame(Deets) %>%
+                            filter(File == unique(ct_dataframe$File)), 
+                         detail_set = "Methods") %>% 
+            select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
+         shading_column = Detail)
+      
+      # Out would have been just the graph or just the two arranged graphs at
+      # this point, so need to convert it to a list here.
+      Out <- list("Graph" = Out, 
+                  "QCGraph" = ggpubr::ggarrange(
+                     plotlist = list(Out, flextable::gen_grob(QCTable)),
+                     font.label = list(size = graph_title_size))
+      )
+   }
+   
+   
    if(complete.cases(save_graph)){
       FileName <- save_graph
       if(str_detect(FileName, "\\.")){
@@ -2061,6 +2115,14 @@ call. = FALSE)
       } else {
          FileName <- paste0(FileName, ".png")
          Ext <- "png"
+      }
+      
+      if(qc_graph){
+         ggsave(sub("\\.png", " - QC.png", Filename), 
+                height = fig_height, width = fig_width * 2, dpi = 600, 
+                plot = ggpubr::ggarrange(plotlist = list(Out$Graph,
+                                                         Out$QCGraph), 
+                                         nrow = 1))
       }
       
       if(Ext == "docx"){

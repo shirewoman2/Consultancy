@@ -47,6 +47,8 @@ ct_plot_overlay(
   graph_title_size = 14,
   legend_position = NA,
   prettify_compound_names = TRUE,
+  qc_graph = FALSE,
+  existing_exp_details = NA,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -417,6 +419,16 @@ legend, and \code{prettify_compound_names = TRUE} will make some reasonable
 guesses about what a prettier compound name should be. An example of
 setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".}
+
+\item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
+the graph where the left panel shows the original graph and the right panel
+shows information about the simulation trial design. This works MUCH faster
+when you have already used \code{\link{extractExpDetails_mult}} to get
+information about how your simulation or simulations were set up and supply
+that object to the argument \code{existing_exp_details}.}
+
+\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
+\code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
