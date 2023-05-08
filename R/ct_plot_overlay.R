@@ -2087,9 +2087,10 @@ call. = FALSE)
       
       QCTable <- formatTable_Simcyp(
          annotateDetails(as.data.frame(Deets) %>%
-                            filter(File == unique(ct_dataframe$File)), 
+                            filter(File %in% unique(ct_dataframe$File)), 
                          detail_set = "Methods") %>% 
-            select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
+            select(-c(SimulatorSection, matches("All files"), Sheet, 
+                      Notes, CompoundID, Compound)), 
          shading_column = Detail)
       
       # Out would have been just the graph or just the two arranged graphs at
