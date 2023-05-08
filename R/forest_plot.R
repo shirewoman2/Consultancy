@@ -784,6 +784,9 @@ forest_plot <- function(forest_dataframe,
     forest_dataframe <- forest_dataframe %>% 
         select(File, VictimCompound, CompoundID, Dose_sub, PerpCompound, 
                Dose_inhib, Tissue, PKparameter, SimOrObs,
+               any_of(as_label(facet_column_x)), 
+               any_of(as_label(y_axis_column)),
+               any_of(as_label(y_axis_column_secondary)),
                any_of(CenterStat), any_of(VarStat))
     
     if(any(complete.cases(PKparameters)) &&
