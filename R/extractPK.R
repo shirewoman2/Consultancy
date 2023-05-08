@@ -202,7 +202,7 @@ extractPK <- function(sim_data_file,
    }
    
    # Checking experimental details to only pull details that apply
-   if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+   if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                  exp_details = "Summary tab")
    } else {
