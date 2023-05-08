@@ -443,20 +443,19 @@ pksummary_mult <- function(sim_data_files = NA,
       
       # Getting summary data for the simulation(s)
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         Deets <- extractExpDetails(i, exp_details = "Summary tab")
+         Deets <- extractExpDetails(i, exp_details = "Summary tab") %>% 
+            as.data.frame()
       } else {
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 
                          "FALSE" = deannotateDetails(existing_exp_details)) 
-         
-         if("data.frame" %in% class(Deets)){
-            Deets <- Deets %>% filter(File == i)
-            
-            if(nrow(Deets) == 0){
-               Deets <- extractExpDetails(sim_data_file = i, 
-                                          exp_details = "Summary tab")
-            }
-         }
+      }
+      
+      Deets <- Deets %>% filter(File == i)
+      
+      if(nrow(Deets) == 0){
+         Deets <- extractExpDetails(sim_data_file = i, 
+                                    exp_details = "Summary tab")
       }
       
       # We need to know the dosing regimen for whatever compound they
@@ -480,13 +479,21 @@ pksummary_mult <- function(sim_data_files = NA,
       }
       
       # Only include compounds that are actually present.
-      AllPossCompounds <- c("substrate" = Deets$Substrate, 
-                            "primary metabolite 1" = Deets$PrimaryMetabolite1, 
-                            "primary metabolite 2" = Deets$PrimaryMetabolite2, 
-                            "secondary metabolite" = Deets$SecondaryMetabolite, 
-                            "inhibitor 1" = Deets$Inhibitor1, 
-                            "inhibitor 2" = Deets$Inhibitor2, 
-                            "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+      AllPossCompounds <- c(
+         "substrate" = Deets$Substrate, 
+         "primary metabolite 1" = ifelse("PrimaryMetabolite1" %in% names(Deets), 
+                                         Deets$PrimaryMetabolite1, NA),
+         "primary metabolite 2" = ifelse("PrimaryMetabolite2" %in% names(Deets),
+                                         Deets$PrimaryMetabolite2, NA),
+         "secondary metabolite" = ifelse("PrimaryMetabolite2" %in% names(Deets),
+                                         Deets$SecondaryMetabolite, NA),
+         "inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets),
+                                Deets$Inhibitor1, NA),
+         "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets),
+                                Deets$Inhibitor2, NA),
+         "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets),
+                                           Deets$Inhibitor1Metabolite, NA))
+      
       AllPossCompounds <- names(AllPossCompounds[complete.cases(AllPossCompounds)])
       
       if(any(compoundsToExtract_orig == "all")){
