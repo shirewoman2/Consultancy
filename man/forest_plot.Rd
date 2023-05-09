@@ -8,6 +8,9 @@ forest_plot(
   forest_dataframe,
   perp_or_victim,
   PKparameters = NA,
+  mean_type = "geometric",
+  variability_type = "90\% CI",
+  observed_PK = NA,
   y_axis_column = File,
   y_order = NA,
   y_axis_column_secondary,
@@ -20,6 +23,10 @@ forest_plot(
   prettify_compound_names = TRUE,
   legend_position = "none",
   color_set = "grays",
+  point_shape = c(24, 21),
+  graph_title = NA,
+  graph_title_size = 14,
+  pad_y_axis = TRUE,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -28,12 +35,13 @@ forest_plot(
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
 generated from running \code{\link{extractForestData}} on Simulator output
-files or a csv or Excel file with the same data. If this is a forest plot
-of perpetrator drug-drug interactions (DDIs), the column "Substrate" will
-be what is used to label the y axis. If it is a forest plot of victim DDIs,
-it will be the column "Inhibitor1". If, instead of the compound or
-inhibitor 1 names, you would like some other label to appear on the y axis,
-please see the argument \code{y_axis_labels}.}
+files or a csv or Excel file with the same data. (If it's an Excel file, it
+must have only one tab.) If this is a forest plot of perpetrator drug-drug
+interactions (DDIs), the column "VictimCompound" will be what is used to
+label the y axis. If it is a forest plot of victim DDIs, it will be the
+column "PerpCompound". If, instead of the substrate or effector names, you
+would like some other label to appear on the y axis, please see the
+argument \code{y_axis_labels}.}
 
 \item{perp_or_victim}{specify whether the drug of interest is a "victim" or
 "perpetrator". This will determine whether the graphs will be labeled on
@@ -46,6 +54,20 @@ parameters you extracted with \code{\link{extractForestData}} will be
 included. If you try to include a parameter that's not already present in
 forest_dataframe, it will be ignored. Enclose the parameters with
 \code{c(...)}.}
+
+\item{mean_type}{type of mean to extract; options are "geometric" (default),
+"arithmetic", or "median"}
+
+\item{variability_type}{type of variability to show as whiskers; options are
+"90\% CI" (default), "95\% CI", "5th to 95th percentiles", "range",
+"geometric CV", "arithmetic CV", or "standard deviation" ("sd" is also ok
+for that last one).}
+
+\item{observed_PK}{observed PK data, laid out just like
+\code{forest_dataframe} with the same columns except that you can omit the
+"File" column. Only observed data with the same perpetrator compound(s),
+the same victim compound(s), and the same summary statistics as in the
+simulated data will be included in the graph.}
 
 \item{y_axis_column}{the column by which you would like to break up the y
 axis, e.g., \code{y_axis_column = File} (default). You must specify
@@ -68,7 +90,7 @@ victim forest plots and with the substrate for perpetrator forest plots.}
   c("myfile1.xlsx", "myfile2.xlsx")}. The file names will automatically be
   replaced with the compounds of interest, so, if this were a victim forest
   plot, what will appear on the y axis will be, e.g., "itraconazole" and
-  "efavirenz".}
+  "efavirenz" rather than the actual file names.}
 
   \item{a character vector of the compounds of interest, named by the
   file}{e.g., \code{y_order = c("myfile1.xlsx" = "itraconazole",
@@ -92,13 +114,14 @@ assistance if you're unsure how to do that.) Let's say you have values in
 that column of "Day 1", "Day 5", and "Day 14".} \item{Set
 \code{y_axis_column = DoseDay}} \item{Set the order of the dose days:
 \code{y_order = c("Day 1", "Day 5", "Day 14")}. Please note that these must
-perfectly match the actual values in that DoseDay column.} \item{Set
-\code{y_axis_column_secondary = File} (Nota bene: At least one of
+perfectly match the actual values in that DoseDay column you made!}
+\item{Set \code{y_axis_column_secondary = File} (Nota bene: At least one of
 \code{y_axis_column} or \code{y_axis_column_secondary} MUST be set to
 File.)} \item{Last, set \code{y_order_secondary = c("buprenorphine",
 "repaglinide", "midazolam")}, where those are the substrates simulated in
 the order you want.}} This will break up the graphs first by the dose day
-and next by the substrate and do so in the order you specified.}
+and next by the substrate and do so in the order you specified. Unclear on
+how this works? Please check the examples at the bottom of this help file.}
 
 \item{y_order_secondary}{the order to use for the secondary y axis
 (optional). Just like with the argument \code{y_order}, this may be
@@ -159,6 +182,30 @@ those in "Clinical Drug Interaction Studies -- Cytochrome P450 Enzyme- and
 Transporter-Mediated Drug Interactions: Guidance for industry", US Food and
 Drug Administration Center for Drug Evaluation and Research, 2020, p. 19.}
 
+\item{point_shape}{the shape of the points to show for the center statistic
+(e.g., the geometric mean). The default is to show a white triangle for
+observed data and a white circle for simulated data, so \code{point_shape =
+c(24, 21)}. Any shapes used in R graphs will work; see options by typing
+\code{ggpubr::show_point_shapes()} into the console. If you have both
+simulated and observed data, enter two shapes with the first being the
+shape for the observed data and the second being the shape for the
+simulated data. If you have only simulated data, enter only one. If you
+enter more shapes than your graph requires, the extras will be ignored.}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14.}
+
+\item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
+is TRUE, which includes some generally reasonable padding). If set to
+FALSE, the y axis tick marks will be placed closer to the top and bottom of
+your data. If you want a \emph{specific} amount of y-axis padding, set this
+to a number; the default is \code{c(0.2, 0)}, which adds 20\% more space to
+the bottom and nothing to the top of the y axis. If you only specify one
+number, we'll assume that's the percent you want added to the bottom.}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -179,15 +226,16 @@ your local (not OneDrive) Documents folder.}
 Output is a graph.
 }
 \description{
-\code{forest_plot} creates forest plots of AUC and Cmax ratios. Please use
+\code{forest_plot} creates a forest plot of AUC and Cmax ratios. Please use
 the function \code{\link{extractForestData}} to generate the input data for
-\code{forest_dataframe}. The data will be broken up by: 1) the file name on
-either the main y axis or, if you would like, a secondary y axis and 2)
-anything you specify for \code{facet_column_x} in the horizontal direction.
-\strong{If you're the kind of person who prefers to wing it rather than
-reading the instructions when assembling furniture (we get that), we
-recommend skipping to the end of this help file and trying out the examples.}
-WARNING: This is a relatively new function and should be rigorously QC'ed.
+\code{forest_dataframe}. In the graph, the data will be broken up by: 1) the
+file name, which will be graphed on either the main y axis or, if you would
+like, a secondary y axis and 2) anything you specify for
+\code{facet_column_x}, which will be graphed in the horizontal direction.
+\strong{If you're a little confused here or you're just the kind of person
+who prefers to wing it rather than reading the instructions when assembling
+furniture, we recommend skipping to the end of this help file and trying out
+the examples to see what we mean.}
 }
 \examples{
 
@@ -315,7 +363,7 @@ forest_plot(forest_dataframe = ForestData,
             perp_or_victim = "victim",
             facet_column_x = Dose_sub,
             legend_position = "bottom",
-            color_set = c("insignificant" = "white", "weak" = "gray90",
+            color_set = c("negligible" = "white", "weak" = "gray90",
                           "moderate" = "gray75", strong = "gray50"))
 
 # -- Make the compound names match *exactly* what was in the simulator file

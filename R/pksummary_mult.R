@@ -441,6 +441,19 @@ pksummary_mult <- function(sim_data_files = NA,
       
       message(paste("Extracting data from", i))
       
+      # Checking that the file is, indeed, a simulator output file.
+      SheetNames <- tryCatch(readxl::excel_sheets(i),
+                             error = openxlsx::getSheetNames(i))
+      if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
+         # Using "warning" instead of "stop" here b/c I want this to be able to
+         # pass through to other functions and just skip any files that
+         # aren't simulator output.
+         warning(paste("The file", i,
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                 call. = FALSE)
+         next
+      }
+      
       # Getting summary data for the simulation(s)
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(i, exp_details = "Summary tab") %>% 
