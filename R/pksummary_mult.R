@@ -77,19 +77,10 @@
 #'   \item{"all" for all possible compounds present in the simulations}} To
 #'   specify multiple compounds, enclose the compound IDs with parentheses,
 #'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}
-#' @param observed_PK (optional) If you have a data.frame, a named numeric
-#'   vector, or an Excel or csv file with observed PK parameters, supply the
-#'   full file name in quotes or the data.frame or vector here, and the
-#'   simulated-to-observed mean ratios will be calculated. If you supply an
-#'   Excel file, R will be looking to read a tab named "observed PK". The
-#'   supplied data.frame or file \emph{must} include columns for the simulator
-#'   output Excel file (title this "File") and each of the PK parameters you
-#'   would like to compare, and those column names \emph{must} be among the PK
-#'   parameter options listed in \code{PKParameterDefinitions}. If you would
-#'   like the output table to include the observed data CV for any of the
-#'   parameters, add "_CV" to the end of the parameter name, e.g.,
-#'   "AUCinf_dose1_CV". Please see the "Example" section of this help file for
-#'   examples of how to set this up.
+#' @param tissues For which tissue(s) would you like the PK parameters to be
+#'   pulled? Options are any combination of "plasma" (default), "unbound
+#'   plasma", "blood", or "unbound blood". For multiple tissues, enclose them
+#'   with parentheses, e.g., \code{tissues = c("blood", "plasma")}
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. \itemize{
 #'
@@ -115,20 +106,13 @@
 #'   inhibitor or effector -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
-#'   and higher X\% confidence interval or X percentiles. Similarly, if you
-#'   request trial means, the values for tmax will be the range of medians for
-#'   the trials rather than the range of means.}}
+#'   and higher confidence interval or percentiles. Similarly, if you request
+#'   trial means, the values for tmax will be the range of medians for the
+#'   trials rather than the range of means.}}
 #'
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
 #'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
-#' @param existing_exp_details If you have already run
-#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
-#'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
-#'   "Input Sheet"} or \code{exp_details = "all"}), you can save some processing
-#'   time by supplying that object here, unquoted. If left as NA, this function
-#'   will run \code{extractExpDetails} behind the scenes to figure out some
-#'   information about your experimental set up.
 #' @param PKorder Would you like the order of the PK parameters to be the the
 #'   order specified in the Consultancy Report Template (default), or would you
 #'   like the order to match the order you specified with the argument
@@ -136,10 +120,38 @@
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Most of the time, this should be left as NA.
-#' @param tissues For which tissue(s) would you like the PK parameters to be
-#'   pulled? Options are any combination of "plasma" (default), "unbound
-#'   plasma", "blood", or "unbound blood". For multiple tissues, enclose them
-#'   with parentheses, e.g., \code{tissues = c("blood", "plasma")}
+#' @param observed_PK (optional) If you have a data.frame, a named numeric
+#'   vector, or an Excel or csv file with observed PK parameters, supply the
+#'   full file name in quotes or supply the unquoted name of the the data.frame
+#'   or vector here, and the simulated-to-observed mean ratios will be
+#'   calculated. If you supply an Excel file, R will be looking to read a tab
+#'   named \emph{exactly} "observed PK". The supplied data.frame or file
+#'   \emph{must} be set up in one of two possible ways: \itemize{
+#'
+#'   \item{Columns for each of the PK parameters you would like to compare, and
+#'   those column names \emph{must} be among the PK parameter options listed in
+#'   \code{PKParameterDefinitions}. If you would like the output table to
+#'   include the observed data CV for any of the parameters, add "_CV" to the
+#'   end of the parameter name, e.g., "AUCinf_dose1_CV".}
+#'
+#'   \item{A column titled "PKparameter" and a column titled "Value". (It's fine
+#'   if there are other columns as well.) All the items in the column
+#'   "PKparameter" \emph{must} be among the PK parameter options listed in
+#'   \code{PKParameterDefinitions}.}}
+#'
+#'   Additionally, if you have more than one set of PK parameters, you must
+#'   include a column titled "File" that lists which simulator output file
+#'   should be compared to that observed data. If there's only one set of PK
+#'   parameters, you can omit the column "File" and the PK data will be compared
+#'   to ALL the simulated files included in \code{sim_data_files}. Please see
+#'   the "Example" section of this help file for examples of how to set this up.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
+#'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
+#'   "Input Sheet"} or \code{exp_details = "all"}), you can save some processing
+#'   time by supplying that object here, unquoted. If left as NA, this function
+#'   will run \code{extractExpDetails} behind the scenes to figure out some
+#'   information about your experimental set up.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
 #' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
@@ -182,6 +194,15 @@
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
+#' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
+#'   yellow the cells on the source Excel file where the data came from. This
+#'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
+#'   the output with \code{save_table}. \strong{Note from LSh:} For reasons that
+#'   I honestly do not know, highlighting the cells on the various AUC tabs from
+#'   R also causes the Simcyp watermark and blue background to disappear from
+#'   the "Summary" tab, "Input Sheet", and the tab with the population
+#'   information. These tabs do remain protected (you can't  change anything on
+#'   them), but you should be aware that watermark and blue background changes.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -241,416 +262,534 @@ pksummary_mult <- function(sim_data_files = NA,
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
                            checkDataSource = TRUE, 
+                           highlightExcel = FALSE,
                            save_table = NA, 
                            fontsize = 11, 
                            ...){
-    
-    # Error catching ----------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
-    
-    # Checking whether they've supplied pksummary_table args instead of
-    # pksummary_mult args
-    if("sim_data_file" %in% names(match.call()) &
-       "sim_data_files" %in% names(match.call()) == FALSE){
-        sim_data_files <- sys.call()$sim_data_file
-    }
-    
-    if("compoundToExtract" %in% names(match.call()) &
-       "compoundsToExtract" %in% names(match.call()) == FALSE){
-        compoundsToExtract <- sys.call()$compoundToExtract
-    }
-    
-    if("tissue" %in% names(match.call()) &
-       "tissues" %in% names(match.call()) == FALSE){
-        tissues <- sys.call()$tissue
-    }
-    
-    # Check for appropriate input for arguments
-    compoundsToExtract <- tolower(compoundsToExtract)
-    
-    PossCmpd <- c("substrate", "primary metabolite 1", "primary metabolite 2",
-                  "secondary metabolite",
-                  "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
-                  "inhibitor 2 metabolite", "all")
-    
-    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
-        warning(paste0("The compound(s) ", 
-                       str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
-                       " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                       str_comma(paste0("`", PossCmpd, "`"))), 
-                call. = FALSE)
-        compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
-    }
-    
-    compoundsToExtract_orig <- compoundsToExtract
-    if(complete.cases(compoundsToExtract) && "all" %in% compoundsToExtract){
-        compoundsToExtract <- c("substrate", "primary metabolite 1", "primary metabolite 2",
-                                "secondary metabolite",
-                                "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
-                                "inhibitor 2 metabolite")
-    }
-    
-    tissues <- tolower(tissues)
-    if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
-        warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
-                call. = FALSE)
-        tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
-    }
-    
-    if(extract_forest_data & includeConfInt == FALSE){
-        warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
-                call. = FALSE)
-        includeConfInt <- TRUE
-    }
-    
-    # Main body of function --------------------------------------------------
-    
-    # If user did not supply specific files, then extract all the files in
-    # the current folder that end in "xlsx".
-    if(length(unique(sim_data_files)) == 1 && is.na(sim_data_files)){
-        sim_data_files <- list.files(pattern = "xlsx$")
-        sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-    }
-    
-    ## Read obs data --------------------------------------------------------
-    # Read in the observed_PK data if it's not already a data.frame. Note that
-    # the class of observed_PK will be logical if left as NA.
-    if(class(observed_PK)[1] == "character"){
-        observed_PKDF <- switch(str_extract(observed_PK, "csv|xlsx"), 
-                                "csv" = read.csv(observed_PK), 
-                                "xlsx" = xlsx::read.xlsx(observed_PK, 
-                                                         sheetName = "observed PK"))
-        # If there's anything named anything like "File", use that for the
-        # "File" column. This is useful to deal with capitalization mismatches
-        # and also because, if the user saves the file as certain kinds of csv
-        # files, R has trouble importing and will add extra symbols to the 1st
-        # column name.
-        names(observed_PKDF)[str_detect(tolower(names(observed_PKDF)), "file")][1] <- 
-            "File"
-        
-        sim_data_files <- union(sim_data_files, observed_PKDF$File)
-        sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
-        
-        
-    } 
-    
-    if("data.frame" %in% class(observed_PK)){
-        observed_PKDF <- unique(observed_PK)
-    }
-    
-    if(exists("observed_PKDF", inherits = FALSE) &&
-       "File" %in% names(observed_PKDF) == FALSE){
-        stop("You must include a column titled 'File' with the observed PK so that this function knows which simulator output file to pull simulated PK parameters from.", 
-             call. = FALSE)
-    }
-    
-    if(exists("observed_PKDF")){
-        # If user has not included "xlsx" in file name, add that.
-        observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
-            paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
-                   ".xlsx")
-    }
-    
-    # If user has not included "xlsx" in file name, add that.
-    sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
-        paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
-               ".xlsx")
-    
-    # Making sure that we're only extracting each file once
-    sim_data_files <- unique(sim_data_files)
-    
-    # Making sure that all the files exist before attempting to pull data
-    if(all(complete.cases(sim_data_files)) && 
-       any(file.exists(sim_data_files) == FALSE)){
-        MissingSimFiles <- sim_data_files[
-            which(file.exists(sim_data_files) == FALSE)]
-        warning(paste0("The file(s) ", 
-                       str_comma(paste0("`", MissingSimFiles, "`")), 
-                       " is/are not present and thus will not be extracted."), 
-                call. = FALSE)
-        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
-    }
-    
-    ## Getting simulated data ------------------------------------------------
-    MyPKResults <- list()
-    OutQC <- list()
-    FD <- list()
-    
-    for(i in sim_data_files){
-        
-        MyPKResults[[i]] <- list()
-        OutQC[[i]] <- list()
-        FD[[i]] <- list()
-        
-        message(paste("Extracting data from", i))
-        
-        # Getting summary data for the simulation(s)
-        if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-            Deets <- extractExpDetails(i, exp_details = "Summary tab")
-        } else {
-            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                            "TRUE" = existing_exp_details, 
-                            "FALSE" = deannotateDetails(existing_exp_details)) 
-            
-            if("data.frame" %in% class(Deets)){
-                Deets <- Deets %>% filter(File == i)
-                
-                if(nrow(Deets) == 0){
-                    Deets <- extractExpDetails(sim_data_file = i, 
-                                               exp_details = "Summary tab")
-                }
-            }
-        }
-        
-        # We need to know the dosing regimen for whatever compound they
-        # requested, but, if the compoundID is inhibitor 2, then that's listed
-        # on the input tab, and we'll need to extract exp details for that, too.
-        if("inhibitor 2" %in% compoundsToExtract){
-            DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
-                                                 exp_details = "Input Sheet")
-            Deets <- c(as.list(Deets), DeetsInputSheet)
-        }
-        
-        # Checking that the file is, indeed, a simulator output file.
-        if(length(Deets) == 0){
-            # Using "warning" instead of "stop" here b/c I want this to be able to
-            # pass through to other functions and just skip any files that
-            # aren't simulator output.
-            warning(paste("The file", i,
-                          "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+   
+   # Error catching ----------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Checking whether they've supplied pksummary_table args instead of
+   # pksummary_mult args
+   if("sim_data_file" %in% names(match.call()) &
+      "sim_data_files" %in% names(match.call()) == FALSE){
+      sim_data_files <- sys.call()$sim_data_file
+   }
+   
+   if("compoundToExtract" %in% names(match.call()) &
+      "compoundsToExtract" %in% names(match.call()) == FALSE){
+      compoundsToExtract <- sys.call()$compoundToExtract
+   }
+   
+   if("tissue" %in% names(match.call()) &
+      "tissues" %in% names(match.call()) == FALSE){
+      tissues <- sys.call()$tissue
+   }
+   
+   # Check for appropriate input for arguments
+   compoundsToExtract <- tolower(compoundsToExtract)
+   
+   PossCmpd <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+                 "secondary metabolite",
+                 "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                 "inhibitor 2 metabolite", "all")
+   
+   if(any(compoundsToExtract %in% PossCmpd == FALSE)){
+      warning(paste0("The compound(s) ", 
+                     str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
+                     " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                     str_comma(paste0("`", PossCmpd, "`"))), 
+              call. = FALSE)
+      compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
+   }
+   
+   compoundsToExtract_orig <- compoundsToExtract
+   if(complete.cases(compoundsToExtract) && "all" %in% compoundsToExtract){
+      compoundsToExtract <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+                              "secondary metabolite",
+                              "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                              "inhibitor 2 metabolite")
+   }
+   
+   tissues <- tolower(tissues)
+   if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+              call. = FALSE)
+      tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
+   }
+   
+   if(extract_forest_data & includeConfInt == FALSE){
+      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
+              call. = FALSE)
+      includeConfInt <- TRUE
+   }
+   
+   # Main body of function --------------------------------------------------
+   
+   # If user did not supply specific files, then extract all the files in
+   # the current folder that end in "xlsx".
+   if(length(unique(sim_data_files)) == 1 && is.na(sim_data_files)){
+      sim_data_files <- list.files(pattern = "xlsx$")
+      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+   }
+   
+   ## Read obs data --------------------------------------------------------
+   # Read in the observed_PK data if it's not already a data.frame. Note that
+   # the class of observed_PK will be logical if left as NA.
+   if(class(observed_PK)[1] == "character"){
+      observed_PKDF <- switch(str_extract(observed_PK, "csv|xlsx"), 
+                              "csv" = read.csv(observed_PK), 
+                              "xlsx" = xlsx::read.xlsx(observed_PK, 
+                                                       sheetName = "observed PK"))
+      # If there's anything named anything like "File", use that for the
+      # "File" column. This is useful to deal with capitalization mismatches
+      # and also because, if the user saves the file as certain kinds of csv
+      # files, R has trouble importing and will add extra symbols to the 1st
+      # column name.
+      names(observed_PKDF)[str_detect(tolower(names(observed_PKDF)), "file")][1] <- 
+         "File"
+      
+      sim_data_files <- union(sim_data_files, observed_PKDF$File)
+      sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
+      
+      
+   } 
+   
+   if("data.frame" %in% class(observed_PK)){
+      observed_PKDF <- unique(observed_PK)
+   }
+   
+   if(exists("observed_PKDF", inherits = FALSE) &&
+      "File" %in% names(observed_PKDF) == FALSE){
+      
+      # If there is only one value for each PK parameter, then use that set of
+      # PK data to compare to ALL of the simulated data.
+      if(any(names(observed_PKDF) %in% AllPKParameters$PKparameter)){
+         if(nrow(observed_PKDF) == 1){
+            observed_PKDF <- bind_cols(observed_PKDF, "File" = sim_data_files)
+         } else {
+            # If there is more than one value for each PK parameter, though,
+            # then we don't know what to compare. Give an error message and
+            # omit the S/O rows.
+            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
                     call. = FALSE)
-            next()
-        }
-        
-        # Only include compounds that are actually present.
-        AllPossCompounds <- c("substrate" = Deets$Substrate, 
-                              "primary metabolite 1" = Deets$PrimaryMetabolite1, 
-                              "primary metabolite 2" = Deets$PrimaryMetabolite2, 
-                              "secondary metabolite" = Deets$SecondaryMetabolite, 
-                              "inhibitor 1" = Deets$Inhibitor1, 
-                              "inhibitor 2" = Deets$Inhibitor2, 
-                              "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
-        AllPossCompounds <- names(AllPossCompounds[complete.cases(AllPossCompounds)])
-        
-        if(any(compoundsToExtract_orig == "all")){
-            compoundsToExtract <- intersect(compoundsToExtract, AllPossCompounds)
-        }
-        
-        for(j in compoundsToExtract){
-            message(paste("Extracting data for compound =", j))
+            observed_PKDF <- NULL
+         }
+      } else {
+         # Checking for unique PK parameters
+         Check <- observed_PKDF %>% select(PKparameter, Value) %>% 
+            unique() %>% group_by(PKparameter) %>% 
+            summarize(N = n())
+         if(any(Check$N > 1)){
+            # If there is more than one value for each PK parameter, though,
+            # then we don't know what to compare. Give an error message and
+            # omit the S/O rows.
+            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
+                    call. = FALSE)
+            observed_PKDF <- NULL
+         } else {
+            observed_PKDF <- observed_PKDF %>% 
+               left_join(expand_grid(PKparameter = unique(observed_PKDF$PKparameter), 
+                                     File = sim_data_files), 
+                         by = "PKparameter",
+                         multiple = "all")
+         }
+      }
+   }
+   
+   if(exists("observed_PKDF")){
+      # If user has not included "xlsx" in file name, add that.
+      observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
+         paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
+                ".xlsx")
+   }
+   
+   # If user has not included "xlsx" in file name, add that.
+   sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
+      paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
+             ".xlsx")
+   
+   # Making sure that we're only extracting each file once
+   sim_data_files <- unique(sim_data_files)
+   
+   # Making sure that all the files exist before attempting to pull data
+   if(all(complete.cases(sim_data_files)) && 
+      any(file.exists(sim_data_files) == FALSE)){
+      MissingSimFiles <- sim_data_files[
+         which(file.exists(sim_data_files) == FALSE)]
+      warning(paste0("The file(s) ", 
+                     str_comma(paste0("`", MissingSimFiles, "`")), 
+                     " is/are not present and thus will not be extracted."), 
+              call. = FALSE)
+      sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+   }
+   
+   ## Getting simulated data ------------------------------------------------
+   MyPKResults <- list()
+   OutQC <- list()
+   FD <- list()
+   
+   for(i in sim_data_files){
+      
+      MyPKResults[[i]] <- list()
+      OutQC[[i]] <- list()
+      FD[[i]] <- list()
+      
+      message(paste("Extracting data from", i))
+      
+      # Getting summary data for the simulation(s)
+      if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
+         Deets <- extractExpDetails(i, exp_details = "Summary tab") %>% 
+            as.data.frame()
+      } else {
+         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                         "TRUE" = existing_exp_details, 
+                         "FALSE" = deannotateDetails(existing_exp_details)) 
+      }
+      
+      Deets <- Deets %>% filter(File == i)
+      
+      if(nrow(Deets) == 0){
+         Deets <- extractExpDetails(sim_data_file = i, 
+                                    exp_details = "Summary tab")
+      }
+      
+      # We need to know the dosing regimen for whatever compound they
+      # requested, but, if the compoundID is inhibitor 2, then that's listed
+      # on the input tab, and we'll need to extract exp details for that, too.
+      if("inhibitor 2" %in% compoundsToExtract){
+         DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
+                                              exp_details = "Input Sheet")
+         Deets <- c(as.list(Deets), DeetsInputSheet)
+      }
+      
+      # Checking that the file is, indeed, a simulator output file.
+      if(length(Deets) == 0){
+         # Using "warning" instead of "stop" here b/c I want this to be able to
+         # pass through to other functions and just skip any files that
+         # aren't simulator output.
+         warning(paste("The file", i,
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                 call. = FALSE)
+         next()
+      }
+      
+      # Only include compounds that are actually present.
+      AllPossCompounds <- c(
+         "substrate" = Deets$Substrate, 
+         "primary metabolite 1" = ifelse("PrimaryMetabolite1" %in% names(Deets), 
+                                         Deets$PrimaryMetabolite1, NA),
+         "primary metabolite 2" = ifelse("PrimaryMetabolite2" %in% names(Deets),
+                                         Deets$PrimaryMetabolite2, NA),
+         "secondary metabolite" = ifelse("PrimaryMetabolite2" %in% names(Deets),
+                                         Deets$SecondaryMetabolite, NA),
+         "inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets),
+                                Deets$Inhibitor1, NA),
+         "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets),
+                                Deets$Inhibitor2, NA),
+         "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets),
+                                           Deets$Inhibitor1Metabolite, NA))
+      
+      AllPossCompounds <- names(AllPossCompounds[complete.cases(AllPossCompounds)])
+      
+      if(any(compoundsToExtract_orig == "all")){
+         compoundsToExtract <- intersect(compoundsToExtract, AllPossCompounds)
+      }
+      
+      for(j in compoundsToExtract){
+         message(paste("Extracting data for compound =", j))
+         
+         MyPKResults[[i]][[j]] <- list()
+         OutQC[[i]][[j]] <- list()
+         FD[[i]][[j]] <- list()
+         
+         for(k in tissues){
+            message(paste("Extracting data for tissue =", k))
+            suppressMessages(
+               temp <- pksummary_table(
+                  sim_data_file = i,
+                  compoundToExtract = j,
+                  tissue = k, 
+                  observed_PK = switch(
+                     as.character(exists("observed_PKDF", inherits = FALSE) &&
+                                     i %in% observed_PKDF$File), 
+                     "TRUE" = observed_PKDF %>% filter(File == i), 
+                     "FALSE" = NA),
+                  PKparameters = PKparameters, 
+                  PKorder = PKorder, 
+                  sheet_PKparameters = sheet_PKparameters, 
+                  existing_exp_details = Deets,
+                  mean_type = mean_type,
+                  includeCV = includeCV,
+                  includeRange = includeRange,
+                  includeConfInt = includeConfInt, 
+                  includePerc = includePerc, 
+                  includeTrialMeans = includeTrialMeans,
+                  concatVariability = concatVariability,
+                  adjust_conc_units = adjust_conc_units,
+                  prettify_columns = prettify_columns, 
+                  extract_forest_data = extract_forest_data,
+                  checkDataSource = checkDataSource,
+                  prettify_compound_names = c("inhibitor" = "effector",
+                                              "substrate" = "substrate"))
+            )
             
-            MyPKResults[[i]][[j]] <- list()
-            OutQC[[i]][[j]] <- list()
-            FD[[i]][[j]] <- list()
-            
-            for(k in tissues){
-                message(paste("Extracting data for tissue =", k))
-                suppressMessages(
-                    temp <- pksummary_table(
-                        sim_data_file = i,
-                        compoundToExtract = j,
-                        tissue = k, 
-                        observed_PK = switch(
-                            as.character(exists("observed_PKDF", inherits = FALSE) &&
-                                         i %in% observed_PKDF$File), 
-                            "TRUE" = observed_PKDF %>% filter(File == i), 
-                            "FALSE" = NA),
-                        PKparameters = PKparameters, 
-                        PKorder = PKorder, 
-                        sheet_PKparameters = sheet_PKparameters, 
-                        existing_exp_details = Deets,
-                        mean_type = mean_type,
-                        includeCV = includeCV,
-                        includeRange = includeRange,
-                        includeConfInt = includeConfInt, 
-                        includePerc = includePerc, 
-                        includeTrialMeans = includeTrialMeans,
-                        concatVariability = concatVariability,
-                        adjust_conc_units = adjust_conc_units,
-                        prettify_columns = prettify_columns, 
-                        extract_forest_data = extract_forest_data,
-                        checkDataSource = checkDataSource,
-                        prettify_compound_names = c("inhibitor" = "effector",
-                                                    "substrate" = "substrate"))
-                )
-                
-                if(length(temp) == 0){
-                    rm(temp)
-                    next
-                }
-                
-                MyPKResults[[i]][[j]][[k]] <- switch(as.character("list" %in% class(temp)), 
-                                                     "TRUE" = temp$Table, 
-                                                     "FALSE" = temp) %>% 
-                    mutate(File = i, 
-                           CompoundID = j, 
-                           Tissue = k)
-                
-                if(checkDataSource){
-                    OutQC[[i]][[j]][[k]] <- temp$QC
-                } 
-                
-                if(extract_forest_data){
-                    FD[[i]][[j]][[k]] <- temp$ForestData
-                }
-                
-                rm(temp)
+            if(length(temp) == 0){
+               rm(temp)
+               next
             }
             
-            MyPKResults[[i]][[j]] <- bind_rows(MyPKResults[[i]][[j]])
-            OutQC[[i]][[j]] <- bind_rows(OutQC[[i]][[j]])
-            FD[[i]][[j]] <- bind_rows(FD[[i]][[j]])
-        }
-        
-        MyPKResults[[i]] <- bind_rows(MyPKResults[[i]])
-        OutQC[[i]] <- bind_rows(OutQC[[i]])
-        FD[[i]] <- bind_rows(FD[[i]])
-        
-    }
-    
-    if(length(MyPKResults) == 0){
-        warning("No PK data could be found in the files ", 
-                str_comma(paste0("`", sim_data_files, "`")),
-                call. = FALSE)
-        return(list())
-    }
-    
-    MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = length) > 0])
-    OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = length) > 0])
-    FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
-    
-    if(extract_forest_data & # NOT SURE THIS IS NECESSARY
-       any(str_detect(names(bind_rows(MyPKResults)), "ratio")) == FALSE){
-        warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.", 
-                call. = FALSE)
-        
-        extract_forest_data <- FALSE
-    } 
-    
-    ## Formatting and arranging the data -------------------------------------
-    if(PKorder == "default"){
-        
-        MyPKResults <- bind_rows(MyPKResults)
-        
-        suppressMessages(
-            MyPKResults <- MyPKResults %>% 
+            MyPKResults[[i]][[j]][[k]] <- switch(as.character("list" %in% class(temp)), 
+                                                 "TRUE" = temp$Table, 
+                                                 "FALSE" = temp) %>% 
+               mutate(File = i, 
+                      CompoundID = j, 
+                      Tissue = k)
+            
+            if(checkDataSource){
+               OutQC[[i]][[j]][[k]] <- temp$QC
+            } 
+            
+            if(extract_forest_data){
+               FD[[i]][[j]][[k]] <- temp$ForestData
+            }
+            
+            rm(temp)
+         }
+         
+         MyPKResults[[i]][[j]] <- bind_rows(MyPKResults[[i]][[j]])
+         OutQC[[i]][[j]] <- bind_rows(OutQC[[i]][[j]])
+         FD[[i]][[j]] <- bind_rows(FD[[i]][[j]])
+      }
+      
+      MyPKResults[[i]] <- bind_rows(MyPKResults[[i]])
+      OutQC[[i]] <- bind_rows(OutQC[[i]])
+      FD[[i]] <- bind_rows(FD[[i]])
+      
+   }
+   
+   if(length(MyPKResults) == 0){
+      warning("No PK data could be found in the files ", 
+              str_comma(paste0("`", sim_data_files, "`")),
+              call. = FALSE)
+      return(list())
+   }
+   
+   MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = length) > 0])
+   OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = length) > 0])
+   
+   if(extract_forest_data){
+      # Need to deal with possible character data for custom dosing before row
+      # binding for FD
+      suppressWarnings(
+         FD <- map(FD, .f = function(x) x %>% mutate(across(.cols = c("Dose_sub", "Dose_inhib"), 
+                                                            .fns = as.numeric))))
+      FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
+      
+   }
+   
+   if(extract_forest_data & # NOT SURE THIS IS NECESSARY
+      any(str_detect(names(bind_rows(MyPKResults)), "ratio")) == FALSE){
+      warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.", 
+              call. = FALSE)
+      
+      extract_forest_data <- FALSE
+   } 
+   
+   ## Formatting and arranging the data -------------------------------------
+   if(PKorder == "default"){
+      
+      MyPKResults <- bind_rows(MyPKResults)
+      
+      suppressMessages(
+         MyPKResults <- MyPKResults %>% 
             select(Statistic, 
                    any_of(data.frame(PrettifiedNames = names(MyPKResults)) %>%
-                          left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
-                          filter(complete.cases(SortOrder)) %>% 
-                          arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
+                             left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
+                             filter(complete.cases(SortOrder)) %>% 
+                             arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
                    everything()) %>% 
             relocate(c(CompoundID, Tissue, File), .after = last_col())
-        )
-        
-    } else {
-        
-        MyPKResults <- bind_rows(MyPKResults) %>% 
-            select(Statistic, CompoundID, Tissue, everything()) %>% 
-            relocate(c(CompoundID, Tissue, File), .after = last_col())
-    }
-    
-    ## Saving --------------------------------------------------------------
-    if(complete.cases(save_table)){
-        
-        # Checking whether they have specified just "docx" or just "csv" for
-        # output b/c then, we'll use "PK summary table" as file name.
-        if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
-            OutPath <- "."
-            save_table <- paste0("PK summary table.", sub("\\.", "", save_table))
-        } else {
-            # If they supplied something other than just "docx" or just "csv",
-            # then check whether that file name is formatted appropriately.
-            
-            if(str_detect(basename(save_table), "\\..*")){
-                if(str_detect(basename(save_table), "\\.docx") == FALSE){
-                    # If they specified a file extension that wasn't docx, make that
-                    # file extension be .csv
-                    save_table <- sub("\\..*", ".csv", save_table)
-                }
-            } else {
-                # If they didn't specify a file extension at all, make it .csv. 
-                save_table <- paste0(save_table, ".csv")
+      )
+      
+   } else {
+      
+      MyPKResults <- bind_rows(MyPKResults) %>% 
+         select(Statistic, CompoundID, Tissue, everything()) %>% 
+         relocate(c(CompoundID, Tissue, File), .after = last_col())
+   }
+   
+   ## Saving --------------------------------------------------------------
+   if(complete.cases(save_table)){
+      
+      # Checking whether they have specified just "docx" or just "csv" for
+      # output b/c then, we'll use "PK summary table" as file name.
+      if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
+         OutPath <- "."
+         save_table <- paste0("PK summary table.", sub("\\.", "", save_table))
+      } else {
+         # If they supplied something other than just "docx" or just "csv",
+         # then check whether that file name is formatted appropriately.
+         
+         if(str_detect(basename(save_table), "\\..*")){
+            if(str_detect(basename(save_table), "\\.docx") == FALSE){
+               # If they specified a file extension that wasn't docx, make that
+               # file extension be .csv
+               save_table <- sub("\\..*", ".csv", save_table)
             }
+         } else {
+            # If they didn't specify a file extension at all, make it .csv. 
+            save_table <- paste0(save_table, ".csv")
+         }
+         
+         # Now that the file should have an appropriate extension, check what
+         # the path and basename should be.
+         OutPath <- dirname(save_table)
+         save_table <- basename(save_table)
+      }
+      
+      if(str_detect(save_table, "\\.csv")){
+         
+         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
+         
+         # This is when they want a csv file as output. In this scenario,
+         # changing the value "simulated" in the list of stats to include
+         # whether it was arithmetic or geometric b/c that info is included
+         # in the Word file but not in the table itself.
+         MyPKResults <- MyPKResults %>% 
+            mutate(Statistic = sub("Simulated", 
+                                   paste("Simulated", MeanType, "mean"), Statistic))
+         
+         WarningDF <- data.frame(Col1 = "WARNING:",
+                                 Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")
+         names(WarningDF) <- names(MyPKResults)[1:2]
+         
+         write.csv(bind_rows(MyPKResults, WarningDF),
+                   paste0(OutPath, "/", save_table), row.names = F)
+         
+      } else {
+         # This is when they want a Word file as output
+         
+         OutPath <- dirname(save_table)
+         
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(save_table)
+         FromCalcPKRatios <- FALSE
+         
+         rmarkdown::render(
+            system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
+                        package="SimcypConsultancy"),
+            output_dir = OutPath, 
+            output_file = FileName, 
+            quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+      }
+      
+      if(checkDataSource){
+         
+         if(complete.cases(save_table)){
             
-            # Now that the file should have an appropriate extension, check what
-            # the path and basename should be.
-            OutPath <- dirname(save_table)
-            save_table <- basename(save_table)
-        }
-        
-        if(str_detect(save_table, "\\.csv")){
-            
-            MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
-            
-            # This is when they want a csv file as output. In this scenario,
-            # changing the value "simulated" in the list of stats to include
-            # whether it was arithmetic or geometric b/c that info is included
-            # in the Word file but not in the table itself.
-            MyPKResults <- MyPKResults %>% 
-                mutate(Statistic = sub("Simulated", 
-                                       paste("Simulated", MeanType, "mean"), Statistic))
-            
-            WarningDF <- data.frame(Col1 = "WARNING:",
-                                    Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")
-            names(WarningDF) <- names(MyPKResults)[1:2]
-            
-            write.csv(bind_rows(MyPKResults, WarningDF),
-                      paste0(OutPath, "/", save_table), row.names = F)
-            
-        } else {
-            # This is when they want a Word file as output
-            
-            OutPath <- dirname(save_table)
-            
-            if(OutPath == "."){
-                OutPath <- getwd()
-            }
-            
-            FileName <- basename(save_table)
-            FromCalcPKRatios <- FALSE
-            
-            rmarkdown::render(
-                system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
-                            package="SimcypConsultancy"),
-                output_dir = OutPath, 
-                output_file = FileName, 
-                quiet = TRUE)
-            # Note: The "system.file" part of the call means "go to where the
-            # package is installed, search for the file listed, and return its
-            # full path.
-            
-        }
-        
-        if(checkDataSource){
             write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
-        }
-        
-        if(extract_forest_data){
-            write.csv(bind_rows(FD), sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
-        }
-        
-    }
-    
-    Out <- list("Table" = MyPKResults)
-    
-    if(checkDataSource){
-        Out[["QC"]] <- OutQC
-    }
-    
-    if(extract_forest_data){
-        Out[["ForestData"]] <- bind_rows(FD)
-    }
-    
-    if(length(Out) == 1){
-        Out <- Out[["Table"]]
-    }
-    
-    return(Out)
-    
-    }
+            
+            if(highlightExcel){
+               # Need to convert letter name of column back to a number
+               XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
+               
+               # Determining which stats we'll need to highlight
+               StatsToHighlight <- switch(MeanType, 
+                                          "arithmetic" = "mean", 
+                                          "geometric" = "geomean")
+               if(includeConfInt){
+                  StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
+               }
+               
+               if(includeCV){
+                  StatsToHighlight <- c(StatsToHighlight, 
+                                        switch(MeanType, 
+                                               "arithmetic" = "CV", 
+                                               "geometric" = "GCV"))
+               }
+               
+               if(includePerc){
+                  StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
+               }
+               
+               if(includeRange){
+                  StatsToHighlight <- c(StatsToHighlight, "min", "max")
+               }
+               
+               # Setting up the cell style to use
+               ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
+                                   halign = "center", valign = "center", 
+                                   border = "TopBottomLeftRight",
+                                   borderStyle = "hair")
+               
+               for(k in unique(OutQC$File)){
+                  # Loading the workbook so that we can highlight things
+                  wb <- openxlsx::loadWorkbook(k)
+                  
+                  for(i in unique(OutQC$Tab)){
+                     
+                     ToHighlight <- OutQC %>% filter(File == k & Tab == i) %>% 
+                        ungroup() %>% 
+                        select(File, Tab, any_of(StatsToHighlight)) %>% 
+                        pivot_longer(cols = -c("File", "Tab"), 
+                                     names_to = "Stat", values_to = "Cell") %>% 
+                        mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
+                               Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
+                     ToHighlight$Column <- as.numeric(sapply(
+                        ToHighlight$Column, FUN = function(x) which(XLCols == x)))
+                     
+                     # Applying the highlighting to the workbook
+                     for(j in 1:nrow(ToHighlight)){
+                        addStyle(wb, sheet = i, style = ToQC,
+                                 rows = ToHighlight$Row[j], 
+                                 cols = ToHighlight$Column[j])
+                     }
+                     
+                     rm(ToHighlight)
+                  }
+                  
+                  saveWorkbook(wb, file = k, overwrite = TRUE)
+                  
+                  rm(wb)
+               }
+            }
+         }
+      }
+      
+      if(extract_forest_data){
+         write.csv(bind_rows(FD), sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
+      }
+      
+   }
+   
+   Out <- list("Table" = MyPKResults)
+   
+   if(checkDataSource){
+      Out[["QC"]] <- OutQC
+   }
+   
+   if(extract_forest_data){
+      Out[["ForestData"]] <- bind_rows(FD)
+   }
+   
+   if(length(Out) == 1){
+      Out <- Out[["Table"]]
+   }
+   
+   return(Out)
+   
+}
 
 
