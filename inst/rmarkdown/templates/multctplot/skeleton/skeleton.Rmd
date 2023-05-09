@@ -101,7 +101,7 @@ CapText2 <- switch(figure_type,
 
 ```{r QC, echo = FALSE, results = "asis"}
 
-if(qc_graphs){
+if(qc_graph){
     OptionalSection <- knitr::knit_child(
         system.file("rmarkdown/templates/ctplotmult-qc/skeleton/skeleton.Rmd",
                     package="SimcypConsultancy"), 
