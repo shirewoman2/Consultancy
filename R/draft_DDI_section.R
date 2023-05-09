@@ -384,7 +384,8 @@ draft_DDI_section <- function(sim_data_file,
    ## exp details -----------------------------------------------------
    # If the user did not supply experimental details, extract them.
    if(class(exp_detail_data) == "logical"){
-      exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all")
+      exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all") %>% 
+         as.data.frame()
    }
    
    if(class(exp_detail_data) == "data.frame"){
@@ -402,7 +403,8 @@ draft_DDI_section <- function(sim_data_file,
           names(exp_detail_data)) == FALSE){
       warning("It appears that, when you generated `exp_detail_data`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. We will re-extract the simulation experimental details using extractExpDetails and set `exp_details = 'all'`.", 
               call. = FALSE)
-      exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all")
+      exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all") %>% 
+         as.data.frame()
    }
    
    exp_detail_data <- exp_detail_data %>% filter(File == sim_data_file)
