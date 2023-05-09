@@ -423,6 +423,7 @@ CapText2 <- switch(
             mean_type_graph, 
             "mean data"))
 
+NextChunkHeight <- ifelse(figure_type_inhib %in% c("both", "both vertical"), 6, 3)
 
 ```
 
@@ -433,7 +434,7 @@ CapText2 <- switch(
 *Figure XXX. Simulated `r tissue` concentration-time profiles of `r paste(exp_detail_data$Dose_inhib, "mg", DoseFreq_inhib, MyEffector)` in `r tidyPop(exp_detail_data$Population)$Population`.*
 
 
-```{r ctplotInhib, fig.width = 5, fig.height = ifelse(figure_type_inhib %in% c("both", "both vertical"), 6, 3)}
+```{r ctplotInhib, fig.width=5, fig.height=NextChunkHeight}
 
 ct_plot(ct_dataframe %>% filter(File == sim_data_file & Tissue == tissue,
                                 CompoundID == "inhibitor 1"), 

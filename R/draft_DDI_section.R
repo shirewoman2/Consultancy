@@ -429,9 +429,9 @@ draft_DDI_section <- function(sim_data_file,
    
    ## enz abund -----------------------------------------------------------
    if(include_enz_plot & class(sim_enz_dataframe)[1] == "logical"){
-      sim_enz_dataframe <- extractEnzAbund(sim_data_file = sim_data_file,
-                                           enzyme = enzyme, 
-                                           tissue = c("liver", "gut"))
+      sim_enz_dataframe <- extractEnzAbund_mult(sim_data_files = sim_data_file,
+                                                enzyme = enzyme, 
+                                                tissue = c("liver", "gut"))
    }
    
    ## knitting ----------------------------------------------------------
