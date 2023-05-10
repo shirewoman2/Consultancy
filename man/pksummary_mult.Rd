@@ -183,8 +183,7 @@ simulator output file. Useful for QCing.}
 
 \item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
 yellow the cells on the source Excel file where the data came from. This
-\emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-the output with \code{save_table}.}
+\emph{only} applies when \code{checkDataSource = TRUE}.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

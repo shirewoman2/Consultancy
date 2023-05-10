@@ -1433,6 +1433,34 @@ pksummary_table <- function(sim_data_file = NA,
       
       OutQC <- MyPKResults_all$QC %>% 
          select(PKparam, File, matches(ColsToInclude))
+      
+      if(highlightExcel){
+         # Determining which stats we'll need to highlight
+         StatsToHighlight <- switch(MeanType, 
+                                    "arithmetic" = "mean", 
+                                    "geometric" = "geomean")
+         if(includeConfInt){
+            StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
+         }
+         
+         if(includeCV){
+            StatsToHighlight <- c(StatsToHighlight, 
+                                  switch(MeanType, 
+                                         "arithmetic" = "CV", 
+                                         "geometric" = "GCV"))
+         }
+         
+         if(includePerc){
+            StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
+         }
+         
+         if(includeRange){
+            StatsToHighlight <- c(StatsToHighlight, "min", "max")
+         }
+         
+         highlightQC(qc_dataframe = OutQC, stats = StatsToHighlight)
+      }
+      
    }
    
    
@@ -1521,78 +1549,6 @@ pksummary_table <- function(sim_data_file = NA,
          
          write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
          
-         if(highlightExcel){
-            # Need to convert letter name of column back to a number
-            XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
-            
-            # Determining which stats we'll need to highlight
-            StatsToHighlight <- switch(MeanType, 
-                                       "arithmetic" = "mean", 
-                                       "geometric" = "geomean")
-            if(includeConfInt){
-               StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
-            }
-            
-            if(includeCV){
-               StatsToHighlight <- c(StatsToHighlight, 
-                                     switch(MeanType, 
-                                            "arithmetic" = "CV", 
-                                            "geometric" = "GCV"))
-            }
-            
-            if(includePerc){
-               StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
-            }
-            
-            if(includeRange){
-               StatsToHighlight <- c(StatsToHighlight, "min", "max")
-            }
-            
-            # Loading the workbook so that we can highlight things
-            wb <- xlsx::loadWorkbook(sim_data_file)
-            
-            # Setting up the cell style to use
-            QCStyle <- xlsx::CellStyle(
-               wb, 
-               dataFormat = xlsx::DataFormat("0.00"),
-               fill = xlsx::Fill(foregroundColor = "yellow"), 
-               alignment = xlsx::Alignment(horizontal = "ALIGN_CENTER", 
-                                           vertical = "VERTICAL_CENTER"),
-               border = xlsx::Border(position = c("TOP", "BOTTOM", "LEFT", "RIGHT"), 
-                                     pen = "BORDER_DOTTED"),
-               font = xlsx::Font(wb, heightInPoints = 8))
-            
-            for(i in unique(OutQC$Tab)){
-               ToHighlight <- OutQC %>% filter(Tab == i) %>% ungroup() %>% 
-                  select(File, Tab, any_of(StatsToHighlight)) %>% 
-                  pivot_longer(cols = -c("File", "Tab"), 
-                               names_to = "Stat", values_to = "Cell") %>% 
-                  mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
-                         Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell))) %>% 
-                  arrange(Row)
-               ToHighlight$Column <- as.numeric(sapply(
-                  ToHighlight$Column, FUN = function(x) which(XLCols == x)))
-               
-               MySheet <- xlsx::getSheets(wb)[[i]]
-               
-               # Applying the highlighting to the workbook
-               for(j in unique(ToHighlight$Row)){
-                  
-                  ToHighlight_j <- ToHighlight %>% filter(Row == j)
-                  
-                  MyRow <- xlsx::getCells(row = xlsx::getRows(MySheet, rowIndex = j))
-                  lapply(MyRow[ToHighlight_j$Column], 
-                         FUN = function(x) xlsx::setCellStyle(cell = x, cellStyle = QCStyle))
-                  
-                  rm(ToHighlight_j)
-                  
-               }
-               
-               rm(ToHighlight)
-            }
-            
-            xlsx::saveWorkbook(wb, file = sim_data_file)
-         }
       }
    }
    

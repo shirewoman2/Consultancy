@@ -196,8 +196,7 @@
 #'   simulator output file. Useful for QCing.
 #' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
 #'   yellow the cells on the source Excel file where the data came from. This
-#'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-#'   the output with \code{save_table}. 
+#'   \emph{only} applies when \code{checkDataSource = TRUE}. 
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -709,70 +708,33 @@ pksummary_mult <- function(sim_data_files = NA,
             
             write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
             
-            if(highlightExcel){
-               # Need to convert letter name of column back to a number
-               XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
-               
-               # Determining which stats we'll need to highlight
-               StatsToHighlight <- switch(MeanType, 
-                                          "arithmetic" = "mean", 
-                                          "geometric" = "geomean")
-               if(includeConfInt){
-                  StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
-               }
-               
-               if(includeCV){
-                  StatsToHighlight <- c(StatsToHighlight, 
-                                        switch(MeanType, 
-                                               "arithmetic" = "CV", 
-                                               "geometric" = "GCV"))
-               }
-               
-               if(includePerc){
-                  StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
-               }
-               
-               if(includeRange){
-                  StatsToHighlight <- c(StatsToHighlight, "min", "max")
-               }
-               
-               # Setting up the cell style to use
-               ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
-                                   halign = "center", valign = "center", 
-                                   border = "TopBottomLeftRight",
-                                   borderStyle = "hair")
-               
-               for(k in unique(OutQC$File)){
-                  # Loading the workbook so that we can highlight things
-                  wb <- openxlsx::loadWorkbook(k)
-                  
-                  for(i in unique(OutQC$Tab)){
-                     
-                     ToHighlight <- OutQC %>% filter(File == k & Tab == i) %>% 
-                        ungroup() %>% 
-                        select(File, Tab, any_of(StatsToHighlight)) %>% 
-                        pivot_longer(cols = -c("File", "Tab"), 
-                                     names_to = "Stat", values_to = "Cell") %>% 
-                        mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
-                               Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
-                     ToHighlight$Column <- as.numeric(sapply(
-                        ToHighlight$Column, FUN = function(x) which(XLCols == x)))
-                     
-                     # Applying the highlighting to the workbook
-                     for(j in 1:nrow(ToHighlight)){
-                        addStyle(wb, sheet = i, style = ToQC,
-                                 rows = ToHighlight$Row[j], 
-                                 cols = ToHighlight$Column[j])
-                     }
-                     
-                     rm(ToHighlight)
-                  }
-                  
-                  saveWorkbook(wb, file = k, overwrite = TRUE)
-                  
-                  rm(wb)
-               }
+         }  
+         
+         if(highlightExcel){
+            # Determining which stats we'll need to highlight
+            StatsToHighlight <- switch(MeanType, 
+                                       "arithmetic" = "mean", 
+                                       "geometric" = "geomean")
+            if(includeConfInt){
+               StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
             }
+            
+            if(includeCV){
+               StatsToHighlight <- c(StatsToHighlight, 
+                                     switch(MeanType, 
+                                            "arithmetic" = "CV", 
+                                            "geometric" = "GCV"))
+            }
+            
+            if(includePerc){
+               StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
+            }
+            
+            if(includeRange){
+               StatsToHighlight <- c(StatsToHighlight, "min", "max")
+            }
+            
+            highlightQC(qc_dataframe = OutQC, stats = StatsToHighlight)
          }
       }
       
