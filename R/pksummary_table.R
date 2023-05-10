@@ -251,12 +251,7 @@
 #' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
 #'   yellow the cells on the source Excel file where the data came from. This
 #'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-#'   the output with \code{save_table}. \strong{Note from LSh:} For reasons that
-#'   I honestly do not know, highlighting the cells on the various AUC tabs from
-#'   R also causes the Simcyp watermark and blue background to disappear from
-#'   the "Summary" tab, "Input Sheet", and the tab with the population
-#'   information. These tabs do remain protected (you can't  change anything on
-#'   them), but you should be aware that watermark and blue background changes.
+#'   the output with \code{save_table}. 
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -1553,14 +1548,19 @@ pksummary_table <- function(sim_data_file = NA,
                StatsToHighlight <- c(StatsToHighlight, "min", "max")
             }
             
-            # Setting up the cell style to use
-            ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
-                                halign = "center", valign = "center", 
-                                border = "TopBottomLeftRight",
-                                borderStyle = "hair")
-            
             # Loading the workbook so that we can highlight things
-            wb <- openxlsx::loadWorkbook(sim_data_file)
+            wb <- xlsx::loadWorkbook(sim_data_file)
+            
+            # Setting up the cell style to use
+            QCStyle <- xlsx::CellStyle(
+               wb, 
+               dataFormat = xlsx::DataFormat("0.00"),
+               fill = xlsx::Fill(foregroundColor = "yellow"), 
+               alignment = xlsx::Alignment(horizontal = "ALIGN_CENTER", 
+                                           vertical = "VERTICAL_CENTER"),
+               border = xlsx::Border(position = c("TOP", "BOTTOM", "LEFT", "RIGHT"), 
+                                     pen = "BORDER_DOTTED"),
+               font = xlsx::Font(wb, heightInPoints = 8))
             
             for(i in unique(OutQC$Tab)){
                ToHighlight <- OutQC %>% filter(Tab == i) %>% ungroup() %>% 
@@ -1568,21 +1568,30 @@ pksummary_table <- function(sim_data_file = NA,
                   pivot_longer(cols = -c("File", "Tab"), 
                                names_to = "Stat", values_to = "Cell") %>% 
                   mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
-                         Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
+                         Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell))) %>% 
+                  arrange(Row)
                ToHighlight$Column <- as.numeric(sapply(
                   ToHighlight$Column, FUN = function(x) which(XLCols == x)))
                
+               MySheet <- xlsx::getSheets(wb)[[i]]
+               
                # Applying the highlighting to the workbook
-               for(j in 1:nrow(ToHighlight)){
-                  addStyle(wb, sheet = i, style = ToQC,
-                           rows = ToHighlight$Row[j], 
-                           cols = ToHighlight$Column[j])
+               for(j in unique(ToHighlight$Row)){
+                  
+                  ToHighlight_j <- ToHighlight %>% filter(Row == j)
+                  
+                  MyRow <- xlsx::getCells(row = xlsx::getRows(MySheet, rowIndex = j))
+                  lapply(MyRow[ToHighlight_j$Column], 
+                         FUN = function(x) xlsx::setCellStyle(cell = x, cellStyle = QCStyle))
+                  
+                  rm(ToHighlight_j)
+                  
                }
                
                rm(ToHighlight)
             }
             
-            saveWorkbook(wb, file = sim_data_file, overwrite = TRUE)
+            xlsx::saveWorkbook(wb, file = sim_data_file)
          }
       }
    }
