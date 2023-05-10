@@ -9,27 +9,29 @@ highlightQC(qc_dataframe, stats)
 }
 \arguments{
 \item{qc_dataframe}{a data.frame listing each PK parameters to be QCed as a
-row and including columns for "File", "Tab", and then the specific summary
-statistics used. The QC output from \code{\link{pksummary_table}} or
-\code{\link{pksummary_mult}} where you have set \code{checkDataSource =
-TRUE} is the\emph{perfect} format for this data.frame and is what this
-function was designed to use.}
+row and including columns for "File", "PKparam", "Tab", and then the
+specific summary statistics used. The QC output from
+\code{\link{pksummary_table}} or \code{\link{pksummary_mult}} where you
+have set \code{checkDataSource = TRUE} is the\emph{perfect} format for this
+data.frame and is what this function was designed to use.}
 
 \item{stats}{a character vector of the summary statistics to highlight.
 Options are "geomean", "mean", "median", "CI90_low", "CI90_high", "per5",
 "per95", "min", "max", "GCV", and/or "CV". An example of acceptable input
 would be \code{stats = c("geomean", "CI90_low", "CI90_high")} to highlight
 the cells containing the geometric mean and the upper and lower values for
-the geometric 90\% confidence interval.}
+the geometric 90\% confidence interval. Regardless of what stats are
+requested, \code{highlightQC} will highlight only the median, minimum, and
+maximum values for tmax to match the Simcyp Consultancy report templates.}
 }
 \value{
 Does not return an R object; saves highlighting in Excel files
 }
 \description{
-\code{highlightQC} uses a data.frame of specific files, tabs, and cell
-locations to determine where to apply yellow highlighting for the purposes of
-QCing. This does NOT change any of the values in the Excel file; it
-\emph{only} adds yellow highlighting.
+\code{highlightQC} uses a data.frame of specific files, tabs, PK parameters,
+and cell locations to determine where to apply yellow highlighting for the
+purposes of QCing. This does NOT change any of the values in the Excel file;
+it \emph{only} adds yellow highlighting.
 }
 \examples{
 # None yet

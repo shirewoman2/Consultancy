@@ -1,23 +1,25 @@
 #' Highlight specific cells in Simcyp Simulator output Excel files for QCing
 #' tables of PK data
 #'
-#' \code{highlightQC} uses a data.frame of specific files, tabs, and cell
-#' locations to determine where to apply yellow highlighting for the purposes of
-#' QCing. This does NOT change any of the values in the Excel file; it
-#' \emph{only} adds yellow highlighting.
+#' \code{highlightQC} uses a data.frame of specific files, tabs, PK parameters,
+#' and cell locations to determine where to apply yellow highlighting for the
+#' purposes of QCing. This does NOT change any of the values in the Excel file;
+#' it \emph{only} adds yellow highlighting.
 #'
 #' @param qc_dataframe a data.frame listing each PK parameters to be QCed as a
-#'   row and including columns for "File", "Tab", and then the specific summary
-#'   statistics used. The QC output from \code{\link{pksummary_table}} or
-#'   \code{\link{pksummary_mult}} where you have set \code{checkDataSource =
-#'   TRUE} is the\emph{perfect} format for this data.frame and is what this
-#'   function was designed to use.
+#'   row and including columns for "File", "PKparam", "Tab", and then the
+#'   specific summary statistics used. The QC output from
+#'   \code{\link{pksummary_table}} or \code{\link{pksummary_mult}} where you
+#'   have set \code{checkDataSource = TRUE} is the\emph{perfect} format for this
+#'   data.frame and is what this function was designed to use.
 #' @param stats a character vector of the summary statistics to highlight.
 #'   Options are "geomean", "mean", "median", "CI90_low", "CI90_high", "per5",
 #'   "per95", "min", "max", "GCV", and/or "CV". An example of acceptable input
 #'   would be \code{stats = c("geomean", "CI90_low", "CI90_high")} to highlight
 #'   the cells containing the geometric mean and the upper and lower values for
-#'   the geometric 90\% confidence interval.
+#'   the geometric 90\% confidence interval. Regardless of what stats are
+#'   requested, \code{highlightQC} will highlight only the median, minimum, and
+#'   maximum values for tmax to match the Simcyp Consultancy report templates.
 #'
 #' @return Does not return an R object; saves highlighting in Excel files
 #' @export
@@ -51,12 +53,15 @@ highlightQC <- function(qc_dataframe, stats){
       qc_dataframe[[k]] <- split(qc_dataframe[[k]], f = qc_dataframe[[k]]$Tab)
       
       for(i in names(qc_dataframe[[k]])){
+         
          ToHighlight <- qc_dataframe[[k]][[i]] %>% ungroup() %>% 
-            select(File, Tab, any_of(stats)) %>% 
-            pivot_longer(cols = -c("File", "Tab"), 
+            select(File, PKparam, Tab, any_of(unique(c(stats, "min", "max", "median")))) %>% 
+            pivot_longer(cols = -c("File", "Tab", "PKparam"), 
                          names_to = "Stat", values_to = "Cell") %>% 
             mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
                    Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell))) %>% 
+            filter((str_detect(PKparam, "tmax") & Stat %in% c("min", "max", "median")) |
+                      (!str_detect(PKparam, "tmax") & Stat %in% stats)) %>% 
             arrange(Row)
          
          # Need to subtract 1 from the column number b/c the 1st column is blank

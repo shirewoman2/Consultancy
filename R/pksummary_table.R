@@ -986,7 +986,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent){
+      if(EffectorPresent & "tmax_dose1_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_dose1_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
@@ -1008,7 +1008,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax_last[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax_last[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent){
+      if(EffectorPresent & "tmax_last_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_last_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "median"]
@@ -1030,7 +1030,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent){
+      if(EffectorPresent & "tmax_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
