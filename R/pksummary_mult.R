@@ -592,11 +592,13 @@ pksummary_mult <- function(sim_data_files = NA,
    if(extract_forest_data){
       # Need to deal with possible character data for custom dosing before row
       # binding for FD
-      suppressWarnings(
-         FD <- map(FD, .f = function(x) x %>% mutate(across(.cols = c("Dose_sub", "Dose_inhib"), 
-                                                            .fns = as.numeric))))
-      FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
+      FD <- FD[which(sapply(FD, function(x) "list" %in% class(x) == FALSE))]
       
+      suppressWarnings(
+         FD <- map(FD, .f = function(x) x %>% 
+                      mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib")), 
+                                    .fns = as.numeric))))
+      FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
    }
    
    if(extract_forest_data & # NOT SURE THIS IS NECESSARY
@@ -711,6 +713,9 @@ pksummary_mult <- function(sim_data_files = NA,
          }  
          
          if(highlightExcel){
+            
+            message("Highlighting PK values in Excel files for QCing. This will take a bit to run since each file needs to be opened, highlighted, and saved again using Java behind the scenes.")
+            
             # Determining which stats we'll need to highlight
             StatsToHighlight <- switch(MeanType, 
                                        "arithmetic" = "mean", 

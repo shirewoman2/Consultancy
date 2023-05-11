@@ -509,7 +509,7 @@ pksummary_table <- function(sim_data_file = NA,
       }
       
       # Also only keeping columns with complete cases for PK values.
-      observed_PK <- observed_PK %>% select(where(complete.cases))
+      observed_PK <- observed_PK %>% select(where(~ any(complete.cases(.x))))
       
       # If they supplied a file name in the observed PK data and NA for
       # sim_data_file, then sim_data_file will be NA. If not, then
@@ -521,6 +521,24 @@ pksummary_table <- function(sim_data_file = NA,
       
       # Cleaning up and harmonizing observed data
       MyObsPK <- observed_PK
+      
+      # Checking whether data are long or wide and converting to wide as needed.
+      # An example of where you'd get long format here: If they're using
+      # observed data that are also laid out for the forest_plot function.
+      if("PKparameter" %in% names(MyObsPK)){
+         
+         MyObsPK <- MyObsPK %>% 
+            rename(Value = switch(mean_type, 
+                                  "geometric" = "GeoMean", 
+                                  "arithmetic" = "Mean", 
+                                  "median" = "Median")) %>% 
+            # Things work better for pivoting if the other possible summary
+            # statistic columns are no longer present.
+            select(-(any_of(c("Min", "Max", "GeoMean", "Mean", "Median",
+                              "CI90_Upper", "CI90_Lower", "Centile95th_Upper", 
+                              "Centile5th_Lower", "GeoCV", "AirthCV")))) %>% 
+            pivot_wider(names_from = PKparameter, values_from = Value)
+      }
       
       names(MyObsPK) <- sub("_first", "_dose1", names(MyObsPK))
       names(MyObsPK) <- sub("tau_dose1", "t_dose1", names(MyObsPK))
@@ -1169,9 +1187,12 @@ pksummary_table <- function(sim_data_file = NA,
                  call. = FALSE)
       } else {
          
+         # For forest data, only keeping ratios and removing observed data from
+         # here b/c we supply it separately for the forest_plot function.
          FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
-                                         Stat %in% c("geomean", "mean",
-                                                     "CI90_low", "CI90_high"))
+                                         # Stat %in% c("geomean", "mean",
+                                         #             "CI90_low", "CI90_high") &
+                                         SorO == "Sim")
          
          FD <- FD %>% 
             mutate(Stat = recode(Stat, "geomean" = "GMR",
@@ -1189,8 +1210,10 @@ pksummary_table <- function(sim_data_file = NA,
                                       "primary metabolite 2" = Deets$PrimaryMetabolite2, 
                                       "secondary metabolite" = Deets$SecondaryMetabolite), 
                    Dose_sub = Deets$Dose_sub, 
-                   Inhibitor1 = Deets$Inhibitor1, 
-                   Dose_inhib = Deets$Dose_inhib) %>% 
+                   Inhibitor1 = ifelse("Inhibitor1" %in% names(Deets),
+                                       Deets$Inhibitor1, NA),
+                   Dose_inhib = ifelse("Dose_inhib" %in% names(Deets),
+                                       Deets$Dose_inhib, NA)) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                    everything())
          
