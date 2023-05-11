@@ -86,6 +86,13 @@ highlightQC <- function(qc_dataframe, stats){
       }
       
       xlsx::saveWorkbook(wb, file = k)
+      
+      rm(wb)
+      
+      # From https://stackoverflow.com/questions/12476044/r-how-to-clear-memory-used-by-rjava
+      suppressMessages(gc(verbose = FALSE)) # Can't seem to suppress the output, though. 
+      J("java.lang.Runtime")$getRuntime()$gc()
+      
    }
 }
 
