@@ -180,10 +180,10 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                             "FALSE" = deannotateDetails(existing_exp_details)) 
             
             if("data.frame" %in% class(Deets)){
-                Deets <- Deets %>% filter(File == sim_data_file)
+                Deets <- Deets %>% filter(File == ff)
                 
                 if(nrow(Deets == 0)){
-                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                    Deets <- extractExpDetails(sim_data_file = ff, 
                                                exp_details = "Input Sheet")
                 }
             }
