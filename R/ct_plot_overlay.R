@@ -332,6 +332,9 @@
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected. This only
 #'   applies when you have requested a semi-log plot with \code{linear_or_log}.
+#' @param y_axis_interval set the y-axis major tick-mark interval. Acceptable
+#'   input: any number or leave as NA to accept default values, which are
+#'   generally reasonable guesses as to aesthetically pleasing intervals.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
 #' @param hline_position numerical position(s) of any horizontal lines to add to
@@ -462,6 +465,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             pad_y_axis = TRUE,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
+                            y_axis_interval = NA,
                             y_axis_label = NA,
                             hline_position = NA, 
                             hline_style = "red dotted", 
@@ -885,6 +889,7 @@ call. = FALSE)
       y_axis_limits_lin <- y_axis_limits_lin / 100
       y_axis_limits_log <- y_axis_limits_log / 100
       hline_position <- hline_position / 100
+      y_axis_interval <- y_axis_interval / 100
       
    } else {
       # for conc-time data
@@ -1297,13 +1302,14 @@ call. = FALSE)
                                                 "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
                        prettify_compound_names = prettify_compound_names,
                        EnzPlot = EnzPlot, 
+                       time_range = time_range,
                        time_range_relative = time_range_relative,
                        Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
                           mutate(Time_orig = Time), 
                        pad_y_axis = pad_y_axis,
                        y_axis_limits_lin = y_axis_limits_lin, 
-                       time_range = time_range,
-                       y_axis_limits_log = y_axis_limits_log)
+                       y_axis_limits_log = y_axis_limits_log, 
+                       y_axis_interval = y_axis_interval)
    
    ObsConcUnits <- YStuff$ObsConcUnits
    ylab <- YStuff$ylab
@@ -1782,6 +1788,7 @@ call. = FALSE)
       if(EnzPlot){
          A <- suppressWarnings(suppressMessages(
             A + scale_y_continuous(labels = scales::percent,
+                                   breaks = YBreaks,
                                    expand = expansion(mult = pad_y_num))
          ))
       } else {

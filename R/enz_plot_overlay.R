@@ -220,6 +220,9 @@
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected. This only
 #'   applies when you have requested a semi-log plot with \code{linear_or_log}.
+#' @param y_axis_interval set the y-axis major tick-mark interval. Acceptable
+#'   input: any number or leave as NA to accept default values, which are
+#'   generally reasonable guesses as to aesthetically pleasing intervals.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
 #' @param hline_position numerical position(s) of any horizontal lines to add to
@@ -257,6 +260,16 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
+#'   whether to make the compound names in the legend prettier or b) supply a
+#'   named character vector to set it to the exact name you'd prefer to see in
+#'   your legend. For example, \code{prettify_compound_names =
+#'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+#'   legend, and \code{prettify_compound_names = TRUE} will make some reasonable
+#'   guesses about what a prettier compound name should be. An example of
+#'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
+#'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   The nice thing about saving to Word is that the figure title and caption
@@ -308,6 +321,7 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                              pad_y_axis = TRUE,
                              y_axis_limits_lin = NA,
                              y_axis_limits_log = NA, 
+                             y_axis_interval = NA,
                              y_axis_label = NA,
                              hline_position = NA, 
                              hline_style = "red dotted", 
@@ -316,6 +330,7 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                              graph_labels = TRUE,
                              graph_title = NA,
                              graph_title_size = 14, 
+                             prettify_compound_names = TRUE,
                              legend_position = NA,
                              save_graph = NA,
                              fig_height = 6,
@@ -359,6 +374,7 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                           pad_y_axis = pad_y_axis,
                           y_axis_limits_lin = y_axis_limits_lin,
                           y_axis_limits_log = y_axis_limits_log, 
+                          y_axis_interval = y_axis_interval,
                           y_axis_label = y_axis_label,
                           hline_position = hline_position, 
                           hline_style = hline_style, 
@@ -368,7 +384,7 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                           graph_title = graph_title,
                           graph_title_size = graph_title_size, 
                           legend_position = legend_position,
-                          prettify_compound_names = TRUE,
+                          prettify_compound_names = prettify_compound_names,
                           save_graph = save_graph,
                           fig_height = fig_height,
                           fig_width = fig_width)
