@@ -520,6 +520,8 @@ forest_plot <- function(forest_dataframe,
    
    # Dropping dose number when requested by user
    if(include_dose_num == FALSE){
+      PKparameters <- sub("_dose1|_last", "", PKparameters)
+      
       forest_dataframe <- forest_dataframe %>% 
          mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
       
@@ -889,10 +891,10 @@ forest_plot <- function(forest_dataframe,
    # Only use PK parameters where there are all complete cases. 
    ParamToUse <- forest_dataframe %>% select(PKparameter, Centre) %>% 
       group_by(PKparameter) %>% 
-      summarize(Centre = all(complete.cases(Centre))) %>% 
+      summarize(Centre = any(complete.cases(Centre))) %>% 
       filter(Centre == TRUE) %>% pull(PKparameter) %>% as.character()
    
-   if(complete.cases(PKparameters) && 
+   if(all(complete.cases(PKparameters)) && 
       all(PKparameters %in% ParamToUse == FALSE)){
       warning(paste0("Not all of your supplied PK parameters had complete values, and only parameters with all complete values can be included here. The PK parameters with missing values, which will not be included in the graph, were: ", 
                      str_comma(setdiff(PKparameters, ParamToUse))), 
@@ -939,9 +941,10 @@ forest_plot <- function(forest_dataframe,
          group_by(MyCompound, PKparameter) %>% 
          summarize(Centre = max(Centre, na.rm = T)) %>% 
          pivot_wider(names_from = PKparameter, values_from = Centre) %>% 
-         arrange(across(any_of(c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
-                                 "AUCtau_ratio_last", "Cmax_ratio_dose1", 
-                                 "Cmax_ratio_last")))) %>% 
+         arrange(across(any_of(c("AUCinf_ratio_dose1", "AUCinf_ratio",
+                                 "AUCt_ratio_dose1", "AUCtau_ratio_last",
+                                 "AUCtau_ratio", "Cmax_ratio",
+                                 "Cmax_ratio_dose1", "Cmax_ratio_last")))) %>% 
          pull(MyCompound) %>% rev() %>% unique()
       
       forest_dataframe <- forest_dataframe %>%
