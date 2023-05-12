@@ -23,6 +23,7 @@ ct_plot_overlay(
   linetype_labels = NA,
   linetypes = c("solid", "dashed"),
   line_width = NA,
+  line_transparency = NA,
   legend_label_linetype = NA,
   facet1_column,
   facet2_column,
@@ -250,6 +251,11 @@ see possible line types by name, please enter
 \item{line_width}{optionally specify how thick to make the lines. Acceptable
 input is a number; the default is 1 for most lines and 0.8 for some, to
 give you an idea of where to start.}
+
+\item{line_transparency}{optionally specify the transparency for the trial
+mean or percentile lines. Acceptable values are from 0 (fully transparent,
+so no line at all) to 1 (completely opaque or black). If left as the
+default NA, this value will be automatically determined.}
 
 \item{legend_label_linetype}{optionally indicate on the legend something
 explanatory about what the line types represent. For example, if

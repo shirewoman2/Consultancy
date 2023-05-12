@@ -231,6 +231,10 @@
 #' @param line_width optionally specify how thick to make the lines. Acceptable
 #'   input is a number; the default is 1 for most lines and 0.8 for some, to
 #'   give you an idea of where to start.
+#' @param line_transparency optionally specify the transparency for the trial
+#'   mean or percentile lines. Acceptable values are from 0 (fully transparent,
+#'   so no line at all) to 1 (completely opaque or black). If left as the
+#'   default NA, this value will be automatically determined.
 #' @param legend_label_linetype optionally indicate on the legend something
 #'   explanatory about what the line types represent. For example, if
 #'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
@@ -443,6 +447,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             linetype_labels = NA, 
                             linetypes = c("solid", "dashed"),
                             line_width = NA,
+                            line_transparency = NA,
                             legend_label_linetype = NA,
                             facet1_column,
                             facet2_column, 
@@ -516,10 +521,11 @@ call. = FALSE)
    }
    
    # Checking for acceptable input
-   if(figure_type %in% c("means only", "percentiles", "percentile ribbon") == FALSE){
+   if(figure_type %in% c("means only", "percentiles", "percentile ribbon", 
+                         "trial means") == FALSE){
       warning(paste0("The value used for `figure_type` was `", 
                      figure_type,
-                     "`, but only the only acceptable options are `means only`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used."),
+                     "`, but only the only acceptable options are `means only`, `trial means`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used."),
               call. = FALSE)
       figure_type <- "means only"
    }
@@ -902,6 +908,7 @@ call. = FALSE)
                    Trial %in% 
                    switch(figure_type, 
                           "means only" = MyMeanType, 
+                          "trial means" = unique(ct_dataframe$Trial),
                           "percentiles" = c(MyMeanType, "per5", "per95"),
                           "percentile ribbon" = c(MyMeanType, "per5", "per95")))
       
@@ -1427,15 +1434,36 @@ call. = FALSE)
       names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
    }
    
+   if(figure_type == "trial means"){
+      suppressMessages(
+         sim_data_trial <- sim_dataframe %>%
+            filter(Simulated == TRUE &
+                      Trial %in% c("mean", "geomean", "per5", "per95", 
+                                   "per10", "per90", "median") == FALSE) %>%
+            group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
+                                     "Simulated", "Trial", "Group",
+                                     "Time", "Time_orig",
+                                     "Time_units", "Conc_units", 
+                                     "colorBy_column", "linetype_column",
+                                     "FC1", "FC2")))) %>%
+            summarize(Conc = switch(mean_type, 
+                                    "arithmetic" = mean(Conc, na.rm = T),
+                                    "geometric" = gm_mean(Conc, na.rm = T),
+                                    "median" = median(Conc, na.rm = T))) %>%
+            ungroup() %>% 
+            mutate(Group = paste(Compound, Inhibitor, Trial))
+      )
+   }
+   
    A <- switch(
       figure_type, 
       "means only" = ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
                             switch(AES, 
                                    "color-linetype" = aes(x = Time, y = Conc, 
+                                                          group = Group, 
                                                           color = colorBy_column, 
                                                           fill = colorBy_column,
                                                           linetype = linetype_column, 
-                                                          group = Group, 
                                                           shape = linetype_column),
                                    "color" = aes(x = Time, y = Conc, 
                                                  color = colorBy_column, 
@@ -1446,6 +1474,23 @@ call. = FALSE)
                                                     group = Group, shape = linetype_column),
                                    "none" = aes(x = Time, y = Conc,
                                                 group = Group))), 
+      "trial means" = ggplot(sim_data_trial,
+                             switch(AES, 
+                                    "color-linetype" = aes(x = Time, y = Conc, 
+                                                           group = Group, 
+                                                           color = colorBy_column, 
+                                                           fill = colorBy_column,
+                                                           linetype = linetype_column, 
+                                                           shape = linetype_column),
+                                    "color" = aes(x = Time, y = Conc, 
+                                                  color = colorBy_column, 
+                                                  fill = colorBy_column,
+                                                  group = Group), 
+                                    "linetype" = aes(x = Time, y = Conc, 
+                                                     linetype = linetype_column, 
+                                                     group = Group, shape = linetype_column),
+                                    "none" = aes(x = Time, y = Conc,
+                                                 group = Group))), 
       "percentiles" = ggplot(sim_dataframe %>%
                                 filter(Trial %in% c("per5", "per95")) %>%
                                 mutate(Group = paste(Group, Trial)),
@@ -1502,56 +1547,40 @@ call. = FALSE)
    if(figure_type == "means only"){
       
       A <- A + 
-         # A <- ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-         #             switch(AES, 
-         #                    "color-linetype" = aes(x = Time, y = Conc, 
-         #                                           color = colorBy_column, 
-         #                                           fill = colorBy_column,
-         #                                           linetype = linetype_column, 
-         #                                           group = Group, 
-         #                                           shape = linetype_column),
-         #                    "color" = aes(x = Time, y = Conc, 
-         #                                  color = colorBy_column, 
-         #                                  fill = colorBy_column,
-      #                                  group = Group), 
-      #                    "linetype" = aes(x = Time, y = Conc, 
-      #                                     linetype = linetype_column, 
-      #                                     group = Group, shape = linetype_column),
-      #                    "none" = aes(x = Time, y = Conc,
-      #                                 group = Group))) +
-      geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
-                show.legend = AESCols["color"] != "Individual")
+         geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
+                   show.legend = AESCols["color"] != "Individual")
       
    }
+   
+   ## figure_type: trial means -----------------------------------------------------------
+   if(figure_type == "trial means"){
+      
+      NumTrials <- length(unique(sim_data_trial$Trial))
+      
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency,
+                           ifelse(NumTrials > 10, 0.05, 0.2))
+      
+      A <- A +
+         geom_line(alpha = AlphaToUse,
+                   lwd = ifelse(is.na(line_width), 1, line_width)) +
+         geom_line(data = sim_dataframe %>%
+                      filter(Trial == MyMeanType),
+                   lwd = ifelse(is.na(line_width), 1, line_width))
+   }
+   
    
    ## Figure type: percentiles ---------------------------------------------
    
    if(figure_type == "percentiles"){
       
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency, 0.25)
+      
       A <- A +
-         # A <- ggplot(sim_dataframe %>%
-         #                 filter(Trial %in% c("per5", "per95")) %>%
-         #                 mutate(Group = paste(Group, Trial)),
-         #             switch(AES, 
-         #                    "color-linetype" = aes(x = Time, y = Conc,
-         #                                           color = colorBy_column,
-         #                                           fill = colorBy_column,
-         #                                           linetype = linetype_column,
-         #                                           group = Group,
-         #                                           shape = linetype_column),
-         #                    "color" = aes(x = Time, y = Conc, 
-      #                                  color = colorBy_column, 
-      #                                  fill = colorBy_column,
-      #                                  group = Group), 
-      #                    "linetype" = aes(x = Time, y = Conc,
-      #                                     linetype = linetype_column,
-      #                                     group = Group, 
-      #                                     shape = linetype_column),
-      #                    "none" = aes(x = Time, y = Conc,
-      #                                 group = Group))) +
-      geom_line(alpha = 0.25,
-                lwd = ifelse(is.na(line_width), 0.8, line_width), 
-                show.legend = AESCols["color"] != "Individual") +
+         geom_line(alpha = AlphaToUse,
+                   lwd = ifelse(is.na(line_width), 0.8, line_width), 
+                   show.legend = AESCols["color"] != "Individual") +
          geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
                    lwd = ifelse(is.na(line_width), 1, line_width), 
                    show.legend = AESCols["color"] != "Individual")
@@ -1560,37 +1589,12 @@ call. = FALSE)
    ## Figure type: ribbon --------------------------------------------------
    if(figure_type == "percentile ribbon"){
       
-      # RibbonDF <-  sim_dataframe %>% 
-      #     filter(Trial %in% c({MyMeanType}, "per5", "per95") &
-      #                # Ribbons don't work if any of the data are clipped on
-      #                # the x axis
-      #                Time >= time_range_relative[1] &
-      #                Time <= time_range_relative[2]) %>% 
-      #     unique() %>% 
-      #     select(-any_of(c("Group", "Individual"))) %>% 
-      #     pivot_wider(names_from = Trial, values_from = Conc)
-      # names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency, 0.25)
       
       A <- A + 
-         # A <- ggplot(RibbonDF, 
-         #             switch(AES, 
-         #                    "color-linetype" = aes(x = Time, y = MyMean, 
-         #                                           ymin = per5, ymax = per95, 
-         #                                           shape = linetype_column,
-         #                                           color = colorBy_column, 
-         #                                           fill = colorBy_column, 
-         #                                           linetype = linetype_column),
-         #                    "linetype" = aes(x = Time, y = MyMean, 
-         #                                     ymin = per5, ymax = per95, 
-         #                                     linetype = linetype_column),
-      #                    "color" = aes(x = Time, y = MyMean, 
-      #                                  ymin = per5, ymax = per95, 
-      #                                  color = colorBy_column, 
-      #                                  fill = colorBy_column), 
-      #                    "none" = aes(x = Time, y = MyMean, 
-      #                                 ymin = per5, ymax = per95))) +
-      geom_ribbon(alpha = 0.25, color = NA, 
-                  show.legend = AESCols["color"] != "Individual") +
+         geom_ribbon(alpha = AlphaToUse, color = NA, 
+                     show.legend = AESCols["color"] != "Individual") +
          geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
                    show.legend = AESCols["color"] != "Individual") 
       

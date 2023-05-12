@@ -827,13 +827,13 @@ ct_plot <- function(ct_dataframe = NA,
    # Setting up the y axis using the subfunction ct_y_axis -------------------
    
    # Setting Y axis limits for both linear and semi-log plots
-   if(figure_type == "trial means") {
-      Ylim_data <- bind_rows(sim_data_trial, obs_data)
-   } else if(str_detect(figure_type, "percentiles|freddy|ribbon")) {
-      Ylim_data <- bind_rows(sim_data_trial, sim_data_mean, obs_data)
-   } else if(figure_type == "means only") {
-      Ylim_data <- sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
-   }
+   Ylim_data <- switch(figure_type, 
+                       "trial means" = bind_rows(sim_data_trial, obs_data), 
+                       "percentiles" = bind_rows(sim_data_trial, sim_data_mean, obs_data), 
+                       "Freddy" = bind_rows(sim_data_trial, sim_data_mean, obs_data),
+                       "percentile ribbon" = bind_rows(sim_data_trial, sim_data_mean, obs_data), 
+                       "means only" = sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
+   )
    
    if(nrow(Ylim_data) == 0){
       Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
@@ -962,10 +962,6 @@ ct_plot <- function(ct_dataframe = NA,
                            ifelse(NumTrials > 10, 0.05, 0.2))
       
       A <- A +
-         # A <- ggplot(sim_data_trial,
-         #             aes(x = Time, y = Conc, group = Group,
-         #                 linetype = Inhibitor, shape = Inhibitor,
-         #                 color = Inhibitor, fill = Inhibitor)) +
          geom_line(alpha = AlphaToUse,
                    lwd = ifelse(is.na(line_width), 1, line_width)) +
          geom_line(data = sim_data_mean %>%
@@ -981,13 +977,6 @@ ct_plot <- function(ct_dataframe = NA,
                            line_transparency, 0.25)
       
       A <- A +
-         # A <- ggplot(sim_data_mean %>%
-         #                filter(Trial %in% c("per5", "per95")) %>%
-         #                mutate(Group = paste(Group, Trial)),
-         #             aes(x = Time, y = Conc,
-         #                 linetype = Inhibitor, shape = Inhibitor,
-         #                 color = Inhibitor, fill = Inhibitor, 
-         #                 group = Group)) +
          geom_line(alpha = AlphaToUse,
                    lwd = ifelse(is.na(line_width), 0.8, line_width)) +
          geom_line(data = sim_data_mean %>%
@@ -1004,10 +993,6 @@ ct_plot <- function(ct_dataframe = NA,
                            line_transparency, 0.25)
       
       A <- A +
-         # A <- ggplot(RibbonDF, aes(x = Time, y = MyMean, 
-         #                           ymin = per5, ymax = per95, 
-         #                           linetype = Inhibitor, shape = Inhibitor,
-         #                           color = Inhibitor, fill = Inhibitor)) +
          geom_ribbon(alpha = AlphaToUse, color = NA) +
          geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
       
@@ -1030,11 +1015,6 @@ ct_plot <- function(ct_dataframe = NA,
          
          ## linear plot
          A <- A +
-            # A <- ggplot(data = sim_data_mean %>%
-            #                filter(Trial == MyMeanType),
-            #             aes(x = Time, y = Conc, group = Group,
-            #                 linetype = Inhibitor, shape = Inhibitor,
-            #                 color = Inhibitor, fill = Inhibitor)) +
             geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
             geom_line(data = sim_data_mean %>%
                          filter(Trial %in% c("per5", "per95")),
@@ -1047,10 +1027,6 @@ ct_plot <- function(ct_dataframe = NA,
          
          ## linear plot
          A <- A +
-            # A <- ggplot(sim_data_trial,
-            #             aes(x = Time, y = Conc, group = Trial,
-            #                 linetype = Inhibitor, shape = Inhibitor,
-            #                 color = Inhibitor, fill = Inhibitor)) +
             geom_line(alpha = AlphaToUse, 
                       lwd = ifelse(is.na(line_width), 1, line_width)) +
             geom_line(data = sim_data_mean %>%
@@ -1067,11 +1043,6 @@ ct_plot <- function(ct_dataframe = NA,
    if(figure_type == "means only"){
       
       A <- A +
-         # A <- ggplot(sim_data_mean %>%
-         #                filter(Trial == MyMeanType),
-         #             aes(x = Time, y = Conc,
-         #                 linetype = Inhibitor, shape = Inhibitor, 
-         #                 color = Inhibitor, fill = Inhibitor)) +
          geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
    }
    
