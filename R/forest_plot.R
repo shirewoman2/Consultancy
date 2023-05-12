@@ -31,6 +31,12 @@
 #'   included. If you try to include a parameter that's not already present in
 #'   forest_dataframe, it will be ignored. Enclose the parameters with
 #'   \code{c(...)}.
+#' @param include_dose_num TRUE (default) or FALSE on whether to include the
+#'   dose number when listing the PK parameter. By default, the parameter will
+#'   be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", but,
+#'   especially if you only have a single-dose regimen, you might not want that.
+#'   To make the parameters be only, e.g., "Cmax ratio" or "AUCtau ratio", set
+#'   this to FALSE.
 #' @param mean_type type of mean to extract; options are "geometric" (default),
 #'   "arithmetic", or "median"
 #' @param variability_type type of variability to show as whiskers; options are
@@ -321,6 +327,7 @@
 forest_plot <- function(forest_dataframe, 
                         perp_or_victim, 
                         PKparameters = NA, 
+                        include_dose_num = TRUE,
                         mean_type = "geometric",
                         variability_type = "90% CI", 
                         observed_PK = NA,
@@ -395,6 +402,9 @@ forest_plot <- function(forest_dataframe,
       x_axis_number_type <- "ratios"
    }
    
+   # Noting whether user supplied observed data
+   ObsIncluded <- "data.frame" %in% class(observed_PK)
+   
    # If they didn't supply dose info, that's ok as long as they also didn't
    # break up graphs by that variable. Warn them if they did.
    if("Dose_sub" %in% names(forest_dataframe) == FALSE){
@@ -403,7 +413,6 @@ forest_plot <- function(forest_dataframe,
          warning("You asked to break up the graphs by the column `Dose_sub`, but that column wasn't included in your data. This is going to cause some issues with your graph.", 
                  call. = FALSE)
       } 
-      
       forest_dataframe$Dose_sub <- NA
    }
    
@@ -413,12 +422,8 @@ forest_plot <- function(forest_dataframe,
          warning("You asked to break up the graphs by the column `Dose_inhib`, but that column wasn't included in your data. This is going to cause some issues with your graph.", 
                  call. = FALSE)
       } 
-      
       forest_dataframe$Dose_inhib <- NA
    }
-   
-   # Noting whether user supplied observed data
-   ObsIncluded <- "data.frame" %in% class(observed_PK)
    
    # Setting things up for nonstandard evaluation 
    facet_column_x <- rlang::enquo(facet_column_x)
@@ -510,6 +515,17 @@ forest_plot <- function(forest_dataframe,
          #                        "Tissue"))) %>% 
          #       left_join(ObsMatch)
          # )
+      }
+   }
+   
+   # Dropping dose number when requested by user
+   if(include_dose_num == FALSE){
+      forest_dataframe <- forest_dataframe %>% 
+         mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
+      
+      if(ObsIncluded){
+         observed_PK <- observed_PK %>% 
+            mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
       }
    }
    
@@ -860,10 +876,14 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       # Graphing this is easiest if the levels start with the item we want on
       # the bottom of the y axis and work upwards.
-      mutate(PKparameter = factor(PKparameter, levels = c("Cmax_ratio_last", 
+      mutate(PKparameter = factor(PKparameter, levels = c("Cmax_ratio",
+                                                          "Cmax_ratio_last", 
+                                                          "AUCtau_ratio",
                                                           "AUCtau_ratio_last", 
                                                           "Cmax_ratio_dose1", 
+                                                          "AUCt_ratio",
                                                           "AUCt_ratio_dose1", 
+                                                          "AUCinf_ratio",
                                                           "AUCinf_ratio_dose1")))
    
    # Only use PK parameters where there are all complete cases. 
@@ -1294,10 +1314,14 @@ forest_plot <- function(forest_dataframe,
          # y_axis_column at this point in the function. -LSh
          
          Param_exp <- c("Cmax_ratio_last" = PKexpressions[["Cmax_ratio_last"]], 
+                        "Cmax_ratio" = PKexpressions[["Cmax_ratio"]],
                         "AUCtau_ratio_last" = PKexpressions[["AUCtau_ratio_last"]], 
+                        "AUCtau_ratio" = PKexpressions[["AUCtau_ratio"]],
                         "Cmax_ratio_dose1" = PKexpressions[["Cmax_ratio_dose1"]],
                         "AUCt_ratio_dose1" = PKexpressions[["AUCt_ratio_dose1"]], 
-                        "AUCinf_ratio_dose1" = PKexpressions[["AUCinf_ratio_dose1"]])
+                        "AUCt_ratio" = PKexpressions[["AUCt_ratio"]],
+                        "AUCinf_ratio_dose1" = PKexpressions[["AUCinf_ratio_dose1"]], 
+                        "AUCinf_ratio" = PKexpressions[["AUCinf_ratio"]])
          
          forest_dataframe <- forest_dataframe %>% 
             mutate(PKparameter_exp = factor(PKparameter, 

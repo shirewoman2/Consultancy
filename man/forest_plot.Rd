@@ -8,6 +8,7 @@ forest_plot(
   forest_dataframe,
   perp_or_victim,
   PKparameters = NA,
+  include_dose_num = TRUE,
   mean_type = "geometric",
   variability_type = "90\% CI",
   observed_PK = NA,
@@ -15,6 +16,7 @@ forest_plot(
   y_order = NA,
   y_axis_column_secondary,
   y_order_secondary = NA,
+  y_axis_title = "none",
   x_axis_limits = NA,
   x_axis_label = NA,
   x_axis_number_type = "ratios",
@@ -55,6 +57,13 @@ parameters you extracted with \code{\link{extractForestData}} will be
 included. If you try to include a parameter that's not already present in
 forest_dataframe, it will be ignored. Enclose the parameters with
 \code{c(...)}.}
+
+\item{include_dose_num}{TRUE (default) or FALSE on whether to include the
+dose number when listing the PK parameter. By default, the parameter will
+be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", but,
+especially if you only have a single-dose regimen, you might not want that.
+To make the parameters be only, e.g., "Cmax ratio" or "AUCtau ratio", set
+this to FALSE.}
 
 \item{mean_type}{type of mean to extract; options are "geometric" (default),
 "arithmetic", or "median"}
@@ -130,6 +139,11 @@ how this works? Please check the examples at the bottom of this help file.}
 in \code{y_axis_column_secondary}, or, if \code{y_axis_column_secondary} is
 File, the compounds that each file represents or a named character vector
 of the compounds. Please see the examples at the bottom of this file.}
+
+\item{y_axis_title}{optionally specify a vertical title to be displayed to
+the left of the y axis. Example: \code{y_axis_title = "Effector
+co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
+This does NOT work with a secondary y axis and will be ignored.}
 
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
