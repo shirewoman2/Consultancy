@@ -30,6 +30,7 @@ enz_plot_overlay(
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_interval = NA,
   y_axis_label = NA,
   hline_position = NA,
   hline_style = "red dotted",
@@ -38,6 +39,7 @@ enz_plot_overlay(
   graph_labels = TRUE,
   graph_title = NA,
   graph_title_size = 14,
+  prettify_compound_names = TRUE,
   legend_position = NA,
   save_graph = NA,
   fig_height = 6,
@@ -283,6 +285,10 @@ respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected. This only
 applies when you have requested a semi-log plot with \code{linear_or_log}.}
 
+\item{y_axis_interval}{set the y-axis major tick-mark interval. Acceptable
+input: any number or leave as NA to accept default values, which are
+generally reasonable guesses as to aesthetically pleasing intervals.}
+
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
 
@@ -324,6 +330,17 @@ your graph or set of graphs}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
 default is 14}
+
+\item{prettify_compound_names}{set this to a) TRUE (default) or FALSE for
+whether to make the compound names in the legend prettier or b) supply a
+named character vector to set it to the exact name you'd prefer to see in
+your legend. For example, \code{prettify_compound_names =
+c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+"Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+legend, and \code{prettify_compound_names = TRUE} will make some reasonable
+guesses about what a prettier compound name should be. An example of
+setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
+"Sim-Ketoconazole-200 mg BID" would become "ketoconazole".}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if

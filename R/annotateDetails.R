@@ -306,7 +306,7 @@ annotateDetails <- function(existing_exp_details,
    }
    
    if("Abs_model_inhib" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+      any(existing_exp_details$Abs_model_inhib == "ADAM", na.rm = T) == FALSE){
       Out <- Out %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "inhibitor 1" &
@@ -315,7 +315,7 @@ annotateDetails <- function(existing_exp_details,
    }
    
    if("Abs_model_inhib2" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+      any(existing_exp_details$Abs_model_inhib2 == "ADAM", na.rm = T) == FALSE){
       Out <- Out %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "inhibitor 2" &
@@ -324,7 +324,7 @@ annotateDetails <- function(existing_exp_details,
    }
    
    if("Abs_model_met1" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+      any(existing_exp_details$Abs_model_met1 == "ADAM", na.rm = T) == FALSE){
       Out <- Out %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "primary metabolite 1" &
@@ -333,7 +333,7 @@ annotateDetails <- function(existing_exp_details,
    }
    
    if("Abs_model_met2" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+      any(existing_exp_details$Abs_model_met2 == "ADAM", na.rm = T) == FALSE){
       Out <- Out %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "primary metabolite 2" &
@@ -342,7 +342,7 @@ annotateDetails <- function(existing_exp_details,
    }
    
    if("Abs_model_secmet" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+      any(existing_exp_details$Abs_model_secmet == "ADAM", na.rm = T) == FALSE){
       Out <- Out %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "secondary metabolite" &
@@ -351,7 +351,7 @@ annotateDetails <- function(existing_exp_details,
    }
    
    if("Abs_model_inhib1met" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
+      any(existing_exp_details$Abs_model_inhib1met == "ADAM", na.rm = T) == FALSE){
       Out <- Out %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "inhibitor 1 metabolite" &

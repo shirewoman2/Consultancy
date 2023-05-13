@@ -38,6 +38,7 @@ ct_plot_overlay(
   pad_y_axis = TRUE,
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_interval = NA,
   y_axis_label = NA,
   hline_position = NA,
   hline_style = "red dotted",
@@ -366,6 +367,10 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected. This only
 applies when you have requested a semi-log plot with \code{linear_or_log}.}
+
+\item{y_axis_interval}{set the y-axis major tick-mark interval. Acceptable
+input: any number or leave as NA to accept default values, which are
+generally reasonable guesses as to aesthetically pleasing intervals.}
 
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
