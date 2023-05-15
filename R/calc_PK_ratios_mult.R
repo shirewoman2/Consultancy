@@ -166,7 +166,6 @@
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from and data to use for making forest plots
 #' @export
-#'
 #' @examples
 #' # No examples yet.
 #' 

@@ -172,7 +172,6 @@
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from
 #' @export
-#'
 #' @examples
 #' # No examples yet.
 #' 

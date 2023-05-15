@@ -1303,7 +1303,7 @@ forest_plot <- function(forest_dataframe,
       
    } else {
       
-      # Making a graph w/out secondary y axis -------------------------------
+      # Graph w/out y order secondary y axis -------------------------------
       if(as_label(y_axis_column) == "File"){
          forest_dataframe <- forest_dataframe %>% 
             mutate(YCol = MyCompound)
