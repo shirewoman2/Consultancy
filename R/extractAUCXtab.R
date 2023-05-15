@@ -65,7 +65,7 @@ extractAUCXtab <- function(PKparameters,
             # If tab was user specified, need to remove the suffix indicating
             # which dose number it was b/c we don't know
             ToDetect <- ToDetect %>% 
-                mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
+                mutate(PKparameter = sub("_dose1|_last", "", PKparameter)) 
         }
             
         ToDetect <- ToDetect %>% 
@@ -73,7 +73,8 @@ extractAUCXtab <- function(PKparameters,
                                    "AUC0" = "AUC0", 
                                    "AUClast" = "AUCX", 
                                    "AUCX" = "AUCX") & PKparameter == i) %>% 
-            select(PKparameter, SearchText)
+            select(PKparameter, SearchText) %>% 
+           unique()
         
         if(nrow(ToDetect) == 0){
            next

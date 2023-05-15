@@ -907,9 +907,9 @@ pksummary_table <- function(sim_data_file = NA,
         !str_detect(names(MyPKResults_all)[1], "AUCinf_[^P]")))){
       warning(paste0("AUCinf included NA values in the file `", 
                      sim_data_file, 
-                     "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate."),
+                     "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. You man want to switch your request to AUCt instead."),
               call. = FALSE)
-      PKToPull <- sub("AUCinf", "AUCt", PKToPull)
+      # PKToPull <- sub("AUCinf", "AUCt", PKToPull)
    }
    
    # If they requested multiple parameters but only some were present, need to
@@ -1342,28 +1342,26 @@ pksummary_table <- function(sim_data_file = NA,
       select(Statistic, everything())
    
    # setting levels for PK parameters so that they're in a nice order
-   PKlevels <- AllPKParameters %>% select(PKparameter, SortOrder) %>% 
-      unique() %>% arrange(SortOrder) %>% pull(PKparameter)
-   
-   # PKlevels must be changed if user specified a tab b/c then the parameters
-   # won't have _last or _dose1 suffixes.
-   if(complete.cases(sheet_PKparameters) & 
-      any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
-      PKlevels <- unique(sub("_last|_dose1", "", PKlevels))
-      # When the suffix is included, then we get an order with 1st dose and
-      # then last dose, which is appropriate, but when the user specifies a
-      # tab, we need to change the order to get any AUC parameters before any
-      # Cmax parameters. 
-      PKlevels <- fct_relevel(PKlevels, c(PKlevels[str_detect(PKlevels, "AUC")], 
-                                          PKlevels[str_detect(PKlevels, "Cmax")]))
-      
-      PKlevels <- sort(PKlevels)
-   } 
-   
-   # If the user wants to specify the order, allowing that here.
-   if(str_detect(PKorder, "user")){
-      PKlevels <- PKparameters
-   }
+   PKlevels <- switch(paste(PKorder, complete.cases(sheet_PKparameters)), 
+                      
+                      # the default scenario
+                      "default FALSE" = AllPKParameters %>% 
+                         select(PKparameter, SortOrder) %>% 
+                         unique() %>% arrange(SortOrder) %>%
+                         pull(PKparameter), 
+                      
+                      # user wants a specific order but using default tabs
+                      "user specified FALSE" = PKparameters, 
+                      
+                      # default order but specific tab
+                      "default TRUE" = sub("_dose1|_last", "", 
+                                           AllPKParameters %>% 
+                                              select(PKparameter, SortOrder) %>% 
+                                              unique() %>% arrange(SortOrder) %>%
+                                              pull(PKparameter)), 
+                      
+                      # user-specified order and specific tab
+                      "user specified TRUE" = sub("_dose1|_last", "", PKparameters))
    
    PKToPull <- factor(PKToPull, levels = PKlevels)
    PKToPull <- sort(PKToPull)
