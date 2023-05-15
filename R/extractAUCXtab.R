@@ -75,6 +75,10 @@ extractAUCXtab <- function(PKparameters,
                                    "AUCX" = "AUCX") & PKparameter == i) %>% 
             select(PKparameter, SearchText)
         
+        if(nrow(ToDetect) == 0){
+           next
+        }
+        
         # Looking for the regular expression specific to this parameter
         # i. 
         ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
@@ -125,7 +129,7 @@ extractAUCXtab <- function(PKparameters,
             rename("Individual" = ...1, "Trial" = ...2)
         
         Out_ind[["AUCXtab"]] <- cbind(SubjTrial_AUCX,
-                                      as.data.frame(Out_ind[PKparameters]))
+                                      bind_rows(Out_ind[PKparameters]))
     }
     
     # suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))

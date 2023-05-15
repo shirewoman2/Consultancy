@@ -207,6 +207,10 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
+#' @param variability_format When the variability is concatenated, format the
+#'   variability either by listing it as "X to Y" (default,
+#'   \code{variability_format = "to"}) or as "[X, Y]" (\code{variability_format
+#'   = "brackets"})
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -251,7 +255,7 @@
 #' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
 #'   yellow the cells on the source Excel file where the data came from. This
 #'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-#'   the output with \code{save_table}. 
+#'   the output with \code{save_table}.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -318,6 +322,7 @@ pksummary_table <- function(sim_data_file = NA,
                             includePerc = FALSE,
                             includeTrialMeans = FALSE,
                             concatVariability = FALSE,
+                            variability_format = "to",
                             adjust_conc_units = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
@@ -381,6 +386,13 @@ pksummary_table <- function(sim_data_file = NA,
    if(complete.cases(sheet_PKparameters) &&
       sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")){
       sheet_PKparameters <- NA
+   }
+   
+   # Make sure that input to variability_format is ok
+   if(variability_format %in% c("to", "brackets") == FALSE){
+      warning("Acceptable input for `variability_format` is only `to` or `brackets`, and you have entered", 
+              variability_format, ". We'll use the default format of `to` for now.", 
+              call. = FALSE)
    }
    
    # Main body of function --------------------------------------------------
@@ -1278,7 +1290,10 @@ pksummary_table <- function(sim_data_file = NA,
             mutate(across(.cols = !matches("Stat"),
                           .fns = function(x) {
                              ifelse(all(complete.cases(c(x[1], x[2]))),
-                                    paste(x[1], "to", x[2]), NA)}),
+                                    switch(variability_format, 
+                                           "to" = paste(x[1], "to", x[2]),
+                                           "brackets" = paste0("[", x[1], ", ", x[2], "]")),
+                                    NA)}),
                    Stat = switch(j,
                                  "ConfInt90" = "CI90concat",
                                  "ConfInt95" = "CI95concat",

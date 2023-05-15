@@ -290,7 +290,7 @@ extractPK <- function(sim_data_file,
       
       Tab_last <- SheetNames[
          str_detect(SheetNames, 
-                    paste0("Int AUC last", 
+                    paste0("Int AUC last(_CI|_SD)?", 
                            switch(compoundToExtract,
                                   "substrate" = "\\(Sub\\)", 
                                   "primary metabolite 1" = "\\(Sub Met\\)",

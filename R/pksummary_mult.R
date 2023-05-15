@@ -175,6 +175,10 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
+#' @param variability_format When the variability is concatenated, format the
+#'   variability either by listing it as "X to Y" (default,
+#'   \code{variability_format = "to"}) or as "[X, Y]" (\code{variability_format
+#'   = "brackets"})
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -252,6 +256,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            includePerc = FALSE, 
                            includeTrialMeans = FALSE, 
                            concatVariability = FALSE, 
+                           variability_format = "to",
                            adjust_conc_units = NA, 
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
@@ -537,6 +542,7 @@ pksummary_mult <- function(sim_data_files = NA,
                   includePerc = includePerc, 
                   includeTrialMeans = includeTrialMeans,
                   concatVariability = concatVariability,
+                  variability_format = variability_format,
                   adjust_conc_units = adjust_conc_units,
                   prettify_columns = prettify_columns, 
                   extract_forest_data = extract_forest_data,
