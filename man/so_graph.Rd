@@ -19,6 +19,8 @@ so_graph(
   point_size = NA,
   legend_label_point_shape = NA,
   legend_position = "none",
+  ncol = NULL,
+  nrow = NULL,
   save_graph = NA,
   fig_width = 8,
   fig_height = 6
@@ -153,6 +155,12 @@ this legend item, set this to "none".}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
+
+\item{ncol}{number of columns of graphs to show. If left as NULL (default), R
+will make a reasonable guess for the number.}
+
+\item{nrow}{number of rows of graphs to show. If left as NULL (default), R
+will make a reasonable guess for the number.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"}

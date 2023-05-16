@@ -124,6 +124,10 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param ncol number of columns of graphs to show. If left as NULL (default), R
+#'   will make a reasonable guess for the number.
+#' @param nrow number of rows of graphs to show. If left as NULL (default), R
+#'   will make a reasonable guess for the number.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"
 #' @param fig_height figure height in inches; default is 8
@@ -152,6 +156,8 @@ so_graph <- function(PKtable,
                      point_size = NA,
                      legend_label_point_shape = NA, 
                      legend_position = "none",
+                     ncol = NULL, 
+                     nrow = NULL,
                      save_graph = NA, 
                      fig_width = 8, 
                      fig_height = 6){
@@ -572,9 +578,41 @@ so_graph <- function(PKtable,
       G <- G[[1]] + theme(legend.position = "none")
       
    } else {
-      G <-  ggpubr::ggarrange(plotlist = G, align = "hv", 
-                              legend = legend_position, 
-                              common.legend = TRUE)
+      
+      # ncol and nrow must both be specified or neither specified. Dealing with
+      # that.
+      NumCR <- paste(is.null(ncol), is.null(nrow))
+      
+      G <-  ggpubr::ggarrange(
+         plotlist = G, align = "hv", 
+         nrow = switch(NumCR, 
+                       
+                       # specified both
+                       "FALSE FALSE" = nrow,
+                       
+                       # specified only ncol
+                       "FALSE TRUE" = round_up_unit(length(G)/ncol, 1),
+                       
+                       # specified only nrow
+                       "TRUE FALSE" = nrow,
+                       
+                       # specified neither
+                       "TRUE TRUE" = NULL),
+         ncol = switch(NumCR, 
+                       
+                       # specified both
+                       "FALSE FALSE" = ncol,
+                       
+                       # specified only ncol
+                       "FALSE TRUE" = ncol,
+                       
+                       # specified only nrow
+                       "TRUE FALSE" = round_up_unit(length(G)/nrow, 1),
+                       
+                       # specified neither
+                       "TRUE TRUE" = NULL),
+         legend = legend_position, 
+         common.legend = TRUE)
    }
    
    
