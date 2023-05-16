@@ -500,7 +500,7 @@ extractPK <- function(sim_data_file,
    # PKparameters as NA or as the default "AUC tab", then let's only return the
    # parameters that they asked for. 
    if(complete.cases(sheet) & complete.cases(PKparameters_orig[1]) &&
-      !PKparameters_orig[1] %in% c("all", "AUC tab")){
+      any(PKparameters_orig %in% c("all", "AUC tab")) == FALSE){
       PKparameters <- intersect(PKparameters, PKparameters_orig)
    }
    
@@ -735,7 +735,7 @@ extractPK <- function(sim_data_file,
             }
             
             if(length(ColNum) == 0 | is.na(ColNum)){
-               if(PKparameters_orig %in% c("all", "AUC tab") == FALSE){
+               if(any(PKparameters_orig %in% c("all", "AUC tab") == FALSE)){
                   warning(paste0("The column with information for ", i,
                                  " on the tab 'AUC' cannot be found in the file ", 
                                  sim_data_file, "."), 
@@ -798,8 +798,11 @@ extractPK <- function(sim_data_file,
          SubjTrial_AUC <- AUC_xl[(IndexRow + 1):EndRow_ind, 1:2] %>%
             rename("Individual" = ...1, "Trial" = ...2)
          
-         Out_ind[["AUCtab"]] <- cbind(SubjTrial_AUC,
-                                      as.data.frame(Out_ind[PKparameters_AUC]))
+         Out_ind <- Out_ind[PKparameters_AUC] 
+            
+         Out_ind[["AUCtab"]] <-
+            cbind(SubjTrial_AUC,
+                  as.data.frame(Out_ind[which(sapply(Out_ind, length) > 0)]))
       }
       
    }
@@ -817,9 +820,9 @@ extractPK <- function(sim_data_file,
    }
    
    if(length(PKparameters_AUC0) > 0 & complete.cases(Tab_first) &
-      (PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE |
-       PKparameters_orig[1] == "AUC tab" & "AUC" %in% SheetNames == FALSE |
-       PKparameters_orig[1] == "AUC tab" & compoundToExtract != "substrate")){
+      (any(PKparameters_orig %in% c("AUC tab", "Absorption tab")) == FALSE |
+       (any(PKparameters_orig == "AUC tab") & "AUC" %in% SheetNames == FALSE) |
+       (any(PKparameters_orig == "AUC tab") & compoundToExtract != "substrate"))){
       # Error catching
       # if(any(str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
       #     # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")
@@ -868,7 +871,7 @@ extractPK <- function(sim_data_file,
    }
    
    if(length(PKparameters_AUClast) > 0 && complete.cases(Tab_last) &
-      PKparameters_orig[1] %in% c("Regional ADAM", "Absorption tab") == FALSE){
+      any(PKparameters_orig %in% c("Regional ADAM", "Absorption tab")) == FALSE){
       
       # # Error catching
       # if(length(Tab_last) == 0 | is.na(Tab_last)){
@@ -943,7 +946,7 @@ extractPK <- function(sim_data_file,
    }
    
    if(length(PKparameters_Abs) > 0 &
-      PKparameters_orig[1] %in% c("AUC tab") == FALSE){
+      any(PKparameters_orig %in% c("AUC tab")) == FALSE){
       # Error catching
       if(any(c("Absorption", "Overall Fa Fg") %in% SheetNames) == FALSE){
          warning(paste0("A sheet called `Absorption` or `Overall Fa Fg` must be present in the Excel simulated data file to extract the PK parameters ",
@@ -995,7 +998,7 @@ extractPK <- function(sim_data_file,
                   ToDetect$SearchText)) + StartCol - 1
                
                if(length(ColNum) == 0 | is.na(ColNum)){
-                  if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+                  if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                      warning(paste0("The column with information for ", i,
                                     " on the tab `Overall Fa Fg` cannot be found in the file ", 
                                     sim_data_file, "."), 
@@ -1075,7 +1078,7 @@ extractPK <- function(sim_data_file,
                   ToDetect$SearchText)) + StartCol - 1
                
                if(length(ColNum) == 0 | is.na(ColNum)){
-                  if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+                  if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                      warning(paste0("The column with information for ", i,
                                     " on the tab 'Absorption' cannot be found in the file ", 
                                     sim_data_file, "."), 
@@ -1194,7 +1197,7 @@ extractPK <- function(sim_data_file,
    }
    
    if(length(PKparameters_CLTSS) > 0 &
-      PKparameters_orig[1] %in% c("AUC tab", "Absorption tab") == FALSE){
+      any(PKparameters_orig %in% c("AUC tab", "Absorption tab")) == FALSE){
       # Error catching
       if("Clearance Trials SS" %in% SheetNames == FALSE){
          
@@ -1277,7 +1280,7 @@ extractPK <- function(sim_data_file,
                                        ToDetect$SearchText))
             
             if(length(ColNum) == 0 | is.na(ColNum)){
-               if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+               if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                   warning(paste0("The column with information for ", i,
                                  " on the tab 'Clearance Trials SS' cannot be found in the file ", 
                                  sim_data_file, "."), 
@@ -1341,7 +1344,7 @@ extractPK <- function(sim_data_file,
                                         ToDetect$SearchText))
             
             if(length(ColNum) == 0 | is.na(ColNum)){
-               if(PKparameters_orig %in% c("all", "Absorption tab") == FALSE){
+               if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                   warning(paste0("The column with information for ", i,
                                  " on the tab 'Clearance Trials SS' cannot be found in the file ", 
                                  sim_data_file, "."), 
@@ -1447,7 +1450,7 @@ extractPK <- function(sim_data_file,
             ColNum <- ifelse(str_detect(i, "fa"), ColNum[1], ColNum[2])
             
             if(length(ColNum) == 0 | is.na(ColNum)){
-               if(PKparameters_orig %in% c("all", "Regional ADAM") == FALSE){
+               if(any(PKparameters_orig %in% c("all", "Regional ADAM")) == FALSE){
                   warning(paste0("The column with information for ", i,
                                  " on the tab `Regional ADAM Fractions (Sub)` cannot be found in the file ", 
                                  sim_data_file, "."), 

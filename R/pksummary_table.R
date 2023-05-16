@@ -1347,8 +1347,8 @@ pksummary_table <- function(sim_data_file = NA,
                       # the default scenario
                       "default FALSE" = AllPKParameters %>% 
                          select(PKparameter, SortOrder) %>% 
-                         unique() %>% arrange(SortOrder) %>%
-                         pull(PKparameter), 
+                         arrange(SortOrder) %>%
+                         pull(PKparameter) %>% unique(), 
                       
                       # user wants a specific order but using default tabs
                       "user specified FALSE" = PKparameters, 
@@ -1357,8 +1357,8 @@ pksummary_table <- function(sim_data_file = NA,
                       "default TRUE" = sub("_dose1|_last", "", 
                                            AllPKParameters %>% 
                                               select(PKparameter, SortOrder) %>% 
-                                              unique() %>% arrange(SortOrder) %>%
-                                              pull(PKparameter)), 
+                                              arrange(SortOrder) %>%
+                                              pull(PKparameter) %>% unique()), 
                       
                       # user-specified order and specific tab
                       "user specified TRUE" = sub("_dose1|_last", "", PKparameters))
