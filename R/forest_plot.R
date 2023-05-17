@@ -1385,8 +1385,8 @@ forest_plot <- function(forest_dataframe,
          scale_x_continuous(trans = scales::pseudo_log_trans(sigma = 0.01, base = 10),
                             breaks =  XBreaks, 
                             labels = switch(x_axis_number_type, 
-                                            "ratios" = waiver(), 
-                                            "percents" = scales::percent)) + 
+                                            "ratios" = scales::label_comma(), 
+                                            "percents" = scales::label_percent())) + 
          coord_cartesian(xlim = x_axis_limits) +
          xlab(ifelse(is.na(x_axis_label), XTitle, x_axis_label)) + 
          ylab(switch(as.character(y_axis_title == "none"), 
