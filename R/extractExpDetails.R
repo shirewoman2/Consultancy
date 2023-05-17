@@ -1080,7 +1080,10 @@ extractExpDetails <- function(sim_data_file,
          
       }
       
-      PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Population, 1, 20))]
+      # If user has requested that the population tab be annotated, which is an
+      # option!, then there will be 2 matches to the population sheet name. We
+      # want the 1st one.
+      PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Population, 1, 20))][1]
       
       PopTab <- suppressMessages(tryCatch(
          readxl::read_excel(path = sim_data_file, sheet = PopSheet,
