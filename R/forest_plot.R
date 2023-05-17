@@ -110,8 +110,11 @@
 #'   co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
 #'   This does NOT work with a secondary y axis and will be ignored.
 #' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
-#' @param x_axis_number_type set the x axis number type to be "ratios" (default)
-#'   or "percents"
+#' @param x_axis_number_type set the x axis number type to be "ratios"
+#'   (default), "percents" (converts the ratios to a percent), or "keep trailing
+#'   zeroes" (still uses ratios but, unlike the default, guesses at a reasonable
+#'   number of digits to include based on the range of the data and includes
+#'   trailing zeroes as necessary)
 #' @param x_axis_label optionally supply a character vector or an expression to
 #'   use for the x axis label
 #' @param facet_column_x optionally break up the graph horizontally into small
@@ -396,8 +399,8 @@ forest_plot <- function(forest_dataframe,
    x_axis_number_type <- ifelse(str_detect(x_axis_number_type, "perc"), 
                                 "percents", x_axis_number_type)
    if(length(x_axis_number_type) != 1 |
-      x_axis_number_type %in% c("ratios", "percents") == FALSE){
-      warning("The value for `x_axis_number_type` must be either `ratios` or `percents`, and you've specified something else. Please check your input. For now, we'll assume you want ratios, the default.", 
+      x_axis_number_type %in% c("ratios", "percents", "keep trailing zeroes") == FALSE){
+      warning("The value for `x_axis_number_type` must be `ratios`, `percents`, or `keep trailing zeroes` and you've specified something else. Please check your input. For now, we'll assume you want ratios, the default.", 
               call. = FALSE)
       x_axis_number_type <- "ratios"
    }
@@ -1095,6 +1098,10 @@ forest_plot <- function(forest_dataframe,
    
    XBreaks <- c(0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 1.25, 2, 5, 10, 
                 50, 100, 500, 1000)
+   XBreaks_char <- c("0.001", "0.01", "0.05", "0.1", "0.2", "0.5", "0.8", "1.25", "2", "5", "10", 
+                     "50", "100", "500", "1000")
+   XBreaks_char <- XBreaks_char[XBreaks >= x_axis_limits[1] & 
+                                   XBreaks <= x_axis_limits[2]]
    XBreaks <- XBreaks[XBreaks >= x_axis_limits[1] & 
                          XBreaks <= x_axis_limits[2]]
    
@@ -1240,7 +1247,8 @@ forest_plot <- function(forest_dataframe,
                scale_x_continuous(trans = scales::pseudo_log_trans(sigma = 0.01, base = 10),
                                   breaks =  XBreaks, 
                                   labels = switch(x_axis_number_type, 
-                                                  "ratios" = waiver(), 
+                                                  "ratios" = XBreaks_char,
+                                                  "keep trailing zeroes" = scales::label_comma(), 
                                                   "percents" = scales::percent)) + 
                coord_cartesian(xlim = x_axis_limits) +
                xlab(ifelse(is.na(x_axis_label), XTitle, x_axis_label)) + 
@@ -1377,7 +1385,8 @@ forest_plot <- function(forest_dataframe,
          scale_x_continuous(trans = scales::pseudo_log_trans(sigma = 0.01, base = 10),
                             breaks =  XBreaks, 
                             labels = switch(x_axis_number_type, 
-                                            "ratios" = scales::label_comma(), 
+                                            "ratios" = XBreaks_char,
+                                            "keep trailing zeroes" = scales::label_comma(),  
                                             "percents" = scales::label_percent())) + 
          coord_cartesian(xlim = x_axis_limits) +
          xlab(ifelse(is.na(x_axis_label), XTitle, x_axis_label)) + 

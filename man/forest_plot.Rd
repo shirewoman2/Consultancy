@@ -150,8 +150,11 @@ This does NOT work with a secondary y axis and will be ignored.}
 \item{x_axis_label}{optionally supply a character vector or an expression to
 use for the x axis label}
 
-\item{x_axis_number_type}{set the x axis number type to be "ratios" (default)
-or "percents"}
+\item{x_axis_number_type}{set the x axis number type to be "ratios"
+(default), "percents" (converts the ratios to a percent), or "keep trailing
+zeroes" (still uses ratios but, unlike the default, guesses at a reasonable
+number of digits to include based on the range of the data and includes
+trailing zeroes as necessary)}
 
 \item{facet_column_x}{optionally break up the graph horizontally into small
 multiples. The designated column name should be unquoted, e.g.,
