@@ -58,176 +58,176 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                   compoundsToExtract = "all",
                                   exp_details = "all", 
                                   save_output = NA){
-    
-    # Error catching ---------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
-    
-    # If user did not supply files, then extract all the files in the current
-    # folder that end in "wksz".
-    if(length(sim_workspace_files) == 1 && is.na(sim_workspace_files)){
-        sim_workspace_files <- list.files(pattern = "wksz$")
-        sim_workspace_files <- sim_workspace_files[!str_detect(sim_workspace_files, "^~")]
-    }
-    
-    # If they didn't include ".wksz" at the end, add that.
-    sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE] <-
-        paste0(sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE], 
-               ".wksz")
-    
-    # Making sure that all the files exist before attempting to pull data
-    if(any(file.exists(sim_workspace_files) == FALSE)){
-        MissingSimFiles <- sim_workspace_files[
-            which(file.exists(sim_workspace_files) == FALSE)]
-        warning(paste0("The file(s) ", 
-                       str_comma(paste0("`", MissingSimFiles, "`")), 
-                       " is/are not present and thus will not be extracted."), 
-                call. = FALSE)
-        sim_workspace_files <- setdiff(sim_workspace_files, MissingSimFiles)
-    }
-    
-    # Checking compound IDs
-    compoundsToExtract <- tolower(compoundsToExtract)
-    
-    MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
-                         "secondary metabolite",
-                         "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
-                         "inhibitor 2 metabolite")
-    
-    PossCmpd <- c(MainCompoundIDs, "all")
-    
-    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
-        warning(paste0("The compound(s) ", 
-                       str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
-                       " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                       str_comma(paste0("`", PossCmpd, "`"))), 
-                call. = FALSE)
-        compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
-    }
-    
-    if(any(compoundsToExtract == "all")){
-        compoundsToExtract <- MainCompoundIDs
-        
-        # HACK: For now, since I'm not sure which details are available for
-        # which compound IDs, only setting this function up to work for
-        # substrate, inhibitor 1, and inhibitor 2.
-        compoundsToExtract <- c("substrate", "inhibitor 1", "inhibitor 2")
-    }
-    
-    
-    # Main body of function ---------------------------------------------------
-    
-    if("all" %in% exp_details){
-       exp_details <- AllExpDetails %>% filter(Sheet == "workspace XML file") %>% 
-          pull(Detail)
-    }
-    
-    CompoundDetails <- AllExpDetails %>% 
-       filter(Sheet == "workspace XML file" & Level1 == "Compounds") %>% 
-        pull(Detail)
-    
-    Deets <- list()
-    
-    for(i in sim_workspace_files){
-        
-        Deets[[i]] <- list()
-        
-        workspace_xml <- XML::xmlTreeParse(i, useInternal = TRUE)
-        RootNode <- XML::xmlRoot(workspace_xml)
-        
-        if(any(exp_details %in% CompoundDetails)){
+   
+   # Error catching ---------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # If user did not supply files, then extract all the files in the current
+   # folder that end in "wksz".
+   if(length(sim_workspace_files) == 1 && is.na(sim_workspace_files)){
+      sim_workspace_files <- list.files(pattern = "wksz$")
+      sim_workspace_files <- sim_workspace_files[!str_detect(sim_workspace_files, "^~")]
+   }
+   
+   # If they didn't include ".wksz" at the end, add that.
+   sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE] <-
+      paste0(sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE], 
+             ".wksz")
+   
+   # Making sure that all the files exist before attempting to pull data
+   if(any(file.exists(sim_workspace_files) == FALSE)){
+      MissingSimFiles <- sim_workspace_files[
+         which(file.exists(sim_workspace_files) == FALSE)]
+      warning(paste0("The file(s) ", 
+                     str_comma(paste0("`", MissingSimFiles, "`")), 
+                     " is/are not present and thus will not be extracted."), 
+              call. = FALSE)
+      sim_workspace_files <- setdiff(sim_workspace_files, MissingSimFiles)
+   }
+   
+   # Checking compound IDs
+   compoundsToExtract <- tolower(compoundsToExtract)
+   
+   MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+                        "secondary metabolite",
+                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                        "inhibitor 2 metabolite")
+   
+   PossCmpd <- c(MainCompoundIDs, "all")
+   
+   if(any(compoundsToExtract %in% PossCmpd == FALSE)){
+      warning(paste0("The compound(s) ", 
+                     str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
+                     " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                     str_comma(paste0("`", PossCmpd, "`"))), 
+              call. = FALSE)
+      compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
+   }
+   
+   if(any(compoundsToExtract == "all")){
+      compoundsToExtract <- MainCompoundIDs
+      
+      # HACK: For now, since I'm not sure which details are available for
+      # which compound IDs, only setting this function up to work for
+      # substrate, inhibitor 1, and inhibitor 2.
+      compoundsToExtract <- c("substrate", "inhibitor 1", "inhibitor 2")
+   }
+   
+   
+   # Main body of function ---------------------------------------------------
+   
+   if("all" %in% exp_details){
+      exp_details <- AllExpDetails %>% filter(Sheet == "workspace XML file") %>% 
+         pull(Detail)
+   }
+   
+   CompoundDetails <- AllExpDetails %>% 
+      filter(Sheet == "workspace XML file" & Level1 == "Compounds") %>% 
+      pull(Detail)
+   
+   Deets <- list()
+   
+   for(i in sim_workspace_files){
+      
+      Deets[[i]] <- list()
+      
+      workspace_xml <- XML::xmlTreeParse(i, useInternal = TRUE)
+      RootNode <- XML::xmlRoot(workspace_xml)
+      
+      if(any(exp_details %in% CompoundDetails)){
+         
+         for(j in compoundsToExtract){
             
-            for(j in compoundsToExtract){
-                
-                CompoundNum <- switch(j, 
-                                      "substrate" = 1, 
-                                      "primary metabolite 1" = 5,
-                                      "primary metabolite 2" = 8,
-                                      "secondary metabolite" = 7,
-                                      "inhibitor 1" = 2,
-                                      "inhibitor 2" = 3, 
-                                      "inhibitor 1 metabolite" = 6)
-                
-                
-                for(k in CompoundDetails){
-                    
-                    DeetInfo <- AllExpDetails %>% 
-                       filter(Sheet == "workspace XML file" & Detail == k)
-                    DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
-                    DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
-                    
-                    DeetValue <- 
-                        switch(DeetLevels, 
-                               # There shouldn't be anything that's only 1 or 2 here
-                               "3" =  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                                   DeetInfo$Level3]]), 
-                               "4" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                                   DeetInfo$Level4]]), 
-                               "5" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                                   DeetInfo$Level3]][[
-                                       DeetInfo$Level4]][[
-                                           DeetInfo$Level5]]))
-                    
-                    DeetValue <- switch(DeetInfo$Class, 
-                                        "numeric" = as.numeric(DeetValue), 
-                                        "character" = as.character(DeetValue))
-                    
-                    Deets[[i]][[gsub("_X$", switch(j, 
-                                                   "substrate" = "_sub", 
-                                                   "primary metabolite 1" = "_met1",
-                                                   "primary metabolite 2" = "_met2",
-                                                   "secondary metabolite" = "_secmet",
-                                                   "inhibitor 1" = "_inhib",
-                                                   "inhibitor 2" = "_inhib2", 
-                                                   "inhibitor 1 metabolite" = "_inhib1met"),
-                                     k)]] <- DeetValue 
-                    
-                    rm(DeetInfo, DeetLevels, DeetValue)
-                }
-                rm(CompoundNum)
+            CompoundNum <- switch(j, 
+                                  "substrate" = 1, 
+                                  "primary metabolite 1" = 5,
+                                  "primary metabolite 2" = 8,
+                                  "secondary metabolite" = 7,
+                                  "inhibitor 1" = 2,
+                                  "inhibitor 2" = 3, 
+                                  "inhibitor 1 metabolite" = 6)
+            
+            
+            for(k in CompoundDetails){
+               
+               DeetInfo <- AllExpDetails %>% 
+                  filter(Sheet == "workspace XML file" & Detail == k)
+               DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
+               DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
+               
+               DeetValue <- 
+                  switch(DeetLevels, 
+                         # There shouldn't be anything that's only 1 or 2 here
+                         "3" =  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+                            DeetInfo$Level3]]), 
+                         "4" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+                            DeetInfo$Level4]]), 
+                         "5" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+                            DeetInfo$Level3]][[
+                               DeetInfo$Level4]][[
+                                  DeetInfo$Level5]]))
+               
+               DeetValue <- switch(DeetInfo$Class, 
+                                   "numeric" = as.numeric(DeetValue), 
+                                   "character" = as.character(DeetValue))
+               
+               Deets[[i]][[gsub("_X$", switch(j, 
+                                              "substrate" = "_sub", 
+                                              "primary metabolite 1" = "_met1",
+                                              "primary metabolite 2" = "_met2",
+                                              "secondary metabolite" = "_secmet",
+                                              "inhibitor 1" = "_inhib",
+                                              "inhibitor 2" = "_inhib2", 
+                                              "inhibitor 1 metabolite" = "_inhib1met"),
+                                k)]] <- DeetValue 
+               
+               rm(DeetInfo, DeetLevels, DeetValue)
             }
-        }
-        
-        if(length(setdiff(exp_details, CompoundDetails)) >= 1){
-            for(m in setdiff(exp_details, CompoundDetails)){
-                
-                DeetInfo <- AllExpDetails %>% 
-                   filter(Sheet == "workspace XML file" & Detail == m)
-                DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
-                DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
-                
-                DeetValue <- 
-                    switch(DeetLevels, 
-                           "2" = XML::xmlValue(RootNode[[DeetInfo$Level1]][[
-                               DeetInfo$Level2]]), 
-                           "3" =  XML::xmlValue(RootNode[[DeetInfo$Level1]][[
-                               DeetInfo$Level2]][[DeetInfo$Level3]]), 
-                           "4" = XML::xmlValue(RootNode[[DeetInfo$Level1]][[
-                               DeetInfo$Level2]][[DeetInfo$Level3]][[DeetInfo$Level4]]), 
-                           "5" = XML::xmlValue(RootNode[[DeetInfo$Level1]][[
-                               DeetInfo$Level2]][[DeetInfo$Level3]][[DeetInfo$Level4]][[
-                                   DeetInfo$Level5]]))
-                
-                DeetValue <- switch(DeetInfo$Class, 
-                                    "numeric" = as.numeric(DeetValue), 
-                                    "character" = as.character(DeetValue))
-                
-                Deets[[i]][[DeetInfo$Detail]] <- DeetValue
-                
-                rm(DeetInfo, DeetLevels, DeetValue)
-            }
-        }
-        
-        rm(workspace_xml, RootNode)
-        
-        Deets[[i]] <- as.data.frame(Deets[[i]]) %>% mutate(Workspace = i)
-    }
-    
-    Deets <- bind_rows(Deets)
-    Deets[Deets == ""] <- NA
-    
-    return(Deets)
-    
+            rm(CompoundNum)
+         }
+      }
+      
+      if(length(setdiff(exp_details, CompoundDetails)) >= 1){
+         for(m in setdiff(exp_details, CompoundDetails)){
+            
+            DeetInfo <- AllExpDetails %>% 
+               filter(Sheet == "workspace XML file" & Detail == m)
+            DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
+            DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
+            
+            DeetValue <- 
+               switch(DeetLevels, 
+                      "2" = XML::xmlValue(RootNode[[DeetInfo$Level1]][[
+                         DeetInfo$Level2]]), 
+                      "3" =  XML::xmlValue(RootNode[[DeetInfo$Level1]][[
+                         DeetInfo$Level2]][[DeetInfo$Level3]]), 
+                      "4" = XML::xmlValue(RootNode[[DeetInfo$Level1]][[
+                         DeetInfo$Level2]][[DeetInfo$Level3]][[DeetInfo$Level4]]), 
+                      "5" = XML::xmlValue(RootNode[[DeetInfo$Level1]][[
+                         DeetInfo$Level2]][[DeetInfo$Level3]][[DeetInfo$Level4]][[
+                            DeetInfo$Level5]]))
+            
+            DeetValue <- switch(DeetInfo$Class, 
+                                "numeric" = as.numeric(DeetValue), 
+                                "character" = as.character(DeetValue))
+            
+            Deets[[i]][[DeetInfo$Detail]] <- DeetValue
+            
+            rm(DeetInfo, DeetLevels, DeetValue)
+         }
+      }
+      
+      rm(workspace_xml, RootNode)
+      
+      Deets[[i]] <- as.data.frame(Deets[[i]]) %>% mutate(Workspace = i)
+   }
+   
+   Deets <- bind_rows(Deets)
+   Deets[Deets == ""] <- NA
+   
+   return(Deets)
+   
 }

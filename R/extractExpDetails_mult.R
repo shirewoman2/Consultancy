@@ -115,178 +115,178 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    annotate_output = TRUE,
                                    save_output = NA, 
                                    ...){
-    
-    # Error catching ---------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
-    
-    # Checking whether they've supplied extractExpDetails args instead of
-    # extractExpDetails_mult args
-    if("sim_data_file" %in% names(match.call()) &
-       "sim_data_files" %in% names(match.call()) == FALSE){
-        sim_data_files <- sys.call()$sim_data_file
-    }
-    
-    # If user did not supply files, then extract all the files in the current
-    # folder that end in "xlsx".
-    if(length(sim_data_files) == 1 && is.na(sim_data_files)){
-        sim_data_files <- list.files(pattern = "xlsx$")
-        sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-    }
-    
-    # If they didn't include ".xlsx" at the end, add that.
-    sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE] <-
-        paste0(sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE], 
-               ".xlsx")
-    
-    # Making sure that all the files exist before attempting to pull data
-    if(any(file.exists(sim_data_files) == FALSE)){
-        MissingSimFiles <- sim_data_files[
-            which(file.exists(sim_data_files) == FALSE)]
-        warning(paste0("The file(s) ", 
-                       str_comma(paste0("`", MissingSimFiles, "`")), 
-                       " is/are not present and thus will not be extracted."), 
-                call. = FALSE)
-        sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
-    }
-    
-    
-    # Main body of function ---------------------------------------------------
-    
-    # print(quo_name(enquo(existing_exp_details))) # for bug fixing
-    
-    AnyExistingDeets <- exists(deparse(substitute(existing_exp_details)))
-    
-    if(AnyExistingDeets){
-        if(class(existing_exp_details)[1] == "list"){
-            existing_exp_details <- bind_rows(existing_exp_details)
-        }
-        
-        if("data.frame" %in% class(existing_exp_details)){
-            if(all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))){
-                # This is when existing_exp_details has been annotated.
-                # Ironically, need to de-annotate here to make this work well
-                # with the rest of the function.
-                existing_exp_details <- existing_exp_details %>% 
-                    select(-any_of(c("SimulatorSection", "Sheet", "Notes",
-                                     "CompoundID", "Compound"))) %>% 
-                    pivot_longer(cols = -Detail, 
-                                 names_to = "File", values_to = "Value") %>% 
-                    pivot_wider(names_from = Detail, values_from = Value)
-                
-            } else if("File" %in% names(existing_exp_details) == FALSE){
-                existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
-            }
+   
+   # Error catching ---------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Checking whether they've supplied extractExpDetails args instead of
+   # extractExpDetails_mult args
+   if("sim_data_file" %in% names(match.call()) &
+      "sim_data_files" %in% names(match.call()) == FALSE){
+      sim_data_files <- sys.call()$sim_data_file
+   }
+   
+   # If user did not supply files, then extract all the files in the current
+   # folder that end in "xlsx".
+   if(length(sim_data_files) == 1 && is.na(sim_data_files)){
+      sim_data_files <- list.files(pattern = "xlsx$")
+      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+   }
+   
+   # If they didn't include ".xlsx" at the end, add that.
+   sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE] <-
+      paste0(sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE], 
+             ".xlsx")
+   
+   # Making sure that all the files exist before attempting to pull data
+   if(any(file.exists(sim_data_files) == FALSE)){
+      MissingSimFiles <- sim_data_files[
+         which(file.exists(sim_data_files) == FALSE)]
+      warning(paste0("The file(s) ", 
+                     str_comma(paste0("`", MissingSimFiles, "`")), 
+                     " is/are not present and thus will not be extracted."), 
+              call. = FALSE)
+      sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+   }
+   
+   
+   # Main body of function ---------------------------------------------------
+   
+   # print(quo_name(enquo(existing_exp_details))) # for bug fixing
+   
+   AnyExistingDeets <- exists(deparse(substitute(existing_exp_details)))
+   
+   if(AnyExistingDeets){
+      if(class(existing_exp_details)[1] == "list"){
+         existing_exp_details <- bind_rows(existing_exp_details)
+      }
+      
+      if("data.frame" %in% class(existing_exp_details)){
+         if(all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))){
+            # This is when existing_exp_details has been annotated.
+            # Ironically, need to de-annotate here to make this work well
+            # with the rest of the function.
+            existing_exp_details <- existing_exp_details %>% 
+               select(-any_of(c("SimulatorSection", "Sheet", "Notes",
+                                "CompoundID", "Compound"))) %>% 
+               pivot_longer(cols = -Detail, 
+                            names_to = "File", values_to = "Value") %>% 
+               pivot_wider(names_from = Detail, values_from = Value)
             
-            if(overwrite == FALSE){
-                sim_data_files_topull <- unique(setdiff(sim_data_files, 
-                                                        existing_exp_details$File))
-            } else {
-                sim_data_files_topull <- unique(sim_data_files)
-                existing_exp_details <- existing_exp_details %>%
-                    filter(!File %in% existing_exp_details$File)
-            }
-        }
-        
-    } else {
-        sim_data_files_topull <- unique(sim_data_files)
-    }
-    
-    MyDeets <- list()
-    CustomDosing <- c()
-    
-    for(i in sim_data_files_topull){
-        message(paste("Extracting data from file =", i))
-        MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
-                                          exp_details = exp_details) 
-        
-        # Checking for custom dosing regimens and removing those data b/c they
-        # have a different data structure and cannot easily be coerced into a
-        # single row for each simulator file.
-        if(any(str_detect(tolower(names(MyDeets[[i]])), "custom"))){
-            CustomDosing[i] <- TRUE
-            MyDeets[[i]] <- 
-                MyDeets[[i]][!str_detect(tolower(names(MyDeets[[i]])), "custom")]
-        } else {
-            CustomDosing[i] <- FALSE
-        }
-        
-        MyDeets[[i]] <- MyDeets[[i]] %>% 
-            as.data.frame() %>% 
-            mutate(File = i) %>% 
-            select(File, everything())
-    }
-    
-    if(any(CustomDosing) | 
-       (AnyExistingDeets && 
-        any(sapply(existing_exp_details %>% 
-                   select(any_of(c("Dose_sub", "Dose_inhib", 
-                                   "DoseInt_sub", "DoseInt_inhib"))), 
-                   class) == "character"))){
-        for(j in names(MyDeets)){
-            MyDeets[[j]] <- MyDeets[[j]] %>% 
-                mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
-                                               "DoseInt_sub", "DoseInt_inhib")), 
-                              .fns = as.character))
-        }
-        
-        # Also then need to make these character for existing_exp_details, too. 
-        if(AnyExistingDeets){
-            existing_exp_details <- existing_exp_details %>% 
-                mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
-                                               "DoseInt_sub", "DoseInt_inhib")), 
-                              .fns = as.character))
-        }
-    }
-    
-    # Binding and organizing
-    Out <- bind_rows(MyDeets)
-    
-    if(AnyExistingDeets){
-        if(annotate_output | all(sapply(existing_exp_details, class) == "character")){
-            Out <- Out %>% mutate(across(.fns = as.character))
-            existing_exp_details <- existing_exp_details %>% 
-                mutate(across(.fns = as.character))
-        } 
-        
-        Out <- bind_rows(Out, existing_exp_details)
-    }
-    
-    # Sorting to help organize output
-    Out <- Out %>% 
-        select(File, sort(setdiff(names(Out), "File")))
-    
-    if(annotate_output){
-        Out <- annotateDetails(Out, 
-                               save_output = save_output)
-    } else if(complete.cases(save_output)){
-        FileName <- save_output
-        if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-            FileName <- sub(paste0(".", Ext), "", FileName)
-            Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
-                          Ext, "csv")
-            FileName <- paste0(FileName, ".", Ext)
-        } else {
-            FileName <- paste0(FileName, ".csv")
-            Ext <- "csv"
-        }
-        
-        switch(Ext, 
-               "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
-               "xlsx" = formatXL_head(as.data.frame(Out), 
-                                      FileName, 
-                                      sheet = "Simulation experimental details"))
-    }
-    
-    if(nrow(Out) == 0){
-        stop("It was not possible to extract any simulation experimental details.")
-    }
-    
-    return(Out)
+         } else if("File" %in% names(existing_exp_details) == FALSE){
+            existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
+         }
+         
+         if(overwrite == FALSE){
+            sim_data_files_topull <- unique(setdiff(sim_data_files, 
+                                                    existing_exp_details$File))
+         } else {
+            sim_data_files_topull <- unique(sim_data_files)
+            existing_exp_details <- existing_exp_details %>%
+               filter(!File %in% existing_exp_details$File)
+         }
+      }
+      
+   } else {
+      sim_data_files_topull <- unique(sim_data_files)
+   }
+   
+   MyDeets <- list()
+   CustomDosing <- c()
+   
+   for(i in sim_data_files_topull){
+      message(paste("Extracting data from file =", i))
+      MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
+                                        exp_details = exp_details) 
+      
+      # Checking for custom dosing regimens and removing those data b/c they
+      # have a different data structure and cannot easily be coerced into a
+      # single row for each simulator file.
+      if(any(str_detect(tolower(names(MyDeets[[i]])), "custom"))){
+         CustomDosing[i] <- TRUE
+         MyDeets[[i]] <- 
+            MyDeets[[i]][!str_detect(tolower(names(MyDeets[[i]])), "custom")]
+      } else {
+         CustomDosing[i] <- FALSE
+      }
+      
+      MyDeets[[i]] <- MyDeets[[i]] %>% 
+         as.data.frame() %>% 
+         mutate(File = i) %>% 
+         select(File, everything())
+   }
+   
+   if(any(CustomDosing) | 
+      (AnyExistingDeets && 
+       any(sapply(existing_exp_details %>% 
+                  select(any_of(c("Dose_sub", "Dose_inhib", 
+                                  "DoseInt_sub", "DoseInt_inhib"))), 
+                  class) == "character"))){
+      for(j in names(MyDeets)){
+         MyDeets[[j]] <- MyDeets[[j]] %>% 
+            mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
+                                           "DoseInt_sub", "DoseInt_inhib")), 
+                          .fns = as.character))
+      }
+      
+      # Also then need to make these character for existing_exp_details, too. 
+      if(AnyExistingDeets){
+         existing_exp_details <- existing_exp_details %>% 
+            mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib", 
+                                           "DoseInt_sub", "DoseInt_inhib")), 
+                          .fns = as.character))
+      }
+   }
+   
+   # Binding and organizing
+   Out <- bind_rows(MyDeets)
+   
+   if(AnyExistingDeets){
+      if(annotate_output | all(sapply(existing_exp_details, class) == "character")){
+         Out <- Out %>% mutate(across(.fns = as.character))
+         existing_exp_details <- existing_exp_details %>% 
+            mutate(across(.fns = as.character))
+      } 
+      
+      Out <- bind_rows(Out, existing_exp_details)
+   }
+   
+   # Sorting to help organize output
+   Out <- Out %>% 
+      select(File, sort(setdiff(names(Out), "File")))
+   
+   if(annotate_output){
+      Out <- annotateDetails(Out, 
+                             save_output = save_output)
+   } else if(complete.cases(save_output)){
+      FileName <- save_output
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
+                       Ext, "csv")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".csv")
+         Ext <- "csv"
+      }
+      
+      switch(Ext, 
+             "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
+             "xlsx" = formatXL_head(as.data.frame(Out), 
+                                    FileName, 
+                                    sheet = "Simulation experimental details"))
+   }
+   
+   if(nrow(Out) == 0){
+      stop("It was not possible to extract any simulation experimental details.")
+   }
+   
+   return(Out)
 }
 
 

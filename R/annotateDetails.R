@@ -567,18 +567,9 @@ annotateDetails <- function(existing_exp_details,
       if("simcyp inputs" %in% tolower(detail_set)){
          
          DetailSet <- c(
-            DetailSet, 
-            "MW", "logP", "CompoundType", "pKa1", "pKa2", "BPratio", 
-            "fu", "BindingProtein", "Abs_model", "Papp_Caco", "Papp_MDCK",
-            "Papp_calibrator", "Qgut", "fu_gut", "ka", "fa", "tlag",
-            "DistributionModel", "VssPredMeth", "Vss_input", "kp_scalar",
-            "kin_sac", "kout_sac", "Vsac", "CLint", "CLrenal", 
-            "Substrate", "PrimaryMetabolite1", "PrimaryMetabolite2",
-            "SecondaryMetabolite", "Inhibitor1", "Inhibitor2", 
-            "Inhibitor1Metabolite",
-            (AllExpDetails %>%
-                filter(complete.cases(CDSInputMatch)) %>%
-                pull(Detail)), 
+            DetailSet, (AllExpDetails %>%
+                           filter(complete.cases(CDSInputMatch)) %>%
+                           pull(Detail)), 
             Out %>% filter(SimulatorSection %in%
                               c("Elimination", "Interaction",
                                 "Transporters", "Trial Design", 
@@ -769,9 +760,18 @@ annotateDetails <- function(existing_exp_details,
    }
    
    # Sorting to help organize output
-   Out <- Out %>% 
-      arrange(across(any_of(c("SimulatorSection", "CompoundID", "Detail", 
-                              "Compound"))))
+   Out <- Out %>%
+      mutate(BaseDetail = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
+                              "", Detail)) %>% 
+      left_join(AllExpDetails %>% 
+                   mutate(BaseDetail = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
+                                           "", Detail)) %>% 
+                   select(BaseDetail, SortOrder) %>% unique(), 
+                by = "BaseDetail") %>% 
+      arrange(across(any_of(c("SimulatorSection", "SortOrder",
+                              "Detail",  "CompoundID", "Compound")))) %>% 
+      select(-BaseDetail, -SortOrder) %>% 
+      unique()
    
    # Checking for differences from template sim
    if(complete.cases(template_sim)){

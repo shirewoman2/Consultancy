@@ -204,16 +204,6 @@
 "ExpDetailDefinitions"
 
 
-#' All possible experimental details for \code{\link{extractExpDetails_XML}}
-#'
-#' All possible experimental details that can be extracted from a simulator
-#' workspace file using \code{\link{extractExpDetails_XML}}. This version includes
-#' columns used only internally with coding. 
-#'
-#' @format A data.frame 
-"AllWorkspaceDetails"
-
-
 #' Example output from \code{extractExpDetails_mult}
 #'
 #' Example output from running \code{extractExpDetails_mult} on some midazolam
