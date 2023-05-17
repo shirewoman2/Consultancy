@@ -547,15 +547,6 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       mutate(SimOrObs = "simulated")
    
-   # If the column CompoundID isn't included, then assume that the compound
-   # they wanted to use for VictimCompound was the substrate.
-   if("CompoundID" %in% names(forest_dataframe) == FALSE){
-      forest_dataframe$CompoundID <- "substrate"
-   }
-   if(ObsIncluded && "CompoundID" %in% names(observed_PK) == FALSE){
-      observed_PK$CompoundID <- "substrate"
-   }
-   
    # If the column Tissue isn't included, then assume that the tissue was
    # plasma.
    if("Tissue" %in% names(forest_dataframe) == FALSE){
@@ -601,6 +592,7 @@ forest_plot <- function(forest_dataframe,
          "range" = c("Min", "Max"), 
          "arithmetic CV" = "ArithCV", 
          "geometric CV" = "GeoCV", 
+         "sd" = "SD",
          "SD" = "SD", 
          "standard deviation" = "SD"))]
    )
@@ -692,7 +684,7 @@ forest_plot <- function(forest_dataframe,
       CenterStat_obs <- names(observed_PK)[
          which(names(observed_PK) %in% c("GeoMean", "Mean", "Median"))]
       VarStat_obs <- names(observed_PK)[
-         which(names(observed_PK) %in% c("CI90_Lower", "CI95_Lower",
+         which(names(observed_PK) %in% c("CI90_Lower", "CI95_Lower", "SD_Lower",
                                          "Centile5th_Lower", "Min"))]
       
       if(any(CenterStat_obs %in% CenterStat) == FALSE | 
@@ -728,7 +720,7 @@ forest_plot <- function(forest_dataframe,
       mutate(Compound = switch(perp_or_victim,
                                "perpetrator" = VictimCompound,
                                "victim" = PerpCompound)) %>% 
-      select(File, Compound, VictimCompound, PerpCompound, CompoundID, 
+      select(File, Compound, VictimCompound, PerpCompound, 
              Dose_sub, Dose_inhib, Tissue) %>% unique()
    
    if(FacetSec == "TRUE TRUE"){
@@ -833,7 +825,7 @@ forest_plot <- function(forest_dataframe,
    # Main body of function -------------------------------------------------
    # Adjusting forest_dataframe to get only the data we want
    forest_dataframe <- forest_dataframe %>% 
-      select(File, VictimCompound, CompoundID, Dose_sub, PerpCompound, 
+      select(File, VictimCompound, Dose_sub, PerpCompound, 
              Dose_inhib, Tissue, PKparameter, SimOrObs,
              any_of(as_label(facet_column_x)), 
              any_of(as_label(y_axis_column)),
@@ -1178,13 +1170,13 @@ forest_plot <- function(forest_dataframe,
                           "Mean" = "Arithmetic Mean Ratio", 
                           "Median" = "Ratio of Medians"), 
                    switch(VarStat[1], 
-                          c("CI90_Lower" = "(90% confidence interval)", 
-                            "CI95_Lower" = "(95% confidence interval)", 
-                            "Centile5th_Lower" = "(5th to 95th percentiles)", 
-                            "Min" = "(range)",
-                            "SD_Lower" = "(standard deviation)", 
-                            "GeoCV" = "GeoCV NOT YET SET UP",
-                            "ArithCV" = "ArithCV NOT YET SET UP")))
+                          "CI90_Lower" = "(90% Confidence Interval)", 
+                          "CI95_Lower" = "(95% Confidence Interval)", 
+                          "Centile5th_Lower" = "(5th to 95th Percentiles)", 
+                          "Min" = "(Range)",
+                          "SD_Lower" = "(Standard Deviation)", 
+                          "GeoCV" = "GeoCV NOT YET SET UP",
+                          "ArithCV" = "ArithCV NOT YET SET UP"))
    
    # Assigning shapes
    if(length(point_shape) == 1){
@@ -1346,8 +1338,8 @@ forest_plot <- function(forest_dataframe,
             facet_grid(. ~ PKparameter_exp, labeller = label_parsed) +
             scale_shape_manual(values = MyShapes) +
             scale_y_reverse(breaks = unique(as.numeric(forest_dataframe$YCol)), 
-                               labels = levels(forest_dataframe$YCol),
-                               expand = expansion(mult = pad_y_num/10)) + # pad_y_num should be smaller here
+                            labels = levels(forest_dataframe$YCol),
+                            expand = expansion(mult = pad_y_num/10)) + # pad_y_num should be smaller here
             labs(fill = "Interaction level", shape = NULL) +
             theme(axis.text.y = element_text(hjust = 0.5, face = "bold"), 
                   axis.ticks.y = element_blank())
