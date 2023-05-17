@@ -762,15 +762,16 @@ annotateDetails <- function(existing_exp_details,
    # Sorting to help organize output
    Out <- Out %>%
       mutate(BaseDetail = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
-                              "", Detail)) %>% 
+                              "", Detail), 
+             EnzymeForSorting = str_extract(Detail, "(CYP|UGT)[1-9][A-Z][1-9]{1,2}")) %>% 
       left_join(AllExpDetails %>% 
                    mutate(BaseDetail = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
                                            "", Detail)) %>% 
                    select(BaseDetail, SortOrder) %>% unique(), 
                 by = "BaseDetail") %>% 
-      arrange(across(any_of(c("SimulatorSection", "SortOrder",
+      arrange(across(any_of(c("SimulatorSection", "SortOrder", "EnzymeForSorting",
                               "Detail",  "CompoundID", "Compound")))) %>% 
-      select(-BaseDetail, -SortOrder) %>% 
+      select(-BaseDetail, -SortOrder, -EnzymeForSorting) %>% 
       unique()
    
    # Checking for differences from template sim
