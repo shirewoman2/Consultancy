@@ -113,8 +113,8 @@
 #' @param simulator_section optionally supply a specific simulator section or
 #'   sections from which to find simulation experimental details and then return
 #'   \emph{only} those details. Options are "Absorption", "Distribution",
-#'   "Elimination", "Interaction", "Phys Chem and Blood Binding", "Population",
-#'   "Transport", or "Trial Design". Not case sensitive. If you want more than
+#'   "Elimination", "Transport", "Interaction", "Phys Chem and Blood Binding",
+#'   "Population", or "Trial Design". Not case sensitive. If you want more than
 #'   one, enclose them with \code{c(...)}.
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
@@ -210,6 +210,19 @@ annotateDetails <- function(existing_exp_details,
                                 "inhibitor 1 metabolite"), compoundID)
    }
    
+   if(any(compound %in% c("substrate", 
+                          "primary metabolite 1",
+                          "primary metabolite 2",
+                          "secondary metabolite",
+                          "inhibitor 1", "inhibitor 2", 
+                          "inhibitor 1 metabolite"))){
+      warning(paste0("You requested `", compound, 
+                     "` for the compound, but we think you actually want that for the argument `compoundID`, so we're going to set `compound = NA` and compoundID = `",
+                     compound, "`. Please see the help file for the distinction between the arguments `compound` (uses actual name of the compound) and `compoundID` (uses position in the simulation, e.g., `substrate`)."), 
+              call. = FALSE)
+      compoundID <- compound
+      compound <- NA
+   }
    
    if(length(compound) > 1){
       compound <- str_c(compound, collapse = "|")
@@ -409,9 +422,9 @@ annotateDetails <- function(existing_exp_details,
    Out <- Out %>% unique() %>% 
       mutate(
          # Elimination details
-         Sheet = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
+         Sheet = ifelse(str_detect(Detail, "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
                         "Input Sheet", Sheet), 
-         SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
+         SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
                                    "Elimination", SimulatorSection), 
          
          # Interaction details
@@ -424,7 +437,7 @@ annotateDetails <- function(existing_exp_details,
          Sheet = ifelse(str_detect(Detail, "^Transport"), 
                         "Input Sheet", Sheet),
          SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
-                                   "Transporters", SimulatorSection), 
+                                   "Transport", SimulatorSection), 
          
          # Adding some notes
          Notes = case_when(
@@ -452,6 +465,7 @@ annotateDetails <- function(existing_exp_details,
                                               "Absorption",
                                               "Distribution",
                                               "Elimination",
+                                              "Transport",
                                               "Interaction",
                                               "Trial Design", 
                                               "Population")),
@@ -538,7 +552,7 @@ annotateDetails <- function(existing_exp_details,
       } 
       
       if(str_detect(simulator_section, "transport")){
-         MySections <- c(MySections, "Transporters")
+         MySections <- c(MySections, "Transport")
          
       }
       
@@ -570,15 +584,17 @@ annotateDetails <- function(existing_exp_details,
             DetailSet, (AllExpDetails %>%
                            filter(complete.cases(CDSInputMatch)) %>%
                            pull(Detail)), 
-            Out %>% filter(SimulatorSection %in%
-                              c("Elimination", "Interaction",
-                                "Transporters", "Trial Design", 
-                                "SimulatorVersion")) %>%
-               pull(Detail))
+            "SimulatorVersion", "Substrate", 
+            "PrimaryMetabolite1", "PrimaryMetabolite2",
+            "SecondaryMetabolite", 
+            "Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite")
       }
       
       if(any(str_detect(tolower(detail_set), "methods"))){
-         DetailSet <- unique(c(DetailSet, "Substrate", "Inhibitor1",
+         DetailSet <- unique(c(DetailSet,  "Substrate", 
+                               "PrimaryMetabolite1", "PrimaryMetabolite2",
+                               "SecondaryMetabolite", 
+                               "Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite",
                                "Dose_sub", "Dose_inhib", "Regimen_sub", "Regimen_inhib",
                                "FixedTrialDesign", "FixedTrialDesignFile", 
                                "SimulatorVersion", 
@@ -606,7 +622,11 @@ annotateDetails <- function(existing_exp_details,
       # This is when they have requested individual details.
       DetailSet <- unique(c(DetailSet, setdiff(detail_set, DetailSet)))
       
-      Out <- Out %>% filter(Detail %in% DetailSet)
+      Out <- Out %>% filter(Detail %in% 
+                               switch(as.character(complete.cases(compound)),
+                                      "TRUE" = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
+                                                   "", DetailSet),
+                                      "FALSE" = DetailSet))
    }
    
    
