@@ -13,7 +13,12 @@ extractExpDetails(
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output,
-in quotes}
+in quotes. \strong{A note:} There are just a few items that we will attempt
+to extract from the matching workspace file; for that information, we will
+look for a workspace file that is named \emph{identically} to the Excel
+file except for the file extension. This means that, if you have run the
+simulations using the autorunner, you'll need to remove the date and time
+tag from the Excel file name in order for things to match.}
 
 \item{exp_details}{Experiment details you want to extract from the simulator
   output file. Options are \describe{

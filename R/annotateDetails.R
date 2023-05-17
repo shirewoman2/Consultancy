@@ -447,7 +447,8 @@ annotateDetails <- function(existing_exp_details,
          
          # Setting factors for sorting
          SimulatorSection = factor(SimulatorSection, 
-                                   levels = c("Phys Chem and Blood Binding", 
+                                   levels = c("SimulatorVersion",
+                                              "Phys Chem and Blood Binding", 
                                               "Absorption",
                                               "Distribution",
                                               "Elimination",
@@ -542,7 +543,7 @@ annotateDetails <- function(existing_exp_details,
       }
       
       if(str_detect(simulator_section, "trial design")){
-         MySections <- c(MySections, "Trial Design")
+         MySections <- c(MySections, "Trial Design", "SimulatorVersion")
       }
       
       MySections <- sort(unique(MySections))
@@ -580,7 +581,8 @@ annotateDetails <- function(existing_exp_details,
                 pull(Detail)), 
             Out %>% filter(SimulatorSection %in%
                               c("Elimination", "Interaction",
-                                "Transporters", "Trial Design")) %>%
+                                "Transporters", "Trial Design", 
+                                "SimulatorVersion")) %>%
                pull(Detail))
       }
       

@@ -4,7 +4,12 @@
 #' Simulator output file.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
-#'   in quotes
+#'   in quotes. \strong{A note:} There are just a few items that we will attempt
+#'   to extract from the matching workspace file; for that information, we will
+#'   look for a workspace file that is named \emph{identically} to the Excel
+#'   file except for the file extension. This means that, if you have run the
+#'   simulations using the autorunner, you'll need to remove the date and time
+#'   tag from the Excel file name in order for things to match.
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output file. Options are \describe{
 #'
@@ -157,18 +162,11 @@ extractExpDetails <- function(sim_data_file,
     
     if(tolower(exp_details_input[1]) == "simcyp inputs"){
         exp_details <- sort(unique(
-            c("Substrate", "Inhibitor1",
-              paste0(rep(each = 2, 
-                         c("MW", "logP", "CompoundType", "pKa1", "pKa2",
-                           "BPratio", "fu", "Abs_model", 
-                           "Papp_Caco", "Papp_MDCK", "Papp_calibrator",
-                           "Qgut", "fu_gut", "ka", "fa", "tlag",
-                           "DistributionModel", "VssPredMeth", "Vss_input",
-                           "kp_scalar", "kin_sac", "kout_sac",
-                           "Vsac", "CLint", "CLrenal", "Interaction")), 
-                     c("_sub", "_inhib")), 
-              AllExpDetails %>% filter(SimulatorSection == "Trial Design") %>% 
-                  pull(Detail))))
+            c("Substrate", "Inhibitor1", "Inhibitor2", "Metabolite1",
+              "Metabolite2", "SecondaryMetabolite", "Inhibitor1Metabolite",
+              AllExpDetails %>% 
+                 filter(complete.cases(CDSInputMatch)) %>% 
+                 pull(Detail))))
     }
     
     # Need to note original exp_details requested b/c I'm adding to it if
@@ -325,7 +323,7 @@ extractExpDetails <- function(sim_data_file,
             Out <- Out[-which(str_detect(names(Out), "_met2$"))]
         }
         
-        if(length(Out$SecondaryMetabolite1) > 0 &&
+        if(length(Out$SecondaryMetabolite) > 0 &&
            is.na(Out$SecondaryMetabolite) & any(str_detect(names(Out), "secmet$"))){
             Out <- Out[-which(str_detect(names(Out), "_secmet$"))]
         }

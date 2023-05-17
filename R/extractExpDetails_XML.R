@@ -120,10 +120,12 @@ extractExpDetails_XML <- function(sim_workspace_files,
     # Main body of function ---------------------------------------------------
     
     if("all" %in% exp_details){
-        exp_details <- AllWorkspaceDetails %>% pull(Detail)
+       exp_details <- AllExpDetails %>% filter(Sheet == "workspace XML file") %>% 
+          pull(Detail)
     }
     
-    CompoundDetails <- AllWorkspaceDetails %>% filter(Level1 == "Compounds") %>% 
+    CompoundDetails <- AllExpDetails %>% 
+       filter(Sheet == "workspace XML file" & Level1 == "Compounds") %>% 
         pull(Detail)
     
     Deets <- list()
@@ -151,7 +153,8 @@ extractExpDetails_XML <- function(sim_workspace_files,
                 
                 for(k in CompoundDetails){
                     
-                    DeetInfo <- AllWorkspaceDetails %>% filter(Detail == k)
+                    DeetInfo <- AllExpDetails %>% 
+                       filter(Sheet == "workspace XML file" & Detail == k)
                     DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
                     DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
                     
@@ -190,7 +193,8 @@ extractExpDetails_XML <- function(sim_workspace_files,
         if(length(setdiff(exp_details, CompoundDetails)) >= 1){
             for(m in setdiff(exp_details, CompoundDetails)){
                 
-                DeetInfo <- AllWorkspaceDetails %>% filter(Detail == m)
+                DeetInfo <- AllExpDetails %>% 
+                   filter(Sheet == "workspace XML file" & Detail == m)
                 DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
                 DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
                 
