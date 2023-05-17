@@ -7,6 +7,7 @@
 qc_sims(
   existing_exp_details,
   template_sim = NA,
+  compoundID = NA,
   compound = NA,
   save_output = NA
 )
@@ -28,6 +29,12 @@ be only the compound you want, e.g., \code{compound = "midaz"} (this will
 match any compound names that include the letters "midaz" and is NOT case
 sensitive), and set \code{show_compound_col = FALSE}. This will result in a
 much clearer Excel file.}
+
+\item{compoundID}{optionally supply one or more of "substrate", "primary
+metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
+1", "inhibitor 2", or "inhibitor 1 metabolite" to return information
+\emph{only} on that/those compound(s). Remember to contain more than one
+compound ID with \code{c(...)}.}
 
 \item{compound}{optionally supply a specific compound name or part of a
 specific compound name to get all possible compounds that match that and
