@@ -289,6 +289,12 @@ pksummary_mult <- function(sim_data_files = NA,
       tissues <- sys.call()$tissue
    }
    
+   # If they said "save_output" instead of "save_table", fix that.
+   if("save_output" %in% names(match.call())){
+      save_table <- sys.call()$save_output
+   }
+   
+   
    # Check for appropriate input for arguments
    compoundsToExtract <- tolower(compoundsToExtract)
    
