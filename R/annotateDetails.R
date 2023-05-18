@@ -584,6 +584,10 @@ annotateDetails <- function(existing_exp_details,
             DetailSet, (AllExpDetails %>%
                            filter(complete.cases(CDSInputMatch)) %>%
                            pull(Detail)), 
+            Out %>% 
+               filter(str_detect(Detail, 
+                                 "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^Ki_|^kinact|^Kapp|^MBI|^Ind")) %>% 
+               pull(Detail),
             "SimulatorVersion", "Substrate", 
             "PrimaryMetabolite1", "PrimaryMetabolite2",
             "SecondaryMetabolite", 
