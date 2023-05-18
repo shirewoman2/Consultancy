@@ -313,7 +313,7 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    compoundsToExtract_orig <- compoundsToExtract
-   if(complete.cases(compoundsToExtract) && "all" %in% compoundsToExtract){
+   if(any(complete.cases(compoundsToExtract)) && "all" %in% compoundsToExtract){
       compoundsToExtract <- c("substrate", "primary metabolite 1", "primary metabolite 2",
                               "secondary metabolite",
                               "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",

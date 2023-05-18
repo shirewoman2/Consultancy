@@ -1197,6 +1197,8 @@ pksummary_table <- function(sim_data_file = NA,
                                   "secondary metabolite") == FALSE){
          warning("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.", 
                  call. = FALSE)
+         FD <- list()
+      
       } else {
          
          # For forest data, only keeping ratios and removing observed data from

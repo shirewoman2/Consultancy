@@ -1787,7 +1787,7 @@ call. = FALSE)
       
       if(EnzPlot){
          A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(labels = scales::percent,
+            A + scale_y_continuous(labels = scales::label_percent(big.mark = ","),
                                    breaks = YBreaks,
                                    expand = expansion(mult = pad_y_num))
          ))
@@ -2024,7 +2024,7 @@ call. = FALSE)
    
    if(EnzPlot){
       B <- suppressMessages(suppressWarnings(
-         A + scale_y_log10(labels = scales::percent, 
+         A + scale_y_log10(labels = scales::label_percent(big.mark = ","), 
                            expand = expansion(mult = pad_y_num)) +
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 

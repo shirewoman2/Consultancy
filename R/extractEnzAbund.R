@@ -158,7 +158,7 @@ extractEnzAbund <- function(sim_data_file,
                                                  "liver" = "(liver)",
                                                  "gut" = "(gut)",
                                                  "kidney" = "(kidney)")), 
-                    "`` and could not find it, so these data cannot be returned."), 
+                    "` and could not find it, so these data cannot be returned."), 
              call. = FALSE)
         return(data.frame())
     }
