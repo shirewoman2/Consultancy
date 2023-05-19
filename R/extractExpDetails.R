@@ -737,11 +737,11 @@ extractExpDetails <- function(sim_data_file,
                   IndParam1stRow <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
                                                      "Ind max|Ind Slope"))
                   if(length(IndParam1stRow) > 0){
-                     IndModelCheck <- list(str_detect(t(InputTab[ThisIntRows, 1]), "Ind max"), 
-                                           str_detect(t(InputTab[ThisIntRows, 1]), "Ind Slope"), 
-                                           str_detect(t(InputTab[ThisIntRows, 1]), "Ind( )?C50"), 
-                                           str_detect(t(InputTab[ThisIntRows, 1]), "fu inc"), 
-                                           str_detect(t(InputTab[ThisIntRows, 1]), "\u03B3"))
+                     IndModelCheck <- list(str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind max"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind Slope"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind( )?C50"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "fu inc"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "\u03B3"))
                      IndModelCheck <- sapply(IndModelCheck, FUN = function(x) which(x == TRUE))
                      # Note: I can't seem to get regex to work for
                      # detecting a Greek character; I figured that the
