@@ -5,15 +5,15 @@
 \title{Highlight specific cells in Simcyp Simulator output Excel files for QCing
 tables of PK data}
 \usage{
-highlightQC(qc_dataframe, stats)
+highlightQC(qc_dataframe, stats, java_fail_option = "fail")
 }
 \arguments{
 \item{qc_dataframe}{a data.frame listing each PK parameters to be QCed as a
 row and including columns for "File", "PKparam", "Tab", and then the
 specific summary statistics used. The QC output from
 \code{\link{pksummary_table}} or \code{\link{pksummary_mult}} where you
-have set \code{checkDataSource = TRUE} is the\emph{perfect} format for this
-data.frame and is what this function was designed to use.}
+have set \code{checkDataSource = TRUE} is the \emph{perfect} format for
+this data.frame and is what this function was designed to use.}
 
 \item{stats}{a character vector of the summary statistics to highlight.
 Options are "geomean", "mean", "median", "CI90_low", "CI90_high", "per5",
@@ -23,6 +23,26 @@ the cells containing the geometric mean and the upper and lower values for
 the geometric 90\% confidence interval. Regardless of what stats are
 requested, \code{highlightQC} will highlight only the median, minimum, and
 maximum values for tmax to match the Simcyp Consultancy report templates.}
+
+\item{java_fail_option}{Option you want to have happen if Java fails because
+  it ran out of memory. By default, behind the scenes, it's Java -- not R --
+  that highlights the appropriate cells in the Simulator output Excel files,
+  but Java requires \emph{so much memory} that it fails for large files.
+  There are two options
+  here: \describe{\item{"fail" (default)}{We'll \emph{try} to have Java highlight
+  things, but if it fails because it ran out of memory, nothing happens.}
+
+  \item{"highlight anyway"}{There \emph{is} a way to get the highlighting
+  you want without Java, but it just doesn't work as well. If we don't use
+  Java, you'll get the appropriate yellow highlighting, but the watermark and blue
+  shading that are present on tabs such as the "Summary" tab, the "Input Sheet",
+  and the tab with the population parameters will disappear. Those tabs will
+  still be protected, but they \emph{will look different.}}
+
+  \item{"highlight a copy"}{We won't use Java to highlight, so you'll lose
+  the watermark and blue background on protected tabs, but we'll do that
+  on a copy of the original Simulator Excel file. It will be named the same
+  but will have "QC" appended to the end of the file name.}}}
 }
 \value{
 Does not return an R object; saves highlighting in Excel files
