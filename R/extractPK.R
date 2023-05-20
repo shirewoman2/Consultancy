@@ -354,6 +354,11 @@ extractPK <- function(sim_data_file,
          # If there was no Tab_last found but there *is* a tab with "t0" in
          # the name, e.g., AUCt0(Sub)(CPlasma), then use that one.
          Tab_last <- Tab_last_check[str_detect(Tab_last_check, "t0")]
+         
+         # If there *still* isn't a tab last, set this to NA. Probably should
+         # change how I set this up and 1st check whether this is a single-dose
+         # simulation.
+         Tab_last <- ifelse(length(Tab_last) == 0, NA, Tab_last)
       }
    }
    
