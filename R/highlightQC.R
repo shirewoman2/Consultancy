@@ -20,6 +20,24 @@
 #'   the geometric 90\% confidence interval. Regardless of what stats are
 #'   requested, \code{highlightQC} will highlight only the median, minimum, and
 #'   maximum values for tmax to match the Simcyp Consultancy report templates.
+#' @param java_fail_option Option you want to have happen if Java fails. By
+#'   default, behind the scenes, it's Java -- not R -- that highlights the
+#'   appropriate cells in the Simulator output Excel files, but Java requires
+#'   \emph{so much memory} that it fails for large files. There are two options
+#'   here: \describe{\item{"fail" (default)}{We'll \emph{try} to have Java highlight
+#'   things, but if it fails because it ran out of memory, nothing happens.}
+#'   
+#'   \item{"highlight anyway"}{There \emph{is} a way to get the highlighting
+#'   you want without Java, but it just doesn't work as well. If we don't use
+#'   Java, you'll get the appropriate yellow highlighting, but the watermark and blue
+#'   shading that are present on tabs such as the "Summary" tab, the "Input Sheet",
+#'   and the tab with the population parameters will disappear. Those tabs will
+#'   still be protected, but they \emph{will} look different.}
+#'   
+#'   \item{"highlight a copy"}{We won't use Java to highlight, so you'll lose
+#'   the watermark and blue background on protected tabs, but we'll do that 
+#'   on a copy of the original Simulator Excel file. It will be named the same 
+#'   but will have "QC" appended to the end of the file name.}}
 #'
 #' @return Does not return an R object; saves highlighting in Excel files
 #' @export
@@ -27,7 +45,9 @@
 #' @examples
 #' # None yet
 #' 
-highlightQC <- function(qc_dataframe, stats){
+highlightQC <- function(qc_dataframe, 
+                        stats, 
+                        java_fail_option = "fail"){
    
    # Need to convert letter name of column back to a number
    XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
@@ -37,18 +57,29 @@ highlightQC <- function(qc_dataframe, stats){
    for(k in names(qc_dataframe)){
       
       # Loading the workbook so that we can highlight things
-      wb <- xlsx::loadWorkbook(k)
+      wb <- tryCatch(xlsx::loadWorkbook(k), error = function(x) "Out of memory")
+      
+      if(class(wb) == "character"){
+         if(java_fail_option == "fail"){
+            warning("This Excel file is just too large for Java to load, so we won't be able to highlight anything.", 
+                    call. = FALSE)
+            next
+         } 
+      }
       
       # Setting up the cell style to use
-      QCStyle <- xlsx::CellStyle(
-         wb, 
-         dataFormat = xlsx::DataFormat("0.00"),
-         fill = xlsx::Fill(foregroundColor = "yellow"), 
-         alignment = xlsx::Alignment(horizontal = "ALIGN_CENTER", 
-                                     vertical = "VERTICAL_CENTER"),
-         border = xlsx::Border(position = c("TOP", "BOTTOM", "LEFT", "RIGHT"), 
-                               pen = "BORDER_DOTTED"),
-         font = xlsx::Font(wb, heightInPoints = 8))
+      QCStyle <- 
+         switch(java_fail_option,
+                "fail" = xlsx::CellStyle(
+                   wb, 
+                   dataFormat = xlsx::DataFormat("0.00"),
+                   fill = xlsx::Fill(foregroundColor = "yellow"), 
+                   alignment = xlsx::Alignment(horizontal = "ALIGN_CENTER", 
+                                               vertical = "VERTICAL_CENTER"),
+                   border = xlsx::Border(position = c("TOP", "BOTTOM", "LEFT", "RIGHT"), 
+                                         pen = "BORDER_DOTTED"),
+                   font = xlsx::Font(wb, heightInPoints = 8))
+         )
       
       qc_dataframe[[k]] <- split(qc_dataframe[[k]], f = qc_dataframe[[k]]$Tab)
       
