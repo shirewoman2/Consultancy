@@ -281,6 +281,14 @@ annotateDetails <- function(existing_exp_details,
          mutate(File = factor(File, levels = FileOrder))
    }
    
+   if(template_sim %in% existing_exp_details$File == FALSE){
+      warning(paste0("You requested a template_sim of `", 
+                     template_sim, 
+                     "`, but that is not one of the files included in `existing_exp_details`. We won't be able to compare parameters to a template simulation in the output."), 
+              call. = FALSE)
+      template_sim <- NA
+   }
+   
    Out <- existing_exp_details %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
       pivot_longer(cols = -File,
@@ -496,6 +504,15 @@ annotateDetails <- function(existing_exp_details,
    
    ## compound -------------------------------------------------------------
    if(complete.cases(compound)){
+      
+      if(any(compound %in% tolower(Out$Compound)) == FALSE){
+         warning(paste0("None of the simulations had information on the compound you requested. You requested a compound called `", 
+                        compound, 
+                        "``, but the compounds present in these simulations are: ", 
+                        str_comma(sort(unique(Out$Compound))), ". All the information specific to those compounds will be omitted from your output."), 
+                 call. = FALSE)
+      }
+      
       Out <- Out %>% filter(str_detect(tolower(Compound), tolower({{compound}})) |
                                is.na(Compound)) %>% 
          mutate(Notes = str_trim(gsub("(for|of) (the )?(substrate|primary metabolite 1|primary metabolite 2|secondary metabolite|inhibitor 1|inhibitor 2|inhibitor 1 metabolite)",

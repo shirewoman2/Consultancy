@@ -61,8 +61,8 @@ between simulations}
 \item{simulator_section}{optionally supply a specific simulator section or
 sections from which to find simulation experimental details and then return
 \emph{only} those details. Options are "Absorption", "Distribution",
-"Elimination", "Interaction", "Phys Chem and Blood Binding", "Population",
-"Transport", or "Trial Design". Not case sensitive. If you want more than
+"Elimination", "Transport", "Interaction", "Phys Chem and Blood Binding",
+"Population", or "Trial Design". Not case sensitive. If you want more than
 one, enclose them with \code{c(...)}.}
 
 \item{detail_set}{optionally supply a set of details to return \emph{only}
