@@ -16,15 +16,15 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r SetupVars2}
 
-MyEffector <- c(exp_detail_data$Inhibitor1, exp_detail_data$Inhibitor1Metabolite, 
-                exp_detail_data$Inhibitor2)
+MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
+                Deets$Inhibitor2)
 MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
 
 if(class(prettify_compound_names) == "logical" &&
    # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
    prettify_compound_names){
    
-   MySubstrate <- prettify_compound_name(exp_detail_data$Substrate)
+   MySubstrate <- prettify_compound_name(Deets$Substrate)
    MyEffector <- prettify_compound_name(MyEffector)
    
 } else if(class(prettify_compound_names) == "character"){
@@ -34,23 +34,23 @@ if(class(prettify_compound_names) == "logical" &&
    
 } else {
    
-   MySubstrate <- exp_detail_data$Substrate
+   MySubstrate <- Deets$Substrate
    
 }
 
 prettify_compound_names <- c("substrate" = as.character(MySubstrate), 
                              "effector" = as.character(MyEffector))
 
-SingMult_sub <- ifelse(exp_detail_data$Regimen_sub %in% c("custom dosing",
+SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
                                                           "Multiple Dose"), 
                        "multiple", "single")
-SingMult_inhib <- ifelse(exp_detail_data$Regimen_inhib %in% c("custom dosing",
+SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
                                                               "Multiple Dose"), 
                          "multiple", "single")
 
 SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
                       
-                      switch(exp_detail_data$DoseRoute_sub, 
+                      switch(Deets$DoseRoute_sub, 
                              "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY", 
                              "Oral" = "oral", 
                              "IV" = "IV"), 
@@ -58,7 +58,7 @@ SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
                       ifelse(SingMult_sub == "single", "dose", "doses")
 )
 
-DoseFreq_sub <- switch(as.character(exp_detail_data$DoseInt_sub),
+DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
                        "12" = "BID", 
                        "24" = "QD", 
                        "8" = "three times per day", 
@@ -72,7 +72,7 @@ DoseFreq_sub <- ifelse(is.null(DoseFreq_sub),
 
 SDMD_inhib_txt <- paste(ifelse(SingMult_inhib == "single", "a single", "multiple"), 
                         
-                        switch(exp_detail_data$DoseRoute_inhib, 
+                        switch(Deets$DoseRoute_inhib, 
                                "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY", 
                                "Oral" = "oral", 
                                "IV" = "IV"), 
@@ -80,7 +80,7 @@ SDMD_inhib_txt <- paste(ifelse(SingMult_inhib == "single", "a single", "multiple
                         ifelse(SingMult_inhib == "single", "dose", "doses")
 )
 
-DoseFreq_inhib <- switch(as.character(exp_detail_data$DoseInt_inhib),
+DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
                          "12" = "BID", 
                          "24" = "QD", 
                          "8" = "three times per day", 
@@ -93,7 +93,7 @@ DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib),
                          DoseFreq_inhib)
 
 NumDaysInhib <- suppressWarnings(
-   exp_detail_data$NumDoses_inhib*as.numeric(exp_detail_data$DoseInt_inhib)/24)
+   Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
 NumDaysInhib <- ifelse(is.na(NumDaysInhib), "CUSTOM DOSING - FILL IN MANUALLY", 
                        NumDaysInhib)
 
@@ -107,7 +107,7 @@ if(SingMult_inhib == "multiple"){
    DoseDay <- "last"
 } else {
    
-   DoseDay <- str_split_fixed(exp_detail_data$StartDayTime_sub, "Day |, ", 3)[2]
+   DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
    LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
    DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9), 
                                      "th", 
@@ -124,17 +124,17 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # METHODS
 
-#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r exp_detail_data$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(exp_detail_data$Population)$PopulationCap` 
+#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
-`r ifelse(exp_detail_data$NumTrials %in% 1:20, Numbers[exp_detail_data$NumTrials], exp_detail_data$NumTrials)` virtual trials of `r exp_detail_data$NumSubjTrial` `r tidyPop(exp_detail_data$Population)$Population` (`r exp_detail_data$PercFemale*100`% female) aged `r exp_detail_data$Age_min` to `r exp_detail_data$Age_max` years receiving `r SDMD_sub_txt` of `r exp_detail_data$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r exp_detail_data$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyEffector, MySubstrate)` model is provided in Appendix A – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
+`r ifelse(Deets$NumTrials %in% 1:20, Numbers[Deets$NumTrials], Deets$NumTrials)` virtual trials of `r Deets$NumSubjTrial` `r tidyPop(Deets$Population)$Population` (`r Deets$PercFemale*100`% female) aged `r Deets$Age_min` to `r Deets$Age_max` years receiving `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyEffector, MySubstrate)` model is provided in Appendix A – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
 
 
 
 # RESULTS
 
-### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r exp_detail_data$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(exp_detail_data$Population)$PopulationCap` 
+### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
-Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r exp_detail_data$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "mMultiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r exp_detail_data$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyEffector` are depicted in Figure XXX. `r ifelse(include_enz_plot, paste0("Simulated hepatic ", enzyme, " levels in the absence and during administration of ", MyEffector, " are indicated in Figure XXX. "), "")`The simulated geometric mean `r ifelse(SingMult_sub == "single", "AUC~inf~", "AUC~tau~")` and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyEffector` are listed in Table XXX.
+Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "mMultiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyEffector` are depicted in Figure XXX. `r ifelse(include_enz_plot, paste0("Simulated hepatic ", enzyme, " levels in the absence and during administration of ", MyEffector, " are indicated in Figure XXX. "), "")`The simulated geometric mean `r ifelse(SingMult_sub == "single", "AUC~inf~", "AUC~tau~")` and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyEffector` are listed in Table XXX.
 
 
 ```{r pullPK}
@@ -165,17 +165,17 @@ LastDoseincluded <- any(str_detect(PKToPull, "_last"))
 Observedincluded <- any(complete.cases(observed_PK))
 
 FigText2 <- ifelse(Dose1included & LastDoseincluded, 
-                   ifelse(exp_detail_data$DoseRoute_sub == "Oral", 
+                   ifelse(Deets$DoseRoute_sub == "Oral", 
                           "the first and multiple oral doses", 
                           paste("the first and multiple", 
-                                exp_detail_data$DoseRoute_sub, "doses")),
+                                Deets$DoseRoute_sub, "doses")),
                    ifelse(Dose1included, 
-                          ifelse(exp_detail_data$DoseRoute_sub == "Oral", 
+                          ifelse(Deets$DoseRoute_sub == "Oral", 
                                  "the first oral dose",
-                                 paste("the first", exp_detail_data$DoseRoute_sub, "dose")),
-                          ifelse(exp_detail_data$DoseRoute_sub == "Oral", 
+                                 paste("the first", Deets$DoseRoute_sub, "dose")),
+                          ifelse(Deets$DoseRoute_sub == "Oral", 
                                  "multiple oral doses", 
-                                 paste("multiple", exp_detail_data$DoseRoute_sub, "doses"))))
+                                 paste("multiple", Deets$DoseRoute_sub, "doses"))))
 
 FigText3 <- ifelse(any(complete.cases(MyEffector)),
                    paste0("with or without ", MyEffector, " "),
@@ -221,7 +221,7 @@ if(ncol(MyPKResults) != 7){
 ```
 
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanTypePK` mean `r tissue` PK parameters for `r MySubstrate` after `r FigText2` of `r paste(exp_detail_data$Dose_sub, "mg", MySubstrate)` `r FigText3`in `r tidyPop(exp_detail_data$Population)$Population`.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanTypePK` mean `r tissue` PK parameters for `r MySubstrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", MySubstrate)` `r FigText3`in `r tidyPop(Deets$Population)$Population`.*
 
 ```{r makeTablePKSummaryOutput, fig.width = 7}
 
@@ -363,7 +363,7 @@ Text1 <- "Linear (A) and log-linear (B)"
 
 ```
 
-*Figure XXX. `r Text1` simulated `r tissue` concentration-time profiles of `r MySubstrate` `r Text2`in `r tidyPop(exp_detail_data$Population)$Population`.*
+*Figure XXX. `r Text1` simulated `r tissue` concentration-time profiles of `r MySubstrate` `r Text2`in `r tidyPop(Deets$Population)$Population`.*
 
 ```{r ctplot, fig.width = 5, fig.height = 6}
 
@@ -387,7 +387,7 @@ ct_plot(ct_dataframe %>% filter(File == sim_data_file & Tissue == tissue,
 CapText1 <- paste(
    ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
           paste0("and observed (circles; ", mean_type_graph, 
-                 " mean of n = ", exp_detail_data$NumTrials * exp_detail_data$NumSubjTrial,
+                 " mean of n = ", Deets$NumTrials * Deets$NumSubjTrial,
                  " individuals; Clinical Study ", clin_study_name), 
           ""), 
    tissue, "concentration-time profiles of", MySubstrate, 
@@ -427,11 +427,11 @@ NextChunkHeight <- ifelse(figure_type_inhib %in% c("both", "both vertical"), 6, 
 
 ```
 
-*Depicted are `r CapText1`. `r CapText2` of the simulated population (n = `r exp_detail_data$NumTrials * exp_detail_data$NumSubjTrial`)`r ifelse(figure_type == "Freddy", ". The dashed lines represent the 5th and 95th percentiles", "")`. Source simulated data: `r sim_data_file`.*
+*Depicted are `r CapText1`. `r CapText2` of the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`)`r ifelse(figure_type == "Freddy", ". The dashed lines represent the 5th and 95th percentiles", "")`. Source simulated data: `r sim_data_file`.*
 
 
 
-*Figure XXX. Simulated `r tissue` concentration-time profiles of `r paste(exp_detail_data$Dose_inhib, "mg", DoseFreq_inhib, MyEffector)` in `r tidyPop(exp_detail_data$Population)$Population`.*
+*Figure XXX. Simulated `r tissue` concentration-time profiles of `r paste(Deets$Dose_inhib, "mg", DoseFreq_inhib, MyEffector)` in `r tidyPop(Deets$Population)$Population`.*
 
 
 ```{r ctplotInhib, fig.width=5, fig.height=NextChunkHeight}
@@ -476,7 +476,7 @@ CapText3 <- switch(
 
 ```
 
-*Depicted are simulated `r tissue` concentration-time profiles of `r MyEffector` with administration of `r MySubstrate` on the `r DoseDay` day of `r NumDaysInhib` days of dosing. `r CapText3` for the simulated population (n = `r exp_detail_data$NumTrials * exp_detail_data$NumSubjTrial`). Source simulated data: `r sim_data_file`.*
+*Depicted are simulated `r tissue` concentration-time profiles of `r MyEffector` with administration of `r MySubstrate` on the `r DoseDay` day of `r NumDaysInhib` days of dosing. `r CapText3` for the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`). Source simulated data: `r sim_data_file`.*
 
 
 ```{r OptionalEnz, echo = FALSE, results = "asis"}

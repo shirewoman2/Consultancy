@@ -7,7 +7,7 @@ CONSTRUCTION}
 \usage{
 draft_DDI_section(
   sim_data_file,
-  exp_detail_data = NA,
+  existing_exp_details = NA,
   ct_dataframe = NA,
   PKparameters = NA,
   observed_PK = NA,
@@ -52,7 +52,7 @@ draft_DDI_section(
 \item{sim_data_file}{name of the Excel file containing the simulator output,
 in quotes}
 
-\item{exp_detail_data}{NA (default) or the output from running either
+\item{existing_exp_details}{NA (default) or the output from running either
 \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} --
 either is fine as long as it contains details for \code{sim_data_file}. You
 must have set the argument \code{exp_details} to "all" when you extracted

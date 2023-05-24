@@ -7,7 +7,7 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
 #'   in quotes
-#' @param exp_detail_data NA (default) or the output from running either
+#' @param existing_exp_details NA (default) or the output from running either
 #'   \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} --
 #'   either is fine as long as it contains details for \code{sim_data_file}. You
 #'   must have set the argument \code{exp_details} to "all" when you extracted
@@ -286,7 +286,7 @@
 #'
 #' 
 draft_DDI_section <- function(sim_data_file,
-                              exp_detail_data = NA, 
+                              existing_exp_details = NA, 
                               ct_dataframe = NA, 
                               
                               PKparameters = NA,
@@ -383,33 +383,40 @@ draft_DDI_section <- function(sim_data_file,
    
    ## exp details -----------------------------------------------------
    # If the user did not supply experimental details, extract them.
-   if(class(exp_detail_data) == "logical"){
-      exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all") %>% 
-         as.data.frame()
+   if("logical" %in% class(existing_exp_details)){ 
+      Deets <- tryCatch(
+         extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+                           exp_details = "all", 
+                           annotate_output = FALSE), 
+         error = function(x) "missing file")
+   } else {
+      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                      "TRUE" = existing_exp_details, 
+                      "FALSE" = deannotateDetails(existing_exp_details))
+      
+      Deets <- as.data.frame(Deets) %>% filter(unique(ct_dataframe$File) %in% File)
+      
+      if(nrow(Deets == 0)){
+         Deets <- tryCatch(
+            extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+                              exp_details = "all", 
+                              annotate_output = FALSE), 
+            error = function(x) "missing file")
+      }
    }
    
-   if(class(exp_detail_data) == "data.frame"){
-      
-      PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(exp_detail_data))
-      
-      # If exp_detail_data are annotated, de-annotate them. 
-      if(PrevAnnotated){
-         exp_detail_data <- deannotateDetails(exp_detail_data)
-      } 
-   }
-   
-   # Checking for parameters we'll need in exp_detail_data
+   # Checking for parameters we'll need in Deets
    if(all(c("DoseRoute_sub", "Age_min", "Regimen_sub") %in%
-          names(exp_detail_data)) == FALSE){
-      warning("It appears that, when you generated `exp_detail_data`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. We will re-extract the simulation experimental details using extractExpDetails and set `exp_details = 'all'`.", 
+          names(Deets)) == FALSE){
+      warning("It appears that, when you generated `existing_exp_details`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. We will re-extract the simulation experimental details using extractExpDetails and set `exp_details = 'all'`.", 
               call. = FALSE)
-      exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all") %>% 
+      Deets <- extractExpDetails(sim_data_file, exp_details = "all") %>% 
          as.data.frame()
    }
    
-   exp_detail_data <- exp_detail_data %>% filter(File == sim_data_file)
+   Deets <- Deets %>% filter(File == sim_data_file)
    
-   if(is.na(exp_detail_data$Inhibitor1)){
+   if(is.na(Deets$Inhibitor1)){
       stop("You do not appear to have an effector present in this simulation. This function is for drafting DDI methods and results only.", 
            call. = FALSE)
    }
