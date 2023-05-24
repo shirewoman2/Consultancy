@@ -580,7 +580,7 @@ call. = FALSE)
    
    # Getting experimental details if they didn't supply them and want to have a
    # QC graph
-   if(qc_graph == TRUE){
+   if(qc_graph == TRUE | "logical" %in% class(existing_exp_details) == FALSE){
       
       if("logical" %in% class(existing_exp_details)){ 
          Deets <- tryCatch(
@@ -607,7 +607,8 @@ call. = FALSE)
          }
       }
       
-      if(class(Deets)[1] == "character" || nrow(Deets) == 0){
+      if(qc_graph == TRUE & 
+         (class(Deets)[1] == "character" || nrow(Deets) == 0)){
          warning("We couldn't find the source Excel files for this graph, so we can't QC it.", 
                  call. = FALSE)
          qc_graph <- FALSE
@@ -2144,7 +2145,7 @@ call. = FALSE)
          Ext <- "png"
       }
       
-      if(qc_graph){
+      if(qc_graph & Ext != "docx"){
          ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
                 plot = ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
