@@ -575,25 +575,25 @@ ct_plot_mult <- function(ct_dataframe,
    if(graph_arrangement == "separate files"){
       
       for(i in names(AllGraphs)){
-         Filename <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
+         FileName <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
                             ifelse(complete.cases(file_suffix),
                                    paste0(" - ", file_suffix), ""), ".png")
          
          if(any(duplicated(DatasetCheck$File))){
             Split_i <- str_split(sub("\\.xlsx", "", basename(i)), pattern = "\\.")[[1]]
-            Filename <- paste0(Split_i[3], " ", Split_i[4], " ",
+            FileName <- paste0(Split_i[3], " ", Split_i[4], " ",
                                ifelse(is.na(Split_i[5]) | Split_i[5] == "none",
                                       "", 
                                       paste0(" subsection ADAM ", Split_i[5])),
-                               Filename)
+                               FileName)
          } 
          
-         ggsave(Filename, 
+         ggsave(FileName, 
                 height = fig_height, width = fig_width, dpi = 600, 
                 plot = AllGraphs[[i]])
          
          if(qc_graph){
-            ggsave(sub("\\.png", " - QC.png", Filename), 
+            ggsave(sub("\\.png|\\.docx", " - QC.png", FileName), 
                    height = fig_height, width = fig_width * 2, dpi = 600, 
                    plot = ggpubr::ggarrange(plotlist = list(AllGraphs[[i]],
                                                             flextable::gen_grob(QCGraphs[[i]])), 

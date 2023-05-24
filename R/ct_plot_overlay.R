@@ -2130,7 +2130,7 @@ call. = FALSE)
       }
       
       if(qc_graph){
-         ggsave(sub("\\.png", " - QC.png", Filename), 
+         ggsave(sub("\\.png|\\.docx", " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
                 plot = ggpubr::ggarrange(plotlist = list(Out$Graph,
                                                          Out$QCGraph), 

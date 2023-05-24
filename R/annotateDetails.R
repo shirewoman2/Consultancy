@@ -281,7 +281,8 @@ annotateDetails <- function(existing_exp_details,
          mutate(File = factor(File, levels = FileOrder))
    }
    
-   if(template_sim %in% existing_exp_details$File == FALSE){
+   if(complete.cases(template_sim) && 
+      template_sim %in% existing_exp_details$File == FALSE){
       warning(paste0("You requested a template_sim of `", 
                      template_sim, 
                      "`, but that is not one of the files included in `existing_exp_details`. We won't be able to compare parameters to a template simulation in the output."), 
@@ -529,48 +530,45 @@ annotateDetails <- function(existing_exp_details,
       MySections <- c()
       
       if(str_detect(simulator_section, "summary")){
-         MySections <- c(MySections, "Summary")
+         MySections <- c(MySections, "Summary", "SimulatorVersion")
          
       }
       
       if(str_detect(simulator_section, "input")){
-         MySections <- c(MySections, "Input Sheet")
+         MySections <- c(MySections, "Input Sheet", "SimulatorVersion")
          
       }
       
       if(str_detect(simulator_section, "absorption")){
-         MySections <- c(MySections, "Absorption")
+         MySections <- c(MySections, "Absorption", "SimulatorVersion")
          
       }
       
       if(str_detect(simulator_section, "distrib")){
-         MySections <- c(MySections, "Distribution")
+         MySections <- c(MySections, "Distribution", "SimulatorVersion")
          
       }
       
       if(str_detect(simulator_section, "elim|metab")){
-         MySections <- c(MySections, "Elimination")
+         MySections <- c(MySections, "Elimination", "SimulatorVersion")
          
       }
       
       if(str_detect(simulator_section, "phys chem|physchem|binding")){
-         MySections <- c(MySections, "Phys Chem and Blood Binding")
+         MySections <- c(MySections, "Phys Chem and Blood Binding", "SimulatorVersion")
          
       }
       
       if(str_detect(simulator_section, "population")){
-         MySections <- c(MySections, "Population")
-         
+         MySections <- c(MySections, "Population", "SimulatorVersion")
       } 
       
       if(str_detect(simulator_section, "interaction")){
-         MySections <- c(MySections, "Interaction")
-         
+         MySections <- c(MySections, "Interaction", "SimulatorVersion")
       } 
       
       if(str_detect(simulator_section, "transport")){
-         MySections <- c(MySections, "Transport")
-         
+         MySections <- c(MySections, "Transport", "SimulatorVersion")
       }
       
       if(str_detect(simulator_section, "trial design")){

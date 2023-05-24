@@ -524,9 +524,11 @@ ct_plot <- function(ct_dataframe = NA,
    # QC graph
    if(qc_graph == TRUE){
       if("logical" %in% class(existing_exp_details)){ 
-         Deets <- extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
-                                    exp_details = "all", 
-                                    annotate_output = FALSE)
+         Deets <- tryCatch(
+            extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+                              exp_details = "all", 
+                              annotate_output = FALSE), 
+            error = function(x) "missing file")
       } else {
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 
@@ -539,6 +541,12 @@ ct_plot <- function(ct_dataframe = NA,
                                        exp_details = "all", 
                                        annotate_output = FALSE)
          }
+      }
+      
+      if(class(Deets)[1] == "character"){
+         warning("We couldn't find the source Excel file for this graph, so we can't QC it.", 
+                 call. = FALSE)
+         qc_graph <- FALSE
       }
    }
    
@@ -1326,7 +1334,7 @@ ct_plot <- function(ct_dataframe = NA,
       }
       
       if(qc_graph){
-         ggsave(sub("\\.png", " - QC.png", Filename), 
+         ggsave(sub("\\.png|\\.docx", " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
                 plot = ggpubr::ggarrange(plotlist = list(Out$Graph,
                                                          Out$QCGraph), 
@@ -1345,7 +1353,6 @@ ct_plot <- function(ct_dataframe = NA,
          
          # This is when they want a Word file as output
          OutPath <- dirname(FileName)
-         
          if(OutPath == "."){
             OutPath <- getwd()
          }
