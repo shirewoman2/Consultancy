@@ -1,7 +1,9 @@
 #' Make an Excel file for QCing simulations
 #'
 #' \code{qc_sims} will create an Excel file specifically designed for general
-#' QCing
+#' QCing. It is, by design, more succinct than \code{\link{annotateDetails}} and
+#' will only return information that would be included in the "Simcyp Inputs"
+#' table.
 #'
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}

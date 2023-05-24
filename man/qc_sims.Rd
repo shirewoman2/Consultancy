@@ -54,7 +54,9 @@ Returns a list of data.frames, broken up by the compound ID, and
 }
 \description{
 \code{qc_sims} will create an Excel file specifically designed for general
-QCing
+QCing. It is, by design, more succinct than \code{\link{annotateDetails}} and
+will only return information that would be included in the "Simcyp Inputs"
+table.
 }
 \examples{
 # No examples yet.
