@@ -1181,7 +1181,7 @@ extractExpDetails <- function(sim_data_file,
             compoundsToExtract = "all",
             exp_details = "all") %>% as.list()
          
-         Out <- c(Out, TEMP)
+         Out <- c(Out, TEMP[names(TEMP)[names(TEMP) != "Workspace"]])
          
          rm(TEMP)
       }

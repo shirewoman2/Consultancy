@@ -3,7 +3,7 @@
 \name{extractExpDetails_XML}
 \alias{extractExpDetails_XML}
 \title{Extract experimental details for multiple Simcyp Simulator workspace files at
-once -- UNDER CONSTRUCTION}
+once}
 \usage{
 extractExpDetails_XML(
   sim_workspace_files,

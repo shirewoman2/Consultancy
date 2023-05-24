@@ -1,5 +1,5 @@
 #' Extract experimental details for multiple Simcyp Simulator workspace files at
-#' once -- UNDER CONSTRUCTION
+#' once
 #'
 #' \code{extractExpDetails_XML} takes a character vector of Simcyp Simulator
 #' workspaces -- or all the workspace files in the current directory if no files
