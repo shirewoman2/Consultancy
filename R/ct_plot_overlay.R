@@ -583,23 +583,34 @@ call. = FALSE)
    if(qc_graph == TRUE){
       
       if("logical" %in% class(existing_exp_details)){ 
-         Deets <- extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
-                                         exp_details = "all", 
-                                         annotate_output = FALSE)
+         Deets <- tryCatch(
+            extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                   exp_details = "all", 
+                                   annotate_output = FALSE), 
+            error = function(x) "missing file")
+         
       } else {
          
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 
                          "FALSE" = deannotateDetails(existing_exp_details))
          
-         Deets <- as.data.frame(Deets) %>% filter(unique(ct_dataframe$File) %in% File)
+         Deets <- as.data.frame(Deets) %>% filter(File %in% unique(ct_dataframe$File))
          
          if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
-            Deets <- extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
-                                            exp_details = "all", 
-                                            annotate_output = FALSE, 
-                                            existing_exp_details = Deets)
+            Deets <- tryCatch(
+               extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                      exp_details = "all", 
+                                      annotate_output = FALSE, 
+                                      existing_exp_details = Deets), 
+               error = function(x) "missing file")
          }
+      }
+      
+      if(class(Deets)[1] == "character" || nrow(Deets) == 0){
+         warning("We couldn't find the source Excel files for this graph, so we can't QC it.", 
+                 call. = FALSE)
+         qc_graph <- FALSE
       }
    }
    
@@ -2086,6 +2097,9 @@ call. = FALSE)
                                           face = "bold", size = graph_title_size))
    }
    
+   
+   # Saving ----------------------------------------------------------------
+   
    Out <- switch(linear_or_log, 
                  "linear" = A,
                  "semi-log" = B,
@@ -2109,6 +2123,7 @@ call. = FALSE)
       Out <- list("Graph" = Out, 
                   "QCGraph" = ggpubr::ggarrange(
                      plotlist = list(Out, flextable::gen_grob(QCTable)),
+                     nrow = 1,
                      font.label = list(size = graph_title_size))
       )
    }
@@ -2130,10 +2145,9 @@ call. = FALSE)
       }
       
       if(qc_graph){
-         ggsave(sub("\\.png|\\.docx", " - QC.png", FileName), 
+         ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
-                plot = ggpubr::ggarrange(plotlist = list(Out$Graph,
-                                                         Out$QCGraph), 
+                plot = ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
                                          nrow = 1))
       }
       

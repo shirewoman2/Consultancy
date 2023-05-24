@@ -33,7 +33,11 @@ Text1 <- switch(linear_or_log,
 
 ```{r ctplotmult, fig.width = fig_width, fig.height = fig_height}
 
-Out 
+if(qc_graph){
+   Out[["Graph"]]
+} else {
+   Out
+}
 
 ```
 

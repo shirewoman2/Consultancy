@@ -3,10 +3,10 @@
 
 ```{r QCtable}
 
-formatTable_Simcyp(annotateDetails(existing_exp_details %>% 
-                                       filter(File %in% unique(ct_dataframe$File)), 
+formatTable_Simcyp(annotateDetails(as.data.frame(Deets) %>% 
+                                      filter(File %in% unique(ct_dataframe$File)), 
                                    detail_set = "Methods") %>% 
-                       select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
+                      select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
                    shading_column = Detail)
 
 ```

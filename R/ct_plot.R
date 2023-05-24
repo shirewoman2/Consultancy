@@ -537,13 +537,15 @@ ct_plot <- function(ct_dataframe = NA,
          Deets <- as.data.frame(Deets) %>% filter(unique(ct_dataframe$File) %in% File)
          
          if(nrow(Deets == 0)){
-            Deets <- extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
-                                       exp_details = "all", 
-                                       annotate_output = FALSE)
+            Deets <- tryCatch(
+               extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+                                 exp_details = "all", 
+                                 annotate_output = FALSE), 
+               error = function(x) "missing file")
          }
       }
       
-      if(class(Deets)[1] == "character"){
+      if(class(Deets)[1] == "character" || nrow(Deets) == 0){
          warning("We couldn't find the source Excel file for this graph, so we can't QC it.", 
                  call. = FALSE)
          qc_graph <- FALSE
@@ -1334,10 +1336,9 @@ ct_plot <- function(ct_dataframe = NA,
       }
       
       if(qc_graph){
-         ggsave(sub("\\.png|\\.docx", " - QC.png", FileName), 
+         ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
-                plot = ggpubr::ggarrange(plotlist = list(Out$Graph,
-                                                         Out$QCGraph), 
+                plot = ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
                                          nrow = 1))
       }
       

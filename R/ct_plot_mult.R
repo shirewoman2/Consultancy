@@ -296,23 +296,34 @@ ct_plot_mult <- function(ct_dataframe,
    if(qc_graph == TRUE){
       
       if("logical" %in% class(existing_exp_details)){ 
-         Deets <- extractExpDetails_mult(sim_data_files = sim_data_files, 
-                                         exp_details = "all", 
-                                         annotate_output = FALSE)
+         Deets <- tryCatch(
+            extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                   exp_details = "all", 
+                                   annotate_output = FALSE), 
+            error = function(x) "missing file")
+         
       } else {
          
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 
                          "FALSE" = deannotateDetails(existing_exp_details))
          
-         Deets <- as.data.frame(Deets) %>% filter(sim_data_files %in% File)
+         Deets <- as.data.frame(Deets) %>% filter(File %in% unique(ct_dataframe$File))
          
-         if(nrow(Deets == 0) | all(sim_data_files %in% Deets$File) == FALSE){
-            Deets <- extractExpDetails_mult(sim_data_files = sim_data_files, 
-                                            exp_details = "all", 
-                                            annotate_output = FALSE, 
-                                            existing_exp_details = Deets)
+         if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
+            Deets <- tryCatch(
+               extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                      exp_details = "all", 
+                                      annotate_output = FALSE, 
+                                      existing_exp_details = Deets), 
+               error = function(x) "missing file")
          }
+      }
+      
+      if(class(Deets)[1] == "character"){
+         warning("We couldn't find the source Excel files for this graph, so we can't QC it.", 
+                 call. = FALSE)
+         qc_graph <- FALSE
       }
    }
    
@@ -547,16 +558,9 @@ ct_plot_mult <- function(ct_dataframe,
       
       if(qc_graph){
          
-         PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% 
-                                 names(existing_exp_details))
-         
-         if(PrevAnnotated){
-            existing_exp_details <- deannotateDetails(existing_exp_details)
-         }
-         
          QCGraphs[[i]] <- 
             formatTable_Simcyp(
-               annotateDetails(existing_exp_details %>% 
+               annotateDetails(Deets %>% 
                                   filter(File == unique(ct_dataframe[[i]]$File)), 
                                detail_set = "Methods") %>% 
                   select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 

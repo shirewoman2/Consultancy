@@ -84,6 +84,14 @@
 #'   some graphs do not (e.g., some have effectors and some do not so there's
 #'   nothing to put in a legend), the alignment between sets of graphs will be a
 #'   bit off.
+#' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
+#'   the graph where the left panel shows the original graph and the right panel
+#'   shows information about the simulation trial design. This works MUCH faster
+#'   when you have already used \code{\link{extractExpDetails_mult}} to get
+#'   information about how your simulation or simulations were set up and supply
+#'   that object to the argument \code{existing_exp_details}.
+#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
+#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -91,10 +99,6 @@
 #'   extension, it will be saved as that file format. Acceptable graphical file
 #'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
 #'   Leaving this as NA means the file will not be saved to disk.
-#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-#'   Microsoft permissions issue, not an R issue. If you try to save on
-#'   SharePoint, you will get a warning that R will save your file instead to
-#'   your Documents folder.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param ... arguments that pass through to \code{\link{ct_plot}} or
@@ -118,161 +122,230 @@ ct_plot3 <- function(ct_dataframe,
                      mean_type = "arithmetic",
                      linear_or_log = "semi-log", 
                      legend_position = "none",
+                     qc_graph = FALSE,
+                     existing_exp_details = NA,
                      save_graph = NA,
                      fig_height = 6,
                      fig_width = 5,
                      ...){
-    
-    # error catching ---------------------------------------------------
-    
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
-             call. = FALSE)
-    }
-    
-    if(length(sort(unique(ct_dataframe$DoseNum))) == 1){
-        stop("ct_plot3 is only for multiple-dose scenarios, but these data appear to be for only one dose.")
-    }
-    
-    if(hasArg("time_range")){
-        stop("You cannot supply anything for 'time_range' here because ct_plot3 needs to set the time range automatically. Please remove 'time_range' from your arguments.")
-    }
-    
-    
-    if(nrow(ct_dataframe) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
-             call. = FALSE)
-    }
-    
-    # main body of function -------------------------------------------
-    
-    if(overlay){
-        
-        A <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                             time_range = NA,
-                             figure_type = figure_type,
-                             mean_type = mean_type, 
-                             linear_or_log = linear_or_log,
-                             ..., # comment this for development
-                             save_graph = NA) +
-            ggtitle("Full time range")
-        
-        # Suppressing messages and warnings after the 1st set.
-        suppressWarnings(suppressMessages(
-            B <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                                 time_range = "first dose",
-                                 figure_type = figure_type,
-                                 mean_type = mean_type, 
-                                 linear_or_log = linear_or_log,
-                                 ..., # comment this for development
-                                 save_graph = NA) +
-                ggtitle("First dose")))
-        
-        suppressWarnings(suppressMessages(
-            C <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                                 time_range = "last dose", 
-                                 figure_type = figure_type,
-                                 mean_type = mean_type, 
-                                 linear_or_log = linear_or_log,
-                                 ..., # comment this for development
-                                 save_graph = NA) +
-                ggtitle("Last dose")))
-        
-        Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                                 nrow = 2, common.legend = TRUE, legend = "bottom")
-        
-    } else {
-        
-        if(hasArg("colorBy_column") | hasArg("facet1_column") |
-           hasArg("facet2_column")){
-            stop("It looks like you wanted to use 'ct_plot_overlay' with this function to create graphs of overlaid concentration-time data, but you have specified 'overlay = FALSE' (or left it as the default). Please change 'overlay' to TRUE and try again.")
-        }
-        
-        A <- ct_plot(ct_dataframe = ct_dataframe,
-                     figure_type = figure_type,
-                     mean_type = mean_type, 
-                     linear_or_log = linear_or_log,
-                     legend_position = legend_position,
-                     ..., # comment this for development
-                     time_range = NA, 
-                     save_graph = NA) +
-            ggtitle("Full time range")
-        
-        suppressWarnings(suppressMessages(
-            B <- ct_plot(ct_dataframe = ct_dataframe,
-                         figure_type = figure_type,
-                         mean_type = mean_type, 
-                         linear_or_log = linear_or_log,
-                         legend_position = "none",
-                         ..., # comment this for development
-                         time_range = "first dose", 
-                         save_graph = NA) +
-                ggtitle("First dose")))
-        
-        suppressWarnings(suppressMessages(
-            C <- ct_plot(ct_dataframe = ct_dataframe,
-                         figure_type = figure_type,
-                         mean_type = mean_type, 
-                         linear_or_log = linear_or_log,
-                         legend_position = "none",
-                         ..., # comment this for development
-                         time_range = "last dose", 
-                         save_graph = NA) +
-                ggtitle("Last dose")))
-        
-        if(legend_position == "none"){
-            Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                                     nrow = 2, legend = "none")
-            
-        } else {
-            Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                                     nrow = 2, common.legend = TRUE, legend = "bottom")
-        }
-    }
-    
-    if(complete.cases(save_graph)){
-        FileName <- save_graph
-        if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-            FileName <- sub(paste0(".", Ext), "", FileName)
-            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg", "docx"), 
-                          Ext, "png")
-            FileName <- paste0(FileName, ".", Ext)
-        } else {
-            FileName <- paste0(FileName, ".png")
-            Ext <- "png"
-        }
-        
-        if(Ext == "docx"){
-            # This is when they want a Word file as output
-            OutPath <- dirname(FileName)
-            
-            if(OutPath == "."){
-                OutPath <- getwd()
-            }
-            
-            FileName <- basename(FileName)
-            
-            rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
-                                          package="SimcypConsultancy"), 
-                              output_dir = OutPath, 
-                              output_file = FileName, 
-                              quiet = TRUE)
-            # Note: The "system.file" part of the call means "go to where the
-            # package is installed, search for the file listed, and return its
-            # full path.
-            
-        } else {
-            # This is when they want any kind of graphical file format.
-            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = Out)
-            
-        }
-    }
-    
-    return(Out)
-    
+   
+   # error catching ---------------------------------------------------
+   
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+           call. = FALSE)
+   }
+   
+   if(length(sort(unique(ct_dataframe$DoseNum))) == 1){
+      stop("ct_plot3 is only for multiple-dose scenarios, but these data appear to be for only one dose.")
+   }
+   
+   if(hasArg("time_range")){
+      stop("You cannot supply anything for 'time_range' here because ct_plot3 needs to set the time range automatically. Please remove 'time_range' from your arguments.")
+   }
+   
+   
+   if(nrow(ct_dataframe) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+           call. = FALSE)
+   }
+   
+   # Getting experimental details if they didn't supply them and want to have a
+   # QC graph
+   if(qc_graph == TRUE){
+      if("logical" %in% class(existing_exp_details)){ 
+         Deets <- tryCatch(
+            extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+                              exp_details = "all", 
+                              annotate_output = FALSE), 
+            error = function(x) "missing file")
+      } else {
+         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                         "TRUE" = existing_exp_details, 
+                         "FALSE" = deannotateDetails(existing_exp_details))
+         
+         Deets <- as.data.frame(Deets) %>% filter(unique(ct_dataframe$File) %in% File)
+         
+         if(nrow(Deets == 0)){
+            Deets <- tryCatch(
+               extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+                                 exp_details = "all", 
+                                 annotate_output = FALSE), 
+               error = function(x) "missing file")
+         }
+      }
+      
+      if(class(Deets)[1] == "character" || nrow(Deets) == 0){
+         warning("We couldn't find the source Excel file for this graph, so we can't QC it.", 
+                 call. = FALSE)
+         qc_graph <- FALSE
+      }
+   }
+   
+   
+   # main body of function -------------------------------------------
+   
+   if(overlay){
+      
+      A <- ct_plot_overlay(ct_dataframe = ct_dataframe,
+                           time_range = NA,
+                           figure_type = figure_type,
+                           mean_type = mean_type, 
+                           linear_or_log = linear_or_log,
+                           qc_graph = FALSE,
+                           ..., # comment this for development
+                           save_graph = NA) +
+         ggtitle("Full time range")
+      
+      # Suppressing messages and warnings after the 1st set.
+      suppressWarnings(suppressMessages(
+         B <- ct_plot_overlay(ct_dataframe = ct_dataframe,
+                              time_range = "first dose",
+                              figure_type = figure_type,
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log,
+                              qc_graph = FALSE,
+                              ..., # comment this for development
+                              save_graph = NA) +
+            ggtitle("First dose")))
+      
+      suppressWarnings(suppressMessages(
+         C <- ct_plot_overlay(ct_dataframe = ct_dataframe,
+                              time_range = "last dose", 
+                              figure_type = figure_type,
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log,
+                              qc_graph = FALSE,
+                              ..., # comment this for development
+                              save_graph = NA) +
+            ggtitle("Last dose")))
+      
+      Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
+                               nrow = 2, common.legend = TRUE, legend = "bottom")
+      
+   } else {
+      
+      if(hasArg("colorBy_column") | hasArg("facet1_column") |
+         hasArg("facet2_column")){
+         stop("It looks like you wanted to use 'ct_plot_overlay' with this function to create graphs of overlaid concentration-time data, but you have specified 'overlay = FALSE' (or left it as the default). Please change 'overlay' to TRUE and try again.")
+      }
+      
+      A <- ct_plot(ct_dataframe = ct_dataframe,
+                   figure_type = figure_type,
+                   mean_type = mean_type, 
+                   linear_or_log = linear_or_log,
+                   legend_position = legend_position,
+                   time_range = NA, 
+                   save_graph = NA, 
+                   qc_graph = FALSE,
+                   ...) + # comment this for development
+         ggtitle("Full time range")
+      
+      suppressWarnings(suppressMessages(
+         B <- ct_plot(ct_dataframe = ct_dataframe,
+                      figure_type = figure_type,
+                      mean_type = mean_type, 
+                      linear_or_log = linear_or_log,
+                      legend_position = "none",
+                      ..., # comment this for development
+                      time_range = "first dose", 
+                      qc_graph = FALSE,
+                      save_graph = NA) +
+            ggtitle("First dose")))
+      
+      suppressWarnings(suppressMessages(
+         C <- ct_plot(ct_dataframe = ct_dataframe,
+                      figure_type = figure_type,
+                      mean_type = mean_type, 
+                      linear_or_log = linear_or_log,
+                      legend_position = "none",
+                      qc_graph = FALSE,
+                      ..., # comment this for development
+                      time_range = "last dose", 
+                      save_graph = NA) +
+            ggtitle("Last dose")))
+      
+      if(legend_position == "none"){
+         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
+                                  nrow = 2, legend = "none")
+         
+      } else {
+         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
+                                  nrow = 2, common.legend = TRUE, legend = "bottom")
+      }
+   }
+   
+   if(qc_graph){
+      
+      QCTable <- formatTable_Simcyp(
+         annotateDetails(as.data.frame(Deets) %>%
+                            filter(File %in% unique(ct_dataframe$File)), 
+                         detail_set = "Methods") %>% 
+            select(-c(SimulatorSection, matches("All files"), Sheet, 
+                      Notes, CompoundID, Compound)), 
+         shading_column = Detail)
+      
+      # Out would have been just the graph or just the two arranged graphs at
+      # this point, so need to convert it to a list here.
+      Out <- list("Graph" = Out, 
+                  "QCGraph" = ggpubr::ggarrange(
+                     plotlist = list(Out, flextable::gen_grob(QCTable)),
+                     font.label = list(size = graph_title_size))
+      )
+   }
+   
+   if(complete.cases(save_graph)){
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg", "docx"), 
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+         Ext <- "png"
+      }
+      
+      if(qc_graph){
+         ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
+                height = fig_height, width = fig_width * 2, dpi = 600, 
+                ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
+                                  nrow = 1))
+      }
+      
+      if(Ext == "docx"){
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_dir = OutPath, 
+                           output_file = FileName, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+      } else {
+         # This is when they want any kind of graphical file format.
+         ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                plot = switch(as.character(qc_graph), 
+                              "TRUE" = Out$Graph, 
+                              "FALSE" = Out))
+         
+      }
+   }
+   
+   return(Out)
+   
 }
