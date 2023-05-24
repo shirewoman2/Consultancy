@@ -3,8 +3,7 @@
 \docType{data}
 \name{AllExpDetails}
 \alias{AllExpDetails}
-\title{All possible experimental details for \code{\link{extractExpDetails}}
-(version for coding purposes)}
+\title{All possible experimental details for \code{\link{extractExpDetails}}}
 \format{
 A data.frame with 10 columns: \describe{
 

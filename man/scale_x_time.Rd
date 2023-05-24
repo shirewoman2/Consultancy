@@ -6,6 +6,7 @@
 \usage{
 scale_x_time(
   time_range = NA,
+  impose_limits = TRUE,
   time_units = "hours",
   x_axis_interval = NA,
   pad_x_axis = TRUE
@@ -19,6 +20,17 @@ scale_x_time(
   \item{a start time and end time in hours}{only data in that range, e.g.
   \code{time_range = c(24, 48)}. Note that there are no quotes around numeric
   data.}}}
+
+\item{impose_limits}{TRUE (default) or FALSE to actually \emph{set} the
+limits listed in \code{time_range}. Why on earth would you \emph{not}
+impose limits on the graph here? Behind the scenes, \code{scale_x_time}
+uses the ggplot2 function \code{\link{ggplot::scale_x_continuous}}, which
+filters out all data beyond the limits you specify. That means that you
+can, in some situations, get graphs where lines are cut off abruptly. This
+is set up with the idea that you can set the time range here to get
+reasonable x axis intervals, but then you can add a call to
+\code{\link{ggplot::coord_cartesian}} to limit the range without the abrupt
+cut off.}
 
 \item{time_units}{the units of time in the graph. Defaults is "hours", and
 acceptable alternative input is "minutes" or "days".}
