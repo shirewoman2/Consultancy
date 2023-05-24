@@ -180,10 +180,10 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                             "FALSE" = deannotateDetails(existing_exp_details)) 
             
             if("data.frame" %in% class(Deets)){
-                Deets <- Deets %>% filter(File == sim_data_file)
+                Deets <- Deets %>% filter(File == ff)
                 
                 if(nrow(Deets == 0)){
-                    Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                    Deets <- extractExpDetails(sim_data_file = ff, 
                                                exp_details = "Input Sheet")
                 }
             }
@@ -252,16 +252,19 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                         "Time_units", "DoseNum_sub", "DoseNum_inhib1", 
                         "DoseNum_inhib2", "File")))
     
-    if(all(is.na(sim_enz_dataframe$DoseNum_inhib2))){
-        sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib2)
+    if("DoseNum_inhib1" %in% names(sim_enz_dataframe) && 
+       all(is.na(sim_enz_dataframe$DoseNum_inhib1))){
+       sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib1)
     }
     
-    if(all(is.na(sim_enz_dataframe$DoseNum_inhib1))){
-        sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib1)
+    if("DoseNum_inhib2" %in% names(sim_enz_dataframe) && 
+       all(is.na(sim_enz_dataframe$DoseNum_inhib2))){
+       sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib2)
     }
+    
+    
     
     return(sim_enz_dataframe)
-    
     
 }
 

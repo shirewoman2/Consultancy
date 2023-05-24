@@ -65,7 +65,7 @@ extractAUCXtab <- function(PKparameters,
             # If tab was user specified, need to remove the suffix indicating
             # which dose number it was b/c we don't know
             ToDetect <- ToDetect %>% 
-                mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
+                mutate(PKparameter = sub("_dose1|_last", "", PKparameter)) 
         }
             
         ToDetect <- ToDetect %>% 
@@ -73,7 +73,12 @@ extractAUCXtab <- function(PKparameters,
                                    "AUC0" = "AUC0", 
                                    "AUClast" = "AUCX", 
                                    "AUCX" = "AUCX") & PKparameter == i) %>% 
-            select(PKparameter, SearchText)
+            select(PKparameter, SearchText) %>% 
+           unique()
+        
+        if(nrow(ToDetect) == 0){
+           next
+        }
         
         # Looking for the regular expression specific to this parameter
         # i. 
@@ -125,7 +130,7 @@ extractAUCXtab <- function(PKparameters,
             rename("Individual" = ...1, "Trial" = ...2)
         
         Out_ind[["AUCXtab"]] <- cbind(SubjTrial_AUCX,
-                                      as.data.frame(Out_ind[PKparameters]))
+                                      bind_rows(Out_ind[PKparameters]))
     }
     
     # suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
