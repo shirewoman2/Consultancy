@@ -25,7 +25,6 @@ pksummary_mult(
   prettify_columns = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
-  highlightExcel = FALSE,
   save_table = NA,
   fontsize = 11,
   ...
@@ -187,10 +186,6 @@ only work for simulations that included an effector.}
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
 
-\item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
-yellow the cells on the source Excel file where the data came from. This
-\emph{only} applies when \code{checkDataSource = TRUE}.}
-
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -201,11 +196,7 @@ of the file will be "PK summary table" with that extension. If you supply
 something other than just "docx" or just "csv" for the file name but you
 leave off the file extension, we'll assume you want it to be ".csv". All PK
 info will be included in a single Word or csv file, and, if
-\code{checkDataSource = TRUE}, that will be saved in a single csv file.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft permissions issue, not an R issue. If you try to save on
-SharePoint, you will get a warning that R will save your file instead to
-your local (not OneDrive) Documents folder.}
+\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}

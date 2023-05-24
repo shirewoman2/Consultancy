@@ -252,29 +252,6 @@
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
-#' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
-#'   yellow the cells on the source Excel file where the data came from. This
-#'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-#'   the output with \code{save_table}.
-#' @param java_fail_option Option you want to have happen if Java fails because
-#'   it ran out of memory. By default, behind the scenes, it's Java -- not R --
-#'   that highlights the appropriate cells in the Simulator output Excel files,
-#'   but Java requires \emph{so much memory} that it fails for large files.
-#'   There are two options
-#'   here: \describe{\item{"fail" (default)}{We'll \emph{try} to have Java highlight
-#'   things, but if it fails because it ran out of memory, nothing happens.}
-#'
-#'   \item{"highlight anyway"}{There \emph{is} a way to get the highlighting
-#'   you want without Java, but it just doesn't work as well. If we don't use
-#'   Java, you'll get the appropriate yellow highlighting, but the watermark and blue
-#'   shading that are present on tabs such as the "Summary" tab, the "Input Sheet",
-#'   and the tab with the population parameters will disappear. Those tabs will
-#'   still be protected, but they \emph{will look different.}}
-#'
-#'   \item{"highlight a copy"}{We won't use Java to highlight, so you'll lose
-#'   the watermark and blue background on protected tabs, but we'll do that
-#'   on a copy of the original Simulator Excel file. It will be named the same
-#'   but will have "QC" appended to the end of the file name.}}
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -347,8 +324,6 @@ pksummary_table <- function(sim_data_file = NA,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
-                            highlightExcel = FALSE,
-                            java_fail_option = "fail", 
                             save_table = NA, 
                             fontsize = 11){
    
@@ -1492,33 +1467,6 @@ pksummary_table <- function(sim_data_file = NA,
       OutQC <- MyPKResults_all$QC %>% 
          select(PKparam, File, matches(ColsToInclude))
       
-      if(highlightExcel){
-         # Determining which stats we'll need to highlight
-         StatsToHighlight <- switch(MeanType, 
-                                    "arithmetic" = "mean", 
-                                    "geometric" = "geomean")
-         if(includeConfInt){
-            StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
-         }
-         
-         if(includeCV){
-            StatsToHighlight <- c(StatsToHighlight, 
-                                  switch(MeanType, 
-                                         "arithmetic" = "CV", 
-                                         "geometric" = "GCV"))
-         }
-         
-         if(includePerc){
-            StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
-         }
-         
-         if(includeRange){
-            StatsToHighlight <- c(StatsToHighlight, "min", "max")
-         }
-         
-         highlightQC(qc_dataframe = OutQC, stats = StatsToHighlight, 
-                     java_fail_option = java_fail_option)
-      }
    }
    
    
