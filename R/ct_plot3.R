@@ -158,20 +158,20 @@ ct_plot3 <- function(ct_dataframe,
          Deets <- tryCatch(
             extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
                               exp_details = "all", 
-                              annotate_output = FALSE), 
+                              annotate_output = FALSE) %>% as.data.frame(), 
             error = function(x) "missing file")
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
+         Deets <- switch(as.character("File" %in% names(as.data.frame(existing_exp_details))), 
+                         "TRUE" = as.data.frame(existing_exp_details), 
                          "FALSE" = deannotateDetails(existing_exp_details))
          
-         Deets <- as.data.frame(Deets) %>% filter(unique(ct_dataframe$File) %in% File)
+         Deets <- Deets %>% filter(unique(ct_dataframe$File) %in% File)
          
          if(nrow(Deets == 0)){
             Deets <- tryCatch(
                extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
                                  exp_details = "all", 
-                                 annotate_output = FALSE), 
+                                 annotate_output = FALSE) %>% as.data.frame(), 
                error = function(x) "missing file")
          }
       }

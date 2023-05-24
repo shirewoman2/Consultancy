@@ -299,23 +299,23 @@ ct_plot_mult <- function(ct_dataframe,
          Deets <- tryCatch(
             extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
                                    exp_details = "all", 
-                                   annotate_output = FALSE), 
+                                   annotate_output = FALSE) %>% as.data.frame(), 
             error = function(x) "missing file")
          
       } else {
          
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+         Deets <- switch(as.character("File" %in% names(as.data.frame(existing_exp_details))), 
                          "TRUE" = existing_exp_details, 
                          "FALSE" = deannotateDetails(existing_exp_details))
          
-         Deets <- as.data.frame(Deets) %>% filter(File %in% unique(ct_dataframe$File))
+         Deets <- Deets %>% filter(File %in% unique(ct_dataframe$File))
          
          if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
             Deets <- tryCatch(
                extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
                                       exp_details = "all", 
                                       annotate_output = FALSE, 
-                                      existing_exp_details = Deets), 
+                                      existing_exp_details = Deets) %>% as.data.frame(), 
                error = function(x) "missing file")
          }
       }
