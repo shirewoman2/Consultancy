@@ -1,17 +1,12 @@
 Package: SimcypConsultancy
 Type: Package
-Title: Useful and standardized tools for using R within the Simcyp Consultancy Team
-Version: 1.20.2
-Author: Laura Sh., Mackenzie, Howie, Christiane, Alenka, Ludwig, Magali, Laura Sa.
+Title: Standardized tools for using R within the Simcyp Consultancy Team
+Version: 2.0.0
+Author: Laura Sh., Mackenzie, Howie, Christiane, Alenka, Ludwig, Magali, Laura Sa., Fatma
 Maintainer: The package maintainer <laura.shireman@certara.com>
-Description: This package is meant to be a collection of useful and standardized
-    reporting tools for the Simcyp Consultancy Team. 
+Description: This package is meant to be a collection of standardized reporting tools for the Simcyp Consultancy Team. 
 Imports:
-      tidyverse,
-      flextable, 
-      readxl,
-      xlsx,
-      stringr
+      tidyverse
 License: none
 Encoding: UTF-8
 LazyData: true

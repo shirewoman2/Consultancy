@@ -5,19 +5,21 @@
 \title{Annotate Simcyp Simulator experimental details}
 \usage{
 annotateDetails(
-  Deets,
+  existing_exp_details,
   compoundID = NA,
   compound = NA,
+  template_sim = NA,
+  show_only_diff_from_template = FALSE,
+  simulator_section = NA,
   detail_set = NA,
   find_matching_details = NA,
-  simulator_section = NA,
   show_compound_col = TRUE,
   omit_all_missing = TRUE,
   save_output = NA
 )
 }
 \arguments{
-\item{Deets}{output from \code{\link{extractExpDetails}} or
+\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}}}
 
 \item{compoundID}{optionally supply one or more of "substrate", "primary
@@ -30,7 +32,38 @@ compound ID with \code{c(...)}.}
 specific compound name to get all possible compounds that match that and
 \emph{only} compounds that match that. Regular expressions are acceptable
 here, e.g., \code{compound = "midaz|keto"} to find any compound with either
-"midaz" or "keto" in the name. Not case sensitive.}
+"midaz" or "keto" in the name. Not case sensitive. If you request only
+information on a specific compound, we will assume what what you care about
+is the set of parameters used for that compound and not whether that
+compound was the substrate or the inhibitor. This will change the output
+somewhat because we won't include the column "CompoundID" and we will
+concatenate all the possible compound names in the column "Compound".}
+
+\item{template_sim}{optionally include a specific file name -- it must be one
+of the files included in the object you supply for
+\code{existing_exp_details} -- that can be used as a template simulation to
+compare all the other simulations to. Any details in any simulations that
+do NOT match the template simulation details will be highlighted in red if
+you save the output to an Excel file using \code{save_output}.
+\strong{NOTE:} If you use a template simulation, we \emph{strongly
+recommend} you also set \code{compoundID} to be only the compound ID you
+want, e.g., \code{compoundID = "substrate"} and/or set the compound name to
+be only the compound you want, e.g., \code{compound = "midaz"} (this will
+match any compound names that include the letters "midaz" and is NOT case
+sensitive), and set \code{show_compound_col = FALSE}. This will result in a
+much clearer Excel file.}
+
+\item{show_only_diff_from_template}{TRUE or FALSE (default) to show only the
+details that differ from the template simulation, which reduces the number
+of rows in your output and can make it easier to find what has changed
+between simulations}
+
+\item{simulator_section}{optionally supply a specific simulator section or
+sections from which to find simulation experimental details and then return
+\emph{only} those details. Options are "Absorption", "Distribution",
+"Elimination", "Transport", "Interaction", "Phys Chem and Blood Binding",
+"Population", or "Trial Design". Not case sensitive. If you want more than
+one, enclose them with \code{c(...)}.}
 
 \item{detail_set}{optionally supply a set of details to return \emph{only}
   those details. Options are the same as the ones listed as possibilities for
@@ -44,8 +77,13 @@ here, e.g., \code{compound = "midaz|keto"} to find any compound with either
   \item{"population tab"}{details about the population used (data come from
   the tab with the same name as the population simulated)}
 
-  \item{"Simcyp inputs"}{the details that you normally fill out on the
-  "Simcyp inputs (and QC)" tab of a compound data sheet}
+  \item{"Simcyp inputs"}{all the details that you normally fill out on the
+  "Simcyp inputs (and QC)" tab of a compound data sheet plus trial design
+  information}
+
+  \item{"Methods"}{all the details that show up in the methods section of a
+  report: number of trials, number of individuals simulated, population,
+  percent female, age range, dose amount and regimen, etc.}
 
   \item{"all"}{all possible details}
 
@@ -74,13 +112,6 @@ here, e.g., \code{compound = "midaz|keto"} to find any compound with either
   = "^CLint.*CYP3A.*sub$"} to find all details that start with "CLint", then,
   somewhere in the name, include "CYP3A", and then end with "sub" (for
   "substrate"). Case sensitive.}
-
-\item{simulator_section}{optionally supply a specific simulator section or
-sections from which to find simulation experimental details and then return
-\emph{only} those details. Options are "Absorption", "Distribution",
-"Elimination", "Interaction", "Phys Chem and Blood Binding", "Population",
-"Transport", or "Trial Design". Not case sensitive. If you want more than
-one, enclose them with \code{c(...)}.}
 
 \item{show_compound_col}{TRUE (default), FALSE, or "concatenate" for whether
 to include in the results the column "Compound", which is the compound's
@@ -134,52 +165,39 @@ Returns a data.frame of simulation experimental details including the
   experimental details for each file will show up in their own columns}}
 }
 \description{
-\code{annotateDetails} converts output from either
-\code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} into
-a long data.frame and adds to that data.frame columns for
-\enumerate{\item{which compound the information pertains to (substrate,
-inhibitor, etc.),} \item{which section of the Simcyp Simulator this detail is
-found in (physchem, absorption, distribution, etc.),} \item{notes describing
-what the detail is, and} \item{which sheet in the Excel file the information
-was pulled from.}} It will also optionally filter the data to return only
-specifically requested information. \strong{A recent change as of Jan. 2023:}
-There are now \emph{so many} possible details that it can be overwhelming to
-get all of them! For that reason, we changed the default setting for
-\code{omit_all_missing} to be TRUE so that, if there are only NA values for
-all the files you're annotating, that detail will be dropped. If you still
-get a \emph{ton} of information all at once, we recommend looking at just one
-compound at a time. You can set the \code{compoundID} argument to just the
-compound ID you want -- "substrate", "inhibitor 1", etc. -- or set the
-\code{compound} argument to just the compound you want -- "midazolam" or
-"Client Drug X" -- and that will also help make things less overwhelming and
-easier to find.
-}
-\details{
-\emph{Nota bene:} When you initially extracted your simulation experimental
-details, if you set \code{annotate_output = TRUE} and \code{show_compound_col
-= "concatenate"}, please understand that you cannot go backwards here and
-un-concatenate the compound names because, once we combine everything, we
-don't know which piece of data belonged to which compound. You'll still get
-concatenated compound names in the output.
+\code{annotateDetails} uses output from either
+\code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}},
+formats it into a long data.frame, adds columns for \enumerate{\item{which
+compound the information pertains to (substrate, inhibitor, etc.),}
+\item{which section of the Simcyp Simulator this detail is found in
+(physchem, absorption, distribution, etc.),} \item{notes describing what the
+detail is, and} \item{which sheet in the Excel file the information was
+pulled from.}} It will also optionally filter the data to return only
+specifically requested information. If you find yourself overwhelmed at the
+amount of information, we recommend looking at just one compound at a time.
+You can set the \code{compoundID} argument to just the compound ID you want
+-- "substrate", "inhibitor 1", etc. -- or set the \code{compound} argument to
+just the compound you want -- "midazolam" or "Client Drug X" -- and that will
+also help make things less overwhelming and easier to find.
 }
 \examples{
 
-annotateDetails(Deets = MDZdetails)
+annotateDetails(existing_exp_details = MDZdetails)
 
 # Get annotated details regarding absorption.
-annotateDetails(Deets = MDZdetails, simulator_section = "absorption")
+annotateDetails(existing_exp_details = MDZdetails, simulator_section = "absorption")
 
 # Get annotated details on whatever was used as inhibitor 1
-annotateDetails(Deets = MDZdetails, compoundID = "inhibitor 1")
+annotateDetails(existing_exp_details = MDZdetails, compoundID = "inhibitor 1")
 
 # Get annotated details for any compounds with "midaz" or "keto" in the name.
-annotateDetails(Deets = MDZdetails, compound = "midaz|keto")
+annotateDetails(existing_exp_details = MDZdetails, compound = "midaz|keto")
 
 # Get (most of) the details to put into a table of simulation inputs:
-annotateDetails(Deets = MDZdetails, detail_set = "Simcyp inputs")
+annotateDetails(existing_exp_details = MDZdetails, detail_set = "Simcyp inputs")
 
 # Combine multiple options to get just a few specific details:
-annotateDetails(Deets = MDZdetails,
+annotateDetails(existing_exp_details = MDZdetails,
             simulator_section = "absorption",
             compound = "midaz|keto",
             compoundID = "substrate")

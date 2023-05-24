@@ -53,7 +53,7 @@ pdf_to_csv <- function(pdf_file,
     # Ignore any NA values in the page numbers.
     page <- page[complete.cases(page)]
     
-    if(class(page) != "integer" | all(is.na(page))){
+    if(class(page) %in% c("integer", "numeric") == FALSE | all(is.na(page))){
         stop("You must supply a numeric value for the page.", 
              call. = FALSE)
         page <- as.numeric(page)

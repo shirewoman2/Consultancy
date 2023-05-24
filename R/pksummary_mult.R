@@ -175,6 +175,10 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
+#' @param variability_format When the variability is concatenated, format the
+#'   variability either by listing it as "X to Y" (default,
+#'   \code{variability_format = "to"}) or as "[X, Y]" (\code{variability_format
+#'   = "brackets"})
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -196,13 +200,7 @@
 #'   simulator output file. Useful for QCing.
 #' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
 #'   yellow the cells on the source Excel file where the data came from. This
-#'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-#'   the output with \code{save_table}. \strong{Note from LSh:} For reasons that
-#'   I honestly do not know, highlighting the cells on the various AUC tabs from
-#'   R also causes the Simcyp watermark and blue background to disappear from
-#'   the "Summary" tab, "Input Sheet", and the tab with the population
-#'   information. These tabs do remain protected (you can't  change anything on
-#'   them), but you should be aware that watermark and blue background changes.
+#'   \emph{only} applies when \code{checkDataSource = TRUE}. 
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -258,6 +256,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            includePerc = FALSE, 
                            includeTrialMeans = FALSE, 
                            concatVariability = FALSE, 
+                           variability_format = "to",
                            adjust_conc_units = NA, 
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
@@ -290,6 +289,12 @@ pksummary_mult <- function(sim_data_files = NA,
       tissues <- sys.call()$tissue
    }
    
+   # If they said "save_output" instead of "save_table", fix that.
+   if("save_output" %in% names(match.call())){
+      save_table <- sys.call()$save_output
+   }
+   
+   
    # Check for appropriate input for arguments
    compoundsToExtract <- tolower(compoundsToExtract)
    
@@ -308,7 +313,7 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    compoundsToExtract_orig <- compoundsToExtract
-   if(complete.cases(compoundsToExtract) && "all" %in% compoundsToExtract){
+   if(any(complete.cases(compoundsToExtract)) && "all" %in% compoundsToExtract){
       compoundsToExtract <- c("substrate", "primary metabolite 1", "primary metabolite 2",
                               "secondary metabolite",
                               "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
@@ -543,6 +548,7 @@ pksummary_mult <- function(sim_data_files = NA,
                   includePerc = includePerc, 
                   includeTrialMeans = includeTrialMeans,
                   concatVariability = concatVariability,
+                  variability_format = variability_format,
                   adjust_conc_units = adjust_conc_units,
                   prettify_columns = prettify_columns, 
                   extract_forest_data = extract_forest_data,
@@ -598,11 +604,13 @@ pksummary_mult <- function(sim_data_files = NA,
    if(extract_forest_data){
       # Need to deal with possible character data for custom dosing before row
       # binding for FD
-      suppressWarnings(
-         FD <- map(FD, .f = function(x) x %>% mutate(across(.cols = c("Dose_sub", "Dose_inhib"), 
-                                                            .fns = as.numeric))))
-      FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
+      FD <- FD[which(sapply(FD, function(x) "list" %in% class(x) == FALSE))]
       
+      suppressWarnings(
+         FD <- map(FD, .f = function(x) x %>% 
+                      mutate(across(.cols = any_of(c("Dose_sub", "Dose_inhib")), 
+                                    .fns = as.numeric))))
+      FD <- bind_rows(FD[sapply(FD, FUN = length) > 0])
    }
    
    if(extract_forest_data & # NOT SURE THIS IS NECESSARY
@@ -714,70 +722,36 @@ pksummary_mult <- function(sim_data_files = NA,
             
             write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
             
-            if(highlightExcel){
-               # Need to convert letter name of column back to a number
-               XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
-               
-               # Determining which stats we'll need to highlight
-               StatsToHighlight <- switch(MeanType, 
-                                          "arithmetic" = "mean", 
-                                          "geometric" = "geomean")
-               if(includeConfInt){
-                  StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
-               }
-               
-               if(includeCV){
-                  StatsToHighlight <- c(StatsToHighlight, 
-                                        switch(MeanType, 
-                                               "arithmetic" = "CV", 
-                                               "geometric" = "GCV"))
-               }
-               
-               if(includePerc){
-                  StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
-               }
-               
-               if(includeRange){
-                  StatsToHighlight <- c(StatsToHighlight, "min", "max")
-               }
-               
-               # Setting up the cell style to use
-               ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
-                                   halign = "center", valign = "center", 
-                                   border = "TopBottomLeftRight",
-                                   borderStyle = "hair")
-               
-               for(k in unique(OutQC$File)){
-                  # Loading the workbook so that we can highlight things
-                  wb <- openxlsx::loadWorkbook(k)
-                  
-                  for(i in unique(OutQC$Tab)){
-                     
-                     ToHighlight <- OutQC %>% filter(File == k & Tab == i) %>% 
-                        ungroup() %>% 
-                        select(File, Tab, any_of(StatsToHighlight)) %>% 
-                        pivot_longer(cols = -c("File", "Tab"), 
-                                     names_to = "Stat", values_to = "Cell") %>% 
-                        mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
-                               Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
-                     ToHighlight$Column <- as.numeric(sapply(
-                        ToHighlight$Column, FUN = function(x) which(XLCols == x)))
-                     
-                     # Applying the highlighting to the workbook
-                     for(j in 1:nrow(ToHighlight)){
-                        addStyle(wb, sheet = i, style = ToQC,
-                                 rows = ToHighlight$Row[j], 
-                                 cols = ToHighlight$Column[j])
-                     }
-                     
-                     rm(ToHighlight)
-                  }
-                  
-                  saveWorkbook(wb, file = k, overwrite = TRUE)
-                  
-                  rm(wb)
-               }
+         }  
+         
+         if(highlightExcel){
+            
+            message("Highlighting PK values in Excel files for QCing. This will take a bit to run since each file needs to be opened, highlighted, and saved again using Java behind the scenes.")
+            
+            # Determining which stats we'll need to highlight
+            StatsToHighlight <- switch(MeanType, 
+                                       "arithmetic" = "mean", 
+                                       "geometric" = "geomean")
+            if(includeConfInt){
+               StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
             }
+            
+            if(includeCV){
+               StatsToHighlight <- c(StatsToHighlight, 
+                                     switch(MeanType, 
+                                            "arithmetic" = "CV", 
+                                            "geometric" = "GCV"))
+            }
+            
+            if(includePerc){
+               StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
+            }
+            
+            if(includeRange){
+               StatsToHighlight <- c(StatsToHighlight, "min", "max")
+            }
+            
+            highlightQC(qc_dataframe = OutQC, stats = StatsToHighlight)
          }
       }
       

@@ -2,14 +2,25 @@
 % Please edit documentation in R/so_graph.R
 \name{so_graph}
 \alias{so_graph}
-\title{Graph of simulated vs. observed PK}
+\title{Graph of simulated vs. observed PK -- NOT WORKING WHEN YOU SPECIFY SHAPE
+COLUMN AT THE MOMENT}
 \usage{
 so_graph(
   PKtable,
   PKparameters = NA,
-  color_set = "red black",
   boundary_indicator = "lines",
-  line_width = 0.7,
+  boundary_color_set = "red black",
+  boundary_line_width = 0.7,
+  point_color_column,
+  point_color_set = "default",
+  legend_label_point_color = NA,
+  point_shape_column,
+  point_shape = NA,
+  point_size = NA,
+  legend_label_point_shape = NA,
+  legend_position = "none",
+  ncol = NULL,
+  nrow = NULL,
   save_graph = NA,
   fig_width = 8,
   fig_height = 6
@@ -24,15 +35,6 @@ so_graph(
 parameter included in \code{PKtable}. To see the full set of possible
 parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 
-\item{color_set}{set of colors to use for indicating the 1.5-fold and 2-fold
-boundaries of the simulated / observed ratio. The default is "red black",
-which results in a black line at the 1.5-fold boundary and a red one at the
-2-fold boundary. Other options are "red green", "muted red green" (a
-lighter, somewhat more muted red and green that work well for indicating
-the boundary when you're using shading instead of lines), and "black",
-which will result in only black lines or shading. You also can set this to
-any two colors you'd like, e.g., \code{color_set = c("yellow", "blue")}}
-
 \item{boundary_indicator}{how to indicate the boundaries of 1.5-fold and
 2-fold comparisons of simulated / observed. Options are "lines" (default)
 "fill" to get a shaded area, or "none" to remove any indicators of those
@@ -43,7 +45,122 @@ RStudio, go to Tools --> Global Options --> General --> Graphics --> And
 then set "Graphics device: backend" to "AGG". Honestly, this is a better
 option for higher-quality graphics anyway!}
 
-\item{line_width}{line width; default is 0.7}
+\item{boundary_color_set}{set of colors to use for indicating the 1.5-fold
+and 2-fold boundaries of the simulated / observed ratio. The default is
+"red black", which results in a black line at the 1.5-fold boundary and a
+red one at the 2-fold boundary. Other options are "red green", "muted red
+green" (a lighter, somewhat more muted red and green that work well for
+indicating the boundary when you're using shading instead of lines), and
+"black", which will result in only black lines or shading. You also can set
+this to any two colors you'd like, e.g., \code{boundary_color_set =
+c("yellow", "blue")}}
+
+\item{boundary_line_width}{line width; default is 0.7. This only applies when
+\code{boundary_indicator} is set to "lines", the default.}
+
+\item{point_color_column}{(optional) the column in \code{PKtable} that should
+be used for determining which color the points will be. This should be
+unquoted. For example, if you have a column named "Study" in the data.frame
+you're using for PKtable and you want to color the points by which study
+they came from, you would use: \code{point_color_column = Study}.}
+
+\item{point_color_set}{the set of colors to use for the points. Options:
+  \describe{
+
+  \item{"default"}{black if nothing is specified for
+  \code{point_color_column} and, otherwise, a set of colors from Cynthia
+  Brewer et al. from Penn State that are friendly to those with red-green
+  colorblindness. The first three colors are green, orange, and purple. This
+  can also be referred to as "Brewer set 2". If there are only two unique
+  values in the point_color_column, then Brewer set 1 will be used since red
+  and blue are still easily distinguishable but also more aesthetically
+  pleasing than green and orange.}
+
+  \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+  first three colors are red, blue, and green.}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 colors, so if you have more than
+  that, that's when this palette is most useful. It's \emph{not} very useful
+  when you only need a couple of colors.}
+
+  \item{"blue-green"}{a set of blues fading into greens. This palette can be
+  especially useful if you are comparing a systematic change in some
+  continuous variable -- for example, increasing dose or predicting how a
+  change in intrinsic solubility will affect concentration-time profiles --
+  because the direction of the trend will be clear.}
+
+  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}
+
+  \item{a character vector of colors}{If you'd prefer to set all the colors
+  yourself to \emph{exactly} the colors you want, you can specify those
+  colors here. An example of how the syntax should look: \code{color_set =
+  c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+  which item in \code{point_color_column} gets which color, you can supply a
+  named vector. For example, if you're coloring the lines by the compound ID,
+  you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+  like help creating a specific gradation of colors, please talk to a member
+  of the R Working Group about how to do that using
+  \link{colorRampPalette}.}}}
+
+\item{legend_label_point_color}{optionally indicate on the legend something
+explanatory about what the colors represent. For example, if
+\code{point_color_column = Study} and \code{legend_label_point_color =
+"Studies included"}, that will make the label above the items in the legend
+"Studies included" rather than the default, which is to use whatever the
+column name is for \code{point_color_column}. If you don't want a label for
+this legend item, set this to "none".}
+
+\item{point_shape_column}{(optional) the column in \code{PKtable} that should
+be used for determining which shape the points will be. This should be
+unquoted. For example, if you have a column named "DosingFrequency" in the
+data.frame you're using for PKtable and you want to change the shape of the
+points by which dosing frequency was used, you would use:
+\code{point_color_column = DosingFrequency}.}
+
+\item{point_shape}{optionally specify what shapes are used for the points.
+Input should look like this, for example: \code{c(1, 2)} to get an open
+circle and an open triangle. If you only specify one value, it will be used
+for all points. If you don't specify anything for
+\code{point_shape_column}, then only the first value listed will be used.
+To see all the possible shapes and what number corresponds to which shape,
+type \code{ggpubr::show_point_shapes()} into the console. If left as NA,
+all points will be filled circles.}
+
+\item{point_size}{optionally specify the size of the points to use for the
+observed data. If left as NA, the size will be 2.}
+
+\item{legend_label_point_shape}{optionally indicate on the legend something
+explanatory about what the colors represent. For example, if
+\code{point_color_column = Study} and \code{legend_label_point_color =
+"Studies included"}, that will make the label above the items in the legend
+"Studies included" rather than the default, which is to use whatever the
+column name is for \code{point_color_column}. If you don't want a label for
+this legend item, set this to "none".}
+
+\item{legend_position}{Specify where you want the legend to be. Options are
+"left", "right" (default in most scenarios), "bottom", "top", or "none" if
+you don't want one at all.}
+
+\item{ncol}{number of columns of graphs to show. If left as NULL (default), R
+will make a reasonable guess for the number.}
+
+\item{nrow}{number of rows of graphs to show. If left as NULL (default), R
+will make a reasonable guess for the number.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"}
@@ -64,7 +181,7 @@ the 1.5-fold line will be replaced with a curve as described in Guest Galetin
 2011 Drug Metab Dispos.
 }
 \examples{
-# Assuming you have run pksummary_mult on a few files with observed data 
+# Assuming you have run pksummary_mult on a few files with observed data
 # to generate an object called MyPKOutput, then:
 so_graph(MyPKOutput)
 so_graph(MyPKOutput, boundary_indicator = "fill")

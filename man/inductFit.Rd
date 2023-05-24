@@ -11,10 +11,14 @@ inductFit(
   donor_column = DonorID,
   fitByDonor = TRUE,
   model = "all",
+  graph_mean_of_fits = FALSE,
   measurement = "mRNA",
   enzyme = "CYP3A4",
   drug = NA,
   weights = "1/y^2",
+  bounds_Emax = NA,
+  bounds_EC50 = NA,
+  bounds_slope = NA,
   omit = NA,
   color_set = "default",
   y_axis_limits = NA,
@@ -71,6 +75,13 @@ individual donor}
 
   \item{"all" (default)}{All 4 models will be fitted to the data.} }}
 
+\item{graph_mean_of_fits}{TRUE or FALSE (default) for whether to graph a line
+representing the mean of all donors' fitted parameters. Please note that
+this is NOT line showing the model fitted to the mean data; instead, this
+is the mean of all the donors individually fitted parameters. This only
+applies when \code{fitByDonor = TRUE}. If \code{graph_mean_of_fits =
+FALSE}, graph will show a line for each donor's fitted parameters.}
+
 \item{measurement}{the type of measurement used. Options are "mRNA" or
 "activity". This only affects the y axis labels on the output graph(s).}
 
@@ -87,6 +98,27 @@ in the Word document output.}
 numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
 "1/y" or "1/y^2" (default). Be careful that you don't have any infinite
 values or this will fail!}
+
+\item{bounds_Emax}{upper and lower boundaries for fitting Indmax or Emax,
+specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
+boundaries. If you only want to specify an upper limit, set the first
+number to \code{-Inf} and the second number to that value. If you only want
+to specify a lower limit, set the first number to that value and the second
+number to \code{Inf}.}
+
+\item{bounds_EC50}{upper and lower boundaries for fitting IndC50 or EC50,
+specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
+boundaries. If you only want to specify an upper limit, set the first
+number to \code{-Inf} and the second number to that value. If you only want
+to specify a lower limit, set the first number to that value and the second
+number to \code{Inf}.}
+
+\item{bounds_slope}{upper and lower boundaries for fitting the slope,
+specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
+boundaries. If you only want to specify an upper limit, set the first
+number to \code{-Inf} and the second number to that value. If you only want
+to specify a lower limit, set the first number to that value and the second
+number to \code{Inf}.}
 
 \item{omit}{An index of which, if any, samples to omit from regression(s).
 These samples will be depicted as open circles in the graph but will not be

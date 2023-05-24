@@ -11,6 +11,7 @@ ct_y_axis(
   EnzPlot,
   y_axis_limits_lin,
   time_range,
+  y_axis_interval = NA,
   prettify_compound_names = TRUE,
   y_axis_limits_log,
   Ylim_data,
@@ -31,6 +32,8 @@ extractConcTime}
 \item{y_axis_limits_lin}{user input for y axis limits for a linear plot}
 
 \item{time_range}{user-specified time range}
+
+\item{y_axis_interval}{user input for y axis tick-mark interval}
 
 \item{y_axis_limits_log}{user input for y axis limits for a semi-log plot}
 

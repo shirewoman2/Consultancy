@@ -55,6 +55,15 @@
 #'   need to specify anything for \code{save_graph}. (In fact, anything you
 #'   specify for \code{save_graph} will be ignored.)
 #'
+#' @param qc_graph TRUE or FALSE (default) on whether to create a second copy
+#'   of the graphical file(s) where the left panel shows the original graphs and
+#'   the right panel shows information about the file used to get the data and
+#'   the trial design. This works MUCH faster when you have already used
+#'   \code{\link{extractExpDetails_mult}} to get information about how your
+#'   simulation or simulations were set up and supply that object to the
+#'   argument \code{existing_exp_details}.
+#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
+#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -217,7 +226,7 @@
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 8
 #'
-#' @return a set of arranged ggplot2 graphs and/or saved files of those graphs 
+#' @return a set of arranged ggplot2 graphs and/or saved files of those graphs
 #' @export
 #'
 #' @examples
@@ -246,6 +255,8 @@
 ct_plot_mult <- function(ct_dataframe, 
                          obs_to_sim_assignment = NA,
                          graph_arrangement = "all together", 
+                         qc_graph = FALSE, 
+                         existing_exp_details = NA,
                          figure_type = "percentiles",
                          mean_type = "arithmetic",
                          linear_or_log = "semi-log",
@@ -267,365 +278,458 @@ ct_plot_mult <- function(ct_dataframe,
                          fig_height = 8,
                          fig_width = 8,
                          ...){
-    
-    # error catching -------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
-             call. = FALSE)
-    }
-    
-    if(nrow(ct_dataframe) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
-             call. = FALSE)
-    }
-    
-    # main body of function -----------------------------------------------
-    
-    # Setting up ct_dataframe
-    ct_dataframe <- ct_dataframe %>% 
-        mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
-                                        "none", subsection_ADAM),
-               GraphLabs = paste(File, CompoundID, Tissue, subsection_ADAM, sep = "."))
-    
-    # Checking for situations where they'll get the same file name for more than
-    # one set of data
-    DatasetCheck <- ct_dataframe %>% filter(Simulated == TRUE) %>% 
-        select(File, Tissue, CompoundID, subsection_ADAM, GraphLabs) %>% 
-        unique()
-    
-    if(any(duplicated(DatasetCheck$File)) == FALSE){
-        ct_dataframe <- ct_dataframe %>% 
-            mutate(GraphLabs = File)
-        DatasetCheck$GraphLabs <- DatasetCheck$File
-    }
-    
-    # Setting up graph titles and order
-    if(length(graph_titles) > 1 && any(complete.cases(graph_titles))){
-        
-        # If they have named some graph_titles but not all, fix that.
-        graph_titles <- c(
-            graph_titles, 
-            setdiff(sort(unique(DatasetCheck$GraphLabs)), 
-                    names(graph_titles)))
-        
-        # If graph_titles isn't named, make the names match the files themselves.
-        if(is.null(names(graph_titles))){
-            names(graph_titles) <- graph_titles
-        }
-        
-        # If they named some but not all the values in graph_titles, name the
-        # missing ones, too.
-        if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
-            names(graph_titles)[is.na(names(graph_titles))] <-
-                graph_titles[is.na(names(graph_titles))]
+   
+   # error catching -------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+           call. = FALSE)
+   }
+   
+   if(nrow(ct_dataframe) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+           call. = FALSE)
+   }
+   
+   # Getting experimental details if they didn't supply them and want to have a
+   # QC graph
+   if(qc_graph == TRUE){
+      
+      if("logical" %in% class(existing_exp_details)){ 
+         Deets <- tryCatch(
+            extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                   exp_details = "all", 
+                                   annotate_output = FALSE) %>% as.data.frame(), 
+            error = function(x) "missing file")
+         
+      } else {
+         
+         Deets <- switch(as.character("File" %in% names(as.data.frame(existing_exp_details))), 
+                         "TRUE" = existing_exp_details, 
+                         "FALSE" = deannotateDetails(existing_exp_details))
+         
+         Deets <- Deets %>% filter(File %in% unique(ct_dataframe$File))
+         
+         if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
+            Deets <- tryCatch(
+               extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
+                                      exp_details = "all", 
+                                      annotate_output = FALSE, 
+                                      existing_exp_details = Deets) %>% as.data.frame(), 
+               error = function(x) "missing file")
+         }
+      }
+      
+      if(class(Deets)[1] == "character"){
+         warning("We couldn't find the source Excel files for this graph, so we can't QC it.", 
+                 call. = FALSE)
+         qc_graph <- FALSE
+      }
+   }
+   
+   
+   # main body of function -----------------------------------------------
+   
+   ## Setting up ct_dataframe ----------------------------------------------
+   ct_dataframe <- ct_dataframe %>% 
+      mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
+                                      "none", subsection_ADAM),
+             GraphLabs = paste(File, CompoundID, Tissue, subsection_ADAM, sep = "."))
+   
+   # Checking for situations where they'll get the same file name for more than
+   # one set of data
+   DatasetCheck <- ct_dataframe %>% filter(Simulated == TRUE) %>% 
+      select(File, Tissue, CompoundID, subsection_ADAM, GraphLabs) %>% 
+      unique()
+   
+   if(any(duplicated(DatasetCheck$File)) == FALSE){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(GraphLabs = File)
+      DatasetCheck$GraphLabs <- DatasetCheck$File
+   }
+   
+   ## Setting up graph titles and order --------------------------------------
+   if(length(graph_titles) > 1 && any(complete.cases(graph_titles))){
+      
+      # If they have named some graph_titles but not all, fix that.
+      graph_titles <- c(
+         graph_titles, 
+         setdiff(sort(unique(DatasetCheck$GraphLabs)), 
+                 names(graph_titles)))
+      
+      # If graph_titles isn't named, make the names match the files themselves.
+      if(is.null(names(graph_titles))){
+         names(graph_titles) <- graph_titles
+      }
+      
+      # If they named some but not all the values in graph_titles, name the
+      # missing ones, too.
+      if(any(is.na(names(graph_titles)) | names(graph_titles) == "")){
+         names(graph_titles)[is.na(names(graph_titles))] <-
+            graph_titles[is.na(names(graph_titles))]
+         
+         names(graph_titles)[names(graph_titles) == ""] <-
+            graph_titles[names(graph_titles) == ""]
+      }
+      
+      # Convert labels to file base names (this doesn't do anything to the
+      # label if the user specified that. Well, as long as they didn't use
+      # graph_titles that were the entire file path, which seems highly
+      # unlikely.)
+      file_label_names <- basename(names(graph_titles))
+      graph_titles <- basename(graph_titles)
+      names(graph_titles) <- file_label_names
+      
+      # If the user omitted any files that are included in ct_dataframe, grab
+      # those now and tack them onto the end of graph_titles. This will allow
+      # them to set the order of the files they DID specify but not omit files
+      # that they forgot. The forgotten files just won't have pretty titles.
+      graph_titles_all <- unique(c(names(graph_titles), 
+                                   DatasetCheck$GraphLabs))
+      
+      # Name items in graph_titles_all according to graph_titles.
+      names(graph_titles_all) <- graph_titles_all
+      graph_titles_all[names(graph_titles)] <- as.character(graph_titles)
+      
+   } else {
+      
+      # Even if user didn't specify file order, we need the levels of that
+      # factor later. Setting them here. 
+      graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
+      names(graph_titles_all) <- graph_titles_all
+   }
+   
+   # Much easier to deal with things if we've got base file names in
+   # ct_dataframe. Taking care of that here as well as setting factor levels
+   # for graph titles.
+   ct_dataframe <- ct_dataframe %>% 
+      mutate(File_bn = basename(File), 
+             # Set the sort order in the data
+             GraphLabs = factor(GraphLabs, levels = names(graph_titles_all)))
+   
+   ## observed data ---------------------------------------------------------
+   
+   if(any(ct_dataframe$Simulated == FALSE) & 
+      (any(is.na(ct_dataframe$File[ct_dataframe$Simulated == FALSE])) |
+       any(complete.cases(obs_to_sim_assignment)))){
+      # This is the scenario when any observed data exist AND *either* any of
+      # the observed data are missing a value for File *or* there are any
+      # values for obs_to_sim_assignment.
+      
+      ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
+      ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
+      
+      if(all(is.na(obs_to_sim_assignment))){
+         # If there are no values assigned for File and the user did not
+         # specify anything for obs_to_sim_assignment, then make all the
+         # observed data go with all the simulated data.
+         FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
+                                   File = unique(ct_dataframe$File)) %>% 
+            filter(complete.cases(File))
+         suppressMessages(
+            ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
+         )
+      } else {
+         # If the user *did* specify values for obs_to_sim_assignment, then use
+         # those for File.
+         
+         # Making sure that the split pattern will work in case the user omitted
+         # spaces.
+         obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
+         ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
+         
+         if(all(sapply(ObsAssign, length) == 1)){
+            ObsCT <- ObsCT %>% mutate(File = obs_to_sim_assignment[ObsFile])
+         } else {
+            ObsCT <- split(as.data.frame(ObsCT), f = ObsCT$ObsFile)
             
-            names(graph_titles)[names(graph_titles) == ""] <-
-                graph_titles[names(graph_titles) == ""]
-        }
-        
-        # Convert labels to file base names (this doesn't do anything to the
-        # label if the user specified that. Well, as long as they didn't use
-        # graph_titles that were the entire file path, which seems highly
-        # unlikely.)
-        file_label_names <- basename(names(graph_titles))
-        graph_titles <- basename(graph_titles)
-        names(graph_titles) <- file_label_names
-        
-        # If the user omitted any files that are included in ct_dataframe, grab
-        # those now and tack them onto the end of graph_titles. This will allow
-        # them to set the order of the files they DID specify but not omit files
-        # that they forgot. The forgotten files just won't have pretty titles.
-        graph_titles_all <- unique(c(names(graph_titles), 
-                                     DatasetCheck$GraphLabs))
-        
-        # Name items in graph_titles_all according to graph_titles.
-        names(graph_titles_all) <- graph_titles_all
-        graph_titles_all[names(graph_titles)] <- as.character(graph_titles)
-        
-    } else {
-        
-        # Even if user didn't specify file order, we need the levels of that
-        # factor later. Setting them here. 
-        graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
-        names(graph_titles_all) <- graph_titles_all
-    }
-    
-    # Dealing with observed data. This is the scenario when any observed data
-    # exist AND *either* any of the observed data are missing a value for File
-    # *or* there are any values for obs_to_sim_assignment.
-    if(any(ct_dataframe$Simulated == FALSE) & 
-       (any(is.na(ct_dataframe$File[ct_dataframe$Simulated == FALSE])) |
-        any(complete.cases(obs_to_sim_assignment)))){
-        
-        ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
-        ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
-        
-        if(all(is.na(obs_to_sim_assignment))){
-            # If there are no values assigned for File and the user did not
-            # specify anything for obs_to_sim_assignment, then make all the
-            # observed data go with all the simulated data.
-            FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
-                                      File = unique(ct_dataframe$File)) %>% 
-                filter(complete.cases(File))
-            suppressMessages(
-                ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
-            )
-        } else {
-            # If the user *did* specify values for obs_to_sim_assignment, then use
-            # those for File.
-            
-            # Making sure that the split pattern will work in case the user omitted
-            # spaces.
-            obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
-            ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
-            
-            if(all(sapply(ObsAssign, length) == 1)){
-                ObsCT <- ObsCT %>% mutate(File = obs_to_sim_assignment[ObsFile])
-            } else {
-                ObsCT <- split(as.data.frame(ObsCT), f = ObsCT$ObsFile)
-                
-                for(j in 1:length(ObsAssign)){
-                    FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
-                                              File = ObsAssign[[j]])
-                    suppressMessages(
-                        ObsCT[[j]] <- FileAssign %>% full_join(ObsCT[[j]] %>% select(-File))
-                    )
-                    rm(FileAssign)
-                }
-                ObsCT <- bind_rows(ObsCT)
+            for(j in 1:length(ObsAssign)){
+               FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
+                                         File = ObsAssign[[j]])
+               suppressMessages(
+                  ObsCT[[j]] <- FileAssign %>% full_join(ObsCT[[j]] %>% select(-File))
+               )
+               rm(FileAssign)
             }
-        }
-        
-        ct_dataframe <- ct_dataframe %>% bind_rows(ObsCT)
-    }
-    
-    # Much easier to deal with things if we've got base file names in
-    # ct_dataframe. Taking care of that here.
-    ct_dataframe <- ct_dataframe %>% 
-        mutate(File_bn = basename(File), 
-               # Set the sort order in the data
-               GraphLabs = factor(GraphLabs, levels = names(graph_titles_all)))
-    
-    AllGraphs <- list()
-    
-    if(is.na(graph_titles[1])){
-        
-        # Splitting the data, which we're about to do, messes up the order b/c you
-        # have to split on character data rather than factor. Getting the order of
-        # the factors here.
-        getOrder <- function(x){
-            Out <- levels(x)
-            if(is.null(Out)){
-                Out <- sort(unique(x))
-            }
-            return(Out)
-        }
-        
-        if(any(duplicated(DatasetCheck$File))){
-            
-            Order <- expand.grid(list("File" = getOrder(ct_dataframe$File), 
-                                      "CompoundID" = getOrder(ct_dataframe$CompoundID), 
-                                      "Tissue" = getOrder(ct_dataframe$Tissue), 
-                                      "subsection_ADAM" = getOrder(ct_dataframe$subsection_ADAM))) %>% 
-                mutate(Order = paste(File, CompoundID, Tissue, subsection_ADAM, sep = ".")) %>% 
-                pull(Order)
-        } else {
-            Order <- getOrder(ct_dataframe$File)
-        }
-        
-    } else {
-        Order <- names(graph_titles_all)
-    }    
-    
-    if(any(duplicated(DatasetCheck$File))){
-        ct_dataframe <- split(ct_dataframe, 
-                              f = list(as.character(ct_dataframe$File),
-                                       as.character(ct_dataframe$CompoundID), 
-                                       as.character(ct_dataframe$Tissue), 
-                                       as.character(ct_dataframe$subsection_ADAM)))
-    } else {
-        ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
-    }
-    
-    # Dealing with scenario where user has specified a file name incorrectly
-    if(any(Order %in% names(ct_dataframe) == FALSE)){
-        Order <- Order[Order %in% names(ct_dataframe)]
-    }
-    
-    for(i in Order){
-        if(nrow(ct_dataframe[[i]]) == 0){
-            next
-        }
-        
-        if(any(complete.cases(graph_titles)) && graph_titles[1] == "none"){
-            Title_i <- NA
-        } else if(any(duplicated(DatasetCheck$File))){
-            if(any(names(graph_titles_all) != graph_titles_all)){
-                Title_i <- graph_titles_all[i]
-            } else {
-                y <- str_split(i, pattern = "\\.")[[1]]
-                Title_i <- paste(str_trim(
-                    paste(paste(y[1], y[2], sep = "."), 
-                          y[3], y[4], 
-                          ifelse(y[5] == "none", "", y[5]))))
-            }
-        } else {
+            ObsCT <- bind_rows(ObsCT)
+         }
+      }
+      
+      ct_dataframe <- ct_dataframe %>% bind_rows(ObsCT)
+   }
+   
+   
+   ## Making graphs ---------------------------------------------------------
+   AllGraphs <- list()
+   QCGraphs <- list()
+   
+   if(is.na(graph_titles[1])){
+      
+      # Splitting the data, which we're about to do, messes up the order b/c you
+      # have to split on character data rather than factor. Getting the order of
+      # the factors here.
+      getOrder <- function(x){
+         Out <- levels(x)
+         if(is.null(Out)){
+            Out <- sort(unique(x))
+         }
+         return(Out)
+      }
+      
+      if(any(duplicated(DatasetCheck$File))){
+         
+         Order <- expand.grid(list("File" = getOrder(ct_dataframe$File), 
+                                   "CompoundID" = getOrder(ct_dataframe$CompoundID), 
+                                   "Tissue" = getOrder(ct_dataframe$Tissue), 
+                                   "subsection_ADAM" = getOrder(ct_dataframe$subsection_ADAM))) %>% 
+            mutate(Order = paste(File, CompoundID, Tissue, subsection_ADAM, sep = ".")) %>% 
+            pull(Order)
+      } else {
+         Order <- getOrder(ct_dataframe$File)
+      }
+      
+   } else {
+      Order <- names(graph_titles_all)
+   }    
+   
+   if(any(duplicated(DatasetCheck$File))){
+      ct_dataframe <- split(ct_dataframe, 
+                            f = list(as.character(ct_dataframe$File),
+                                     as.character(ct_dataframe$CompoundID), 
+                                     as.character(ct_dataframe$Tissue), 
+                                     as.character(ct_dataframe$subsection_ADAM)))
+   } else {
+      ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
+   }
+   
+   # Dealing with scenario where user has specified a file name incorrectly
+   if(any(Order %in% names(ct_dataframe) == FALSE)){
+      Order <- Order[Order %in% names(ct_dataframe)]
+   }
+   
+   for(i in Order){
+      if(nrow(ct_dataframe[[i]]) == 0){
+         next
+      }
+      
+      if(any(complete.cases(graph_titles)) && graph_titles[1] == "none"){
+         Title_i <- NA
+      } else if(any(duplicated(DatasetCheck$File))){
+         if(any(names(graph_titles_all) != graph_titles_all)){
             Title_i <- graph_titles_all[i]
-        }
-        
-        ct_dataframe[[i]] <- ct_dataframe[[i]] %>% 
-            # need to convert subsection_ADAM back to NA if it was
-            # changed above in order for this to work with ct_plot
-            mutate(subsection_ADAM = ifelse(subsection_ADAM == "none",
-                                            NA, subsection_ADAM))
-        # print(i)
-        # print(head(ct_dataframe[[i]]))
-        
-        AllGraphs[[i]] <- 
-            ct_plot(ct_dataframe = ct_dataframe[[i]], 
-                    figure_type = figure_type,
-                    mean_type = mean_type,
-                    linear_or_log = linear_or_log,
-                    time_range = time_range, 
-                    x_axis_interval = x_axis_interval, 
-                    x_axis_label = x_axis_label,
-                    pad_x_axis = pad_x_axis, 
-                    pad_y_axis = pad_y_axis,
-                    y_axis_limits_lin = y_axis_limits_lin, 
-                    y_axis_limits_log = y_axis_limits_log, 
-                    y_axis_label = y_axis_label,
-                    legend_position = legend_position,
-                    legend_label = legend_label, 
-                    graph_labels = FALSE, 
-                    graph_title = Title_i,
-                    ..., # comment this when developing
-                    graph_title_size = graph_title_size)
-        
-        rm(Title_i)
-    }
-    
-    if(graph_labels){
-        labels <- "AUTO"
-    } else {
-        labels <- NULL
-    }
-    
-    if(graph_arrangement != "separate files"){
-        
-        # Checking on number of columns and rows requested
-        if(graph_arrangement == "all together"){
+         } else {
+            y <- str_split(i, pattern = "\\.")[[1]]
+            Title_i <- paste(str_trim(
+               paste(paste(y[1], y[2], sep = "."), 
+                     y[3], y[4], 
+                     ifelse(y[5] == "none", "", y[5]))))
+         }
+      } else {
+         Title_i <- graph_titles_all[i]
+      }
+      
+      ct_dataframe[[i]] <- ct_dataframe[[i]] %>% 
+         # need to convert subsection_ADAM back to NA if it was
+         # changed above in order for this to work with ct_plot
+         mutate(subsection_ADAM = ifelse(subsection_ADAM == "none",
+                                         NA, subsection_ADAM))
+      # print(i)
+      # print(head(ct_dataframe[[i]]))
+      
+      AllGraphs[[i]] <- 
+         ct_plot(ct_dataframe = ct_dataframe[[i]], 
+                 figure_type = figure_type,
+                 mean_type = mean_type,
+                 linear_or_log = linear_or_log,
+                 time_range = time_range, 
+                 x_axis_interval = x_axis_interval, 
+                 x_axis_label = x_axis_label,
+                 pad_x_axis = pad_x_axis, 
+                 pad_y_axis = pad_y_axis,
+                 y_axis_limits_lin = y_axis_limits_lin, 
+                 y_axis_limits_log = y_axis_limits_log, 
+                 y_axis_label = y_axis_label,
+                 legend_position = legend_position,
+                 legend_label = legend_label, 
+                 graph_labels = FALSE, 
+                 graph_title = Title_i,
+                 ..., # comment this when developing
+                 graph_title_size = graph_title_size)
+      
+      if(qc_graph){
+         
+         QCGraphs[[i]] <- 
+            formatTable_Simcyp(
+               annotateDetails(Deets %>% 
+                                  filter(File == unique(ct_dataframe[[i]]$File)), 
+                               detail_set = "Methods") %>% 
+                  select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
+               shading_column = Detail)
+      }
+      
+      rm(Title_i)
+   }
+   
+   if(graph_labels){
+      labels <- LETTERS[1:length(AllGraphs)]
+   } else {
+      labels <- NULL
+   }
+   
+   if(graph_arrangement == "separate files"){
+      
+      for(i in names(AllGraphs)){
+         FileName <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
+                            ifelse(complete.cases(file_suffix),
+                                   paste0(" - ", file_suffix), ""), ".png")
+         
+         if(any(duplicated(DatasetCheck$File))){
+            Split_i <- str_split(sub("\\.xlsx", "", basename(i)), pattern = "\\.")[[1]]
+            FileName <- paste0(Split_i[3], " ", Split_i[4], " ",
+                               ifelse(is.na(Split_i[5]) | Split_i[5] == "none",
+                                      "", 
+                                      paste0(" subsection ADAM ", Split_i[5])),
+                               FileName)
+         } 
+         
+         ggsave(FileName, 
+                height = fig_height, width = fig_width, dpi = 600, 
+                plot = AllGraphs[[i]])
+         
+         if(qc_graph){
+            ggsave(sub("\\.png|\\.docx", " - QC.png", FileName), 
+                   height = fig_height, width = fig_width * 2, dpi = 600, 
+                   plot = ggpubr::ggarrange(plotlist = list(AllGraphs[[i]],
+                                                            flextable::gen_grob(QCGraphs[[i]])), 
+                                            nrow = 1))
+         }
+      }
+   } else {
+      # This is when the user does NOT want separate files
+      
+      # Checking on number of columns and rows requested
+      if(graph_arrangement == "all together"){
+         nrow <- NULL
+         ncol <- NULL
+      } else {
+         graph_arrangement <- gsub(" ", "", tolower(graph_arrangement))
+         graph_arrangement <- as.numeric(
+            str_split(graph_arrangement, pattern = "x", simplify = TRUE))
+         nrow <- graph_arrangement[1]
+         ncol <- graph_arrangement[2]
+         
+         # Checking that these are sensible numbers. If there are blank spots
+         # where there aren't enough graphs -- for example, there are only 3
+         # graphs and they asked for 2 rows and 2 columns -- that's ok, but
+         # this gives unexpected output if there are not enough slots to fit
+         # all the graphs.
+         if(nrow * ncol < length(AllGraphs)){
+            warning(paste0("You requested ", nrow, " row(s) and ", 
+                           ncol, " column(s) of graphs, which allows space for up to ", 
+                           nrow * ncol, " graphs. However, you have ", 
+                           length(AllGraphs), " graphs. We're going to guess at more reasonable numbers of rows and columns for you."),
+                    call. = FALSE)
             nrow <- NULL
             ncol <- NULL
-        } else {
-            graph_arrangement <- gsub(" ", "", tolower(graph_arrangement))
-            graph_arrangement <- as.numeric(
-                str_split(graph_arrangement, pattern = "x", simplify = TRUE))
-            nrow <- graph_arrangement[1]
-            ncol <- graph_arrangement[2]
+         }
+      }
+      
+      if(legend_position == "none"){
+         Out <- suppressWarnings(
+            ggpubr::ggarrange(plotlist = AllGraphs, 
+                              nrow = nrow, 
+                              ncol = ncol, 
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
+                              align = "hv"))
+      } else {
+         Out <- suppressWarnings(
+            ggpubr::ggarrange(plotlist = AllGraphs, 
+                              nrow = nrow, 
+                              ncol = ncol, 
+                              common.legend = TRUE,
+                              legend = legend_position,
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
+                              align = "hv"))
+      }
+      
+      if(qc_graph){
+         
+         MyPlots <- c(AllGraphs, 
+                      lapply(QCGraphs, FUN = function(x) flextable::gen_grob(x)))
+         
+         suppressWarnings(
+            Out_QC <- ggpubr::ggarrange(plotlist = MyPlots,
+                                        labels = rep(labels, 2),
+                                        font.label = list(size = graph_title_size))
+         )
+         
+         # Having trouble getting the arrangement to match main graphs            
+         # Out_QC <- suppressWarnings(
+         #     cowplot::plot_grid(plotlist = MyPlots, 
+         #                        byrow = FALSE, 
+         #                        labels = "AUTO",
+         #                        font.label = list(size = graph_title_size)))
+         # )
+         
+      }
+      
+      if(complete.cases(save_graph)){
+         FileName <- save_graph
+         if(str_detect(FileName, "\\.")){
+            # Making sure they've got a good extension
+            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+            FileName <- sub(paste0(".", Ext), "", FileName)
+            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                     "png", "bmp", "svg", "jpg", "docx"), 
+                          Ext, "png")
+            FileName <- paste0(FileName, ".", Ext)
+         } else {
+            FileName <- paste0(FileName, ".png")
+            Ext <- "png"
+         }
+         
+         if(Ext == "docx"){
             
-            # Checking that these are sensible numbers. If there are blank spots
-            # where there aren't enough graphs -- for example, there are only 3
-            # graphs and they asked for 2 rows and 2 columns -- that's ok, but
-            # this gives unexpected output if there are not enough slots to fit
-            # all the graphs.
-            if(nrow * ncol < length(AllGraphs)){
-                warning(paste0("You requested ", nrow, " row(s) and ", 
-                               ncol, " column(s) of graphs, which allows space for up to ", 
-                               nrow * ncol, " graphs. However, you have ", 
-                               length(AllGraphs), " graphs. We're going to guess at more reasonable numbers of rows and columns for you."),
-                        call. = FALSE)
-                nrow <- NULL
-                ncol <- NULL
+            # This is when they want a Word file as output
+            OutPath <- dirname(FileName)
+            if(OutPath == "."){
+               OutPath <- getwd()
             }
-        }
-        
-        if(legend_position == "none"){
-            Out <- suppressWarnings(
-                ggpubr::ggarrange(plotlist = AllGraphs, 
-                                  nrow = nrow, 
-                                  ncol = ncol, 
-                                  labels = labels, 
-                                  font.label = list(size = graph_title_size),
-                                  align = "hv"))
             
-        } else {
-            Out <- suppressWarnings(
-                ggpubr::ggarrange(plotlist = AllGraphs, 
-                                  nrow = nrow, 
-                                  ncol = ncol, 
-                                  common.legend = TRUE,
-                                  legend = legend_position,
-                                  labels = labels, 
-                                  font.label = list(size = graph_title_size),
-                                  align = "hv"))
-        }
-        
-        if(complete.cases(save_graph)){
-            FileName <- save_graph
-            if(str_detect(FileName, "\\.")){
-                # Making sure they've got a good extension
-                Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-                FileName <- sub(paste0(".", Ext), "", FileName)
-                Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                         "png", "bmp", "svg", "jpg", "docx"), 
-                              Ext, "png")
-                FileName <- paste0(FileName, ".", Ext)
-            } else {
-                FileName <- paste0(FileName, ".png")
-                Ext <- "png"
-            }
+            FileName <- basename(FileName)
             
-            if(Ext == "docx"){
-                
-                # This is when they want a Word file as output
-                OutPath <- dirname(FileName)
-                if(OutPath == "."){
-                    OutPath <- getwd()
-                }
-                
-                FileName <- basename(FileName)
-                
-                rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
-                                              package="SimcypConsultancy"), 
-                                  output_dir = OutPath, 
-                                  output_file = FileName, 
-                                  quiet = TRUE)
-                # Note: The "system.file" part of the call means "go to where the
-                # package is installed, search for the file listed, and return its
-                # full path.
-                
-            } else {
-                # This is when they want any kind of graphical file format.
-                ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                       plot = Out)
-                
-            }
-        }
-        
-        return(Out)
-        
-    } else {
-        
-        for(i in names(AllGraphs)){
+            rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = FileName, 
+                              quiet = TRUE)
+            # Note: The "system.file" part of the call means "go to where the
+            # package is installed, search for the file listed, and return its
+            # full path.
             
-            Filename <- paste0(gsub("\\.xlsx.*", "", basename(i)), 
-                               ifelse(complete.cases(file_suffix),
-                                      paste0(" - ", file_suffix), ""), ".png")
+         } else {
+            # This is when they want any kind of graphical file format.
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                   plot = Out)
             
-            if(any(duplicated(DatasetCheck$File))){
-                Split_i <- str_split(i, pattern = "\\.")[[1]]
-                Filename <- paste0(Split_i[3], " ", Split_i[4], " ",
-                                   ifelse(Split_i[5] == "none", "", 
-                                          paste0(" subsection ADAM ", Split_i[5])),
-                                   Filename)
-            } 
-            
-            ggsave(Filename, 
-                   height = fig_height, width = fig_width, dpi = 600, 
-                   plot = AllGraphs[[i]])
-        }
-    }
-    
+         }
+         
+         if(qc_graph){
+            ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
+                   height = fig_height * 2, width = fig_width, dpi = 600, 
+                   plot = Out_QC)
+         }
+      }
+      
+      if(qc_graph){
+         return(list("graph" = Out, 
+                     "QC graph" = Out_QC))
+      } else {
+         return(Out)
+      }
+   }
 }
+
 

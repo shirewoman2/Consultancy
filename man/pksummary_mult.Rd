@@ -20,6 +20,7 @@ pksummary_mult(
   includePerc = FALSE,
   includeTrialMeans = FALSE,
   concatVariability = FALSE,
+  variability_format = "to",
   adjust_conc_units = NA,
   prettify_columns = TRUE,
   extract_forest_data = FALSE,
@@ -158,6 +159,11 @@ or percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
+\item{variability_format}{When the variability is concatenated, format the
+variability either by listing it as "X to Y" (default,
+\code{variability_format = "to"}) or as "[X, Y]" (\code{variability_format
+= "brackets"})}
+
 \item{adjust_conc_units}{Would you like to adjust the units to something
 other than what was used in the simulation? Default is NA to leave the
 units as is, but if you set the concentration units to something else, this
@@ -183,13 +189,7 @@ simulator output file. Useful for QCing.}
 
 \item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
 yellow the cells on the source Excel file where the data came from. This
-\emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-the output with \code{save_table}. \strong{Note from LSh:} For reasons that
-I honestly do not know, highlighting the cells on the various AUC tabs from
-R also causes the Simcyp watermark and blue background to disappear from
-the "Summary" tab, "Input Sheet", and the tab with the population
-information. These tabs do remain protected (you can't  change anything on
-them), but you should be aware that watermark and blue background changes.}
+\emph{only} applies when \code{checkDataSource = TRUE}.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

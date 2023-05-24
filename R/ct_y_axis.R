@@ -10,6 +10,7 @@
 #' @param EnzPlot T or F for whether this was a plot of enzyme abundance
 #' @param y_axis_limits_lin user input for y axis limits for a linear plot
 #' @param y_axis_limits_log user input for y axis limits for a semi-log plot
+#' @param y_axis_interval user input for y axis tick-mark interval
 #' @param time_range user-specified time range 
 #' @param Ylim_data data used for determining y axis limits
 #' @param pad_y_axis user-specified value for pad_y_axis
@@ -18,7 +19,9 @@
 #' @return values to use for ct_plots
 
 ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
-                      y_axis_limits_lin, time_range,
+                      y_axis_limits_lin, 
+                      time_range,
+                      y_axis_interval = NA,
                       prettify_compound_names = TRUE, 
                       y_axis_limits_log, Ylim_data, pad_y_axis,
                       time_range_relative){
@@ -195,7 +198,11 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
     YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
         slice(which.min(Ymax)) %>% pull(YBreaksToUse)
     
-    YInterval    <- YBreaksToUse
+    YInterval    <- switch(paste(is.na(y_axis_interval), EnzPlot), 
+                           "TRUE FALSE" = YBreaksToUse, 
+                           "FALSE FALSE" = y_axis_interval, 
+                           "TRUE TRUE" = YBreaksToUse,
+                           "FALSE TRUE" = 2*y_axis_interval)
     YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
                            round_up_unit(Ylim[2], YInterval),
                            y_axis_limits_lin[2])
@@ -265,6 +272,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                               Ylim_log[2]/100, Ylim_log[1])
         Ylim_log[1] <- round_down(Ylim_log[1])
         Ylim_log[2] <- round_up(Ylim[2])
+        Ylim_log <- sort(Ylim_log)
         
     } else {
         # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and

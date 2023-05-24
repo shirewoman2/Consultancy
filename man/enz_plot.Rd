@@ -22,6 +22,10 @@ enz_plot(
   line_transparency = NA,
   line_color = NA,
   line_width = NA,
+  hline_position = NA,
+  hline_style = "red dotted",
+  vline_position = NA,
+  vline_style = "red dotted",
   legend_position = "none",
   legend_label = NA,
   prettify_compound_names = TRUE,
@@ -189,6 +193,35 @@ acceptable to use.}
 \item{line_width}{optionally specify how thick to make the lines. Acceptable
 input is a number; the default is 1 for most lines and 0.8 for some, to
 give you an idea of where to start.}
+
+\item{hline_position}{numerical position(s) of any horizontal lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{hline_position = 100} to
+have a horizontal line at 100 percent of the baseline enzyme abundance or
+\code{hline_position = c(50, 100, 200)} to have horizontal lines at each of
+those y values.}
+
+\item{hline_style}{the line color and type to use for any horizontal lines
+that you add to the graph with \code{hline_position}. Default is "red
+dotted", but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
+
+\item{vline_position}{numerical position(s) of any vertical lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{vline_position = 12} to
+have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+168, by = 24)} to have horizontal lines every 24 hours for one week.
+Examples of where this might be useful would be indicating dosing times or
+the time at which some other drug was started or stopped.}
+
+\item{vline_style}{the line color and type to use for any vertical lines that
+you add to the graph with \code{vline_position}. Default is "red dotted",
+but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
 
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one

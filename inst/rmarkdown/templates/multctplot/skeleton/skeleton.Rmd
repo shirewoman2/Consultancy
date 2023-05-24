@@ -33,7 +33,11 @@ Text1 <- switch(linear_or_log,
 
 ```{r ctplotmult, fig.width = fig_width, fig.height = fig_height}
 
-Out 
+if(qc_graph){
+   Out[["Graph"]]
+} else {
+   Out
+}
 
 ```
 
@@ -99,6 +103,19 @@ CapText2 <- switch(figure_type,
 
 *Depicted are simulated `r CapText1`. `r CapText2`. Source simulated data: `r str_comma(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))`.*
 
+```{r QC, echo = FALSE, results = "asis"}
+
+if(qc_graph){
+    OptionalSection <- knitr::knit_child(
+        system.file("rmarkdown/templates/ctplotmult-qc/skeleton/skeleton.Rmd",
+                    package="SimcypConsultancy"), 
+        envir = environment(), 
+        quiet = TRUE)
+    
+    cat(OptionalSection, sep = "\n")
+}
+
+```
 
 
 

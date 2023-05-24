@@ -8,6 +8,7 @@ forest_plot(
   forest_dataframe,
   perp_or_victim,
   PKparameters = NA,
+  include_dose_num = TRUE,
   mean_type = "geometric",
   variability_type = "90\% CI",
   observed_PK = NA,
@@ -15,8 +16,10 @@ forest_plot(
   y_order = NA,
   y_axis_column_secondary,
   y_order_secondary = NA,
+  y_axis_title = "none",
   x_axis_limits = NA,
   x_axis_label = NA,
+  x_axis_number_type = "ratios",
   facet_column_x,
   x_order = NA,
   dose_units = "mg",
@@ -54,6 +57,13 @@ parameters you extracted with \code{\link{extractForestData}} will be
 included. If you try to include a parameter that's not already present in
 forest_dataframe, it will be ignored. Enclose the parameters with
 \code{c(...)}.}
+
+\item{include_dose_num}{TRUE (default) or FALSE on whether to include the
+dose number when listing the PK parameter. By default, the parameter will
+be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", but,
+especially if you only have a single-dose regimen, you might not want that.
+To make the parameters be only, e.g., "Cmax ratio" or "AUCtau ratio", set
+this to FALSE.}
 
 \item{mean_type}{type of mean to extract; options are "geometric" (default),
 "arithmetic", or "median"}
@@ -130,10 +140,21 @@ in \code{y_axis_column_secondary}, or, if \code{y_axis_column_secondary} is
 File, the compounds that each file represents or a named character vector
 of the compounds. Please see the examples at the bottom of this file.}
 
+\item{y_axis_title}{optionally specify a vertical title to be displayed to
+the left of the y axis. Example: \code{y_axis_title = "Effector
+co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
+This does NOT work with a secondary y axis and will be ignored.}
+
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
 \item{x_axis_label}{optionally supply a character vector or an expression to
 use for the x axis label}
+
+\item{x_axis_number_type}{set the x axis number type to be "ratios"
+(default), "percents" (converts the ratios to a percent), or "keep trailing
+zeroes" (still uses ratios but, unlike the default, guesses at a reasonable
+number of digits to include based on the range of the data and includes
+trailing zeroes as necessary)}
 
 \item{facet_column_x}{optionally break up the graph horizontally into small
 multiples. The designated column name should be unquoted, e.g.,
@@ -212,11 +233,7 @@ graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
 extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be saved to disk.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft permissions issue, not an R issue. If you try to save on
-SharePoint, you will get a warning that R will save your file instead to
-your local (not OneDrive) Documents folder.}
+Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
 
@@ -227,10 +244,11 @@ Output is a graph.
 }
 \description{
 \code{forest_plot} creates a forest plot of AUC and Cmax ratios. Please use
-the function \code{\link{extractForestData}} to generate the input data for
-\code{forest_dataframe}. In the graph, the data will be broken up by: 1) the
-file name, which will be graphed on either the main y axis or, if you would
-like, a secondary y axis and 2) anything you specify for
+the function \code{\link{extractForestData}} or \code{\link{pksummary_mult}}
+(set the argument "extract_forest_data" to TRUE) to generate the input data
+for \code{forest_dataframe}. In the graph, the data will be broken up by: 1)
+the file name, which will be graphed on either the main y axis or, if you
+would like, a secondary y axis and 2) anything you specify for
 \code{facet_column_x}, which will be graphed in the horizontal direction.
 \strong{If you're a little confused here or you're just the kind of person
 who prefers to wing it rather than reading the instructions when assembling

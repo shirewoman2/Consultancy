@@ -11,6 +11,8 @@ ct_plot3(
   mean_type = "arithmetic",
   linear_or_log = "semi-log",
   legend_position = "none",
+  qc_graph = FALSE,
+  existing_exp_details = NA,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5,
@@ -100,17 +102,23 @@ some graphs do not (e.g., some have effectors and some do not so there's
 nothing to put in a legend), the alignment between sets of graphs will be a
 bit off.}
 
+\item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
+the graph where the left panel shows the original graph and the right panel
+shows information about the simulation trial design. This works MUCH faster
+when you have already used \code{\link{extractExpDetails_mult}} to get
+information about how your simulation or simulations were set up and supply
+that object to the argument \code{existing_exp_details}.}
+
+\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
+\code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
 extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be saved to disk.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft permissions issue, not an R issue. If you try to save on
-SharePoint, you will get a warning that R will save your file instead to
-your Documents folder.}
+Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
 

@@ -9,6 +9,7 @@ create_doses(
   num_doses = NA,
   end_time = NA,
   custom_dosing_schedule = NA,
+  simulator_version = 22,
   compound_ID = "Substrate",
   compound_start = 0,
   compound_route = "Oral",

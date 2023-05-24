@@ -29,6 +29,10 @@ ct_plot(
   line_transparency = NA,
   line_color = NA,
   line_width = NA,
+  hline_position = NA,
+  hline_style = "red dotted",
+  vline_position = NA,
+  vline_style = "red dotted",
   legend_position = "none",
   legend_label = NA,
   prettify_compound_names = TRUE,
@@ -36,6 +40,8 @@ ct_plot(
   graph_labels = TRUE,
   graph_title = NA,
   graph_title_size = 14,
+  qc_graph = FALSE,
+  existing_exp_details = NA,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -253,6 +259,37 @@ acceptable to use.}
 input is a number; the default is 1 for most lines and 0.8 for some, to
 give you an idea of where to start.}
 
+\item{hline_position}{numerical position(s) of any horizontal lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{hline_position = 10} to
+have a horizontal line at 10 ng/mL (or whatever your concentration units
+are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+at each of those y values. Examples of where this might be useful would be
+to indicate a toxicity threshold, a target Cmin, or the lower limit of
+quantification for the assay used to generate the concentration-time data.}
+
+\item{hline_style}{the line color and type to use for any horizontal lines
+that you add to the graph with \code{hline_position}. Default is "red
+dotted", but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
+
+\item{vline_position}{numerical position(s) of any vertical lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{vline_position = 12} to
+have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+168, by = 24)} to have horizontal lines every 24 hours for one week.
+Examples of where this might be useful would be indicating dosing times or
+the time at which some other drug was started or stopped.}
+
+\item{vline_style}{the line color and type to use for any vertical lines that
+you add to the graph with \code{vline_position}. Default is "red dotted",
+but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
+
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all.}
@@ -313,6 +350,16 @@ your graph or set of graphs}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
 default is 14. This also determines the font size of the graph labels.}
+
+\item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
+the graph where the left panel shows the original graph and the right panel
+shows information about the simulation trial design. This works MUCH faster
+when you have already used \code{\link{extractExpDetails_mult}} to get
+information about how your simulation or simulations were set up and supply
+that object to the argument \code{existing_exp_details}.}
+
+\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
+\code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time

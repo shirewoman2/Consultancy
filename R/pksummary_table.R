@@ -207,6 +207,10 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
+#' @param variability_format When the variability is concatenated, format the
+#'   variability either by listing it as "X to Y" (default,
+#'   \code{variability_format = "to"}) or as "[X, Y]" (\code{variability_format
+#'   = "brackets"})
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -251,12 +255,26 @@
 #' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
 #'   yellow the cells on the source Excel file where the data came from. This
 #'   \emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-#'   the output with \code{save_table}. \strong{Note from LSh:} For reasons that
-#'   I honestly do not know, highlighting the cells on the various AUC tabs from
-#'   R also causes the Simcyp watermark and blue background to disappear from
-#'   the "Summary" tab, "Input Sheet", and the tab with the population
-#'   information. These tabs do remain protected (you can't  change anything on
-#'   them), but you should be aware that watermark and blue background changes.
+#'   the output with \code{save_table}.
+#' @param java_fail_option Option you want to have happen if Java fails because
+#'   it ran out of memory. By default, behind the scenes, it's Java -- not R --
+#'   that highlights the appropriate cells in the Simulator output Excel files,
+#'   but Java requires \emph{so much memory} that it fails for large files.
+#'   There are two options
+#'   here: \describe{\item{"fail" (default)}{We'll \emph{try} to have Java highlight
+#'   things, but if it fails because it ran out of memory, nothing happens.}
+#'
+#'   \item{"highlight anyway"}{There \emph{is} a way to get the highlighting
+#'   you want without Java, but it just doesn't work as well. If we don't use
+#'   Java, you'll get the appropriate yellow highlighting, but the watermark and blue
+#'   shading that are present on tabs such as the "Summary" tab, the "Input Sheet",
+#'   and the tab with the population parameters will disappear. Those tabs will
+#'   still be protected, but they \emph{will look different.}}
+#'
+#'   \item{"highlight a copy"}{We won't use Java to highlight, so you'll lose
+#'   the watermark and blue background on protected tabs, but we'll do that
+#'   on a copy of the original Simulator Excel file. It will be named the same
+#'   but will have "QC" appended to the end of the file name.}}
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -323,12 +341,14 @@ pksummary_table <- function(sim_data_file = NA,
                             includePerc = FALSE,
                             includeTrialMeans = FALSE,
                             concatVariability = FALSE,
+                            variability_format = "to",
                             adjust_conc_units = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
                             highlightExcel = FALSE,
+                            java_fail_option = "fail", 
                             save_table = NA, 
                             fontsize = 11){
    
@@ -386,6 +406,13 @@ pksummary_table <- function(sim_data_file = NA,
    if(complete.cases(sheet_PKparameters) &&
       sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")){
       sheet_PKparameters <- NA
+   }
+   
+   # Make sure that input to variability_format is ok
+   if(variability_format %in% c("to", "brackets") == FALSE){
+      warning("Acceptable input for `variability_format` is only `to` or `brackets`, and you have entered", 
+              variability_format, ". We'll use the default format of `to` for now.", 
+              call. = FALSE)
    }
    
    # Main body of function --------------------------------------------------
@@ -514,7 +541,7 @@ pksummary_table <- function(sim_data_file = NA,
       }
       
       # Also only keeping columns with complete cases for PK values.
-      observed_PK <- observed_PK %>% select(where(complete.cases))
+      observed_PK <- observed_PK %>% select(where(~ any(complete.cases(.x))))
       
       # If they supplied a file name in the observed PK data and NA for
       # sim_data_file, then sim_data_file will be NA. If not, then
@@ -526,6 +553,24 @@ pksummary_table <- function(sim_data_file = NA,
       
       # Cleaning up and harmonizing observed data
       MyObsPK <- observed_PK
+      
+      # Checking whether data are long or wide and converting to wide as needed.
+      # An example of where you'd get long format here: If they're using
+      # observed data that are also laid out for the forest_plot function.
+      if("PKparameter" %in% names(MyObsPK)){
+         
+         MyObsPK <- MyObsPK %>% 
+            rename(Value = switch(mean_type, 
+                                  "geometric" = "GeoMean", 
+                                  "arithmetic" = "Mean", 
+                                  "median" = "Median")) %>% 
+            # Things work better for pivoting if the other possible summary
+            # statistic columns are no longer present.
+            select(-(any_of(c("Min", "Max", "GeoMean", "Mean", "Median",
+                              "CI90_Upper", "CI90_Lower", "Centile95th_Upper", 
+                              "Centile5th_Lower", "GeoCV", "AirthCV")))) %>% 
+            pivot_wider(names_from = PKparameter, values_from = Value)
+      }
       
       names(MyObsPK) <- sub("_first", "_dose1", names(MyObsPK))
       names(MyObsPK) <- sub("tau_dose1", "t_dose1", names(MyObsPK))
@@ -882,9 +927,9 @@ pksummary_table <- function(sim_data_file = NA,
         !str_detect(names(MyPKResults_all)[1], "AUCinf_[^P]")))){
       warning(paste0("AUCinf included NA values in the file `", 
                      sim_data_file, 
-                     "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. AUCt will be returned to use in place of AUCinf as you deem appropriate."),
+                     "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. You man want to switch your request to AUCt instead."),
               call. = FALSE)
-      PKToPull <- sub("AUCinf", "AUCt", PKToPull)
+      # PKToPull <- sub("AUCinf", "AUCt", PKToPull)
    }
    
    # If they requested multiple parameters but only some were present, need to
@@ -991,7 +1036,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent){
+      if(EffectorPresent & "tmax_dose1_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_dose1_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
@@ -1013,7 +1058,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax_last[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax_last[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent){
+      if(EffectorPresent & "tmax_last_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_last_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "median"]
@@ -1035,7 +1080,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent){
+      if(EffectorPresent & "tmax_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
@@ -1172,11 +1217,16 @@ pksummary_table <- function(sim_data_file = NA,
                                   "secondary metabolite") == FALSE){
          warning("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.", 
                  call. = FALSE)
+         FD <- list()
+      
       } else {
          
+         # For forest data, only keeping ratios and removing observed data from
+         # here b/c we supply it separately for the forest_plot function.
          FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
-                                         Stat %in% c("geomean", "mean",
-                                                     "CI90_low", "CI90_high"))
+                                         # Stat %in% c("geomean", "mean",
+                                         #             "CI90_low", "CI90_high") &
+                                         SorO == "Sim")
          
          FD <- FD %>% 
             mutate(Stat = recode(Stat, "geomean" = "GMR",
@@ -1194,8 +1244,10 @@ pksummary_table <- function(sim_data_file = NA,
                                       "primary metabolite 2" = Deets$PrimaryMetabolite2, 
                                       "secondary metabolite" = Deets$SecondaryMetabolite), 
                    Dose_sub = Deets$Dose_sub, 
-                   Inhibitor1 = Deets$Inhibitor1, 
-                   Dose_inhib = Deets$Dose_inhib) %>% 
+                   Inhibitor1 = ifelse("Inhibitor1" %in% names(Deets),
+                                       Deets$Inhibitor1, NA),
+                   Dose_inhib = ifelse("Dose_inhib" %in% names(Deets),
+                                       Deets$Dose_inhib, NA)) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                    everything())
          
@@ -1260,7 +1312,10 @@ pksummary_table <- function(sim_data_file = NA,
             mutate(across(.cols = !matches("Stat"),
                           .fns = function(x) {
                              ifelse(all(complete.cases(c(x[1], x[2]))),
-                                    paste(x[1], "to", x[2]), NA)}),
+                                    switch(variability_format, 
+                                           "to" = paste(x[1], "to", x[2]),
+                                           "brackets" = paste0("[", x[1], ", ", x[2], "]")),
+                                    NA)}),
                    Stat = switch(j,
                                  "ConfInt90" = "CI90concat",
                                  "ConfInt95" = "CI95concat",
@@ -1309,28 +1364,26 @@ pksummary_table <- function(sim_data_file = NA,
       select(Statistic, everything())
    
    # setting levels for PK parameters so that they're in a nice order
-   PKlevels <- AllPKParameters %>% select(PKparameter, SortOrder) %>% 
-      unique() %>% arrange(SortOrder) %>% pull(PKparameter)
-   
-   # PKlevels must be changed if user specified a tab b/c then the parameters
-   # won't have _last or _dose1 suffixes.
-   if(complete.cases(sheet_PKparameters) & 
-      any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
-      PKlevels <- unique(sub("_last|_dose1", "", PKlevels))
-      # When the suffix is included, then we get an order with 1st dose and
-      # then last dose, which is appropriate, but when the user specifies a
-      # tab, we need to change the order to get any AUC parameters before any
-      # Cmax parameters. 
-      PKlevels <- fct_relevel(PKlevels, c(PKlevels[str_detect(PKlevels, "AUC")], 
-                                          PKlevels[str_detect(PKlevels, "Cmax")]))
-      
-      PKlevels <- sort(PKlevels)
-   } 
-   
-   # If the user wants to specify the order, allowing that here.
-   if(str_detect(PKorder, "user")){
-      PKlevels <- PKparameters
-   }
+   PKlevels <- switch(paste(PKorder, complete.cases(sheet_PKparameters)), 
+                      
+                      # the default scenario
+                      "default FALSE" = AllPKParameters %>% 
+                         select(PKparameter, SortOrder) %>% 
+                         arrange(SortOrder) %>%
+                         pull(PKparameter) %>% unique(), 
+                      
+                      # user wants a specific order but using default tabs
+                      "user specified FALSE" = PKparameters, 
+                      
+                      # default order but specific tab
+                      "default TRUE" = sub("_dose1|_last", "", 
+                                           AllPKParameters %>% 
+                                              select(PKparameter, SortOrder) %>% 
+                                              arrange(SortOrder) %>%
+                                              pull(PKparameter) %>% unique()), 
+                      
+                      # user-specified order and specific tab
+                      "user specified TRUE" = sub("_dose1|_last", "", PKparameters))
    
    PKToPull <- factor(PKToPull, levels = PKlevels)
    PKToPull <- sort(PKToPull)
@@ -1438,6 +1491,34 @@ pksummary_table <- function(sim_data_file = NA,
       
       OutQC <- MyPKResults_all$QC %>% 
          select(PKparam, File, matches(ColsToInclude))
+      
+      if(highlightExcel){
+         # Determining which stats we'll need to highlight
+         StatsToHighlight <- switch(MeanType, 
+                                    "arithmetic" = "mean", 
+                                    "geometric" = "geomean")
+         if(includeConfInt){
+            StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
+         }
+         
+         if(includeCV){
+            StatsToHighlight <- c(StatsToHighlight, 
+                                  switch(MeanType, 
+                                         "arithmetic" = "CV", 
+                                         "geometric" = "GCV"))
+         }
+         
+         if(includePerc){
+            StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
+         }
+         
+         if(includeRange){
+            StatsToHighlight <- c(StatsToHighlight, "min", "max")
+         }
+         
+         highlightQC(qc_dataframe = OutQC, stats = StatsToHighlight, 
+                     java_fail_option = java_fail_option)
+      }
    }
    
    
@@ -1526,64 +1607,6 @@ pksummary_table <- function(sim_data_file = NA,
          
          write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
          
-         if(highlightExcel){
-            # Need to convert letter name of column back to a number
-            XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
-            
-            # Determining which stats we'll need to highlight
-            StatsToHighlight <- switch(MeanType, 
-                                       "arithmetic" = "mean", 
-                                       "geometric" = "geomean")
-            if(includeConfInt){
-               StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
-            }
-            
-            if(includeCV){
-               StatsToHighlight <- c(StatsToHighlight, 
-                                     switch(MeanType, 
-                                            "arithmetic" = "CV", 
-                                            "geometric" = "GCV"))
-            }
-            
-            if(includePerc){
-               StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
-            }
-            
-            if(includeRange){
-               StatsToHighlight <- c(StatsToHighlight, "min", "max")
-            }
-            
-            # Setting up the cell style to use
-            ToQC <- createStyle(fontSize = 8, fgFill = "yellow", numFmt = "0.00", 
-                                halign = "center", valign = "center", 
-                                border = "TopBottomLeftRight",
-                                borderStyle = "hair")
-            
-            # Loading the workbook so that we can highlight things
-            wb <- openxlsx::loadWorkbook(sim_data_file)
-            
-            for(i in unique(OutQC$Tab)){
-               ToHighlight <- OutQC %>% filter(Tab == i) %>% ungroup() %>% 
-                  select(File, Tab, any_of(StatsToHighlight)) %>% 
-                  pivot_longer(cols = -c("File", "Tab"), 
-                               names_to = "Stat", values_to = "Cell") %>% 
-                  mutate(Column = str_extract(Cell, "[A-Z]{1,2}"), 
-                         Row = as.numeric(gsub("[A-Z]{1,2}", "", Cell)))
-               ToHighlight$Column <- as.numeric(sapply(
-                  ToHighlight$Column, FUN = function(x) which(XLCols == x)))
-               
-               # Applying the highlighting to the workbook
-               for(j in 1:nrow(ToHighlight)){
-                  addStyle(wb, sheet = i, style = ToQC,
-                           rows = ToHighlight$Row[j], 
-                           cols = ToHighlight$Column[j])
-               }
-               
-               rm(ToHighlight)
-            }
-            
-            saveWorkbook(wb, file = sim_data_file, overwrite = TRUE)
-         }
       }
    }
    
