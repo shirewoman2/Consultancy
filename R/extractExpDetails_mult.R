@@ -241,6 +241,33 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       }
    }
    
+   # Similarly, checking for any calculated values that are now character data.
+   
+   # Generic function applicable elsewhere if needed, vetted to guard against NULL
+   MyColNames <- c("fu_sub", "fu_inhib", "fu_inhib1met", "fu_inhib2", 
+                   "fu_met1", "fu_met2", "fu_secmet")
+   
+   find_char_col_names <- function(DF, ColnamesToCheck){
+      IsColChar_list <- lapply(DF, is.character)
+      IsColChar_list <- IsColChar_list[ColnamesToCheck]
+      if(!all(is.null(unlist(IsColChar_list)))){
+         CharColNames <- names(which(unlist(IsColChar_list))) 
+         return(CharColNames)
+      }
+   }
+   
+   # Generic function applicable elsewhere if needed, vetted to guard against NULL
+   coerce_to_char <- function(DF, coerce_to_char_colnames){
+      NamesINData <- intersect(names(DF), coerce_to_char_colnames) # this deals with NULLS
+      DF[NamesINData] <- lapply(DF[NamesINData], as.character) # sub-setting is hard :P
+      return(DF)
+   }
+   
+   # This is all you need to see from user's top level
+   coerce_to_char_colnames <- lapply(MyDeets, find_char_col_names, MyColNames)
+   coerce_to_char_colnames <- unique(unlist(coerce_to_char_colnames))
+   MyDeets <- lapply(MyDeets, coerce_to_char, coerce_to_char_colnames)
+   
    # Binding and organizing
    Out <- bind_rows(MyDeets)
    

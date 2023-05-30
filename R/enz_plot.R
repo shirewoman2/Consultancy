@@ -54,6 +54,29 @@
 #'   "median" for median concentrations. If that option was not included in the
 #'   output, you'll get a warning and the graph will include one that was.
 #'
+#' @param linear_or_log the type of graph to be returned. Options: \describe{
+#'   \item{"semi-log"}{y axis is log transformed}
+#'
+#'   \item{"linear"}{no axis transformation}
+#'
+#'   \item{"both vertical"}{(default) both the linear and the semi-log graphs
+#'   will be returned, and graphs are stacked vertically}
+#'
+#'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
+#'   returned, and graphs are side by side horizontally}
+#'
+#'   \item{"horizontal and vertical"}{both the linear and the semi-log graphs
+#'   will be returned, and graphs are side by side horizontally (one graph; file
+#'   name will end in "- horizontal") and stacked vertically (second graph; file
+#'   name will end in "- vertical"). This option, which was designed to create
+#'   the vertically stacked version of a graph for a report and the horizontal,
+#'   side-by-side version for a presentation, is a bit different from the others
+#'   since it will return two separate files. In the RStudio "Plots" window,
+#'   you'll only see the vertically stacked version. Setting \code{fig_height}
+#'   and \code{fig_width} will adjust only the dimensions of the horizontal
+#'   figure; the default values will be used for the vertical one. If you
+#'   request Word output, only the vertical plot will be saved in Word format;
+#'   the horizontal plot will be saved as a png file.}}
 #' @param time_range time range to show relative to the start of the simulation.
 #'   Options: \describe{
 #'
@@ -181,6 +204,14 @@
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
+#' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
+#'   the graph where the left panel shows the original graph and the right panel
+#'   shows information about the simulation trial design. This works MUCH faster
+#'   when you have already used \code{\link{extractExpDetails_mult}} to get
+#'   information about how your simulation or simulations were set up and supply
+#'   that object to the argument \code{existing_exp_details}.
+#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
+#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -192,29 +223,6 @@
 #'   Microsoft permissions issue, not an R issue. If you try to save on
 #'   SharePoint, you will get a warning that R will save your file instead to
 #'   your local (not OneDrive) Documents folder.
-#' @param linear_or_log the type of graph to be returned. Options: \describe{
-#'   \item{"semi-log"}{y axis is log transformed}
-#'
-#'   \item{"linear"}{no axis transformation}
-#'
-#'   \item{"both vertical"}{(default) both the linear and the semi-log graphs
-#'   will be returned, and graphs are stacked vertically}
-#'
-#'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
-#'   returned, and graphs are side by side horizontally}
-#'
-#'   \item{"horizontal and vertical"}{both the linear and the semi-log graphs
-#'   will be returned, and graphs are side by side horizontally (one graph; file
-#'   name will end in "- horizontal") and stacked vertically (second graph; file
-#'   name will end in "- vertical"). This option, which was designed to create
-#'   the vertically stacked version of a graph for a report and the horizontal,
-#'   side-by-side version for a presentation, is a bit different from the others
-#'   since it will return two separate files. In the RStudio "Plots" window,
-#'   you'll only see the vertically stacked version. Setting \code{fig_height}
-#'   and \code{fig_width} will adjust only the dimensions of the horizontal
-#'   figure; the default values will be used for the vertical one. If you
-#'   request Word output, only the vertical plot will be saved in Word format;
-#'   the horizontal plot will be saved as a png file.}}
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -259,6 +267,8 @@ enz_plot <- function(sim_enz_dataframe,
                      graph_labels = TRUE,
                      graph_title = NA,
                      graph_title_size = 14, 
+                     qc_graph = FALSE,
+                     existing_exp_details = NA,
                      save_graph = NA,
                      fig_height = 4, 
                      fig_width = 6){
@@ -326,6 +336,8 @@ enz_plot <- function(sim_enz_dataframe,
            graph_labels = graph_labels,
            graph_title = graph_title, 
            graph_title_size = graph_title_size, 
+           qc_graph = qc_graph,
+           existing_exp_details = existing_exp_details,
            save_graph = save_graph, 
            fig_height = fig_height, 
            fig_width = fig_width,

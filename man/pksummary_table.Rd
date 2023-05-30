@@ -28,6 +28,8 @@ pksummary_table(
   prettify_compound_names = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
+  highlightExcel = FALSE,
+  java_fail_option = "fail",
   save_table = NA,
   fontsize = 11
 )
@@ -162,10 +164,10 @@ or percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
-\item{variability_format}{When the variability is concatenated, format the
-variability either by listing it as "X to Y" (default,
-\code{variability_format = "to"}) or as "[X, Y]" (\code{variability_format
-= "brackets"})}
+\item{variability_format}{formatting used to indicate the variability When
+the variability is concatenated. Options are "to" (default) to get output
+like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
+output like "X - Y".}
 
 \item{adjust_conc_units}{Would you like to adjust the units to something
 other than what was used in the simulation? Default is NA to leave the
@@ -212,6 +214,31 @@ with only one simulation isn't terribly informative.}
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
+
+\item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
+yellow the cells on the source Excel file where the data came from. This
+\emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
+the output with \code{save_table}.}
+
+\item{java_fail_option}{Option you want to have happen if Java fails because
+  it ran out of memory. By default, behind the scenes, it's Java -- not R --
+  that highlights the appropriate cells in the Simulator output Excel files,
+  but Java requires \emph{so much memory} that it fails for large files.
+  There are two options
+  here: \describe{\item{"fail" (default)}{We'll \emph{try} to have Java highlight
+  things, but if it fails because it ran out of memory, nothing happens.}
+
+  \item{"highlight anyway"}{There \emph{is} a way to get the highlighting
+  you want without Java, but it just doesn't work as well. If we don't use
+  Java, you'll get the appropriate yellow highlighting, but the watermark and blue
+  shading that are present on tabs such as the "Summary" tab, the "Input Sheet",
+  and the tab with the population parameters will disappear. Those tabs will
+  still be protected, but they \emph{will look different.}}
+
+  \item{"highlight a copy"}{We won't use Java to highlight, so you'll lose
+  the watermark and blue background on protected tabs, but we'll do that
+  on a copy of the original Simulator Excel file. It will be named the same
+  but will have "QC" appended to the end of the file name.}}}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

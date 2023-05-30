@@ -833,7 +833,7 @@ extractEnzAbund <- function(sim_data_file,
         mutate(Time_units = tolower({{TimeUnits}}),
                File = sim_data_file,
                Inhibitor = ifelse(EffectorPresent,
-                                  AllEffectors, "none"), 
+                                  str_comma(AllEffectors), "none"), 
                Substrate = Deets$Substrate) %>%
         arrange(across(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",
                                 "Individual", "Trial", "Time")))) %>%

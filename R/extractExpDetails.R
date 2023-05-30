@@ -126,13 +126,13 @@ extractExpDetails <- function(sim_data_file,
    # Noting exp_details requested for later
    exp_details_input <- tolower(exp_details)
    
+   
    # Main body of function ----------------------------------------------------
    
    # Noting which details are possible, which columns to search for their
    # names, which columns contain their values for substrates or inhibitors,
    # and what kind of data to format the output as at the end. Using data
    # object AllExpDetails.
-   
    SumDeets <- AllExpDetails %>% filter(Sheet == "Summary") %>% 
       rename(Deet = Detail)
    PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
@@ -169,10 +169,37 @@ extractExpDetails <- function(sim_data_file,
               pull(Detail))))
    }
    
-   # Need to note original exp_details requested b/c I'm adding to it if
-   # people request info from population tab. Note that this is different
-   # from "exp_details_input" and serves a different purpose.
+   # Need to note original exp_details requested b/c I'm adding to it if people
+   # request info from other tabs than what they've originally got. Note that
+   # this is different from "exp_details_input" and serves a different purpose.
    exp_details_orig <- exp_details
+   
+   # When user requests HSA or AGP, they actually want all the individual betas
+   # for that. Adjusting to account for that here.
+   if("HSA" %in% exp_details_orig){
+      exp_details <- unique(c(exp_details, "HSA_C0_female",
+                              "HSA_C0_male", "HSA_C1_female",
+                              "HSA_C1_male", "HSA_C2_female",
+                              "HSA_C2_male", "HSA_male", "HSA_female"))
+      exp_details <- exp_details[!exp_details == "HSA"]
+   }
+   
+   if("HSA_male" %in% exp_details_orig){
+      exp_details <- unique(c(exp_details, "HSA_male", "HSA_C0_male",
+                              "HSA_C1_male", "HSA_C2_male"))
+      exp_details <- exp_details[!exp_details == "HSA_male"]
+   }
+   
+   if("HSA_female" %in% exp_details_orig){
+      exp_details <- unique(c(exp_details, "HSA_female", "HSA_C0_female",
+                              "HSA_C1_female", "HSA_C2_female"))
+      exp_details <- exp_details[!exp_details == "HSA_female"]
+   }
+   
+   if("AGP" %in% exp_details_orig){
+      exp_details <- unique(c(exp_details, "AGP_male", "AGP_female"))
+      exp_details <- exp_details[!exp_details == "AGP"]
+   }
    
    # Since StartHr_sub and StartHr_inhib are calculated from StartDayTime_sub
    # and StartDayTime_inhib, those must be included in exp_details to
@@ -217,6 +244,7 @@ extractExpDetails <- function(sim_data_file,
    # Need to note when to look for custom dosing tabs
    CustomDosing <- NA
    
+   
    # Pulling details from the summary tab ----------------------------------
    MySumDeets <- intersect(exp_details, SumDeets$Deet)
    # If all of the details are from one of the other sheets, then don't
@@ -257,9 +285,18 @@ extractExpDetails <- function(sim_data_file,
          Val <- SummaryTab[Row, SumDeets$ValueCol[SumDeets$Deet == deet]] %>%
             pull()
          
+         # Accounting for when fu,p is scripted
+         if(length(Val) > 0 && 
+            (complete.cases(Val) && 
+             str_detect(deet, "^fu_") & str_detect(Val, "script"))){
+            SumDeets$Class[SumDeets$Deet == deet] <- "character"
+            assign("SumDeets", SumDeets, envir = parent.frame())
+         }
+         
          suppressWarnings(
-            Val <- ifelse(SumDeets$Class[SumDeets$Deet == deet] == "character",
-                          Val, as.numeric(Val))
+            Val <- switch(SumDeets$Class[SumDeets$Deet == deet], 
+                          "character" = as.character(Val),
+                          "numeric" = as.numeric(Val))
          )
          
          # Tidying up some specific idiosyncracies of simulator output
@@ -463,13 +500,23 @@ extractExpDetails <- function(sim_data_file,
          # anyway, so not just keeping the 1st value listed.
          Val <- sort(unique(Val))
          
+         # Accounting for when fu,p is scripted
+         if(length(Val) > 0 && 
+            (complete.cases(Val) && 
+             str_detect(deet, "^fu_") & str_detect(Val, "script"))){
+            InputDeets$Class[InputDeets$Deet == deet] <- "character"
+            assign("InputDeets", InputDeets, envir = parent.frame())
+         }
+         
          suppressWarnings(
-            Val <- ifelse(InputDeets$Class[InputDeets$Deet == deet] == "character",
-                          Val, as.numeric(Val))
+            Val <- switch(InputDeets$Class[InputDeets$Deet == deet], 
+                          "character" = as.character(Val),
+                          "numeric" = as.numeric(Val))
          )
          
          # Tidying up some specific idiosyncracies of simulator output
-         Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
+         Val <- ifelse(length(Val) == 0 || 
+                          (complete.cases(Val) & Val == "n/a"), NA, Val)
          
          return(Val)
       }
@@ -1095,29 +1142,6 @@ extractExpDetails <- function(sim_data_file,
          names(PopTab) <- paste0("...", 1:ncol(PopTab))
       }
       
-      if("HSA" %in% exp_details_orig){
-         exp_details <- unique(c(exp_details, "HSA_C0_female",
-                                 "HSA_C0_male", "HSA_C1_female",
-                                 "HSA_C1_male", "HSA_C2_female",
-                                 "HSA_C2_male", "HSA_male", "HSA_female"))
-         exp_details <- exp_details[!exp_details == "HSA"]
-      }
-      
-      if("HSA_male" %in% exp_details_orig){
-         exp_details <- unique(c(exp_details, "HSA_male", "HSA_C0_male",
-                                 "HSA_C1_male", "HSA_C2_male"))
-      }
-      
-      if("HSA_female" %in% exp_details_orig){
-         exp_details <- unique(c(exp_details, "HSA_female", "HSA_C0_female",
-                                 "HSA_C1_female", "HSA_C2_female"))
-      }
-      
-      if("AGP" %in% exp_details_orig){
-         exp_details <- unique(c(exp_details, "AGP_male", "AGP_female"))
-         exp_details <- exp_details[!exp_details == "AGP"]
-      }
-      
       MyPopDeets <- intersect(exp_details, PopDeets$Deet)
       
       # User can change the name of user-defined cytosolic phenotypes for GI
@@ -1150,17 +1174,23 @@ extractExpDetails <- function(sim_data_file,
             return(NA)
          }
          Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
-         Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
-            pull()
-         Val <- sort(unique(Val))
+         if(length(Row) == 0){
+            Val <- NA
+         } else {
+            Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
+               pull()
+            Val <- sort(unique(Val))
+         }
          
          suppressWarnings(
-            Val <- ifelse(PopDeets$Class[PopDeets$Deet == deet] == "character",
-                          Val, as.numeric(Val))
+            Val <- switch(PopDeets$Class[PopDeets$Deet == deet], 
+                          "character" = as.character(Val),
+                          "numeric" = as.numeric(Val))
          )
          
          # Tidying up some specific idiosyncracies of simulator output
-         Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
+         Val <- ifelse(complete.cases(Val) & Val == "n/a",
+                       NA, Val)
          
          return(Val)
       }

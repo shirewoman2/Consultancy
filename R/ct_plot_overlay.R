@@ -624,7 +624,10 @@ call. = FALSE)
    obs_color_user <- obs_color
    obs_shape_user <- obs_shape
    
-   # Prettifying compound names before doing anything else 
+   # Making sure the data.frame contains unique observations.
+   ct_dataframe <- unique(ct_dataframe)
+   
+   # Prettifying compound names 
    if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
       if(prettify_compound_names){
          if(EnzPlot){ 
@@ -2161,6 +2164,11 @@ call. = FALSE)
          }
          
          FileName <- basename(FileName)
+         
+         # Need to add Simulated column for enzyme data.
+         if(EnzPlot){
+            ct_dataframe$Simulated <- TRUE
+         }
          
          rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 

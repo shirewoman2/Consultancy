@@ -330,6 +330,10 @@ ct_plot_mult <- function(ct_dataframe,
    
    # main body of function -----------------------------------------------
    
+   # Noting that this is NOT an enzyme abundance plot. Need this info for the
+   # Rmd file.
+   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+   
    ## Setting up ct_dataframe ----------------------------------------------
    ct_dataframe <- ct_dataframe %>% 
       mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
