@@ -207,10 +207,10 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
-#' @param variability_format When the variability is concatenated, format the
-#'   variability either by listing it as "X to Y" (default,
-#'   \code{variability_format = "to"}) or as "[X, Y]" (\code{variability_format
-#'   = "brackets"})
+#' @param variability_format formatting used to indicate the variability When
+#'   the variability is concatenated. Options are "to" (default) to get output
+#'   like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
+#'   output like "X - Y".
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -409,7 +409,7 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Make sure that input to variability_format is ok
-   if(variability_format %in% c("to", "brackets") == FALSE){
+   if(variability_format %in% c("to", "hyphen", "brackets") == FALSE){
       warning("Acceptable input for `variability_format` is only `to` or `brackets`, and you have entered", 
               variability_format, ". We'll use the default format of `to` for now.", 
               call. = FALSE)
@@ -1314,6 +1314,7 @@ pksummary_table <- function(sim_data_file = NA,
                              ifelse(all(complete.cases(c(x[1], x[2]))),
                                     switch(variability_format, 
                                            "to" = paste(x[1], "to", x[2]),
+                                           "hyphen" = paste(x[1], "-", x[2]),
                                            "brackets" = paste0("[", x[1], ", ", x[2], "]")),
                                     NA)}),
                    Stat = switch(j,
