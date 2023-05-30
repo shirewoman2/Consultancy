@@ -6,23 +6,13 @@
 \usage{
 extractFmFe(
   sim_data_file,
-  enzyme = "CYP3A4",
-  tissue = "liver",
   returnAggregateOrIndiv = "both",
   existing_exp_details = NA
 )
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulated
-enzyme-abundance-time data, in quotes}
-
-\item{enzyme}{the enzyme of interest, e.g., "CYP3A4" (default), "UGT1A1",
-etc. Spaces or hyphens in enzyme names will be ignored. Not case sensitive.}
-
-\item{tissue}{From which tissue should the desired enzyme abundance be
-extracted? Options are "liver" (default), "gut", or "kidney". Note: If
-"gut" is selected, the output will return both colon and small intestine
-concentrations.}
+\item{sim_data_file}{name of the Excel file containing the simulated dynamic
+fm and fe data, in quotes}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 enzyme abundance data? Options are "individual", "aggregate", or "both"
@@ -39,47 +29,16 @@ that object here, unquoted. If left as NA, this function will run
 about your experimental set up.}
 }
 \value{
-A data.frame of enzyme abundance with time with the following
-  columns: \describe{
-
-  \item{Enzyme}{the enzyme whose abundance is listed}
-
-  \item{Tissue}{the tissue}
-
-  \item{Substrate}{what the substrate was in the simulation}
-
-  \item{Inhibitor}{what the effector was in the simulation if there was one}
-
-  \item{Individual}{the individual for the given profile, which will be a
-  number for a simulated individual or will be "obs" or "obs+inhibitor" for
-  observed data, "mean" for the mean data, "geomean" for the geometric mean
-  data, or "per5" or "per95" for the 5th and 95th percentile data.}
-
-  \item{Trial}{the trial number for that set of simulations or "obs", "mean",
-  etc. for the observed or aggregate data}
-
-  \item{Time}{the time since the first dose}
-
-  \item{Abundance}{abundance of the enzyme listed}
-
-  \item{Time_units}{units used for time}
-
-  \item{Dose_num_x}{the dose number for the substrate (suffix is "_sub"),
-  inhibitor 1 ("_inhib1"), or inhibitor 2 ("_inhib2")}
-
-  \item{Dose_int_x}{the dosing interval for that compound. This will be NA
-  for custom-dosing regimens.}
-
-  \item{TimeSinceDose1_x}{time since dose 1 for that compound}
-
-  }
+a data.frame
 }
 \description{
 \code{extractFmFe} extracts enzyme abundance data from a simulator output
 Excel file. A tab named something like "Time variant \%fm and fe" must be
-present.
+present. A note: This has not yet been set up to deal with custom dosing
+regimens, so if you have a simulation that involves that, please contact
+Laura Shireman.
 }
 \examples{
-extractFmFe(sim_data_file = "../Example simulator output MD.xlsx",
-                enzyme = "CYP3A4", tissue = "liver")
+# None yet
+
 }
