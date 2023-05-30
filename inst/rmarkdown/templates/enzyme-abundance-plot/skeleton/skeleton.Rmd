@@ -11,6 +11,11 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
                       dpi = 600)
 
 ```
+```{r}
+
+FigText1 <- paste0("Simulated `r unique(ct_dataframe$Tissue)` `r unique(ct_dataframe$Enzyme)` levels in the presence and absence of `r prettify_compound_name(unique(ct_dataframe$Inhibitor[!ct_dataframe$Inhibitor == "none"]))` in healthy subjects / patients with [complaint]")
+
+```
 
 *Figure XXX. Simulated `r unique(ct_dataframe$Tissue)` `r unique(ct_dataframe$Enzyme)` levels in the presence and absence of `r prettify_compound_name(unique(ct_dataframe$Inhibitor[!ct_dataframe$Inhibitor == "none"]))` in healthy subjects / patients with [complaint].*
 
