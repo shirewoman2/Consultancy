@@ -94,9 +94,10 @@
 #'   "Simcyp inputs (and QC)" tab of a compound data sheet plus trial design
 #'   information}
 #'
-#'   \item{"Methods"}{all the details that show up in the methods section of a
-#'   report: number of trials, number of individuals simulated, population,
-#'   percent female, age range, dose amount and regimen, etc.}
+#'   \item{"methods" or "trial design"}{all the details that show up in the 
+#'   methods section of a report: number of trials, number of individuals 
+#'   simulated, population, percent female, age range, dose amount and regimen,
+#'    etc.}
 #'
 #'   \item{"all"}{all possible details}
 #'
@@ -609,7 +610,7 @@ annotateDetails <- function(existing_exp_details,
             "Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite")
       }
       
-      if(any(str_detect(tolower(detail_set), "methods"))){
+      if(any(str_detect(tolower(detail_set), "methods|trial design"))){
          DetailSet <- unique(c(DetailSet,  "Substrate", 
                                "PrimaryMetabolite1", "PrimaryMetabolite2",
                                "SecondaryMetabolite", 
