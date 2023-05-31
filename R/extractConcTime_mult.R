@@ -248,6 +248,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
    }
    
+   # TO DO: Add option of extracting all possible tissues or all ADAM tissues.
+   
    # Main body of function -----------------------------------------------
    
    sim_data_files <- unique(sim_data_files)
