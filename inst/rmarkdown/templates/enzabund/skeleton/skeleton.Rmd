@@ -1,4 +1,4 @@
-Figure XXX. Simulated hepatic `r enzyme` levels during the dosing of `r MySubstrate` in the presence and absence of `r MyEffector` to `r tidyPop(existing_exp_details$Population)$Population`. 
+Figure XXX. Simulated hepatic `r enzyme` levels during the dosing of `r MySubstrate` in the presence and absence of `r MyEffector` to `r tidyPop(Deets$Population)$Population`. 
 
 ```{r EnzymeAbundancePlot1}
 
@@ -61,10 +61,10 @@ EnzCaption <- paste0("Depicted are simulated hepatic ",
                      enzyme, " levels following multiple oral doses of ",
                      MySubstrate, " in the absence of ",
                      MyEffector, " (solid line) and on the ",
-                     DoseDay, " day of ", existing_exp_details$SimDuration/24,
+                     DoseDay, " day of ", Deets$SimDuration/24,
                      " days of dosing of ", MyEffector, 
                      " (dashed line). The lines represent the mean data for the simulated population (n = ",
-                     existing_exp_details$NumTrials * existing_exp_details$NumSubjTrial, 
+                     Deets$NumTrials * Deets$NumSubjTrial, 
                      ") Source simulated data: ", sim_data_file, ")")
 
 ```
