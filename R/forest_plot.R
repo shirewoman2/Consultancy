@@ -1251,7 +1251,7 @@ forest_plot <- function(forest_dataframe,
                scale_x_continuous(trans = scales::pseudo_log_trans(sigma = 0.01, base = 10),
                                   breaks =  XBreaks, 
                                   labels = switch(x_axis_number_type, 
-                                                  "ratios" = XBreaks_char,
+                                                  "ratios" = names(XBreaks),
                                                   "keep trailing zeroes" = scales::label_comma(), 
                                                   "percents" = scales::percent)) + 
                coord_cartesian(xlim = x_axis_limits) +
