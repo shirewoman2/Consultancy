@@ -4,8 +4,9 @@
 #' or Ki or IndMax in workspace files (.wksz files) for then running with the
 #' Simcyp Simulator. This will change \emph{all} the workspace files provided to
 #' have the \emph{same} interaction parameters listed here. Currently only set
-#' up to change CYP parameters, but we'll add more options soon. UNDER
-#' CONSTRUCTION.
+#' up to change CYP, P-gp, and a few UGT parameters, but we'll add more options
+#' soon. \strong{Pay attention to the "switch" arguments, which are set up just
+#' like in the Simulator but are easy to overlook.} UNDER CONSTRUCTION.
 #'
 #' @param sim_workspace_files the set of workspace files to modify; must end in
 #'   ".wksz" if you're specifying individual files. Leave as NA to change all
@@ -27,7 +28,7 @@
 #'   "new_sim_workspace_files", or any of "compoundID", "enzymes",
 #'   "competitive_inhibition_switch", "Ki", "Ki_fumic", "TDI_switch", "Kapp",
 #'   "kinact", "Kapp_fumic", "induction_IndC50_switch", "IndMax", "IndC50",
-#'   "IndC50_fuinc", "induction_slope_switch", "Ind_slope", and "Ind_gamma".
+#'   "IndC50_fuinc", "induction_IndMax_switch", "Ind_slope", and "Ind_gamma".
 #'   Please see the notes on each of the arguments below to see what values to
 #'   use for this data.frame. This can be an easier way to set things up when
 #'   you have a lot of information to keep track of or when you're setting
@@ -46,9 +47,12 @@
 #'   inhibitor 1}}
 #' @param enzymes enzymes whose interaction parameters you want to change, e.g.,
 #'   \code{enzymes = c("CYP3A4", "CYP3A5")}. Note: This is currently only set up
-#'   to change CYP interaction parameters. If you need to change interaction
-#'   parameters for other enzymes or transporters, please talk to Laura
-#'   Shireman.
+#'   to change CYP, some UGT, and P-gp interaction parameters. If you need to
+#'   change interaction parameters for other enzymes or transporters, please
+#'   talk to Laura Shireman.
+#' @param tissues tissues where the enzyme of interest may be found. Leave as NA
+#'   if not applicable (CYPs, for exaple) or set to the tissue as listed in the
+#'   Simulator, e.g., "Intestine" or "Liver" for P-gp.
 #' @param competitive_inhibition_switch turn competitive inhibition "on" or
 #'   "off" or set to "no change" to leave the original value
 #' @param Ki Ki value to use for competitive inhibition (uM) or set to "no
@@ -65,6 +69,13 @@
 #'   0.
 #' @param Kapp_fumic fu,mic value to use for TDI or set to "no change" (default)
 #'   to leave as the original value. If set to NA, value will be set to 1.
+#' @param induction_IndMax_switch set to "on" when there is either a) no
+#'   induction (IndMax is 1) or b) when there \emph{is} induction and you're
+#'   using any induction model except the slope model. Set to "off" when there
+#'   is induction but you're using the "slope" model to describe it. Set to "no
+#'   change" (default) to leave as the original value.
+#' @param IndMax a number for the maximum fold induction to use or set to "no
+#'   change" (default) to leave the original value.
 #' @param induction_IndC50_switch turn "on" or "off" the use of an induction
 #'   IndC50 value or set to "no change" (default) to leave the original value
 #' @param IndC50 IndC50 value to use (uM) or set to "no change" (default) to
@@ -72,16 +83,9 @@
 #' @param IndC50_fuinc fu,mic value to use for the IndC50 incubation or set to
 #'   "no change" (default) to leave the original value. If set to NA, value will
 #'   be set to 1.
-#' @param IndMax a number for the maximum fold induction to use or set to "no
-#'   change" (default) to leave the original value. Note that IndMax doesn't
-#'   require a switch to turn it on (there's no toggle switch for it in the
-#'   Simulator).
 #' @param Ind_gamma value to use for gamma aka the Hill coefficient for
 #'   induction or set to "no change" (default) to leave the original value. If
 #'   set to NA, value will be set to 1.
-#' @param induction_slope_switch turn "on" or "off" the use of a slope value for
-#'   describing induction or set to "no change" (default) to leave the original
-#'   value
 #' @param Ind_slope value to use for slope in induction or set to "no change"
 #'   (default) to leave the original value. If left as NA, value will be set to
 #'   0.
@@ -99,6 +103,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                      
                                      compoundID = "inhibitor 1",
                                      enzymes, 
+                                     tissues = NA,
                                      
                                      competitive_inhibition_switch = "no change",
                                      Ki = "no change", 
@@ -109,12 +114,12 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                      kinact = "no change", 
                                      Kapp_fumic = "no change",
                                      
+                                     induction_IndMax_switch = "no change",
+                                     IndMax = "no change", 
                                      induction_IndC50_switch = "no change",
                                      IndC50 = "no change", 
                                      IndC50_fuinc = "no change", 
-                                     IndMax = "no change", 
                                      Ind_gamma = "no change",
-                                     induction_slope_switch = "no change",
                                      Ind_slope = "no change"){
    
    # Error catching ----------------------------------------------------------
@@ -125,38 +130,35 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
    }
    
    # If they left sim_workspace_files as NA and did not supply something for
-   # interactions_to_set, then they want to apply this function to all the
-   # workspaces in the current folder. Getting the names of the workspaces.
-   if(class(interactions_to_set) == "logical"){
+   # that in interactions_to_set, then they want to apply this function to all
+   # the workspaces in the current folder. Getting the names of the workspaces.
+   if(class(interactions_to_set) == "logical" | 
+      ("data.frame" %in% class(interactions_to_set) && 
+       "sim_workspace_files" %in% names(interactions_to_set) == FALSE)){
       sim_workspace_files <- sim_workspace_files[complete.cases(sim_workspace_files)]
       if(length(sim_workspace_files) == 0){
          sim_workspace_files <- list.files(pattern = ".wksz")
       } else if(any(sim_workspace_files == "recursive")){
          sim_workspace_files <- list.files(pattern = ".wksz", recursive = TRUE)
       }
+      
+      # If they did not provide a value for new_sim_workspace_files, then they
+      # must want the orginal file names to be overwritten.
+      if(all(is.na(new_sim_workspace_files))){
+         new_sim_workspace_files <- sim_workspace_files
+      }
+      
    } else {
-      if(length(sim_workspace_files) == 1 && is.na(sim_workspace_files)){
+      # If they didn't provide sim_workspace_files separately but it's in
+      # interactions_to_set, then use that.
+      if(length(sim_workspace_files) == 1 && is.na(sim_workspace_files) &
+         "sim_workspace_files" %in% names(interactions_to_set)){
          sim_workspace_files <- interactions_to_set$sim_workspace_files
       }
    }
    
    if(length(sim_workspace_files) == 0){
       stop("No workspace files could be found to change.")
-   }
-   
-   # If they did not provide a value for new_sim_workspace_files, then they
-   # must want the orginal file names to be overwritten.
-   if(all(is.na(new_sim_workspace_files))){
-      new_sim_workspace_files <- sim_workspace_files
-   }
-   
-   # If they didn't include the file suffix, add that. Replace any "xlsx" file
-   # extensions with "wksz".
-   if(any(str_detect(sim_workspace_files, "wksz") == FALSE)){
-      sim_workspace_files <- paste0(sub("\\.xlsx", "", sim_workspace_files), ".wksz")
-   }
-   if(any(str_detect(new_sim_workspace_files, "wksz") == FALSE)){
-      new_sim_workspace_files <- paste0(sub("\\.xlsx", "", new_sim_workspace_files), ".wksz")
    }
    
    # Checking for mismatches between new and old file name lengths
@@ -185,10 +187,11 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
       Changes <- interactions_to_set %>% 
          select(compoundID, enzymes, 
                 any_of(c("sim_workspace_files", "new_sim_workspace_files",
+                         "tissues",
                          "competitive_inhibition_switch", "Ki", "Ki_fumic",
                          "TDI_switch", "Kapp", "kinact", "Kapp_fumic",
                          "induction_IndC50_switch", "IndMax", "IndC50",
-                         "IndC50_fuinc", "Ind_gamma", "induction_slope_switch",
+                         "IndC50_fuinc", "Ind_gamma", "induction_IndMax_switch",
                          "Ind_slope")))
       
    } else {
@@ -196,6 +199,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
       # Collecting changes to make into a data.frame if it's not already.
       Changes <- list(compoundID = compoundID,
                       enzymes = enzymes,
+                      tissues = tissues,
                       competitive_inhibition_switch = competitive_inhibition_switch,
                       Ki = Ki,
                       Ki_fumic = Ki_fumic,
@@ -208,7 +212,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                       IndC50 = IndC50,
                       IndC50_fuinc = IndC50_fuinc,
                       Ind_gamma = Ind_gamma,
-                      induction_slope_switch = induction_slope_switch,
+                      induction_IndMax_switch = induction_IndMax_switch,
                       Ind_slope = Ind_slope)
       
       # Checking lengths of arguments
@@ -240,6 +244,102 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                    by = "sim_workspace_files")
    }
    
+   # At this point, regardless of whether they provided a data.frame to
+   # interactions_to_set or filled out the arguments individually, we should
+   # have a data.frame called Changes that includes all interactions AND the
+   # original and revised file names.
+   
+   # If they didn't include the file suffix, add that. Replace any "xlsx" file
+   # extensions with "wksz".
+   Changes <- Changes %>% 
+      mutate(sim_workspace_files = paste0(sub("\\.xlsx|\\.wksz", "", sim_workspace_files), ".wksz"), 
+             new_sim_workspace_files = paste0(sub("\\.xlsx|\\.wksz", "", new_sim_workspace_files), ".wksz"), 
+             # Adjusting enzyme names as needed. 
+             enzymes = sub("P-gp|ABCB1", "Pgp", enzymes), 
+             tissues = tolower(tissues)) %>% 
+      mutate(across(.cols = everything(), .fns = as.character)) %>% 
+      pivot_longer(cols = -c(compoundID, enzymes, tissues, sim_workspace_files, 
+                             new_sim_workspace_files), 
+                   names_to = "Parameter", 
+                   values_to = "Value") %>% 
+      filter(Value != "no change") %>% 
+      # Dealing with NAs depending on what the parameter is
+      mutate(OrigNA = is.na(Value),
+             Value = case_when(is.na(Value) & 
+                                  Parameter %in% c("Ki", "Kapp", "IndC50") ~ "1000000", 
+                               is.na(Value) &
+                                  Parameter %in% c("Ki_fumic", "Kapp_fumic", 
+                                                   "IndMax", "IndC50_fuinc", 
+                                                   "Ind_gamm") ~ "1", 
+                               is.na(Value) & 
+                                  Parameter %in% c("kinact", "Ind_slope") ~ "0", 
+                               TRUE ~ Value),
+             
+             # Dealing with switches to make them T or F instead of off or on
+             Value = case_when(Parameter %in% c("competitive_inhibition_switch", 
+                                                "TDI_switch",
+                                                "induction_IndC50_switch") &
+                                  Value == "on" ~ "true", 
+                               Parameter %in% c("competitive_inhibition_switch", 
+                                                "TDI_switch",
+                                                "induction_IndC50_switch") &
+                                  Value == "off" ~ "false", 
+                               
+                               Parameter == "induction_IndMax_switch" &
+                                  str_detect(enzymes, "CYP|UGT") &
+                                  Value == "on" ~ "false",  # <-- This turns OFF the induction slope switch
+                               Parameter == "induction_IndMax_switch" &
+                                  str_detect(enzymes, "Pgp") &
+                                  Value == "on" ~ "true", # <-- This turns ON the IndMax switch
+                               
+                               Parameter == "induction_IndMax_switch" &
+                                  str_detect(enzymes, "CYP|UGT") &
+                                  Value == "off" ~ "true",  # <-- This turns ON the induction slope switch
+                               Parameter == "induction_IndMax_switch" &
+                                  str_detect(enzymes, "Pgp") &
+                                  Value == "off" ~ "false", # <-- This turns OFF the IndMax switch
+                               TRUE ~ Value),
+             
+             # setting the level 5 tag names b/c they change depending on the
+             # scenario.
+             Level5 = case_when(Parameter == "competitive_inhibition_switch" &
+                                   str_detect(enzymes, "CYP|UGT") ~ "KiSwitch", 
+                                Parameter == "competitive_inhibition_switch" &
+                                   str_detect(enzymes, "Pgp") ~ "KiEnabled", 
+                                
+                                Parameter == "Ki_fumic" &
+                                   str_detect(enzymes, "CYP|UGT") ~ "Fumic",
+                                Parameter == "Ki_fumic" &
+                                   str_detect(enzymes, "Pgp") ~ "KiFuinc",
+                                
+                                Parameter == "TDI_switch" ~ "KappSwitch",
+                                Parameter == "kinact" ~ "Kinact",
+                                
+                                Parameter == "induction_IndMax_switch" &
+                                   str_detect(enzymes, "CYP|UGT") ~ "IndSlopeSwitch",
+                                Parameter == "induction_IndMax_switch" &
+                                   str_detect(enzymes, "Pgp") ~ "Ind_max_switch",
+                                
+                                Parameter == "Ind_slope" &
+                                   str_detect(enzymes, "CYP|UGT") ~ "Y",
+                                Parameter == "induction_IndMax_switch" &
+                                   str_detect(enzymes, "Pgp") ~ "Induction_Hill",
+                                
+                                Parameter == "induction_IndC50_switch" &
+                                   str_detect(enzymes, "CYP|UGT") ~ "IndC50Switch",
+                                Parameter == "induction_IndC50_switch" &
+                                   str_detect(enzymes, "Pgp") ~ "Ind_C50_switch",
+                                
+                                Parameter == "IndC50" &
+                                   str_detect(enzymes, "Pgp") ~ "Ind_C50",
+                                
+                                Parameter == "Ind_gamma" &
+                                   str_detect(enzymes, "CYP|UGT") ~ "Y",
+                                Parameter == "Ind_gamma" &
+                                   str_detect(enzymes, "Pgp") ~ "Induction_Hill",
+                                
+                                TRUE ~ Parameter))
+   
    
    # Main body of function ---------------------------------------------------
    
@@ -258,58 +358,14 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                          useInternal = TRUE)
       RootNode <- XML::xmlRoot(workspace_xml)
       
-      Changes_i <- Changes[[i]] %>% 
-         mutate(across(.cols = everything(), 
-                       .fns = as.character)) %>% 
-         pivot_longer(cols = -c(compoundID, enzymes, sim_workspace_files, 
-                                new_sim_workspace_files), 
-                      names_to = "Parameter", 
-                      values_to = "Value") %>% 
-         filter(Value != "no change")
-      
-      # If they specified a value for something but didn't turn the switch on,
-      # fix that for them. I mean for the "switch" arguments mainly to be an
-      # opportunity to turn off interactions they no longer want, and I think
-      # people will not think to turn switches ON when they include new
-      # interaction parameters. Note that IndMax does not require a switch, so
-      # it's filtered out here. In fact, only parameters that have a switch
-      # associated with them are included.
-      ArgSwitchCheck <- Changes_i %>% 
-         filter(!Parameter %in% c("IndMax", "Ki_fumic", "Kapp_fumic", 
-                                  "IndC50_fuinc", "Ind_gamma"))
-      
-      if(any(str_detect(tolower(ArgSwitchCheck$Parameter), "switch"))){
-         Changes_i <- Changes_i %>% 
-            mutate(Value = case_when(str_detect(tolower(Parameter), "switch") &
-                                        Value == "on" ~ "true", 
-                                     str_detect(tolower(Parameter), "switch") &
-                                        Value == "off" ~ "false", 
-                                     TRUE ~ Value))
-      } else {
-         # This is when they forgot to include anything about the switches,
-         # which will probably be often. 
-         ArgSwitchCheck <- ArgSwitchCheck %>% 
-            mutate(Switch = case_when(
-               Parameter %in% c("Ki") ~ "competitive_inhibition_switch",
-               Parameter %in% c("Kapp", "kinact") ~ "TDI_switch", 
-               Parameter %in% c("IndC50") ~ "IndC50_switch", 
-               Parameter %in% c("Ind_slope") ~ "Ind_slope_switch")) %>% 
-            mutate(NewValueForSwitch = ifelse(complete.cases(Value),
-                                              "true", "false"))
+      # NB: I originally set this up to do a check here for whether they had
+      # specified the switches correctly. It quickly became unmanageable in
+      # complexity. They'll need to just make sure they set them right. May
+      # return to this later, though.
+
+      for(j in 1:nrow(Changes[[i]])){
          
-         Changes_i <- bind_rows(
-            Changes_i, 
-            ArgSwitchCheck %>% 
-               select(compoundID, enzymes, Switch, NewValueForSwitch,
-                      sim_workspace_files, new_sim_workspace_files) %>% 
-               unique() %>% 
-               rename(Parameter = Switch, 
-                      Value = NewValueForSwitch))
-      }
-      
-      for(j in 1:nrow(Changes_i)){
-         
-         CompoundIDnum <- switch(Changes_i$compoundID[j], 
+         CompoundIDnum <- switch(Changes[[i]]$compoundID[j], 
                                  "substrate" = 1, 
                                  "inhibitor 1" = 2, 
                                  "inhibitor 2" = 3, 
@@ -319,12 +375,15 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                  "secondary metabolite" = 7, 
                                  "primary metabolite 2" = 8)
          
-         EnzIntRoutes <- switch(str_extract(Changes_i$enzymes[j], 
-                                            "CYP|UGT"), 
+         EnzIntRoutes <- switch(str_extract(Changes[[i]]$enzymes[j], 
+                                            "CYP|UGT|Pgp"), 
                                 "CYP" = "CYPInteractionRoutes", 
-                                "UGT" = "UGTInteractionRoutes")
+                                "UGT" = "UGTInteractionRoutes", 
+                                "Pgp" = switch(Changes[[i]]$tissues[j], 
+                                               "liver" = "LiverTransporterSet", 
+                                               "intestine" = "GutTransporterSet"))
          
-         EnzNum <- switch(Changes_i$enzymes[j],
+         EnzNum <- switch(Changes[[i]]$enzymes[j],
                           "CYP1A2" = 1, 
                           "CYP2A6" = 2, 
                           "CYP2B6" = 3,
@@ -337,111 +396,17 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                           "CYP2J2" = 10,
                           "CYP3A4" = 11, 
                           "CYP3A5" = 12, 
-                          "CYP3A7" = 13)
-         
-         # Making a whole bunch of "if" statements b/c I'm not proficient enough
-         # w/XML files to use "switch" well here. What would be a better way to
-         # do this?!? There must be a better one!
-         
-         ## Competitive inhibition -----------------------------------------
-         if(as.character(Changes_i[j, "Parameter"]) == "competitive_inhibition_switch"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["KiSwitch"]]) <-
-               as.character(Changes_i[j, "Value"])
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "Ki"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["Ki"]]) <-
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      "1000000", as.character(Changes_i[j, "Value"]))
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "Ki_fumic"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["Fumic"]]) <-
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      1, as.character(Changes_i[j, "Value"]))
-         }
+                          "CYP3A7" = 13, 
+                          "UGT1A1" = 1, 
+                          "User UGT1" = 17, 
+                          "Pgp" =  switch(Changes[[i]]$tissues[j], 
+                                          "liver" = 18, 
+                                          "intestine" = 10))
          
          
-         ## TDI --------------------------------------------------------
-         if(as.character(Changes_i[j, "Parameter"]) == "TDI_switch"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["KappSwitch"]]) <-
-               as.character(Changes_i[j, "Value"])
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "Kapp"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["Kapp"]]) <-
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      "1000000", as.character(Changes_i[j, "Value"]))
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "kinact"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["Kinact"]]) <-
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      0, as.character(Changes_i[j, "Value"]))
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "Kapp_fumic"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["Kapp_fumic"]]) <-
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      1, as.character(Changes_i[j, "Value"]))
-         }
-         
-         ## Induction ----------------------------------------------------
-         
-         # No switch for Indmax
-         if(as.character(Changes_i[j, "Parameter"]) == "IndMax"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["IndMax"]]) <- 
-               ifelse(is.na(as.character(Changes_i[j, "Value"])), 
-                      1, as.character(Changes_i[j, "Value"]))
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "induction_IndC50_switch"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["IndC50Switch"]]) <- 
-               as.character(Changes_i[j, "Value"])
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "IndC50"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["IndC50"]]) <- 
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      "1000000", as.character(Changes_i[j, "Value"]))
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "IndC50_fuinc"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["IndC50_fuinc"]]) <-
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      1, as.character(Changes_i[j, "Value"]))
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "Ind_gamma"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["Y"]]) <- 
-               ifelse(is.na(as.character(Changes_i[j, "Value"])),
-                      1, as.character(Changes_i[j, "Value"]))
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "induction_slope_switch"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["IndSlopeSwitch"]]) <-
-               as.character(Changes_i[j, "Value"])
-         }
-         
-         if(as.character(Changes_i[j, "Parameter"]) == "Ind_slope"){
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
-               EnzIntRoutes]][[EnzNum]][["IndSlope"]]) <- 
-               ifelse(is.na(as.character(Changes_i[j, "Value"])), 
-                      0, as.character(Changes_i[j, "Value"]))
-         }
+         XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
+            EnzIntRoutes]][[EnzNum]][[Changes[[i]]$Level5[j]]]) <-
+            Changes[[i]]$Value[j]
          
          rm(EnzIntRoutes, EnzNum, CompoundIDnum)
          
