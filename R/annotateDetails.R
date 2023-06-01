@@ -507,7 +507,7 @@ annotateDetails <- function(existing_exp_details,
    ## compound -------------------------------------------------------------
    if(complete.cases(compound)){
       
-      if(any(compound %in% tolower(Out$Compound)) == FALSE){
+      if(any(str_detect(tolower(Out$Compound), tolower(compound))) == FALSE){
          warning(paste0("None of the simulations had information on the compound you requested. You requested a compound called `", 
                         compound, 
                         "``, but the compounds present in these simulations are: ", 
