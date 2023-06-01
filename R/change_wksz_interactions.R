@@ -124,14 +124,20 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # If they left sim_workspace_files as NA, then they want to apply this
-   # function to all the workspaces in the current folder. Getting the names of
-   # the workspaces.
-   sim_workspace_files <- sim_workspace_files[complete.cases(sim_workspace_files)]
-   if(length(sim_workspace_files) == 0){
-      sim_workspace_files <- list.files(pattern = ".wksz")
-   } else if(any(sim_workspace_files == "recursive")){
-      sim_workspace_files <- list.files(pattern = ".wksz", recursive = TRUE)
+   # If they left sim_workspace_files as NA and did not supply something for
+   # interactions_to_set, then they want to apply this function to all the
+   # workspaces in the current folder. Getting the names of the workspaces.
+   if(class(interactions_to_set) == "logical"){
+      sim_workspace_files <- sim_workspace_files[complete.cases(sim_workspace_files)]
+      if(length(sim_workspace_files) == 0){
+         sim_workspace_files <- list.files(pattern = ".wksz")
+      } else if(any(sim_workspace_files == "recursive")){
+         sim_workspace_files <- list.files(pattern = ".wksz", recursive = TRUE)
+      }
+   } else {
+      if(length(sim_workspace_files) == 1 && is.na(sim_workspace_files)){
+         sim_workspace_files <- interactions_to_set$sim_workspace_files
+      }
    }
    
    if(length(sim_workspace_files) == 0){

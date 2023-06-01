@@ -125,7 +125,10 @@ extractExpDetails_XML <- function(sim_workspace_files,
    }
    
    CompoundDetails <- AllExpDetails %>% 
-      filter(Sheet == "workspace XML file" & Level1 == "Compounds") %>% 
+      filter(Sheet == "workspace XML file" & Level1 == "Compounds" & 
+                !Detail %in% c("Substrate", "Inhibitor1", "Inhibitor2", 
+                               "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                               "SecondaryMetabolite", "Inhibitor1Metabolite")) %>% 
       pull(Detail)
    
    Deets <- list()
@@ -220,9 +223,30 @@ extractExpDetails_XML <- function(sim_workspace_files,
          }
       }
       
-      rm(workspace_xml, RootNode)
+      # Adding compound names separately. Trying to figure out how to tell if
+      # these are "on" in the simulation, but I am really struggling to find
+      # that tag name.
+      for(j in c("Substrate", "Inhibitor1", "Inhibitor2", 
+                 "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                 "SecondaryMetabolite", "Inhibitor1Metabolite")){
+         
+         CompoundNum <- switch(j, 
+                               "Substrate" = 1, 
+                               "PrimaryMetabolite1" = 5,
+                               "PrimaryMetabolite2" = 8,
+                               "SecondaryMetabolite" = 7,
+                               "Inhibitor1" = 2,
+                               "Inhibitor2" = 3, 
+                               "Inhibitor1Metabolite" = 6)
+         
+         Deets[[i]][[j]] <- 
+            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["idName"]])
+      }
       
       Deets[[i]] <- as.data.frame(Deets[[i]]) %>% mutate(Workspace = i)
+      
+      rm(workspace_xml, RootNode)
+      
    }
    
    Deets <- bind_rows(Deets)
