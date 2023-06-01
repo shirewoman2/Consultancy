@@ -1210,9 +1210,9 @@ extractExpDetails <- function(sim_data_file,
             sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
             compoundsToExtract = "all",
             exp_details = "all") %>% 
-            filter(!Detail %in% c("Substrate", "Inhibitor1", "Inhibitor2", 
-                                  "PrimaryMetabolite1", "PrimaryMetabolite2", 
-                                  "SecondaryMetabolite", "Inhibitor1Metabolite")) %>% 
+            select(!any_of(c("Substrate", "Inhibitor1", "Inhibitor2", 
+                             "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                             "SecondaryMetabolite", "Inhibitor1Metabolite"))) %>% 
             as.list()
          
          Out <- c(Out, TEMP[names(TEMP)[names(TEMP) != "Workspace"]])
