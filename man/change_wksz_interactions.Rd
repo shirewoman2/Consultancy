@@ -10,6 +10,7 @@ change_wksz_interactions(
   interactions_to_set = NA,
   compoundID = "inhibitor 1",
   enzymes,
+  tissues = NA,
   competitive_inhibition_switch = "no change",
   Ki = "no change",
   Ki_fumic = "no change",
@@ -17,12 +18,12 @@ change_wksz_interactions(
   Kapp = "no change",
   kinact = "no change",
   Kapp_fumic = "no change",
+  induction_IndMax_switch = "no change",
+  IndMax = "no change",
   induction_IndC50_switch = "no change",
   IndC50 = "no change",
   IndC50_fuinc = "no change",
-  IndMax = "no change",
   Ind_gamma = "no change",
-  induction_slope_switch = "no change",
   Ind_slope = "no change"
 )
 }
@@ -49,7 +50,7 @@ this function will pay any attention to are "sim_workspace_files",
 "new_sim_workspace_files", or any of "compoundID", "enzymes",
 "competitive_inhibition_switch", "Ki", "Ki_fumic", "TDI_switch", "Kapp",
 "kinact", "Kapp_fumic", "induction_IndC50_switch", "IndMax", "IndC50",
-"IndC50_fuinc", "induction_slope_switch", "Ind_slope", and "Ind_gamma".
+"IndC50_fuinc", "induction_IndMax_switch", "Ind_slope", and "Ind_gamma".
 Please see the notes on each of the arguments below to see what values to
 use for this data.frame. This can be an easier way to set things up when
 you have a lot of information to keep track of or when you're setting
@@ -70,9 +71,13 @@ inhibitor 1}}}
 
 \item{enzymes}{enzymes whose interaction parameters you want to change, e.g.,
 \code{enzymes = c("CYP3A4", "CYP3A5")}. Note: This is currently only set up
-to change CYP interaction parameters. If you need to change interaction
-parameters for other enzymes or transporters, please talk to Laura
-Shireman.}
+to change CYP, some UGT, and P-gp interaction parameters. If you need to
+change interaction parameters for other enzymes or transporters, please
+talk to Laura Shireman.}
+
+\item{tissues}{tissues where the enzyme of interest may be found. Leave as NA
+if not applicable (CYPs, for exaple) or set to the tissue as listed in the
+Simulator, e.g., "Intestine" or "Liver" for P-gp.}
 
 \item{competitive_inhibition_switch}{turn competitive inhibition "on" or
 "off" or set to "no change" to leave the original value}
@@ -97,6 +102,15 @@ leave the original value. If set to NA, value will be set to 1E+06.}
 \item{Kapp_fumic}{fu,mic value to use for TDI or set to "no change" (default)
 to leave as the original value. If set to NA, value will be set to 1.}
 
+\item{induction_IndMax_switch}{set to "on" when there is either a) no
+induction (IndMax is 1) or b) when there \emph{is} induction and you're
+using any induction model except the slope model. Set to "off" when there
+is induction but you're using the "slope" model to describe it. Set to "no
+change" (default) to leave as the original value.}
+
+\item{IndMax}{a number for the maximum fold induction to use or set to "no
+change" (default) to leave the original value.}
+
 \item{induction_IndC50_switch}{turn "on" or "off" the use of an induction
 IndC50 value or set to "no change" (default) to leave the original value}
 
@@ -107,18 +121,9 @@ leave the original value. If set to NA, value will be set to 1E+06.}
 "no change" (default) to leave the original value. If set to NA, value will
 be set to 1.}
 
-\item{IndMax}{a number for the maximum fold induction to use or set to "no
-change" (default) to leave the original value. Note that IndMax doesn't
-require a switch to turn it on (there's no toggle switch for it in the
-Simulator).}
-
 \item{Ind_gamma}{value to use for gamma aka the Hill coefficient for
 induction or set to "no change" (default) to leave the original value. If
 set to NA, value will be set to 1.}
-
-\item{induction_slope_switch}{turn "on" or "off" the use of a slope value for
-describing induction or set to "no change" (default) to leave the original
-value}
 
 \item{Ind_slope}{value to use for slope in induction or set to "no change"
 (default) to leave the original value. If left as NA, value will be set to
@@ -131,9 +136,10 @@ does not return anything in R but saves workspace files
 \code{change_wksz_interactions} changes interaction parameters such as Kapp
 or Ki or IndMax in workspace files (.wksz files) for then running with the
 Simcyp Simulator. This will change \emph{all} the workspace files provided to
-have the \emph{same} interaction parameters listed here. Currently only set
-up to change CYP parameters, but we'll add more options soon. UNDER
-CONSTRUCTION.
+have the \emph{same} interaction parameters you list here. Currently only set
+up to change CYP, P-gp, and a few UGT parameters, but we'll add more options
+soon. \strong{Pay attention to the "switch" arguments, which are set up just
+like in the Simulator but are easy to overlook.} UNDER CONSTRUCTION.
 }
 \examples{
 # None yet

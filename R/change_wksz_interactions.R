@@ -3,7 +3,7 @@
 #' \code{change_wksz_interactions} changes interaction parameters such as Kapp
 #' or Ki or IndMax in workspace files (.wksz files) for then running with the
 #' Simcyp Simulator. This will change \emph{all} the workspace files provided to
-#' have the \emph{same} interaction parameters listed here. Currently only set
+#' have the \emph{same} interaction parameters you list here. Currently only set
 #' up to change CYP, P-gp, and a few UGT parameters, but we'll add more options
 #' soon. \strong{Pay attention to the "switch" arguments, which are set up just
 #' like in the Simulator but are easy to overlook.} UNDER CONSTRUCTION.
@@ -249,8 +249,11 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
    # have a data.frame called Changes that includes all interactions AND the
    # original and revised file names.
    
+   
+   # Main body of function ---------------------------------------------------
+   
    # If they didn't include the file suffix, add that. Replace any "xlsx" file
-   # extensions with "wksz".
+   # extensions with "wksz". Clean up "Value" column and set Level5 tag names.
    Changes <- Changes %>% 
       mutate(sim_workspace_files = paste0(sub("\\.xlsx|\\.wksz", "", sim_workspace_files), ".wksz"), 
              new_sim_workspace_files = paste0(sub("\\.xlsx|\\.wksz", "", new_sim_workspace_files), ".wksz"), 
@@ -340,9 +343,6 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                 
                                 TRUE ~ Parameter))
    
-   
-   # Main body of function ---------------------------------------------------
-   
    # Grouping by new workspace
    Changes <- split(Changes, f = Changes$new_sim_workspace_files)
    
@@ -411,6 +411,13 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
          rm(EnzIntRoutes, EnzNum, CompoundIDnum)
          
       }
+      
+      ## Checking for observed overlay file ----------------------------------
+      
+      # If observed overlay file is listed and the path doesn't match b/c the
+      # workspace path has a different user b/c of SharePoint, fix that.
+      workspace_xml <- change_xml_path()
+      
       
       ## Saving -------------------------------------------------------------
       XML::saveXML(workspace_xml, file = "temp.xml")
