@@ -6,7 +6,11 @@
 #' have the \emph{same} interaction parameters you list here. Currently only set
 #' up to change CYP, P-gp, and a few UGT parameters, but we'll add more options
 #' soon. \strong{Pay attention to the "switch" arguments, which are set up just
-#' like in the Simulator but are easy to overlook.} UNDER CONSTRUCTION.
+#' like in the Simulator but are easy to overlook.} Also, this will
+#' automatically fix any XML file paths such as observed data overlay files or
+#' fixed trial design XML files to match the current user's path on SharePoint.
+#' If you don't want that, set \code{fix_xml_paths} to FALSE. UNDER
+#' CONSTRUCTION.
 #'
 #' @param sim_workspace_files the set of workspace files to modify; must end in
 #'   ".wksz" if you're specifying individual files. Leave as NA to change all
@@ -21,6 +25,9 @@
 #'   Otherwise, specify a character vector of file names to use, e.g.,
 #'   \code{new_sim_workspace_files = c("new file 1.wksz", "new file
 #'   2.wksz")}
+#' @param fix_xml_paths TRUE (default) or FALSE to automatically fix any
+#'   discrepancies in user name on the SharePoint folder path for observed
+#'   overlay data files or fixed trial design files.
 #' @param interactions_to_set a data.frame of interaction parameters to use
 #'   instead of filling in each of the arguments below (compoundID through
 #'   Ind_slope) with character vectors of values. The only columns that will
@@ -98,6 +105,7 @@
 #' 
 change_wksz_interactions <- function(sim_workspace_files = NA,
                                      new_sim_workspace_files = NA,
+                                     fix_xml_paths = TRUE,
                                      
                                      interactions_to_set = NA,
                                      
@@ -362,7 +370,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
       # specified the switches correctly. It quickly became unmanageable in
       # complexity. They'll need to just make sure they set them right. May
       # return to this later, though.
-
+      
       for(j in 1:nrow(Changes[[i]])){
          
          CompoundIDnum <- switch(Changes[[i]]$compoundID[j], 
@@ -412,12 +420,15 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
          
       }
       
-      ## Checking for observed overlay file ----------------------------------
+      ## Checking for observed overlay or fixed trial design files -------------
       
-      # If observed overlay file is listed and the path doesn't match b/c the
-      # workspace path has a different user b/c of SharePoint, fix that.
-      workspace_xml <- change_xml_path()
-      
+      if(fix_xml_paths){
+         # If XML file is listed and the path doesn't match b/c the workspace path
+         # has a different user b/c of SharePoint, fix that.
+         TEMP <- change_xml_path(workspace_objects = list(workspace_xml), 
+                                 save_workspaces = FALSE)
+         workspace_xml <- TEMP[[1]]
+      }
       
       ## Saving -------------------------------------------------------------
       XML::saveXML(workspace_xml, file = "temp.xml")

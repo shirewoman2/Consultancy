@@ -7,6 +7,7 @@
 change_wksz_interactions(
   sim_workspace_files = NA,
   new_sim_workspace_files = NA,
+  fix_xml_paths = TRUE,
   interactions_to_set = NA,
   compoundID = "inhibitor 1",
   enzymes,
@@ -42,6 +43,10 @@ names to use. If left as NA, the original workspace will be overwritten.
 Otherwise, specify a character vector of file names to use, e.g.,
 \code{new_sim_workspace_files = c("new file 1.wksz", "new file
 2.wksz")}}
+
+\item{fix_xml_paths}{TRUE (default) or FALSE to automatically fix any
+discrepancies in user name on the SharePoint folder path for observed
+overlay data files or fixed trial design files.}
 
 \item{interactions_to_set}{a data.frame of interaction parameters to use
 instead of filling in each of the arguments below (compoundID through
@@ -139,7 +144,11 @@ Simcyp Simulator. This will change \emph{all} the workspace files provided to
 have the \emph{same} interaction parameters you list here. Currently only set
 up to change CYP, P-gp, and a few UGT parameters, but we'll add more options
 soon. \strong{Pay attention to the "switch" arguments, which are set up just
-like in the Simulator but are easy to overlook.} UNDER CONSTRUCTION.
+like in the Simulator but are easy to overlook.} Also, this will
+automatically fix any XML file paths such as observed data overlay files or
+fixed trial design XML files to match the current user's path on SharePoint.
+If you don't want that, set \code{fix_xml_paths} to FALSE. UNDER
+CONSTRUCTION.
 }
 \examples{
 # None yet
