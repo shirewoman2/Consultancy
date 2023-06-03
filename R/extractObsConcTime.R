@@ -272,7 +272,7 @@ extractObsConcTime <- function(obs_data_file,
             
             names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
                                  "SD_SE",
-                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "Compound", "DoseRoute", "Dose_units", "DoseAmount",
                                  "InfDuration", "InjectionSite",
                                  "Period", "Age", "Weight_kg",
                                  "Height_cm", "Sex", "SerumCreatinine_umolL",
@@ -283,7 +283,7 @@ extractObsConcTime <- function(obs_data_file,
          } else if(any(str_detect(MainColNames, "Placenta"), na.rm = TRUE)){
             SimVersion <- "V21"
             names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                 "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                 "Compound", "DoseRoute", "Dose_units", "DoseAmount",
                                  "InfDuration", "Period", "Age", "Weight_kg",
                                  "Height_cm", "Sex", "SerumCreatinine_umolL",
                                  "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
@@ -294,7 +294,7 @@ extractObsConcTime <- function(obs_data_file,
             SimVersion <- "V20"
             if(any(str_detect(MainColNames, "Gestational Age"))){
                names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                    "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                    "Compound", "DoseRoute", "Dose_units", "DoseAmount",
                                     "InfDuration", "Period", "Age", "Weight_kg",
                                     "Height_cm", "Sex", "SerumCreatinine_umolL",
                                     "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
@@ -305,7 +305,7 @@ extractObsConcTime <- function(obs_data_file,
                
                SimVersion <- "V19"
                names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                    "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                                    "Compound", "DoseRoute", "Dose_units", "DoseAmount",
                                     "InfDuration", "Period", "Age", "Weight_kg",
                                     "Height_cm", "Sex", "SerumCreatinine_umolL",
                                     "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
@@ -315,7 +315,7 @@ extractObsConcTime <- function(obs_data_file,
       } else {
          SimVersion <- "preV19"
          names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                              "Compound", "DoseRoute", "DoseUnit", "DoseAmount",
+                              "Compound", "DoseRoute", "Dose_units", "DoseAmount",
                               "InfDuration", "Age", "Weight_kg",
                               "Height_cm", "Sex", "SerumCreatinine_umolL",
                               "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
@@ -332,40 +332,58 @@ extractObsConcTime <- function(obs_data_file,
              CompoundID = ObsCompoundIDs[CompoundID_obsfile],
              Inhibitor = ObsEffectors[CompoundID_obsfile],
              Simulated = FALSE,
+             Trial = "obs",
              Tissue = Tissue[CompoundID_obsfile],
              ObsFile = obs_data_file,
              SmokingStatus = Smoke[SmokingStatus],
              Time_units = TimeUnits,
              Conc_units = ObsConcUnits[as.character(DVID)])
    
-   if(returnDosingInfo){
-      dose_data <- obs_data %>% filter(is.na(DVID)) %>% 
-         mutate(CompoundID = tolower(Compound), 
-                DoseUnit = gsub("\\(|\\)", "", DoseUnit), 
-                Dose = as.numeric(DoseAmount), 
-                InfDuration = as.numeric(InfDuration)) %>% 
-         select(any_of(c("Individual", "Species", "Age",
-                         "Weight_kg", "Height_cm",
-                         "Sex", "SerumCreatinine_umolL", "HSA_gL", 
-                         "Haematocrit", "PhenotypeCYP2D6", "SmokingStatus", 
-                         "GestationalAge_wk", "PlacentaVol_L", "FetalWt_kg", 
-                         "ObsFile", "CompoundID", 
-                         "Time", "Time_units", "Dose", "DoseUnit",
-                         "InfDuration"))) 
-   }
+   dose_data <- obs_data %>% filter(is.na(DVID)) %>% 
+      mutate(CompoundID = tolower(Compound), 
+             Dose_units = gsub("\\(|\\)", "", Dose_units), 
+             Dose = as.numeric(DoseAmount), 
+             InfDuration = as.numeric(InfDuration)) %>% 
+      select(any_of(c("Individual", "Species", "Age",
+                      "Weight_kg", "Height_cm",
+                      "Sex", "SerumCreatinine_umolL", "HSA_gL", 
+                      "Haematocrit", "PhenotypeCYP2D6", "SmokingStatus", 
+                      "GestationalAge_wk", "PlacentaVol_L", "FetalWt_kg", 
+                      "ObsFile", "CompoundID", 
+                      "Time", "Time_units", "Dose", "Dose_units",
+                      "InfDuration"))) 
    
    obs_data <- obs_data %>%
       # Removing dosing rows b/c that's not conc time data. 
       filter(complete.cases(DVID)) %>%
       filter(is.na(DoseAmount)) %>% 
-      select(any_of(c("CompoundID", 
-                      # "CompoundID_obsfile",
-                      "Individual",
-                      "Tissue", "Inhibitor",
-                      "Time", "Time_units", "Conc", "Conc_units", "DVID",
-                      "ObsFile", "Weighting",
-                      "Period", "Age", "Weight_kg",
-                      "Species",
+      mutate(Simulated = FALSE)
+   
+   DoseInts <- dose_data %>%
+      select(Individual, CompoundID, Time, Dose, Dose_units) %>% 
+      rename(DoseTime = Time) 
+   DoseInts_ID <- DoseInts %>% 
+      mutate(Interval = cut(DoseTime, 
+                            breaks = c(unique(DoseInts$DoseTime), Inf), 
+                            include.lowest = TRUE, right = FALSE))
+   
+   # Adding dose info to conc-time data.frame
+   obs_data <- obs_data %>% 
+      select(-Dose_units) %>% 
+      mutate(Interval = cut(Time, breaks = c(unique(DoseInts$DoseTime), Inf), 
+                            include.lowest = TRUE, right = FALSE)) %>% 
+      left_join(DoseInts_ID, 
+                by = join_by(CompoundID, Individual, Interval)) %>% 
+      mutate(across(.cols = any_of(c("Age", "Weight_kg", "Height_cm",
+                                     "SerumCreatinine_umolL", "HSA_gL", 
+                                     "Haematocrit", "GestationalAge_wk", 
+                                     "PlacentaVol_L", "FetalWt_kg")), 
+                    .fns = as.numeric)) %>% 
+      select(any_of(c("CompoundID", "Inhibitor", "Tissue", 
+                      "Individual", "Trial",
+                      "Simulated", "Time", "Conc",
+                      "Time_units",  "Conc_units", "Dose", "Dose_units",
+                      "ObsFile", "Period", "Species", "Age", "Weight_kg",
                       "Height_cm", "Sex", "SerumCreatinine_umolL",
                       "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
                       "SmokingStatus", "GestationalAge_wk", 

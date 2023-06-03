@@ -12,6 +12,9 @@
 #'   contain only the digitized time and concentration data and not the XML
 #'   files themselves that you would include in a Simulator workspace for
 #'   observed data. 
+#' @param returnDosingInfo TRUE or FALSE (default) for whether to return a
+#'   second data.frame with dosing and demographic information from the Excel
+#'   file.
 #' @param studyID either a single value for the study ID or a named character
 #'   vector of which observed data files go with which study IDs. An example of
 #'   acceptable input: \code{studyID = "HV 101"} or \code{studyID = c("HV 101" =
@@ -56,6 +59,7 @@
 #' extractObsConcTime(obs_data_file = "My observed data.xlsx")
 #' 
 extractObsConcTime_mult <- function(obs_data_files, 
+                                    returnDosingInfo = FALSE, 
                                     studyID = NA, 
                                     study_arm = NA){
    
@@ -128,14 +132,13 @@ extractObsConcTime_mult <- function(obs_data_files,
    # Main body of function ---------------------------------------------------
    
    ObsData <- list()
+   DosingInfo <- list()
    
    for(i in obs_data_files){
       TEMP <- extractObsConcTime(obs_data_file = i, 
                                  returnDosingInfo = TRUE)
-      suppressMessages(
-         ObsData[[i]] <- TEMP$ObsCT %>% 
-            left_join(TEMP$ObsDosing) %>% 
-            fill(Dose, DoseUnit, InfDuration, .direction = "down"))
+      ObsData[[i]] <- TEMP$ObsCT
+      DosingInfo[[i]] <- TEMP$ObsDosing
       
       rm(TEMP)
    }
@@ -162,6 +165,14 @@ extractObsConcTime_mult <- function(obs_data_files,
          ObsData <- ObsData %>% 
             left_join(MyStudies, by = "ObsFile")
       }
+   }
+   
+   Out <- list("ObsData" = ObsData)
+   
+   if(returnDosingInfo){
+      Out[["ObsDosing"]] <- bind_rows(DosingInfo)
+   } else {
+      Out <- Out[["ObsData"]]
    }
    
    return(ObsData)
