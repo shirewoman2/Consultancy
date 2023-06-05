@@ -893,8 +893,11 @@ call. = FALSE)
    if(EnzPlot){ 
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
-         mutate(Group = paste(File, Trial, Tissue, Enzyme, Inhibitor), 
-                Abundance = Abundance / 100) %>% 
+         unite(col = Group, any_of(c("File", "Trial", "Tissue", "Enzyme",
+                                     "Inhibitor",
+                                     "colorBy_column", "FC1", "FC2")), 
+               sep = " ", remove = FALSE) %>% 
+         mutate(Abundance = Abundance / 100) %>% 
          rename(Conc = Abundance)
       
       sim_dataframe <- ct_dataframe
@@ -911,8 +914,11 @@ call. = FALSE)
    } else {
       # for conc-time data
       ct_dataframe <- ct_dataframe %>%
-         mutate(Group = paste(File, Trial, Tissue, CompoundID, Compound, Inhibitor),
-                CompoundID = factor(CompoundID,
+         unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
+                                     "Compound", "Inhibitor",
+                                     "colorBy_column", "FC1", "FC2")), 
+               sep = " ", remove = FALSE) %>% 
+         mutate(CompoundID = factor(CompoundID,
                                     levels = c("substrate", "primary metabolite 1",
                                                "primary metabolite 2", "secondary metabolite",
                                                "inhibitor 1", "inhibitor 1 metabolite", 
@@ -967,8 +973,10 @@ call. = FALSE)
       suppressMessages(
          obs_dataframe <- obs_dataframe %>% select(-File) %>% 
             left_join(ToAdd) %>% 
-            mutate(Group = paste(File, Trial, Tissue, CompoundID,
-                                 Compound, Inhibitor)))
+            unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
+                                        "Compound", "Inhibitor",
+                                        "colorBy_column", "FC1", "FC2")), 
+                  sep = " ", remove = FALSE))
       
       if(as_label(colorBy_column) == "File"){
          obs_dataframe <- obs_dataframe %>% 
@@ -1488,7 +1496,10 @@ call. = FALSE)
                                     "geometric" = gm_mean(Conc, na.rm = T),
                                     "median" = median(Conc, na.rm = T))) %>%
             ungroup() %>% 
-            mutate(Group = paste(Compound, Inhibitor, Trial))
+            unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
+                                        "Compound", "Inhibitor",
+                                        "colorBy_column", "FC1", "FC2")), 
+                  sep = " ", remove = FALSE)
       )
    }
    
