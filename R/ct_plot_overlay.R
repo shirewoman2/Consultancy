@@ -1017,6 +1017,13 @@ call. = FALSE)
                     call. = FALSE)  
          } else {
             
+            MissingLabels <- setdiff(unique(sim_dataframe$colorBy_column), 
+                                     names(color_labels))
+            if(length(MissingLabels) > 0){
+               names(MissingLabels) <- MissingLabels
+               color_labels <- c(color_labels, MissingLabels)
+            }
+            
             sim_dataframe <- sim_dataframe %>% 
                mutate(colorBy_column = color_labels[colorBy_column], 
                       colorBy_column = factor(colorBy_column, levels = color_labels))
@@ -1052,6 +1059,13 @@ call. = FALSE)
                            as_label(linetype_column), ". The specified labels cannot be used."),
                     call. = FALSE)  
          } else {
+            
+            MissingLabels <- setdiff(unique(sim_dataframe$linetype_column), 
+                                     names(linetype_labels))
+            if(length(MissingLabels) > 0){
+               names(MissingLabels) <- MissingLabels
+               linetype_labels <- c(linetype_labels, MissingLabels)
+            }
             
             sim_dataframe <- sim_dataframe %>% 
                mutate(linetype_column = linetype_labels[linetype_column], 
