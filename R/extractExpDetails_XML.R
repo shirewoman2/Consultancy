@@ -69,12 +69,12 @@ extractExpDetails_XML <- function(sim_workspace_files,
    # If user did not supply files, then extract all the files in the current
    # folder that end in "wksz" or in all subfolders if they wanted it to be
    # recursive.
-   if(length(sim_data_files) == 1 &&
-      (is.na(sim_data_files) | sim_data_files == "recursive")){
-      sim_data_files <- list.files(pattern = "wksz$",
-                                   recursive = (complete.cases(sim_data_files) &&
-                                                   sim_data_files == "recursive"))
-      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+   if(length(sim_workspace_files) == 1 &&
+      (is.na(sim_workspace_files) | sim_workspace_files == "recursive")){
+      sim_workspace_files <- list.files(pattern = "wksz$",
+                                   recursive = (complete.cases(sim_workspace_files) &&
+                                                   sim_workspace_files == "recursive"))
+      sim_workspace_files <- sim_workspace_files[!str_detect(sim_workspace_files, "^~")]
    }
    
    # If they didn't include ".wksz" at the end, add that.
