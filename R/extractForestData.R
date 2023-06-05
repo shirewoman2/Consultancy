@@ -141,6 +141,11 @@ extractForestData <- function(sim_data_files = NA,
                               checkDataSource = checkDataSource)
         )
         
+        # If it wasn't a simulator file, then temp has length 0.
+        if(length(temp) == 0){
+           next
+        }
+        
         # If only one parameter was found, then the 1st item in the list will be
         # a vector named as the parameter rather than a data.frame named
         # "aggregate". Adjusting for that.
