@@ -840,6 +840,16 @@ annotateDetails <- function(existing_exp_details,
       Out <- Out[RowsWithDiffs, ]
    }
    
+   # Check for when there isn't any information beyond what the simulator
+   # version is, which can happen if the user extracts only some information and
+   # then wants information that would not have been extracted. For example,
+   # extractExpDetails pulls only the "Summary" tab by default, so it won't have
+   # a LOT of useful information.
+   if(nrow(Out) == 1){
+      warning("There is only 1 row in your output. When you ran `extractExpDetails` or `extractExpDetails_mult`, did you request all the information you wanted? For example, if you only requested information from the `Summary` tab, that won't include any elimination information.", 
+              call. = FALSE)
+   }
+   
    
    # Saving ---------------------------------------------------------------
    if(complete.cases(save_output)){
