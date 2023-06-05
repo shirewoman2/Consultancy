@@ -692,7 +692,8 @@ call. = FALSE)
    
    # Things will be more consistent and easier to code if Individual is a
    # factor and is not NA. Adjusting that as needed.
-   if(any(is.na(ct_dataframe$Individual))){
+   if("Invididual" %in% names(ct_dataframe) &&
+      any(is.na(ct_dataframe$Individual))){
       ct_dataframe <- ct_dataframe %>%
          mutate(Individual = ifelse(is.na(Individual), 
                                     Trial, Individual))
@@ -736,7 +737,8 @@ call. = FALSE)
    # If the color labels don't match the files available, give a warning.
    if(as_label(colorBy_column) != "<empty>" && 
       any(complete.cases(color_labels)) && 
-      all(names(color_labels) %in% sort(unique(ct_dataframe[, as_label(colorBy_column)]))) == FALSE){
+      all(names(color_labels) %in% sort(t(unique(
+         ct_dataframe[, as_label(colorBy_column)]))) == FALSE)){
       BadLabs <- setdiff(names(color_labels), unique(ct_dataframe[, as_label(colorBy_column)]))
       
       warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
