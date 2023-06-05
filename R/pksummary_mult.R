@@ -527,7 +527,7 @@ pksummary_mult <- function(sim_data_files = NA,
          
          for(k in tissues){
             message(paste("Extracting data for tissue =", k))
-            suppressMessages(
+            suppressWarnings(
                temp <- pksummary_table(
                   sim_data_file = i,
                   compoundToExtract = j,
@@ -568,6 +568,22 @@ pksummary_mult <- function(sim_data_files = NA,
                mutate(File = i, 
                       CompoundID = j, 
                       Tissue = k)
+            
+            # Checking for when they requested AUCinf but there were problems
+            # extrapolating. Giving a warning in that situation.
+            if((is.na(PKparameters) ||
+                (complete.cases(PKparameters) &
+                 any(str_detect(PKparameters, "AUCinf")))) &
+               any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
+               
+               warning(paste0("The ", k, # tissue
+                              " AUCinf included NA values for the ", j, # CompoundID
+                              " in the file `", 
+                              i, 
+                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead."),
+                       call. = FALSE)
+            }
+            
             
             if(checkDataSource){
                OutQC[[i]][[j]][[k]] <- temp$QC

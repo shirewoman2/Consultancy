@@ -830,7 +830,8 @@ pksummary_table <- function(sim_data_file = NA,
    ## Getting PK parameters -------------------------------------------------
    suppressWarnings(
       MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
-                                   PKparameters = PKToPull,
+                                   PKparameters = unique(c(PKToPull,
+                                                           sub("AUCinf", "AUCt", PKToPull))),
                                    tissue = tissue,
                                    compoundToExtract = compoundToExtract,
                                    sheet = sheet_PKparameters, 
@@ -922,14 +923,15 @@ pksummary_table <- function(sim_data_file = NA,
    # change PKToPull to reflect that change.
    if(any(str_detect(PKToPull, "AUCinf_[^P]")) & 
       (("data.frame" %in% class(MyPKResults_all[[1]]) & 
-        any(str_detect(names(MyPKResults_all[[1]]), "AUCinf_[^P]")) == FALSE) |
+        all(PKToPull[str_detect(PKToPull, "AUCinf_[^P]")] %in% 
+            names(MyPKResults_all[[1]])) == FALSE) |
        ("data.frame" %in% class(MyPKResults_all[[1]]) == FALSE &
         !str_detect(names(MyPKResults_all)[1], "AUCinf_[^P]")))){
       warning(paste0("AUCinf included NA values in the file `", 
                      sim_data_file, 
-                     "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. You man want to switch your request to AUCt instead."),
+                     "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead."),
               call. = FALSE)
-      # PKToPull <- sub("AUCinf", "AUCt", PKToPull)
+      PKToPull <- unique(sub("AUCinf", "AUCt", PKToPull))
    }
    
    # If they requested multiple parameters but only some were present, need to
