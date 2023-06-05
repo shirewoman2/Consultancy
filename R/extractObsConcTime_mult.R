@@ -67,14 +67,15 @@ extractObsConcTime_mult <- function(obs_data_files,
    
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx".
-   if(length(obs_data_files) == 1){
-      if(is.na(obs_data_files)){
-         obs_data_files <- list.files(pattern = "xlsx$")
-         obs_data_files <- obs_data_files[!str_detect(obs_data_files, "^~")]
-      } else if(obs_data_files == "recursive"){
-         obs_data_files <- list.files(pattern = "xlsx$", recursive = TRUE)
-         obs_data_files <- obs_data_files[!str_detect(obs_data_files, "^~")]
-      }
+   # If user did not supply files, then extract all the files in the current
+   # folder that end in "xlsx" or in all subfolders if they wanted it to be
+   # recursive.
+   if(length(sim_data_files) == 1 &&
+      (is.na(sim_data_files) | sim_data_files == "recursive")){
+      sim_data_files <- list.files(pattern = "xlsx$",
+                                   recursive = (complete.cases(sim_data_files) &&
+                                                   sim_data_files == "recursive"))
+      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
    }
    
    # If they didn't include ".xlsx" at the end, add that.

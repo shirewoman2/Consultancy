@@ -17,9 +17,11 @@ extractForestData(
 )
 }
 \arguments{
-\item{sim_data_files}{a character vector of simulator output files; leaving
-this as the default NA will extract forest data from all simulator files in
-the current working directory}
+\item{sim_data_files}{a character vector of simulator output files, each in
+quotes and encapsulated with \code{c(...)}, NA to extract forest-plot data
+for \emph{all} the Excel files in the current folder, or "recursive" to
+extract forest-plot data for \emph{all} the Excel files in the current
+folder and \emph{all} subfolders.}
 
 \item{PKparameters}{PK parameters to extract from simulator output files;
 default is all possible AUC and Cmax geometric mean ratios for both dose 1

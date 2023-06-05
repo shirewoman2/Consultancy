@@ -4,7 +4,12 @@
 \alias{extractObsConcTime_mult}
 \title{Extract observed concentration-time data from multiple Excel files}
 \usage{
-extractObsConcTime_mult(obs_data_files, studyID = NA, study_arm = NA)
+extractObsConcTime_mult(
+  obs_data_files,
+  returnDosingInfo = FALSE,
+  studyID = NA,
+  study_arm = NA
+)
 }
 \arguments{
 \item{obs_data_files}{a character vector of the names of the Excel files
@@ -16,6 +21,10 @@ files that are \emph{ready} to be converted to XML files, not files that
 contain only the digitized time and concentration data and not the XML
 files themselves that you would include in a Simulator workspace for
 observed data.}
+
+\item{returnDosingInfo}{TRUE or FALSE (default) for whether to return a
+second data.frame with dosing and demographic information from the Excel
+file.}
 
 \item{studyID}{either a single value for the study ID or a named character
 vector of which observed data files go with which study IDs. An example of

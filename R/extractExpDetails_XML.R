@@ -8,10 +8,11 @@
 #' 
 
 #' @param sim_workspace_files a character vector of simulator output files, each
-#'   in quotes and encapsulated with \code{c(...)}, or NA to extract
-#'   experimental details for \emph{all} the Simulator workspace files in the
-#'   current folder. Example of acceptable input: \code{c("sim1.wksz",
-#'   "sim2.wksz")}.
+#'   in quotes and encapsulated with \code{c(...)}, NA to extract experimental
+#'   details for \emph{all} the Simulator workspace files in the current folder,
+#'   or "recursive" to extract experimental details for \emph{all} the Simulator
+#'   workspace files in the current folder and \emph{all} subfolders. Example 
+#'   of acceptable input: \code{c("sim1.wksz", "sim2.wksz")}.
 #' @param exp_details experimental details you want to extract from the
 #'   simulator workspace files; currently "all" is the only acceptable input and
 #'   anything else will be ignored. These are much more limited than the options
@@ -43,12 +44,12 @@
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 #'   details.xlsx". If you leave off the file extension, it will be saved as a
 #'   csv file.
-#'   
+#'
 #' @return Returns a data.frame of the experimental details
 #' @export
 #'
 #' @examples
-#' 
+#'
 #' # None yet
 #' 
 
@@ -66,10 +67,14 @@ extractExpDetails_XML <- function(sim_workspace_files,
    }
    
    # If user did not supply files, then extract all the files in the current
-   # folder that end in "wksz".
-   if(length(sim_workspace_files) == 1 && is.na(sim_workspace_files)){
-      sim_workspace_files <- list.files(pattern = "wksz$")
-      sim_workspace_files <- sim_workspace_files[!str_detect(sim_workspace_files, "^~")]
+   # folder that end in "wksz" or in all subfolders if they wanted it to be
+   # recursive.
+   if(length(sim_data_files) == 1 &&
+      (is.na(sim_data_files) | sim_data_files == "recursive")){
+      sim_data_files <- list.files(pattern = "wksz$",
+                                   recursive = (complete.cases(sim_data_files) &&
+                                                   sim_data_files == "recursive"))
+      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
    }
    
    # If they didn't include ".wksz" at the end, add that.
