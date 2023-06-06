@@ -17,8 +17,8 @@ extractExpDetails_XML(
 in quotes and encapsulated with \code{c(...)}, NA to extract experimental
 details for \emph{all} the Simulator workspace files in the current folder,
 or "recursive" to extract experimental details for \emph{all} the Simulator
-workspace files in the current folder and \emph{all} subfolders. Example 
-of acceptable input: \code{c("sim1.wksz", "sim2.wksz")}.}
+workspace files in the current folder and \emph{all} subfolders. Example of
+acceptable input: \code{c("sim1.wksz", "sim2.wksz")}.}
 
 \item{compoundsToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"all" (default) for
@@ -46,8 +46,9 @@ correct data.}}
 simulator workspace files; currently "all" is the only acceptable input and
 anything else will be ignored. These are much more limited than the options
 for the function \code{\link{extractExpDetails}} and currently only include
-calculated Peff,human, predicted Vss, the XML overlay file used for
-observed data, and the XML file used for a fixed-trial design.}
+a handful of items such as calculated Peff,human, predicted Vss, the XML
+overlay file used for observed data, and the XML file used for a
+fixed-trial design.}
 
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
