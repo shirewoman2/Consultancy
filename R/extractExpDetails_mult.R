@@ -286,6 +286,10 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       Out <- bind_rows(Out, existing_exp_details)
    }
    
+   if(nrow(Out) == 0){
+      stop("It was not possible to extract any simulation experimental details.")
+   }
+   
    # Sorting to help organize output
    Out <- Out %>% 
       select(File, sort(setdiff(names(Out), "File")))
@@ -312,10 +316,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
              "xlsx" = formatXL_head(as.data.frame(Out), 
                                     FileName, 
                                     sheet = "Simulation experimental details"))
-   }
-   
-   if(nrow(Out) == 0){
-      stop("It was not possible to extract any simulation experimental details.")
    }
    
    return(Out)

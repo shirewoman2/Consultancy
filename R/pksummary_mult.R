@@ -366,9 +366,9 @@ pksummary_mult <- function(sim_data_files = NA,
       
       sim_data_files <- union(sim_data_files, observed_PKDF$File)
       sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
-      
-      
-   } 
+   } else if(class(observed_PK) == "numeric"){
+      observed_PKDF <- as.data.frame(t(observed_PK))
+   }
    
    if("data.frame" %in% class(observed_PK)){
       observed_PKDF <- unique(observed_PK)
@@ -577,9 +577,9 @@ pksummary_mult <- function(sim_data_files = NA,
             
             # Checking for when they requested AUCinf but there were problems
             # extrapolating. Giving a warning in that situation.
-            if((is.na(PKparameters) ||
-                (complete.cases(PKparameters) &
-                 any(str_detect(PKparameters, "AUCinf")))) &
+            if(all(is.na(PKparameters)) ||
+               all(complete.cases(PKparameters)) &
+               any(str_detect(PKparameters, "AUCinf")) &
                any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
                
                warning(paste0("The ", k, # tissue
