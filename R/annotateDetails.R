@@ -94,9 +94,10 @@
 #'   "Simcyp inputs (and QC)" tab of a compound data sheet plus trial design
 #'   information}
 #'
-#'   \item{"Methods"}{all the details that show up in the methods section of a
-#'   report: number of trials, number of individuals simulated, population,
-#'   percent female, age range, dose amount and regimen, etc.}
+#'   \item{"methods" or "trial design"}{all the details that show up in the 
+#'   methods section of a report: number of trials, number of individuals 
+#'   simulated, population, percent female, age range, dose amount and regimen,
+#'    etc.}
 #'
 #'   \item{"all"}{all possible details}
 #'
@@ -506,7 +507,7 @@ annotateDetails <- function(existing_exp_details,
    ## compound -------------------------------------------------------------
    if(complete.cases(compound)){
       
-      if(any(compound %in% tolower(Out$Compound)) == FALSE){
+      if(any(str_detect(tolower(Out$Compound), tolower(compound))) == FALSE){
          warning(paste0("None of the simulations had information on the compound you requested. You requested a compound called `", 
                         compound, 
                         "``, but the compounds present in these simulations are: ", 
@@ -609,7 +610,7 @@ annotateDetails <- function(existing_exp_details,
             "Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite")
       }
       
-      if(any(str_detect(tolower(detail_set), "methods"))){
+      if(any(str_detect(tolower(detail_set), "methods|trial design"))){
          DetailSet <- unique(c(DetailSet,  "Substrate", 
                                "PrimaryMetabolite1", "PrimaryMetabolite2",
                                "SecondaryMetabolite", 
@@ -837,6 +838,16 @@ annotateDetails <- function(existing_exp_details,
       RowsWithDiffs <- lapply(Diffs, FUN = function(x) x[["rows"]])
       RowsWithDiffs <- sort(unique(unlist(RowsWithDiffs)))
       Out <- Out[RowsWithDiffs, ]
+   }
+   
+   # Check for when there isn't any information beyond what the simulator
+   # version is, which can happen if the user extracts only some information and
+   # then wants information that would not have been extracted. For example,
+   # extractExpDetails pulls only the "Summary" tab by default, so it won't have
+   # a LOT of useful information.
+   if(nrow(Out) == 1){
+      warning("There is only 1 row in your output. When you ran `extractExpDetails` or `extractExpDetails_mult`, did you request all the information you wanted? For example, if you only requested information from the `Summary` tab, that won't include any elimination information.", 
+              call. = FALSE)
    }
    
    

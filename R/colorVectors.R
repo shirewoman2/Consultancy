@@ -17,11 +17,20 @@
 #' scales::show_col(rainbow(10))
 #' 
 rainbow <- function(ncolors){
-    colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                     "darkorange", "green3", "seagreen3",
-                                     "cadetblue", "dodgerblue3", "royalblue4",
-                                     "darkorchid4"))
-    return(colRainbow(ncolors))
+   
+   if(ncolors <= 7){
+      colRainbow <- colorRampPalette(c("#B91E02FF", "#F66D19FF", "#B8F735FF",
+                                       "#22C4E3FF", "#434DB9FF"))
+      
+   } else {
+      colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
+                                       "darkorange", "green3", "seagreen3",
+                                       "cadetblue", "dodgerblue3", "royalblue4",
+                                       "darkorchid4"))
+      
+   }
+   
+   return(colRainbow(ncolors))
 }
 
 
@@ -44,10 +53,10 @@ rainbow <- function(ncolors){
 #' scales::show_col(blueGreens(10))
 #' 
 blueGreens <- function(ncolors){
-    
-    colblueGreens <- colorRampPalette(c("royalblue4", "dodgerblue3",
+   
+   colblueGreens <- colorRampPalette(c("royalblue4", "dodgerblue3",
                                        "cadetblue", "seagreen3", "green3"))
-    return(colblueGreens(ncolors))
+   return(colblueGreens(ncolors))
 }
 
 
@@ -70,11 +79,11 @@ blueGreens <- function(ncolors){
 #' scales::show_col(blues(10))
 #' 
 blues <- function(ncolors){
-    
-    colBlues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
-                                   "#08519C", "#08306B"))
-    
-    return(colBlues(ncolors))
-    
+   
+   colBlues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
+                                  "#08519C", "#08306B"))
+   
+   return(colBlues(ncolors))
+   
 }
 

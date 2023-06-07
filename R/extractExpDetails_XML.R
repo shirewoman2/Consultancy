@@ -8,16 +8,18 @@
 #' 
 
 #' @param sim_workspace_files a character vector of simulator output files, each
-#'   in quotes and encapsulated with \code{c(...)}, or NA to extract
-#'   experimental details for \emph{all} the Simulator workspace files in the
-#'   current folder. Example of acceptable input: \code{c("sim1.wksz",
-#'   "sim2.wksz")}.
+#'   in quotes and encapsulated with \code{c(...)}, NA to extract experimental
+#'   details for \emph{all} the Simulator workspace files in the current folder,
+#'   or "recursive" to extract experimental details for \emph{all} the Simulator
+#'   workspace files in the current folder and \emph{all} subfolders. Example of
+#'   acceptable input: \code{c("sim1.wksz", "sim2.wksz")}.
 #' @param exp_details experimental details you want to extract from the
 #'   simulator workspace files; currently "all" is the only acceptable input and
 #'   anything else will be ignored. These are much more limited than the options
 #'   for the function \code{\link{extractExpDetails}} and currently only include
-#'   calculated Peff,human, predicted Vss, the XML overlay file used for
-#'   observed data, and the XML file used for a fixed-trial design.
+#'   a handful of items such as calculated Peff,human, predicted Vss, the XML
+#'   overlay file used for observed data, and the XML file used for a
+#'   fixed-trial design.
 #' @param compoundsToExtract For which compound do you want to extract
 #'   concentration-time data? Options are: \itemize{\item{"all" (default) for
 #'   all the possible compounds in the simulation (substrate, metabolites,
@@ -43,12 +45,12 @@
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 #'   details.xlsx". If you leave off the file extension, it will be saved as a
 #'   csv file.
-#'   
+#'
 #' @return Returns a data.frame of the experimental details
 #' @export
 #'
 #' @examples
-#' 
+#'
 #' # None yet
 #' 
 
@@ -66,9 +68,13 @@ extractExpDetails_XML <- function(sim_workspace_files,
    }
    
    # If user did not supply files, then extract all the files in the current
-   # folder that end in "wksz".
-   if(length(sim_workspace_files) == 1 && is.na(sim_workspace_files)){
-      sim_workspace_files <- list.files(pattern = "wksz$")
+   # folder that end in "wksz" or in all subfolders if they wanted it to be
+   # recursive.
+   if(length(sim_workspace_files) == 1 &&
+      (is.na(sim_workspace_files) | sim_workspace_files == "recursive")){
+      sim_workspace_files <- list.files(pattern = "wksz$",
+                                        recursive = (complete.cases(sim_workspace_files) &&
+                                                        sim_workspace_files == "recursive"))
       sim_workspace_files <- sim_workspace_files[!str_detect(sim_workspace_files, "^~")]
    }
    
@@ -93,8 +99,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
    
    MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
                         "secondary metabolite",
-                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
-                        "inhibitor 2 metabolite")
+                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite")
    
    PossCmpd <- c(MainCompoundIDs, "all")
    
@@ -109,13 +114,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
    
    if(any(compoundsToExtract == "all")){
       compoundsToExtract <- MainCompoundIDs
-      
-      # HACK: For now, since I'm not sure which details are available for
-      # which compound IDs, only setting this function up to work for
-      # substrate, inhibitor 1, and inhibitor 2.
-      compoundsToExtract <- c("substrate", "inhibitor 1", "inhibitor 2")
    }
-   
    
    # Main body of function ---------------------------------------------------
    
@@ -125,7 +124,10 @@ extractExpDetails_XML <- function(sim_workspace_files,
    }
    
    CompoundDetails <- AllExpDetails %>% 
-      filter(Sheet == "workspace XML file" & Level1 == "Compounds") %>% 
+      filter(Sheet == "workspace XML file" & Level1 == "Compounds" & 
+                !Detail %in% c("Substrate", "Inhibitor1", "Inhibitor2", 
+                               "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                               "SecondaryMetabolite", "Inhibitor1Metabolite")) %>% 
       pull(Detail)
    
    Deets <- list()
@@ -139,6 +141,8 @@ extractExpDetails_XML <- function(sim_workspace_files,
       
       if(any(exp_details %in% CompoundDetails)){
          
+         # Extracting anything under "Compounds" on level 1 here.
+         
          for(j in compoundsToExtract){
             
             CompoundNum <- switch(j, 
@@ -150,6 +154,11 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                   "inhibitor 2" = 3, 
                                   "inhibitor 1 metabolite" = 6)
             
+            # Check whether that compound was activated and skip if not. 
+            if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
+               paste0("idInhEnabled", CompoundNum)]])) == FALSE){
+               next
+            }
             
             for(k in CompoundDetails){
                
@@ -174,6 +183,15 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                    "numeric" = as.numeric(DeetValue), 
                                    "character" = as.character(DeetValue))
                
+               # Decoding as necessary. Add to the options for k as needed.
+               if(k %in% c("DistributionModel_X")){
+                  DeetValue <- switch(k, 
+                                      "DistributionModel_X" = 
+                                         switch(DeetValue, 
+                                                "1" = "Full PBPK Model", 
+                                                "0" = "Minimal PBPK Model"))
+               }
+               
                Deets[[i]][[gsub("_X$", switch(j, 
                                               "substrate" = "_sub", 
                                               "primary metabolite 1" = "_met1",
@@ -191,6 +209,9 @@ extractExpDetails_XML <- function(sim_workspace_files,
       }
       
       if(length(setdiff(exp_details, CompoundDetails)) >= 1){
+         
+         # Extracting anything that was NOT under "Compounds" on level 1 here.
+         
          for(m in setdiff(exp_details, CompoundDetails)){
             
             DeetInfo <- AllExpDetails %>% 
@@ -220,9 +241,34 @@ extractExpDetails_XML <- function(sim_workspace_files,
          }
       }
       
-      rm(workspace_xml, RootNode)
+      # Adding compound names separately. 
+      for(j in c("Substrate", "Inhibitor1", "Inhibitor2", 
+                 "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                 "SecondaryMetabolite", "Inhibitor1Metabolite")){
+         
+         CompoundNum <- switch(j, 
+                               "Substrate" = 1, 
+                               "PrimaryMetabolite1" = 5,
+                               "PrimaryMetabolite2" = 8,
+                               "SecondaryMetabolite" = 7,
+                               "Inhibitor1" = 2,
+                               "Inhibitor2" = 3, 
+                               "Inhibitor1Metabolite" = 6)
+         
+         # Check whether that compound was activated and skip if not. 
+         if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
+            paste0("idInhEnabled", CompoundNum)]])) == FALSE){
+            next
+         }
+         
+         Deets[[i]][[j]] <- 
+            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["idName"]])
+      }
       
       Deets[[i]] <- as.data.frame(Deets[[i]]) %>% mutate(Workspace = i)
+      
+      rm(workspace_xml, RootNode)
+      
    }
    
    Deets <- bind_rows(Deets)

@@ -734,6 +734,15 @@ call. = FALSE)
       warning("You have specified something for `linetype_labels` but nothing for `linetype_column`. Since R doesn't know which column contains the data to use for your linetype labels, they will be ignored.")
    }
    
+   # If there are any replicate names for color_labels, give a warning.
+   if(any(duplicated(names(color_labels)))){
+      warning(paste0("You have listed this file more than once for the argument `color_labels`:
+", names(color_labels[duplicated(names(color_labels))]), "
+and we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input."), 
+call. = FALSE)
+      color_labels <- NA
+   }
+   
    # If the color labels don't match the files available, give a warning.
    if(as_label(colorBy_column) != "<empty>" && 
       any(complete.cases(color_labels)) && 

@@ -16,18 +16,19 @@ extractExpDetails_mult(
 }
 \arguments{
 \item{sim_data_files}{a character vector of simulator output files, each in
-quotes and encapsulated with \code{c(...)}, or NA to extract experimental
-details for \emph{all} the Excel files in the current folder. Example of
-acceptable input: \code{sim_data_files = c("sim1.xlsx", "sim2.xlsx")}. If
-some of your Excel files are not regular simulator output, e.g. they are
-sensitivity analyses or a file where you were doing some calculations,
-those files will be skipped. \strong{A note:} There are just a few items
-that we will attempt to extract from the matching workspace file; for that
-information, we will look for a workspace file that is named
-\emph{identically} to the Excel file except for the file extension. This
-means that, if you have run the simulations using the autorunner, you'll
-need to remove the date and time tag from the Excel file name in order for
-things to match.}
+quotes and encapsulated with \code{c(...)}, NA to extract experimental
+details for \emph{all} the Excel files in the current folder, or
+"recursive" to extract experimental details for \emph{all} the Excel files
+in the current folder and \emph{all} subfolders. Example of acceptable
+input: \code{sim_data_files = c("sim1.xlsx", "sim2.xlsx")}. If some of your
+Excel files are not regular simulator output, e.g. they are sensitivity
+analyses or a file where you were doing some calculations, those files will
+be skipped. \strong{A note:} There are just a few items that we will
+attempt to extract from the matching workspace file; for that information,
+we will look for a workspace file that is named \emph{identically} to the
+Excel file except for the file extension. This means that, if you have run
+the simulations using the autorunner, you'll need to remove the date and
+time tag from the Excel file name in order for things to match.}
 
 \item{exp_details}{experimental details you want to extract from the
   simulator output files using the function \code{\link{extractExpDetails}}.

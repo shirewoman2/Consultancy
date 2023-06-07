@@ -63,9 +63,11 @@
 #' on the SharePoint drive in the "Research" folder for you project. Change
 #' "abc-1a" and the file name to whatever you need for your project.)
 #'
-#' @param sim_data_files a character vector of simulator output files, e.g.,
-#'   \code{sim_data_files = c("My file 1.xlsx", "My file 2.xlsx")} or, if you
-#'   want all the Excel files in the current folder, \code{sim_data_files = NA}.
+#' @param sim_data_files a character vector of simulator output files, each in
+#'   quotes and encapsulated with \code{c(...)}, NA to extract PK data for
+#'   \emph{all} the Excel files in the current folder, or "recursive" to extract
+#'   PK data for \emph{all} the Excel files in the current folder and \emph{all}
+#'   subfolders.
 #' @param compoundsToExtract For which compound(s) do you want to extract PK
 #'   data? Options are any combination of the following:
 #'   \itemize{\item{"substrate" (default),} \item{"primary metabolite 1",}
@@ -200,7 +202,7 @@
 #'   simulator output file. Useful for QCing.
 #' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
 #'   yellow the cells on the source Excel file where the data came from. This
-#'   \emph{only} applies when \code{checkDataSource = TRUE}. 
+#'   \emph{only} applies when \code{checkDataSource = TRUE}.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -335,10 +337,14 @@ pksummary_mult <- function(sim_data_files = NA,
    
    # Main body of function --------------------------------------------------
    
-   # If user did not supply specific files, then extract all the files in
-   # the current folder that end in "xlsx".
-   if(length(unique(sim_data_files)) == 1 && is.na(sim_data_files)){
-      sim_data_files <- list.files(pattern = "xlsx$")
+   # If user did not supply files, then extract all the files in the current
+   # folder that end in "xlsx" or in all subfolders if they wanted it to be
+   # recursive.
+   if(length(sim_data_files) == 1 &&
+      (is.na(sim_data_files) | sim_data_files == "recursive")){
+      sim_data_files <- list.files(pattern = "xlsx$",
+                                   recursive = (complete.cases(sim_data_files) &&
+                                                   sim_data_files == "recursive"))
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
    }
    
@@ -360,9 +366,9 @@ pksummary_mult <- function(sim_data_files = NA,
       
       sim_data_files <- union(sim_data_files, observed_PKDF$File)
       sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
-      
-      
-   } 
+   } else if(class(observed_PK) == "numeric"){
+      observed_PKDF <- as.data.frame(t(observed_PK))
+   }
    
    if("data.frame" %in% class(observed_PK)){
       observed_PKDF <- unique(observed_PK)
@@ -527,7 +533,7 @@ pksummary_mult <- function(sim_data_files = NA,
          
          for(k in tissues){
             message(paste("Extracting data for tissue =", k))
-            suppressMessages(
+            suppressWarnings(
                temp <- pksummary_table(
                   sim_data_file = i,
                   compoundToExtract = j,
@@ -568,6 +574,22 @@ pksummary_mult <- function(sim_data_files = NA,
                mutate(File = i, 
                       CompoundID = j, 
                       Tissue = k)
+            
+            # Checking for when they requested AUCinf but there were problems
+            # extrapolating. Giving a warning in that situation.
+            if(all(is.na(PKparameters)) ||
+               all(complete.cases(PKparameters)) &
+               any(str_detect(PKparameters, "AUCinf")) &
+               any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
+               
+               warning(paste0("The ", k, # tissue
+                              " AUCinf included NA values for the ", j, # CompoundID
+                              " in the file `", 
+                              i, 
+                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead."),
+                       call. = FALSE)
+            }
+            
             
             if(checkDataSource){
                OutQC[[i]][[j]][[k]] <- temp$QC

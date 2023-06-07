@@ -81,9 +81,10 @@ one, enclose them with \code{c(...)}.}
   "Simcyp inputs (and QC)" tab of a compound data sheet plus trial design
   information}
 
-  \item{"Methods"}{all the details that show up in the methods section of a
-  report: number of trials, number of individuals simulated, population,
-  percent female, age range, dose amount and regimen, etc.}
+  \item{"methods" or "trial design"}{all the details that show up in the 
+  methods section of a report: number of trials, number of individuals 
+  simulated, population, percent female, age range, dose amount and regimen,
+   etc.}
 
   \item{"all"}{all possible details}
 

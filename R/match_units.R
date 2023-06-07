@@ -114,9 +114,9 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
         suppressMessages(
             ConvTable_conc <- data.frame(
                 
-                ToAdjustUnits = rep(c("µM", "nM"), 6), 
+                OrigUnits = rep(c("µM", "nM"), 6), 
                 
-                GoodUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                RevUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
                                 each = 2)) %>% 
                 mutate(
                     FactorNoMW = c(
@@ -132,7 +132,7 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
                     left_join(data.frame(MW = MW, 
                                          CompoundID = names(MW)),
                               expand_grid(CompoundID = names(MW), 
-                                          ToAdjustUnits = c("µM", "nM")))) %>% 
+                                          OrigUnits = c("µM", "nM")))) %>% 
                 mutate(Factor = MW * FactorNoMW)
         )
         
@@ -141,10 +141,10 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
         
         suppressMessages(
             ConvTable_conc <- data.frame(
-                ToAdjustUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                OrigUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
                                     each = 2),
                 
-                GoodUnits = rep(c("µM", "nM"), 6)) %>% 
+                RevUnits = rep(c("µM", "nM"), 6)) %>% 
                 mutate(
                     FactorNoMW = c(
                         # uM then nM
@@ -159,24 +159,24 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
                     left_join(data.frame(MW = MW, 
                                          CompoundID = names(MW)),
                               expand_grid(CompoundID = names(MW), 
-                                          GoodUnits = c("µM", "nM")))) %>% 
+                                          RevUnits = c("µM", "nM")))) %>% 
                 mutate(Factor = FactorNoMW / MW)
         )
         
     } else {
         
         ConvTable_conc <- data.frame(
-            ToAdjustUnits = c(
+            OrigUnits = c(
                 rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
                       "ng/mL"), 6),
                 
                 rep(c("µM", "nM"), 2),
                 
-                rep(c("mg", "µg"), 2),
+                rep(c("mg", "µg", "ng"), 3),
                 
                 "mL", "PD response"),
             
-            GoodUnits = c(
+            RevUnits = c(
                 rep("mg/L", 6),
                 rep("mg/mL", 6),
                 rep("µg/L", 6),
@@ -187,8 +187,7 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
                 rep("µM", 2),
                 rep("nM", 2),
                 
-                rep("mg", 2),
-                rep("µg", 2),
+                rep(c("mg", "µg", "ng"), each = 3),
                 
                 "mL", "PD response"),
             
@@ -202,24 +201,25 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
                        1,    10^-3, # uM
                        10^3, 1,     # nM
                        
-                       1, 10^-3, # mg
-                       1^3, 1,   # ug
+                       1,    10^-3, 10^-6, # mg
+                       1^3,  1,     10^-3, # ug
+                       10^6, 10^3,  1, # ng
                        
                        1, # mL
                        1 # PD response
             ) )
     }
     
-    if(unique(goodunits$Conc_units) %in% ConvTable_conc$GoodUnits == FALSE |
-       unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$ToAdjustUnits == FALSE){
+    if(unique(goodunits$Conc_units) %in% ConvTable_conc$RevUnits == FALSE |
+       unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$OrigUnits == FALSE){
         stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
              call. = FALSE)
     }
     
     ConvFactor_conc <-
         ConvTable_conc$Factor[
-            which(ConvTable_conc$ToAdjustUnits == unique(DF_to_adjust$Conc_units) &
-                      ConvTable_conc$GoodUnits == unique(goodunits$Conc_units))]
+            which(ConvTable_conc$OrigUnits == unique(DF_to_adjust$Conc_units) &
+                      ConvTable_conc$RevUnits == unique(goodunits$Conc_units))]
     
     if(length(ConvFactor_conc) < 1){
         stop(paste0("You supplied concentration units of ",
@@ -236,20 +236,20 @@ match_units <- function(DF_to_adjust, goodunits, MW = NA){
     # Matching time units -------------------------------------------------
     
     ConvTable_time <- data.frame(
-        ToAdjustUnits = rep(c("hours", "minutes", "days"), 3),
-        GoodUnits = rep(c("hours", "minutes", "days"), each = 3),
+        OrigUnits = rep(c("hours", "minutes", "days"), 3),
+        RevUnits = rep(c("hours", "minutes", "days"), each = 3),
         Factor = c(1, 1/60, 24, 60, 1, 24*60, 1/24, 1/(24*60), 1))
     
-    if(unique(goodunits$Time_units) %in% ConvTable_time$ToAdjustUnits == FALSE |
-       unique(DF_to_adjust$Time_units) %in% ConvTable_time$GoodUnits == FALSE){
+    if(unique(goodunits$Time_units) %in% ConvTable_time$OrigUnits == FALSE |
+       unique(DF_to_adjust$Time_units) %in% ConvTable_time$RevUnits == FALSE){
         stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
              call. = FALSE)
     }
     
     ConvFactor_time <-
         ConvTable_time$Factor[
-            which(ConvTable_time$ToAdjustUnits == unique(DF_to_adjust$Time_units) &
-                      ConvTable_time$GoodUnits == unique(goodunits$Time_units))]
+            which(ConvTable_time$OrigUnits == unique(DF_to_adjust$Time_units) &
+                      ConvTable_time$RevUnits == unique(goodunits$Time_units))]
     
     DF_to_adjust <- DF_to_adjust %>% mutate(Time = Time*ConvFactor_time,
                                             Time_units = unique(goodunits$Time_units))

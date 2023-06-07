@@ -1096,21 +1096,25 @@ forest_plot <- function(forest_dataframe,
       
    }
    
-   XBreaks <- c(0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 1.25, 2, 5, 10, 
+   XBreaks <- c(0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 
+                1.25, 2, 5, 10, 
                 50, 100, 500, 1000)
-   XBreaks_char <- c("0.001", "0.01", "0.05", "0.1", "0.2", "0.5", "0.8", "1.25", "2", "5", "10", 
+   names(XBreaks) <- c("0.001", "0.01", "0.05", "0.1", "0.2", "0.5", "0.8", 
+                       "1.25", "2", "5", "10", 
                      "50", "100", "500", "1000")
-   XBreaks_char <- XBreaks_char[XBreaks >= x_axis_limits[1] & 
-                                   XBreaks <= x_axis_limits[2]]
    XBreaks <- XBreaks[XBreaks >= x_axis_limits[1] & 
                          XBreaks <= x_axis_limits[2]]
    
    if(x_axis_limits[1] %in% XBreaks == FALSE){
       XBreaks <- c(XBreaks, x_axis_limits[1])
+      names(XBreaks)[length(XBreaks)] <- as.character(x_axis_limits[1])
+      XBreaks <- sort(XBreaks)
    }
    
    if(x_axis_limits[2] %in% XBreaks == FALSE){
       XBreaks <- c(XBreaks, x_axis_limits[2])
+      names(XBreaks)[length(XBreaks)] <- as.character(x_axis_limits[2])
+      XBreaks <- sort(XBreaks)
    }
    
    # Tweaking y axis positions based on whether obs data included
@@ -1247,7 +1251,7 @@ forest_plot <- function(forest_dataframe,
                scale_x_continuous(trans = scales::pseudo_log_trans(sigma = 0.01, base = 10),
                                   breaks =  XBreaks, 
                                   labels = switch(x_axis_number_type, 
-                                                  "ratios" = XBreaks_char,
+                                                  "ratios" = names(XBreaks),
                                                   "keep trailing zeroes" = scales::label_comma(), 
                                                   "percents" = scales::percent)) + 
                coord_cartesian(xlim = x_axis_limits) +
@@ -1385,7 +1389,7 @@ forest_plot <- function(forest_dataframe,
          scale_x_continuous(trans = scales::pseudo_log_trans(sigma = 0.01, base = 10),
                             breaks =  XBreaks, 
                             labels = switch(x_axis_number_type, 
-                                            "ratios" = XBreaks_char,
+                                            "ratios" = names(XBreaks),
                                             "keep trailing zeroes" = scales::label_comma(),  
                                             "percents" = scales::label_percent())) + 
          coord_cartesian(xlim = x_axis_limits) +

@@ -4,17 +4,23 @@
 \alias{extractObsConcTime}
 \title{Extract observed concentration-time data from an Excel file}
 \usage{
-extractObsConcTime(obs_data_file)
+extractObsConcTime(obs_data_file, returnDosingInfo = FALSE)
 }
 \arguments{
 \item{obs_data_file}{name of the Excel file containing the observed
-concentration-time data, in quotes. This is the file that it is ready to be
-converted to an XML file, not the file that contains only the digitized
+concentration-time data, in quotes. This is the file that is \emph{ready}
+to be converted to an XML file, not a file that contains only digitized
 time and concentration data and not the XML file itself that you would
 include in a Simulator workspace for observed data.}
+
+\item{returnDosingInfo}{TRUE or FALSE (default) for whether to return a
+second data.frame with dosing and demographic information from the Excel
+file.}
 }
 \value{
-a data.frame with the following columns:
+a data.frame or a list of two data.frames. The observed
+  concentration-time data.frame, which is named "ObsCT" if the output is a
+  list, has the following columns:
   \describe{\item{Individual}{the individual ID}
 
   \item{CompoundID}{the compound ID listed in the observed file, e.g., "Sub
@@ -32,18 +38,14 @@ a data.frame with the following columns:
 
   \item{Period, Age, Weight_kg, Height_cm, Sex, SerumCreatinine_umolL,
   HSA_gL, Haematocrit, PhenotypeCYP2D6, SmokingStatus}{the columns in the
-  template for "Period" and "Covariates" but with R-friendly names.
-  (Currently, no dosing information is pulled because the data format is
-  different from what we need for other functions related to
-  concentration-time data.)}}
+  template for "Period" and "Covariates" but with R-friendly names.}}
+  If the user requested dosing information, the second item in the list will
+  be a data.frame titled "ObsDosing" and will include both dosing and
+  demographic information from the Excel file.
 }
 \description{
 Extract observed data from an Excel file that follows the Simcyp Simulator
 template for converting concentration-time data into an XML file.
-}
-\details{
-\strong{Note:} This does not pull dosing information at this time, but we
-could change that if there's interest.
 }
 \examples{
 extractObsConcTime(obs_data_file = "My observed data.xlsx")

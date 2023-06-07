@@ -22,13 +22,15 @@ extractConcTime_mult(
 }
 \arguments{
 \item{sim_data_files}{a character vector of simulator output files, each in
-quotes and encapsulated with \code{c(...)}, or, if left as NA, \emph{all}
-the Excel files in the current directory. Example of acceptable input:
-\code{c("sim1.xlsx", "sim2.xlsx")}. The path should be included with the
-file names if they are located somewhere other than your working directory.
-If some of your Excel files are not regular simulator output, e.g. they are
-sensitivity analyses or a file where you were doing some calculations,
-those files will be skipped.}
+quotes and encapsulated with \code{c(...)}, NA to extract
+concentration-time data for \emph{all} the Excel files in the current
+folder, or "recursive" to extract concentration-time data for \emph{all}
+the Excel files in the current folder and \emph{all} subfolders. Example of
+acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be
+included with the file names if they are located somewhere other than your
+working directory. If some of your Excel files are not regular simulator
+output, e.g. they are sensitivity analyses or a file where you were doing
+some calculations, those files will be skipped.}
 
 \item{obs_to_sim_assignment}{the assignment of which observed files go with
   which simulated files. There are three ways to supply this:

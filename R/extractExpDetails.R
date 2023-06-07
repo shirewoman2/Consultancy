@@ -1209,7 +1209,17 @@ extractExpDetails <- function(sim_data_file,
          TEMP <- extractExpDetails_XML(
             sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
             compoundsToExtract = "all",
-            exp_details = "all") %>% as.list()
+            exp_details = "all") %>% 
+            # This currently removes anything that we already have from the
+            # Excel file. May change that later to verify that Excel and
+            # workspace match.
+            select(!any_of(c("Substrate", "Inhibitor1", "Inhibitor2", 
+                             "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                             "SecondaryMetabolite", "Inhibitor1Metabolite", 
+                             paste0("DistributionModel",
+                                    c("inhib1met", 
+                                      "_met1", "_met2", "_secmet"))))) %>% 
+            as.list()
          
          Out <- c(Out, TEMP[names(TEMP)[names(TEMP) != "Workspace"]])
          
