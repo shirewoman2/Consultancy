@@ -310,7 +310,7 @@ ct_plot_mult <- function(ct_dataframe,
          
          Deets <- Deets %>% filter(File %in% unique(ct_dataframe$File))
          
-         if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
+         if(nrow(Deets) == 0 | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
             Deets <- tryCatch(
                extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
                                       exp_details = "all", 

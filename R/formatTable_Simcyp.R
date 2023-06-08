@@ -117,234 +117,238 @@ formatTable_Simcyp <- function(DF,
                                highlight_cells = NA, 
                                highlight_color = "yellow",
                                save_table = NA){
-    
-    # Error catching ---------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
-             call. = FALSE)
-    }
-    
-    if("data.frame" %in% class(DF) == FALSE){
-        stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames, and it looks like you have supplied some other type of data.", 
-             call. = FALSE)
-    }
-    
-    if(nrow(DF) == 0){
-        stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
-             call. = FALSE)
-    }
-    
-    if(any(complete.cases(highlight_cells))){
-        if(class(highlight_cells) == "numeric"){
-            highlight_cells <- list(highlight_cells[1:2])
-        }
-        
-        if(any(sapply(highlight_cells, length) < 2)){
-            warning("For highlighting cells, you must specify a row and a column for everything you want to be highlighted, and you have only specified one number for at least one of the items you asked to be highlighted. We don't know which rows or columns to highlight without that second number, so nothing will be highlighted.", 
-                    call. = FALSE)
-            highlight_cells <- NA
-        }
-    }
-    
-    if(any(complete.cases(bold_cells))){
-        if(class(bold_cells) == "numeric"){
-            bold_cells <- list(bold_cells[1:2])
-        }
-        
-        if(any(sapply(bold_cells, length) < 2)){
-            warning("For making cells bold, you must specify a row and a column for everything you want to have bold-face text, and you have only specified one number for at least one of the items you asked to be bold face. We don't know which rows or columns to make bold face without that second number, so we'll use the default settings and make the 1st column and the header row bold.", 
-                    call. = FALSE)
-            bold_cells <- list(c(0, NA), c(NA, 1))
-        }
-    }
-    
-    # Setting things up for nonstandard evaluation ----------------------------
-    shading_column <- rlang::enquo(shading_column)
-    
-    
-    # Main body of function -------------------------------------------------
-    FT <- flextable::flextable(DF)
-    
-    # Optionally making things bold face
-    if(any(sapply(bold_cells, complete.cases))){
-        for(i in 1:length(bold_cells)){
-            
-            FT <- FT %>% 
-                flextable::bold(i = switch(paste(is.na(bold_cells[[i]][1]), 
-                                                 bold_cells[[i]][1] == 0), 
-                                           "TRUE NA" = NULL, 
-                                           "FALSE TRUE" = 1, # this is when the row should be the only row in the header
-                                           "FALSE FALSE" = bold_cells[[i]][1]), 
-                                j = switch(as.character(is.na(bold_cells[[i]][2])), 
-                                           "TRUE" = NULL, 
-                                           "FALSE" = bold_cells[[i]][2]), 
-                                part = ifelse(complete.cases(bold_cells[[i]][1]) & 
-                                                  bold_cells[[i]][1] == 0, 
-                                              "header", "body"))   
-        }
-    }
-    
-    FT <- FT %>% 
-        
-        # center the header row
-        flextable::align(align = "center", part = "header")
-    
-    # center the columns that contain numbers, i.e., the 2nd column through the
-    # penultimate column and optionally center the 1st column
-    if(center_1st_column == FALSE & ncol(DF) == 1){
-        FT <- FT %>% flextable::align(align = "left")
-    } else {
-        FT <- FT %>% 
-            flextable::align(align = "center", 
-                             j = switch(paste(center_1st_column, ncol(DF) > 1),
-                                        "TRUE TRUE" = 1:ncol(DF),
-                                        "TRUE FALSE" = 1:ncol(DF), 
-                                        "FALSE TRUE" = 2:ncol(DF)))
-    }
-    
-    FT <- FT %>% 
-        
-        # Set the font size
-        flextable::fontsize(part = "all", size = fontsize) %>% 
-        
-        # setting up which borderlines to show
-        flextable::border_remove() %>% 
-        flextable::border_inner_v(part = "all", 
-                                  border = officer::fp_border(width = 0.5)) %>% 
-        flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
-        
-        # making the width autofitted to contents
-        flextable::set_table_properties(width = 1, layout = "autofit")
-    
-    # Optionally including shading whenever the shading column changes
-    if(as_label(shading_column) != "<empty>"){
-        
-        ShadeCol <- DF %>% pull(!!shading_column)
-        
-        ShadeChange <- which(ShadeCol[1:(length(ShadeCol) - 1)] != 
-                                 ShadeCol[2:nrow(DF)]) + 1
-        if(length(ShadeChange) == 0){
-            DF$Shade <- FALSE
-        } else {
-            ShadeRows <- ShadeChange[seq(1, length(ShadeChange), by = 2)]
-            if(length(ShadeChange) > 1){
-                NoShadeRows <- ShadeChange[seq(2, length(ShadeChange), by = 2)]
-            } else {
-                NoShadeRows <- 1
-            }
-            DF$Shade <- as.logical(NA)
-            DF$Shade[ShadeRows] <- TRUE
-            DF$Shade[NoShadeRows] <- FALSE
-            DF <- DF %>% fill(Shade, .direction = "down") %>% 
-                mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
-        }
-        
-        ShadeRows <- which(DF$Shade)
-        FT <- FT %>% 
-            flextable::bg(i = ShadeRows, bg = "#F2F2F2")
-        
-        if(merge_shaded_cells){
-            FT <- FT %>% 
-                flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
-        }
-    }
-    
-    # Optionally highlight specific cells
-    if(any(sapply(highlight_cells, complete.cases))){
-        for(i in 1:length(highlight_cells)){
-            
-            FT <- FT %>% 
-                flextable::bg(i = switch(paste(is.na(highlight_cells[[i]][1]), 
-                                               highlight_cells[[i]][1] == 0), 
-                                         "TRUE NA" = NULL, 
-                                         "FALSE TRUE" = 1, # this is when the row should be the only row in the header
-                                         "FALSE FALSE" = highlight_cells[[i]][1]), 
-                              j = switch(as.character(is.na(highlight_cells[[i]][2])), 
-                                         "TRUE" = NULL, 
-                                         "FALSE" = highlight_cells[[i]][2]), 
-                              bg = highlight_color, 
-                              part = ifelse(complete.cases(highlight_cells[[i]][1]) & 
-                                                highlight_cells[[i]][1] == 0, 
-                                            "header", "body"))   
-        }
-    }
-    
-    # Dealing with subscripts
-    ColNames <- names(DF)
-    ColNames <- sub("AUCt ", "AUC~t~ ", ColNames)
-    ColNames <- sub("AUCinf ", "AUC~inf~ ", ColNames)
-    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
-    ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
-    ColNames <- sub("Cmax", "C~max~", ColNames)
-    ColNames <- sub("Cmin", "C~min~", ColNames)
-    ColNames <- sub("tmax", "t~max~", ColNames)
-    ColNames <- sub("tlag", "t~lag~", ColNames)
-    ColNames <- sub(" ka ", " k~a~ ", ColNames)
-    ColNames <- sub("^ka ", "k~a~ ", ColNames)
-    ColNames <- sub(" fa ", " f~a~ ", ColNames)
-    ColNames <- sub("^fa ", "f~a~ ", ColNames)
-    ColNames <- sub(" fh ", " f~h~ ", ColNames)
-    ColNames <- sub("^fh ", "f~h~ ", ColNames)
-    ColNames <- sub(" fg ", " f~g~ ", ColNames)
-    ColNames <- sub("^fg ", "f~g~ ", ColNames)
-    ColNames <- sub("Indmax", "Ind~max~", ColNames)
-    ColNames <- sub("Emax", "E~max~", ColNames)
-    ColNames <- sub("IndC50", "IndC~50~", ColNames)
-    ColNames <- sub("EC50", "EC~50~", ColNames)
-    
-    ColNames <- str_split(ColNames, pattern = "~", simplify = T)
-    
-    if(ncol(ColNames) == 3){
-        for(i in which(ColNames[,2] != "")){
-            FT <- FT %>% 
-                flextable::compose(part = "header",
-                                   j = i,
-                                   value = flextable::as_paragraph(
-                                       ColNames[i, 1],
-                                       flextable::as_sub(ColNames[i, 2]), 
-                                       ColNames[i, 3]))
-        }
-    }
-    
-    # Saving --------------------------------------------------------------
-    if(complete.cases(save_table)){
-        
-        # Format the file name appropriately, including making the extension be
-        # docx, even if they specified something else.
-        save_table <- ifelse(str_detect(save_table, "\\..*$"), 
-                             sub("\\..*", ".docx", save_table), 
-                             paste0(save_table, ".docx"))
-        
-        # Now that the file should have an appropriate extension, check what
-        # the path and basename should be.
-        OutPath <- dirname(save_table)
-        save_table <- basename(save_table)
-        
-        # May need to change the working directory temporarily, so
-        # determining what it is now
-        CurrDir <- getwd()
-        
-        OutPath <- dirname(save_table)
-        if(OutPath == "."){
-            OutPath <- getwd()
-        }
-        
-        FileName <- basename(save_table)
-        
-        rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
-                                      package="SimcypConsultancy"), 
-                          output_dir = OutPath, 
-                          output_file = FileName, 
-                          quiet = TRUE)
-        # Note: The "system.file" part of the call means "go to where the
-        # package is installed, search for the file listed, and return its
-        # full path.
-        
-    }
-    
-    return(FT)
-    
+   
+   # Error catching ---------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+           call. = FALSE)
+   }
+   
+   if("data.frame" %in% class(DF) == FALSE){
+      stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames, and it looks like you have supplied some other type of data.", 
+           call. = FALSE)
+   }
+   
+   if(nrow(DF) == 0){
+      stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
+           call. = FALSE)
+   }
+   
+   if(any(complete.cases(highlight_cells))){
+      if(class(highlight_cells) == "numeric"){
+         highlight_cells <- list(highlight_cells[1:2])
+      }
+      
+      if(any(sapply(highlight_cells, length) < 2)){
+         warning("For highlighting cells, you must specify a row and a column for everything you want to be highlighted, and you have only specified one number for at least one of the items you asked to be highlighted. We don't know which rows or columns to highlight without that second number, so nothing will be highlighted.", 
+                 call. = FALSE)
+         highlight_cells <- NA
+      }
+   }
+   
+   if(any(complete.cases(bold_cells))){
+      if(class(bold_cells) == "numeric"){
+         bold_cells <- list(bold_cells[1:2])
+      }
+      
+      if(any(sapply(bold_cells, length) < 2)){
+         warning("For making cells bold, you must specify a row and a column for everything you want to have bold-face text, and you have only specified one number for at least one of the items you asked to be bold face. We don't know which rows or columns to make bold face without that second number, so we'll use the default settings and make the 1st column and the header row bold.", 
+                 call. = FALSE)
+         bold_cells <- list(c(0, NA), c(NA, 1))
+      }
+   }
+   
+   # Setting things up for nonstandard evaluation ----------------------------
+   shading_column <- rlang::enquo(shading_column)
+   
+   
+   # Main body of function -------------------------------------------------
+   FT <- flextable::flextable(DF)
+   
+   # Optionally making things bold face
+   if(any(sapply(bold_cells, complete.cases))){
+      for(i in 1:length(bold_cells)){
+         
+         FT <- FT %>% 
+            flextable::bold(i = switch(paste(is.na(bold_cells[[i]][1]), 
+                                             bold_cells[[i]][1] == 0), 
+                                       "TRUE NA" = NULL, 
+                                       "FALSE TRUE" = 1, # this is when the row should be the only row in the header
+                                       "FALSE FALSE" = bold_cells[[i]][1]), 
+                            j = switch(as.character(is.na(bold_cells[[i]][2])), 
+                                       "TRUE" = NULL, 
+                                       "FALSE" = bold_cells[[i]][2]), 
+                            part = ifelse(complete.cases(bold_cells[[i]][1]) & 
+                                             bold_cells[[i]][1] == 0, 
+                                          "header", "body"))   
+      }
+   }
+   
+   FT <- FT %>% 
+      # center the header row
+      flextable::align(align = "center", part = "header") %>% 
+      
+      # make everything have a white background (we'll fill in other shading later)
+      flextable::bg(part = "all", bg = "white")
+   
+   # center the columns that contain numbers, i.e., the 2nd column through the
+   # penultimate column and optionally center the 1st column
+   if(center_1st_column == FALSE & ncol(DF) == 1){
+      FT <- FT %>% flextable::align(align = "left")
+   } else {
+      FT <- FT %>% 
+         flextable::align(align = "center", 
+                          j = switch(paste(center_1st_column, ncol(DF) > 1),
+                                     "TRUE TRUE" = 1:ncol(DF),
+                                     "TRUE FALSE" = 1:ncol(DF), 
+                                     "FALSE TRUE" = 2:ncol(DF)))
+   }
+   
+   # Optionally including shading whenever the shading column changes
+   if(as_label(shading_column) != "<empty>"){
+      
+      ShadeCol <- DF %>% pull(!!shading_column)
+      
+      ShadeChange <- which(ShadeCol[1:(length(ShadeCol) - 1)] != 
+                              ShadeCol[2:nrow(DF)]) + 1
+      if(length(ShadeChange) == 0){
+         DF$Shade <- FALSE
+      } else {
+         ShadeRows <- ShadeChange[seq(1, length(ShadeChange), by = 2)]
+         if(length(ShadeChange) > 1){
+            NoShadeRows <- ShadeChange[seq(2, length(ShadeChange), by = 2)]
+         } else {
+            NoShadeRows <- 1
+         }
+         DF$Shade <- as.logical(NA)
+         DF$Shade[ShadeRows] <- TRUE
+         DF$Shade[NoShadeRows] <- FALSE
+         DF <- DF %>% fill(Shade, .direction = "down") %>% 
+            mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
+      }
+      
+      ShadeRows <- which(DF$Shade)
+      FT <- FT %>% 
+         flextable::bg(i = ShadeRows, bg = "#F2F2F2") %>% 
+         flextable::bg(i = NoShadeRows, bg = "white") %>% 
+         flextable::bg(part = "header", bg = "white")
+      
+      if(merge_shaded_cells){
+         FT <- FT %>% 
+            flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
+      }
+   } 
+   
+   # Optionally highlight specific cells
+   if(any(sapply(highlight_cells, complete.cases))){
+      for(i in 1:length(highlight_cells)){
+         
+         FT <- FT %>% 
+            flextable::bg(i = switch(paste(is.na(highlight_cells[[i]][1]), 
+                                           highlight_cells[[i]][1] == 0), 
+                                     "TRUE NA" = NULL, 
+                                     "FALSE TRUE" = 1, # this is when the row should be the only row in the header
+                                     "FALSE FALSE" = highlight_cells[[i]][1]), 
+                          j = switch(as.character(is.na(highlight_cells[[i]][2])), 
+                                     "TRUE" = NULL, 
+                                     "FALSE" = highlight_cells[[i]][2]), 
+                          bg = highlight_color, 
+                          part = ifelse(complete.cases(highlight_cells[[i]][1]) & 
+                                           highlight_cells[[i]][1] == 0, 
+                                        "header", "body"))   
+      }
+   }
+   
+   FT <- FT %>% 
+      
+      # Set the font size
+      flextable::fontsize(part = "all", size = fontsize) %>% 
+      
+      # setting up which borderlines to show
+      flextable::border_remove() %>% 
+      flextable::border_inner_v(part = "all", 
+                                border = officer::fp_border(width = 0.5)) %>% 
+      flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
+      
+      # making the width autofitted to contents
+      flextable::set_table_properties(width = 1, layout = "autofit")
+   
+   # Dealing with subscripts
+   ColNames <- names(DF)
+   ColNames <- sub("AUCt ", "AUC~t~ ", ColNames)
+   ColNames <- sub("AUCinf ", "AUC~inf~ ", ColNames)
+   ColNames <- sub("AUCt$", "AUC~t~", ColNames)
+   ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
+   ColNames <- sub("Cmax", "C~max~", ColNames)
+   ColNames <- sub("Cmin", "C~min~", ColNames)
+   ColNames <- sub("tmax", "t~max~", ColNames)
+   ColNames <- sub("tlag", "t~lag~", ColNames)
+   ColNames <- sub(" ka ", " k~a~ ", ColNames)
+   ColNames <- sub("^ka ", "k~a~ ", ColNames)
+   ColNames <- sub(" fa ", " f~a~ ", ColNames)
+   ColNames <- sub("^fa ", "f~a~ ", ColNames)
+   ColNames <- sub(" fh ", " f~h~ ", ColNames)
+   ColNames <- sub("^fh ", "f~h~ ", ColNames)
+   ColNames <- sub(" fg ", " f~g~ ", ColNames)
+   ColNames <- sub("^fg ", "f~g~ ", ColNames)
+   ColNames <- sub("Indmax", "Ind~max~", ColNames)
+   ColNames <- sub("Emax", "E~max~", ColNames)
+   ColNames <- sub("IndC50", "IndC~50~", ColNames)
+   ColNames <- sub("EC50", "EC~50~", ColNames)
+   
+   ColNames <- str_split(ColNames, pattern = "~", simplify = T)
+   
+   if(ncol(ColNames) == 3){
+      for(i in which(ColNames[,2] != "")){
+         FT <- FT %>% 
+            flextable::compose(part = "header",
+                               j = i,
+                               value = flextable::as_paragraph(
+                                  ColNames[i, 1],
+                                  flextable::as_sub(ColNames[i, 2]), 
+                                  ColNames[i, 3]))
+      }
+   }
+   
+   # Saving --------------------------------------------------------------
+   if(complete.cases(save_table)){
+      
+      # Format the file name appropriately, including making the extension be
+      # docx, even if they specified something else.
+      save_table <- ifelse(str_detect(save_table, "\\..*$"), 
+                           sub("\\..*", ".docx", save_table), 
+                           paste0(save_table, ".docx"))
+      
+      # Now that the file should have an appropriate extension, check what
+      # the path and basename should be.
+      OutPath <- dirname(save_table)
+      save_table <- basename(save_table)
+      
+      # May need to change the working directory temporarily, so
+      # determining what it is now
+      CurrDir <- getwd()
+      
+      OutPath <- dirname(save_table)
+      if(OutPath == "."){
+         OutPath <- getwd()
+      }
+      
+      FileName <- basename(save_table)
+      
+      rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
+                                    package="SimcypConsultancy"), 
+                        output_dir = OutPath, 
+                        output_file = FileName, 
+                        quiet = TRUE)
+      # Note: The "system.file" part of the call means "go to where the
+      # package is installed, search for the file listed, and return its
+      # full path.
+      
+   }
+   
+   return(FT)
+   
 }
 
 
