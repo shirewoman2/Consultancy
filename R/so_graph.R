@@ -1,5 +1,4 @@
-#' Graph of simulated vs. observed PK -- NOT WORKING WHEN YOU SPECIFY SHAPE
-#' COLUMN AT THE MOMENT
+#' Graph of simulated vs. observed PK
 #'
 #' \code{so_graph} makes a graph of simulated vs. observed PK, including
 #' indicating where the predicted parameters fell within 1.5- or 2-fold of the
@@ -180,10 +179,29 @@ so_graph <- function(PKtable,
    boundary_indicator <- ifelse(str_detect(tolower(boundary_indicator), "fil"), 
                                 "fill", "lines")
    
-   if(boundary_indicator == "fill" & length(boundary_color_set) == 1 & 
-      !any(str_detect(boundary_color_set, " "))){
-      warning("You have requested only one color for the fill, which means you'll only see a shaded rectangle for the 2-fold boundary. If you would also like to see the 1.5-fold or Guest-curve boundary, please add a second color.", 
+   # Checking color input
+   if(length(boundary_color_set) == 1 && 
+      boundary_color_set %in% c("red black", "red green", "muted red green", 
+                                "black")){
+      BoundColors <- switch(boundary_color_set, 
+                            "red green" = c("red", "#17A142"), 
+                            "muted red green" = c("#E6A2A2", "#A4E4AF"),
+                            "red black" = c("red", "black"),
+                            "black" = c("black", "black"))
+   } else {
+      BoundColors <- boundary_color_set
+   }
+   # If there is a space, then separate at the space b/c they might want 2
+   # colors. To get around user possibly only listing 1 color or listing more
+   # than 2 colors, replicate the colors and then just take the 1st two items.
+   BoundColors <- sapply(BoundColors, FUN = function(x) str_split_1(x, " "))
+   BoundColors <- rep(BoundColors, 2)[1:2]
+   
+   # Check whether they supplied valid color values
+   if(is.matrix(col2rgb(BoundColors)) == FALSE){
+      warning("The colors you supplied for the argument `boundary_color_set` are not valid R colors. We'll set them to the default for now, but please check the help file for acceptable options.", 
               call. = FALSE)
+      BoundColors <- c("red", "black")
    }
    
    if(any(is.na(PKparameters))){
@@ -253,17 +271,6 @@ so_graph <- function(PKtable,
    
    Poly1.5xGuest <- GuestCurve_upper %>% arrange(Observed) %>% 
       bind_rows(GuestCurve_lower %>% arrange(desc(Observed)))
-   
-   
-   if(length(boundary_color_set) == 1){
-      BoundColors <- switch(boundary_color_set, 
-                            "red green" = c("red", "#17A142"), 
-                            "muted red green" = c("#E6A2A2", "#A4E4AF"),
-                            "red black" = c("red", "black"),
-                            "black" = c("black", "black"))
-   } else {
-      BoundColors <- boundary_color_set[1:2]
-   }
    
    # Arranging input data
    
