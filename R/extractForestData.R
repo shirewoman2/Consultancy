@@ -5,9 +5,11 @@
 #' \code{\link{forest_plot}} or the forest plot shiny app. This will take some
 #' time to run since it needs to open multiple Excel files.
 #'
-#' @param sim_data_files a character vector of simulator output files; leaving
-#'   this as the default NA will extract forest data from all simulator files in
-#'   the current working directory
+#' @param sim_data_files a character vector of simulator output files, each in
+#'   quotes and encapsulated with \code{c(...)}, NA to extract forest-plot data
+#'   for \emph{all} the Excel files in the current folder, or "recursive" to
+#'   extract forest-plot data for \emph{all} the Excel files in the current
+#'   folder and \emph{all} subfolders.
 #' @param PKparameters PK parameters to extract from simulator output files;
 #'   default is all possible AUC and Cmax geometric mean ratios for both dose 1
 #'   and the last dose simulated. Input must be among "AUCinf_ratio_dose1",
@@ -115,10 +117,16 @@ extractForestData <- function(sim_data_files = NA,
     
     # Main body of function ------------------------------------------------
     # Getting sim_data_files if not already supplied
-    if(length(sim_data_files) == 1 && is.na(sim_data_files)){
-        # If left as NA, pull all the files in this folder. 
-        sim_data_files <- list.files(pattern = "xlsx")
-        sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+    
+    # If user did not supply files, then extract all the files in the current
+    # folder that end in "xlsx" or in all subfolders if they wanted it to be
+    # recursive.
+    if(length(sim_data_files) == 1 &&
+       (is.na(sim_data_files) | sim_data_files == "recursive")){
+       sim_data_files <- list.files(pattern = "xlsx$",
+                                    recursive = (complete.cases(sim_data_files) &&
+                                                    sim_data_files == "recursive"))
+       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
     
     Forest_l <- list()
@@ -140,6 +148,11 @@ extractForestData <- function(sim_data_files = NA,
                               returnAggregateOrIndiv = "aggregate", 
                               checkDataSource = checkDataSource)
         )
+        
+        # If it wasn't a simulator file, then temp has length 0.
+        if(length(temp) == 0){
+           next
+        }
         
         # If only one parameter was found, then the 1st item in the list will be
         # a vector named as the parameter rather than a data.frame named

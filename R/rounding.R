@@ -284,7 +284,7 @@ round_unit <- function(x, b){
 #' round_consultancy(c(1239.236, 0.23513))
 #' 
 round_consultancy <- function(x){
-    if_else(x > 100, 
+    if_else(x >= 100, 
             as.character(round(x, 0)), 
             # This next convoluted bit will retain trailing zeroes since
             # "signif" alone will not

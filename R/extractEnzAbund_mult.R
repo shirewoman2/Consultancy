@@ -13,8 +13,10 @@
 #' progress it has made so far. Be sure to close all of the source Excel files.
 #'
 #' @param sim_data_files a character vector of simulator output files, each in
-#'   quotes and encapsulated with \code{c(...)}, or, if left as NA, \emph{all}
-#'   the Excel files in the current directory. Example of acceptable input:
+#'   quotes and encapsulated with \code{c(...)}, NA to extract enzyme-abundance
+#'   data for \emph{all} the Excel files in the current folder, or "recursive"
+#'   to extract enzyme-abundance data for \emph{all} the Excel files in the
+#'   current folder and \emph{all} subfolders. Example of acceptable input:
 #'   \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be included with the
 #'   file names if they are located somewhere other than your working directory.
 #'   If some of your Excel files are not regular simulator output, e.g. they are
@@ -117,10 +119,15 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
     
     sim_data_files <- unique(sim_data_files)
     
-    if(length(sim_data_files) == 1 && is.na(sim_data_files)){
-        # If left as NA, pull all the files in this folder. 
-        sim_data_files <- list.files(pattern = "xlsx$")
-        sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+    # If user did not supply files, then extract all the files in the current
+    # folder that end in "xlsx" or in all subfolders if they wanted it to be
+    # recursive.
+    if(length(sim_data_files) == 1 &&
+       (is.na(sim_data_files) | sim_data_files == "recursive")){
+       sim_data_files <- list.files(pattern = "xlsx$",
+                                    recursive = (complete.cases(sim_data_files) &&
+                                                    sim_data_files == "recursive"))
+       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
     }
     
     # Checking on what combinations of data the user has requested and what
