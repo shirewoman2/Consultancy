@@ -114,6 +114,8 @@ extractExpDetails_XML <- function(sim_workspace_files,
    
    if(any(compoundsToExtract == "all")){
       compoundsToExtract <- MainCompoundIDs
+   } else {
+      compoundsToExtract <- intersect(compoundsToExtract, MainCompoundIDs)
    }
    
    # Main body of function ---------------------------------------------------
@@ -160,12 +162,38 @@ extractExpDetails_XML <- function(sim_workspace_files,
                next
             }
             
-            for(k in CompoundDetails){
+            for(k in exp_details){
                
                DeetInfo <- AllExpDetails %>% 
                   filter(Sheet == "workspace XML file" & Detail == k)
                DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
                DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
+               
+               # Check for a switch b/c that will change what tag we extract
+               if(complete.cases(DeetInfo$XMLswitch)){
+                  
+                  # Check whether switch is on, i.e., set to "true" or "1". The
+                  # switch and the new tag to use both will be at the same level
+                  # as the original value. (At least, that's what I've
+                  # encountered so far.)
+                  SwitchPosition <- 
+                     switch(DeetLevels, 
+                            # There shouldn't be anything that's only 1 or 2 here
+                            "3" =  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+                               DeetInfo$XMLswitch]]), 
+                            "4" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+                               DeetInfo$Level3]][[DeetInfo$Level4]]), 
+                            "5" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+                               DeetInfo$Level3]][[DeetInfo$Level4]][[
+                                  DeetInfo$Level5]]))
+                  
+                  if(SwitchPosition %in% c("1", "true")){
+                     DeetInfo[, switch(DeetLevels, 
+                                       "3" = "Level3", 
+                                       "4" = "Level4", 
+                                       "5" = "Level5")] <- DeetInfo$SwitchTo
+                  }
+               }
                
                DeetValue <- 
                   switch(DeetLevels, 
@@ -173,11 +201,10 @@ extractExpDetails_XML <- function(sim_workspace_files,
                          "3" =  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
                             DeetInfo$Level3]]), 
                          "4" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                            DeetInfo$Level4]]), 
+                            DeetInfo$Level3]][[DeetInfo$Level4]]), 
                          "5" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                            DeetInfo$Level3]][[
-                               DeetInfo$Level4]][[
-                                  DeetInfo$Level5]]))
+                            DeetInfo$Level3]][[DeetInfo$Level4]][[
+                               DeetInfo$Level5]]))
                
                DeetValue <- switch(DeetInfo$Class, 
                                    "numeric" = as.numeric(DeetValue), 
