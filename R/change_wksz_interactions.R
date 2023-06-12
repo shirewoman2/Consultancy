@@ -351,6 +351,20 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                 
                                 TRUE ~ Parameter))
    
+   # Check for bad inputs. 
+   InputCheck <- Changes %>% 
+      mutate(ValNum = suppressWarnings(as.numeric(Value)), 
+             Value = ifelse(Value == "NA", NA, Value),
+             ValCheck = complete.cases(ValNum) |
+                (is.na(Value) & is.na(ValNum)) |
+                Value %in% c("no change", "true", "false", "on", "off"))
+   
+   if(all(InputCheck$ValCheck) == FALSE){
+      stop(paste0("There is a problem with some of your input. Depending on the parameter, acceptable values are numbers, NA, `no change`, `on`, or `off`. Please check your input for the following parameters:\n",
+                  str_c(InputCheck$Parameter[InputCheck$ValCheck == FALSE], collapse = "\n")), 
+           call. = FALSE)
+   }
+   
    # Grouping by new workspace
    Changes <- split(Changes, f = Changes$new_sim_workspace_files)
    
