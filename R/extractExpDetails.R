@@ -279,7 +279,7 @@ extractExpDetails <- function(sim_data_file,
          
          # Setting up regex to search
          ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & Sheet == "Summary") %>% pull(Regex)
+            filter(Detail == deet & Sheet == "Summary") %>% pull(Regex_row)
          NameCol <- SumDeets$NameCol[which(SumDeets$Deet == deet)]
          Row <- which(str_detect(SummaryTab[, NameCol] %>% pull(), ToDetect))
          Val <- SummaryTab[Row, SumDeets$ValueCol[SumDeets$Deet == deet]] %>%
@@ -317,7 +317,7 @@ extractExpDetails <- function(sim_data_file,
       MySumDeets <- setdiff(MySumDeets, "ADCSimulation")
       Out[["ADCSimulation"]] <- 
          str_detect(as.character(SummaryTab[, 1]), 
-                    SumDeets %>% filter(Deet == "ADCSimulation") %>% pull(Regex))
+                    SumDeets %>% filter(Deet == "ADCSimulation") %>% pull(Regex_row))
       
       for(i in MySumDeets){
          Out[[i]] <- pullValue(i)
@@ -457,7 +457,7 @@ extractExpDetails <- function(sim_data_file,
                         "Sub Sec Metabolite" = which(t(InputTab[5, ]) == "Sub Sec Metabolite"),
                         "Inh 1 Metabolite" = which(t(InputTab[5, ]) == "Inh 1 Metabolite"))
       
-      InputDeets$NameCol <- ColLocations[InputDeets$NameColDetect]
+      InputDeets$NameCol <- ColLocations[InputDeets$Regex_col]
       InputDeets$ValueCol <- InputDeets$NameCol + 1
       
       ## Main set of parameters -----------------------------------------
@@ -466,7 +466,7 @@ extractExpDetails <- function(sim_data_file,
          
          # Setting up regex to search
          ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & Sheet == "Input Sheet") %>% pull(Regex)
+            filter(Detail == deet & Sheet == "Input Sheet") %>% pull(Regex_row)
          NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
          Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect)) +
             (AllExpDetails %>% 
@@ -538,7 +538,7 @@ extractExpDetails <- function(sim_data_file,
       # Checking whether this was an ADC sim. 
       Out[["ADCSimulation"]] <- 
          str_detect(as.character(InputTab[, 1]), 
-                    InputDeets %>% filter(Deet == "ADCSimulation") %>% pull(Regex))
+                    InputDeets %>% filter(Deet == "ADCSimulation") %>% pull(Regex_row))
       
       # Checking simulator version
       Out[["SimulatorVersion"]] <- str_extract(as.character(InputTab[3, 1]),
@@ -1166,7 +1166,7 @@ extractExpDetails <- function(sim_data_file,
          
          # Setting up regex to search
          ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & Sheet == "population") %>% pull(Regex)
+            filter(Detail == deet & Sheet == "population") %>% pull(Regex_row)
          NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
          
          if(ncol(PopTab) < NameCol){

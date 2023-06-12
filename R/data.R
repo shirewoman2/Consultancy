@@ -142,7 +142,7 @@
 #' columns used only internally with coding. For the more user-friendly version,
 #' see \code{\link{ExpDetailDefinitions}}.
 #'
-#' @format A data.frame with 10 columns: \describe{
+#' @format A data.frame with 21 columns: \describe{
 #'
 #'   \item{Detail}{the experimental detail name to use with
 #'   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
@@ -152,8 +152,12 @@
 #'
 #'   \item{Notes}{an explanation of what the experimental detail is}
 #'
-#'   \item{NameColDetect}{FOR INTERNAL USE. When searching the Input Sheet for
-#'   the set of columns to use, what regular expression should be used.}
+#'   \item{Regex_col}{FOR INTERNAL USE. When searching the Input Sheet for
+#'   the set of columns to use, what regular expression should be used for
+#'   finding the correct column.}
+#'
+#'   \item{Regex_row}{FOR INTERNAL USE. When searching the specified column,
+#'   what regular expression should be used for finding the correct row.}
 #'
 #'   \item{Class}{Data class}
 #'
@@ -163,10 +167,11 @@
 #'   for this detail}
 #'
 #'   \item{ValueCol}{Which column in the simulator output tab will contains the
-#'   value used for this detail}
+#'   value used for this detail. This applies when the column doesn't move,
+#'   e.g., \emph{not} the Input Sheet.}
 #'
 #'   \item{CDSInputMatch}{FOR INTERNAL USE: Which compound data sheet item on
-#'   the "Simcyp Inputs and QC" tab match this experimental detail}
+#'   the "Simcyp Inputs and QC" tab matches this experimental detail}
 #'
 #'   \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which
 #'   section does this detail belong? Options: Absorption, Distribution,
@@ -174,6 +179,23 @@
 #'
 #'   \item{ADAMParameter}{FOR INTERNAL USE: TRUE or FALSE for whether the
 #'   parameter only comes into play when it's an ADAM model}
+#'
+#'   \item{OffsetRows}{FOR INTERNAL USE: When there just isn't good regex in the
+#'   specific row for this detail, we need to look for a value and then go down
+#'   this number of rows to get to the actual value we want.}
+#'
+#'   \item{SortOrder}{FOR INTERNAL USE: Order in which this detail should show
+#'   up in the output of `annotateDetails`}
+#'
+#'   \item{Level1, Level2, etc.}{FOR INTERNAL USE: the level in the XML file
+#'   where the information lives}
+#'
+#'   \item{XMLswitch}{FOR INTERNAL USE: If there is a switch involved in the
+#'   XML file, what is the tag to use for checking on that switch}
+#'
+#'   \item{SwitchTo}{FOR INTERNAL USE: If the switch is turned to "1" or "true"
+#'   in the XML file, this is the tag to switch to for looking up the value for
+#'   this detail.}
 #'
 #'   }
 "AllExpDetails"

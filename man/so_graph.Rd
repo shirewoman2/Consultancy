@@ -2,8 +2,7 @@
 % Please edit documentation in R/so_graph.R
 \name{so_graph}
 \alias{so_graph}
-\title{Graph of simulated vs. observed PK -- NOT WORKING WHEN YOU SPECIFY SHAPE
-COLUMN AT THE MOMENT}
+\title{Graph of simulated vs. observed PK}
 \usage{
 so_graph(
   PKtable,
