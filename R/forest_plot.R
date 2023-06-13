@@ -535,7 +535,7 @@ forest_plot <- function(forest_dataframe,
    }
    
    # Renaming columns as needed for back-compatibility with previous package
-   # versions and also noting which data was simulated. If they already have
+   # versions and also noting which data were simulated. If they already have
    # PerpCompound or VictimCompound in the data, though, no need.
    if("PerpCompound" %in% names(forest_dataframe) == FALSE){
       forest_dataframe <- forest_dataframe %>% 
@@ -783,7 +783,7 @@ forest_plot <- function(forest_dataframe,
                  call. = FALSE)
       }
       
-      if(is.null(names(y_order)) == FALSE & any(str_detect(y_order, "xlsx"))){
+      if(is.null(names(y_order)) == FALSE & any(str_detect(y_order, "xlsx|db"))){
          warning("If you supply a named character vector for `y_order` to indicate what order the files should be and what compound they represent, then the files should be used as the names of the vector and the compound should be used as the values, e.g., `c('MyFile1.xlsx' = 'Compound A', 'MyFile2.xlsx' = 'Compound B')`. We will swap those for you.", 
                  call. = FALSE)
          temp <- y_order
@@ -953,7 +953,7 @@ forest_plot <- function(forest_dataframe,
       # names or specified the compounds that each file represents.
       # Furthermore, they may have specified files using the names of a
       # character vector. Dealing with each of those three scenarios.
-      if(any(str_detect(names(YFileOrder), "xlsx"))){
+      if(all(names(YFileOrder) %in% forest_dataframe$File)){
          # When the file names are specified
          suppressMessages(
             forest_dataframe <- forest_dataframe %>% 
@@ -964,7 +964,7 @@ forest_plot <- function(forest_dataframe,
                mutate(MyCompound = factor(MyCompound_rev, levels = unique(MyCompound_rev))))
          # File and MyCompound are both now factor. 
          
-      } else if(any(str_detect(YFileOrder, "xlsx"))){
+      } else if(all(YFileOrder %in% forest_dataframe$File)){
          # When the file names are not specified but the files
          # themselves are
          forest_dataframe <- forest_dataframe %>% 
