@@ -698,11 +698,40 @@ annotateDetails <- function(existing_exp_details,
       }
    } else if(show_compound_col == "concatenate"){
       if(complete.cases(compound)){
-         AllCompounds <- str_comma(sort(unique(Out$Compound)), conjunction = "or")
-         Out <- Out %>% mutate(Compound = ifelse(complete.cases(Compound), 
-                                                 AllCompounds, NA)) %>% 
-            select(SimulatorSection, Sheet, Notes, Compound, Detail,
-                   File, Value)
+         
+         # Checking whether user has asked to concatenate compounds that occupy
+         # multiple positions in the simulator for the same simulation, e.g.,
+         # asked to concatenate info on the substrate and the inhibitor 1 b/c
+         # that would result in multiple values in the same cell.
+         CmpdCheck <- existing_exp_details %>% 
+            select(File, any_of(c("Substrate", 
+                                  "PrimaryMetabolite1", 
+                                  "PrimaryMetabolite2",
+                                  "SecondaryMetabolite", 
+                                  "Inhibitor1", 
+                                  "Inhibitor2", 
+                                  "Inhibitor1Metabolite"))) %>% 
+            mutate(across(.cols = -File, .fns = function(x){str_detect(tolower(x), compound)})) %>% 
+            pivot_longer(cols = -File, names_to = "CompoundID", 
+                         values_to = "Detected") %>% 
+            filter(complete.cases(Detected)) %>% 
+            group_by(File) %>% 
+            summarize(N = length(which(Detected == TRUE)))
+         
+         if(any(CmpdCheck$N > 1)){
+            
+            warning(paste0("You have asked to concatenate the compound column and also requested all details that match `", 
+                           compound, 
+                           "`. The problem, though, is that you have requested information for compounds that occupy more than one position in the Simulator, e.g., one is the substrate and one is inhibitor 1 in the same simulation, which means that there would be more than one value for a given detail. This wouldn't be workable in the results, so we cannot concatenate the compound column in this situation."), 
+                           call. = FALSE)
+         } else {
+            
+            AllCompounds <- str_comma(sort(unique(Out$Compound)), conjunction = "or")
+            Out <- Out %>% mutate(Compound = ifelse(complete.cases(Compound), 
+                                                    AllCompounds, NA)) %>% 
+               select(SimulatorSection, Sheet, Notes, Compound, Detail,
+                      File, Value)
+         }
       } else {
          AllCompounds <- Out %>% select(Compound, CompoundID) %>% 
             filter(complete.cases(CompoundID)) %>% 
