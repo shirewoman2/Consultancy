@@ -353,27 +353,32 @@ extractObsConcTime <- function(obs_data_file,
                       "Time", "Time_units", "Dose", "Dose_units",
                       "InfDuration"))) 
    
-   obs_data <- obs_data %>%
-      # Removing dosing rows b/c that's not conc time data. 
-      filter(complete.cases(DVID)) %>%
-      filter(is.na(DoseAmount)) %>% 
-      mutate(Simulated = FALSE)
+   if(nrow(dose_data) > 0){
+      
+      obs_data <- obs_data %>%
+         # Removing dosing rows b/c that's not conc time data. 
+         filter(complete.cases(DVID)) %>%
+         filter(is.na(DoseAmount)) %>% 
+         mutate(Simulated = FALSE)
+      
+      DoseInts <- dose_data %>%
+         select(Individual, CompoundID, Time, Dose, Dose_units) %>% 
+         rename(DoseTime = Time) 
+      DoseInts_ID <- DoseInts %>% 
+         mutate(Interval = cut(DoseTime, 
+                               breaks = c(unique(DoseInts$DoseTime), Inf), 
+                               include.lowest = TRUE, right = FALSE))
+      
+      # Adding dose info to conc-time data.frame
+      obs_data <- obs_data %>% 
+         select(-Dose_units) %>% 
+         mutate(Interval = cut(Time, breaks = c(unique(DoseInts$DoseTime), Inf), 
+                               include.lowest = TRUE, right = FALSE)) %>% 
+         left_join(DoseInts_ID, 
+                   by = join_by(CompoundID, Individual, Interval))
+   }
    
-   DoseInts <- dose_data %>%
-      select(Individual, CompoundID, Time, Dose, Dose_units) %>% 
-      rename(DoseTime = Time) 
-   DoseInts_ID <- DoseInts %>% 
-      mutate(Interval = cut(DoseTime, 
-                            breaks = c(unique(DoseInts$DoseTime), Inf), 
-                            include.lowest = TRUE, right = FALSE))
-   
-   # Adding dose info to conc-time data.frame
    obs_data <- obs_data %>% 
-      select(-Dose_units) %>% 
-      mutate(Interval = cut(Time, breaks = c(unique(DoseInts$DoseTime), Inf), 
-                            include.lowest = TRUE, right = FALSE)) %>% 
-      left_join(DoseInts_ID, 
-                by = join_by(CompoundID, Individual, Interval)) %>% 
       mutate(across(.cols = any_of(c("Age", "Weight_kg", "Height_cm",
                                      "SerumCreatinine_umolL", "HSA_gL", 
                                      "Haematocrit", "GestationalAge_wk", 
