@@ -265,7 +265,7 @@
 #' bufuralol as the substrate and then 4 different effectors.
 #'
 #' @format a data.frame 
-"ForestData"
+"BufForestData"
 
 
 #' Example observed PK data for working with \code{forest_plot}
@@ -274,5 +274,5 @@
 #' function
 #'
 #' @format a data.frame 
-"ObsForestData"
+"BufObsForestData"
 
