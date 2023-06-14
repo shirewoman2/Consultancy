@@ -107,13 +107,16 @@
 #'   and "100 mg" instead of just "50" and "100". This just helps make it
 #'   clearer what the numbers represent. If you specify anything other than
 #'   Dose_sub or Dose_inhib for \code{facet_column_x}, this will be ignored.
-#' @param prettify_compound_names TRUE (default) or FALSE on whether to make any
-#'   compound names included in \code{y_axis_labels} prettier. This was designed
-#'   for simulations where the substrates or effectors are among the standard
-#'   options for the simulator, and leaving \code{prettify_compound_names =
-#'   TRUE} will make the name of those compounds something more human readable.
-#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
-#'   "Sim-Midazolam" will become "midazolam".
+#' @param prettify_compound_names NA (default), TRUE, or FALSE on whether to
+#'   make any compound names included in \code{y_axis_labels} prettier. This was
+#'   designed for simulations where the substrates or effectors are among the
+#'   standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". If you don't
+#'   specify this, we'll prettify if you supply a column name for
+#'   \code{y_axis_labels} and we *won't* prettify if you supply a named
+#'   character vector there.
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -169,8 +172,8 @@
 #' # You can used the argument y_axis_labels to specify what to use for the
 #' # y axis labels instead of the simulation file names. One option: Use a
 #' # named character vector to list the file names and what you want to
-#' # show instead. This can be as verbose as you like, and it's ok to use 
-#' # "\n" for a new line if you want. 
+#' # show instead. This can be as verbose as you like, and it's ok to use
+#' # "\n" for a new line if you want.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine",
 #'                               "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraconazole",
@@ -184,48 +187,78 @@
 #'             y_axis_labels = PerpCompound)
 #'
 #' # By default, the graph will show the strongest inhibitors on top and
-#' # the strongest inducers on the bottom, sorted by their AUC GMR. However, 
+#' # the strongest inducers on the bottom, sorted by their AUC GMR. However,
 #' # if you liked the order you already had things in whatever you supplied
 #' # for forest_dataframe, you can tell the forest_plot function not to change
 #' # that by setting y_order to "as is".
 #' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             y_order = "as is")
-#' 
-#' # If it would be sensible to break up your graph by a column in 
+#'
+#' # If it would be sensible to break up your graph by a column in
 #' # forest_dataframe, you can do that with the argument facet_column_x. We'll
-#' # switch to some example data with two dose levels here. 
+#' # switch to some example data with two dose levels here.
 #' forest_plot(forest_dataframe = BufForestData,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub)
-#' 
-#' # Or break up your graph by the PK parameter shown. # NOT WORKING --------------------
+#'
+#' # Or break up your graph by the PK parameter shown. 
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             facet_column_x = PKparameter) 
+#'             facet_column_x = PKparameter)
+#'             
+#' # If what you supplied for forest_dataframe includes other statistics, 
+#' # you can graph those instead of the default, which is the geometric 
+#' # mean (point) and geometric 90 percent confidence interval (error bars). 
+#' forest_plot(forest_dataframe = BufForestData_20mg,
+#'             y_axis_labels = PerpCompound,
+#'             mean_type = "median", 
+#'             variability_type = "range")
 #' 
+#' # You can compare observed PK data as long as they are formatted the same
+#' # way as the simulated data. Here's an example. 
+#' view(BufObsForestData_20mg)
+#' forest_plot(forest_dataframe = BufForestData_20mg,
+#'             y_axis_labels = PerpCompound,
+#'             observed_PK = BufObsForestData_20mg)
+#'
 #' # Here are some options for modifying the aesthetics of your graph:
+#' 
+#' # -- Don't include "Dose 1" or "Last dose" in the PK parameter names.
+#' forest_plot(forest_dataframe = BufForestData_20mg,
+#'             y_axis_labels = PerpCompound,
+#'             include_dose_num = FALSE)
+#'             
+#' # -- Add an overall graph title and a y axis title to make it clear that 
+#' # we're looking at the effects of various perpetrators on bufuralol PK (at 
+#' # least, that's what we're doing in this example). 
+#' forest_plot(forest_dataframe = BufForestData_20mg,
+#'             y_axis_labels = PerpCompound,
+#'             include_dose_num = FALSE, 
+#'             y_axis_title = "Perpetrator", 
+#'             graph_title = "Effects of various DDI perpetrator\ndrugs on bufuralol PK")
+#' 
 #' # -- Adjust the x axis limits with x_axis_limits
 #' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             x_axis_limits = c(0.9, 5))
 #'
 #' # -- Include a legend for the shading
 #' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom")
 #'
 #' # -- Change the shading to be like in Chen Jones 2022 CPT
 #' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
 #'             color_set = "yellow to red")
 #'
 #' # -- Or make the shading disappear
 #' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
 #'             color_set = "none")
@@ -235,13 +268,13 @@
 #'             y_axis_labels = PerpCompound, 
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
-#'             color_set = c("negligible" = "white", "weak" = "gray90",
-#'                           "moderate" = "gray75", strong = "gray50"))
+#'             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
+#'                           "moderate" = "#7294D4", strong = "#E6A0C4"))
 #'
 #' # -- Make the compound names match *exactly* what was in the simulator file
 #' # rather than being automatically prettified
 #' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub,
 #'             prettify_compound_names = FALSE)
 
@@ -256,7 +289,7 @@ forest_plot <- function(forest_dataframe,
                         variability_type = "90% CI", 
                         include_dose_num = TRUE,
                         y_axis_title = "none", 
-                        prettify_compound_names = TRUE, 
+                        prettify_compound_names = NA, 
                         x_axis_limits = NA, 
                         x_axis_label = NA,
                         x_axis_number_type = "ratios",
@@ -298,20 +331,18 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
-   if((all(c("File", "VictimCompound", "PerpCompound") %in%
-           names(forest_dataframe)) |
-       all(c("File", "Substrate", "Inhibitor1") %in%
-           names(forest_dataframe))) == FALSE){
-      stop("Please check your input for `forest_dataframe` because it does not appear to match the output from running the function `extractForestData`, and it must match that for this function to work.", 
-           call. = FALSE)
-   }
-   
    # Cleaning up inputs
    if(class(prettify_compound_names) != "logical"){
-      warning("You appear to have supplied something to the argument `prettify_compound_names` other than TRUE or FALSE. Unfortunately, those are the only permissible values. We'll set this to TRUE.", 
+      warning("You appear to have supplied something to the argument `prettify_compound_names` other than TRUE, FALSE, or NA. Unfortunately, those are the only permissible values. We'll set this to NA.", 
               call. = FALSE)
-      prettify_compound_names <- TRUE
+      prettify_compound_names <- NA
    }
+   
+   # Changing prettify_compound_names to "character" and setting NA to "not
+   # set". Using this lower down in the script.
+   prettify_compound_names <- ifelse(is.na(prettify_compound_names), 
+                                     "not set",
+                                     as.character(prettify_compound_names))
    
    x_axis_number_type <- ifelse(str_detect(x_axis_number_type, "perc"), 
                                 "percents", x_axis_number_type)
@@ -380,6 +411,13 @@ forest_plot <- function(forest_dataframe,
             }
          }
       }
+   }
+   
+   if(all(c("File", "PKparameter") %in% names(forest_dataframe) == FALSE)){
+      stop(paste0("There must be a column titled `File` in what you supply for forest_dataframe, and there also must be some PK data. We can't find that in your input. For an example of acceptable data, please run\n", 
+                  "view(BufForestData_20mg)\n", 
+                  "in the console."),
+           call. = FALSE)
    }
    
    # Dropping dose number when requested by user
@@ -555,7 +593,12 @@ forest_plot <- function(forest_dataframe,
       } else {
          forest_dataframe <- forest_dataframe %>% 
             mutate(YCol = !!y_axis_labels, 
-                   YCol = switch(as.character(prettify_compound_names), 
+                   YCol = switch(prettify_compound_names, 
+                                 # If they didn't set prettify_compound_names
+                                 # but they did set a column, it's likely a
+                                 # column with substrate or inhibitor 1 names,
+                                 # so prettify unless they request not to.
+                                 "not set" = prettify_compound_name(YCol), 
                                  "TRUE" = prettify_compound_name(YCol), 
                                  "FALSE" = YCol))
       } 
@@ -589,16 +632,24 @@ forest_plot <- function(forest_dataframe,
          
       } else if(any(complete.cases(y_axis_labels)) &&
                 all(names(y_axis_labels) %in% forest_dataframe$File) == FALSE){
-         warning("You must provide either a column name (unquoted) or a named character vector for `y_axis_labels`.
-It looks like you're trying to provide a character vector, but something isn't matching with the file names present in the column `File` in forest_dataframe. Please check your input. For now, we'll just list the file names rather than using what you specified with `y_axis_labels`.", 
-call. = FALSE)
+         warning(paste0("It looks like you're trying to provide a named character vector for `y_axis_labels`, but these file names are not present in forest_dataframe:\n", 
+                        str_c(setdiff(names(y_axis_labels), forest_dataframe$File), 
+                              collapse = "\n"), 
+                        "\nFor now, we'll list the file names along the y axis rather than using what you specified with `y_axis_labels`."),
+                 call. = FALSE)
          y_axis_labels <- NA
       } 
       
       if(any(complete.cases(y_axis_labels))){
          
          forest_dataframe <- forest_dataframe %>% 
-            mutate(YCol = switch(as.character(prettify_compound_names), 
+            mutate(YCol = switch(prettify_compound_names, 
+                                 # If user didn't specify whether they wanted
+                                 # prettification but did use specific values
+                                 # for y_axis_labels, they probably don't want
+                                 # those to change. If not set, then here, DON'T
+                                 # prettify.
+                                 "not set" = y_axis_labels[File],
                                  "TRUE" = prettify_compound_name(y_axis_labels[File]),
                                  "FALSE" = y_axis_labels[File]))
       } else {
@@ -619,16 +670,7 @@ call. = FALSE)
            call. = FALSE)
    }
    
-   if(any(complete.cases(y_order)) && 
-      all(forest_dataframe$YCol != forest_dataframe$File)){
-      if(any(forest_dataframe$File %in% y_order == FALSE)){
-         warning(paste0("The file(s) ", 
-                        str_comma(setdiff(forest_dataframe$File, 
-                                          y_order)), 
-                        " are not included in `y_order`, so they will be labeled as NA on the y axis until that's fixed."), 
-                 call. = FALSE)
-      }
-      
+   if(any(complete.cases(y_order))){
       if(length(y_order) == 1 && 
          !y_order %in% c("strongest inducer to strongest inhibitor", 
                          "strongest inhibitor to strongest inducer", 
@@ -638,6 +680,8 @@ call. = FALSE)
                         "\nWe will use the default order."),
                  call. = FALSE)
          y_order <- "strongest inhibitor to strongest inducer"
+      } else if(length(y_order) > 1){
+         # FIXME
       }
    }
    
@@ -941,25 +985,19 @@ call. = FALSE)
                                          labels = {{Param_exp}}))
       
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
-                                        y = YCol_num, shape = SimOrObs)) +
-         geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, 
-                                    ymin = Ymin, ymax = Ymax, fill = IntLevel), 
+                                        y = 1, shape = SimOrObs)) +
+         geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax,
+                                    ymin = Ymin, ymax = Ymax, fill = IntLevel),
                    inherit.aes = FALSE) +
-         geom_hline(yintercept = seq(from = 1.5, by = 1, 
-                                     to = length(levels(forest_dataframe$YCol)) - 0.5), 
-                    color = "gray70", linewidth = 0.5) +
          scale_fill_manual(values = FillColor) +
          geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
          geom_errorbar(width = 0.3) +
          geom_point(size = 2.5, fill = "white") +
-         facet_grid(. ~ PKparameter_exp, labeller = label_parsed) +
+         facet_grid(YCol ~ PKparameter_exp, labeller = label_parsed, 
+                    switch = "y") +
          scale_shape_manual(values = MyShapes) +
-         scale_y_reverse(breaks = unique(as.numeric(forest_dataframe$YCol)), 
-                         labels = levels(forest_dataframe$YCol),
-                         expand = expansion(mult = pad_y_num/10)) + # pad_y_num should be smaller here
-         labs(fill = "Interaction level", shape = NULL) +
-         theme(axis.text.y = element_text(hjust = 0.5, face = "bold"), 
-               axis.ticks.y = element_blank())
+         scale_y_discrete(expand = expansion(mult = pad_y_num * 3)) + # Often needs a little extra
+         labs(fill = "Interaction level", shape = NULL)
       
    } else {
       
@@ -1013,6 +1051,12 @@ call. = FALSE)
          panel.border = element_rect(colour = "grey70", fill = NA),
          panel.spacing.y = unit(0, "cm"),
          panel.spacing.x = unit(0.5, "cm"))
+   
+   if(as_label(facet_column_x) == "PKparameter"){
+      G <- G +
+         theme(axis.ticks.y = element_blank(), 
+               axis.text.y = element_blank())
+   }
    
    if(complete.cases(graph_title)){
       G <- G + ggtitle(graph_title) +
