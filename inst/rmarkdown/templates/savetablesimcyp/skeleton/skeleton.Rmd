@@ -1,5 +1,4 @@
 ---
-title: "A formatted table"
 author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
 date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
 output: word_document
@@ -11,6 +10,10 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
                       dpi = 600)
 
 ```
+
+---
+title: `r ifelse(complete.cases(title_document), title_document, "A formatted table")`
+---
 
 ```{r formattedtable}
 

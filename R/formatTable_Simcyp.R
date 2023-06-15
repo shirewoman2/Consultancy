@@ -60,8 +60,10 @@
 #'   SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
 #'   try to save on SharePoint, you will get a warning that R will save your
 #'   file instead to your local (not OneDrive) Documents folder.
+#' @param title_document optionally specify a title for the Word document
+#'   output. If you don't save the table, this will be ignored.
 #'
-#' @return a formatted table 
+#' @return a formatted table
 #' @export
 #'
 #' @examples
@@ -116,7 +118,8 @@ formatTable_Simcyp <- function(DF,
                                center_1st_column = FALSE,
                                highlight_cells = NA, 
                                highlight_color = "yellow",
-                               save_table = NA){
+                               save_table = NA, 
+                               title_document = NA){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
