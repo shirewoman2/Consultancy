@@ -13,7 +13,8 @@ formatTable_Simcyp(
   center_1st_column = FALSE,
   highlight_cells = NA,
   highlight_color = "yellow",
-  save_table = NA
+  save_table = NA,
+  title_document = NA
 )
 }
 \arguments{
@@ -76,6 +77,9 @@ were included. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
 SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
 try to save on SharePoint, you will get a warning that R will save your
 file instead to your local (not OneDrive) Documents folder.}
+
+\item{title_document}{optionally specify a title for the Word document
+output. If you don't save the table, this will be ignored.}
 }
 \value{
 a formatted table

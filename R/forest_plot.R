@@ -65,18 +65,45 @@
 #'   to include a parameter that's not already present in
 #'   \code{forest_dataframe}, it will be ignored. User a character vector here,
 #'   e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}
-#' @param observed_PK observed PK data, laid out just like
-#'   \code{forest_dataframe} with the same columns. For the column File, list
-#'   the simulated file you'd like those observed data to be graphed next to.
-#' @param include_dose_num TRUE (default) or FALSE on whether to include the
-#'   dose number when listing the PK parameter. By default, the parameter will
-#'   be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", but,
-#'   especially if you only have a single-dose regimen, you might not want that.
-#'   To make the parameters be only, e.g., "Cmax ratio" or "AUCtau ratio", set
-#'   this to FALSE.
+#' @param observed_PK observed PK data, with the following columns: \describe{
+#'
+#'   \item{File}{the file you'd like the observed data to be graphed
+#'   next to. Note that this file name must exist in the simulated data
+#'   (forest_dataframe).}
+#'
+#'   \item{PKparameter}{the specific PK parameters to graph. Acceptable values
+#'   are: "AUCinf_ratio_dose1", "AUCt_ratio_dose1", "AUCinf_ratio",
+#'   "Cmax_ratio_dose1", "Cmax_ratio_last", or "Cmax_ratio". Whatever you use
+#'   must match what was listed in the simulated data to be included in the
+#'   graph.}
+#'
+#'   \item{at least one column named "Mean", "GeoMean", or "Median"}{Must be
+#'   specified depending on your choice for \code{mean_type}, this column will
+#'   be used for determining where to place the point. Whatever statistic you
+#'   use \strong{must} be the same for both observed and simulated data.}
+#'
+#'   \item{(optional) at least one column or set of columns named "CI90_Lower", "CI90_upper",
+#'   "Centile5th_Lower", "Centile95th_Upper", "GeoCV", "ArithCV", "Min", "Max",
+#'   "Std Dev"}{these will be used for the error bars and are optional.}
+#'
+#'   \item{whatever column you used for facet_column_x}{If you broke up the
+#'   main graphs into two smaller graphs along the x axis, then whatever column you used for that
+#'   must be present in the observed data, too.}
+#'
+#'   }
+#'
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #' @param mean_type type of mean to graph; options are "geometric" (default),
 #'   "arithmetic", or "median", but this only works when those data are included
-#'   in \code{forest_dataframe}.
+#'   in \code{forest_dataframe}. If you list the mean type as "mean", we'll
+#'   assume you want arithmetic means.
 #' @param variability_type type of variability to show as whiskers; options are
 #'   "90\% CI" (default), "95\% CI", "5th to 95th percentiles", "range",
 #'   "geometric CV", "arithmetic CV", or "standard deviation" ("sd" is also ok
@@ -90,11 +117,22 @@
 #'   zeroes" (still uses ratios but, unlike the default, guesses at a reasonable
 #'   number of digits to include based on the range of the data and includes
 #'   trailing zeroes as necessary)
-#' @param x_axis_label optionally supply a character vector or an expression to
-#'   use for the x axis label
+#' @param x_axis_title optionally supply a character vector or an expression to
+#'   use for the x axis title
 #' @param facet_column_x optionally break up the graph horizontally into small
 #'   multiples. The designated column name should be unquoted, e.g.,
-#'   \code{facet_column_x = Dose_sub}
+#'   \code{facet_column_x = Dose_sub}. This would also allow you to potentially
+#'   use the same value for \code{y_axis_labels} for multiple simulations. For
+#'   example, say you have one simulation -- "SimA.xlsx" -- where the substrate
+#'   was dosed QD and another simulation -- "SimB.xlsx" -- where it was dosed
+#'   BID, and both of them were co-administered with the inhibitor itraconazole.
+#'   You want the y axis labels to show what effector was used in each
+#'   simulation, and both of these used the same inhibitor. If you break up your
+#'   graphs by setting \code{facet_column_x} to whatever column you used to
+#'   indicate the dosing regimen, then "SimA.xlsx" and "SimB.xlsx" won't overlap
+#'   on the graph even though they both had the same effector. That's the reason
+#'   it's ok here. Unclear? Please check out the examples at the bottom,
+#'   particularly the ones that employ \code{facet_column_x}.
 #' @param x_order optionally specify the order in which the x-axis facets should
 #'   appear. For example, if you \code{facet_column_x} is the dosing regimen and
 #'   the values there are "QD" and "BID", the default will be to show them in
@@ -202,42 +240,42 @@
 #'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub)
 #'
-#' # Or break up your graph by the PK parameter shown. 
+#' # Or break up your graph by the PK parameter shown.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             facet_column_x = PKparameter)
-#'             
-#' # If what you supplied for forest_dataframe includes other statistics, 
-#' # you can graph those instead of the default, which is the geometric 
-#' # mean (point) and geometric 90 percent confidence interval (error bars). 
+#'
+#' # If what you supplied for forest_dataframe includes other statistics,
+#' # you can graph those instead of the default, which is the geometric
+#' # mean (point) and geometric 90 percent confidence interval (error bars).
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             mean_type = "median", 
+#'             mean_type = "median",
 #'             variability_type = "range")
-#' 
+#'
 #' # You can compare observed PK data as long as they are formatted the same
-#' # way as the simulated data. Here's an example. 
+#' # way as the simulated data. Here's an example.
 #' view(BufObsForestData_20mg)
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             observed_PK = BufObsForestData_20mg)
 #'
 #' # Here are some options for modifying the aesthetics of your graph:
-#' 
+#'
 #' # -- Don't include "Dose 1" or "Last dose" in the PK parameter names.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             include_dose_num = FALSE)
-#'             
-#' # -- Add an overall graph title and a y axis title to make it clear that 
-#' # we're looking at the effects of various perpetrators on bufuralol PK (at 
-#' # least, that's what we're doing in this example). 
+#'
+#' # -- Add an overall graph title and a y axis title to make it clear that
+#' # we're looking at the effects of various perpetrators on bufuralol PK (at
+#' # least, that's what we're doing in this example).
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             include_dose_num = FALSE, 
-#'             y_axis_title = "Perpetrator", 
+#'             include_dose_num = FALSE,
+#'             y_axis_title = "Perpetrator",
 #'             graph_title = "Effects of various DDI perpetrator\ndrugs on bufuralol PK")
-#' 
+#'
 #' # -- Adjust the x axis limits with x_axis_limits
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
@@ -265,7 +303,7 @@
 #'
 #' # -- Or specify exactly which colors you want for which interaction level
 #' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound, 
+#'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
 #'             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
@@ -291,7 +329,7 @@ forest_plot <- function(forest_dataframe,
                         y_axis_title = "none", 
                         prettify_compound_names = NA, 
                         x_axis_limits = NA, 
-                        x_axis_label = NA,
+                        x_axis_title = NA,
                         x_axis_number_type = "ratios",
                         x_order = NA,
                         dose_units = "mg",
@@ -420,7 +458,21 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
-   # Dropping dose number when requested by user
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(forest_dataframe$PKparameter, "dose1")), 
+                     "last" = any(str_detect(forest_dataframe$PKparameter, "last")))
+      include_dose_num <- all(DoseCheck) == FALSE
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+   }
+   
    if(include_dose_num == FALSE){
       PKparameters <- sub("_dose1|_last", "", PKparameters)
       
@@ -434,7 +486,7 @@ forest_plot <- function(forest_dataframe,
    }
    
    forest_dataframe <- forest_dataframe %>% 
-      mutate(SimOrObs = "simulated")
+      mutate(SimOrObs = "predicted")
    
    # If the column Tissue isn't included, then assume that the tissue was
    # plasma.
@@ -456,6 +508,7 @@ forest_plot <- function(forest_dataframe,
    CenterStat <- as.character(
       FDnames[which(FDnames %in% switch(mean_type, 
                                         "geometric" = "GeoMean", 
+                                        "mean" = "Mean",
                                         "arithmetic" = "Mean", 
                                         "median" = "Median"))])
    if(length(CenterStat) == 0){
@@ -774,7 +827,7 @@ forest_plot <- function(forest_dataframe,
    
    # Setting the order of the simulations. 
    StInhib_StInd <- forest_dataframe %>% 
-      filter(SimOrObs == "simulated") %>% 
+      filter(SimOrObs == "predicted") %>% 
       select(YCol, PKparameter, Centre) %>% unique() %>% 
       arrange(desc(PKparameter), desc(Centre)) %>% 
       pull(YCol) %>% unique()
@@ -899,12 +952,12 @@ forest_plot <- function(forest_dataframe,
          left_join(ObsCheck, by = "YCol") %>% 
          mutate(YCol_num = as.numeric(YCol),
                 YCol_num = case_when(Ylen == 1 ~ YCol_num, 
-                                     Ylen == 2 & SimOrObs == "simulated" ~ YCol_num - 0.2, 
+                                     Ylen == 2 & SimOrObs == "predicted" ~ YCol_num - 0.2, 
                                      Ylen == 2 & SimOrObs == "observed" ~ YCol_num + 0.2))
       
    } else {
       forest_dataframe <- forest_dataframe %>% 
-         mutate(PKParam_num = ifelse(SimOrObs == "simulated", 
+         mutate(PKParam_num = ifelse(SimOrObs == "predicted", 
                                      PKParam_num - 0.2, PKParam_num + 0.2))
    }
    
@@ -958,7 +1011,7 @@ forest_plot <- function(forest_dataframe,
       MyShapes <- point_shape[1:2]
    }
    
-   names(MyShapes) <- c("observed", "simulated")
+   names(MyShapes) <- c("observed", "predicted")
    
    
    # Graph ----------------------------------------------------------------
@@ -1036,7 +1089,7 @@ forest_plot <- function(forest_dataframe,
                                          "keep trailing zeroes" = scales::label_comma(),  
                                          "percents" = scales::label_percent())) + 
       coord_cartesian(xlim = x_axis_limits) +
-      xlab(ifelse(is.na(x_axis_label), XTitle, x_axis_label)) + 
+      xlab(ifelse(is.na(x_axis_title), XTitle, x_axis_title)) + 
       ylab(switch(as.character(y_axis_title == "none"), 
                   "TRUE" = NULL, 
                   "FALSE" = y_axis_title)) +
