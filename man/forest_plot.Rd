@@ -105,8 +105,8 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   be used for determining where to place the point. Whatever statistic you
   use \strong{must} be the same for both observed and simulated data.}
 
-  \item{(optional) at least one column or set of columns named "CI90_Lower", "CI90_upper",
-  "Centile5th_Lower", "Centile95th_Upper", "GeoCV", "ArithCV", "Min", "Max",
+  \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
+  "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
   "Std Dev"}{these will be used for the error bars and are optional.}
 
   \item{whatever column you used for facet_column_x}{If you broke up the

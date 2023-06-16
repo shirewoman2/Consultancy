@@ -82,8 +82,8 @@
 #'   be used for determining where to place the point. Whatever statistic you
 #'   use \strong{must} be the same for both observed and simulated data.}
 #'
-#'   \item{(optional) at least one column or set of columns named "CI90_Lower", "CI90_upper",
-#'   "Centile5th_Lower", "Centile95th_Upper", "GeoCV", "ArithCV", "Min", "Max",
+#'   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
+#'   "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
 #'   "Std Dev"}{these will be used for the error bars and are optional.}
 #'
 #'   \item{whatever column you used for facet_column_x}{If you broke up the
@@ -412,8 +412,8 @@ forest_plot <- function(forest_dataframe,
          separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
          mutate(Statistic = case_match(Statistic, 
                                        "GMR" ~ "GeoMean", 
-                                       "CI90_lo"~ "CI90_Lower",
-                                       "CI90_hi" ~ "CI90_Upper", 
+                                       "CI90_lo"~ "CI_Lower",
+                                       "CI90_hi" ~ "CI_Upper", 
                                        .default = Statistic)) %>% 
          pivot_wider(names_from = "Statistic", values_from = "Value")
       
@@ -428,8 +428,8 @@ forest_plot <- function(forest_dataframe,
                separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
                mutate(Statistic = case_match(Statistic, 
                                              "GMR" ~ "GeoMean", 
-                                             "CI90_lo"~ "CI90_Lower",
-                                             "CI90_hi" ~ "CI90_Upper", 
+                                             "CI90_lo"~ "CI_Lower",
+                                             "CI90_hi" ~ "CI_Upper", 
                                              .default = Statistic)) %>% 
                pivot_wider(names_from = "Statistic", values_from = "Value")
          }
@@ -500,9 +500,8 @@ forest_plot <- function(forest_dataframe,
    # Checking that the stats requested are available
    FDnames <- factor(names(forest_dataframe), 
                      levels = c("GeoMean", "Mean", "Median", 
-                                "CI90_Lower", "CI90_Upper", 
-                                "CI95_Lower", "CI95_Upper", 
-                                "Centile5th_Lower","Centile95th_Upper", 
+                                "CI_Lower", "CI_Upper", 
+                                "Centile_Lower","Centile_Upper", 
                                 "Min", "Max", "SD", "GeoCV", "ArithCV"))
    FDnames <- sort(FDnames)
    CenterStat <- as.character(
@@ -528,9 +527,9 @@ forest_plot <- function(forest_dataframe,
    VarStat <- as.character(
       FDnames[which(FDnames %in% switch(
          variability_type, 
-         "90% CI" = c("CI90_Lower", "CI90_Upper"), 
-         "95% CI" = c("CI95_Lower", "CI95_Upper"), 
-         "5th to 95th percentiles" = c("Centile5th_Lower", "Centile95th_Upper"), 
+         "90% CI" = c("CI_Lower", "CI_Upper"), 
+         "95% CI" = c("CI_Lower", "CI_Upper"), 
+         "5th to 95th percentiles" = c("Centile_Lower", "Centile_Upper"), 
          "range" = c("Min", "Max"), 
          "arithmetic CV" = "ArithCV", 
          "geometric CV" = "GeoCV", 
@@ -540,9 +539,9 @@ forest_plot <- function(forest_dataframe,
    )
    
    if(length(VarStat) == 0){
-      VarStat <- FDnames[which(FDnames %in% c("CI90_Lower", "CI90_Upper", 
-                                              "CI95_Lower", "CI95_Upper", 
-                                              "Centile5th_Lower","Centile95th_Upper", 
+      VarStat <- FDnames[which(FDnames %in% c("CI_Lower", "CI_Upper", 
+                                              "CI_Lower", "CI_Upper", 
+                                              "Centile_Lower","Centile_Upper", 
                                               "Min", "Max", "SD", "GeoCV", "ArithCV"))][1]
       
       if(length(VarStat) == 0){
@@ -552,9 +551,8 @@ forest_plot <- function(forest_dataframe,
          warning(paste0("You requested a variability_type of ", 
                         variability_type, ", but that was not available in your data. Instead, ", 
                         switch(VarStat[1], 
-                               "CI90_Lower" = "the geometric 90% confidence interval", 
-                               "CI95_Lower" = "the geometric 90% confidence interval",  
-                               "Centile5th_Lower" = "5th to 95th percentiles",
+                               "CI_Lower" = "the geometric X% confidence interval", 
+                               "Centile_Lower" = "Xth to Yth percentiles",
                                "range" = "the range",
                                "ArithCV" = "the arithmetic CV",
                                "GeoCV" = "the geometric CV",
@@ -616,8 +614,8 @@ forest_plot <- function(forest_dataframe,
       CenterStat_obs <- names(observed_PK)[
          which(names(observed_PK) %in% c("GeoMean", "Mean", "Median"))]
       VarStat_obs <- names(observed_PK)[
-         which(names(observed_PK) %in% c("CI90_Lower", "CI95_Lower", "SD_Lower",
-                                         "Centile5th_Lower", "Min"))]
+         which(names(observed_PK) %in% c("CI_Lower", "CI_Lower", "SD_Lower",
+                                         "Centile_Lower", "Min"))]
       
       if(any(CenterStat_obs %in% CenterStat) == FALSE | 
          any(VarStat_obs %in% VarStat) == FALSE){
@@ -996,9 +994,9 @@ forest_plot <- function(forest_dataframe,
                           "Mean" = "Arithmetic Mean Ratio", 
                           "Median" = "Ratio of Medians"), 
                    switch(VarStat[1], 
-                          "CI90_Lower" = "(90% Confidence Interval)", 
-                          "CI95_Lower" = "(95% Confidence Interval)", 
-                          "Centile5th_Lower" = "(5th to 95th Percentiles)", 
+                          "CI_Lower" = "(90% Confidence Interval)", 
+                          "CI_Lower" = "(95% Confidence Interval)", 
+                          "Centile_Lower" = "(5th to 95th Percentiles)", 
                           "Min" = "(Range)",
                           "SD_Lower" = "(Standard Deviation)", 
                           "GeoCV" = "GeoCV NOT YET SET UP",
