@@ -7,10 +7,11 @@
 calc_PK_ratios_mult(
   sim_data_file_pairs,
   paired = TRUE,
+  compoundToExtract = "substrate",
+  tissue = "plasma",
   PKparameters = "AUC tab",
   sheet_PKparameters_num = NA,
   sheet_PKparameters_denom = NA,
-  tissue = "plasma",
   mean_type = "geometric",
   include_num_denom_columns = TRUE,
   conf_int = 0.9,
@@ -19,6 +20,7 @@ calc_PK_ratios_mult(
   rounding = NA,
   checkDataSource = TRUE,
   extract_forest_data = FALSE,
+  existing_exp_details = NA,
   save_table = NA,
   fontsize = 11
 )
@@ -50,6 +52,21 @@ denominator simulation. Would this be clearer if you could see the
 mathematical equations? We agree but can't easily include equations in the
 help file. However, if you run this and save the output to a Word file, the
 equations will be included in the output.}
+
+\item{compoundToExtract}{For which compound do you want to extract PK data?
+Options are: \itemize{\item{"substrate" (default),} \item{"primary
+metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
+metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
+activator, or suppressor, but it's labeled as "Inhibitor 1" in the
+simulator,} \item{"inhibitor 2" for the 2nd effector listed in the
+simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
+inhibitor 1}} At some point, we may expand this to allow for extracting PK
+data for multiple compounds, but we have not done that at this point. Email
+Laura Shireman if that's something you really want.}
+
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" (default) or "blood" (possible but not as thoroughly
+tested).}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
   output file. Options are: \describe{
@@ -97,10 +114,6 @@ should be left as NA.}
 the numerator to be pulled from a specific tab in
 \code{sim_data_file_denominator}, list that tab here. Most of the time,
 this should be left as NA.}
-
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
 
 \item{mean_type}{What kind of means and confidence intervals do you want
 listed in the output table? Options are "arithmetic" or "geometric"
@@ -156,6 +169,14 @@ the column "Dose_inhib" will contain the dose of the inhibitor (if there
 was one) in the numerator simulations or the dose of the substrate in the
 numerator simulations if there was not. If there was not an inhibitor, the
 column "Inhibitor 1" will contain the file names for the numerator sims.}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails_mult you said
+\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+save some processing time by supplying that object here, unquoted. If left
+as NA, this function will run \code{extractExpDetails} behind the scenes to
+figure out some information about your experimental set up.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

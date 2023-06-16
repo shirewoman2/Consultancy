@@ -57,8 +57,8 @@ equations will be included in the output.}
 Options are: \itemize{\item{"substrate" (default),} \item{"primary
 metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
 metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
-activator, or suppresesor, but it's labeled as "Inhibitor 1" in the
-simulator,} \item{"inhibitor 2" for the 2nd inhibitor listed in the
+activator, or suppressor, but it's labeled as "Inhibitor 1" in the
+simulator,} \item{"inhibitor 2" for the 2nd effector listed in the
 simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
 inhibitor 1}}}
 
@@ -95,13 +95,7 @@ tested).}
   the dose 1 AUCinf with an inhibitor present for file 1 divided by the
   AUCinf for dose 1 with no inhibitor (baseline) for file 2:
   \code{PKparameters = c("AUCinf_dose1_withInhib / AUCinf_dose1")} Please
-  note that the quotes are around \emph{both} of the two parameters!}}
-
-  Currently, the PK data are only for the substrate unless noted, although
-  you can sometimes hack around this by supplying a specific sheet to extract
-  for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
-  This has NOT been as well tested, though, so be sure to check that you're
-  getting what you expected!}
+  note that the quotes are around \emph{both} of the two parameters!}}}
 
 \item{sheet_PKparameters_num}{(optional) If you want the PK parameters for
 the numerator to be pulled from a specific tab in
@@ -116,7 +110,7 @@ this should be left as NA.}
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 Sheet" (e.g., when you ran extractExpDetails_mult you said
-\code{exp_details = "Summary tab"} or \code{exp_details = "all"}), you can
+\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
 save some processing time by supplying that object here, unquoted. If left
 as NA, this function will run \code{extractExpDetails} behind the scenes to
 figure out some information about your experimental set up.}
@@ -218,10 +212,10 @@ A list or a data.frame of PK data that optionally includes where the
   data came from
 }
 \description{
-\code{calc_PK_ratios_mult} matches PK data from a pair of simulator output
-Excel files and calculates the mean and confidence intervals of the ratios of
-the requested PK parameters. To do this for multiple pairs of simulator
-output files, please see the function \code{\link{calc_PK_ratios_mult}}.
+\code{calc_PK_ratios} matches PK data from a pair of simulator output Excel
+files and calculates the mean and confidence intervals of the ratios of the
+requested PK parameters. To do this for multiple pairs of simulator output
+files, please see the function \code{\link{calc_PK_ratios_mult}}.
 }
 \examples{
 # No examples yet.
