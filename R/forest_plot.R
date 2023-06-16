@@ -736,12 +736,6 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   # If color_set is "none" and no observed data are included, then remove the
-   # legend.
-   if(length(color_set) == 1 && color_set == "none" & ObsIncluded == FALSE){
-      legend_position <- "none"
-   }
-   
    if((length(color_set) == 1 &&
        color_set %in% c("none", "grays", "yellow to red") == FALSE) |
       (length(color_set) > 1 && length(color_set) != 4)){
@@ -1107,6 +1101,12 @@ forest_plot <- function(forest_dataframe,
       G <- G +
          theme(axis.ticks.y = element_blank(), 
                axis.text.y = element_blank())
+   }
+   
+   # If color_set is "none", don't show fill for the legend. 
+   if(length(color_set) == 1 && color_set == "none"){
+      G <- G +
+         guides(fill = "none")
    }
    
    if(complete.cases(graph_title)){
