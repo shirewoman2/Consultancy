@@ -29,6 +29,16 @@
 #'   mathematical equations? We agree but can't easily include equations in the
 #'   help file. However, if you run this and save the output to a Word file, the
 #'   equations will be included in the output.
+#' @param compoundToExtract For which compound do you want to extract PK data?
+#'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
+#'   metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
+#'   metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
+#'   activator, or suppressor, but it's labeled as "Inhibitor 1" in the
+#'   simulator,} \item{"inhibitor 2" for the 2nd effector listed in the
+#'   simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
+#'   inhibitor 1}} At some point, we may expand this to allow for extracting PK
+#'   data for multiple compounds, but we have not done that at this point. Email
+#'   Laura Shireman if that's something you really want.
 #' @param PKparameters PK parameters you want to extract from the simulator
 #'   output file. Options are: \describe{
 #'
@@ -141,6 +151,13 @@
 #'   want to have nicely rounded and formatted output in a Word file but you
 #'   \emph{also} want to use the results from \code{calc_PK_ratios_mult} to make
 #'   forest plots, which requires numbers that are \emph{not} rounded.}}
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
+#'   Sheet" (e.g., when you ran extractExpDetails_mult you said
+#'   \code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+#'   save some processing time by supplying that object here, unquoted. If left
+#'   as NA, this function will run \code{extractExpDetails} behind the scenes to
+#'   figure out some information about your experimental set up.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -171,10 +188,11 @@
 #' 
 calc_PK_ratios_mult <- function(sim_data_file_pairs,  
                                 paired = TRUE,
+                                compoundToExtract = "substrate",
+                                tissue = "plasma",
                                 PKparameters = "AUC tab", 
                                 sheet_PKparameters_num = NA,
                                 sheet_PKparameters_denom = NA,
-                                tissue = "plasma",
                                 mean_type = "geometric", 
                                 include_num_denom_columns = TRUE, 
                                 conf_int = 0.9, 
@@ -183,292 +201,308 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 rounding = NA,
                                 checkDataSource = TRUE, 
                                 extract_forest_data = FALSE, 
+                                existing_exp_details = NA,
                                 save_table = NA, 
                                 fontsize = 11){
-    
-    # Error catching ----------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
-    
-    # Check for appropriate input for arguments
-    tissue <- tolower(tissue)
-    if(tissue %in% c("plasma", "blood") == FALSE){
-        warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
-                call. = FALSE)
-        tissue <- "plasma"
-    }
-    
-    if(extract_forest_data & includeConfInt == FALSE){
-        warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
-                call. = FALSE)
-        includeConfInt <- TRUE
-    }
-    
-    # Main body of function -------------------------------------------------
-    
-    # Loading sim_data_file_pairs as needed
-    if(class(sim_data_file_pairs)[1] == "character"){
-        
-        # Checking file name format and setting as csv
-        sim_data_file_pairs <- ifelse(str_detect(sim_data_file_pairs, "\\."),
-                                      sub("\\..*", ".csv", sim_data_file_pairs), 
-                                      sim_data_file_pairs)
-        
-        sim_data_file_pairs <- read.csv(sim_data_file_pairs)
-    }
-    
-    if(all(c("Numerator", "Denominator") %in% names(sim_data_file_pairs) == FALSE)){
-        stop("You must have a column titled `Numerator` and a column titled `Denominator` in the csv file or data.frame `sim_data_file_pairs`, and you are missing at least one of those. We don't know which files are for the numerators and which are for the denominators and cannot proceed.", 
-             call. = FALSE)
-    }
-    
-    if(all(c("sheet_PKparameters_denom", "sheet_PKparameters_num") %in%
-           names(sim_data_file_pairs)) == FALSE){
-        sim_data_file_pairs$sheet_PKparameters_num <- sheet_PKparameters_num
-        sim_data_file_pairs$sheet_PKparameters_denom <- sheet_PKparameters_denom
-    }
-    
-    
-    MyTable <- list()
-    QC <- list()
-    ForestInfo <- list()
-    
-    for(i in 1:nrow(sim_data_file_pairs)){
-        # Including a progress message
-        message("Extracting data for file pair #", i)
-        
-        TEMP <- calc_PK_ratios(
-            sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
-            sim_data_file_denominator = sim_data_file_pairs$Denominator[i], 
-            paired = paired, 
-            PKparameters = PKparameters, 
-            sheet_PKparameters_num = sim_data_file_pairs$sheet_PKparameters_num[i], 
-            sheet_PKparameters_denom = sim_data_file_pairs$sheet_PKparameters_denom[i], 
-            tissue = tissue, 
-            mean_type = mean_type, 
-            include_num_denom_columns = include_num_denom_columns, 
-            conf_int = conf_int, 
-            includeCV = includeCV, 
-            includeConfInt = includeConfInt, 
-            prettify_columns = FALSE, 
-            prettify_compound_names = FALSE, 
-            rounding = "none", 
-            checkDataSource = TRUE, 
-            returnExpDetails = TRUE,
-            save_table = NA)
-        
-        MyTable[[i]] <- TEMP$Table %>% 
-            mutate(File = paste(sim_data_file_pairs$Numerator[i], "/", 
-                                sim_data_file_pairs$Denominator[i]))
-        QC[[i]] <- TEMP$QC
-        
-        ForestInfo[[i]] <- data.frame(
-            File = paste(sim_data_file_pairs$Numerator[i], "/", 
-                         sim_data_file_pairs$Denominator[i]), 
-            Dose_sub = TEMP$ExpDetails_denom$Dose_sub, 
-            Dose_inhib = switch(as.character(
-                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
-                "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
-                "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
-            Substrate = TEMP$ExpDetails_denom$Substrate, 
-            Inhibitor1 = switch(as.character(
-                complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
-                "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
-                "FALSE" = TEMP$ExpDetails_num$Substrate), 
-            File_num = sim_data_file_pairs$Numerator[i], 
-            File_denom = sim_data_file_pairs$Denominator[i]) %>% 
-            left_join(MyTable[[i]], by = join_by(File))
-        
-        rm(TEMP)
-    }
-    
-    MyPKResults <- bind_rows(MyTable)
-    
-    # Setting the rounding option
-    round_opt <- function(x, round_fun){
-        
-        round_fun <- ifelse(is.na(round_fun), "consultancy", tolower(round_fun))
-        round_fun <- ifelse(str_detect(tolower(round_fun), "word"), "none", round_fun)
-        
-        suppressWarnings(
-            NumDig <- as.numeric(str_trim(sub("signif(icant)?|round", "", round_fun)))
-        )
-        
-        if(str_detect(round_fun, "signif|round") & 
-           !str_detect(round_fun, "[0-9]{1,}")){
-            warning("You appear to want some rounding, but we're not sure how many digits. We'll use 3 for now, but please check the help file for appropriate input for the argument `rounding`.", 
-                    call. = FALSE)
-            NumDig <- 3
-        }
-        
-        round_fun <- str_trim(sub("[0-9]{1,}", "", round_fun))
-        round_fun <- ifelse(str_detect(round_fun, "signif"), "signif", round_fun)
-        
-        Out <- switch(round_fun, 
-                      "round" = round(x, digits = NumDig),
-                      "signif" = signif(x, digits = NumDig), 
-                      "consultancy" = round_consultancy(x), 
-                      "none" = x)
-        
-        return(Out)
-    }
-    
-    # Rounding as requested and setting column order
-    MyPKResults <- MyPKResults %>% 
-        mutate(across(.cols = where(is.numeric), 
-                      .fns = round_opt, 
-                      round_fun = ifelse(complete.cases(rounding) & 
-                                             rounding == "Word only", 
-                                         "none", rounding))) %>% 
-        select(-File, File)
-    
-    
-    # Saving --------------------------------------------------------------
-    
-    Out <- list(Table = MyPKResults)
-    
-    
-    if(complete.cases(save_table)){
-        
-        # Rounding as necessary
-        if(complete.cases(rounding) && rounding == "Word only"){
-            MyPKResults <- MyPKResults %>% 
-                mutate(across(.cols = where(is.numeric), 
-                              .fns = round_opt, round_fun = "Consultancy")) %>% 
-                select(-File, File)
-        } 
-        
-        # Checking whether they have specified just "docx" or just "csv" for
-        # output b/c then, we'll use "PK ratios" as file name. This allows us to
-        # determine what the path should be, too.
-        if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
+   
+   # Error catching ----------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Check for appropriate input for arguments
+   tissue <- tolower(tissue)
+   if(tissue %in% c("plasma", "blood") == FALSE){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+              call. = FALSE)
+      tissue <- "plasma"
+   }
+   
+   if(extract_forest_data & includeConfInt == FALSE){
+      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
+              call. = FALSE)
+      includeConfInt <- TRUE
+   }
+   
+   # Standardizing input for when they want to specify PK parameters with "/".
+   # Making sure they always have a space.
+   PKparameters <- sub("( )?/( )?", " / ", PKparameters)
+   
+   
+   # Main body of function -------------------------------------------------
+   
+   # Loading sim_data_file_pairs as needed
+   if(class(sim_data_file_pairs)[1] == "character"){
+      
+      # Checking file name format and setting as csv
+      sim_data_file_pairs <- ifelse(str_detect(sim_data_file_pairs, "\\."),
+                                    sub("\\..*", ".csv", sim_data_file_pairs), 
+                                    sim_data_file_pairs)
+      
+      sim_data_file_pairs <- read.csv(sim_data_file_pairs)
+   }
+   
+   if(all(c("Numerator", "Denominator") %in% names(sim_data_file_pairs) == FALSE)){
+      stop("You must have a column titled `Numerator` and a column titled `Denominator` in the csv file or data.frame `sim_data_file_pairs`, and you are missing at least one of those. We don't know which files are for the numerators and which are for the denominators and cannot proceed.", 
+           call. = FALSE)
+   }
+   
+   if(all(c("sheet_PKparameters_denom", "sheet_PKparameters_num") %in%
+          names(sim_data_file_pairs)) == FALSE){
+      sim_data_file_pairs$sheet_PKparameters_num <- sheet_PKparameters_num
+      sim_data_file_pairs$sheet_PKparameters_denom <- sheet_PKparameters_denom
+   }
+   
+   
+   MyTable <- list()
+   QC <- list()
+   ForestInfo <- list()
+   
+   for(i in 1:nrow(sim_data_file_pairs)){
+      # Including a progress message
+      message("Extracting data for file pair #", i)
+      
+      TEMP <- calc_PK_ratios(
+         sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
+         sim_data_file_denominator = sim_data_file_pairs$Denominator[i], 
+         paired = paired, 
+         compoundToExtract = compoundToExtract,
+         PKparameters = PKparameters, 
+         sheet_PKparameters_num = sim_data_file_pairs$sheet_PKparameters_num[i], 
+         sheet_PKparameters_denom = sim_data_file_pairs$sheet_PKparameters_denom[i], 
+         tissue = tissue, 
+         mean_type = mean_type, 
+         existing_exp_details = existing_exp_details,
+         include_num_denom_columns = include_num_denom_columns, 
+         conf_int = conf_int, 
+         includeCV = includeCV, 
+         includeConfInt = includeConfInt, 
+         prettify_columns = FALSE, 
+         prettify_compound_names = FALSE, 
+         rounding = "none", 
+         checkDataSource = TRUE, 
+         returnExpDetails = TRUE,
+         save_table = NA)
+      
+      MyTable[[i]] <- TEMP$Table %>% 
+         mutate(File = paste(sim_data_file_pairs$Numerator[i], "/", 
+                             sim_data_file_pairs$Denominator[i]))
+      QC[[i]] <- TEMP$QC
+      
+      ForestInfo[[i]] <- data.frame(
+         File = paste(sim_data_file_pairs$Numerator[i], "/", 
+                      sim_data_file_pairs$Denominator[i]), 
+         Dose_sub = TEMP$ExpDetails_denom$Dose_sub, 
+         Dose_inhib = switch(as.character(
+            complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+            "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
+            "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
+         Substrate = TEMP$ExpDetails_denom$Substrate, 
+         Inhibitor1 = switch(as.character(
+            complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
+            "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
+            "FALSE" = TEMP$ExpDetails_num$Substrate), 
+         File_num = sim_data_file_pairs$Numerator[i], 
+         File_denom = sim_data_file_pairs$Denominator[i]) %>% 
+         left_join(MyTable[[i]], by = join_by(File))
+      
+      rm(TEMP)
+   }
+   
+   MyPKResults <- bind_rows(MyTable)
+   
+   # Setting the rounding option
+   round_opt <- function(x, round_fun){
+      
+      round_fun <- ifelse(is.na(round_fun), "consultancy", tolower(round_fun))
+      round_fun <- ifelse(str_detect(tolower(round_fun), "word"), "none", round_fun)
+      
+      suppressWarnings(
+         NumDig <- as.numeric(str_trim(sub("signif(icant)?|round", "", round_fun)))
+      )
+      
+      if(str_detect(round_fun, "signif|round") & 
+         !str_detect(round_fun, "[0-9]{1,}")){
+         warning("You appear to want some rounding, but we're not sure how many digits. We'll use 3 for now, but please check the help file for appropriate input for the argument `rounding`.", 
+                 call. = FALSE)
+         NumDig <- 3
+      }
+      
+      round_fun <- str_trim(sub("[0-9]{1,}", "", round_fun))
+      round_fun <- ifelse(str_detect(round_fun, "signif"), "signif", round_fun)
+      
+      Out <- switch(round_fun, 
+                    "round" = round(x, digits = NumDig),
+                    "signif" = signif(x, digits = NumDig), 
+                    "consultancy" = round_consultancy(x), 
+                    "none" = x)
+      
+      return(Out)
+   }
+   
+   # Rounding as requested and setting column order
+   MyPKResults <- MyPKResults %>% 
+      mutate(across(.cols = where(is.numeric), 
+                    .fns = round_opt, 
+                    round_fun = ifelse(complete.cases(rounding) & 
+                                          rounding == "Word only", 
+                                       "none", rounding))) %>% 
+      select(-File, File)
+   
+   
+   # Saving --------------------------------------------------------------
+   
+   Out <- list(Table = MyPKResults)
+   
+   
+   if(complete.cases(save_table)){
+      
+      # Rounding as necessary
+      if(complete.cases(rounding) && rounding == "Word only"){
+         MyPKResults <- MyPKResults %>% 
+            mutate(across(.cols = where(is.numeric), 
+                          .fns = round_opt, round_fun = "Consultancy")) %>% 
+            select(-File, File)
+      } 
+      
+      # Checking whether they have specified just "docx" or just "csv" for
+      # output b/c then, we'll use "PK ratios" as file name. This allows us to
+      # determine what the path should be, too.
+      if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
+         OutPath <- getwd()
+         save_table <- sub("xlsx", 
+                           # If they included "." at the beginning of the
+                           # file extension, need to remove that here.
+                           sub("\\.", "", save_table),
+                           "PK ratios")
+      } else {
+         # If they supplied something other than just "docx" or just "csv",
+         # then check whether that file name is formatted appropriately.
+         
+         if(str_detect(basename(save_table), "\\..*")){
+            if(str_detect(basename(save_table), "\\.docx") == FALSE){
+               # If they specified a file extension that wasn't docx, make that
+               # file extension be .csv
+               save_table <- sub("\\..*", ".csv", save_table)
+            }
+         } else {
+            # If they didn't specify a file extension at all, make it .csv. 
+            save_table <- paste0(save_table, ".csv")
+         }
+         
+         # Now that the file should have an appropriate extension, check what
+         # the path and basename should be.
+         OutPath <- dirname(save_table)
+         save_table <- basename(save_table)
+      }
+      
+      if(str_detect(save_table, "docx")){ 
+         # This is when they want a Word file as output
+         
+         # May need to change the working directory temporarily, so
+         # determining what it is now
+         CurrDir <- getwd()
+         
+         OutPath <- dirname(save_table)
+         if(OutPath == "."){
             OutPath <- getwd()
-            save_table <- sub("xlsx", 
-                              # If they included "." at the beginning of the
-                              # file extension, need to remove that here.
-                              sub("\\.", "", save_table),
-                              "PK ratios")
-        } else {
-            # If they supplied something other than just "docx" or just "csv",
-            # then check whether that file name is formatted appropriately.
-            
-            if(str_detect(basename(save_table), "\\..*")){
-                if(str_detect(basename(save_table), "\\.docx") == FALSE){
-                    # If they specified a file extension that wasn't docx, make that
-                    # file extension be .csv
-                    save_table <- sub("\\..*", ".csv", save_table)
-                }
-            } else {
-                # If they didn't specify a file extension at all, make it .csv. 
-                save_table <- paste0(save_table, ".csv")
-            }
-            
-            # Now that the file should have an appropriate extension, check what
-            # the path and basename should be.
-            OutPath <- dirname(save_table)
-            save_table <- basename(save_table)
-        }
-        
-        if(str_detect(save_table, "docx")){ 
-            # This is when they want a Word file as output
-            
-            # May need to change the working directory temporarily, so
-            # determining what it is now
-            CurrDir <- getwd()
-            
-            OutPath <- dirname(save_table)
-            if(OutPath == "."){
-                OutPath <- getwd()
-            }
-            
-            FileName <- basename(save_table)
-            
-            # Storing some objects so they'll work with the markdown file
-            PKToPull <- PKparameters
-            MeanType <- mean_type
-            FromCalcPKRatios <- TRUE
-            
-            rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
-                                          package="SimcypConsultancy"), 
-                              output_dir = OutPath, 
-                              output_file = FileName, 
-                              quiet = TRUE)
-            # Note: The "system.file" part of the call means "go to where the
-            # package is installed, search for the file listed, and return its
-            # full path.
-            
-        } else {
-            # This is when they want a .csv file as output. In this scenario,
-            # changing the value "simulated" in the list of stats to include
-            # whether it was arithmetic or geometric b/c that info is included
-            # in the Word file but not in the table itself.
-            MyPKResults <- MyPKResults %>% 
-                mutate(Statistic = sub("Simulated", 
-                                       paste("Simulated", MeanType, "mean"), Statistic))
-            write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
-        }
-    }
-    
-    if(extract_forest_data){
-        
-        StatNames <- unique(MyPKResults$Statistic[
-            str_detect(MyPKResults$Statistic, "Mean Ratio|CI|^Simulated$")])
-        names(StatNames) <- StatNames
-        StatNames[which(str_detect(StatNames, "Ratio|^Simulated$"))] <- "GMR"
-        StatNames[which(str_detect(StatNames, "CI - Lower"))] <- "CI90_lo"
-        StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI90_hi"
-        
-        FD <- bind_rows(ForestInfo) %>% 
-            select(File, Statistic, Substrate, Dose_sub, Inhibitor1, Dose_inhib,
-                   matches(" / ")) %>% 
-            filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
-            pivot_longer(cols = -c("Statistic", "File", "Dose_sub", "Dose_inhib", 
-                                   "Substrate", "Inhibitor1"), 
-                         names_to = "Parameter1", 
-                         values_to = "Value") %>% 
-            mutate(
-                Statistic = StatNames[Statistic],
-                Parameter = str_extract(
-                    Parameter1, 
-                    str_c(AllPKParameters %>% filter(AppliesOnlyWhenEffectorPresent == FALSE) %>% 
-                              pull(PKparameter) %>% unique(), 
-                          collapse = "|")), 
-                Parameter = paste(Parameter, Statistic, sep = "__"), 
-                Parameter = sub("_dose1", "_ratio_dose1", Parameter), 
-                Parameter = sub("_last", "_ratio_last", Parameter)) %>% 
-            select(-Parameter1, -Statistic) %>% 
-            filter(str_detect(Parameter, "AUCinf|AUCt|Cmax"))
-        
-        if(nrow(FD) == 0){
-            warning("The PK parameters selected don't work for forest plots, which can only take PK parameters for AUCinf, AUCtau, and Cmax for dose 1 or the last dose. We cannot return any forest-plot data.", 
-                    call. = FALSE)
-            FD <- data.frame()
-            
-        } else {
-            
-            suppressMessages(
-                FD <-  FD %>% 
-                    pivot_wider(names_from = Parameter, values_from = Value) %>% 
-                    select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
-                           everything())
-            )
-        }
-        
-        Out[["ForestData"]] <- FD
-        
-    }
-    
-    if(checkDataSource){
-        Out[["QC"]] <- bind_rows(QC)
-    }
-    
-    if(length(Out) == 1){
-        return(Out[[1]])
-    } else {
-        return(Out)
-    }
-    
+         }
+         
+         FileName <- basename(save_table)
+         
+         # Storing some objects so they'll work with the markdown file
+         PKToPull <- PKparameters
+         MeanType <- mean_type
+         FromCalcPKRatios <- TRUE
+         
+         rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_dir = OutPath, 
+                           output_file = FileName, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+      } else {
+         # This is when they want a .csv file as output. In this scenario,
+         # changing the value "simulated" in the list of stats to include
+         # whether it was arithmetic or geometric b/c that info is included
+         # in the Word file but not in the table itself.
+         MyPKResults <- MyPKResults %>% 
+            mutate(Statistic = sub("Simulated", 
+                                   paste("Simulated", MeanType, "mean"), Statistic))
+         write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
+      }
+   }
+   
+   if(extract_forest_data){
+      
+      StatNames <- unique(MyPKResults$Statistic[
+         str_detect(MyPKResults$Statistic, "Mean Ratio|CI|^Simulated$")])
+      names(StatNames) <- StatNames
+      StatNames[which(str_detect(StatNames, "Ratio|^Simulated$"))] <- "GeoMean"
+      StatNames[which(str_detect(StatNames, "CI - Lower"))] <- "CI_Lower"
+      StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI_Upper"
+      
+      FD <- bind_rows(ForestInfo) %>% 
+         select(File, Statistic, Substrate, Dose_sub, Inhibitor1, Dose_inhib,
+                matches(" / | Ratio")) %>% 
+         filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
+         pivot_longer(cols = -c("Statistic", "File", "Dose_sub", "Dose_inhib", 
+                                "Substrate", "Inhibitor1"), 
+                      names_to = "Parameter", 
+                      values_to = "Value") %>% 
+         mutate(Statistic = StatNames[Statistic],
+                # If they used " / " in their specification of PK parameters and
+                # used it the way I envision, then we know when we have, e.g.,
+                # "AUCinf_ratio_dose1" or "Cmax_ratio_last". However, if they
+                # just requested regular PK parameters, then "AUCinf_dose1" is
+                # NOT "AUCinf_ratio_dose1" because it is NOT the ratio of AUCinf
+                # with effector / AUCinf baseline but the ratio of, e.g.,
+                # AUCinf_dose1 with hepatic impairment / AUCinf_dose1 for
+                # healthy volunteers or fed / fasted, etc. In any circumstances
+                # beyond the ones we can know definitively are the "regular" PK
+                # ratios, leave the name of the PK parameter as is. It will NOT
+                # currently work with forest_plot, but that's OK. I'd want to
+                # KNOW what they're trying to do before adapting the forest_plot
+                # function to accommodate anything unusual.
+                Parameter = case_when(
+                   Parameter == "AUCinf_dose1_withInhib / AUCinf_dose1" ~ "AUCinf_ratio_dose1", 
+                   Parameter == "AUCt_dose1_withInhib / AUCt_dose1" ~ "AUCt_ratio_dose1", 
+                   Parameter == "AUCtau_last_withInhib / AUCtau_last" ~ "AUCtau_ratio_last", 
+                   Parameter == "Cmax_dose1_withInhib / Cmax_dose1" ~ "Cmax_ratio_dose1", 
+                   Parameter == "Cmax_last_withInhib / Cmax_last" ~ "Cmax_ratio_last", 
+                   # Not even sure you can *get* these next few, but including just in case
+                   Parameter == "Cmax_withInhib / Cmax" ~ "Cmax_ratio", 
+                   Parameter == "AUCinf_withInhib / AUCinf" ~ "AUCinf_ratio", 
+                   Parameter == "AUCt_withInhib / AUCt" ~ "AUCt_ratio", 
+                   Parameter == "AUCtau_withInhib / AUCtau" ~ "AUCtau_ratio", 
+                   TRUE ~ Parameter)) %>% 
+         filter(str_detect(Parameter, "AUCinf_[^Perc]|AUCt|Cmax")) %>% 
+         pivot_wider(names_from = Statistic, values_from = Value)
+      
+      if(nrow(FD) == 0){
+         warning("The PK parameters selected don't work for forest plots, which can only take PK parameters for AUCinf, AUCt, AUCtau, and Cmax. We cannot return any forest-plot data.", 
+                 call. = FALSE)
+         FD <- data.frame()
+         
+      } 
+      
+      Out[["ForestData"]] <- FD
+      
+   }
+   
+   if(checkDataSource){
+      Out[["QC"]] <- bind_rows(QC)
+   }
+   
+   if(length(Out) == 1){
+      return(Out[[1]])
+   } else {
+      return(Out)
+   }
+   
 }
 
