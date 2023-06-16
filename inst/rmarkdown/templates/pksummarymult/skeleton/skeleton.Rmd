@@ -42,6 +42,13 @@ if(FromCalcPKRatios){
         cat(OptionalSection, sep = "\n")
         
     }
+   
+   # calc_PK_ratios only has a single tissue option for now, so need to set
+   # tissues to tissue. Same w/compounds. 
+   tissues <- tissue
+   MyPKResults$Tissue <- tissue
+   compoundsToExtract <- compoundToExtract
+   MyPKResults$CompoundID <- compoundToExtract
 } 
 
 ```

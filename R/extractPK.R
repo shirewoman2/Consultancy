@@ -845,6 +845,7 @@ extractPK <- function(sim_data_file,
       
       Out_AUC0 <- extractAUCXtab(PKparameters = PKparameters_AUC0, 
                                  PKparameters_orig = PKparameters_orig,
+                                 compoundToExtract = compoundToExtract,
                                  sim_data_file = sim_data_file,
                                  Sheet = Tab_first, 
                                  PKset = "AUC0",
