@@ -31,24 +31,24 @@
 #' @export
 
 gm_mean <- function(x, na.rm=TRUE, zero.propagate = FALSE){
-    
-    # If any values are negative, return NaN.
-    if(any(x < 0, na.rm = TRUE)){
-        return(NaN)
-    }
-    
-    if(zero.propagate){
-        if(any(x == 0, na.rm = TRUE)){
-            return(0)
-        }
-    } else {
-        # If user doesn't want to propagate zeroes, then remove them from
-        # the vector.
-        x <- x[x > 0]
-    }
-    
-    return(exp(mean(log(x), na.rm = na.rm)))
-    
+   
+   # If any values are negative, return NaN.
+   if(any(x < 0, na.rm = TRUE)){
+      return(NaN)
+   }
+   
+   if(zero.propagate){
+      if(any(x == 0, na.rm = TRUE)){
+         return(0)
+      }
+   } else {
+      # If user doesn't want to propagate zeroes, then remove them from
+      # the vector.
+      x <- x[x > 0]
+   }
+   
+   return(exp(mean(log(x), na.rm = na.rm)))
+   
 }
 
 
@@ -81,37 +81,37 @@ gm_mean <- function(x, na.rm=TRUE, zero.propagate = FALSE){
 #' @export
 
 gm_sd <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
-    
-    if(na.rm){
-        x <- x[complete.cases(x)]
-    }
-    
-    # If any values are negative, return NaN.
-    if(any(x < 0, na.rm = TRUE)){
-        return(NaN)
-    }
-    
-    if(zero.propagate){
-        if(any(x == 0, na.rm = TRUE)){
-            return(0)
-        }
-    } else { # If you don't want to propagate zeroes, then remove them from the vector.
-        x <- x[x > 0]
-    }
-    
-    # Now, proceed with whatever your vector is after removing zeroes (or not
-    # removing them if zero.propagate was TRUE but there weren't any zeroes
-    # to start with anyway.)
-    ToSum <- rep(NA, length(x))
-    # There's probably a way to do this next bit without actually writing
-    # a loop, but I'm not sure how.
-    for(i in 1:length(x)){
-        ToSum[i] <- (log(x[i]/gm_mean(x)))^2
-    }
-    
-    return(exp(sqrt(sum(ToSum)/(length(x))))) # This is population geometric
-    # standard deviation. For *sample* geometric sd, you'd want the denominator
-    # to be N-1 instead of N.
+   
+   if(na.rm){
+      x <- x[complete.cases(x)]
+   }
+   
+   # If any values are negative, return NaN.
+   if(any(x < 0, na.rm = TRUE)){
+      return(NaN)
+   }
+   
+   if(zero.propagate){
+      if(any(x == 0, na.rm = TRUE)){
+         return(0)
+      }
+   } else { # If you don't want to propagate zeroes, then remove them from the vector.
+      x <- x[x > 0]
+   }
+   
+   # Now, proceed with whatever your vector is after removing zeroes (or not
+   # removing them if zero.propagate was TRUE but there weren't any zeroes
+   # to start with anyway.)
+   ToSum <- rep(NA, length(x))
+   # There's probably a way to do this next bit without actually writing
+   # a loop, but I'm not sure how.
+   for(i in 1:length(x)){
+      ToSum[i] <- (log(x[i]/gm_mean(x)))^2
+   }
+   
+   return(exp(sqrt(sum(ToSum)/(length(x))))) # This is population geometric
+   # standard deviation. For *sample* geometric sd, you'd want the denominator
+   # to be N-1 instead of N.
 }
 
 
@@ -133,29 +133,29 @@ gm_sd <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #' @export
 
 gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
-    
-    if(na.rm){
-        x <- x[complete.cases(x)]
-    }
-    
-    # If any values are negative, return NaN.
-    if(any(x < 0, na.rm = TRUE)){
-        return(NaN)
-    }
-    
-    if(zero.propagate){
-        if(any(x == 0, na.rm = TRUE)){
-            return(0)
-        }
-    } else { # If you don't want to propagate zeroes, then remove them from the vector.
-        x <- x[x > 0]
-    }
-    
-    # Now, proceed with whatever your vector is after removing zeroes (or not
-    # removing them if zero.propagate was TRUE but there weren't any zeroes
-    # to start with anyway.)
-    
-    return( sqrt(exp(sd(log(x))^2)-1) )
+   
+   if(na.rm){
+      x <- x[complete.cases(x)]
+   }
+   
+   # If any values are negative, return NaN.
+   if(any(x < 0, na.rm = TRUE)){
+      return(NaN)
+   }
+   
+   if(zero.propagate){
+      if(any(x == 0, na.rm = TRUE)){
+         return(0)
+      }
+   } else { # If you don't want to propagate zeroes, then remove them from the vector.
+      x <- x[x > 0]
+   }
+   
+   # Now, proceed with whatever your vector is after removing zeroes (or not
+   # removing them if zero.propagate was TRUE but there weren't any zeroes
+   # to start with anyway.)
+   
+   return( sqrt(exp(sd(log(x))^2)-1) )
 }
 
 
@@ -181,23 +181,23 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #' @export
 
 confInt <- function(x, CI = 0.95, na.rm = TRUE) {
-    
-    if(na.rm){
-        x <- x[complete.cases(x)]
-    }
-    
-    # Now, proceed with whatever your vector is after removing zeroes (or not
-    # removing them if zero.propagate was TRUE but there weren't any zeroes
-    # to start with anyway.)
-    
-    alpha <- 1-CI
-    
-    Up <- mean(x) + qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
-    Low <- mean(x) - qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
-    
-    Out <- c("lower" = Low, "upper" = Up)
-    
-    return(Out)
+   
+   if(na.rm){
+      x <- x[complete.cases(x)]
+   }
+   
+   # Now, proceed with whatever your vector is after removing zeroes (or not
+   # removing them if zero.propagate was TRUE but there weren't any zeroes
+   # to start with anyway.)
+   
+   alpha <- 1-CI
+   
+   Up <- mean(x) + qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
+   Low <- mean(x) - qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
+   
+   Out <- c("lower" = Low, "upper" = Up)
+   
+   return(Out)
 }
 
 
@@ -214,6 +214,9 @@ confInt <- function(x, CI = 0.95, na.rm = TRUE) {
 #'   as a decimal, e.g., 0.95.
 #' @param na.rm Should NA values be removed? (logical)
 #' @param zero.propagate Should zeroes be propagated? (logical)
+#' @param distribution_type use a "t" distribution (default) or a "Z"
+#'   distribution. Note: The Simcyp Simulator calculates geometric confidence
+#'   intervals with a t distribution.
 #'
 #' @examples
 #' x <- rnorm(100, 5, 1)
@@ -237,40 +240,51 @@ confInt <- function(x, CI = 0.95, na.rm = TRUE) {
 #'
 #' @export
 
-gm_conf <- function(x, CI = 0.95, na.rm = TRUE, zero.propagate = FALSE) {
-    
-    if(na.rm){
-        x <- x[complete.cases(x)]
-    }
-    
-    # If any values are negative, return NaN.
-    if(any(x < 0, na.rm = TRUE)){
-        return(NaN)
-    }
-    
-    if(zero.propagate){
-        if(any(x == 0, na.rm = TRUE)){
-            return(0)
-        }
-    } else { # If you don't want to propagate zeroes, then remove them from the vector.
-        x <- x[x > 0]
-    }
-    
-    # Now, proceed with whatever your vector is after removing zeroes (or not
-    # removing them if zero.propagate was TRUE but there weren't any zeroes
-    # to start with anyway.)
-    
-    alpha <- 1-CI
-    
-    logx <- log(x)
-    
-    Up <- exp(mean(logx) + qnorm(1-(alpha)/2)*sd(logx)/sqrt(length(logx)))
-    Low <- exp(mean(logx) - qnorm(1-(alpha)/2)*sd(logx)/sqrt(length(logx)))
-    
-    Out <- c("lower" = Low, "upper" = Up)
-    
-    return(Out)
-    
+gm_conf <- function(x, 
+                    CI = 0.95, 
+                    na.rm = TRUE, 
+                    zero.propagate = FALSE, 
+                    distribution_type = "t") {
+   
+   if(na.rm){
+      x <- x[complete.cases(x)]
+   }
+   
+   # If any values are negative, return NaN.
+   if(any(x < 0, na.rm = TRUE)){
+      return(NaN)
+   }
+   
+   if(zero.propagate){
+      if(any(x == 0, na.rm = TRUE)){
+         return(0)
+      }
+   } else { # If you don't want to propagate zeroes, then remove them from the vector.
+      x <- x[x > 0]
+   }
+   
+   # Now, proceed with whatever your vector is after removing zeroes (or not
+   # removing them if zero.propagate was TRUE but there weren't any zeroes
+   # to start with anyway.)
+   
+   alpha <- 1-CI
+   
+   logx <- log(x)
+   
+   Up <- switch(distribution_type, 
+                "Z" = exp(mean(logx) + qnorm(1-alpha/2)*sd(logx)/sqrt(length(logx))),
+                "t" = exp(mean(logx) + qt(p = 1-alpha/2, df = (length(logx) - 1)) * 
+                             sd(logx)/sqrt(length(logx))))
+   
+   Low <- switch(distribution_type, 
+                 "Z" = exp(mean(logx) - qnorm(1-alpha/2)*sd(logx)/sqrt(length(logx))), 
+                 "t" = exp(mean(logx) - qt(p = 1-alpha/2, df = (length(logx) - 1)) * 
+                              sd(logx)/sqrt(length(logx))))
+   
+   Out <- c("lower" = Low, "upper" = Up)
+   
+   return(Out)
+   
 }
 
 

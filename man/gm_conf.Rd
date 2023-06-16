@@ -4,7 +4,13 @@
 \alias{gm_conf}
 \title{Calculate the geometric X percent confidence interval}
 \usage{
-gm_conf(x, CI = 0.95, na.rm = TRUE, zero.propagate = FALSE)
+gm_conf(
+  x,
+  CI = 0.95,
+  na.rm = TRUE,
+  zero.propagate = FALSE,
+  distribution_type = "t"
+)
 }
 \arguments{
 \item{x}{A vector of numbers}
@@ -15,6 +21,10 @@ as a decimal, e.g., 0.95.}
 \item{na.rm}{Should NA values be removed? (logical)}
 
 \item{zero.propagate}{Should zeroes be propagated? (logical)}
+
+\item{distribution_type}{use a "t" distribution (default) or a "Z"
+distribution. Note: The Simcyp Simulator calculates geometric confidence
+intervals with a t distribution.}
 }
 \description{
 \code{gm_conf} takes as input a numeric vector, the desired confidence
