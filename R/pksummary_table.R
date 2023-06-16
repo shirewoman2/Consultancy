@@ -214,8 +214,10 @@
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
-#'   will attempt to adjust the units to match that. This only adjusts AUC and
-#'   Cmax values at present. Acceptable input is any concentration unit listed
+#'   will attempt to adjust the units to match that. This only adjusts only the
+#'   simulated values, since we're assuming that that's the most likely problem
+#'   and that observed units are relatively easy to fix, and it also only affect
+#'   AUC and Cmax values. Acceptable input is any concentration unit listed
 #'   in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
 #'   "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
@@ -890,26 +892,27 @@ pksummary_table <- function(sim_data_file = NA,
             MyPKResults_all$aggregate[, i] <- TEMP$Conc
             rm(TEMP)
             
-            TEMP <- match_units(
-               MyPKResults_all$individual %>% 
-                  rename(Conc = i) %>% 
-                  mutate(CompoundID = compoundToExtract, 
-                         Conc_units = Deets$Units_Cmax, 
-                         Time = 1, Time_units = "hours"),
-               goodunits = list("Conc_units" = adjust_conc_units, 
-                                "Time_units" = "hours"), 
-               MW = c(compoundToExtract = 
-                         switch(compoundToExtract, 
-                                "substrate" = Deets$MW_sub, 
-                                "primary metabolite 1" = Deets$MW_met1, 
-                                "primary metabolite 2" = Deets$MW_met2, 
-                                "secondary metabolite" = Deets$MW_secmet, 
-                                "inhibitor 1" = Deets$MW_inhib, 
-                                "inhibitor 2" = Deets$MW_inhib2, 
-                                "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
-            MyPKResults_all$individual[, i] <- TEMP$Conc
-            rm(TEMP)
-            
+            if("individual" %in% names(MyPKResults_all)){
+               TEMP <- match_units(
+                  MyPKResults_all$individual %>% 
+                     rename(Conc = i) %>% 
+                     mutate(CompoundID = compoundToExtract, 
+                            Conc_units = Deets$Units_Cmax, 
+                            Time = 1, Time_units = "hours"),
+                  goodunits = list("Conc_units" = adjust_conc_units, 
+                                   "Time_units" = "hours"), 
+                  MW = c(compoundToExtract = 
+                            switch(compoundToExtract, 
+                                   "substrate" = Deets$MW_sub, 
+                                   "primary metabolite 1" = Deets$MW_met1, 
+                                   "primary metabolite 2" = Deets$MW_met2, 
+                                   "secondary metabolite" = Deets$MW_secmet, 
+                                   "inhibitor 1" = Deets$MW_inhib, 
+                                   "inhibitor 2" = Deets$MW_inhib2, 
+                                   "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
+               MyPKResults_all$individual[, i] <- TEMP$Conc
+               rm(TEMP)
+            }
          }
          
          # Need to change units in Deets now to match.
@@ -1220,7 +1223,7 @@ pksummary_table <- function(sim_data_file = NA,
          warning("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.", 
                  call. = FALSE)
          FD <- list()
-      
+         
       } else {
          
          # For forest data, only keeping ratios and removing observed data from

@@ -172,8 +172,10 @@ output like "X - Y".}
 \item{adjust_conc_units}{Would you like to adjust the units to something
 other than what was used in the simulation? Default is NA to leave the
 units as is, but if you set the concentration units to something else, this
-will attempt to adjust the units to match that. This only adjusts AUC and
-Cmax values at present. Acceptable input is any concentration unit listed
+will attempt to adjust the units to match that. This only adjusts only the
+simulated values, since we're assuming that that's the most likely problem
+and that observed units are relatively easy to fix, and it also only affect
+AUC and Cmax values. Acceptable input is any concentration unit listed
 in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
 "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
 automatically converted using the molecular weight of whatever you set for
