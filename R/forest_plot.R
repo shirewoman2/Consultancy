@@ -1025,7 +1025,7 @@ forest_plot <- function(forest_dataframe,
       # Function is NOT set up for allowing for a secondary y axis when
       # facet_column_x is PKparameter, so y must be mapped to
       # y_axis_column at this point in the function. -LSh
-      
+      # 
       Param_exp <- c("Cmax_ratio_last" = PKexpressions[["Cmax_ratio_last"]], 
                      "Cmax_ratio" = PKexpressions[["Cmax_ratio"]],
                      "AUCtau_ratio_last" = PKexpressions[["AUCtau_ratio_last"]], 
@@ -1059,6 +1059,10 @@ forest_plot <- function(forest_dataframe,
             mutate(PKparameter_exp = 
                       factor(Param_ch[as.character(PKparameter)], 
                              levels = {{Param_ch}}))
+      } else {
+         # Need to replace spaces with ~ to work with labeller.
+         forest_dataframe$YCol <- 
+            gsub(" ", "~", forest_dataframe$YCol)
       }
       
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
