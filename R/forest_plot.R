@@ -1052,7 +1052,8 @@ forest_plot <- function(forest_dataframe,
                        "Cmax_ratio_dose1" = "Dose 1 Cmax ratio", 
                        "AUCt_ratio_dose1" = "Dose 1 AUCt ratio", 
                        "AUCt_ratio" = "AUCt ratio", 
-                       "AUCinf_ratio_dose1" = "Dose 1 AUCinf ratio")
+                       "AUCinf_ratio_dose1" = "Dose 1 AUCinf ratio", 
+                       "AUCinf_ratio" = "AUCinf ratio")
          
          forest_dataframe <- forest_dataframe %>% 
             mutate(PKparameter_exp = 
