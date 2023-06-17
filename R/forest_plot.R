@@ -451,6 +451,18 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
+   if(ObsIncluded){
+      # If any of the column names had older stat names, fix that.
+      observed_PK <- observed_PK %>% 
+         rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower", "CI_Lower", .x)) %>% 
+         rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper", "CI_Upper", .x))
+   }
+   
+   # If any of the column names had older stat names, fix that.
+   forest_dataframe <- forest_dataframe %>% 
+      rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower", "CI_Lower", .x)) %>% 
+      rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper", "CI_Upper", .x))
+   
    if(all(c("File", "PKparameter") %in% names(forest_dataframe) == FALSE)){
       stop(paste0("There must be a column titled `File` in what you supply for forest_dataframe, and there also must be some PK data. We can't find that in your input. For an example of acceptable data, please run\n", 
                   "view(BufForestData_20mg)\n", 
@@ -1029,8 +1041,27 @@ forest_plot <- function(forest_dataframe,
                                          levels = names({{Param_exp}}), 
                                          labels = {{Param_exp}}))
       
+      # If there are any \n in YCol, labeller doesn't work. In that case, make
+      # PKparameter_exp just be the name w/out subscripts or symbols.
+      if(any(str_detect(forest_dataframe$YCol, "\\n"))){ 
+         
+         Param_ch <- c("Cmax_ratio_last" = "Last dose Cmax ratio", 
+                       "Cmax_ratio" = "Cmax ratio", 
+                       "AUCtau_ratio_last" = "Last dose AUCtau ratio", 
+                       "AUCtau_ratio" = "AUCtau ratio", 
+                       "Cmax_ratio_dose1" = "Dose 1 Cmax ratio", 
+                       "AUCt_ratio_dose1" = "Dose 1 AUCt ratio", 
+                       "AUCt_ratio" = "AUCt ratio", 
+                       "AUCinf_ratio_dose1" = "Dose 1 AUCinf ratio")
+         
+         forest_dataframe <- forest_dataframe %>% 
+            mutate(PKparameter_exp = 
+                      factor(Param_ch[as.character(PKparameter)], 
+                             levels = {{Param_ch}}))
+      }
+      
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
-                                        y = 1, shape = SimOrObs)) +
+                                        y = SimOrObs, shape = SimOrObs)) +
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax,
                                     ymin = Ymin, ymax = Ymax, fill = IntLevel),
                    inherit.aes = FALSE) +
@@ -1038,7 +1069,10 @@ forest_plot <- function(forest_dataframe,
          geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
          geom_errorbar(width = 0.3) +
          geom_point(size = 2.5, fill = "white") +
-         facet_grid(YCol ~ PKparameter_exp, labeller = label_parsed, 
+         facet_grid(YCol ~ PKparameter_exp, 
+                    labeller = switch(as.character(any(str_detect(forest_dataframe$YCol, "\\n"))), 
+                                      "TRUE" = label_value, 
+                                      "FALSE" = label_parsed), 
                     switch = "y") +
          scale_shape_manual(values = MyShapes) +
          scale_y_discrete(expand = expansion(mult = pad_y_num * 3)) + # Often needs a little extra
