@@ -11,6 +11,7 @@ forest_plot(
   PKparameters = NA,
   observed_PK = NA,
   facet_column_x,
+  show_numbers_on_right = FALSE,
   mean_type = "geometric",
   variability_type = "90\% CI",
   include_dose_num = TRUE,
@@ -20,6 +21,8 @@ forest_plot(
   x_axis_title = NA,
   x_axis_number_type = "ratios",
   x_order = NA,
+  error_bar_height = NA,
+  show_borders = TRUE,
   dose_units = "mg",
   legend_position = "none",
   color_set = "grays",
@@ -130,6 +133,14 @@ on the graph even though they both had the same effector. That's the reason
 it's ok here. Unclear? Please check out the examples at the bottom,
 particularly the ones that employ \code{facet_column_x}.}
 
+\item{show_numbers_on_right}{TRUE or FALSE (default) for whether to show the
+numbers used for the centre statistic (the point) and any variability (the
+error bars). This \emph{only} works when the graph has not been facetted
+along the x direction. If it's facetted along the x direction, it wouldn't
+be clear which numbers belonged to which facet. There's a way around this
+limitation, though; please see the examples pertaining to
+\code{show_numbers_on_right}.}
+
 \item{mean_type}{type of mean to graph; options are "geometric" (default),
 "arithmetic", or "median", but this only works when those data are included
 in \code{forest_dataframe}. If you list the mean type as "mean", we'll
@@ -180,6 +191,18 @@ appear. For example, if you \code{facet_column_x} is the dosing regimen and
 the values there are "QD" and "BID", the default will be to show them in
 alphabetical order. If you want "QD" to show up first, though, set the
 order with \code{x_order = c("QD", "BID")}}
+
+\item{error_bar_height}{optionally specify a number for the height of the
+line at the end of the error bar. If left as NA, it will be set to 0.3. If
+set to 0, the error bars will be just lines. Try it and you'll see what we
+mean.}
+
+\item{show_borders}{TRUE (default) or FALSE for whether to show a light gray
+line between the files on the y axis. Note: This works best when
+\code{color_set = "none"}. Otherwise, you'll be able to see what looks like
+a very thin white line between the graphs that is actually the space
+between the panels of the graph for each file. We can't quite eliminate
+that tiny space.}
 
 \item{dose_units}{the units used in dosing, which only applies if you set
 \code{facet_column_x}, to Dose_sub or Dose_inhib. In that situation,
@@ -310,8 +333,9 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             mean_type = "median",
             variability_type = "range")
 
-# You can compare observed PK data as long as they are formatted the same
-# way as the simulated data. Here's an example.
+# You can compare observed PK data as long as they are laid out the same
+# way as the simulated data. Please see the argument `observed_PK` for 
+# details, but here's an example.
 view(BufObsForestData_20mg)
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
@@ -341,27 +365,25 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # -- Include a legend for the shading
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
-            facet_column_x = Dose_sub,
             legend_position = "bottom")
 
 # -- Change the shading to be like in Chen Jones 2022 CPT
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
-            facet_column_x = Dose_sub,
             legend_position = "bottom",
             color_set = "yellow to red")
 
-# -- Or make the shading disappear
+# -- Or make the shading disappear and also make the error bars just be lines
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
-            facet_column_x = Dose_sub,
             legend_position = "bottom",
-            color_set = "none")
+            color_set = "none", 
+            show_borders = FALSE, 
+            error_bar_height = 0)
 
 # -- Or specify exactly which colors you want for which interaction level
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
-            facet_column_x = Dose_sub,
             legend_position = "bottom",
             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
                           "moderate" = "#7294D4", strong = "#E6A0C4"))
@@ -370,6 +392,38 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # rather than being automatically prettified
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
-            facet_column_x = Dose_sub,
             prettify_compound_names = FALSE)
+            
+# -- Include a table of the numbers used for the centre statistic and 
+# variability along the right side of the graph. 
+forest_plot(forest_dataframe = BufForestData_20mg,
+            y_axis_labels = PerpCompound,
+            legend_position = "bottom",
+            show_numbers_on_right = TRUE,
+            color_set = "yellow to red")
+
+# -- Hack things to make it so that you can break up your graphs by PK 
+# parameter (or some other column for facet_column_x) AND also show those
+# numbers along the right side. (You can't do this natively with the 
+# forest_plot function because it wouldn't be clear which numbers go with 
+# which y axis labels since we don't repeat the y axis for each facet.)
+GraphA <- forest_plot(forest_dataframe = BufForestData_20mg \%>\% 
+                         filter(PKparameter == "AUCt_ratio_dose1"),
+                      y_axis_labels = PerpCompound,
+                      legend_position = "bottom",
+                      graph_title = "AUCt ratio",
+                      show_numbers_on_right = TRUE,
+                      error_bar_height = 0,
+                      color_set = "none")
+
+GraphB <- forest_plot(forest_dataframe = BufForestData_20mg \%>\% 
+                         filter(PKparameter == "Cmax_ratio_dose1"),
+                      y_axis_labels = PerpCompound,
+                      graph_title = "Cmax ratio",
+                     legend_position = "bottom",
+                     show_numbers_on_right = TRUE,
+                     color_set = "none")
+
+patchwork::wrap_plots(GraphA, GraphB, nrow = 1)
+
 }

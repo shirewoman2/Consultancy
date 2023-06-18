@@ -133,6 +133,23 @@
 #'   on the graph even though they both had the same effector. That's the reason
 #'   it's ok here. Unclear? Please check out the examples at the bottom,
 #'   particularly the ones that employ \code{facet_column_x}.
+#' @param show_numbers_on_right TRUE or FALSE (default) for whether to show the
+#'   numbers used for the centre statistic (the point) and any variability (the
+#'   error bars). This \emph{only} works when the graph has not been facetted
+#'   along the x direction. If it's facetted along the x direction, it wouldn't
+#'   be clear which numbers belonged to which facet. There's a way around this
+#'   limitation, though; please see the examples pertaining to
+#'   \code{show_numbers_on_right}.
+#' @param error_bar_height optionally specify a number for the height of the
+#'   line at the end of the error bar. If left as NA, it will be set to 0.3. If
+#'   set to 0, the error bars will be just lines. Try it and you'll see what we
+#'   mean.
+#' @param show_borders TRUE (default) or FALSE for whether to show a light gray
+#'   line between the files on the y axis. Note: This works best when
+#'   \code{color_set = "none"}. Otherwise, you'll be able to see what looks like
+#'   a very thin white line between the graphs that is actually the space
+#'   between the panels of the graph for each file. We can't quite eliminate
+#'   that tiny space.
 #' @param x_order optionally specify the order in which the x-axis facets should
 #'   appear. For example, if you \code{facet_column_x} is the dosing regimen and
 #'   the values there are "QD" and "BID", the default will be to show them in
@@ -253,8 +270,9 @@
 #'             mean_type = "median",
 #'             variability_type = "range")
 #'
-#' # You can compare observed PK data as long as they are formatted the same
-#' # way as the simulated data. Here's an example.
+#' # You can compare observed PK data as long as they are laid out the same
+#' # way as the simulated data. Please see the argument `observed_PK` for 
+#' # details, but here's an example.
 #' view(BufObsForestData_20mg)
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
@@ -284,27 +302,25 @@
 #' # -- Include a legend for the shading
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom")
 #'
 #' # -- Change the shading to be like in Chen Jones 2022 CPT
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
 #'             color_set = "yellow to red")
 #'
-#' # -- Or make the shading disappear
+#' # -- Or make the shading disappear and also make the error bars just be lines
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
-#'             color_set = "none")
+#'             color_set = "none", 
+#'             show_borders = FALSE, 
+#'             error_bar_height = 0)
 #'
 #' # -- Or specify exactly which colors you want for which interaction level
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
 #'             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
 #'                           "moderate" = "#7294D4", strong = "#E6A0C4"))
@@ -313,8 +329,40 @@
 #' # rather than being automatically prettified
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
-#'             facet_column_x = Dose_sub,
 #'             prettify_compound_names = FALSE)
+#'             
+#' # -- Include a table of the numbers used for the centre statistic and 
+#' # variability along the right side of the graph. 
+#' forest_plot(forest_dataframe = BufForestData_20mg,
+#'             y_axis_labels = PerpCompound,
+#'             legend_position = "bottom",
+#'             show_numbers_on_right = TRUE,
+#'             color_set = "yellow to red")
+#' 
+#' # -- Hack things to make it so that you can break up your graphs by PK 
+#' # parameter (or some other column for facet_column_x) AND also show those
+#' # numbers along the right side. (You can't do this natively with the 
+#' # forest_plot function because it wouldn't be clear which numbers go with 
+#' # which y axis labels since we don't repeat the y axis for each facet.)
+#' GraphA <- forest_plot(forest_dataframe = BufForestData_20mg %>% 
+#'                          filter(PKparameter == "AUCt_ratio_dose1"),
+#'                       y_axis_labels = PerpCompound,
+#'                       legend_position = "bottom",
+#'                       graph_title = "AUCt ratio",
+#'                       show_numbers_on_right = TRUE,
+#'                       error_bar_height = 0,
+#'                       color_set = "none")
+#' 
+#' GraphB <- forest_plot(forest_dataframe = BufForestData_20mg %>% 
+#'                          filter(PKparameter == "Cmax_ratio_dose1"),
+#'                       y_axis_labels = PerpCompound,
+#'                       graph_title = "Cmax ratio",
+#'                      legend_position = "bottom",
+#'                      show_numbers_on_right = TRUE,
+#'                      color_set = "none")
+#' 
+#' patchwork::wrap_plots(GraphA, GraphB, nrow = 1)
+#' 
 
 
 forest_plot <- function(forest_dataframe, 
@@ -323,6 +371,7 @@ forest_plot <- function(forest_dataframe,
                         PKparameters = NA, 
                         observed_PK = NA,
                         facet_column_x, 
+                        show_numbers_on_right = FALSE,
                         mean_type = "geometric",
                         variability_type = "90% CI", 
                         include_dose_num = TRUE,
@@ -332,6 +381,8 @@ forest_plot <- function(forest_dataframe,
                         x_axis_title = NA,
                         x_axis_number_type = "ratios",
                         x_order = NA,
+                        error_bar_height = NA,
+                        show_borders = TRUE, 
                         dose_units = "mg",
                         legend_position = "none", 
                         color_set = "grays",
@@ -1052,10 +1103,8 @@ forest_plot <- function(forest_dataframe,
                    inherit.aes = FALSE) +
          scale_fill_manual(values = FillColor) +
          geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
-         geom_hline(yintercept = seq(from = 1.5, by = 1,
-                                     to = length(levels(forest_dataframe$YCol)) - 0.5),
-                    color = "gray70", linewidth = 0.5) +
-         geom_errorbar(width = 0.3) +
+         geom_errorbar(width = ifelse(is.na(error_bar_height), 
+                                      0.3, error_bar_height)) +
          geom_point(size = 2.5, fill = "white") +
          facet_grid(. ~ PKparameter_exp, 
                     labeller = label_parsed, 
@@ -1068,16 +1117,25 @@ forest_plot <- function(forest_dataframe,
                             expand = expansion(mult = pad_y_num)) + 
          labs(fill = "Interaction level", shape = NULL)
       
+      if(show_borders){
+         G <- G +
+            geom_hline(yintercept = seq(from = 1.5, by = 1,
+                                        to = length(levels(forest_dataframe$YCol)) - 0.5),
+                       color = "gray70", linewidth = 0.5)
+      }
+      
    } else {
       
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
                                         y = PKParam_num, shape = SimOrObs)) +
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, 
                                     ymin = Ymin, ymax = Ymax, fill = IntLevel), 
-                   inherit.aes = FALSE) +
+                   inherit.aes = FALSE, 
+                   color = NA) +
          scale_fill_manual(values = FillColor) +
          geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
-         geom_errorbar(width = 0.3) +
+         geom_errorbar(width = ifelse(is.na(error_bar_height), 
+                                      0.3, error_bar_height)) +
          geom_point(size = 2.5, fill = "white") +
          scale_shape_manual(values = MyShapes) +
          scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
@@ -1117,7 +1175,12 @@ forest_plot <- function(forest_dataframe,
          strip.text = element_text(face = "bold"),
          strip.text.y.left = element_text(angle = 0),
          strip.placement = "outside",
-         panel.border = element_rect(colour = "grey70", fill = NA),
+         panel.border = switch(as.character(show_borders), 
+                               "TRUE" = element_rect(colour = "grey70", fill = NA),
+                               "FALSE" = element_blank()),
+         axis.ticks = switch(as.character(show_borders), 
+                             "TRUE" = element_line(colour = "grey20"), 
+                             "FALSE" = element_blank()),
          panel.spacing.y = unit(0, "cm"),
          panel.spacing.x = unit(0.5, "cm"))
    
@@ -1138,6 +1201,41 @@ forest_plot <- function(forest_dataframe,
          theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
    }
    
+   if(show_numbers_on_right){
+      if(as_label(facet_column_x) != "<empty>"){
+         warning("You have faceted your graph along the x direction and also requested the numbers be shown on the right sight. In that scenario, it wouldn't be clear which numbers belonged to which PK parameter in your graph, so we will not show those numbers.", 
+                 call. = FALSE)
+      } else {
+         
+         NumTable <-
+            ggplot(
+               forest_dataframe %>% 
+                  mutate(Nums = ifelse(complete.cases(Lower), 
+                                       # when variability is present
+                                       paste0(round_consultancy(Centre), " (",
+                                              round_consultancy(Lower), ", ",
+                                              round_consultancy(Upper), ")"), 
+                                       # when no variability is present
+                                       round_consultancy(Centre))),
+               aes(x = 1, y = PKParam_num, 
+                   label = Nums)) +
+            geom_text(vjust = 0.5, hjust = 0.5) +
+            facet_grid(YCol ~ .) +
+            scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
+                               labels = sapply(PKexpressions[levels(forest_dataframe$PKparameter)], FUN = `[`),
+                               expand = expansion(mult = pad_y_num)) +
+            theme(axis.ticks = element_blank(),
+                  axis.text = element_blank(),
+                  axis.title = element_blank(),
+                  strip.text = element_blank(),
+                  plot.background = element_rect(fill="white", colour=NA),
+                  panel.background = element_rect(fill="white", color=NA),
+                  panel.border = element_rect(color = NA, fill = NA),
+                  strip.background = element_rect(color=NA, fill="white"),
+                  rect = element_rect(fill = "white", color = "white"))
+         
+      }
+   }
    
    if(complete.cases(save_graph)){
       FileName <- save_graph
@@ -1156,11 +1254,22 @@ forest_plot <- function(forest_dataframe,
       
       suppressWarnings(
          ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                plot = G)
+                plot = switch(as.character(show_numbers_on_right), 
+                              "TRUE" = patchwork::wrap_plots(G, 
+                                                             NumTable, 
+                                                             nrow = 1,
+                                                             widths = c(5, 1)),
+                              "FALSE" = G))
       )
+      
    }
    
-   return(G)
+   return(switch(as.character(show_numbers_on_right), 
+                 "TRUE" = patchwork::wrap_plots(G, 
+                                                NumTable, 
+                                                nrow = 1,
+                                                widths = c(5, 1)),
+                 "FALSE" = G))
 }
 
 
