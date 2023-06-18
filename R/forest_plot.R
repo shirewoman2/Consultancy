@@ -399,6 +399,7 @@ forest_plot <- function(forest_dataframe,
    
    
    # Reshaping data as needed ------------------------------------------------
+   
    # Getting data into the shape needed. Earlier versions of the
    # SimcypConsultancy package (< 1.19.1) use a wide version of
    # forest_dataframe where the names of the columns included BOTH the PK
@@ -969,17 +970,23 @@ forest_plot <- function(forest_dataframe,
    # amount if not
    if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
       if(pad_y_axis){
-         pad_y_num <-  switch(paste(ObsIncluded, length(ParamToUse)), 
-                              "FALSE 1" = 0,
-                              "FALSE 2" = 0.5, 
-                              "FALSE 3" = 0.25, 
-                              "FALSE 4" = 0.2, 
-                              "FALSE 5" = 0.2,
-                              "TRUE 1" = 0.2, 
-                              "TRUE 2" = 0.3, 
-                              "TRUE 3" = 0.2, 
-                              "TRUE 4" = 0.15, 
-                              "TRUE 5" = 0.2)
+         pad_y_num <- ifelse(as_label(facet_column_x) == "PKparameter", 
+                             # When faceted on PKparameter, graph is set up
+                             # differently & no padding necessary 
+                             0, 
+                             
+                             # This is when NOT facted on PKparameter
+                             switch(paste(ObsIncluded, length(ParamToUse)), 
+                                    "FALSE 1" = 0,
+                                    "FALSE 2" = 0.5, 
+                                    "FALSE 3" = 0.25, 
+                                    "FALSE 4" = 0.2, 
+                                    "FALSE 5" = 0.2,
+                                    "TRUE 1" = 0.2, 
+                                    "TRUE 2" = 0.3, 
+                                    "TRUE 3" = 0.2, 
+                                    "TRUE 4" = 0.15, 
+                                    "TRUE 5" = 0.2))
       } else {
          pad_y_num <- 0
       }
@@ -1021,10 +1028,7 @@ forest_plot <- function(forest_dataframe,
    # Graph ----------------------------------------------------------------
    if(as_label(facet_column_x) == "PKparameter"){
       # If user wants to facet by the PK parameter, that's a special case
-      # b/c we need to change what we're using for the y axis. NB:
-      # Function is NOT set up for allowing for a secondary y axis when
-      # facet_column_x is PKparameter, so y must be mapped to
-      # y_axis_column at this point in the function. -LSh
+      # b/c we need to change what we're using for the y axis. 
       # 
       Param_exp <- c("Cmax_ratio_last" = PKexpressions[["Cmax_ratio_last"]], 
                      "Cmax_ratio" = PKexpressions[["Cmax_ratio"]],
@@ -1041,46 +1045,27 @@ forest_plot <- function(forest_dataframe,
                                          levels = names({{Param_exp}}), 
                                          labels = {{Param_exp}}))
       
-      # If there are any \n in YCol, labeller doesn't work. In that case, make
-      # PKparameter_exp just be the name w/out subscripts or symbols.
-      if(any(str_detect(forest_dataframe$YCol, "\\n"))){ 
-         
-         Param_ch <- c("Cmax_ratio_last" = "Last dose Cmax ratio", 
-                       "Cmax_ratio" = "Cmax ratio", 
-                       "AUCtau_ratio_last" = "Last dose AUCtau ratio", 
-                       "AUCtau_ratio" = "AUCtau ratio", 
-                       "Cmax_ratio_dose1" = "Dose 1 Cmax ratio", 
-                       "AUCt_ratio_dose1" = "Dose 1 AUCt ratio", 
-                       "AUCt_ratio" = "AUCt ratio", 
-                       "AUCinf_ratio_dose1" = "Dose 1 AUCinf ratio", 
-                       "AUCinf_ratio" = "AUCinf ratio")
-         
-         forest_dataframe <- forest_dataframe %>% 
-            mutate(PKparameter_exp = 
-                      factor(Param_ch[as.character(PKparameter)], 
-                             levels = {{Param_ch}}))
-      } else {
-         # Need to replace spaces with ~ to work with labeller.
-         forest_dataframe$YCol <- 
-            gsub(" ", "~", forest_dataframe$YCol)
-      }
-      
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
-                                        y = SimOrObs, shape = SimOrObs)) +
+                                        y = YCol_num, shape = SimOrObs)) +
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax,
                                     ymin = Ymin, ymax = Ymax, fill = IntLevel),
                    inherit.aes = FALSE) +
          scale_fill_manual(values = FillColor) +
          geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
+         geom_hline(yintercept = seq(from = 1.5, by = 1,
+                                     to = length(levels(forest_dataframe$YCol)) - 0.5),
+                    color = "gray70", linewidth = 0.5) +
          geom_errorbar(width = 0.3) +
          geom_point(size = 2.5, fill = "white") +
-         facet_grid(YCol ~ PKparameter_exp, 
-                    labeller = switch(as.character(any(str_detect(forest_dataframe$YCol, "\\n"))), 
-                                      "TRUE" = label_value, 
-                                      "FALSE" = label_parsed), 
+         facet_grid(. ~ PKparameter_exp, 
+                    labeller = label_parsed, 
                     switch = "y") +
          scale_shape_manual(values = MyShapes) +
-         scale_y_discrete(expand = expansion(mult = pad_y_num * 3)) + # Often needs a little extra
+         scale_y_continuous(limits = c(0.5, 
+                                       max(as.numeric(forest_dataframe$YCol)) + 0.5), 
+                            breaks = unique(as.numeric(forest_dataframe$YCol)),
+                            labels = levels(forest_dataframe$YCol),
+                            expand = expansion(mult = pad_y_num)) + 
          labs(fill = "Interaction level", shape = NULL)
       
    } else {
@@ -1138,8 +1123,8 @@ forest_plot <- function(forest_dataframe,
    
    if(as_label(facet_column_x) == "PKparameter"){
       G <- G +
-         theme(axis.ticks.y = element_blank(), 
-               axis.text.y = element_blank())
+         theme(axis.ticks.y = element_blank(),
+               axis.text.y = element_text(hjust = 0.5))
    }
    
    # If color_set is "none", don't show fill for the legend. 
@@ -1152,7 +1137,6 @@ forest_plot <- function(forest_dataframe,
       G <- G + ggtitle(graph_title) +
          theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
    }
-   
    
    
    if(complete.cases(save_graph)){
