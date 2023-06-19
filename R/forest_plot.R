@@ -150,6 +150,14 @@
 #'   a very thin white line between the graphs that is actually the space
 #'   between the panels of the graph for each file. We can't quite eliminate
 #'   that tiny space.
+#' @param vline_at_1 specify the type of vertical line to show where the ratio =
+#'   1; default is to show a gray dashed line, and you can get no line by
+#'   specifying \code{vline_at_1 = "none"}. Acceptable input is the color (any
+#'   R-acceptable color will do) and then the line type separated by spaces,
+#'   e.g. "gray dashed" or "red dotted". To see all the possible line types,
+#'   type this into the console: \code{ggpubr::show_line_types()}. If you also
+#'   list a number, e.g., \code{vline_at_1 = "blue longdash 0.5"}, we'll set
+#'   that for the line thickness. Default line thickness is 0.5.
 #' @param x_order optionally specify the order in which the x-axis facets should
 #'   appear. For example, if you \code{facet_column_x} is the dosing regimen and
 #'   the values there are "QD" and "BID", the default will be to show them in
@@ -223,7 +231,7 @@
 #' # We'll use some example forest-plot data for the substrate bufuralol
 #' # with various effectors. To start, we'll use all the default settings.
 #' forest_plot(forest_dataframe = BufForestData_20mg)
-#'
+#' 
 #' # You can used the argument y_axis_labels to specify what to use for the
 #' # y axis labels instead of the simulation file names. One option: Use a
 #' # named character vector to list the file names and what you want to
@@ -234,13 +242,13 @@
 #'                               "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraconazole",
 #'                               "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine",
 #'                               "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlopidine\nSingh et al. 2017 study"))
-#'
+#' 
 #' # Or use a different column in forest_dataframe to specify y_axis_labels.
 #' # Please note that there must be one unique value in y_axis_labels for
 #' # each simulation file.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound)
-#'
+#' 
 #' # By default, the graph will show the strongest inhibitors on top and
 #' # the strongest inducers on the bottom, sorted by their AUC GMR. However,
 #' # if you liked the order you already had things in whatever you supplied
@@ -249,19 +257,19 @@
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             y_order = "as is")
-#'
+#' 
 #' # If it would be sensible to break up your graph by a column in
 #' # forest_dataframe, you can do that with the argument facet_column_x. We'll
-#' # switch to some example data with two dose levels here.
+#' # switch the example data to some with two dose levels here.
 #' forest_plot(forest_dataframe = BufForestData,
 #'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub)
-#'
+#' 
 #' # Or break up your graph by the PK parameter shown.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             facet_column_x = PKparameter)
-#'
+#' 
 #' # If what you supplied for forest_dataframe includes other statistics,
 #' # you can graph those instead of the default, which is the geometric
 #' # mean (point) and geometric 90 percent confidence interval (error bars).
@@ -269,7 +277,7 @@
 #'             y_axis_labels = PerpCompound,
 #'             mean_type = "median",
 #'             variability_type = "range")
-#'
+#' 
 #' # You can compare observed PK data as long as they are laid out the same
 #' # way as the simulated data. Please see the argument `observed_PK` for 
 #' # details, but here's an example.
@@ -277,14 +285,9 @@
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             observed_PK = BufObsForestData_20mg)
-#'
+#' 
 #' # Here are some options for modifying the aesthetics of your graph:
-#'
-#' # -- Don't include "Dose 1" or "Last dose" in the PK parameter names.
-#' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound,
-#'             include_dose_num = FALSE)
-#'
+#' 
 #' # -- Add an overall graph title and a y axis title to make it clear that
 #' # we're looking at the effects of various perpetrators on bufuralol PK (at
 #' # least, that's what we're doing in this example).
@@ -293,44 +296,48 @@
 #'             include_dose_num = FALSE,
 #'             y_axis_title = "Perpetrator",
 #'             graph_title = "Effects of various DDI perpetrator\ndrugs on bufuralol PK")
-#'
+#' 
 #' # -- Adjust the x axis limits with x_axis_limits
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             x_axis_limits = c(0.9, 5))
-#'
+#' 
 #' # -- Include a legend for the shading
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom")
-#'
+#' 
 #' # -- Change the shading to be like in Chen Jones 2022 CPT
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom",
 #'             color_set = "yellow to red")
-#'
-#' # -- Or make the shading disappear and also make the error bars just be lines
+#' 
+#' # -- Or specify exactly which colors you want for which interaction level, and
+#' # make the vertical line at 1 be a different color and line type. 
+#' forest_plot(forest_dataframe = BufForestData_20mg,
+#'             y_axis_labels = PerpCompound,
+#'             legend_position = "bottom",
+#'             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
+#'                           "moderate" = "#7294D4", strong = "#E6A0C4"), 
+#'             vline_at_1 = "purple dotted")
+#' 
+#' # -- Or make the shading disappear and also make the error bars just be lines.
+#' # Also make the error bars lose the hat at either end, and don't show any lines
+#' # in between the files. 
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom",
 #'             color_set = "none", 
 #'             show_borders = FALSE, 
 #'             error_bar_height = 0)
-#'
-#' # -- Or specify exactly which colors you want for which interaction level
-#' forest_plot(forest_dataframe = BufForestData_20mg,
-#'             y_axis_labels = PerpCompound,
-#'             legend_position = "bottom",
-#'             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
-#'                           "moderate" = "#7294D4", strong = "#E6A0C4"))
-#'
+#' 
 #' # -- Make the compound names match *exactly* what was in the simulator file
 #' # rather than being automatically prettified
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             prettify_compound_names = FALSE)
-#'             
+#' 
 #' # -- Include a table of the numbers used for the centre statistic and 
 #' # variability along the right side of the graph. 
 #' forest_plot(forest_dataframe = BufForestData_20mg,
@@ -356,12 +363,14 @@
 #' GraphB <- forest_plot(forest_dataframe = BufForestData_20mg %>% 
 #'                          filter(PKparameter == "Cmax_ratio_dose1"),
 #'                       y_axis_labels = PerpCompound,
-#'                       graph_title = "Cmax ratio",
-#'                      legend_position = "bottom",
+#'                       legend_position = "bottom",
+#'                      graph_title = "Cmax ratio",
 #'                      show_numbers_on_right = TRUE,
-#'                      color_set = "none")
+#'                       error_bar_height = 0,
+#'                       color_set = "none")
 #' 
-#' patchwork::wrap_plots(GraphA, GraphB, nrow = 1)
+#' patchwork::wrap_plots(GraphA, GraphB, nrow = 2)
+#' 
 #' 
 
 
@@ -374,7 +383,7 @@ forest_plot <- function(forest_dataframe,
                         show_numbers_on_right = FALSE,
                         mean_type = "geometric",
                         variability_type = "90% CI", 
-                        include_dose_num = TRUE,
+                        include_dose_num = NA,
                         y_axis_title = "none", 
                         prettify_compound_names = NA, 
                         x_axis_limits = NA, 
@@ -383,6 +392,7 @@ forest_plot <- function(forest_dataframe,
                         x_order = NA,
                         error_bar_height = NA,
                         show_borders = TRUE, 
+                        vline_at_1 = "gray dashed",
                         dose_units = "mg",
                         legend_position = "none", 
                         color_set = "grays",
@@ -448,6 +458,33 @@ forest_plot <- function(forest_dataframe,
    # Making legend argument lower case to avoid case sensitivity
    legend_position <- tolower(legend_position)
    
+   # Checking input validity. These should all have length 1.
+   LenCheck <- list("show_numbers_on_right" = show_numbers_on_right, 
+                    "mean_type" = mean_type, 
+                    "variability_type" = variability_type,
+                    "include_dose_num" = include_dose_num,
+                    "y_axis_title" = y_axis_title, 
+                    "prettify_compound_names" = prettify_compound_names, 
+                    "x_axis_title" = x_axis_title,
+                    "x_axis_number_type" = x_axis_number_type,
+                    "error_bar_height" = error_bar_height,
+                    "show_borders" = show_borders,
+                    "vline_at_1" = vline_at_1,
+                    "dose_units" = dose_units,
+                    "legend_position" = legend_position, 
+                    "graph_title" = graph_title,
+                    "graph_title_size" = graph_title_size, 
+                    "pad_y_axis" = pad_y_axis, 
+                    "save_graph" = save_graph,
+                    "fig_height" = fig_height,
+                    "fig_width" = fig_width)
+   LenCheck <- unlist(lapply(LenCheck, length))
+   if(any(LenCheck != 1)){
+      stop(paste0("The argument `", 
+                  names(LenCheck)[which(LenCheck != 1)][1], 
+                  "`` must have only one item. Please check your input and the help file and try again."), 
+           call. = FALSE)
+   }
    
    # Reshaping data as needed ------------------------------------------------
    
@@ -527,7 +564,7 @@ forest_plot <- function(forest_dataframe,
       # both dose 1 and last-dose data.
       DoseCheck <- c("first" = any(str_detect(forest_dataframe$PKparameter, "dose1")), 
                      "last" = any(str_detect(forest_dataframe$PKparameter, "last")))
-      include_dose_num <- all(DoseCheck) == FALSE
+      include_dose_num <- all(DoseCheck)
    }
    
    # include_dose_num now should be either T or F no matter what, so checking
@@ -681,8 +718,7 @@ forest_plot <- function(forest_dataframe,
          which(names(observed_PK) %in% c("CI_Lower", "CI_Lower", "SD_Lower",
                                          "Centile_Lower", "Min"))]
       
-      if(any(CenterStat_obs %in% CenterStat) == FALSE | 
-         any(VarStat_obs %in% VarStat) == FALSE){
+      if(any(CenterStat_obs %in% CenterStat) == FALSE){
          warning("You have different statistics in your simulated and observed data, so we cannot compare them. We are dropping the observed data for now. Please check your input.", 
                  call. = FALSE)
          ObsIncluded <- FALSE
@@ -1075,6 +1111,42 @@ forest_plot <- function(forest_dataframe,
    
    names(MyShapes) <- c("observed", "predicted")
    
+   # Figuring out what they want for vline at x = 1.
+   ShowVLine <- vline_at_1 != "none"
+   VlineParams <- str_split_1(vline_at_1, pattern = " ")
+   if(length(VlineParams) == 1){
+      
+      if(ShowVLine){
+      warning("It looks like you've specified only the color or only the line type for `vline_at_1`, and we need both. We'll set this to the default of `gray dashed` for now.", 
+              call. = FALSE)
+      }
+      
+      # If the user set vline_at_1 to "none", we still need VlineParams to work
+      # for the next lines of code, even though we won't apply them.
+      VlineParams <- c("gray", "dashed")
+   }
+   
+   if(length(VlineParams) == 2){
+      VlineParams[3] <- "0.5"
+   }
+   
+   if(length(VlineParams) > 2){
+      VlineParams <- VlineParams[1:3]
+      names(VlineParams) <- c("color", "linetype", "linewidth")
+   }
+   
+   # Checking that the 1st item is color.
+   if(is.matrix(col2rgb(VlineParams["color"])) == FALSE){
+      warning("The value you set for the line color for vline_at_1 is not a valid color in R. We'll set this to gray instead.", 
+              call. = FALSE)
+      VlineParams["color"] <- "gray"
+   }
+   
+   # Making VlineParams as list again and making the last item numeric.
+   VlineParams <- as.list(VlineParams)
+   VlineParams[["linewidth"]] <- ifelse(is.na(as.numeric(VlineParams[["linewidth"]])), 
+                                        0.5, as.numeric(VlineParams[["linewidth"]]))
+   
    
    # Graph ----------------------------------------------------------------
    if(as_label(facet_column_x) == "PKparameter"){
@@ -1101,8 +1173,18 @@ forest_plot <- function(forest_dataframe,
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax,
                                     ymin = Ymin, ymax = Ymax, fill = IntLevel),
                    inherit.aes = FALSE) +
-         scale_fill_manual(values = FillColor) +
-         geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
+         scale_fill_manual(values = FillColor)
+      
+      # vline needs to be here to be underneath the points.
+      if(ShowVLine){
+         G <- G +
+            geom_vline(xintercept = 1, 
+                       linetype = VlineParams$linetype,
+                       color = VlineParams$color,
+                       linewidth = VlineParams$linewidth)
+      }
+      
+      G <- G +
          geom_errorbar(width = ifelse(is.na(error_bar_height), 
                                       0.3, error_bar_height)) +
          geom_point(size = 2.5, fill = "white") +
@@ -1132,8 +1214,18 @@ forest_plot <- function(forest_dataframe,
                                     ymin = Ymin, ymax = Ymax, fill = IntLevel), 
                    inherit.aes = FALSE, 
                    color = NA) +
-         scale_fill_manual(values = FillColor) +
-         geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
+         scale_fill_manual(values = FillColor)
+      
+      # vline needs to be here to be underneath the points.
+      if(ShowVLine){
+         G <- G +
+            geom_vline(xintercept = 1, 
+                       linetype = VlineParams$linetype,
+                       color = VlineParams$color,
+                       linewidth = VlineParams$linewidth)
+      }
+      
+      G <- G +
          geom_errorbar(width = ifelse(is.na(error_bar_height), 
                                       0.3, error_bar_height)) +
          geom_point(size = 2.5, fill = "white") +
@@ -1169,8 +1261,18 @@ forest_plot <- function(forest_dataframe,
                   "FALSE" = y_axis_title)) +
       theme_consultancy() +
       theme(
-         axis.line.x.bottom = element_blank(), 
-         axis.line.y.left = element_blank(),
+         axis.line.x.bottom = switch(as.character(show_borders), 
+                                     "TRUE" = element_blank(),
+                                     # Don't need to add a line when there are
+                                     # already borders.
+                                     "FALSE" = element_line(color = "black", 
+                                                            linewidth = 0.25)), 
+         axis.line.y.left = switch(as.character(show_borders), 
+                                   "TRUE" = element_blank(),
+                                   # Don't need to add a line when there are
+                                   # already borders.
+                                   "FALSE" = element_line(color = "black", 
+                                                          linewidth = 0.25)), 
          legend.position = legend_position, ### KEEP THIS
          strip.text = element_text(face = "bold"),
          strip.text.y.left = element_text(angle = 0),
@@ -1178,9 +1280,9 @@ forest_plot <- function(forest_dataframe,
          panel.border = switch(as.character(show_borders), 
                                "TRUE" = element_rect(colour = "grey70", fill = NA),
                                "FALSE" = element_blank()),
-         axis.ticks = switch(as.character(show_borders), 
-                             "TRUE" = element_line(colour = "grey20"), 
-                             "FALSE" = element_blank()),
+         # axis.ticks = switch(as.character(show_borders), 
+         #                     "TRUE" = element_line(colour = "grey20"), 
+         #                     "FALSE" = element_blank()),
          panel.spacing.y = unit(0, "cm"),
          panel.spacing.x = unit(0.5, "cm"))
    

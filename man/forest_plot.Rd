@@ -14,7 +14,7 @@ forest_plot(
   show_numbers_on_right = FALSE,
   mean_type = "geometric",
   variability_type = "90\% CI",
-  include_dose_num = TRUE,
+  include_dose_num = NA,
   y_axis_title = "none",
   prettify_compound_names = NA,
   x_axis_limits = NA,
@@ -23,6 +23,7 @@ forest_plot(
   x_order = NA,
   error_bar_height = NA,
   show_borders = TRUE,
+  vline_at_1 = "gray dashed",
   dose_units = "mg",
   legend_position = "none",
   color_set = "grays",
@@ -204,6 +205,15 @@ a very thin white line between the graphs that is actually the space
 between the panels of the graph for each file. We can't quite eliminate
 that tiny space.}
 
+\item{vline_at_1}{specify the type of vertical line to show where the ratio =
+1; default is to show a gray dashed line, and you can get no line by
+specifying \code{vline_at_1 = "none"}. Acceptable input is the color (any
+R-acceptable color will do) and then the line type separated by spaces,
+e.g. "gray dashed" or "red dotted". To see all the possible line types,
+type this into the console: \code{ggpubr::show_line_types()}. If you also
+list a number, e.g., \code{vline_at_1 = "blue longdash 0.5"}, we'll set
+that for the line thickness. Default line thickness is 0.5.}
+
 \item{dose_units}{the units used in dosing, which only applies if you set
 \code{facet_column_x}, to Dose_sub or Dose_inhib. In that situation,
 setting the dose units here will automatically add those units to the
@@ -315,7 +325,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 
 # If it would be sensible to break up your graph by a column in
 # forest_dataframe, you can do that with the argument facet_column_x. We'll
-# switch to some example data with two dose levels here.
+# switch the example data to some with two dose levels here.
 forest_plot(forest_dataframe = BufForestData,
             y_axis_labels = PerpCompound,
             facet_column_x = Dose_sub)
@@ -343,11 +353,6 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 
 # Here are some options for modifying the aesthetics of your graph:
 
-# -- Don't include "Dose 1" or "Last dose" in the PK parameter names.
-forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
-            include_dose_num = FALSE)
-
 # -- Add an overall graph title and a y axis title to make it clear that
 # we're looking at the effects of various perpetrators on bufuralol PK (at
 # least, that's what we're doing in this example).
@@ -373,7 +378,18 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             legend_position = "bottom",
             color_set = "yellow to red")
 
-# -- Or make the shading disappear and also make the error bars just be lines
+# -- Or specify exactly which colors you want for which interaction level, and
+# make the vertical line at 1 be a different color and line type. 
+forest_plot(forest_dataframe = BufForestData_20mg,
+            y_axis_labels = PerpCompound,
+            legend_position = "bottom",
+            color_set = c("negligible" = "white", "weak" = "#C6CDF7",
+                          "moderate" = "#7294D4", strong = "#E6A0C4"), 
+            vline_at_1 = "purple dotted")
+
+# -- Or make the shading disappear and also make the error bars just be lines.
+# Also make the error bars lose the hat at either end, and don't show any lines
+# in between the files. 
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
             legend_position = "bottom",
@@ -381,19 +397,12 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             show_borders = FALSE, 
             error_bar_height = 0)
 
-# -- Or specify exactly which colors you want for which interaction level
-forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
-            legend_position = "bottom",
-            color_set = c("negligible" = "white", "weak" = "#C6CDF7",
-                          "moderate" = "#7294D4", strong = "#E6A0C4"))
-
 # -- Make the compound names match *exactly* what was in the simulator file
 # rather than being automatically prettified
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
             prettify_compound_names = FALSE)
-            
+
 # -- Include a table of the numbers used for the centre statistic and 
 # variability along the right side of the graph. 
 forest_plot(forest_dataframe = BufForestData_20mg,
@@ -419,11 +428,13 @@ GraphA <- forest_plot(forest_dataframe = BufForestData_20mg \%>\%
 GraphB <- forest_plot(forest_dataframe = BufForestData_20mg \%>\% 
                          filter(PKparameter == "Cmax_ratio_dose1"),
                       y_axis_labels = PerpCompound,
-                      graph_title = "Cmax ratio",
-                     legend_position = "bottom",
+                      legend_position = "bottom",
+                     graph_title = "Cmax ratio",
                      show_numbers_on_right = TRUE,
-                     color_set = "none")
+                      error_bar_height = 0,
+                      color_set = "none")
 
-patchwork::wrap_plots(GraphA, GraphB, nrow = 1)
+patchwork::wrap_plots(GraphA, GraphB, nrow = 2)
+
 
 }
