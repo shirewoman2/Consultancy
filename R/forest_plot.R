@@ -524,21 +524,6 @@ forest_plot <- function(forest_dataframe,
                                              .default = Statistic)) %>% 
                pivot_wider(names_from = "Statistic", values_from = "Value")
          }
-         
-         # Check that observed data are matched to a specific simulation file
-         ObsMismatch <- setdiff(unique(observed_PK$File), forest_dataframe$File)
-         if(length(ObsMismatch) > 0){
-            warning(paste0("In the provided observed PK data, the simulated file listed as matching that set of observed PK is not present in your simulated data for these files: ", 
-                           str_comma(paste0("`", ObsMismatch, "`")), 
-                           ". These observed data will be omitted from your graph."), 
-                    call. = FALSE)
-            observed_PK <- observed_PK %>% 
-               filter(!File %in% ObsMismatch)
-            
-            if(nrow(observed_PK) == 0){
-               observed_PK <- NA
-            }
-         }
       }
    }
    
@@ -865,7 +850,8 @@ forest_plot <- function(forest_dataframe,
          YOrderExtra <- setdiff(y_order, forest_dataframe$File)
          if(length(YOrderExtra) > 0){
             warning(paste0("The files `", str_comma(YOrderExtra), 
-                           "` are included for the y order but are not present in your data. They will be ignored."))
+                           "` are included for the y order but are not present in your data. They will be ignored."), 
+                    call. = FALSE)
             y_order <- y_order[y_order %in% forest_dataframe$File]
          }
          
@@ -1090,12 +1076,12 @@ forest_plot <- function(forest_dataframe,
              # so there's more room for errorbars w/out overlapping
              PKParam_num = as.numeric(PKparameter)* 1.5) 
    
+   # Adjusting y position if there are any obs data.
+   ObsCheck <- forest_dataframe %>% 
+      group_by(YCol) %>% 
+      summarize(Ylen = length(unique(SimOrObs)))
+   
    if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
-      
-      # Adjusting y position if there are any obs data.
-      ObsCheck <- forest_dataframe %>% 
-         group_by(YCol) %>% 
-         summarize(Ylen = length(unique(SimOrObs)))
       
       forest_dataframe <- forest_dataframe %>%
          left_join(ObsCheck, by = "YCol") %>% 
@@ -1106,8 +1092,10 @@ forest_plot <- function(forest_dataframe,
       
    } else if(any(forest_dataframe$SimOrObs == "observed")){
       forest_dataframe <- forest_dataframe %>% 
-         mutate(PKParam_num = ifelse(SimOrObs == "predicted", 
-                                     PKParam_num - 0.2, PKParam_num + 0.2))
+         left_join(ObsCheck, by = "YCol") %>% 
+         mutate(PKParam_num = case_when(Ylen == 1 ~ PKParam_num, 
+                                        Ylen == 2 & SimOrObs == "predicted" ~ PKParam_num - 0.2, 
+                                        Ylen == 2 & SimOrObs == "observed" ~ PKParam_num + 0.2))
    }
    
    # Adding padding if user requests it or trying to come up with a reasonable
