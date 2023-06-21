@@ -216,6 +216,10 @@
 #'   for the x axis, e.g., "Geometric Mean Ratio (90\% CI)". Otherwise, specify
 #'   what text you'd like to use. Setting this to "none" will remove the table
 #'   title.
+#' @param rel_widths specify the relative widths of the graph and the table
+#'   (only applies if you included a table on the right side of the graph) as a
+#'   numeric vector. The default makes the graph 5x larger than the table, and
+#'   acceptable input looks like this: \code{rel_widths = c(5, 1)}
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). If set to
 #'   FALSE, the y axis tick marks will be placed closer to the top and bottom of
@@ -379,6 +383,7 @@ forest_plot <- function(forest_dataframe,
                         graph_title = NA,
                         graph_title_size = 14,
                         table_title = NA,
+                        rel_widths = c(5, 1),
                         prettify_compound_names = NA, 
                         include_dose_num = NA,
                         include_ratio_in_labels = TRUE, 
@@ -443,6 +448,15 @@ forest_plot <- function(forest_dataframe,
    
    # Making legend argument lower case to avoid case sensitivity
    legend_position <- tolower(legend_position)
+   
+   # Checking for good input for relative widths of graph and table
+   rel_widths <- as.numeric(rel_widths)
+   rel_widths <- rel_widths[complete.cases(rel_widths)][1:2]
+   if(show_numbers_on_right & length(rel_widths) < 2){
+      warning("There's something wrong with your input for the argument `rel_widths`. We'll set this to the default relative widths.", 
+              call. = FALSE)
+      rel_widths <- c(5, 1)
+   }
    
    # Checking input validity. These should all have length 1.
    LenCheck <- list("show_numbers_on_right" = show_numbers_on_right, 
@@ -1375,7 +1389,7 @@ forest_plot <- function(forest_dataframe,
                                                   Upper, ")")))
          
          NumTable <- ggplot(NumTable, aes(x = 1, y = PKParam_num, label = Nums)) +
-            geom_text(vjust = 0.5, hjust = 0.5) +
+            geom_text(vjust = 0.5, hjust = 0.5, size = 3) +
             facet_grid(YCol ~ .) +
             scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
                                labels = sapply(PKexpressions[levels(forest_dataframe$PKparameter)], FUN = `[`),
@@ -1418,7 +1432,7 @@ forest_plot <- function(forest_dataframe,
                               "TRUE" = patchwork::wrap_plots(G, 
                                                              NumTable, 
                                                              nrow = 1,
-                                                             widths = c(5, 1)),
+                                                             widths = rel_widths),
                               "FALSE" = G))
       )
       
@@ -1428,7 +1442,7 @@ forest_plot <- function(forest_dataframe,
                  "TRUE" = patchwork::wrap_plots(G, 
                                                 NumTable, 
                                                 nrow = 1,
-                                                widths = c(5, 1)),
+                                                widths = rel_widths),
                  "FALSE" = G))
 }
 
