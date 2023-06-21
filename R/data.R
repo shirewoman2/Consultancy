@@ -258,3 +258,21 @@
 "ObsDVoptions"
 
 
+
+#' Example output from \code{extractForestData}
+#'
+#' Example output from running \code{extractForestData} on some simulations with
+#' bufuralol as the substrate and then 4 different effectors.
+#'
+#' @format a data.frame 
+"BufForestData"
+
+
+#' Example observed PK data for working with \code{forest_plot}
+#'
+#' Fake observed bufuralol PK data for showing examples with the forest_plot
+#' function
+#'
+#' @format a data.frame 
+"BufObsForestData"
+

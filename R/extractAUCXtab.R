@@ -12,6 +12,16 @@
 #'   sim_data_file
 #' @param includeTrialInfo TRUE or FALSE
 #' @param DataCheck DataCheck data.frame
+#' @param PKparameters_orig original PK parameters from extractPK function
+#' @param compoundToExtract For which compound do you want to extract
+#'   PK data? Options are: \itemize{\item{"substrate"
+#'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+#'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+#'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
+#'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+#'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+#'   metabolite of inhibitor 1}}
+
 #'
 #' @return a list for use with the extractPK function
 #'
@@ -20,6 +30,7 @@
 #' 
 extractAUCXtab <- function(PKparameters, 
                            PKparameters_orig, 
+                           compoundToExtract = "substrate",
                            sim_data_file,
                            Sheet, 
                            PKset,
@@ -60,7 +71,12 @@ extractAUCXtab <- function(PKparameters,
         # Using regex to find the correct column. See
         # data(AllPKParameters) for all the possible parameters as well
         # as what regular expressions are being searched for each. 
-        ToDetect <- AllPKParameters
+        ToDetect <- AllPKParameters %>% 
+           mutate(SearchText = ifelse(compoundToExtract %in% c("inhibitor 1",
+                                                               "inhibitor 1 metabolite",
+                                                               "inhibitor 2") &
+                                         SwitchWhenInhib != "", 
+                                      SwitchWhenInhib, SearchText))
         if(UserSpecified){
             # If tab was user specified, need to remove the suffix indicating
             # which dose number it was b/c we don't know

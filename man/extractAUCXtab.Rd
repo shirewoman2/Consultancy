@@ -8,6 +8,7 @@ formatted like the "AUC" tab from Simcyp V21 and earlier}
 extractAUCXtab(
   PKparameters,
   PKparameters_orig,
+  compoundToExtract = "substrate",
   sim_data_file,
   Sheet,
   PKset,
@@ -20,6 +21,17 @@ extractAUCXtab(
 \arguments{
 \item{PKparameters}{parameters to extract; character vector only (a set of
 parameters like in extractPK is not acceptable here)}
+
+\item{PKparameters_orig}{original PK parameters from extractPK function}
+
+\item{compoundToExtract}{For which compound do you want to extract
+PK data? Options are: \itemize{\item{"substrate"
+(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
+\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
+inducer, inhibitor, activator, or suppresesor, but it's labeled as
+"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
+listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
+metabolite of inhibitor 1}}}
 
 \item{sim_data_file}{simulator output Excel file to read}
 
