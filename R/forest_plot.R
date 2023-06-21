@@ -100,6 +100,8 @@
 #'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 #'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 #'   the default behavior and get exactly what you want.
+#' @param include_ratio_in_labels TRUE (default) or FALSE on whether to include
+#'   "ratio" in the labels for the PK parameters.
 #' @param mean_type type of mean to graph; options are "geometric" (default),
 #'   "arithmetic", or "median", but this only works when those data are included
 #'   in \code{forest_dataframe}. If you list the mean type as "mean", we'll
@@ -207,6 +209,13 @@
 #'   the graph
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14.
+#' @param table_title if you have included a table of the numbers by setting
+#'   \code{show_numbers_on_right = TRUE}, optionally specify what to use for the
+#'   title above those numbers. Setting this to NA (default) will result in a
+#'   title of what the numbers are, so basically the same text as the default
+#'   for the x axis, e.g., "Geometric Mean Ratio (90\% CI)". Otherwise, specify
+#'   what text you'd like to use. Setting this to "none" will remove the table
+#'   title.
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). If set to
 #'   FALSE, the y axis tick marks will be placed closer to the top and bottom of
@@ -231,7 +240,7 @@
 #' # We'll use some example forest-plot data for the substrate bufuralol
 #' # with various effectors. To start, we'll use all the default settings.
 #' forest_plot(forest_dataframe = BufForestData_20mg)
-#' 
+#'
 #' # You can used the argument y_axis_labels to specify what to use for the
 #' # y axis labels instead of the simulation file names. One option: Use a
 #' # named character vector to list the file names and what you want to
@@ -242,13 +251,13 @@
 #'                               "buf-20mg-sd-itra-200mg-qd.xlsx" = "itraconazole",
 #'                               "buf-20mg-sd-quin-200mg-qd.xlsx" = "quinidine",
 #'                               "buf-20mg-sd-tic-219mg-bid.xlsx" = "ticlopidine\nSingh et al. 2017 study"))
-#' 
+#'
 #' # Or use a different column in forest_dataframe to specify y_axis_labels.
 #' # Please note that there must be one unique value in y_axis_labels for
 #' # each simulation file.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound)
-#' 
+#'
 #' # By default, the graph will show the strongest inhibitors on top and
 #' # the strongest inducers on the bottom, sorted by their AUC GMR. However,
 #' # if you liked the order you already had things in whatever you supplied
@@ -257,19 +266,19 @@
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             y_order = "as is")
-#' 
+#'
 #' # If it would be sensible to break up your graph by a column in
 #' # forest_dataframe, you can do that with the argument facet_column_x. We'll
 #' # switch the example data to some with two dose levels here.
 #' forest_plot(forest_dataframe = BufForestData,
 #'             y_axis_labels = PerpCompound,
 #'             facet_column_x = Dose_sub)
-#' 
+#'
 #' # Or break up your graph by the PK parameter shown.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             facet_column_x = PKparameter)
-#' 
+#'
 #' # If what you supplied for forest_dataframe includes other statistics,
 #' # you can graph those instead of the default, which is the geometric
 #' # mean (point) and geometric 90 percent confidence interval (error bars).
@@ -277,17 +286,17 @@
 #'             y_axis_labels = PerpCompound,
 #'             mean_type = "median",
 #'             variability_type = "range")
-#' 
+#'
 #' # You can compare observed PK data as long as they are laid out the same
-#' # way as the simulated data. Please see the argument `observed_PK` for 
+#' # way as the simulated data. Please see the argument `observed_PK` for
 #' # details, but here's an example.
 #' view(BufObsForestData_20mg)
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             observed_PK = BufObsForestData_20mg)
-#' 
+#'
 #' # Here are some options for modifying the aesthetics of your graph:
-#' 
+#'
 #' # -- Add an overall graph title and a y axis title to make it clear that
 #' # we're looking at the effects of various perpetrators on bufuralol PK (at
 #' # least, that's what we're doing in this example).
@@ -296,81 +305,56 @@
 #'             include_dose_num = FALSE,
 #'             y_axis_title = "Perpetrator",
 #'             graph_title = "Effects of various DDI perpetrator\ndrugs on bufuralol PK")
-#' 
+#'
 #' # -- Adjust the x axis limits with x_axis_limits
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             x_axis_limits = c(0.9, 5))
-#' 
+#'
 #' # -- Include a legend for the shading
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom")
-#' 
+#'
 #' # -- Change the shading to be like in Chen Jones 2022 CPT
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom",
 #'             color_set = "yellow to red")
-#' 
+#'
 #' # -- Or specify exactly which colors you want for which interaction level, and
-#' # make the vertical line at 1 be a different color and line type. 
+#' # make the vertical line at 1 be a different color and line type.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom",
 #'             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
-#'                           "moderate" = "#7294D4", strong = "#E6A0C4"), 
+#'                           "moderate" = "#7294D4", strong = "#E6A0C4"),
 #'             vline_at_1 = "purple dotted")
-#' 
+#'
 #' # -- Or make the shading disappear and also make the error bars just be lines.
 #' # Also make the error bars lose the hat at either end, and don't show any lines
-#' # in between the files. 
+#' # in between the files.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom",
-#'             color_set = "none", 
-#'             show_borders = FALSE, 
+#'             color_set = "none",
+#'             show_borders = FALSE,
 #'             error_bar_height = 0)
-#' 
+#'
 #' # -- Make the compound names match *exactly* what was in the simulator file
 #' # rather than being automatically prettified
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             prettify_compound_names = FALSE)
-#' 
-#' # -- Include a table of the numbers used for the centre statistic and 
-#' # variability along the right side of the graph. 
+#'
+#' # -- Include a table of the numbers used for the centre statistic and
+#' # variability along the right side of the graph.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = PerpCompound,
 #'             legend_position = "bottom",
 #'             show_numbers_on_right = TRUE,
 #'             color_set = "yellow to red")
-#' 
-#' # -- Hack things to make it so that you can break up your graphs by PK 
-#' # parameter (or some other column for facet_column_x) AND also show those
-#' # numbers along the right side. (You can't do this natively with the 
-#' # forest_plot function because it wouldn't be clear which numbers go with 
-#' # which y axis labels since we don't repeat the y axis for each facet.)
-#' GraphA <- forest_plot(forest_dataframe = BufForestData_20mg %>% 
-#'                          filter(PKparameter == "AUCt_ratio_dose1"),
-#'                       y_axis_labels = PerpCompound,
-#'                       legend_position = "bottom",
-#'                       graph_title = "AUCt ratio",
-#'                       show_numbers_on_right = TRUE,
-#'                       error_bar_height = 0,
-#'                       color_set = "none")
-#' 
-#' GraphB <- forest_plot(forest_dataframe = BufForestData_20mg %>% 
-#'                          filter(PKparameter == "Cmax_ratio_dose1"),
-#'                       y_axis_labels = PerpCompound,
-#'                       legend_position = "bottom",
-#'                      graph_title = "Cmax ratio",
-#'                      show_numbers_on_right = TRUE,
-#'                       error_bar_height = 0,
-#'                       color_set = "none")
-#' 
-#' patchwork::wrap_plots(GraphA, GraphB, nrow = 2)
-#' 
+#'
 #' 
 
 
@@ -383,23 +367,25 @@ forest_plot <- function(forest_dataframe,
                         show_numbers_on_right = FALSE,
                         mean_type = "geometric",
                         variability_type = "90% CI", 
-                        include_dose_num = NA,
-                        y_axis_title = "none", 
-                        prettify_compound_names = NA, 
                         x_axis_limits = NA, 
                         x_axis_title = NA,
                         x_axis_number_type = "ratios",
                         x_order = NA,
-                        error_bar_height = NA,
-                        show_borders = TRUE, 
-                        vline_at_1 = "gray dashed",
-                        dose_units = "mg",
+                        y_axis_title = "none", 
+                        pad_y_axis = TRUE, 
                         legend_position = "none", 
                         color_set = "grays",
                         point_shape = c(24, 21),
                         graph_title = NA,
-                        graph_title_size = 14, 
-                        pad_y_axis = TRUE, 
+                        graph_title_size = 14,
+                        table_title = NA,
+                        prettify_compound_names = NA, 
+                        include_dose_num = NA,
+                        include_ratio_in_labels = TRUE, 
+                        error_bar_height = NA,
+                        show_borders = TRUE, 
+                        vline_at_1 = "gray dashed",
+                        dose_units = "mg",
                         save_graph = NA,
                         fig_height = 6,
                         fig_width = 5){
@@ -463,6 +449,7 @@ forest_plot <- function(forest_dataframe,
                     "mean_type" = mean_type, 
                     "variability_type" = variability_type,
                     "include_dose_num" = include_dose_num,
+                    "include_ratio_in_labels" = include_ratio_in_labels,
                     "y_axis_title" = y_axis_title, 
                     "prettify_compound_names" = prettify_compound_names, 
                     "x_axis_title" = x_axis_title,
@@ -474,6 +461,7 @@ forest_plot <- function(forest_dataframe,
                     "legend_position" = legend_position, 
                     "graph_title" = graph_title,
                     "graph_title_size" = graph_title_size, 
+                    "table_title" = table_title,
                     "pad_y_axis" = pad_y_axis, 
                     "save_graph" = save_graph,
                     "fig_height" = fig_height,
@@ -583,6 +571,34 @@ forest_plot <- function(forest_dataframe,
       if(ObsIncluded){
          observed_PK <- observed_PK %>% 
             mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
+      }
+   }
+   
+   if(include_ratio_in_labels == FALSE){
+      if(include_dose_num){
+         PKparameters <- sub("_ratio_dose1", "_dose1_nounits", PKparameters)
+         PKparameters <- sub("_ratio_last", "_last_nounits", PKparameters)
+         
+         forest_dataframe <- forest_dataframe %>% 
+            mutate(PKparameter = sub("_ratio_dose1", "_dose1_nounits", PKparameter), 
+                   PKparameter = sub("_ratio_last", "_last_nounits", PKparameter))
+         
+         if(ObsIncluded){
+            observed_PK <- observed_PK %>% 
+               mutate(PKparameter = sub("_ratio_dose1", "_dose1_nounits", PKparameter), 
+                      PKparameter = sub("_ratio_last", "_last_nounits", PKparameter))
+         }
+         
+      } else {
+         PKparameters <- sub("_ratio", "_nounits", PKparameters)
+         
+         forest_dataframe <- forest_dataframe %>% 
+            mutate(PKparameter = sub("_ratio", "_nounits", PKparameter))
+         
+         if(ObsIncluded){
+            observed_PK <- observed_PK %>% 
+               mutate(PKparameter = sub("_ratio", "_nounits", PKparameter))
+         }
       }
    }
    
@@ -832,7 +848,19 @@ forest_plot <- function(forest_dataframe,
                  call. = FALSE)
          y_order <- "strongest inhibitor to strongest inducer"
       } else if(length(y_order) > 1){
-         # FIXME
+         YOrderExtra <- setdiff(y_order, forest_dataframe$File)
+         if(length(YOrderExtra) > 0){
+            warning(paste0("The files `", str_comma(YOrderExtra), 
+                           "` are included for the y order but are not present in your data. They will be ignored."))
+            y_order <- y_order[y_order %in% forest_dataframe$File]
+         }
+         
+         YOrderMissing <- setdiff(forest_dataframe$File, y_order)
+         if(length(YOrderMissing) > 0){
+            warning(paste0("The files `", str_comma(YOrderMissing), 
+                           "` are present in your data but are not included in `y_order`. We'll put them on the bottom of your graph."))
+            y_order <- c(y_order, YOrderMissing)
+         }
       }
    }
    
@@ -890,11 +918,19 @@ forest_plot <- function(forest_dataframe,
       # the bottom of the y axis and work upwards.
       mutate(PKparameter = factor(PKparameter, levels = c("Cmax_ratio",
                                                           "Cmax_ratio_last", 
+                                                          "Cmax_nounits",
+                                                          "Cmax_last_nounits", 
                                                           "AUCtau_ratio",
                                                           "AUCtau_ratio_last", 
+                                                          "AUCtau_nounits",
+                                                          "AUCtau_last_nounits",
                                                           "Cmax_ratio_dose1", 
+                                                          "Cmax_dose1_nounits",
                                                           "AUCt_ratio",
                                                           "AUCt_ratio_dose1", 
+                                                          "AUCt_nounits",
+                                                          "AUCinf_nounits", 
+                                                          "AUCinf_dose1_nounits",
                                                           "AUCinf_ratio",
                                                           "AUCinf_ratio_dose1")))
    
@@ -956,6 +992,13 @@ forest_plot <- function(forest_dataframe,
                                               .fun = min))
       }
    }
+   
+   # If the user only wants one PK parameter, then set up the graph like it's
+   # faceted on PKparameter so that we're not repeating the same PK parameter on
+   # every row. Except let them include a table on the right, something that
+   # wouldn't work if they had more than one PK parameter.
+   FakeFacetOnPK <- length(unique(forest_dataframe$PKparameter)) == 1
+   
    
    ## Setting up other stuff for graphing ----------------------------------
    
@@ -1033,7 +1076,7 @@ forest_plot <- function(forest_dataframe,
              # so there's more room for errorbars w/out overlapping
              PKParam_num = as.numeric(PKparameter)* 1.5) 
    
-   if(as_label(facet_column_x) == "PKparameter"){
+   if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
       
       # Adjusting y position if there are any obs data.
       ObsCheck <- forest_dataframe %>% 
@@ -1047,7 +1090,7 @@ forest_plot <- function(forest_dataframe,
                                      Ylen == 2 & SimOrObs == "predicted" ~ YCol_num - 0.2, 
                                      Ylen == 2 & SimOrObs == "observed" ~ YCol_num + 0.2))
       
-   } else {
+   } else if(any(forest_dataframe$SimOrObs == "observed")){
       forest_dataframe <- forest_dataframe %>% 
          mutate(PKParam_num = ifelse(SimOrObs == "predicted", 
                                      PKParam_num - 0.2, PKParam_num + 0.2))
@@ -1117,8 +1160,8 @@ forest_plot <- function(forest_dataframe,
    if(length(VlineParams) == 1){
       
       if(ShowVLine){
-      warning("It looks like you've specified only the color or only the line type for `vline_at_1`, and we need both. We'll set this to the default of `gray dashed` for now.", 
-              call. = FALSE)
+         warning("It looks like you've specified only the color or only the line type for `vline_at_1`, and we need both. We'll set this to the default of `gray dashed` for now.", 
+                 call. = FALSE)
       }
       
       # If the user set vline_at_1 to "none", we still need VlineParams to work
@@ -1147,9 +1190,9 @@ forest_plot <- function(forest_dataframe,
    VlineParams[["linewidth"]] <- ifelse(is.na(as.numeric(VlineParams[["linewidth"]])), 
                                         0.5, as.numeric(VlineParams[["linewidth"]]))
    
-   
    # Graph ----------------------------------------------------------------
-   if(as_label(facet_column_x) == "PKparameter"){
+   if(as_label(facet_column_x) == "PKparameter" |
+      FakeFacetOnPK){
       # If user wants to facet by the PK parameter, that's a special case
       # b/c we need to change what we're using for the y axis. 
       # 
@@ -1192,11 +1235,11 @@ forest_plot <- function(forest_dataframe,
                     labeller = label_parsed, 
                     switch = "y") +
          scale_shape_manual(values = MyShapes) +
-         scale_y_continuous(limits = c(0.5, 
-                                       max(as.numeric(forest_dataframe$YCol)) + 0.5), 
-                            breaks = unique(as.numeric(forest_dataframe$YCol)),
-                            labels = levels(forest_dataframe$YCol),
-                            expand = expansion(mult = pad_y_num)) + 
+         scale_y_reverse(limits = c(max(as.numeric(forest_dataframe$YCol)) + 0.5, 
+                                    0.5), 
+                         breaks = sort(unique(as.numeric(forest_dataframe$YCol))),
+                         labels = levels(forest_dataframe$YCol),
+                         expand = expansion(mult = pad_y_num)) + 
          labs(fill = "Interaction level", shape = NULL)
       
       if(show_borders){
@@ -1208,6 +1251,7 @@ forest_plot <- function(forest_dataframe,
       
    } else {
       
+      # This is when they're NOT faceting on the PK parameter. 
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
                                         y = PKParam_num, shape = SimOrObs)) +
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, 
@@ -1286,7 +1330,7 @@ forest_plot <- function(forest_dataframe,
          panel.spacing.y = unit(0, "cm"),
          panel.spacing.x = unit(0.5, "cm"))
    
-   if(as_label(facet_column_x) == "PKparameter"){
+   if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
       G <- G +
          theme(axis.ticks.y = element_blank(),
                axis.text.y = element_text(hjust = 0.5))
@@ -1309,18 +1353,28 @@ forest_plot <- function(forest_dataframe,
                  call. = FALSE)
       } else {
          
-         NumTable <-
-            ggplot(
-               forest_dataframe %>% 
-                  mutate(Nums = ifelse(complete.cases(Lower), 
-                                       # when variability is present
-                                       paste0(round_consultancy(Centre), " (",
-                                              round_consultancy(Lower), ", ",
-                                              round_consultancy(Upper), ")"), 
-                                       # when no variability is present
-                                       round_consultancy(Centre))),
-               aes(x = 1, y = PKParam_num, 
-                   label = Nums)) +
+         TableTitle <- ifelse(is.na(table_title),
+                              XTitle, table_title)
+         # Cleaning up and making things shorter
+         TableTitle <- sub("Ratio \\(", "Ratio\n(", TableTitle)
+         TableTitle <- sub("Confidence Interval", "CI", TableTitle)
+         
+         NumTable <- forest_dataframe %>% 
+            mutate(across(.cols = c(Centre, Lower, Upper), 
+                          .fns = function(x) x * 
+                             ifelse({x_axis_number_type} == "percents", 
+                                    100, 1)), 
+                   across(.cols = c(Centre, Lower, Upper), 
+                          .fns = function(x) round_consultancy(x)), 
+                   Nums = case_when({x_axis_number_type} == "percents" ~
+                                       paste0(Centre, "% (", 
+                                              Lower, "%, ", 
+                                              Upper, "%)"), 
+                                    TRUE ~ paste0(Centre, " (", 
+                                                  Lower, ", ", 
+                                                  Upper, ")")))
+         
+         NumTable <- ggplot(NumTable, aes(x = 1, y = PKParam_num, label = Nums)) +
             geom_text(vjust = 0.5, hjust = 0.5) +
             facet_grid(YCol ~ .) +
             scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
@@ -1330,12 +1384,16 @@ forest_plot <- function(forest_dataframe,
                   axis.text = element_blank(),
                   axis.title = element_blank(),
                   strip.text = element_blank(),
+                  plot.title = element_text(hjust = 0.5, size = 11),
                   plot.background = element_rect(fill="white", colour=NA),
                   panel.background = element_rect(fill="white", color=NA),
                   panel.border = element_rect(color = NA, fill = NA),
                   strip.background = element_rect(color=NA, fill="white"),
                   rect = element_rect(fill = "white", color = "white"))
          
+         if(TableTitle != "none"){
+            NumTable <- NumTable + ggtitle(TableTitle) 
+         }
       }
    }
    

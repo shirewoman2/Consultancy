@@ -14,23 +14,25 @@ forest_plot(
   show_numbers_on_right = FALSE,
   mean_type = "geometric",
   variability_type = "90\% CI",
-  include_dose_num = NA,
-  y_axis_title = "none",
-  prettify_compound_names = NA,
   x_axis_limits = NA,
   x_axis_title = NA,
   x_axis_number_type = "ratios",
   x_order = NA,
-  error_bar_height = NA,
-  show_borders = TRUE,
-  vline_at_1 = "gray dashed",
-  dose_units = "mg",
+  y_axis_title = "none",
+  pad_y_axis = TRUE,
   legend_position = "none",
   color_set = "grays",
   point_shape = c(24, 21),
   graph_title = NA,
   graph_title_size = 14,
-  pad_y_axis = TRUE,
+  table_title = NA,
+  prettify_compound_names = NA,
+  include_dose_num = NA,
+  include_ratio_in_labels = TRUE,
+  error_bar_height = NA,
+  show_borders = TRUE,
+  vline_at_1 = "gray dashed",
+  dose_units = "mg",
   save_graph = NA,
   fig_height = 6,
   fig_width = 5
@@ -152,30 +154,6 @@ assume you want arithmetic means.}
 "geometric CV", "arithmetic CV", or "standard deviation" ("sd" is also ok
 for that last one).}
 
-\item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
-the dose number when listing the PK parameter. By default, the parameter
-will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
-you have PK data for both the first dose and the last dose. Also by
-default, if you have data only for the first dose or only for the last
-dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
-ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
-the default behavior and get exactly what you want.}
-
-\item{y_axis_title}{optionally specify a vertical title to be displayed to
-the left of the y axis. Example: \code{y_axis_title = "Effector
-co-administered with Drug X"}. Default ("none") leaves off any y-axis title.}
-
-\item{prettify_compound_names}{NA (default), TRUE, or FALSE on whether to
-make any compound names included in \code{y_axis_labels} prettier. This was
-designed for simulations where the substrates or effectors are among the
-standard options for the simulator, and leaving
-\code{prettify_compound_names = TRUE} will make the name of those compounds
-something more human readable. For example, "SV-Rifampicin-MD" will become
-"rifampicin", and "Sim-Midazolam" will become "midazolam". If you don't
-specify this, we'll prettify if you supply a column name for
-\code{y_axis_labels} and we *won't* prettify if you supply a named
-character vector there.}
-
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
 \item{x_axis_title}{optionally supply a character vector or an expression to
@@ -193,34 +171,17 @@ the values there are "QD" and "BID", the default will be to show them in
 alphabetical order. If you want "QD" to show up first, though, set the
 order with \code{x_order = c("QD", "BID")}}
 
-\item{error_bar_height}{optionally specify a number for the height of the
-line at the end of the error bar. If left as NA, it will be set to 0.3. If
-set to 0, the error bars will be just lines. Try it and you'll see what we
-mean.}
+\item{y_axis_title}{optionally specify a vertical title to be displayed to
+the left of the y axis. Example: \code{y_axis_title = "Effector
+co-administered with Drug X"}. Default ("none") leaves off any y-axis title.}
 
-\item{show_borders}{TRUE (default) or FALSE for whether to show a light gray
-line between the files on the y axis. Note: This works best when
-\code{color_set = "none"}. Otherwise, you'll be able to see what looks like
-a very thin white line between the graphs that is actually the space
-between the panels of the graph for each file. We can't quite eliminate
-that tiny space.}
-
-\item{vline_at_1}{specify the type of vertical line to show where the ratio =
-1; default is to show a gray dashed line, and you can get no line by
-specifying \code{vline_at_1 = "none"}. Acceptable input is the color (any
-R-acceptable color will do) and then the line type separated by spaces,
-e.g. "gray dashed" or "red dotted". To see all the possible line types,
-type this into the console: \code{ggpubr::show_line_types()}. If you also
-list a number, e.g., \code{vline_at_1 = "blue longdash 0.5"}, we'll set
-that for the line thickness. Default line thickness is 0.5.}
-
-\item{dose_units}{the units used in dosing, which only applies if you set
-\code{facet_column_x}, to Dose_sub or Dose_inhib. In that situation,
-setting the dose units here will automatically add those units to the
-appropriate graph labels. This way, the graph label will be, e.g., "50 mg"
-and "100 mg" instead of just "50" and "100". This just helps make it
-clearer what the numbers represent. If you specify anything other than
-Dose_sub or Dose_inhib for \code{facet_column_x}, this will be ignored.}
+\item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
+is TRUE, which includes some generally reasonable padding). If set to
+FALSE, the y axis tick marks will be placed closer to the top and bottom of
+your data. If you want a \emph{specific} amount of y-axis padding, set this
+to a number; the default is \code{c(0.2, 0)}, which adds 20\% more space to
+the bottom and nothing to the top of the y axis. If you only specify one
+number, we'll assume that's the percent you want added to the bottom.}
 
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
@@ -254,13 +215,65 @@ the graph}
 \item{graph_title_size}{the font size for the graph title if it's included;
 default is 14.}
 
-\item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
-is TRUE, which includes some generally reasonable padding). If set to
-FALSE, the y axis tick marks will be placed closer to the top and bottom of
-your data. If you want a \emph{specific} amount of y-axis padding, set this
-to a number; the default is \code{c(0.2, 0)}, which adds 20\% more space to
-the bottom and nothing to the top of the y axis. If you only specify one
-number, we'll assume that's the percent you want added to the bottom.}
+\item{table_title}{if you have included a table of the numbers by setting
+\code{show_numbers_on_right = TRUE}, optionally specify what to use for the
+title above those numbers. Setting this to NA (default) will result in a
+title of what the numbers are, so basically the same text as the default
+for the x axis, e.g., "Geometric Mean Ratio (90\% CI)". Otherwise, specify
+what text you'd like to use. Setting this to "none" will remove the table
+title.}
+
+\item{prettify_compound_names}{NA (default), TRUE, or FALSE on whether to
+make any compound names included in \code{y_axis_labels} prettier. This was
+designed for simulations where the substrates or effectors are among the
+standard options for the simulator, and leaving
+\code{prettify_compound_names = TRUE} will make the name of those compounds
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Midazolam" will become "midazolam". If you don't
+specify this, we'll prettify if you supply a column name for
+\code{y_axis_labels} and we *won't* prettify if you supply a named
+character vector there.}
+
+\item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
+the dose number when listing the PK parameter. By default, the parameter
+will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+you have PK data for both the first dose and the last dose. Also by
+default, if you have data only for the first dose or only for the last
+dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+the default behavior and get exactly what you want.}
+
+\item{include_ratio_in_labels}{TRUE (default) or FALSE on whether to include
+"ratio" in the labels for the PK parameters.}
+
+\item{error_bar_height}{optionally specify a number for the height of the
+line at the end of the error bar. If left as NA, it will be set to 0.3. If
+set to 0, the error bars will be just lines. Try it and you'll see what we
+mean.}
+
+\item{show_borders}{TRUE (default) or FALSE for whether to show a light gray
+line between the files on the y axis. Note: This works best when
+\code{color_set = "none"}. Otherwise, you'll be able to see what looks like
+a very thin white line between the graphs that is actually the space
+between the panels of the graph for each file. We can't quite eliminate
+that tiny space.}
+
+\item{vline_at_1}{specify the type of vertical line to show where the ratio =
+1; default is to show a gray dashed line, and you can get no line by
+specifying \code{vline_at_1 = "none"}. Acceptable input is the color (any
+R-acceptable color will do) and then the line type separated by spaces,
+e.g. "gray dashed" or "red dotted". To see all the possible line types,
+type this into the console: \code{ggpubr::show_line_types()}. If you also
+list a number, e.g., \code{vline_at_1 = "blue longdash 0.5"}, we'll set
+that for the line thickness. Default line thickness is 0.5.}
+
+\item{dose_units}{the units used in dosing, which only applies if you set
+\code{facet_column_x}, to Dose_sub or Dose_inhib. In that situation,
+setting the dose units here will automatically add those units to the
+appropriate graph labels. This way, the graph label will be, e.g., "50 mg"
+and "100 mg" instead of just "50" and "100". This just helps make it
+clearer what the numbers represent. If you specify anything other than
+Dose_sub or Dose_inhib for \code{facet_column_x}, this will be ignored.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -344,7 +357,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             variability_type = "range")
 
 # You can compare observed PK data as long as they are laid out the same
-# way as the simulated data. Please see the argument `observed_PK` for 
+# way as the simulated data. Please see the argument `observed_PK` for
 # details, but here's an example.
 view(BufObsForestData_20mg)
 forest_plot(forest_dataframe = BufForestData_20mg,
@@ -379,22 +392,22 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             color_set = "yellow to red")
 
 # -- Or specify exactly which colors you want for which interaction level, and
-# make the vertical line at 1 be a different color and line type. 
+# make the vertical line at 1 be a different color and line type.
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
             legend_position = "bottom",
             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
-                          "moderate" = "#7294D4", strong = "#E6A0C4"), 
+                          "moderate" = "#7294D4", strong = "#E6A0C4"),
             vline_at_1 = "purple dotted")
 
 # -- Or make the shading disappear and also make the error bars just be lines.
 # Also make the error bars lose the hat at either end, and don't show any lines
-# in between the files. 
+# in between the files.
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
             legend_position = "bottom",
-            color_set = "none", 
-            show_borders = FALSE, 
+            color_set = "none",
+            show_borders = FALSE,
             error_bar_height = 0)
 
 # -- Make the compound names match *exactly* what was in the simulator file
@@ -403,38 +416,13 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
             prettify_compound_names = FALSE)
 
-# -- Include a table of the numbers used for the centre statistic and 
-# variability along the right side of the graph. 
+# -- Include a table of the numbers used for the centre statistic and
+# variability along the right side of the graph.
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = PerpCompound,
             legend_position = "bottom",
             show_numbers_on_right = TRUE,
             color_set = "yellow to red")
-
-# -- Hack things to make it so that you can break up your graphs by PK 
-# parameter (or some other column for facet_column_x) AND also show those
-# numbers along the right side. (You can't do this natively with the 
-# forest_plot function because it wouldn't be clear which numbers go with 
-# which y axis labels since we don't repeat the y axis for each facet.)
-GraphA <- forest_plot(forest_dataframe = BufForestData_20mg \%>\% 
-                         filter(PKparameter == "AUCt_ratio_dose1"),
-                      y_axis_labels = PerpCompound,
-                      legend_position = "bottom",
-                      graph_title = "AUCt ratio",
-                      show_numbers_on_right = TRUE,
-                      error_bar_height = 0,
-                      color_set = "none")
-
-GraphB <- forest_plot(forest_dataframe = BufForestData_20mg \%>\% 
-                         filter(PKparameter == "Cmax_ratio_dose1"),
-                      y_axis_labels = PerpCompound,
-                      legend_position = "bottom",
-                     graph_title = "Cmax ratio",
-                     show_numbers_on_right = TRUE,
-                      error_bar_height = 0,
-                      color_set = "none")
-
-patchwork::wrap_plots(GraphA, GraphB, nrow = 2)
 
 
 }
