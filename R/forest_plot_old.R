@@ -1,12 +1,14 @@
-#' Create a forest plot
+#' Create a forest plot --  WARNING! TO BE DEPRECATED!
 #'
-#' \code{forest_plot} creates a forest plot of AUC and Cmax ratios. Please use
-#' the function \code{\link{extractForestData}} or \code{\link{pksummary_mult}}
-#' (set the argument "extract_forest_data" to TRUE) to generate the input data
-#' for \code{forest_dataframe}. In the graph, the data will be broken up by: 1)
-#' the file name, which will be graphed on either the main y axis or, if you
-#' would like, a secondary y axis and 2) anything you specify for
-#' \code{facet_column_x}, which will be graphed in the horizontal direction.
+#' Please see the newer version of the forest plot function:
+#' \code{\link{forest_plot}}. \code{forest_plot_old} creates a forest plot of
+#' AUC and Cmax ratios. Please use the function \code{\link{extractForestData}}
+#' or \code{\link{pksummary_mult}} (set the argument "extract_forest_data" to
+#' TRUE) to generate the input data for \code{forest_dataframe}. In the graph,
+#' the data will be broken up by: 1) the file name, which will be graphed on
+#' either the main y axis or, if you would like, a secondary y axis and 2)
+#' anything you specify for \code{facet_column_x}, which will be graphed in the
+#' horizontal direction.
 #' \strong{If you're a little confused here or you're just the kind of person
 #' who prefers to wing it rather than reading the instructions when assembling
 #' furniture, we recommend skipping to the end of this help file and trying out
@@ -195,25 +197,25 @@
 #' # We'll use some example forest-plot data for the substrate bufuralol
 #' # with various effectors. To start, we'll just look at one dose level.
 #' Buf_lowdose <- ForestData %>% filter(Dose_sub == 20)
-#' forest_plot(forest_dataframe = Buf_lowdose,
+#' forest_plot_old(forest_dataframe = Buf_lowdose,
 #'             perp_or_victim = "victim")
 #'
 #' # If there were multiple dosing levels of your drug, though, it might be
 #' # nice to break up the graph by the substrate dose like this:
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column_x = Dose_sub)
 #'
 #' # Maybe you want just one longer graph  with all the low-dose simulations
 #' # on the top and the high-dose simulations on the bottom. Here's one
 #' # way to do that:
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File)
 #'
 #' # Or you could break things up first by the file and then by the dose:
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = File,
 #'             y_axis_column_secondary = Dose_sub)
@@ -221,16 +223,16 @@
 #' # By default, the order of compounds will put inhibitors on top and
 #' # inducers on the bottom, sorted by their AUC GMR. If you already liked
 #' # the order you had things in whatever you supplied for forest_dataframe,
-#' # you can tell the forest_plot function not to change that by setting
+#' # you can tell the forest_plot_old function not to change that by setting
 #' # y_order or y_order_secondary to "as is".
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File,
 #'             y_order_secondary = "as is")
 #'
 #' # Here's another way you could set the order in which the compounds appear:
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File,
@@ -239,7 +241,7 @@
 #'
 #' # Perhaps it would be less opaque to just list the full file names
 #' # in the order you want:
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File,
@@ -254,7 +256,7 @@
 #'
 #' # You could also change the way the compound names appear when
 #' # you list the file names as a named character vector like this:
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = Dose_sub,
 #'             y_axis_column_secondary = File,
@@ -272,7 +274,7 @@
 #' # character vector, you don't need to break up your data in any other way.
 #' # Here's basically the same function call as above but without
 #' # y_axis_column_secondary.
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             y_axis_column = File,
 #'             y_order = c("buf-20mg-sd-fluv-36mg-qd.xlsx" = "fluvoxamine (SSRI)",
@@ -286,33 +288,33 @@
 #'
 #' # Here are some options for modifying the aesthetics of your graph:
 #' # -- Adjust the x axis limits with x_axis_limits
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column_x = Dose_sub,
 #'             x_axis_limits = c(0.9, 5))
 #'
 #' # -- Include a legend for the shading
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom")
 #'
 #' # -- Change the shading to be like in Chen Jones 2022 CPT
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
 #'             color_set = "yellow to red")
 #'
 #' # -- Or make the shading disappear
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
 #'             color_set = "none")
 #'
 #' # -- Or specify exactly which colors you want for which interaction level
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column_x = Dose_sub,
 #'             legend_position = "bottom",
@@ -321,13 +323,13 @@
 #'
 #' # -- Make the compound names match *exactly* what was in the simulator file
 #' # rather than being automatically prettified
-#' forest_plot(forest_dataframe = ForestData,
+#' forest_plot_old(forest_dataframe = ForestData,
 #'             perp_or_victim = "victim",
 #'             facet_column_x = Dose_sub,
 #'             prettify_compound_names = FALSE)
 
 
-forest_plot <- function(forest_dataframe, 
+forest_plot_old <- function(forest_dataframe, 
                         perp_or_victim, 
                         PKparameters = NA, 
                         include_dose_num = TRUE,
@@ -702,7 +704,7 @@ forest_plot <- function(forest_dataframe,
    
    # y_axis_column must not be empty.
    if(as_label(rlang::enquo(y_axis_column)) == "<empty>"){
-      stop("Something must be specified for `y_axis_column` for the forest_plot function to work.", 
+      stop("Something must be specified for `y_axis_column` for the forest_plot_old function to work.", 
            call. = FALSE)
    }
    
@@ -710,7 +712,7 @@ forest_plot <- function(forest_dataframe,
    # for that.
    if(as_label(rlang::enquo(y_axis_column_secondary)) != "File" &
       as_label(rlang::enquo(y_axis_column)) != "File"){
-      stop("Either `y_axis_column` or `y_axis_column_secondary` must be set to the simulator file for the forest_plot function to work.", 
+      stop("Either `y_axis_column` or `y_axis_column_secondary` must be set to the simulator file for the forest_plot_old function to work.", 
            call. = FALSE)
    }
    
@@ -1205,7 +1207,7 @@ forest_plot <- function(forest_dataframe,
       # day of dosing or prandial state or something like that. 
       
       if(as_label(facet_column_x) == "PKparameter"){
-         warning("You have requested that we break up the graphs by PK parameter (facet_column_x = PKparameter) and also have requested a secondary y axis. We're sorry, but the forest_plot function is not currently set up to do both. We will not be able to use anything for facet_column_x here.", 
+         warning("You have requested that we break up the graphs by PK parameter (facet_column_x = PKparameter) and also have requested a secondary y axis. We're sorry, but the forest_plot_old function is not currently set up to do both. We will not be able to use anything for facet_column_x here.", 
                  call. = FALSE)
          facet_column_x <- as_quosure(NULL)
       }
