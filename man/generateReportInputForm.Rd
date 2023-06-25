@@ -21,10 +21,6 @@ can be fed into \code{\link{pksummary_table}} to automate some of the
 calculations for writing a report.
 }
 \details{
-This does not work on the SharePoint drive because R doesn't have permission
-to write there. Please set your working directory to a different location. It
-\emph{will} work on the Large File Store drive.
-
 The tabs in the Excel file this function creates are: \describe{
 
 \item{how to use this file}{Instructions for how to use the Excel template

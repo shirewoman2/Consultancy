@@ -42,13 +42,7 @@ in quotes}
   \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
   parameters to extract, enter \code{view(PKParameterDefinitions)} into the
   console. Not case sensitive. If you use "_first" instead of "_dose1", that
-  will also work.}}
-
-  Currently, the PK data are only for the substrate unless noted, although
-  you can sometimes hack around this by supplying a specific sheet to extract
-  for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
-  This has NOT been as well tested, though, so be sure to check that you're
-  getting what you expected!}
+  will also work.}}}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
 pull the PK data, in quotes; for example, specify the tab where you have a
@@ -109,14 +103,9 @@ Depending on the options selected, returns a list of numerical
   "QC" that indicates where in the simulator output file the data came from.
 }
 \description{
-Pull calculated PK parameters from a Simcyp simulation output Excel file.
-\strong{Note:} Nearly all parameters are for the SUBSTRATE We're still
-validating this for extracting PK for an effector. \strong{A request for
-assistance:} If you extract PK data for an effector by specifying an Excel
-sheet for that compound, please check the values and tell Laura Shireman how
-well it works! Also, absorption parameters are for first-order absorption
-models only; we haven't developed this yet to pull ADAM-model absorption
-parameters, but it's on our to-do list.
+Pull calculated PK parameters from a Simcyp simulation output Excel file. A
+data.frame of all possible PK parameters may be found by typing 
+\code{view(PKParameterDefinitions)} into the console.
 }
 \examples{
 

@@ -56,10 +56,7 @@
 #'   in quotes here, e.g., "My nicely formatted table.docx". If you leave off
 #'   the file extension, we'll assume you want it to be ".docx". If there is a
 #'   column titled "File" in your table, we'll add a caption listing which files
-#'   were included. \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON
-#'   SHAREPOINT. This is a Microsoft permissions issue, not an R issue. If you
-#'   try to save on SharePoint, you will get a warning that R will save your
-#'   file instead to your local (not OneDrive) Documents folder.
+#'   were included. 
 #' @param title_document optionally specify a title for the Word document
 #'   output. If you don't save the table, this will be ignored.
 #'

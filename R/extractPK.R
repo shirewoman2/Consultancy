@@ -1,13 +1,8 @@
 #' Extract PK data for specific parameters from a simulator output Excel file
 #'
-#' Pull calculated PK parameters from a Simcyp simulation output Excel file.
-#' \strong{Note:} Nearly all parameters are for the SUBSTRATE We're still
-#' validating this for extracting PK for an effector. \strong{A request for
-#' assistance:} If you extract PK data for an effector by specifying an Excel
-#' sheet for that compound, please check the values and tell Laura Shireman how
-#' well it works! Also, absorption parameters are for first-order absorption
-#' models only; we haven't developed this yet to pull ADAM-model absorption
-#' parameters, but it's on our to-do list.
+#' Pull calculated PK parameters from a Simcyp simulation output Excel file. A
+#' data.frame of all possible PK parameters may be found by typing 
+#' \code{view(PKParameterDefinitions)} into the console. 
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
 #'   in quotes
@@ -41,11 +36,6 @@
 #'   console. Not case sensitive. If you use "_first" instead of "_dose1", that
 #'   will also work.}}
 #'
-#'   Currently, the PK data are only for the substrate unless noted, although
-#'   you can sometimes hack around this by supplying a specific sheet to extract
-#'   for a compound other than the substrate, e.g. sheet = "AUC(Sub Pri Met1)".
-#'   This has NOT been as well tested, though, so be sure to check that you're
-#'   getting what you expected!
 #' @param compoundToExtract For which compound do you want to extract
 #'   PK data? Options are: \itemize{\item{"substrate"
 #'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
@@ -172,29 +162,30 @@ extractPK <- function(sim_data_file,
    
    # NOTE TO CODERS: This function calls on the data object AllPKParameters to
    # figure out which regex to use for which PK parameter. In AllPKParameters,
-   # the sheet listed is "AUC" when it's a parameter that we're searching for
-   # on a tab named "AUC", "AUC_SD", or "AUC_CI", which apparently only exists
-   # with simulator versions earlier than V22 and even then does not *always*
-   # exist. The "AUC" tab has a very specific format that DIFFERS from the more
-   # generic PK tab layouts, so this matters! extractPK will call on the
-   # unexported internal function extractAUCtab to get the data requested. 
+   # the sheet listed is "AUC" when it's a parameter that we're searching for on
+   # a tab named "AUC", "AUC_SD", or "AUC_CI", which apparently only exists with
+   # simulator versions earlier than V22 and even then does not *always* exist.
+   # The "AUC" tab has a very specific format that DIFFERS from the more generic
+   # PK tab layouts, so this matters! 
    
-   # By contrast, when the sheet listed is "AUC0", that's only for first-dose
-   # data, and the structure of that Excel tab is the more generic layout of PK
-   # data like in, e.g., "Int AUC 1st(Sub)(CPlasma)" or a similarly named tab.
-   # Similarly, when the sheet is listed in AllPKParameters as "AUCX", that's a
-   # tab that could be for a last dose or for a user-specified interval, but
-   # its layout will be similar to the AUC0 layout, so extractPK will still
-   # call on the internal function extractAUCXtab to get the requested info.
+   # By contrast, when the sheet listed is not plain "AUC" but "AUC0", that's
+   # only for first-dose data, and the structure of that Excel tab is the more
+   # generic layout of PK data like in, e.g., "Int AUC 1st(Sub)(CPlasma)" or a
+   # similarly named tab. Similarly, when the sheet is listed in AllPKParameters
+   # as "AUCX", that's a tab that could be for a last dose or for a
+   # user-specified interval, but its layout will be similar to the AUC0 layout,
+   # so extractPK will still call on the internal function extractAUCXtab to get
+   # the requested info.
    
-   # To add new PK parameters to extract, you should be able to just add them
-   # to AllPKParameters, following the examples for other PK parameters as far
-   # as what to put in each column. This is TRICKY for the AUC tab b/c you have
-   # to check things in multiple rows to make sure you're extracting the
-   # correct cells. Once you've added the new parameters to AllPKParameters,
+   # To add new PK parameters to extract, add them to AllPKParameters, following
+   # the examples for other PK parameters as far as what to put in each column.
+   # This is TRICKY for the AUC tab b/c you have to check things in multiple
+   # rows to make sure you're extracting the correct cells. It's easier for the
+   # AUCX tabs, which means that it gets easier when the version of the
+   # simulator is 22+. Once you've added the new parameters to AllPKParameters,
    # save that RData object when you save the package, and then extractPK
-   # *should* be able to find them. At least, I *hope* it will work that
-   # simply! -LSh
+   # *should* be able to find them. At least, that's how I've tried to design
+   # it to work! -LSh
    
    
    if(returnAggregateOrIndiv[1] == "both"){
@@ -525,11 +516,19 @@ extractPK <- function(sim_data_file,
    
    # Pulling data from "AUC" sheet ------------------------------------------
    
-   # Need to pull these parameters if either a) they requested a vector of
-   # parameters rather than a set and some of those parameters are present on
-   # the AUC tab or b) the user requested the "AUC tab" for PK parameters and
-   # either "AUC", "AUC_CI", or "AUC_SD" are among the sheets in the file.
-   if(length(Tab_AUC) > 0 && complete.cases(Tab_AUC)){
+   # Need to pull these parameters if
+   
+   # a) they requested a vector of parameters rather than a set and some of
+   # those parameters are present on the AUC tab or 
+   
+   # b) the user requested the "AUC tab" for PK parameters and either "AUC",
+   # "AUC_CI", or "AUC_SD" are among the sheets in the file or
+   
+   # c) They requested a specific sheet for pulling the PK parameters and that
+   # sheet was formatted like the AUC tab.
+   
+   if((length(Tab_AUC) > 0 && complete.cases(Tab_AUC)) &
+      (is.na(sheet) | UserAUC == TRUE)){
       
       PKparameters_AUC <- intersect(PKparameters, ParamAUC)
       

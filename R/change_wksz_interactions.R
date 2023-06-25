@@ -27,7 +27,9 @@
 #'   2.wksz")}
 #' @param fix_xml_paths TRUE (default) or FALSE to automatically fix any
 #'   discrepancies in user name on the SharePoint folder path for observed
-#'   overlay data files or fixed trial design files.
+#'   overlay data files or fixed trial design files. This can be useful if, say,
+#'   someone else ran the development and verification simulations and you're
+#'   now running the application simulations.
 #' @param interactions_to_set a data.frame of interaction parameters to use
 #'   instead of filling in each of the arguments below (compoundID through
 #'   Ind_slope) with character vectors of values. The only columns that will

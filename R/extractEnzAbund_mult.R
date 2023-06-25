@@ -9,8 +9,8 @@
 #' "sim2.xlsx" and then also ask for the enzymes "CYP3A4" and "CYP2C9", you will
 #' get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
 #' \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
-#' saved on SharePoint and are open, this WILL CRASH and WILL NOT save whatever
-#' progress it has made so far. Be sure to close all of the source Excel files.
+#' open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
+#' Be sure to close all of the source Excel files.
 #'
 #' @param sim_data_files a character vector of simulator output files, each in
 #'   quotes and encapsulated with \code{c(...)}, NA to extract enzyme-abundance
