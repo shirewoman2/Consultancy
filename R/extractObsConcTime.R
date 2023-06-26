@@ -343,14 +343,20 @@ extractObsConcTime <- function(obs_data_file,
       mutate(CompoundID = tolower(Compound), 
              Dose_units = gsub("\\(|\\)", "", Dose_units), 
              Dose = as.numeric(DoseAmount), 
-             InfDuration = as.numeric(InfDuration)) %>% 
+             InfDuration = as.numeric(InfDuration), 
+             Dose_sub = case_when(complete.cases(Dose) & 
+                                     CompoundID == "substrate" ~ Dose), 
+             Dose_inhib = case_when(complete.cases(Dose) & 
+                                       CompoundID == "inhibitor 1" ~ Dose), 
+             Dose_inhib2 = case_when(complete.cases(Dose) & 
+                                        CompoundID == "inhibitor 2" ~ Dose)) %>% 
       select(any_of(c("Individual", "Species", "Age",
                       "Weight_kg", "Height_cm",
                       "Sex", "SerumCreatinine_umolL", "HSA_gL", 
                       "Haematocrit", "PhenotypeCYP2D6", "SmokingStatus", 
                       "GestationalAge_wk", "PlacentaVol_L", "FetalWt_kg", 
-                      "ObsFile", "CompoundID", 
-                      "Time", "Time_units", "Dose", "Dose_units",
+                      "ObsFile", "CompoundID", "Time", "Time_units",
+                      "Dose_sub", "Dose_inhib", "Dose_inhib2", "Dose_units",
                       "InfDuration"))) 
    
    if(nrow(dose_data) > 0){
@@ -359,26 +365,39 @@ extractObsConcTime <- function(obs_data_file,
          # Removing dosing rows b/c that's not conc time data. 
          filter(complete.cases(DVID)) %>%
          filter(is.na(DoseAmount)) %>% 
-         mutate(Simulated = FALSE)
+         mutate(Simulated = FALSE) %>% 
+         # Removing dose units column b/c it will be NA for all obs data. Need to
+         # get that from dose_data.
+         select(-Dose_units)
       
       DoseInts <- dose_data %>%
-         select(Individual, CompoundID, Time, Dose, Dose_units) %>% 
-         rename(DoseTime = Time) 
-      DoseInts_ID <- DoseInts %>% 
-         mutate(Interval = cut(DoseTime, 
-                               breaks = c(unique(DoseInts$DoseTime), Inf), 
-                               include.lowest = TRUE, right = FALSE))
+         select(Individual, CompoundID, Time, 
+                Dose_sub, Dose_inhib, Dose_inhib2, Dose_units) %>% 
+         rename(DoseTime = Time)
       
-      # Adding dose info to conc-time data.frame
-      obs_data <- obs_data %>% 
-         select(-Dose_units) %>% 
-         mutate(Interval = cut(Time, breaks = c(unique(DoseInts$DoseTime), Inf), 
-                               include.lowest = TRUE, right = FALSE)) %>% 
-         left_join(DoseInts_ID, 
-                   by = join_by(CompoundID, Individual, Interval))
+      # Adding dose info to conc-time data.frame one CompoundID at a time.
+      obs_data <- split(obs_data, f = obs_data$CompoundID)
+      DoseInts <- split(DoseInts, f = DoseInts$CompoundID)
+      
+      for(i in names(obs_data)){
+         
+         if(nrow(DoseInts[[i]]) > 0){
+            DoseInts[[i]] <- DoseInts[[i]] %>% 
+               mutate(Interval = cut(DoseTime, 
+                                     breaks = c(unique(DoseInts[[i]]$DoseTime), Inf), 
+                                     include.lowest = TRUE, right = FALSE))
+            
+            obs_data[[i]] <- obs_data[[i]] %>% 
+               mutate(Interval = cut(Time, breaks = c(unique(DoseInts[[i]]$DoseTime), Inf), 
+                                     include.lowest = TRUE, right = FALSE)) %>% 
+               left_join(DoseInts[[i]], 
+                         by = join_by(CompoundID, Individual, Interval)) %>% 
+               mutate(DoseNum = as.numeric(Interval))
+         }
+      }
    }
    
-   obs_data <- obs_data %>% 
+   obs_data <- bind_rows(obs_data) %>% 
       mutate(across(.cols = any_of(c("Age", "Weight_kg", "Height_cm",
                                      "SerumCreatinine_umolL", "HSA_gL", 
                                      "Haematocrit", "GestationalAge_wk", 
@@ -387,7 +406,9 @@ extractObsConcTime <- function(obs_data_file,
       select(any_of(c("CompoundID", "Inhibitor", "Tissue", 
                       "Individual", "Trial",
                       "Simulated", "Time", "Conc",
-                      "Time_units",  "Conc_units", "Dose", "Dose_units",
+                      "Time_units",  "Conc_units", 
+                      "Dose_sub", "Dose_inhib", "Dose_inhib2",
+                      "Dose_units", "DoseNum",
                       "ObsFile", "Period", "Species", "Age", "Weight_kg",
                       "Height_cm", "Sex", "SerumCreatinine_umolL",
                       "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
