@@ -359,7 +359,7 @@ pksummary_mult <- function(sim_data_files = NA,
       
       sim_data_files <- union(sim_data_files, observed_PKDF$File)
       sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
-   } else if(class(observed_PK) == "numeric"){
+   } else if("numeric" %in% class(observed_PK)){
       observed_PKDF <- as.data.frame(t(observed_PK))
    }
    

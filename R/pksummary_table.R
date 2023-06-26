@@ -440,7 +440,7 @@ pksummary_table <- function(sim_data_file = NA,
       sectionInfo <- FALSE
       
       # If they supplied observed_PK, get sim_data_file from that. 
-      if(any(complete.cases(observed_PK)) && (class(observed_PK) == "character")){
+      if(any(complete.cases(observed_PK)) && "character" %in% class(observed_PK)){
          observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                "csv" = read.csv(observed_PK), 
                                "xlsx" = xlsx::read.xlsx(observed_PK, 
