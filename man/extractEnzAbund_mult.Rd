@@ -92,8 +92,8 @@ them. For example, if you ask for data from the files "sim1.xlsx" and
 "sim2.xlsx" and then also ask for the enzymes "CYP3A4" and "CYP2C9", you will
 get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
 \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
-saved on SharePoint and are open, this WILL CRASH and WILL NOT save whatever
-progress it has made so far. Be sure to close all of the source Excel files.
+open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
+Be sure to close all of the source Excel files.
 }
 \examples{
 ConcTimeData <-

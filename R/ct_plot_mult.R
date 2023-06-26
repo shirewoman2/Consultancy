@@ -209,12 +209,7 @@
 #'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
 #'   will not be automatically saved to disk, except when \code{graph_arrangment
 #'   = "separate files"}, when anything you specify here will be ignored and it
-#'   will be saved by file name anyway. \strong{WARNING:} SAVING TO WORD DOES
-#'   NOT WORK ON SHAREPOINT OR THE LARGE FILE STORE. This is a Microsoft
-#'   permissions issue, not an R issue. If you temporarily change your working
-#'   directory to a local folder, it will work fine and you can copy those files
-#'   later back to SharePoint or the Large File Store. We wish we had a better
-#'   solution for this!
+#'   will be saved by file name anyway. 
 #' @param file_suffix optionally add a file suffix to explain what each graph
 #'   it. For example, you might run this function once and with
 #'   \code{figure_type = "means only"} and once with \code{figure_type =

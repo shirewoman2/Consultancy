@@ -26,6 +26,7 @@ forest_plot(
   graph_title = NA,
   graph_title_size = 14,
   table_title = NA,
+  rel_widths = c(5, 1),
   prettify_compound_names = NA,
   include_dose_num = NA,
   include_ratio_in_labels = TRUE,
@@ -222,6 +223,11 @@ title of what the numbers are, so basically the same text as the default
 for the x axis, e.g., "Geometric Mean Ratio (90\% CI)". Otherwise, specify
 what text you'd like to use. Setting this to "none" will remove the table
 title.}
+
+\item{rel_widths}{specify the relative widths of the graph and the table
+(only applies if you included a table on the right side of the graph) as a
+numeric vector. The default makes the graph 5x larger than the table, and
+acceptable input looks like this: \code{rel_widths = c(5, 1)}}
 
 \item{prettify_compound_names}{NA (default), TRUE, or FALSE on whether to
 make any compound names included in \code{y_axis_labels} prettier. This was

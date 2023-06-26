@@ -8,9 +8,9 @@
 #' ask for data from the files "sim1.xlsx" and "sim2.xlsx" and then also ask for
 #' "substrate" and "primary metabolite 1", you will get the substrate and
 #' primary metabolite 1 data from \emph{both} files. \strong{NOTE:} If ANY of
-#' the Excel files you wish to extract data from are saved on SharePoint and are
-#' open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
-#' Be sure to close all of the source Excel files.
+#' the Excel files you wish to extract data from are open, this WILL CRASH and
+#' WILL NOT save whatever progress it has made so far. Be sure to close all of
+#' the source Excel files.
 #'
 #' \strong{Regarding dose intervals for observed data:} The observed data files
 #' don't include information on dosing intervals or dose numbers, which makes it

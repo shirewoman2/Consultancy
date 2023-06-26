@@ -25,7 +25,6 @@ pksummary_mult(
   prettify_columns = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
-  highlightExcel = FALSE,
   save_table = NA,
   fontsize = 11,
   ...
@@ -189,10 +188,6 @@ only work for simulations that included an effector.}
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
 
-\item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
-yellow the cells on the source Excel file where the data came from. This
-\emph{only} applies when \code{checkDataSource = TRUE}.}
-
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -225,10 +220,7 @@ percentiles and, optionally, comparisons to observed data. This function
 automatically finds the correct tabs and the correct cells in a Simulator
 output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 see the notes at the bottom of this help file for how to supply observed data
-in a standardized fashion that this function can read.} \item{ If the
-simulator output Excel file lives on SharePoint, you'll need to close it or
-this function will just keep running and not generate any output while it
-waits for access to the file.}}
+in a standardized fashion that this function can read.}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up
@@ -272,9 +264,9 @@ simulation output file that you want to compare. It's ok to leave blank any
 cells where you don't have a value, and it's ok to change the PK parameter
 names to something else that you want as long as it's one of the options for
 "PKparameter" in the table you can see by running this in the console:
-\code{view(PKParameterDefinitions)} If your compound data sheet is on
-SharePoint, make sure you close it before running this or R won't be able to
-access the file!
+\code{view(PKParameterDefinitions)}. Note that this will require that a copy
+of the compound data sheet exists somewhere that R can read it, i.e., not on
+a SharePoint folder with no path in Windows.
 
 When you call on \code{pksummary_table}, use the following syntax,
 substituting your project's compound data sheet file name for the example:

@@ -6,10 +6,7 @@
 #' automatically finds the correct tabs and the correct cells in a Simulator
 #' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
-#' in a standardized fashion that this function can read.} \item{ If the
-#' simulator output Excel file lives on SharePoint, you'll need to close it or
-#' this function will just keep running and not generate any output while it
-#' waits for access to the file.}}
+#' in a standardized fashion that this function can read.}}
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame of the observed PK
@@ -52,9 +49,9 @@
 #' cells where you don't have a value, and it's ok to change the PK parameter
 #' names to something else that you want as long as it's one of the options for
 #' "PKparameter" in the table you can see by running this in the console:
-#' \code{view(PKParameterDefinitions)} If your compound data sheet is on
-#' SharePoint, make sure you close it before running this or R won't be able to
-#' access the file!
+#' \code{view(PKParameterDefinitions)}. Note that this will require that a copy
+#' of the compound data sheet exists somewhere that R can read it, i.e., not on
+#' a SharePoint folder with no path in Windows.
 #'
 #' When you call on \code{pksummary_table}, use the following syntax,
 #' substituting your project's compound data sheet file name for the example:
@@ -200,9 +197,6 @@
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
-#' @param highlightExcel TRUE or FALSE (default) for whether to highlight in
-#'   yellow the cells on the source Excel file where the data came from. This
-#'   \emph{only} applies when \code{checkDataSource = TRUE}.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -263,7 +257,6 @@ pksummary_mult <- function(sim_data_files = NA,
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
                            checkDataSource = TRUE, 
-                           highlightExcel = FALSE,
                            save_table = NA, 
                            fontsize = 11, 
                            ...){
@@ -745,36 +738,6 @@ pksummary_mult <- function(sim_data_files = NA,
             write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
             
          }  
-         
-         if(highlightExcel){
-            
-            message("Highlighting PK values in Excel files for QCing. This will take a bit to run since each file needs to be opened, highlighted, and saved again using Java behind the scenes.")
-            
-            # Determining which stats we'll need to highlight
-            StatsToHighlight <- switch(MeanType, 
-                                       "arithmetic" = "mean", 
-                                       "geometric" = "geomean")
-            if(includeConfInt){
-               StatsToHighlight <- c(StatsToHighlight, "CI90_low", "CI90_high")
-            }
-            
-            if(includeCV){
-               StatsToHighlight <- c(StatsToHighlight, 
-                                     switch(MeanType, 
-                                            "arithmetic" = "CV", 
-                                            "geometric" = "GCV"))
-            }
-            
-            if(includePerc){
-               StatsToHighlight <- c(StatsToHighlight, "per5", "per95")
-            }
-            
-            if(includeRange){
-               StatsToHighlight <- c(StatsToHighlight, "min", "max")
-            }
-            
-            highlightQC(qc_dataframe = OutQC, stats = StatsToHighlight)
-         }
       }
       
       if(extract_forest_data){

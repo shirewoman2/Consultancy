@@ -28,8 +28,6 @@ pksummary_table(
   prettify_compound_names = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
-  highlightExcel = FALSE,
-  java_fail_option = "fail",
   save_table = NA,
   fontsize = 11
 )
@@ -67,7 +65,7 @@ blood".}
   \item{Alternatively, you can specify a vector of any combination of
   specific, individual parameters, e.g., \code{c("Cmax_dose1",
   "AUCtau_last").} Be sure to encapsulate the parameters you want with
-  \code{c(...)}! To see the full set of possible parameters to extract, enter
+  \code{c(...)}. To see the full set of possible parameters to extract, enter
   \code{view(PKParameterDefinitions)} into the console.}
 
   \item{If you supply observed data using either the argument
@@ -78,10 +76,10 @@ blood".}
   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
   inhibitor or effector -- will not be included.}
 
-  \item{tmax will be listed as median, min, and max rather than mean, lower
-  and higher 90\% confidence interval or 5th to 95th percentiles. Similarly,
-  if you request trial means, the values for tmax will be the range of
-  medians for the trials rather than the range of means.}}
+  \item{tmax will be listed as median, minimum, and maximum rather than mean,
+  lower and higher 90\% confidence interval or 5th to 95th percentiles.
+  Similarly, if you request trial means, the values for tmax will be the
+  range of medians for the trials rather than the range of means.}}
 
   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
@@ -150,8 +148,8 @@ limit)").}
 \item{includeRange}{TRUE or FALSE (default) for whether to include the
 minimum and maximum values}
 
-\item{includePerc}{TRUE or FALSE (default) for whether to include 5th to 95th
-percentiles}
+\item{includePerc}{TRUE or FALSE (default) for whether to include the 5th to
+95th percentiles}
 
 \item{includeTrialMeans}{TRUE or FALSE (default) for whether to include the
 range of trial means for a given parameter. Note: This is calculated from
@@ -217,31 +215,6 @@ with only one simulation isn't terribly informative.}
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
 
-\item{highlightExcel}{TRUE or FALSE (default) for whether to highlight in
-yellow the cells on the source Excel file where the data came from. This
-\emph{only} applies when \code{checkDataSource = TRUE} AND you are saving
-the output with \code{save_table}.}
-
-\item{java_fail_option}{Option you want to have happen if Java fails because
-  it ran out of memory. By default, behind the scenes, it's Java -- not R --
-  that highlights the appropriate cells in the Simulator output Excel files,
-  but Java requires \emph{so much memory} that it fails for large files.
-  There are two options
-  here: \describe{\item{"fail" (default)}{We'll \emph{try} to have Java highlight
-  things, but if it fails because it ran out of memory, nothing happens.}
-
-  \item{"highlight anyway"}{There \emph{is} a way to get the highlighting
-  you want without Java, but it just doesn't work as well. If we don't use
-  Java, you'll get the appropriate yellow highlighting, but the watermark and blue
-  shading that are present on tabs such as the "Summary" tab, the "Input Sheet",
-  and the tab with the population parameters will disappear. Those tabs will
-  still be protected, but they \emph{will look different.}}
-
-  \item{"highlight a copy"}{We won't use Java to highlight, so you'll lose
-  the watermark and blue background on protected tabs, but we'll do that
-  on a copy of the original Simulator Excel file. It will be named the same
-  but will have "QC" appended to the end of the file name.}}}
-
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -278,10 +251,7 @@ in a standardized fashion that this function can read.} \item{If you would
 like to make a single PK table for multiple files at once, please see the
 function \code{\link{pksummary_mult}}.} \item{You can specify which compound
 (substrate, inhibitor 1, etc.) and which tissue (plasma, blood, or unbound
-versions of each) you want to get the PK data for.} \item{ If the simulator
-output Excel file lives on SharePoint, you'll need to close it or this
-function will just keep running and not generate any output while it waits
-for access to the file.}}
+versions of each) you want to get the PK data for.}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up
@@ -326,9 +296,9 @@ simulation output file that you want to compare. It's ok to leave blank any
 cells where you don't have a value, and it's ok to change the PK parameter
 names to something else that you want as long as it's one of the options for
 "PKparameter" in the table you can see by running this in the console:
-\code{view(PKParameterDefinitions)} If your compound data sheet is on
-SharePoint, make sure you close it before running this or R won't be able to
-access the file!
+\code{view(PKParameterDefinitions)}. Note that this will require that a copy
+of the compound data sheet exists somewhere that R can read it, i.e., not on
+a SharePoint folder with no path in Windows.
 
 When you call on \code{pksummary_table}, use the following syntax,
 substituting your project's compound data sheet file name for the example:

@@ -218,11 +218,7 @@ means the file will not be automatically saved to disk.}
 quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
 file will save only the fitted parameters. However, if you would like a
 Word file with a) the equations used, b) the fitted parameters, and c) the
-graphs, end this file name with ".docx" instead. \strong{WARNING:} SAVING
-TO WORD DOES NOT WORK ON SHAREPOINT. This is a Microsoft permissions issue,
-not an R issue. If you try to save on SharePoint, you will get a warning
-that R will save your file instead to your local (not OneDrive) Documents
-folder.}
+graphs, end this file name with ".docx" instead.}
 }
 \value{
 Returns a list of \describe{ \item{Fit}{the fitted parameters}
