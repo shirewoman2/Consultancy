@@ -1221,7 +1221,8 @@ extractExpDetails <- function(sim_data_file,
                                       "_met1", "_met2", "_secmet"))))) %>% 
             as.list()
          
-         Out <- c(Out, TEMP[names(TEMP)[names(TEMP) != "Workspace"]])
+         Out <- c(Out, TEMP[setdiff(names(TEMP)[names(TEMP) != "Workspace"], 
+                                    names(Out))])
          
          rm(TEMP)
       }
