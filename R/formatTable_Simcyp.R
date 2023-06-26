@@ -52,11 +52,16 @@
 #' @param highlight_color color to use for highlighting; default is yellow.
 #'   Color can be specified using any R-friendly color name or hex code, e.g.,
 #'   "red" or "#D8212D".
+#' @param highlight_so optionally highlight all values in rows where the 1st
+#'   column is "S/O" and the simulated/observed ratio is outside 1.5 fold
+#'   (yellow) or outside 2 fold (red). This overrides anything else you
+#'   specified for highlighting. Default is FALSE for no highlighting based on
+#'   S/O value. WILL EXPAND THIS SOON.
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx". If you leave off
 #'   the file extension, we'll assume you want it to be ".docx". If there is a
 #'   column titled "File" in your table, we'll add a caption listing which files
-#'   were included. 
+#'   were included.
 #' @param title_document optionally specify a title for the Word document
 #'   output. If you don't save the table, this will be ignored.
 #'
@@ -113,6 +118,7 @@ formatTable_Simcyp <- function(DF,
                                merge_shaded_cells = TRUE,
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
+                               highlight_so = FALSE,
                                highlight_cells = NA, 
                                highlight_color = "yellow",
                                save_table = NA, 
@@ -257,6 +263,38 @@ formatTable_Simcyp <- function(DF,
                           part = ifelse(complete.cases(highlight_cells[[i]][1]) & 
                                            highlight_cells[[i]][1] == 0, 
                                         "header", "body"))   
+      }
+   }
+   
+   # Optionally highlighting poor fidelity S/O values
+   if(highlight_so){
+      SOrows <- which(DF$Statistic == "S/O")
+      for(i in SOrows){
+         suppressWarnings(
+            SOyellow_col <- which(
+               as.numeric(t(DF[i, ])) > 1.5 | as.numeric(t(DF[i, ])) < 1/1.5)
+         )
+         
+         if(length(SOyellow_col) > 0){
+         FT <- FT %>% 
+            flextable::bg(i = i, 
+                          j = SOyellow_col, 
+                          bg = "#FFFF95")
+         }
+         
+         suppressWarnings(
+            SOred_col <- which(
+               as.numeric(t(DF[i, ])) > 2 | as.numeric(t(DF[i, ])) < 1/2)
+         )
+         
+         if(length(SOred_col) > 0){
+            FT <- FT %>% 
+               flextable::bg(i = i, 
+                             j = SOred_col, 
+                             bg = "#FF9595")
+         }
+         
+         rm(SOyellow_col, SOred_col)
       }
    }
    

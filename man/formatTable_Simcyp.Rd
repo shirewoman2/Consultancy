@@ -11,6 +11,7 @@ formatTable_Simcyp(
   merge_shaded_cells = TRUE,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
+  highlight_so = FALSE,
   highlight_cells = NA,
   highlight_color = "yellow",
   save_table = NA,
@@ -54,6 +55,12 @@ the examples at the bottom of the help file.}
 
 \item{center_1st_column}{TRUE or FALSE (default) for whether to make the
 alignment of the first column centered}
+
+\item{highlight_so}{optionally highlight all values in rows where the 1st
+column is "S/O" and the simulated/observed ratio is outside 1.5 fold
+(yellow) or outside 2 fold (red). This overrides anything else you
+specified for highlighting. Default is FALSE for no highlighting based on
+S/O value. WILL EXPAND THIS SOON.}
 
 \item{highlight_cells}{optionally specify cells in the table to be
 highlighted with a numeric vector where the 1st number is the row number
