@@ -7,9 +7,9 @@
 #'   in quotes. \strong{A note:} There are just a few items that we will attempt
 #'   to extract from the matching workspace file; for that information, we will
 #'   look for a workspace file that is named \emph{identically} to the Excel
-#'   file except for the file extension. This means that, if you have run the
-#'   simulations using the autorunner, you'll need to remove the date and time
-#'   tag from the Excel file name in order for things to match.
+#'   file except for the file extension. It will ignore the date/time stamp that
+#'   the autorunner adds as long as that stamp is in a format like this: "myfile
+#'   - 2023-10-31 07-23-15.xlsx".
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output file. Options are \describe{
 #'
@@ -1203,8 +1203,10 @@ extractExpDetails <- function(sim_data_file,
    # Pulling from workspace file -------------------------------------------
    if(any(c("workspace", "all") %in% exp_details_input)){
       
-      # Checking that the workspace file is available. 
-      if(sub("xlsx$", "wksz", sim_data_file) %in% list.files(pattern = "wksz$")){
+      # Checking that the workspace file is available. This will ignore the
+      # date/time stamp on the Excel results if it's still there.
+      if(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
+             ".wksz", sim_data_file) %in% list.files(pattern = "wksz$")){
          
          TEMP <- extractExpDetails_XML(
             sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
