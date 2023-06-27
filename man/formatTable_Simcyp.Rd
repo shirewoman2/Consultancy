@@ -11,7 +11,8 @@ formatTable_Simcyp(
   merge_shaded_cells = TRUE,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
-  highlight_so = FALSE,
+  highlight_so_cutoffs = NA,
+  highlight_so_colors = "yellow to red",
   highlight_cells = NA,
   highlight_color = "yellow",
   save_table = NA,
@@ -56,11 +57,28 @@ the examples at the bottom of the help file.}
 \item{center_1st_column}{TRUE or FALSE (default) for whether to make the
 alignment of the first column centered}
 
-\item{highlight_so}{optionally highlight all values in rows where the 1st
-column is "S/O" and the simulated/observed ratio is outside 1.5 fold
-(yellow) or outside 2 fold (red). This overrides anything else you
-specified for highlighting. Default is FALSE for no highlighting based on
-S/O value. WILL EXPAND THIS SOON.}
+\item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
+simulated-to-observed ratios. Anything that is above those values or below
+the inverse of those values will be highlighted. To figure out what cells
+to highlight, this looks for a column titled "Statistic" or "Stat", then
+looks for what row contains "S/O" or "simulated (something something)
+observed" (as in, we'll use some wildcards to try to match your specific
+text). Next, it looks for any values in that same row that are above those
+cutoffs. This overrides anything else you specified for highlighting. The
+default is NA, for \emph{not} highlighting based on S/O value, and
+acceptable input for, say, highlighting values that are > 125\% or < 80\%
+of the observed and also, with a second color, values that are > 150\% or <
+66\% would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}}
+
+\item{highlight_so_colors}{optionally specify a set of colors to use for
+highlighting S/O values outside the limits you specified with
+\code{highlight_so_cutoffs}. The default is "yellow to red", which will
+color your values in that range based on how they compare to your the
+cutoffs you specified. Alternatively, specify specific colors using any
+R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
+"red")}. If you do specify your own bespoke colors, you'll need to make
+sure that you supply one color for every value in
+\code{highlight_so_cutoffs}.}
 
 \item{highlight_cells}{optionally specify cells in the table to be
 highlighted with a numeric vector where the 1st number is the row number

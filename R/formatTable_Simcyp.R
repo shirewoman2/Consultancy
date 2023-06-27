@@ -40,6 +40,27 @@
 #'   the examples at the bottom of the help file.
 #' @param center_1st_column TRUE or FALSE (default) for whether to make the
 #'   alignment of the first column centered
+#' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
+#'   simulated-to-observed ratios. Anything that is above those values or below
+#'   the inverse of those values will be highlighted. To figure out what cells
+#'   to highlight, this looks for a column titled "Statistic" or "Stat", then
+#'   looks for what row contains "S/O" or "simulated (something something)
+#'   observed" (as in, we'll use some wildcards to try to match your specific
+#'   text). Next, it looks for any values in that same row that are above those
+#'   cutoffs. This overrides anything else you specified for highlighting. The
+#'   default is NA, for \emph{not} highlighting based on S/O value, and
+#'   acceptable input for, say, highlighting values that are > 125\% or < 80\%
+#'   of the observed and also, with a second color, values that are > 150\% or <
+#'   66\% would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}
+#' @param highlight_so_colors optionally specify a set of colors to use for
+#'   highlighting S/O values outside the limits you specified with
+#'   \code{highlight_so_cutoffs}. The default is "yellow to red", which will
+#'   color your values in that range based on how they compare to your the
+#'   cutoffs you specified. Alternatively, specify specific colors using any
+#'   R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
+#'   "red")}. If you do specify your own bespoke colors, you'll need to make
+#'   sure that you supply one color for every value in
+#'   \code{highlight_so_cutoffs}.
 #' @param highlight_cells optionally specify cells in the table to be
 #'   highlighted with a numeric vector where the 1st number is the row number
 #'   and the 2nd number is the column number (just like regular row and column
@@ -52,11 +73,6 @@
 #' @param highlight_color color to use for highlighting; default is yellow.
 #'   Color can be specified using any R-friendly color name or hex code, e.g.,
 #'   "red" or "#D8212D".
-#' @param highlight_so optionally highlight all values in rows where the 1st
-#'   column is "S/O" and the simulated/observed ratio is outside 1.5 fold
-#'   (yellow) or outside 2 fold (red). This overrides anything else you
-#'   specified for highlighting. Default is FALSE for no highlighting based on
-#'   S/O value. WILL EXPAND THIS SOON.
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx". If you leave off
 #'   the file extension, we'll assume you want it to be ".docx". If there is a
@@ -118,7 +134,8 @@ formatTable_Simcyp <- function(DF,
                                merge_shaded_cells = TRUE,
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
-                               highlight_so = FALSE,
+                               highlight_so_cutoffs = NA, 
+                               highlight_so_colors = "yellow to red",
                                highlight_cells = NA, 
                                highlight_color = "yellow",
                                save_table = NA, 
@@ -267,34 +284,65 @@ formatTable_Simcyp <- function(DF,
    }
    
    # Optionally highlighting poor fidelity S/O values
-   if(highlight_so){
+   if(any(complete.cases(highlight_so_cutoffs))){
+      
+      # Tidying inputs
+      highlight_so_colors <- tolower(highlight_so_colors)
+      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
+      
+      if(any(highlight_so_cutoffs < 1)){
+         warning("At least one of the numbers you specified for highlight_so_cutoffs was < 1. We will automatically use both the original number you specified and its inverse for highlighting, so we'll ignore any values < 1 here.", 
+                 call. = FALSE)
+         highlight_so_cutoffs <- highlight_so_cutoffs[which(highlight_so_cutoffs >= 1)]
+      }
+      
+      if(length(highlight_so_cutoffs) != length(highlight_so_colors) &
+         highlight_so_colors[1] != "yellow to red"){
+         warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
+                 call. = FALSE)
+         highlight_so_colors <- "yellow to red"
+      }
+      
+      if(highlight_so_colors[1] != "yellow to red" && 
+         is.matrix(col2rgb(highlight_so_colors)) == FALSE){
+         warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
+                 call. = FALSE)
+         highlight_so_colors <- "yellow to red"
+      } 
+      
+      if(highlight_so_colors[1] == "yellow to red"){
+         if(length(highlight_so_cutoffs) == 1){
+            highlight_so_colors <- "#FF9595"
+         } else if(length(highlight_so_cutoffs) == 2){
+            highlight_so_colors <- c("#FFFF95", "#FF9595")
+         } else if(length(highlight_so_cutoffs) == 2){
+            highlight_so_colors <- c("#FFFF95", "#FF9595")
+         } else if(length(highlight_so_cutoffs) == 3){
+            highlight_so_colors <- c("#FFFF95", "#FFDA95", "#FF9595")
+         } else {
+            highlight_so_colors <- 
+               colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(length(highlight_so_cutoffs))
+         }
+      }
+      
       SOrows <- which(DF$Statistic == "S/O")
       for(i in SOrows){
-         suppressWarnings(
-            SOyellow_col <- which(
-               as.numeric(t(DF[i, ])) > 1.5 | as.numeric(t(DF[i, ])) < 1/1.5)
-         )
-         
-         if(length(SOyellow_col) > 0){
-         FT <- FT %>% 
-            flextable::bg(i = i, 
-                          j = SOyellow_col, 
-                          bg = "#FFFF95")
+         for(j in 1:length(highlight_so_cutoffs)){
+            suppressWarnings(
+               SO_col <- which(
+                  as.numeric(t(DF[i, ])) >= highlight_so_cutoffs[j] | 
+                     as.numeric(t(DF[i, ])) <= 1/highlight_so_cutoffs[j])
+            )
+            
+            if(length(SO_col) > 0){
+               FT <- FT %>% 
+                  flextable::bg(i = i, 
+                                j = SO_col, 
+                                bg = highlight_so_colors[j])
+            }
+            
+            rm(SO_col)
          }
-         
-         suppressWarnings(
-            SOred_col <- which(
-               as.numeric(t(DF[i, ])) > 2 | as.numeric(t(DF[i, ])) < 1/2)
-         )
-         
-         if(length(SOred_col) > 0){
-            FT <- FT %>% 
-               flextable::bg(i = i, 
-                             j = SOred_col, 
-                             bg = "#FF9595")
-         }
-         
-         rm(SOyellow_col, SOred_col)
       }
    }
    
