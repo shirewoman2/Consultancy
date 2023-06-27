@@ -16,9 +16,9 @@
 #'   be skipped. \strong{A note:} There are just a few items that we will
 #'   attempt to extract from the matching workspace file; for that information,
 #'   we will look for a workspace file that is named \emph{identically} to the
-#'   Excel file except for the file extension. This means that, if you have run
-#'   the simulations using the autorunner, you'll need to remove the date and
-#'   time tag from the Excel file name in order for things to match.
+#'   Excel file except for the file extension. It will ignore the date/time
+#'   stamp that the autorunner adds as long as that stamp is in a format like
+#'   this: "myfile - 2023-10-31 07-23-15.xlsx".
 #' @param exp_details experimental details you want to extract from the
 #'   simulator output files using the function \code{\link{extractExpDetails}}.
 #'   Options are \describe{
