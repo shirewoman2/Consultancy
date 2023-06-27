@@ -151,7 +151,7 @@ extractAUCXtab <- function(PKparameters,
     
     # suppressWarnings(rm(StartRow_agg, EndRow_agg, EndRow_ind, Sheet))
     
-    Out <- list("Out_ind" = Out_ind, 
+    Out <- list("Out_ind" = Out_ind,
                 "Out_agg" = Out_agg, 
                 "DataCheck" = DataCheck)
     

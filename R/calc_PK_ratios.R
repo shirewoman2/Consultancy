@@ -284,18 +284,6 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    Deets_denom <- Deets %>% filter(File == sim_data_file_denominator)
    Deets <- Deets %>% filter(File == sim_data_file_numerator)
    
-   # If user specified the sheet, then they're likely to get both AUCt and
-   # AUCtau as well as CLt and CLtau b/c extractPK doesn't know what dose
-   # number this is for b/c that's not included in the Excel output. When that
-   # happens, we don't want to have BOTH show up in the results b/c they'll be
-   # duplicates. Remove the AUCt and CLt columns from both sets of PK results
-   # and just keep AUCtau and CLtau. User will be able to figure out what it
-   # should be called and change that column name if they want.
-   if(all(c("AUCt", "AUCtau") %in% names(PKnumerator$individual))){
-      PKnumerator$individual <- PKnumerator$individual %>% select(-AUCt, -CLt)
-      PKdenominator$individual <- PKdenominator$individual %>% select(-AUCt, -CLt)
-   }
-   
    
    ## Determining column format & arrangement ---------------------------------
    
@@ -363,6 +351,25 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                 DenomCheck = PKparam_denom %in% names(PKdenominator$aggregate)) %>% 
          filter(NumCheck == TRUE & DenomCheck == TRUE) %>% 
          select(-NumCheck, -DenomCheck)
+   }
+   
+   # If user specified the sheet, then they're likely to get both AUCt and
+   # AUCtau as well as CLt and CLtau b/c extractPK doesn't know what dose
+   # number this is for b/c that's not included in the Excel output. When that
+   # happens, we don't want to have BOTH show up in the results b/c they'll be
+   # duplicates. Remove the AUCt and CLt columns from both sets of PK results
+   # and just keep AUCtau and CLtau. User will be able to figure out what it
+   # should be called and change that column name if they want.
+   if(all(c("AUCt", "AUCtau") %in% names(PKnumerator$individual)) |
+      all(c("AUCt", "AUCtau") %in% names(PKdenominator$individual))){
+      PKnumerator$individual <- PKnumerator$individual %>% 
+         select(-any_of(c("AUCt", "CLt")))
+      PKdenominator$individual <- PKdenominator$individual %>% 
+         select(-any_of(c("AUCt", "CLt")))
+      
+      Comparisons <- Comparisons %>% 
+         filter(!PKparam_num %in% c("AUCt", "CLt")) %>% 
+         filter(!PKparam_denom %in% c("AUCt", "CLt"))
    }
    
    # !!!!!!!!!!!!!!! CHANGING COL NAMES FOR DENOMINATOR !!!!!!!!!!!!!!!!!!!!!!
@@ -665,11 +672,11 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             left_join(
                AllPKParameters %>% 
                   mutate(PKparameter = 
-                            switch(any(str_detect(names(MyPKResults), "_dose1|_last")),
+                            switch(as.character(any(str_detect(names(MyPKResults), "_dose1|_last"))),
                                    "TRUE" = PKparameter, 
                                    "FALSE" = sub("_dose1|_last", "", PKparameter)), 
                          PrettifiedNames = 
-                            switch(any(str_detect(names(MyPKResults), "_dose1|_last")),
+                            switch(as.character(any(str_detect(names(MyPKResults), "_dose1|_last"))),
                                    "TRUE" = PrettifiedNames,
                                    "FALSE" = sub("Dose 1 |Last dose ", "", PrettifiedNames))) %>% 
                   select(PKparameter, PrettifiedNames)) %>% 
