@@ -6,7 +6,12 @@ Author: Laura Sh., Mackenzie, Howie, Christiane, Alenka, Ludwig, Magali, Laura S
 Maintainer: The package maintainer <laura.shireman@certara.com>
 Description: This package is meant to be a collection of standardized reporting tools for the Simcyp Consultancy Team. 
 Imports:
-      tidyverse
+      tidyverse (>= 2.0.0), 
+      readxl, 
+      rlang,
+      stringr, 
+      knitr, 
+      rmarkdown
 License: none
 Encoding: UTF-8
 LazyData: true
