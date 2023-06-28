@@ -76,8 +76,11 @@ if(length(compoundsToExtract) == 1){
       select(!CompoundID)
 }
 
-formatTable_Simcyp(MyPKResults, fontsize = fontsize, 
-                   shading_column = File)
+formatTable_Simcyp(MyPKResults,
+                   shading_column = File, 
+                   fontsize = fontsize,
+                   highlight_so_cutoffs = highlight_so_cutoffs, 
+                   highlight_so_colors = highlight_so_colors)
 
 ```
 
