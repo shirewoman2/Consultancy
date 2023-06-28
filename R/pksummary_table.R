@@ -208,6 +208,14 @@
 #'   the variability is concatenated. Options are "to" (default) to get output
 #'   like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
 #'   output like "X - Y".
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -268,6 +276,36 @@
 #'   added to the end of the file name.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
+#'   simulated-to-observed ratios. Anything that is above those values or below
+#'   the inverse of those values will be highlighted. To figure out what cells
+#'   to highlight, this looks for a column titled "Statistic" or "Stat", then
+#'   looks for what row contains "S/O" or "simulated (something something)
+#'   observed" (as in, we'll use some wildcards to try to match your specific
+#'   text). Next, it looks for any values in that same row that are above those
+#'   cutoffs. This overrides anything else you specified for highlighting. The
+#'   default is NA, for \emph{not} highlighting based on S/O value. Acceptable
+#'   input for, say, highlighting values that are > 125\% or < 80\% of the
+#'   observed and also, with a second color, values that are > 150\% or < 66\%
+#'   would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you would like the
+#'   middle range of values to be highlighted, include 1 in your cutoffs. For
+#'   example, say you would like everything that's < 80\% or > 125\% to be
+#'   highlighted red but you'd like the "good" values from 80\% to 125\% to be
+#'   green, you can get that by specifying
+#'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+#'   c("green", "red")}. This only applies when you save the table as a Word file.
+#' @param highlight_so_colors optionally specify a set of colors to use for
+#'   highlighting S/O values outside the limits you specified with
+#'   \code{highlight_so_cutoffs}. The default is "yellow to red", which will
+#'   color your values in that range based on how they compare to your the
+#'   cutoffs you specified. Alternatively, specify specific colors using any
+#'   R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
+#'   "red")}. If you do specify your own bespoke colors, you'll need to make
+#'   sure that you supply one color for every value in
+#'   \code{highlight_so_cutoffs}. If you have included 1 in your cutoffs and you
+#'   leave \code{highlight_so_colors} with the default setting, values in the
+#'   middle, "good" range of S/O values will be highlighted a light green. This
+#'   only applies when you save the table as a Word file.
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -319,12 +357,15 @@ pksummary_table <- function(sim_data_file = NA,
                             concatVariability = FALSE,
                             variability_format = "to",
                             adjust_conc_units = NA,
+                            include_dose_num = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
                             save_table = NA, 
-                            fontsize = 11){
+                            fontsize = 11, 
+                            highlight_so_cutoffs = NA, 
+                            highlight_so_colors = "yellow to red"){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -770,8 +811,8 @@ pksummary_table <- function(sim_data_file = NA,
    
    # If dose regimen were single-dose, then only pull dose 1 data.
    if(DoseRegimen == "Single Dose"){
-      SDParam <- AllPKParameters %>%
-         filter(AppliesToSingleDose == TRUE) %>%
+      SDParam <- AllPKParameters %>% 
+         filter(AppliesToSingleDose == TRUE) %>% 
          pull(PKparameter)
       PKToPull <- PKToPull[PKToPull %in% SDParam]
    } else {
@@ -1443,6 +1484,26 @@ pksummary_table <- function(sim_data_file = NA,
       
       names(MyPKResults) <- c("Statistic", PrettyCol)
       
+   }
+   
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
+                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
+      include_dose_num <- all(DoseCheck)
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+      include_dose_num <- TRUE
+   }
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1|Last dose", "", names(MyPKResults))
    }
    
    if(checkDataSource){
