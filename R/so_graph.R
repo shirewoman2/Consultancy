@@ -204,14 +204,24 @@ so_graph <- function(PKtable,
       BoundColors <- c("red", "black")
    }
    
+   # Will need to figure out what PK parameters are and will need deprettified
+   # names when reshaping and organizing data here and lower in function
+   AllPKParameters_pretty <- AllPKParameters %>%
+      filter(!PKparameter == "CLt_dose1") %>% 
+      select(PrettifiedNames, PKparameter) %>% unique()
+   
+   AllPKParameters_pretty <- bind_rows(
+      AllPKParameters_pretty, 
+      AllPKParameters_pretty %>% 
+         mutate(PrettifiedNames = sub("(for )?[Dd]ose 1 |Last dose ", "", PrettifiedNames), 
+                PKparameter = sub("_dose1|_last", "", PKparameter)))
+   
    if(any(is.na(PKparameters))){
       PKparameters <- names(PKtable)
       
       # Need to get the un-prettified names here
       PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
-         left_join(AllPKParameters %>% select(PrettifiedNames, PKparameter) %>% 
-                      unique(), 
-                   by = join_by(PrettifiedNames)) %>% 
+         left_join(AllPKParameters_pretty, by = join_by(PrettifiedNames)) %>% 
          filter(complete.cases(PKparameter)) %>% 
          pull(PKparameter)
    }
@@ -277,9 +287,7 @@ so_graph <- function(PKtable,
    # First, de-prettifying column names
    PKnames <- data.frame(OrigName = names(PKtable)) %>% 
       mutate(PrettifiedNames = sub("with .* ", "with effector ", OrigName)) %>% 
-      left_join(AllPKParameters %>% filter(!PKparameter == "CLt_dose1") %>% 
-                   select(PrettifiedNames, PKparameter) %>% unique(), 
-                by = join_by(PrettifiedNames)) %>% 
+      left_join(AllPKParameters_pretty,  by = join_by(PrettifiedNames)) %>% 
       mutate(NewName = ifelse(is.na(PKparameter), OrigName, PKparameter))
    
    SO <- PKtable
@@ -474,7 +482,7 @@ so_graph <- function(PKtable,
                          fill = BoundColors[2], alpha = 0.2)
       }
       
-      MaxMinRatio <- range(c(SO[[i]]$Observed, SO[[i]]$Simulated))
+      MaxMinRatio <- range(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)
       MaxMinRatio <- MaxMinRatio[2] / MaxMinRatio[1]
       
       if(MaxMinRatio > 100){
