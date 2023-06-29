@@ -208,6 +208,14 @@
 #'   the variability is concatenated. Options are "to" (default) to get output
 #'   like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
 #'   output like "X - Y".
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -268,6 +276,36 @@
 #'   added to the end of the file name.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
+#'   simulated-to-observed ratios. Anything that is above those values or below
+#'   the inverse of those values will be highlighted. To figure out what cells
+#'   to highlight, this looks for a column titled "Statistic" or "Stat", then
+#'   looks for what row contains "S/O" or "simulated (something something)
+#'   observed" (as in, we'll use some wildcards to try to match your specific
+#'   text). Next, it looks for any values in that same row that are above those
+#'   cutoffs. This overrides anything else you specified for highlighting. The
+#'   default is NA, for \emph{not} highlighting based on S/O value. Acceptable
+#'   input for, say, highlighting values that are > 125\% or < 80\% of the
+#'   observed and also, with a second color, values that are > 150\% or < 66\%
+#'   would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you would like the
+#'   middle range of values to be highlighted, include 1 in your cutoffs. For
+#'   example, say you would like everything that's < 80\% or > 125\% to be
+#'   highlighted red but you'd like the "good" values from 80\% to 125\% to be
+#'   green, you can get that by specifying
+#'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+#'   c("green", "red")}. This only applies when you save the table as a Word file.
+#' @param highlight_so_colors optionally specify a set of colors to use for
+#'   highlighting S/O values outside the limits you specified with
+#'   \code{highlight_so_cutoffs}. The default is "yellow to red", which will
+#'   color your values in that range based on how they compare to your the
+#'   cutoffs you specified. Alternatively, specify specific colors using any
+#'   R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
+#'   "red")}. If you do specify your own bespoke colors, you'll need to make
+#'   sure that you supply one color for every value in
+#'   \code{highlight_so_cutoffs}. If you have included 1 in your cutoffs and you
+#'   leave \code{highlight_so_colors} with the default setting, values in the
+#'   middle, "good" range of S/O values will be highlighted a light green. This
+#'   only applies when you save the table as a Word file.
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -319,12 +357,15 @@ pksummary_table <- function(sim_data_file = NA,
                             concatVariability = FALSE,
                             variability_format = "to",
                             adjust_conc_units = NA,
+                            include_dose_num = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
                             save_table = NA, 
-                            fontsize = 11){
+                            fontsize = 11, 
+                            highlight_so_cutoffs = NA, 
+                            highlight_so_colors = "yellow to red"){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -466,8 +507,27 @@ pksummary_table <- function(sim_data_file = NA,
    # Excel or csv file for observed data, or it came from a report input form.
    if("data.frame" %in% class(observed_PK)){
       
+      
       # Reshape to wide format if necessary
       if(all(c("PKparameter", "Value") %in% names(observed_PK))){
+         
+         # If user specified a sheet and/or didn't specify dose number in the PK
+         # parameter name for obs PK, we don't know what dose the PK pertain to and
+         # that messes up everything else. Artificially adding that now and will
+         # remove it later.
+         if(any(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)){
+            observed_PK$PKparameter[
+               which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)] <- 
+               paste0(observed_PK$PKparameter[
+                  which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)], 
+                  "_last") 
+            # Using "last" here b/c more flexible; applicable to more PK
+            # parameters. If it were a single-dose sim, that wouldn't
+            # require a user-defined integration interval.
+            
+            observed_PK$PKparameter <- sub("AUCt_last", "AUCtau_last", observed_PK$PKparameter)
+         }
+         
          observed_PK <- observed_PK %>% 
             select(any_of(c("File", "PKparameter", "Value"))) %>%  # Return to this later to add options for including variability
             # Only keeping parameters that we've set up data extraction for,
@@ -732,11 +792,12 @@ pksummary_table <- function(sim_data_file = NA,
          if("data.frame" %in% class(observed_PK)){
             # If user supplies an observed file, then pull the parameters
             # they want to match. 
-            if("")
-               
-               # If user specified "_first" instead of "_dose1", make that
-               # work, too.
-               PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
+            
+            # FIXME
+            
+            # If user specified "_first" instead of "_dose1", make that
+            # work, too.
+            PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
             
          } else {
             # If the user didn't specify an observed file, didn't list
@@ -760,6 +821,34 @@ pksummary_table <- function(sim_data_file = NA,
       }
    }
    
+   # !!! IMPORTANT!!! If it was a custom-dosing regimen, then any parameters
+   # that are not dose 1 parameters are not necessarily in their usual
+   # locations! Do NOT pull last-dose parameters for a custom-dosing simulation
+   # UNLESS the user has specified the sheet to use! Giving a warning about
+   # that.
+   if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
+                                "primary metabolite 2", "secondary metabolite") & 
+       complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
+      
+      (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
+       is.null(Deets$DoseInt_inhib) == FALSE && 
+       complete.cases(Deets$DoseInt_inhib) &&
+       Deets$DoseInt_inhib == "custom dosing") |
+      
+      (compoundToExtract == "inhibitor 2" & 
+       is.null(Deets$DoseInt_inhib2) == FALSE && 
+       complete.cases(Deets$DoseInt_inhib2) &&
+       Deets$DoseInt_inhib2 == "custom dosing") &
+      
+      any(str_detect(PKparameters, "_last")) & is.na(sheet_PKparameters)){
+      warning(paste0("The file `",
+                     sim_data_file,
+                     "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.
+We cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 
+call. = FALSE)
+      PKToPull <- PKToPull[!str_detect(PKToPull, "_last")]
+   }
+   
    # Allowing for flexibility in case. Get the lower-case version of whatever
    # PKparameters user specified and match them to the correct PKparameters in
    # AllPKParameters.
@@ -770,8 +859,8 @@ pksummary_table <- function(sim_data_file = NA,
    
    # If dose regimen were single-dose, then only pull dose 1 data.
    if(DoseRegimen == "Single Dose"){
-      SDParam <- AllPKParameters %>%
-         filter(AppliesToSingleDose == TRUE) %>%
+      SDParam <- AllPKParameters %>% 
+         filter(AppliesToSingleDose == TRUE) %>% 
          pull(PKparameter)
       PKToPull <- PKToPull[PKToPull %in% SDParam]
    } else {
@@ -1393,6 +1482,9 @@ pksummary_table <- function(sim_data_file = NA,
                                                   PrettifiedNames))) %>% 
             unique()
          
+         # We don't know whether an AUC was actually AUCtau, so make it AUCt.
+         PKToPull <- sub("AUCtau", "AUCt", PKToPull)
+         
          suppressMessages(
             PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
                left_join(AllPKParameters_mod) %>% 
@@ -1443,6 +1535,32 @@ pksummary_table <- function(sim_data_file = NA,
       
       names(MyPKResults) <- c("Statistic", PrettyCol)
       
+   } else if(complete.cases(sheet_PKparameters) & 
+             any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
+      # This is when it's a user-defined sheet but we're not prettifying column
+      # names. We don't know whether an AUC was actually AUCtau, so make it
+      # AUCt.
+      PKToPull <- sub("AUCtau", "AUCt", PKToPull)
+   }
+   
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
+                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
+      include_dose_num <- all(DoseCheck)
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+      include_dose_num <- TRUE
+   }
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1|Last dose", "", names(MyPKResults))
    }
    
    if(checkDataSource){
