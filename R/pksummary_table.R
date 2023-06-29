@@ -507,8 +507,27 @@ pksummary_table <- function(sim_data_file = NA,
    # Excel or csv file for observed data, or it came from a report input form.
    if("data.frame" %in% class(observed_PK)){
       
+      
       # Reshape to wide format if necessary
       if(all(c("PKparameter", "Value") %in% names(observed_PK))){
+         
+         # If user specified a sheet and/or didn't specify dose number in the PK
+         # parameter name for obs PK, we don't know what dose the PK pertain to and
+         # that messes up everything else. Artificially adding that now and will
+         # remove it later.
+         if(any(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)){
+            observed_PK$PKparameter[
+               which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)] <- 
+               paste0(observed_PK$PKparameter[
+                  which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)], 
+                  "_last") 
+            # Using "last" here b/c more flexible; applicable to more PK
+            # parameters. If it were a single-dose sim, that wouldn't
+            # require a user-defined integration interval.
+            
+            observed_PK$PKparameter <- sub("AUCt_last", "AUCtau_last", observed_PK$PKparameter)
+         }
+         
          observed_PK <- observed_PK %>% 
             select(any_of(c("File", "PKparameter", "Value"))) %>%  # Return to this later to add options for including variability
             # Only keeping parameters that we've set up data extraction for,
@@ -773,11 +792,12 @@ pksummary_table <- function(sim_data_file = NA,
          if("data.frame" %in% class(observed_PK)){
             # If user supplies an observed file, then pull the parameters
             # they want to match. 
-            if("")
-               
-               # If user specified "_first" instead of "_dose1", make that
-               # work, too.
-               PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
+            
+            # FIXME
+            
+            # If user specified "_first" instead of "_dose1", make that
+            # work, too.
+            PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
             
          } else {
             # If the user didn't specify an observed file, didn't list
@@ -799,6 +819,34 @@ pksummary_table <- function(sim_data_file = NA,
             filter(PKparameter %in% names(sectionInfo$ObsData)) %>% 
             pull(PKparameter) %>% unique()
       }
+   }
+   
+   # !!! IMPORTANT!!! If it was a custom-dosing regimen, then any parameters
+   # that are not dose 1 parameters are not necessarily in their usual
+   # locations! Do NOT pull last-dose parameters for a custom-dosing simulation
+   # UNLESS the user has specified the sheet to use! Giving a warning about
+   # that.
+   if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
+                                "primary metabolite 2", "secondary metabolite") & 
+       complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
+      
+      (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
+       is.null(Deets$DoseInt_inhib) == FALSE && 
+       complete.cases(Deets$DoseInt_inhib) &&
+       Deets$DoseInt_inhib == "custom dosing") |
+      
+      (compoundToExtract == "inhibitor 2" & 
+       is.null(Deets$DoseInt_inhib2) == FALSE && 
+       complete.cases(Deets$DoseInt_inhib2) &&
+       Deets$DoseInt_inhib2 == "custom dosing") &
+      
+      any(str_detect(PKparameters, "_last")) & is.na(sheet_PKparameters)){
+      warning(paste0("The file `",
+                     sim_data_file,
+                     "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.
+We cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 
+call. = FALSE)
+      PKToPull <- PKToPull[!str_detect(PKToPull, "_last")]
    }
    
    # Allowing for flexibility in case. Get the lower-case version of whatever
@@ -1434,6 +1482,9 @@ pksummary_table <- function(sim_data_file = NA,
                                                   PrettifiedNames))) %>% 
             unique()
          
+         # We don't know whether an AUC was actually AUCtau, so make it AUCt.
+         PKToPull <- sub("AUCtau", "AUCt", PKToPull)
+         
          suppressMessages(
             PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
                left_join(AllPKParameters_mod) %>% 
@@ -1484,6 +1535,12 @@ pksummary_table <- function(sim_data_file = NA,
       
       names(MyPKResults) <- c("Statistic", PrettyCol)
       
+   } else if(complete.cases(sheet_PKparameters) & 
+             any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
+      # This is when it's a user-defined sheet but we're not prettifying column
+      # names. We don't know whether an AUC was actually AUCtau, so make it
+      # AUCt.
+      PKToPull <- sub("AUCtau", "AUCt", PKToPull)
    }
    
    if(is.na(include_dose_num)){
