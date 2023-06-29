@@ -602,9 +602,9 @@ pksummary_mult <- function(sim_data_files = NA,
             
             # Checking for when they requested AUCinf but there were problems
             # extrapolating. Giving a warning in that situation.
-            if(all(is.na(PKparameters)) ||
+            if((all(is.na(PKparameters)) |
                all(complete.cases(PKparameters)) &
-               any(str_detect(PKparameters, "AUCinf")) &
+               any(str_detect(PKparameters, "AUCinf"))) &
                any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
                
                warning(paste0("The ", k, # tissue
