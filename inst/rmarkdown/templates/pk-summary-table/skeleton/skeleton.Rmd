@@ -56,13 +56,13 @@ MyCompoundID <- switch(compoundToExtract,
                        "inhibitor 1 metabolite" = "Inhibitor1Metabolite")
 
 MyDosedCompound <- switch(compoundToExtract, 
-                          "substrate" = prettify_compound_name(Deets$Substrate),
-                          "primary metabolite 1" = prettify_compound_name(Deets$Substrate),
-                          "primary metabolite 2" = prettify_compound_name(Deets$Substrate),
-                          "secondary metabolite" = prettify_compound_name(Deets$Substrate),
-                          "inhibitor 1" = prettify_compound_name(Deets$Inhibitor1),
-                          "inhibitor 2" = prettify_compound_name(Deets$Inhibitor2),
-                          "inhibitor 1 metabolite" = prettify_compound_name(Deets$Inhibitor1))
+                          "substrate" = Deets$Substrate,
+                          "primary metabolite 1" = Deets$Substrate,
+                          "primary metabolite 2" = Deets$Substrate,
+                          "secondary metabolite" = Deets$Substrate,
+                          "inhibitor 1" = Deets$Inhibitor1,
+                          "inhibitor 2" = Deets$Inhibitor2,
+                          "inhibitor 1 metabolite" = Deets$Inhibitor1)
 
 MyDoseRoute <- switch(compoundToExtract, 
                       "substrate" = "DoseRoute_sub",
@@ -86,8 +86,17 @@ if(class(prettify_compound_names) == "logical" &&
    # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
    prettify_compound_names){
     MyCompound <- prettify_compound_name(Deets[[MyCompoundID]])
+    MyDosedCompound <- prettify_compound_name(MyDosedCompound)
 } else if(class(prettify_compound_names) == "character"){
     MyCompound <- prettify_compound_names[compoundToExtract]
+    MyDosedCompound <- prettify_compound_names[switch(compoundToExtract, 
+                          "substrate" = Deets$Substrate,
+                          "primary metabolite 1" = Deets$Substrate,
+                          "primary metabolite 2" = Deets$Substrate,
+                          "secondary metabolite" = Deets$Substrate,
+                          "inhibitor 1" = Deets$Inhibitor1,
+                          "inhibitor 2" = Deets$Inhibitor2,
+                          "inhibitor 1 metabolite" = Deets$Inhibitor1)]
 } else {
     MyCompound <- Deets[[MyCompoundID]]
 }
@@ -121,7 +130,10 @@ if("File" %in% names(MyPKResults)){
     MyPKResults <- MyPKResults %>% relocate(File, .after = last_col())
 }
 
-formatTable_Simcyp(MyPKResults, fontsize = fontsize)
+formatTable_Simcyp(MyPKResults, 
+                   fontsize = fontsize,
+                   highlight_so_cutoffs = highlight_so_cutoffs, 
+                   highlight_so_colors = highlight_so_colors)
 
 ```
 

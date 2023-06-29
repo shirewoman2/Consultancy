@@ -559,6 +559,7 @@ forest_plot <- function(forest_dataframe,
    if(is.logical(include_dose_num) == FALSE){
       warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
               call. = FALSE)
+      include_dose_num <- TRUE
    }
    
    if(include_dose_num == FALSE){

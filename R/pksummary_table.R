@@ -561,95 +561,101 @@ pksummary_table <- function(sim_data_file = NA,
          }
       }
       
-      # There should be only 1 row in observed_PK, so removing any extras.
-      if("File" %in% names(observed_PK) & nrow(observed_PK) > 1 & 
-         complete.cases(sim_data_file) && 
-         any(observed_PK$File %in% sim_data_file)){
-         observed_PK <- observed_PK %>% filter(File == sim_data_file)
+      if(nrow(observed_PK) < 1){
+         warning("None of the supplied observed PK were for the supplied sim_data_file. We cannot make any comparisons between simulated and observed PK.", 
+                 call. = FALSE)
+         observed_PK <- NA
       } else {
-         observed_PK <- observed_PK[1, ]
-      }
-      
-      if("File" %in% names(observed_PK) == FALSE){
-         observed_PK$File <- sim_data_file
-      }
-      
-      # Also only keeping columns with complete cases for PK values.
-      observed_PK <- observed_PK %>% select(where(~ any(complete.cases(.x))))
-      
-      # If they supplied a file name in the observed PK data and NA for
-      # sim_data_file, then sim_data_file will be NA. If not, then
-      # sim_data_file will be the same as the only entry for File in
-      # observed_PK. Either way, setting sim_data_file and making sure it has
-      # the correct file extension.
-      sim_data_file <- ifelse(str_detect(sim_data_file, "\\.xlsx"), 
-                              sim_data_file, paste0(sim_data_file, ".xlsx"))
-      
-      # Cleaning up and harmonizing observed data
-      MyObsPK <- observed_PK
-      
-      # Checking whether data are long or wide and converting to wide as needed.
-      # An example of where you'd get long format here: If they're using
-      # observed data that are also laid out for the forest_plot function.
-      if("PKparameter" %in% names(MyObsPK)){
          
-         MyObsPK <- MyObsPK %>% 
-            rename(Value = switch(mean_type, 
-                                  "geometric" = "GeoMean", 
-                                  "arithmetic" = "Mean", 
-                                  "median" = "Median")) %>% 
-            # Things work better for pivoting if the other possible summary
-            # statistic columns are no longer present.
-            select(-(any_of(c("Min", "Max", "GeoMean", "Mean", "Median",
-                              "CI90_Upper", "CI90_Lower", "Centile95th_Upper", 
-                              "Centile5th_Lower", "GeoCV", "AirthCV")))) %>% 
-            pivot_wider(names_from = PKparameter, values_from = Value)
+         # There should be only 1 row in observed_PK, so removing any extras.
+         if("File" %in% names(observed_PK) & nrow(observed_PK) > 1 & 
+            complete.cases(sim_data_file) && 
+            any(observed_PK$File %in% sim_data_file)){
+            observed_PK <- observed_PK %>% filter(File == sim_data_file)
+         } else {
+            observed_PK <- observed_PK[1, ]
+         }
+         
+         if("File" %in% names(observed_PK) == FALSE){
+            observed_PK$File <- sim_data_file
+         }
+         
+         # Also only keeping columns with complete cases for PK values.
+         observed_PK <- observed_PK %>% select(where(~ any(complete.cases(.x))))
+         
+         # If they supplied a file name in the observed PK data and NA for
+         # sim_data_file, then sim_data_file will be NA. If not, then
+         # sim_data_file will be the same as the only entry for File in
+         # observed_PK. Either way, setting sim_data_file and making sure it has
+         # the correct file extension.
+         sim_data_file <- ifelse(str_detect(sim_data_file, "\\.xlsx"), 
+                                 sim_data_file, paste0(sim_data_file, ".xlsx"))
+         
+         # Cleaning up and harmonizing observed data
+         MyObsPK <- observed_PK
+         
+         # Checking whether data are long or wide and converting to wide as needed.
+         # An example of where you'd get long format here: If they're using
+         # observed data that are also laid out for the forest_plot function.
+         if("PKparameter" %in% names(MyObsPK)){
+            
+            MyObsPK <- MyObsPK %>% 
+               rename(Value = switch(mean_type, 
+                                     "geometric" = "GeoMean", 
+                                     "arithmetic" = "Mean", 
+                                     "median" = "Median")) %>% 
+               # Things work better for pivoting if the other possible summary
+               # statistic columns are no longer present.
+               select(-(any_of(c("Min", "Max", "GeoMean", "Mean", "Median",
+                                 "CI90_Upper", "CI90_Lower", "Centile95th_Upper", 
+                                 "Centile5th_Lower", "GeoCV", "AirthCV")))) %>% 
+               pivot_wider(names_from = PKparameter, values_from = Value)
+         }
+         
+         names(MyObsPK) <- sub("_first", "_dose1", names(MyObsPK))
+         names(MyObsPK) <- sub("tau_dose1", "t_dose1", names(MyObsPK))
+         names(MyObsPK) <- sub("AUCt_ratio_last", "AUCtau_ratio_last", names(MyObsPK))
+         names(MyObsPK) <- sub("_last", "_last", names(MyObsPK))
+         
+         # Making obs PK names match correct PK parameters regardless of case
+         suppressMessages(
+            ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
+               mutate(PKparameter_lower = sub("_first", "_dose1",
+                                              tolower(OrigName)), 
+                      PKparameter_lower = sub("_ss", "_last", 
+                                              PKparameter_lower),
+                      PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
+               left_join(AllPKParameters %>% select(PKparameter) %>% 
+                            unique() %>% 
+                            mutate(PKparameter_lower = tolower(PKparameter))) %>% 
+               mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
+                                           paste0(PKparameter, "_CV"), 
+                                           PKparameter), 
+                      PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
+                      PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
+         )
+         names(MyObsPK) <- ObsNames$PKparameter
+         
+         # Having extra columns messes things up, so removing any extraneous
+         # things the user might have included.
+         
+         # Getting the names w/out "File"
+         NewObsNames <- names(MyObsPK)[names(MyObsPK) %in% 
+                                          c(AllPKParameters$PKparameter, 
+                                            paste0(AllPKParameters$PKparameter, "_CV"))]
+         MyObsPK <- as.data.frame(MyObsPK[, NewObsNames])
+         names(MyObsPK) <- NewObsNames
+         
+         # If user provided observed PK, then make sure those PK parameters are
+         # included in the PK to extract.
+         PKparameters <- sort(unique(union(PKparameters, names(MyObsPK))))
       }
-      
-      names(MyObsPK) <- sub("_first", "_dose1", names(MyObsPK))
-      names(MyObsPK) <- sub("tau_dose1", "t_dose1", names(MyObsPK))
-      names(MyObsPK) <- sub("AUCt_ratio_last", "AUCtau_ratio_last", names(MyObsPK))
-      names(MyObsPK) <- sub("_last", "_last", names(MyObsPK))
-      
-      # Making obs PK names match correct PK parameters regardless of case
-      suppressMessages(
-         ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
-            mutate(PKparameter_lower = sub("_first", "_dose1",
-                                           tolower(OrigName)), 
-                   PKparameter_lower = sub("_ss", "_last", 
-                                           PKparameter_lower),
-                   PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
-            left_join(AllPKParameters %>% select(PKparameter) %>% 
-                         unique() %>% 
-                         mutate(PKparameter_lower = tolower(PKparameter))) %>% 
-            mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
-                                        paste0(PKparameter, "_CV"), 
-                                        PKparameter), 
-                   PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
-                   PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
-      )
-      names(MyObsPK) <- ObsNames$PKparameter
-      
-      # Having extra columns messes things up, so removing any extraneous
-      # things the user might have included.
-      
-      # Getting the names w/out "File"
-      NewObsNames <- names(MyObsPK)[names(MyObsPK) %in% 
-                                       c(AllPKParameters$PKparameter, 
-                                         paste0(AllPKParameters$PKparameter, "_CV"))]
-      MyObsPK <- as.data.frame(MyObsPK[, NewObsNames])
-      names(MyObsPK) <- NewObsNames
-      
-      # If user provided observed PK, then make sure those PK parameters are
-      # included in the PK to extract.
-      PKparameters <- sort(unique(union(PKparameters, names(MyObsPK))))
-      
    }
    
    # From here down, function is set up for PKparameters to be a data.frame or,
-   # if the user did not provide observed PK, then a logical. Setting that for
-   # when something went wrong with the data they supplied for observed PK,
-   # making the observed PK data.frame just have a single column, "File".
+   # if the user did not provide observed PK, then a logical. If something went
+   # wrong with the data they supplied for observed PK, making the observed PK
+   # data.frame just have a single column, "File".
    if("data.frame" %in% class(observed_PK) &&
       ncol(observed_PK) == 1){
       observed_PK <- NA
@@ -827,18 +833,18 @@ pksummary_table <- function(sim_data_file = NA,
    # UNLESS the user has specified the sheet to use! Giving a warning about
    # that.
    if(((compoundToExtract %in% c("substrate", "primary metabolite 1", 
-                                "primary metabolite 2", "secondary metabolite") & 
-       complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
-      
-      (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
-       is.null(Deets$DoseInt_inhib) == FALSE && 
-       complete.cases(Deets$DoseInt_inhib) &&
-       Deets$DoseInt_inhib == "custom dosing") |
-      
-      (compoundToExtract == "inhibitor 2" & 
-       is.null(Deets$DoseInt_inhib2) == FALSE && 
-       complete.cases(Deets$DoseInt_inhib2) &&
-       Deets$DoseInt_inhib2 == "custom dosing")) &
+                                 "primary metabolite 2", "secondary metabolite") & 
+        complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
+       
+       (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
+        is.null(Deets$DoseInt_inhib) == FALSE && 
+        complete.cases(Deets$DoseInt_inhib) &&
+        Deets$DoseInt_inhib == "custom dosing") |
+       
+       (compoundToExtract == "inhibitor 2" & 
+        is.null(Deets$DoseInt_inhib2) == FALSE && 
+        complete.cases(Deets$DoseInt_inhib2) &&
+        Deets$DoseInt_inhib2 == "custom dosing")) &
       
       any(str_detect(PKparameters, "_last")) & is.na(sheet_PKparameters)){
       warning(paste0("The file `",
@@ -1560,7 +1566,7 @@ call. = FALSE)
    }
    
    if(include_dose_num == FALSE){
-      names(MyPKResults) <- sub("Dose 1|Last dose", "", names(MyPKResults))
+      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
    }
    
    if(checkDataSource){

@@ -11,6 +11,8 @@ formatTable_Simcyp(
   merge_shaded_cells = TRUE,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
+  highlight_so_cutoffs = NA,
+  highlight_so_colors = "yellow to red",
   highlight_cells = NA,
   highlight_color = "yellow",
   save_table = NA,
@@ -55,6 +57,37 @@ the examples at the bottom of the help file.}
 \item{center_1st_column}{TRUE or FALSE (default) for whether to make the
 alignment of the first column centered}
 
+\item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
+simulated-to-observed ratios. Anything that is above those values or below
+the inverse of those values will be highlighted. To figure out what cells
+to highlight, this looks for a column titled "Statistic" or "Stat", then
+looks for what row contains "S/O" or "simulated (something something)
+observed" (as in, we'll use some wildcards to try to match your specific
+text). Next, it looks for any values in that same row that are above those
+cutoffs. This overrides anything else you specified for highlighting. The
+default is NA, for \emph{not} highlighting based on S/O value. Acceptable
+input for, say, highlighting values that are > 125\% or < 80\% of the
+observed and also, with a second color, values that are > 150\% or < 66\%
+would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you would like the
+middle range of values to be highlighted, include 1 in your cutoffs. For
+example, say you would like everything that's < 80\% or > 125\% to be
+highlighted red but you'd like the "good" values from 80\% to 125\% to be
+green, you can get that by specifying
+\code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+c("green", "red")}}
+
+\item{highlight_so_colors}{optionally specify a set of colors to use for
+highlighting S/O values outside the limits you specified with
+\code{highlight_so_cutoffs}. The default is "yellow to red", which will
+color your values in that range based on how they compare to your the
+cutoffs you specified. Alternatively, specify specific colors using any
+R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
+"red")}. If you do specify your own bespoke colors, you'll need to make
+sure that you supply one color for every value in
+\code{highlight_so_cutoffs}. If you have included 1 in your cutoffs and you
+leave \code{highlight_so_colors} with the default setting, values in the
+middle, "good" range of S/O values will be highlighted a light green.}
+
 \item{highlight_cells}{optionally specify cells in the table to be
 highlighted with a numeric vector where the 1st number is the row number
 and the 2nd number is the column number (just like regular row and column
@@ -92,47 +125,65 @@ subscripted, and the table will automatically expand to fit the contents. You
 can save the output to a Word file with the argument \code{save_table}.
 }
 \examples{
-MyData <- data.frame(ColA = rep(LETTERS[1:3], each = 2),
-                     ColB = 1:6)
-formatTable_Simcyp(MyData)
-formatTable_Simcyp(MyData, center_1st_column = TRUE)
-formatTable_Simcyp(MyData, fontsize = 18)
-formatTable_Simcyp(MyData, shading_column = ColA)
+MyPKTable <- tibble(Statistic = c("Simulated", "CV\%", "Observed", "S/O"),
+                        AUCinf = c(2756, 32.5, 1801, 1.53), 
+                        Cmax = c(852, 45.8, 775, 1.1), 
+                        `Half life` = c(7.75, 5.7, 6.05, 1.28))
+formatTable_Simcyp(MyPKTable)
+formatTable_Simcyp(MyPKTable, center_1st_column = TRUE)
+formatTable_Simcyp(MyPKTable, fontsize = 18)
+formatTable_Simcyp(MyPKTable, shading_column = Statistic)
 
 # Highlighting examples
-## Highlight row 1, column 2
-formatTable_Simcyp(MyData, highlight_cells = c(1, 2))
+## Highlighting S/O values outside bioequivalence of 125\%.
+formatTable_Simcyp(MyPKTable,
+                   highlight_so_cutoffs = 1.25)
+
+## Highlighting S/O values with a few more colors based on the S/O.
+formatTable_Simcyp(MyPKTable,
+                   highlight_so_cutoffs = c(1.25, 1.5))
+
+## Highlighting S/O values and shading the "good" values green.
+formatTable_Simcyp(MyPKTable,
+                   highlight_so_cutoffs = c(1, 1.25, 1.5))
+
+## Highlight exactly the cells you want, e.g., row 1, column 2
+formatTable_Simcyp(MyPKTable, highlight_cells = c(1, 2))
 
 ## Highlight all of column 2
-formatTable_Simcyp(MyData, highlight_cells = c(NA, 2))
+formatTable_Simcyp(MyPKTable, highlight_cells = c(NA, 2))
 
 ## Highlight all of row 1
-formatTable_Simcyp(MyData, highlight_cells = c(1, NA))
+formatTable_Simcyp(MyPKTable, highlight_cells = c(1, NA))
 
 ## Highlight the 2nd column in the header
-formatTable_Simcyp(MyData, highlight_cells = c(0, 2))
+formatTable_Simcyp(MyPKTable, highlight_cells = c(0, 2))
 
 ## Set the highlight color to light blue instead of yellow
-formatTable_Simcyp(MyData, highlight_cells = c(1, NA),
+formatTable_Simcyp(MyPKTable, highlight_cells = c(1, NA),
                    highlight_color = "lightblue")
 
 ## Highlighting multiple cells
-formatTable_Simcyp(MyData, highlight_cells = list(c(1, 2), c(3,1), c(5, 2)),
                    highlight_color = "lightblue")
 
 # Bold-face examples
-## Make only the cell in row 5 and column 2 be bold face. This will
+## Make only the cell in row 4 and column 2 be bold face. This will
 ## override the default of having the header row and the 1st column in bold.
-formatTable_Simcyp(MyData, bold_cells = c(5, 2))
+formatTable_Simcyp(MyPKTable, bold_cells = c(4, 2))
 
-## Make the cell in row 5 and column 2 be bold face AND include the original
+## Make the cell in row 4 and column 2 be bold face AND include the original
 ## defaults of having the header row and the 1st column be in bold.
-formatTable_Simcyp(MyData, bold_cells = list(c(0, NA), c(NA, 1), c(5, 2)))
+formatTable_Simcyp(MyPKTable, bold_cells = list(c(0, NA), c(NA, 1), c(4, 2)))
 
 # Saving
 ## Adding a column called "File" so that there will be a caption in the Word
-## document listing which files were included in the table.
-MyData$File <- "abc-1a.xlsx"
-formatTable_Simcyp(MyData, save_table = "My data.docx")
+## document listing which files were included in the table. Also setting 
+## the document title.
+MyPKTable$File <- "abc-1a.xlsx"
+formatTable_Simcyp(MyPKTable, 
+                   highlight_so_cutoffs = c(1, 1.25, 1.5),
+                   save_table = "My data.docx", 
+                   title_document = "PK data")
+
 
 }
