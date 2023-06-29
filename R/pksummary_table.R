@@ -826,7 +826,7 @@ pksummary_table <- function(sim_data_file = NA,
    # locations! Do NOT pull last-dose parameters for a custom-dosing simulation
    # UNLESS the user has specified the sheet to use! Giving a warning about
    # that.
-   if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
+   if(((compoundToExtract %in% c("substrate", "primary metabolite 1", 
                                 "primary metabolite 2", "secondary metabolite") & 
        complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
       
@@ -838,7 +838,7 @@ pksummary_table <- function(sim_data_file = NA,
       (compoundToExtract == "inhibitor 2" & 
        is.null(Deets$DoseInt_inhib2) == FALSE && 
        complete.cases(Deets$DoseInt_inhib2) &&
-       Deets$DoseInt_inhib2 == "custom dosing") &
+       Deets$DoseInt_inhib2 == "custom dosing")) &
       
       any(str_detect(PKparameters, "_last")) & is.na(sheet_PKparameters)){
       warning(paste0("The file `",
