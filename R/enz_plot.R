@@ -278,7 +278,7 @@ enz_plot <- function(sim_enz_dataframe,
    
    # Observed data are not included for enzyme-abundance plots, so remove that
    # regular option for time_range.
-   if(complete.cases(time_range) && str_detect(time_range, "all obs")){
+   if(any(complete.cases(time_range)) && any(str_detect(time_range, "all obs"))){
       warning("Since there are no observed data for enzyme abundance, the option for time_range of `all observed` does not work for the function enz_plot. The full time range will be used.", 
               call. = FALSE)
       time_range = NA
