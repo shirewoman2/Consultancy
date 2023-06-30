@@ -38,6 +38,11 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    # Main info ------------------------------------------------------------
    
+   Deets <- switch(as.character("File" %in% names(as.data.frame(Deets))), 
+                   "TRUE" = as.data.frame(Deets), 
+                   "FALSE" = deannotateDetails(Deets)) %>% 
+      filter(File == MyFile)
+   
    ## General info on MyCompoundID ----------------------------------------
    Dose1included <- any(str_detect(PKpulled, "_dose1"))
    LastDoseincluded <- any(str_detect(PKpulled, "_last"))

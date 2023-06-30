@@ -140,7 +140,8 @@ if(single_table == FALSE){
       TableSettings <- c(Tissue = length(tissues) > 1, 
                          CompoundID = length(compoundsToExtract) > 1, 
                          File = TRUE)
-      TableSettings <- TableSettings[TableSettings == TRUE]
+      TableSettings <- str_c(names(TableSettings)[TableSettings == TRUE], 
+                             collapse = " ")
       
       Heading <- switch(TableSettings, 
                         "Tissue CompoundID File" = paste0(
