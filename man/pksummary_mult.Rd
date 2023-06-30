@@ -29,6 +29,7 @@ pksummary_mult(
   fontsize = 11,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
+  single_table = TRUE,
   ...
 )
 }
@@ -240,6 +241,10 @@ sure that you supply one color for every value in
 leave \code{highlight_so_colors} with the default setting, values in the
 middle, "good" range of S/O values will be highlighted a light green. This
 only applies when you save the table as a Word file.}
+
+\item{single_table}{TRUE (default) or FALSE for whether to save all the PK
+data in a single table or break the data up by tissue, compound ID, and
+file into multiple tables. This only applies to the Word output.}
 
 \item{...}{}
 }

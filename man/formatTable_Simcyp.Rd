@@ -77,16 +77,23 @@ green, you can get that by specifying
 c("green", "red")}}
 
 \item{highlight_so_colors}{optionally specify a set of colors to use for
-highlighting S/O values outside the limits you specified with
-\code{highlight_so_cutoffs}. The default is "yellow to red", which will
-color your values in that range based on how they compare to your the
-cutoffs you specified. Alternatively, specify specific colors using any
-R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
-"red")}. If you do specify your own bespoke colors, you'll need to make
-sure that you supply one color for every value in
-\code{highlight_so_cutoffs}. If you have included 1 in your cutoffs and you
-leave \code{highlight_so_colors} with the default setting, values in the
-middle, "good" range of S/O values will be highlighted a light green.}
+  highlighting S/O values outside the limits you specified with
+  \code{highlight_so_cutoffs}. Options: \describe{
+
+  \item{"yellow to red" (default)}{A range of light yellow to light orange to
+  light red. If you have included 1 in your cutoffs and you leave
+  \code{highlight_so_colors} with the default setting, values in the middle,
+  "good" range of S/O values will be highlighted a light green.}
+
+  \item{"Lisa"}{Lisa's preferred set of colors: light green, yellow, and red
+  designed to display values outside 1.25, 1.5, and 2 fold of unity, 
+  respectively. If you include 1 in \code{highlight_so_cutoffs} like Lisa 
+  often does, you'll get a darker green for "good" S/O values.}
+
+  \item{a character vector of specific colors}{Any R-acceptable colors, will
+  work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
+  If you do specify your own bespoke colors, you'll need to make sure that 
+  you supply one color for every value in \code{highlight_so_cutoffs}.}}
 
 \item{highlight_cells}{optionally specify cells in the table to be
 highlighted with a numeric vector where the 1st number is the row number

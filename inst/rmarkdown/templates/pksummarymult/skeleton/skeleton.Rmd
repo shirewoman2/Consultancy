@@ -23,25 +23,25 @@ MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 ```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
 if(FromCalcPKRatios){
-    if(paired){
-        OptionalSection <- knitr::knit_child(
-            system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
-                        package="SimcypConsultancy"), 
-            envir = environment(), 
-            quiet = TRUE)
-        
-        cat(OptionalSection, sep = "\n")
-        
-    } else {
-        OptionalSection <- knitr::knit_child(
-            system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
-                        package="SimcypConsultancy"), 
-            envir = environment(), 
-            quiet = TRUE)
-        
-        cat(OptionalSection, sep = "\n")
-        
-    }
+   if(paired){
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   } else {
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   }
    
    # calc_PK_ratios only has a single tissue option for now, so need to set
    # tissues to tissue. Same w/compounds. 
@@ -56,10 +56,9 @@ if(FromCalcPKRatios){
 *Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r str_comma(tissues)` PK parameters.*
 
 ```{r makeTablePKSummaryOutput}
-
 if("File" %in% names(MyPKResults)){
-    MyPKResults <- MyPKResults %>% 
-        select(!File, File)
+   MyPKResults <- MyPKResults %>% 
+      select(!File, File)
 }
 
 # If they only wanted 1 tissue, don't include a column for that in the table.
@@ -76,11 +75,78 @@ if(length(compoundsToExtract) == 1){
       select(!CompoundID)
 }
 
-formatTable_Simcyp(MyPKResults,
-                   shading_column = File, 
-                   fontsize = fontsize,
-                   highlight_so_cutoffs = highlight_so_cutoffs, 
-                   highlight_so_colors = highlight_so_colors)
+if(single_table){
+   formatTable_Simcyp(MyPKResults,
+                      shading_column = File, 
+                      fontsize = fontsize,
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors)
+}
+
+
+```
+```{r SplitTable, echo = FALSE, results = "asis"}
+
+if(single_table == FALSE){
+   
+   TableSettings <- c("Tissue", "CompoundID", "File")
+   TableSettings <- str_c(TableSettings[TableSettings %in% names(MyPKResults)], 
+                          collapse = " ")
+   MyPKResults <- 
+      split(MyPKResults, 
+            f = switch(TableSettings,
+                       "Tissue CompoundID File" = list(MyPKResults$Tissue, 
+                                                       MyPKResults$CompoundID, 
+                                                       MyPKResults$File), 
+                       "Tissue File" = list(MyPKResults$Tissue, 
+                                            MyPKResults$File), 
+                       "CompoundID File" = list(MyPKResults$CompoundID, 
+                                                MyPKResults$File), 
+                       "File" = list(MyPKResults$File))
+      )
+   
+   MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
+   
+   for(i in names(MyPKResults)){
+      
+      Header <- switch(TableSettings, 
+                       "Tissue CompoundID File" = paste0(
+                          str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+                          " PK for the ", 
+                          unique(MyPKResults[[i]]$CompoundID), 
+                          " for the file '", 
+                          unique(MyPKResults[[i]]$File), "'"), 
+                       
+                       "CompoundID File" = paste0(
+                          "PK for the ", 
+                          unique(MyPKResults[[i]]$CompoundID), 
+                          " for the file '", 
+                          unique(MyPKResults[[i]]$File), "'"), 
+                       
+                       "Tissue File" = paste0(
+                          str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+                          " PK for the file '", 
+                          unique(MyPKResults[[i]]$File), "'"), 
+                       
+                       "File" = paste0(
+                          "PK for the file '", 
+                          unique(MyPKResults[[i]]$File), "'"))
+      
+      TableSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/pktablesection/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(TableSection, sep = "\n")
+      
+      rm(Header)
+      
+   }
+   
+   MyPKResults <- bind_rows(MyPKResults)
+   
+}
 
 ```
 
@@ -101,13 +167,13 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
                           ""))
 
 AllFiles <- switch(
-    as.character(exists("sim_data_file_pairs", inherits = FALSE)), 
-    "TRUE" = # from calc_PK_ratios_mult
-        str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
-    
-    "FALSE" = # from pksummary_mult
-        str_comma(basename(unique(MyPKResults$File))))
-        
+   as.character(exists("sim_data_file_pairs", inherits = FALSE)), 
+   "TRUE" = # from calc_PK_ratios_mult
+      str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
+   
+   "FALSE" = # from pksummary_mult
+      str_comma(basename(unique(MyPKResults$File))))
+
 
 ```
 

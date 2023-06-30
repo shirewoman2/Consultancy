@@ -732,7 +732,8 @@ pksummary_table <- function(sim_data_file = NA,
       # We need to know the dosing regimen for whatever compound they
       # requested, but, if the compoundID is inhibitor 2, then that's listed
       # on the input tab, and we'll need to extract exp details for that, too.
-      if("inhibitor 2" %in% compoundToExtract){
+      if("inhibitor 2" %in% compoundToExtract &
+         "Inhibitor2" %in% names(Deets) == FALSE){
          DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
                                               exp_details = "Input Sheet")
          Deets <- c(as.list(Deets), DeetsInputSheet)
@@ -742,32 +743,39 @@ pksummary_table <- function(sim_data_file = NA,
       # fact, a Simulator output file and return a list of length 0 if not.
       # Checking for that here.
       if(length(Deets) == 0){
-         # warning(paste0("The file ", sim_data_file, 
-         #                " is not a Simulator output file and will be skipped."))
+         warning(paste0("The file ", sim_data_file,
+                        " is not a Simulator output file and will be skipped.
+", call. = FALSE))
          return(list())
       }
-      
-      EffectorPresent <- complete.cases(Deets$Inhibitor1)
-      DoseRegimen <- switch(compoundToExtract, 
-                            "substrate" = Deets$Regimen_sub,
-                            "primary metabolite 1" = Deets$Regimen_sub,
-                            "primary metabolite 2" = Deets$Regimen_sub,
-                            "secondary metabolite" = Deets$Regimen_sub,
-                            "inhibitor 1" = Deets$Regimen_inhib,
-                            "inhibitor 2" = Deets$Regimen_inhib2,
-                            "inhibitor 1 metabolite" = Deets$Regimen_inhib)
    }
    
-   # Checking that the file is, indeed, a simulator output file.
-   if(length(Deets) == 0){
-      # Using "warning" instead of "stop" here b/c I want this to be able to
-      # pass through to other functions and just skip any files that
-      # aren't simulator output.
-      warning(paste("The file", sim_data_file,
-                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-              call. = FALSE)
+   # Need to check that the compound they requested was included in the
+   # simulation
+   if(is.na(switch(compoundToExtract, 
+                     "substrate" = Deets$Substrate,
+                     "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                     "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                     "secondary metabolite" = Deets$SecondaryMetabolite,
+                     "inhibitor 1" = Deets$Inhibitor1,
+                     "inhibitor 2" = Deets$Inhibitor2,
+                     "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))){
+      warning(paste0("You requested PK data for the ", 
+                     compoundToExtract, 
+                     " but that compound is not present in the simulation. We cannot return any PK data for it.
+"), call. = FALSE)
       return(list())
    }
+   
+   EffectorPresent <- complete.cases(Deets$Inhibitor1)
+   DoseRegimen <- switch(compoundToExtract, 
+                         "substrate" = Deets$Regimen_sub,
+                         "primary metabolite 1" = Deets$Regimen_sub,
+                         "primary metabolite 2" = Deets$Regimen_sub,
+                         "secondary metabolite" = Deets$Regimen_sub,
+                         "inhibitor 1" = Deets$Regimen_inhib,
+                         "inhibitor 2" = Deets$Regimen_inhib2,
+                         "inhibitor 1 metabolite" = Deets$Regimen_inhib)
    
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 

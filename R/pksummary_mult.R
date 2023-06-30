@@ -208,10 +208,9 @@
 #'   leave off the file extension, we'll assume you want it to be ".csv". All PK
 #'   info will be included in a single Word or csv file, and, if
 #'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
-#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-#'   Microsoft permissions issue, not an R issue. If you try to save on
-#'   SharePoint, you will get a warning that R will save your file instead to
-#'   your local (not OneDrive) Documents folder.
+#' @param single_table TRUE (default) or FALSE for whether to save all the PK
+#'   data in a single table or break the data up by tissue, compound ID, and
+#'   file into multiple tables. This only applies to the Word output.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
@@ -291,6 +290,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            fontsize = 11, 
                            highlight_so_cutoffs = NA, 
                            highlight_so_colors = "yellow to red", 
+                           single_table = TRUE,
                            ...){
    
    # Error catching ----------------------------------------------------------
@@ -334,7 +334,8 @@ pksummary_mult <- function(sim_data_files = NA,
       warning(paste0("The compound(s) ", 
                      str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
                      " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`"))), 
+                     str_comma(paste0("`", PossCmpd, "`")), "
+                     "), 
               call. = FALSE)
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }
@@ -349,13 +350,15 @@ pksummary_mult <- function(sim_data_files = NA,
    
    tissues <- tolower(tissues)
    if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.
+              ", 
               call. = FALSE)
       tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
    }
    
    if(extract_forest_data & includeConfInt == FALSE){
-      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
+      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.
+              ", 
               call. = FALSE)
       includeConfInt <- TRUE
    }
@@ -411,8 +414,9 @@ pksummary_mult <- function(sim_data_files = NA,
             # If there is more than one value for each PK parameter, though,
             # then we don't know what to compare. Give an error message and
             # omit the S/O rows.
-            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
-                    call. = FALSE)
+            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.
+", 
+call. = FALSE)
             observed_PKDF <- NULL
          }
       } else {
@@ -424,8 +428,9 @@ pksummary_mult <- function(sim_data_files = NA,
             # If there is more than one value for each PK parameter, though,
             # then we don't know what to compare. Give an error message and
             # omit the S/O rows.
-            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
-                    call. = FALSE)
+            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.
+", 
+call. = FALSE)
             observed_PKDF <- NULL
          } else {
             observed_PKDF <- observed_PKDF %>% 
@@ -459,7 +464,8 @@ pksummary_mult <- function(sim_data_files = NA,
          which(file.exists(sim_data_files) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted."), 
+                     " is/are not present and thus will not be extracted.
+                     "), 
               call. = FALSE)
       sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
    }
@@ -475,7 +481,7 @@ pksummary_mult <- function(sim_data_files = NA,
       OutQC[[i]] <- list()
       FD[[i]] <- list()
       
-      message(paste("Extracting data from", i))
+      message(paste0("Extracting data from `", i, "`"))
       
       # Checking that the file is, indeed, a simulator output file.
       SheetNames <- tryCatch(readxl::excel_sheets(i),
@@ -485,8 +491,10 @@ pksummary_mult <- function(sim_data_files = NA,
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-                 call. = FALSE)
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.
+
+"), 
+call. = FALSE)
          next
       }
       
@@ -522,8 +530,9 @@ pksummary_mult <- function(sim_data_files = NA,
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-                 call. = FALSE)
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.
+"), 
+call. = FALSE)
          next()
       }
       
@@ -603,16 +612,17 @@ pksummary_mult <- function(sim_data_files = NA,
             # Checking for when they requested AUCinf but there were problems
             # extrapolating. Giving a warning in that situation.
             if((all(is.na(PKparameters)) |
-               all(complete.cases(PKparameters)) &
-               any(str_detect(PKparameters, "AUCinf"))) &
+                all(complete.cases(PKparameters)) &
+                any(str_detect(PKparameters, "AUCinf"))) &
                any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
                
                warning(paste0("The ", k, # tissue
                               " AUCinf included NA values for the ", j, # CompoundID
                               " in the file `", 
                               i, 
-                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead."),
-                       call. = FALSE)
+                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead.
+"),
+call. = FALSE)
             }
             
             
@@ -640,8 +650,9 @@ pksummary_mult <- function(sim_data_files = NA,
    
    if(length(MyPKResults) == 0){
       warning("No PK data could be found in the files ", 
-              str_comma(paste0("`", sim_data_files, "`")),
-              call. = FALSE)
+              str_comma(paste0("`", sim_data_files, "`")), "
+",
+call. = FALSE)
       return(list())
    }
    
@@ -662,8 +673,9 @@ pksummary_mult <- function(sim_data_files = NA,
    
    if(extract_forest_data & # NOT SURE THIS IS NECESSARY
       any(str_detect(names(bind_rows(MyPKResults)), "ratio")) == FALSE){
-      warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.", 
-              call. = FALSE)
+      warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.
+", 
+call. = FALSE)
       
       extract_forest_data <- FALSE
    } 
