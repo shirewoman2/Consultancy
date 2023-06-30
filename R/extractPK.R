@@ -340,7 +340,7 @@ extractPK <- function(sim_data_file,
             mutate(DoseNum = as.numeric(str_extract(Tab_last, "[0-9]{1,}"))) %>% 
             # It's the highest dose number and it can't be 0 b/c that's dose 1.
             filter(DoseNum == max(DoseNum) & DoseNum != 0)
-         Tab_last <- LastDoseNum$Tab_last
+         Tab_last <- LastDoseNum$Tab_last[1]
       } else {
          # If there was no Tab_last found but there *is* a tab with "t0" in
          # the name, e.g., AUCt0(Sub)(CPlasma), then use that one.
