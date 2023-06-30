@@ -1375,7 +1375,8 @@ forest_plot <- function(forest_dataframe,
                                               Upper, "%)"), 
                                     TRUE ~ paste0(Centre, " (", 
                                                   Lower, ", ", 
-                                                  Upper, ")")))
+                                                  Upper, ")")),
+                   Nums = sub(" \\(NA, NA\\)| \\(NA%, NA%\\)", "", Nums))
          
          NumTable <- ggplot(NumTable, aes(x = 1, y = PKParam_num, label = Nums)) +
             geom_text(vjust = 0.5, hjust = 0.5, size = 3) +
