@@ -201,11 +201,7 @@ of the file will be "PK summary table" with that extension. If you supply
 something other than just "docx" or just "csv" for the file name but you
 leave off the file extension, we'll assume you want it to be ".csv". All PK
 info will be included in a single Word or csv file, and, if
-\code{checkDataSource = TRUE}, that will be saved in a single csv file.
-\strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-Microsoft permissions issue, not an R issue. If you try to save on
-SharePoint, you will get a warning that R will save your file instead to
-your local (not OneDrive) Documents folder.}
+\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}

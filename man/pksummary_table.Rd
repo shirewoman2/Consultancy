@@ -29,6 +29,7 @@ pksummary_table(
   prettify_compound_names = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
+  return_PK_pulled = FALSE,
   save_table = NA,
   fontsize = 11,
   highlight_so_cutoffs = NA,

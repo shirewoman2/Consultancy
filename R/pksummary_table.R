@@ -362,6 +362,7 @@ pksummary_table <- function(sim_data_file = NA,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
+                            return_PK_pulled = FALSE,
                             save_table = NA, 
                             fontsize = 11, 
                             highlight_so_cutoffs = NA, 
@@ -710,7 +711,13 @@ pksummary_table <- function(sim_data_file = NA,
       # just going to be confusing to change it. If it turns out to be an
       # issue, revisit this. - LSh
       
-      # Checking experimental details to only pull details that apply
+      # Checking experimental details to only pull details that apply. NB:
+      # "Deets" in all pksummary functions means ONLY the experimental details
+      # for the single file in question -- either the only file for
+      # pksummary_table or the specific file we're dealing with in that
+      # iteration of the loop in pksummary_mult. By contrast,
+      # existing_exp_details will include ALL experimental details provided or
+      # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                     exp_details = "Summary tab")
@@ -753,13 +760,13 @@ pksummary_table <- function(sim_data_file = NA,
    # Need to check that the compound they requested was included in the
    # simulation
    if(is.na(switch(compoundToExtract, 
-                     "substrate" = Deets$Substrate,
-                     "primary metabolite 1" = Deets$PrimaryMetabolite1,
-                     "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                     "secondary metabolite" = Deets$SecondaryMetabolite,
-                     "inhibitor 1" = Deets$Inhibitor1,
-                     "inhibitor 2" = Deets$Inhibitor2,
-                     "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))){
+                   "substrate" = Deets$Substrate,
+                   "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                   "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                   "secondary metabolite" = Deets$SecondaryMetabolite,
+                   "inhibitor 1" = Deets$Inhibitor1,
+                   "inhibitor 2" = Deets$Inhibitor2,
+                   "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))){
       warning(paste0("You requested PK data for the ", 
                      compoundToExtract, 
                      " but that compound is not present in the simulation. We cannot return any PK data for it.
@@ -1525,25 +1532,32 @@ call. = FALSE)
       PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
       PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
       
-      MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-                      Deets$Inhibitor2)
+      # MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
+      #                 Deets$Inhibitor2)
+      # 
+      # if(any(complete.cases(MyEffector))){
+      #    MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
+      #    
+      #    if(class(prettify_compound_names) == "logical" &&
+      #       prettify_compound_names){
+      #       MyEffector <- prettify_compound_name(MyEffector)
+      #    }
+      #    
+      #    if(class(prettify_compound_names) == "character" &
+      #       "effector" %in% names(prettify_compound_names)){
+      #       names(prettify_compound_names)[
+      #          str_detect(tolower(names(prettify_compound_names)), 
+      #                     "effector")][1] <- "effector"
+      #       MyEffector <- prettify_compound_names["effector"]
+      #    }
+      #    
+      #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
+      # }
+      # 
+      
+      MyEffector <- determine_myeffector(Deets, prettify_compound_names)
       
       if(any(complete.cases(MyEffector))){
-         MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
-         
-         if(class(prettify_compound_names) == "logical" &&
-            prettify_compound_names){
-            MyEffector <- prettify_compound_name(MyEffector)
-         }
-         
-         if(class(prettify_compound_names) == "character" &
-            "effector" %in% names(prettify_compound_names)){
-            names(prettify_compound_names)[
-               str_detect(tolower(names(prettify_compound_names)), 
-                          "effector")][1] <- "effector"
-            MyEffector <- prettify_compound_names["effector"]
-         }
-         
          PrettyCol <- sub("effector", MyEffector, PrettyCol)
       }
       
@@ -1612,6 +1626,7 @@ call. = FALSE)
       
    }
    
+   PKpulled <- PKToPull # Need to rename here for consistency w/other pksummary functions and Rmd files.
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
@@ -1707,6 +1722,10 @@ call. = FALSE)
       if(complete.cases(save_table)){ 
          write.csv(OutQC, sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
       }
+   }
+   
+   if(return_PK_pulled){
+      Out[["PKpulled"]] <- PKpulled
    }
    
    if(length(Out) == 1){

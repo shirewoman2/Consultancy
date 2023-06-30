@@ -67,10 +67,11 @@
 #'   \code{highlight_so_colors} with the default setting, values in the middle,
 #'   "good" range of S/O values will be highlighted a light green.}
 #'
-#'   \item{"Lisa"}{Lisa's preferred set of colors: light green, yellow, and red
-#'   designed to display values outside 1.25, 1.5, and 2 fold of unity, 
-#'   respectively. If you include 1 in \code{highlight_so_cutoffs} like Lisa 
-#'   often does, you'll get a darker green for "good" S/O values.}
+#'   \item{"traffic"}{light green, yellow, and red designed to display values 
+#'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O 
+#'   values. This color scheme was borrowed from Lisa, so if you've seen her 
+#'   slides, these will look familiar.}
 #'
 #'   \item{a character vector of specific colors}{Any R-acceptable colors, will
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
@@ -331,7 +332,7 @@ formatTable_Simcyp <- function(DF,
       }
       
       if(length(highlight_so_cutoffs) != length(highlight_so_colors) &
-         highlight_so_colors[1] %in% c("yellow to red", "Lisa") == FALSE){
+         highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE){
          warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
@@ -340,14 +341,14 @@ formatTable_Simcyp <- function(DF,
       highlight_so_colors <- tolower(highlight_so_colors)
       highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
       
-      if(highlight_so_colors[1] %in% c("yellow to red", "lisa") == FALSE && 
+      if(highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE && 
          is.matrix(col2rgb(highlight_so_colors)) == FALSE){
          warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       } 
       
-      if(highlight_so_colors[1] %in% c("yellow to red", "lisa")){
+      if(highlight_so_colors[1] %in% c("yellow to red", "traffic")){
          
          ColorChoices <- paste(
             highlight_so_colors,
@@ -394,19 +395,19 @@ formatTable_Simcyp <- function(DF,
                         colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
                            length(highlight_so_cutoffs))), 
                    
-                   ## Lisa
+                   ## traffic
                    
                    # no middle, 1 cutoff
-                   "lisa FALSE (0,1]" = "#FF0000", 
+                   "traffic FALSE (0,1]" = "#FF0000", 
                    
                    # no middle, 2 cutoffs
-                   "lisa FALSE (1,2]" = c("#92D050", "#FF0000"), 
+                   "traffic FALSE (1,2]" = c("#92D050", "#FF0000"), 
                    
                    # no middle, 3 cutoffs
-                   "lisa FALSE (2,3]" = c("#92D050", "#FFC000", "#FF0000"), 
+                   "traffic FALSE (2,3]" = c("#92D050", "#FFC000", "#FF0000"), 
                    
                    # no middle, >3 cutoffs
-                   "lisa FALSE (3,4]" = colorRampPalette(c("#92D050", "#FFC000", "#FF0000"))(
+                   "traffic FALSE (3,4]" = colorRampPalette(c("#92D050", "#FFC000", "#FF0000"))(
                       length(highlight_so_cutoffs)), 
                    # This is the same as the above on purpose.
                    "FALSE (4,Inf]" = colorRampPalette(c("#92D050", "#FFC000", "#FF0000"))(
@@ -415,19 +416,19 @@ formatTable_Simcyp <- function(DF,
                    # Just highlight everything green. This would be weird and
                    # probably not what the user wants, but is among the possible
                    # choices for inputs.
-                   "lisa TRUE (0,1]" = c("#00B050"),
+                   "traffic TRUE (0,1]" = c("#00B050"),
                    
                    # highlight middle, 1 cutoff other than middle
-                   "lisa TRUE (1,2]" = c("#00B050", "#FF0000"), 
+                   "traffic TRUE (1,2]" = c("#00B050", "#FF0000"), 
                    
                    # highlight middle, 2 cutoffs other than middle
-                   "lisa TRUE (2,3]" = c("#00B050", "#92D050", "#FF0000"), 
+                   "traffic TRUE (2,3]" = c("#00B050", "#92D050", "#FF0000"), 
                    
                    # highlight middle, 3 cutoffs other than middle
-                   "lisa TRUE (3,4]" = c("#00B050", "#92D050", "#FFC000", "#FF0000"), 
+                   "traffic TRUE (3,4]" = c("#00B050", "#92D050", "#FFC000", "#FF0000"), 
                    
                    # highlight middle, >3 cutoffs other than middle
-                   "lisa TRUE (4,Inf]" = 
+                   "traffic TRUE (4,Inf]" = 
                       c("#00B050", 
                         colorRampPalette(c("#FFC000", "#FF0000"))(
                            length(highlight_so_cutoffs)))

@@ -470,14 +470,20 @@ call. = FALSE)
       sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
    }
    
+   # Setting this for all files 
+   prettify_compound_names <- c("inhibitor" = "effector",
+                                "substrate" = "substrate")
+   
    ## Getting simulated data ------------------------------------------------
    MyPKResults <- list()
+   PKpulled <- list()
    OutQC <- list()
    FD <- list()
    
    for(i in sim_data_files){
       
       MyPKResults[[i]] <- list()
+      PKpulled[[i]] <- list()
       OutQC[[i]] <- list()
       FD[[i]] <- list()
       
@@ -498,30 +504,44 @@ call. = FALSE)
          next
       }
       
-      # Getting summary data for the simulation(s)
+      # Getting experimental details for the simulation(s) as needed. NB:
+      # "Deets" in all pksummary functions means ONLY the experimental details
+      # for the single file in question -- either the only file for
+      # pksummary_table or the specific file we're dealing with in that
+      # iteration of the loop in pksummary_mult. By contrast,
+      # existing_exp_details will include ALL experimental details provided or
+      # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         Deets <- extractExpDetails(i, exp_details = "Summary tab") %>% 
+         existing_exp_details <- extractExpDetails(i, exp_details = "Summary tab", 
+                                                   annotate_output = FALSE) %>% 
             as.data.frame()
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details)) 
+         existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
+                                        "TRUE" = existing_exp_details, 
+                                        "FALSE" = deannotateDetails(existing_exp_details)) 
       }
       
-      Deets <- Deets %>% filter(File == i)
+      Deets <- existing_exp_details %>% filter(File == i)
       
       if(nrow(Deets) == 0){
-         Deets <- extractExpDetails(sim_data_file = i, 
-                                    exp_details = "Summary tab")
+         existing_exp_details <- 
+            extractExpDetails_mult(sim_data_file = i, 
+                                   existing_exp_details = existing_exp_details,
+                                   exp_details = "Summary tab", 
+                                   annotate_output = FALSE)
+         
+         Deets <- existing_exp_details %>% filter(File == i)
       }
       
       # We need to know the dosing regimen for whatever compound they
       # requested, but, if the compoundID is inhibitor 2, then that's listed
       # on the input tab, and we'll need to extract exp details for that, too.
       if("inhibitor 2" %in% compoundsToExtract){
-         DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
-                                              exp_details = "Input Sheet")
-         Deets <- c(as.list(Deets), DeetsInputSheet)
+         existing_exp_details <-
+            extractExpDetails_mult(sim_data_file = i, 
+                                   existing_exp_details = existing_exp_details,
+                                   exp_details = "Input Sheet")
+         Deets <- existing_exp_details %>% filter(File == i)
       }
       
       # Checking that the file is, indeed, a simulator output file.
@@ -562,6 +582,7 @@ call. = FALSE)
          message(paste("Extracting data for compound =", j))
          
          MyPKResults[[i]][[j]] <- list()
+         PKpulled[[i]][[j]] <- list()
          OutQC[[i]][[j]] <- list()
          FD[[i]][[j]] <- list()
          
@@ -580,6 +601,7 @@ call. = FALSE)
                   PKparameters = PKparameters, 
                   PKorder = PKorder, 
                   sheet_PKparameters = sheet_PKparameters, 
+                  return_PK_pulled = TRUE,
                   existing_exp_details = Deets,
                   mean_type = mean_type,
                   includeCV = includeCV,
@@ -593,8 +615,7 @@ call. = FALSE)
                   prettify_columns = prettify_columns, 
                   extract_forest_data = extract_forest_data,
                   checkDataSource = checkDataSource,
-                  prettify_compound_names = c("inhibitor" = "effector",
-                                              "substrate" = "substrate"))
+                  prettify_compound_names = prettify_compound_names)
             )
             
             if(length(temp) == 0){
