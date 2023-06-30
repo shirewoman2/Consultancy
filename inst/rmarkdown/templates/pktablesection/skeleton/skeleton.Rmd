@@ -1,0 +1,14 @@
+# `r Header`
+
+```{r}
+
+formatTable_Simcyp(MyPKResults[[i]] %>% select(-File) %>% 
+                      purrr::discard(~all(is.na(.))),
+                      fontsize = fontsize,
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors)
+
+```
+
+*Source simulated data: `r unique(basename(MyPKResults[[i]]$File))`*
+
