@@ -204,7 +204,7 @@ extractPK <- function(sim_data_file,
       if("data.frame" %in% class(Deets)){
          Deets <- Deets %>% filter(File == sim_data_file)
          
-         if(nrow(Deets == 0)){
+         if(nrow(Deets) == 0){
             Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                        exp_details = "Summary tab")
          }
@@ -449,11 +449,12 @@ extractPK <- function(sim_data_file,
                                 "primary metabolite 2", "secondary metabolite") &
        Deets$Regimen_sub == "Single Dose") |
       (complete.cases(Deets$Inhibitor1) && 
-       compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
-       && Deets$Regimen_inhib == "Single Dose") |
-      (complete.cases(Deets$Inhibitor2) &&
-       compoundToExtract %in% c("inhibitor 2") && 
-       Deets$Regimen_inhib2 == "Single Dose")){
+       (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
+        & Deets$Regimen_inhib == "Single Dose")) |
+      ("Inhibitor2" %in% names(Deets) && 
+       (complete.cases(Deets$Inhibitor2) &
+        compoundToExtract %in% c("inhibitor 2") && 
+        Deets$Regimen_inhib2 == "Single Dose"))){
       
       PKparameters <- 
          PKparameters[PKparameters %in% 
@@ -467,18 +468,18 @@ extractPK <- function(sim_data_file,
    # UNLESS the user has specified the sheet to use! Giving a warning about
    # that.
    if(((compoundToExtract %in% c("substrate", "primary metabolite 1", 
-                                "primary metabolite 2", "secondary metabolite") & 
-       complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
-      
-      (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
-       is.null(Deets$DoseInt_inhib) == FALSE && 
-       complete.cases(Deets$DoseInt_inhib) &&
-       Deets$DoseInt_inhib == "custom dosing") |
-      
-      (compoundToExtract == "inhibitor 2" & 
-       is.null(Deets$DoseInt_inhib2) == FALSE && 
-       complete.cases(Deets$DoseInt_inhib2) &&
-       Deets$DoseInt_inhib2 == "custom dosing")) &
+                                 "primary metabolite 2", "secondary metabolite") & 
+        complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
+       
+       (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
+        is.null(Deets$DoseInt_inhib) == FALSE && 
+        complete.cases(Deets$DoseInt_inhib) &&
+        Deets$DoseInt_inhib == "custom dosing") |
+       
+       (compoundToExtract == "inhibitor 2" & 
+        is.null(Deets$DoseInt_inhib2) == FALSE && 
+        complete.cases(Deets$DoseInt_inhib2) &&
+        Deets$DoseInt_inhib2 == "custom dosing")) &
       
       any(str_detect(PKparameters, "_last")) & is.na(sheet)){
       warning(paste0("The file `",
@@ -500,12 +501,14 @@ call. = FALSE)
    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
                                 "primary metabolite 2", "secondary metabolite") &
        Deets$Regimen_sub == "Multiple Dose") |
-      (complete.cases(Deets$Inhibitor1) && 
-       compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
-       && Deets$Regimen_inhib == "Multiple Dose") |
-      (complete.cases(Deets$Inhibitor2) &&
-       compoundToExtract %in% c("inhibitor 2") && 
-       Deets$Regimen_inhib2 == "Multiple Dose")){
+      ("Inhibitor1" %in% names(Deets) &&
+       (complete.cases(Deets$Inhibitor1) &
+        compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
+        & Deets$Regimen_inhib == "Multiple Dose")) |
+      ("Inhibitor2" %in% names(Deets) && 
+       (complete.cases(Deets$Inhibitor2) &
+        compoundToExtract %in% c("inhibitor 2") & 
+        Deets$Regimen_inhib2 == "Multiple Dose"))){
       
       ParamAUC <- setdiff(ParamAUC,
                           c("AUCt_ratio_dose1", "AUCt_dose1", 
