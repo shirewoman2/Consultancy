@@ -362,6 +362,7 @@ pksummary_table <- function(sim_data_file = NA,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
+                            return_PK_pulled = FALSE,
                             save_table = NA, 
                             fontsize = 11, 
                             highlight_so_cutoffs = NA, 
@@ -710,7 +711,13 @@ pksummary_table <- function(sim_data_file = NA,
       # just going to be confusing to change it. If it turns out to be an
       # issue, revisit this. - LSh
       
-      # Checking experimental details to only pull details that apply
+      # Checking experimental details to only pull details that apply. NB:
+      # "Deets" in all pksummary functions means ONLY the experimental details
+      # for the single file in question -- either the only file for
+      # pksummary_table or the specific file we're dealing with in that
+      # iteration of the loop in pksummary_mult. By contrast,
+      # existing_exp_details will include ALL experimental details provided or
+      # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                     exp_details = "Summary tab")
@@ -732,7 +739,8 @@ pksummary_table <- function(sim_data_file = NA,
       # We need to know the dosing regimen for whatever compound they
       # requested, but, if the compoundID is inhibitor 2, then that's listed
       # on the input tab, and we'll need to extract exp details for that, too.
-      if("inhibitor 2" %in% compoundToExtract){
+      if("inhibitor 2" %in% compoundToExtract &
+         "Inhibitor2" %in% names(Deets) == FALSE){
          DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
                                               exp_details = "Input Sheet")
          Deets <- c(as.list(Deets), DeetsInputSheet)
@@ -742,32 +750,39 @@ pksummary_table <- function(sim_data_file = NA,
       # fact, a Simulator output file and return a list of length 0 if not.
       # Checking for that here.
       if(length(Deets) == 0){
-         # warning(paste0("The file ", sim_data_file, 
-         #                " is not a Simulator output file and will be skipped."))
+         warning(paste0("The file ", sim_data_file,
+                        " is not a Simulator output file and will be skipped.
+", call. = FALSE))
          return(list())
       }
-      
-      EffectorPresent <- complete.cases(Deets$Inhibitor1)
-      DoseRegimen <- switch(compoundToExtract, 
-                            "substrate" = Deets$Regimen_sub,
-                            "primary metabolite 1" = Deets$Regimen_sub,
-                            "primary metabolite 2" = Deets$Regimen_sub,
-                            "secondary metabolite" = Deets$Regimen_sub,
-                            "inhibitor 1" = Deets$Regimen_inhib,
-                            "inhibitor 2" = Deets$Regimen_inhib2,
-                            "inhibitor 1 metabolite" = Deets$Regimen_inhib)
    }
    
-   # Checking that the file is, indeed, a simulator output file.
-   if(length(Deets) == 0){
-      # Using "warning" instead of "stop" here b/c I want this to be able to
-      # pass through to other functions and just skip any files that
-      # aren't simulator output.
-      warning(paste("The file", sim_data_file,
-                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-              call. = FALSE)
+   # Need to check that the compound they requested was included in the
+   # simulation
+   if(is.na(switch(compoundToExtract, 
+                   "substrate" = Deets$Substrate,
+                   "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                   "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                   "secondary metabolite" = Deets$SecondaryMetabolite,
+                   "inhibitor 1" = Deets$Inhibitor1,
+                   "inhibitor 2" = Deets$Inhibitor2,
+                   "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))){
+      warning(paste0("You requested PK data for the ", 
+                     compoundToExtract, 
+                     " but that compound is not present in the simulation. We cannot return any PK data for it.
+"), call. = FALSE)
       return(list())
    }
+   
+   EffectorPresent <- complete.cases(Deets$Inhibitor1)
+   DoseRegimen <- switch(compoundToExtract, 
+                         "substrate" = Deets$Regimen_sub,
+                         "primary metabolite 1" = Deets$Regimen_sub,
+                         "primary metabolite 2" = Deets$Regimen_sub,
+                         "secondary metabolite" = Deets$Regimen_sub,
+                         "inhibitor 1" = Deets$Regimen_inhib,
+                         "inhibitor 2" = Deets$Regimen_inhib2,
+                         "inhibitor 1 metabolite" = Deets$Regimen_inhib)
    
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
@@ -841,7 +856,7 @@ pksummary_table <- function(sim_data_file = NA,
         complete.cases(Deets$DoseInt_inhib) &&
         Deets$DoseInt_inhib == "custom dosing") |
        
-       (compoundToExtract == "inhibitor 2" & 
+       (compoundToExtract == "inhibitor 2" && 
         is.null(Deets$DoseInt_inhib2) == FALSE && 
         complete.cases(Deets$DoseInt_inhib2) &&
         Deets$DoseInt_inhib2 == "custom dosing")) &
@@ -1304,19 +1319,32 @@ call. = FALSE)
          # For forest data, only keeping ratios and removing observed data from
          # here b/c we supply it separately for the forest_plot function.
          FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
-                                         # Stat %in% c("geomean", "mean",
-                                         #             "CI90_low", "CI90_high") &
                                          SorO == "Sim")
          
          FD <- FD %>% 
-            mutate(Stat = recode(Stat, "geomean" = "GMR",
-                                 "mean" = "AMR",
-                                 "CI90_low" = "CI90_lo", 
-                                 "CI90_high" = "CI90_hi"),
-                   Parameter = paste(PKParam, Stat, sep = "__")) %>% 
-            select(-PKParam, -Stat, -SorO) %>% 
-            filter(str_detect(Parameter, "AUCinf_[^P]|AUCt|Cmax")) %>% 
-            pivot_wider(names_from = Parameter, values_from = Value) %>% 
+            mutate(Stat = case_match(Stat, 
+                                     "Geometric Mean" ~ "GeoMean",
+                                     "CI90_low" ~ "CI_Lower", 
+                                     "CI90_high" ~ "CI_Upper",
+                                     "per5" ~ "Centile_Lower", 
+                                     "per95" ~ "Centile_Upper",
+                                     "geomean" ~ "GeoMean",
+                                     "Mean" ~ "Mean", 
+                                     "Median" ~ "Median",
+                                     "90% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower", 
+                                     "90% confidence interval around the geometric mean(upper limit)" ~ "CI_Upper", 
+                                     "95% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower",
+                                     "95% confidence interval around the geometric mean(upper limit)" ~ "CI_Upper",
+                                     "5th centile" ~ "Centile_Lower", 
+                                     "95th centile" ~ "Centile_Upper", 
+                                     "Min Val" ~ "Min", 
+                                     "Max Val" ~ "Max", 
+                                     "cv" ~ "ArithCV", 
+                                     "Geometric CV" ~ "GeoCV", 
+                                     "Std Dev" ~ "SD", 
+                                     .default = Stat)) %>% 
+            rename(PKparameter = PKParam) %>% 
+            filter(str_detect(PKparameter, "AUCinf_[^P]|AUCt|Cmax")) %>% 
             mutate(File = sim_data_file, 
                    Substrate = switch(compoundToExtract, 
                                       "substrate" = Deets$Substrate, 
@@ -1328,6 +1356,7 @@ call. = FALSE)
                                        Deets$Inhibitor1, NA),
                    Dose_inhib = ifelse("Dose_inhib" %in% names(Deets),
                                        Deets$Dose_inhib, NA)) %>% 
+            pivot_wider(names_from = Stat, values_from = Value) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                    everything())
          
@@ -1517,25 +1546,32 @@ call. = FALSE)
       PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
       PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
       
-      MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-                      Deets$Inhibitor2)
+      # MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
+      #                 Deets$Inhibitor2)
+      # 
+      # if(any(complete.cases(MyEffector))){
+      #    MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
+      #    
+      #    if(class(prettify_compound_names) == "logical" &&
+      #       prettify_compound_names){
+      #       MyEffector <- prettify_compound_name(MyEffector)
+      #    }
+      #    
+      #    if(class(prettify_compound_names) == "character" &
+      #       "effector" %in% names(prettify_compound_names)){
+      #       names(prettify_compound_names)[
+      #          str_detect(tolower(names(prettify_compound_names)), 
+      #                     "effector")][1] <- "effector"
+      #       MyEffector <- prettify_compound_names["effector"]
+      #    }
+      #    
+      #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
+      # }
+      # 
+      
+      MyEffector <- determine_myeffector(Deets, prettify_compound_names)
       
       if(any(complete.cases(MyEffector))){
-         MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
-         
-         if(class(prettify_compound_names) == "logical" &&
-            prettify_compound_names){
-            MyEffector <- prettify_compound_name(MyEffector)
-         }
-         
-         if(class(prettify_compound_names) == "character" &
-            "effector" %in% names(prettify_compound_names)){
-            names(prettify_compound_names)[
-               str_detect(tolower(names(prettify_compound_names)), 
-                          "effector")][1] <- "effector"
-            MyEffector <- prettify_compound_names["effector"]
-         }
-         
          PrettyCol <- sub("effector", MyEffector, PrettyCol)
       }
       
@@ -1604,6 +1640,7 @@ call. = FALSE)
       
    }
    
+   PKpulled <- PKToPull # Need to rename here for consistency w/other pksummary functions and Rmd files.
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
@@ -1699,6 +1736,10 @@ call. = FALSE)
       if(complete.cases(save_table)){ 
          write.csv(OutQC, sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
       }
+   }
+   
+   if(return_PK_pulled){
+      Out[["PKpulled"]] <- PKpulled
    }
    
    if(length(Out) == 1){

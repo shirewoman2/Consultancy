@@ -60,15 +60,23 @@
 #'   c("green", "red")}
 #' @param highlight_so_colors optionally specify a set of colors to use for
 #'   highlighting S/O values outside the limits you specified with
-#'   \code{highlight_so_cutoffs}. The default is "yellow to red", which will
-#'   color your values in that range based on how they compare to your the
-#'   cutoffs you specified. Alternatively, specify specific colors using any
-#'   R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
-#'   "red")}. If you do specify your own bespoke colors, you'll need to make
-#'   sure that you supply one color for every value in
-#'   \code{highlight_so_cutoffs}. If you have included 1 in your cutoffs and you
-#'   leave \code{highlight_so_colors} with the default setting, values in the
-#'   middle, "good" range of S/O values will be highlighted a light green.
+#'   \code{highlight_so_cutoffs}. Options: \describe{
+#'
+#'   \item{"yellow to red" (default)}{A range of light yellow to light orange to
+#'   light red. If you have included 1 in your cutoffs and you leave
+#'   \code{highlight_so_colors} with the default setting, values in the middle,
+#'   "good" range of S/O values will be highlighted a light green.}
+#'
+#'   \item{"traffic"}{light green, yellow, and red designed to display values 
+#'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O 
+#'   values. This color scheme was borrowed from Lisa, so if you've seen her 
+#'   slides, these will look familiar.}
+#'
+#'   \item{a character vector of specific colors}{Any R-acceptable colors, will
+#'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
+#'   If you do specify your own bespoke colors, you'll need to make sure that 
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.} 
 #' @param highlight_cells optionally specify cells in the table to be
 #'   highlighted with a numeric vector where the 1st number is the row number
 #'   and the 2nd number is the column number (just like regular row and column
@@ -155,7 +163,7 @@
 #'                    title_document = "PK data")
 #' 
 #' 
- 
+
 formatTable_Simcyp <- function(DF, 
                                fontsize = 11, 
                                shading_column, 
@@ -324,7 +332,7 @@ formatTable_Simcyp <- function(DF,
       }
       
       if(length(highlight_so_cutoffs) != length(highlight_so_colors) &
-         highlight_so_colors[1] != "yellow to red"){
+         highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE){
          warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
@@ -333,31 +341,35 @@ formatTable_Simcyp <- function(DF,
       highlight_so_colors <- tolower(highlight_so_colors)
       highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
       
-      if(highlight_so_colors[1] != "yellow to red" && 
+      if(highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE && 
          is.matrix(col2rgb(highlight_so_colors)) == FALSE){
          warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       } 
       
-      if(highlight_so_colors[1] == "yellow to red"){
+      if(highlight_so_colors[1] %in% c("yellow to red", "traffic")){
          
-         ColorChoices <- paste(HighlightMiddle, 
-                               cut(length(highlight_so_cutoffs), breaks = c(0:4, Inf)))
+         ColorChoices <- paste(
+            highlight_so_colors,
+            HighlightMiddle, 
+            cut(length(highlight_so_cutoffs), breaks = c(0:4, Inf)))
          
          highlight_so_colors <- 
             switch(ColorChoices, 
+                   ## yellow to red
+                   
                    # no middle, 1 cutoff
-                   "FALSE (0,1]" = "#FF9595", 
+                   "yellow to red FALSE (0,1]" = "#FF9595", 
                    
                    # no middle, 2 cutoffs
-                   "FALSE (1,2]" = c("#FFFF95", "#FF9595"), 
+                   "yellow to red FALSE (1,2]" = c("#FFFF95", "#FF9595"), 
                    
                    # no middle, 3 cutoffs
-                   "FALSE (2,3]" = c("#FFFF95", "#FFDA95", "#FF9595"), 
+                   "yellow to red FALSE (2,3]" = c("#FFFF95", "#FFDA95", "#FF9595"), 
                    
                    # no middle, >3 cutoffs
-                   "FALSE (3,4]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                   "yellow to red FALSE (3,4]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
                       length(highlight_so_cutoffs)), 
                    # This is the same as the above on purpose.
                    "FALSE (4,Inf]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
@@ -366,21 +378,59 @@ formatTable_Simcyp <- function(DF,
                    # Just highlight everything green. This would be weird and
                    # probably not what the user wants, but is among the possible
                    # choices for inputs.
-                   "TRUE (0,1]" = c("#C7FEAC"),
+                   "yellow to red TRUE (0,1]" = c("#C7FEAC"),
                    
                    # highlight middle, 1 cutoff other than middle
-                   "TRUE (1,2]" = c("#C7FEAC", "#FF9595"), 
+                   "yellow to red TRUE (1,2]" = c("#C7FEAC", "#FF9595"), 
                    
                    # highlight middle, 2 cutoffs other than middle
-                   "TRUE (2,3]" = c("#C7FEAC", "#FFFF95", "#FF9595"), 
+                   "yellow to red TRUE (2,3]" = c("#C7FEAC", "#FFFF95", "#FF9595"), 
                    
                    # highlight middle, 3 cutoffs other than middle
-                   "TRUE (3,4]" = c("#C7FEAC", "#FFFF95", "#FFDA95", "#FF9595"), 
+                   "yellow to red TRUE (3,4]" = c("#C7FEAC", "#FFFF95", "#FFDA95", "#FF9595"), 
                    
                    # highlight middle, >3 cutoffs other than middle
-                   "TRUE (4,Inf]" = 
+                   "yellow to red TRUE (4,Inf]" = 
                       c("#C7FEAC", 
                         colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                           length(highlight_so_cutoffs))), 
+                   
+                   ## traffic
+                   
+                   # no middle, 1 cutoff
+                   "traffic FALSE (0,1]" = "#FF0000", 
+                   
+                   # no middle, 2 cutoffs
+                   "traffic FALSE (1,2]" = c("#92D050", "#FF0000"), 
+                   
+                   # no middle, 3 cutoffs
+                   "traffic FALSE (2,3]" = c("#92D050", "#FFC000", "#FF0000"), 
+                   
+                   # no middle, >3 cutoffs
+                   "traffic FALSE (3,4]" = colorRampPalette(c("#92D050", "#FFC000", "#FF0000"))(
+                      length(highlight_so_cutoffs)), 
+                   # This is the same as the above on purpose.
+                   "FALSE (4,Inf]" = colorRampPalette(c("#92D050", "#FFC000", "#FF0000"))(
+                      length(highlight_so_cutoffs)), 
+                   
+                   # Just highlight everything green. This would be weird and
+                   # probably not what the user wants, but is among the possible
+                   # choices for inputs.
+                   "traffic TRUE (0,1]" = c("#00B050"),
+                   
+                   # highlight middle, 1 cutoff other than middle
+                   "traffic TRUE (1,2]" = c("#00B050", "#FF0000"), 
+                   
+                   # highlight middle, 2 cutoffs other than middle
+                   "traffic TRUE (2,3]" = c("#00B050", "#92D050", "#FF0000"), 
+                   
+                   # highlight middle, 3 cutoffs other than middle
+                   "traffic TRUE (3,4]" = c("#00B050", "#92D050", "#FFC000", "#FF0000"), 
+                   
+                   # highlight middle, >3 cutoffs other than middle
+                   "traffic TRUE (4,Inf]" = 
+                      c("#00B050", 
+                        colorRampPalette(c("#FFC000", "#FF0000"))(
                            length(highlight_so_cutoffs)))
             )
       }

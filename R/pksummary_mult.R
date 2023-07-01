@@ -208,10 +208,9 @@
 #'   leave off the file extension, we'll assume you want it to be ".csv". All PK
 #'   info will be included in a single Word or csv file, and, if
 #'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
-#'   \strong{WARNING:} SAVING TO WORD DOES NOT WORK ON SHAREPOINT. This is a
-#'   Microsoft permissions issue, not an R issue. If you try to save on
-#'   SharePoint, you will get a warning that R will save your file instead to
-#'   your local (not OneDrive) Documents folder.
+#' @param single_table TRUE (default) or FALSE for whether to save all the PK
+#'   data in a single table or break the data up by tissue, compound ID, and
+#'   file into multiple tables. This only applies to the Word output.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
@@ -291,6 +290,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            fontsize = 11, 
                            highlight_so_cutoffs = NA, 
                            highlight_so_colors = "yellow to red", 
+                           single_table = TRUE,
                            ...){
    
    # Error catching ----------------------------------------------------------
@@ -334,7 +334,8 @@ pksummary_mult <- function(sim_data_files = NA,
       warning(paste0("The compound(s) ", 
                      str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
                      " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`"))), 
+                     str_comma(paste0("`", PossCmpd, "`")), "
+                     "), 
               call. = FALSE)
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }
@@ -349,13 +350,15 @@ pksummary_mult <- function(sim_data_files = NA,
    
    tissues <- tolower(tissues)
    if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.
+              ", 
               call. = FALSE)
       tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
    }
    
    if(extract_forest_data & includeConfInt == FALSE){
-      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
+      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.
+              ", 
               call. = FALSE)
       includeConfInt <- TRUE
    }
@@ -411,8 +414,9 @@ pksummary_mult <- function(sim_data_files = NA,
             # If there is more than one value for each PK parameter, though,
             # then we don't know what to compare. Give an error message and
             # omit the S/O rows.
-            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
-                    call. = FALSE)
+            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.
+", 
+call. = FALSE)
             observed_PKDF <- NULL
          }
       } else {
@@ -424,8 +428,9 @@ pksummary_mult <- function(sim_data_files = NA,
             # If there is more than one value for each PK parameter, though,
             # then we don't know what to compare. Give an error message and
             # omit the S/O rows.
-            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.", 
-                    call. = FALSE)
+            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.
+", 
+call. = FALSE)
             observed_PKDF <- NULL
          } else {
             observed_PKDF <- observed_PKDF %>% 
@@ -459,23 +464,30 @@ pksummary_mult <- function(sim_data_files = NA,
          which(file.exists(sim_data_files) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted."), 
+                     " is/are not present and thus will not be extracted.
+                     "), 
               call. = FALSE)
       sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
    }
    
+   # Setting this for all files 
+   prettify_compound_names <- c("inhibitor" = "effector",
+                                "substrate" = "substrate")
+   
    ## Getting simulated data ------------------------------------------------
    MyPKResults <- list()
+   PKpulled <- list()
    OutQC <- list()
    FD <- list()
    
    for(i in sim_data_files){
       
       MyPKResults[[i]] <- list()
+      PKpulled[[i]] <- list()
       OutQC[[i]] <- list()
       FD[[i]] <- list()
       
-      message(paste("Extracting data from", i))
+      message(paste0("Extracting data from `", i, "`"))
       
       # Checking that the file is, indeed, a simulator output file.
       SheetNames <- tryCatch(readxl::excel_sheets(i),
@@ -485,35 +497,51 @@ pksummary_mult <- function(sim_data_files = NA,
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-                 call. = FALSE)
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.
+
+"), 
+call. = FALSE)
          next
       }
       
-      # Getting summary data for the simulation(s)
+      # Getting experimental details for the simulation(s) as needed. NB:
+      # "Deets" in all pksummary functions means ONLY the experimental details
+      # for the single file in question -- either the only file for
+      # pksummary_table or the specific file we're dealing with in that
+      # iteration of the loop in pksummary_mult. By contrast,
+      # existing_exp_details will include ALL experimental details provided or
+      # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         Deets <- extractExpDetails(i, exp_details = "Summary tab") %>% 
+         existing_exp_details <- extractExpDetails(i, exp_details = "Summary tab", 
+                                                   annotate_output = FALSE) %>% 
             as.data.frame()
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details)) 
+         existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
+                                        "TRUE" = existing_exp_details, 
+                                        "FALSE" = deannotateDetails(existing_exp_details)) 
       }
       
-      Deets <- Deets %>% filter(File == i)
+      Deets <- existing_exp_details %>% filter(File == i)
       
       if(nrow(Deets) == 0){
-         Deets <- extractExpDetails(sim_data_file = i, 
-                                    exp_details = "Summary tab")
+         existing_exp_details <- 
+            extractExpDetails_mult(sim_data_file = i, 
+                                   existing_exp_details = existing_exp_details,
+                                   exp_details = "Summary tab", 
+                                   annotate_output = FALSE)
+         
+         Deets <- existing_exp_details %>% filter(File == i)
       }
       
       # We need to know the dosing regimen for whatever compound they
       # requested, but, if the compoundID is inhibitor 2, then that's listed
       # on the input tab, and we'll need to extract exp details for that, too.
       if("inhibitor 2" %in% compoundsToExtract){
-         DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
-                                              exp_details = "Input Sheet")
-         Deets <- c(as.list(Deets), DeetsInputSheet)
+         existing_exp_details <-
+            extractExpDetails_mult(sim_data_file = i, 
+                                   existing_exp_details = existing_exp_details,
+                                   exp_details = "Input Sheet")
+         Deets <- existing_exp_details %>% filter(File == i)
       }
       
       # Checking that the file is, indeed, a simulator output file.
@@ -522,8 +550,9 @@ pksummary_mult <- function(sim_data_files = NA,
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-                 call. = FALSE)
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.
+"), 
+call. = FALSE)
          next()
       }
       
@@ -553,6 +582,7 @@ pksummary_mult <- function(sim_data_files = NA,
          message(paste("Extracting data for compound =", j))
          
          MyPKResults[[i]][[j]] <- list()
+         PKpulled[[i]][[j]] <- list()
          OutQC[[i]][[j]] <- list()
          FD[[i]][[j]] <- list()
          
@@ -571,6 +601,7 @@ pksummary_mult <- function(sim_data_files = NA,
                   PKparameters = PKparameters, 
                   PKorder = PKorder, 
                   sheet_PKparameters = sheet_PKparameters, 
+                  return_PK_pulled = TRUE,
                   existing_exp_details = Deets,
                   mean_type = mean_type,
                   includeCV = includeCV,
@@ -584,8 +615,7 @@ pksummary_mult <- function(sim_data_files = NA,
                   prettify_columns = prettify_columns, 
                   extract_forest_data = extract_forest_data,
                   checkDataSource = checkDataSource,
-                  prettify_compound_names = c("inhibitor" = "effector",
-                                              "substrate" = "substrate"))
+                  prettify_compound_names = prettify_compound_names)
             )
             
             if(length(temp) == 0){
@@ -602,17 +632,18 @@ pksummary_mult <- function(sim_data_files = NA,
             
             # Checking for when they requested AUCinf but there were problems
             # extrapolating. Giving a warning in that situation.
-            if(all(is.na(PKparameters)) ||
-               all(complete.cases(PKparameters)) &
-               any(str_detect(PKparameters, "AUCinf")) &
+            if((all(is.na(PKparameters)) |
+                all(complete.cases(PKparameters)) &
+                any(str_detect(PKparameters, "AUCinf"))) &
                any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
                
                warning(paste0("The ", k, # tissue
                               " AUCinf included NA values for the ", j, # CompoundID
                               " in the file `", 
                               i, 
-                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead."),
-                       call. = FALSE)
+                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead.
+"),
+call. = FALSE)
             }
             
             
@@ -640,8 +671,9 @@ pksummary_mult <- function(sim_data_files = NA,
    
    if(length(MyPKResults) == 0){
       warning("No PK data could be found in the files ", 
-              str_comma(paste0("`", sim_data_files, "`")),
-              call. = FALSE)
+              str_comma(paste0("`", sim_data_files, "`")), "
+",
+call. = FALSE)
       return(list())
    }
    
@@ -662,8 +694,9 @@ pksummary_mult <- function(sim_data_files = NA,
    
    if(extract_forest_data & # NOT SURE THIS IS NECESSARY
       any(str_detect(names(bind_rows(MyPKResults)), "ratio")) == FALSE){
-      warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.", 
-              call. = FALSE)
+      warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.
+", 
+call. = FALSE)
       
       extract_forest_data <- FALSE
    } 

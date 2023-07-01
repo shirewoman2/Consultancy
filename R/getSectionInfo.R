@@ -40,9 +40,12 @@ getSectionInfo <- function(report_input_file = NA,
         filter(complete.cases(RName))
     
     sim_data_file <- InputXL$Value[InputXL$RName == "SimFile"]
-    if(dirname(sim_data_file) == "."){
-        sim_data_file <- paste0(dirname(report_input_file), "/", sim_data_file)
-    }
+    
+    ## Why did I add the snippet below here??? It's bugging up extractPK, but
+    ## I'm not sure whether it's needed!
+    # if(dirname(sim_data_file) == "."){
+    #     sim_data_file <- paste0(dirname(report_input_file), "/", sim_data_file)
+    # }
     
     Deets <- extractExpDetails(sim_data_file = sim_data_file)
     

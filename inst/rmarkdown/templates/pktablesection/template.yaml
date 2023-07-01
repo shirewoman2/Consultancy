@@ -1,0 +1,4 @@
+name: pktablesection
+description: >
+   Separate PK tables
+create_dir: FALSE

@@ -23,25 +23,25 @@ MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 ```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
 if(FromCalcPKRatios){
-    if(paired){
-        OptionalSection <- knitr::knit_child(
-            system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
-                        package="SimcypConsultancy"), 
-            envir = environment(), 
-            quiet = TRUE)
-        
-        cat(OptionalSection, sep = "\n")
-        
-    } else {
-        OptionalSection <- knitr::knit_child(
-            system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
-                        package="SimcypConsultancy"), 
-            envir = environment(), 
-            quiet = TRUE)
-        
-        cat(OptionalSection, sep = "\n")
-        
-    }
+   if(paired){
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   } else {
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   }
    
    # calc_PK_ratios only has a single tissue option for now, so need to set
    # tissues to tissue. Same w/compounds. 
@@ -51,67 +51,140 @@ if(FromCalcPKRatios){
    MyPKResults$CompoundID <- compoundToExtract
 } 
 
+if(single_table){
+   
+   CapText1 <- ifelse(any(str_detect(names(MyPKResults), "tmax")), 
+                      paste("the", MeanType, "means, except for t~max~, which is median, minimum, and maximum"),
+                      paste("the", MeanType, "means"))
+   
+   CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
+                              "CV: coefficient of variation; ", ""), 
+                       ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
+                              "CI: confidence interval; ", ""))
+   
+   CapText2 <- paste0(sub("; $", ".", CapText2a), 
+                      ifelse(Observedincluded, 
+                             "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
+                             ""))
+   
+   AllFiles <- switch(
+      as.character(exists("sim_data_file_pairs", inherits = FALSE)), 
+      "TRUE" = # from calc_PK_ratios_mult
+         str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
+      
+      "FALSE" = # from pksummary_mult
+         str_comma(basename(unique(MyPKResults$File))))
+   
+   Annotations <- list(
+      "TableHeading" = paste0("Table XXX. Simulated ", 
+                              ifelse(Observedincluded, "and observed ", ""), 
+                              MeanType, " mean ", str_comma(tissues),
+                              " PK parameters."),
+      "TableCaption" = paste0("Simulated values listed are ",
+                              CapText1, ". ", CapText2, 
+                              " Source simulated data: ", AllFiles))
+} else {
+   Annotations <- list("TableHeading" = "", 
+                       "TableCaption" = "")
+}
+
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r str_comma(tissues)` PK parameters.*
+`r Annotations[["TableHeading"]]`
 
 ```{r makeTablePKSummaryOutput}
 
 if("File" %in% names(MyPKResults)){
-    MyPKResults <- MyPKResults %>% 
-        select(!File, File)
-}
-
-# If they only wanted 1 tissue, don't include a column for that in the table.
-# It'll be listed in the text and takes up room needlessly.
-if(length(tissues) == 1){
    MyPKResults <- MyPKResults %>% 
-      select(!Tissue)
+      select(!File, File)
 }
 
-# Similarly, if they only wanted 1 compoundID, don't include a column for that
-# in the table.
-if(length(compoundsToExtract) == 1){
-   MyPKResults <- MyPKResults %>% 
-      select(!CompoundID)
+if(single_table){
+   
+   # If they only wanted 1 tissue, don't include a column for that in the table.
+   # It'll be listed in the text and takes up room needlessly.
+   if(length(tissues) == 1){
+      MyPKResults <- MyPKResults %>% 
+         select(!Tissue)
+   }
+   
+   # Similarly, if they only wanted 1 compoundID, don't include a column for that
+   # in the table.
+   if(length(compoundsToExtract) == 1){
+      MyPKResults <- MyPKResults %>% 
+         select(!CompoundID)
+   }
+   
+   formatTable_Simcyp(MyPKResults,
+                      shading_column = File, 
+                      fontsize = fontsize,
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors)
 }
 
-formatTable_Simcyp(MyPKResults,
-                   shading_column = File, 
-                   fontsize = fontsize,
-                   highlight_so_cutoffs = highlight_so_cutoffs, 
-                   highlight_so_colors = highlight_so_colors)
+
+```
+```{r SplitTable, echo = FALSE, results = "asis"}
+
+if(single_table == FALSE){
+   
+   MyPKResults <- 
+      split(MyPKResults, f = list(MyPKResults$Tissue, 
+                                  MyPKResults$CompoundID, 
+                                  MyPKResults$File))
+   
+   MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
+   
+   for(i in names(MyPKResults)){
+      
+      TableSettings <- c(Tissue = length(tissues) > 1, 
+                         CompoundID = length(compoundsToExtract) > 1, 
+                         File = TRUE)
+      TableSettings <- str_c(names(TableSettings)[TableSettings == TRUE], 
+                             collapse = " ")
+      
+      Heading <- switch(TableSettings, 
+                        "Tissue CompoundID File" = paste0(
+                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+                           " PK for the ", 
+                           unique(MyPKResults[[i]]$CompoundID), 
+                           " for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"), 
+                        
+                        "CompoundID File" = paste0(
+                           "PK for the ", 
+                           unique(MyPKResults[[i]]$CompoundID), 
+                           " for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"), 
+                        
+                        "Tissue File" = paste0(
+                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+                           " PK for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"), 
+                        
+                        "File" = paste0(
+                           "PK for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"))
+      
+      TableSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/pktablesection/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(TableSection, sep = "\n")
+      
+      rm(Heading)
+      
+   }
+   
+   MyPKResults <- bind_rows(MyPKResults)
+   
+}
 
 ```
 
-```{r captionPKSummary}
-
-CapText1 <- ifelse(any(str_detect(names(MyPKResults), "tmax")), 
-                   paste("the", MeanType, "means, except for t~max~, which is median, minimum, and maximum"),
-                   paste("the", MeanType, "means"))
-
-CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
-                           "CV: coefficient of variation; ", ""), 
-                    ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
-                           "CI: confidence interval; ", ""))
-
-CapText2 <- paste0(sub("; $", ".", CapText2a), 
-                   ifelse(Observedincluded, 
-                          "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
-                          ""))
-
-AllFiles <- switch(
-    as.character(exists("sim_data_file_pairs", inherits = FALSE)), 
-    "TRUE" = # from calc_PK_ratios_mult
-        str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
-    
-    "FALSE" = # from pksummary_mult
-        str_comma(basename(unique(MyPKResults$File))))
-        
-
-```
-
-*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r AllFiles`* 
+`r Annotations[["TableCaption"]]`*
 
 
 

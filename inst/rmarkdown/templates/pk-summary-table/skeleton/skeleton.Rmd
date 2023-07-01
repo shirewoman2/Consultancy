@@ -42,9 +42,9 @@ if(FromCalcPKRatios){
 
 ```{r FigtextPKSummary}
 
-Dose1included <- any(str_detect(PKToPull, "_dose1"))
-LastDoseincluded <- any(str_detect(PKToPull, "_last"))
-Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
+# Dose1included <- any(str_detect(PKpulled, "_dose1"))
+# LastDoseincluded <- any(str_detect(PKpulled, "_last"))
+# Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
 
 MyCompoundID <- switch(compoundToExtract, 
                        "substrate" = "Substrate",
@@ -55,73 +55,18 @@ MyCompoundID <- switch(compoundToExtract,
                        "inhibitor 2" = "Inhibitor2",
                        "inhibitor 1 metabolite" = "Inhibitor1Metabolite")
 
-MyDosedCompound <- switch(compoundToExtract, 
-                          "substrate" = Deets$Substrate,
-                          "primary metabolite 1" = Deets$Substrate,
-                          "primary metabolite 2" = Deets$Substrate,
-                          "secondary metabolite" = Deets$Substrate,
-                          "inhibitor 1" = Deets$Inhibitor1,
-                          "inhibitor 2" = Deets$Inhibitor2,
-                          "inhibitor 1 metabolite" = Deets$Inhibitor1)
-
-MyDoseRoute <- switch(compoundToExtract, 
-                      "substrate" = "DoseRoute_sub",
-                      "primary metabolite 1" = "DoseRoute_sub",
-                      "primary metabolite 2" = "DoseRoute_sub",
-                      "secondary metabolite" = "DoseRoute_sub",
-                      "inhibitor 1" = "DoseRoute_inhib",
-                      "inhibitor 2" = "DoseRoute_inhib2",
-                      "inhibitor 1 metabolite" = "DoseRoute_inhib1")
-
-MyDose <- switch(compoundToExtract, 
-                 "substrate" = "Dose_sub",
-                 "primary metabolite 1" = "Dose_sub",
-                 "primary metabolite 2" = "Dose_sub",
-                 "secondary metabolite" = "Dose_sub",
-                 "inhibitor 1" = "Dose_inhib",
-                 "inhibitor 2" = "Dose_inhib2",
-                 "inhibitor 1 metabolite" = "Dose_inhib")
-
-if(class(prettify_compound_names) == "logical" &&
-   # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
-   prettify_compound_names){
-    MyCompound <- prettify_compound_name(Deets[[MyCompoundID]])
-    MyDosedCompound <- prettify_compound_name(MyDosedCompound)
-} else if(class(prettify_compound_names) == "character"){
-    MyCompound <- prettify_compound_names[compoundToExtract]
-    MyDosedCompound <- prettify_compound_names[switch(compoundToExtract, 
-                          "substrate" = Deets$Substrate,
-                          "primary metabolite 1" = Deets$Substrate,
-                          "primary metabolite 2" = Deets$Substrate,
-                          "secondary metabolite" = Deets$Substrate,
-                          "inhibitor 1" = Deets$Inhibitor1,
-                          "inhibitor 2" = Deets$Inhibitor2,
-                          "inhibitor 1 metabolite" = Deets$Inhibitor1)]
-} else {
-    MyCompound <- Deets[[MyCompoundID]]
-}
-
-FigText2 <- ifelse(Dose1included & LastDoseincluded, 
-                   ifelse(Deets[[MyDoseRoute]] == "Oral", 
-                          "the first and multiple oral doses", 
-                          paste("the first and multiple", Deets[[MyDoseRoute]], "doses")),
-                   ifelse(Dose1included, 
-                          ifelse(Deets[[MyDoseRoute]] == "Oral", 
-                                 "the first oral dose",
-                                 paste("the first", Deets[[MyDoseRoute]], "dose")),
-                          ifelse(Deets[[MyDoseRoute]] == "Oral", 
-                                 "multiple oral doses", 
-                                 paste("multiple", Deets[[MyDoseRoute]], "doses"))))
-
-FigText3 <- ifelse(any(complete.cases(MyEffector)) & 
-                       compoundToExtract %in% c("inhibitor 1", "inhibitor 2",
-                                         "inhibitor 1 metabolite" == FALSE),
-                   paste0("with or without ", MyEffector, " "),
-                   "")
+Annotations <- make_table_annotations(MyPKResults = MyPKResults,
+                                      MyFile = sim_data_file, 
+                                      PKpulled = PKpulled, 
+                                      MyCompoundID = compoundToExtract, 
+                                      prettify_compound_names = prettify_compound_names, 
+                                      Deets = Deets, 
+                                      MeanType = MeanType, 
+                                      tissue = tissue)
 
 ```
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanType` mean `r tissue` PK parameters for `r MyCompound` after `r FigText2` of `r paste(Deets[[MyDose]], "mg", MyDosedCompound)` `r FigText3`in `r tidyPop(Deets$Population)$PopulationSimpleLower`.*
+`r Annotations[["TableHeading"]]`
 
 
 ```{r makeTablePKSummaryOutput}
@@ -137,24 +82,6 @@ formatTable_Simcyp(MyPKResults,
 
 ```
 
-```{r captionPKSummary}
-
-CapText1 <- ifelse(any(str_detect(names(MyPKResults), "tmax")), 
-                   paste("the", MeanType, "means, except for t~max~, which is median, minimum, and maximum"),
-                   paste("the", MeanType, "means"))
-
-CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
-                           "CV: coefficient of variation; ", ""), 
-                    ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
-                           "CI: confidence interval; ", ""))
-
-CapText2 <- paste0(sub("; $", ".", CapText2a), 
-                   ifelse(Observedincluded, 
-                          " S/O: simulated/observed; source observed data: Clinical Study XXX; ",
-                          ""))
-
-```
-
-*Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r basename(sim_data_file)`* 
+`r Annotations[["TableCaption"]]`
 
 

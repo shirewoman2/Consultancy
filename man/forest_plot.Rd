@@ -51,9 +51,9 @@ simulations on the y axis. In all forest plots, the y axis will be broken
 up by the simulation file name behind the scenes, but that's likely not the
 prettiest way to label the y axis, which is where this argument comes in.
 If you already have a column in \code{forest_dataframe} with the label you
-want -- for example the column PerpCompound when your drug of interest is a
-victim or VictimCompound when it's the effector -- use that by specifying,
-for example, \code{y_axis_labels = PerpCompound}. If you would like to
+want -- for example the column Inhibitor1 when your drug of interest is a
+victim or Substrate when it's the effector -- use that by specifying,
+for example, \code{y_axis_labels = Inhibitor1}. If you would like to
 manually specify which simulation file should be labeled what here, do so
 with a named character vector, e.g.,
 \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
@@ -331,7 +331,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # Please note that there must be one unique value in y_axis_labels for
 # each simulation file.
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound)
+            y_axis_labels = Inhibitor1)
 
 # By default, the graph will show the strongest inhibitors on top and
 # the strongest inducers on the bottom, sorted by their AUC GMR. However,
@@ -339,26 +339,26 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # for forest_dataframe, you can tell the forest_plot function not to change
 # that by setting y_order to "as is".
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             y_order = "as is")
 
 # If it would be sensible to break up your graph by a column in
 # forest_dataframe, you can do that with the argument facet_column_x. We'll
 # switch the example data to some with two dose levels here.
 forest_plot(forest_dataframe = BufForestData,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             facet_column_x = Dose_sub)
 
 # Or break up your graph by the PK parameter shown.
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             facet_column_x = PKparameter)
 
 # If what you supplied for forest_dataframe includes other statistics,
 # you can graph those instead of the default, which is the geometric
 # mean (point) and geometric 90 percent confidence interval (error bars).
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             mean_type = "median",
             variability_type = "range")
 
@@ -367,7 +367,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # details, but here's an example.
 view(BufObsForestData_20mg)
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             observed_PK = BufObsForestData_20mg)
 
 # Here are some options for modifying the aesthetics of your graph:
@@ -376,31 +376,31 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # we're looking at the effects of various perpetrators on bufuralol PK (at
 # least, that's what we're doing in this example).
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             include_dose_num = FALSE,
             y_axis_title = "Perpetrator",
             graph_title = "Effects of various DDI perpetrator\ndrugs on bufuralol PK")
 
 # -- Adjust the x axis limits with x_axis_limits
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             x_axis_limits = c(0.9, 5))
 
 # -- Include a legend for the shading
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             legend_position = "bottom")
 
 # -- Change the shading to be like in Chen Jones 2022 CPT
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             legend_position = "bottom",
             color_set = "yellow to red")
 
 # -- Or specify exactly which colors you want for which interaction level, and
 # make the vertical line at 1 be a different color and line type.
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             legend_position = "bottom",
             color_set = c("negligible" = "white", "weak" = "#C6CDF7",
                           "moderate" = "#7294D4", strong = "#E6A0C4"),
@@ -410,7 +410,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # Also make the error bars lose the hat at either end, and don't show any lines
 # in between the files.
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             legend_position = "bottom",
             color_set = "none",
             show_borders = FALSE,
@@ -419,13 +419,13 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # -- Make the compound names match *exactly* what was in the simulator file
 # rather than being automatically prettified
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             prettify_compound_names = FALSE)
 
 # -- Include a table of the numbers used for the centre statistic and
 # variability along the right side of the graph.
 forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = PerpCompound,
+            y_axis_labels = Inhibitor1,
             legend_position = "bottom",
             show_numbers_on_right = TRUE,
             color_set = "yellow to red")

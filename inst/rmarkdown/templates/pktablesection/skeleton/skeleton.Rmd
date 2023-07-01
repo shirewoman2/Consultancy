@@ -1,0 +1,38 @@
+# `r Heading`
+
+```{r}
+
+Deets <- existing_exp_details %>% filter(File == unique(MyPKResults[[i]]$File))
+MyEffector <- determine_myeffector(Deets = Deets, 
+                                   prettify_compound_names = TRUE)
+
+MyAnnotations <- make_table_annotations(
+   MyPKResults = MyPKResults[[i]], 
+   MyFile = unique(MyPKResults[[i]]$File), 
+   # For PKpulled, i = File, j = CompoundID, k = Tissue
+   PKpulled = PKpulled[[unique(MyPKResults[[i]]$File)]][[unique(MyPKResults[[i]]$CompoundID)]][[unique(MyPKResults[[i]]$Tissue)]],  
+   MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
+   prettify_compound_names = TRUE,
+   Deets = Deets, 
+   MeanType = MeanType, 
+   tissue = unique(MyPKResults[[i]]$Tissue))
+
+```
+
+`r MyAnnotations[["TableHeading"]]`
+
+```{r}
+
+TempTable <- MyPKResults[[i]] %>%
+   select(-any_of(c("CompoundID", "Tissue", "File"))) %>%
+   purrr::discard(~all(is.na(.)))
+names(TempTable) <- sub("effector", MyEffector, names(TempTable))
+
+formatTable_Simcyp(TempTable,
+                   fontsize = fontsize,
+                   highlight_so_cutoffs = highlight_so_cutoffs, 
+                   highlight_so_colors = highlight_so_colors)
+
+```
+
+`r MyAnnotations[["TableCaption"]]`
