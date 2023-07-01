@@ -449,8 +449,8 @@ extractPK <- function(sim_data_file,
                                 "primary metabolite 2", "secondary metabolite") &
        Deets$Regimen_sub == "Single Dose") |
       (complete.cases(Deets$Inhibitor1) && 
-       (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
-        & Deets$Regimen_inhib == "Single Dose")) |
+       (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &&
+        Deets$Regimen_inhib == "Single Dose")) |
       ("Inhibitor2" %in% names(Deets) && 
        (complete.cases(Deets$Inhibitor2) &&
         compoundToExtract %in% c("inhibitor 2") && 
@@ -504,8 +504,8 @@ call. = FALSE)
        Deets$Regimen_sub == "Multiple Dose") |
       ("Inhibitor1" %in% names(Deets) &&
        (complete.cases(Deets$Inhibitor1) &&
-        compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite")
-        & Deets$Regimen_inhib == "Multiple Dose")) |
+        compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &&
+        Deets$Regimen_inhib == "Multiple Dose")) |
       ("Inhibitor2" %in% names(Deets) && 
        (complete.cases(Deets$Inhibitor2) &&
         compoundToExtract %in% c("inhibitor 2") && 
