@@ -856,7 +856,7 @@ pksummary_table <- function(sim_data_file = NA,
         complete.cases(Deets$DoseInt_inhib) &&
         Deets$DoseInt_inhib == "custom dosing") |
        
-       (compoundToExtract == "inhibitor 2" & 
+       (compoundToExtract == "inhibitor 2" && 
         is.null(Deets$DoseInt_inhib2) == FALSE && 
         complete.cases(Deets$DoseInt_inhib2) &&
         Deets$DoseInt_inhib2 == "custom dosing")) &
@@ -1319,19 +1319,32 @@ call. = FALSE)
          # For forest data, only keeping ratios and removing observed data from
          # here b/c we supply it separately for the forest_plot function.
          FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
-                                         # Stat %in% c("geomean", "mean",
-                                         #             "CI90_low", "CI90_high") &
                                          SorO == "Sim")
          
          FD <- FD %>% 
-            mutate(Stat = recode(Stat, "geomean" = "GMR",
-                                 "mean" = "AMR",
-                                 "CI90_low" = "CI90_lo", 
-                                 "CI90_high" = "CI90_hi"),
-                   Parameter = paste(PKParam, Stat, sep = "__")) %>% 
-            select(-PKParam, -Stat, -SorO) %>% 
-            filter(str_detect(Parameter, "AUCinf_[^P]|AUCt|Cmax")) %>% 
-            pivot_wider(names_from = Parameter, values_from = Value) %>% 
+            mutate(Stat = case_match(Stat, 
+                                     "Geometric Mean" ~ "GeoMean",
+                                     "CI90_low" ~ "CI_Lower", 
+                                     "CI90_high" ~ "CI_Upper",
+                                     "per5" ~ "Centile_Lower", 
+                                     "per95" ~ "Centile_Upper",
+                                     "geomean" ~ "GeoMean",
+                                     "Mean" ~ "Mean", 
+                                     "Median" ~ "Median",
+                                     "90% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower", 
+                                     "90% confidence interval around the geometric mean(upper limit)" ~ "CI_Upper", 
+                                     "95% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower",
+                                     "95% confidence interval around the geometric mean(upper limit)" ~ "CI_Upper",
+                                     "5th centile" ~ "Centile_Lower", 
+                                     "95th centile" ~ "Centile_Upper", 
+                                     "Min Val" ~ "Min", 
+                                     "Max Val" ~ "Max", 
+                                     "cv" ~ "ArithCV", 
+                                     "Geometric CV" ~ "GeoCV", 
+                                     "Std Dev" ~ "SD", 
+                                     .default = Stat)) %>% 
+            rename(PKparameter = PKParam) %>% 
+            filter(str_detect(PKparameter, "AUCinf_[^P]|AUCt|Cmax")) %>% 
             mutate(File = sim_data_file, 
                    Substrate = switch(compoundToExtract, 
                                       "substrate" = Deets$Substrate, 
@@ -1343,6 +1356,7 @@ call. = FALSE)
                                        Deets$Inhibitor1, NA),
                    Dose_inhib = ifelse("Dose_inhib" %in% names(Deets),
                                        Deets$Dose_inhib, NA)) %>% 
+            pivot_wider(names_from = Stat, values_from = Value) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                    everything())
          

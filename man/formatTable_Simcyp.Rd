@@ -85,10 +85,11 @@ c("green", "red")}}
   \code{highlight_so_colors} with the default setting, values in the middle,
   "good" range of S/O values will be highlighted a light green.}
 
-  \item{"Lisa"}{Lisa's preferred set of colors: light green, yellow, and red
-  designed to display values outside 1.25, 1.5, and 2 fold of unity, 
-  respectively. If you include 1 in \code{highlight_so_cutoffs} like Lisa 
-  often does, you'll get a darker green for "good" S/O values.}
+  \item{"traffic"}{light green, yellow, and red designed to display values 
+  outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+  \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O 
+  values. This color scheme was borrowed from Lisa, so if you've seen her 
+  slides, these will look familiar.}
 
   \item{a character vector of specific colors}{Any R-acceptable colors, will
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
