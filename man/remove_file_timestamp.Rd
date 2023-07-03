@@ -31,7 +31,7 @@ Does not return anything in R; only changes file names
 \description{
 \code{remove_file_timestamp} will remove date/time stamps that have EXACTLY
 the same format as the Simcyp Autorunner's. For example: "myfile - 2023-10-31
-13-29-15.xlsx" will become "myfile.xlsx". UNDER CONSTRUCTION.
+13-29-15.xlsx" will become "myfile.xlsx".
 }
 \examples{
 # None yet

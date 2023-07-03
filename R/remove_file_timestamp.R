@@ -2,7 +2,7 @@
 #'
 #' \code{remove_file_timestamp} will remove date/time stamps that have EXACTLY
 #' the same format as the Simcyp Autorunner's. For example: "myfile - 2023-10-31
-#' 13-29-15.xlsx" will become "myfile.xlsx". UNDER CONSTRUCTION.
+#' 13-29-15.xlsx" will become "myfile.xlsx". 
 #'
 #' @param sim_data_files the Simcyp Simulator results Excel files to clean up.
 #'   There are three options: \enumerate{\item{Leave this as NA (default)
@@ -52,6 +52,18 @@ remove_file_timestamp <- function(sim_data_files = NA,
       mutate(Revised = sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
                            "", Orig)) %>% 
       filter(str_detect(Orig, " - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}"))
+   
+   if(any(duplicated(Changes$Revised))){
+      stop("The following files would have the same name once the date/time stamp is removed:
+", Changes %>% 
+   filter(duplicated(Revised) | duplicated(Revised, fromLast = TRUE)) %>% 
+   group_by(Revised) %>% 
+   summarize(Same = str_c(Orig, collapse = " & ")) %>% 
+   pull(Same) %>% str_c(collapse = "\n"),
+"
+Please change the file names to avoid replicates before proceeding.",
+call. = FALSE)
+   }
    
    for(i in 1:nrow(Changes)){
       file.rename(from = Changes$Orig[i], 
