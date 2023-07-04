@@ -266,18 +266,25 @@ green, you can get that by specifying
 \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
 c("green", "red")}. This only applies when you save the table as a Word file.}
 
-\item{highlight_so_colors}{optionally specify a set of colors to use for
-highlighting S/O values outside the limits you specified with
-\code{highlight_so_cutoffs}. The default is "yellow to red", which will
-color your values in that range based on how they compare to your the
-cutoffs you specified. Alternatively, specify specific colors using any
-R-acceptable color, e.g., \code{highlight_so_colors = c("yellow", "orange",
-"red")}. If you do specify your own bespoke colors, you'll need to make
-sure that you supply one color for every value in
-\code{highlight_so_cutoffs}. If you have included 1 in your cutoffs and you
-leave \code{highlight_so_colors} with the default setting, values in the
-middle, "good" range of S/O values will be highlighted a light green. This
-only applies when you save the table as a Word file.}
+\item{highlight_so_colors}{optionally specify a set of colors to use in the
+  Word file output for highlighting S/O values outside the limits you
+  specified with \code{highlight_so_cutoffs}. Options: \describe{
+
+  \item{"yellow to red" (default)}{A range of light yellow to light orange to
+  light red. If you have included 1 in your cutoffs and you leave
+  \code{highlight_so_colors} with the default setting, values in the middle,
+  "good" range of S/O values will be highlighted a light green.}
+
+  \item{"traffic"}{light green, yellow, and red designed to display values
+  outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+  \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
+  values. This color scheme was borrowed from Lisa, so if you've seen her
+  slides, these will look familiar.}
+
+  \item{a character vector of specific colors}{Any R-acceptable colors, will
+  work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
+  If you do specify your own bespoke colors, you'll need to make sure that
+  you supply one color for every value in \code{highlight_so_cutoffs}.}}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were
