@@ -187,7 +187,7 @@
 #'   at all.
 #' @param color_set the set of colors to use for shading the graph background to
 #'   indicate the level of interaction depicted. Options are: \describe{
-#'   \item{"grays" (default)}{white for "good" values and progressively
+#'   \item{"grays" (default)}{white for values close to 1 and progressively
 #'    darker grays for values with ratios outside of 1.25, 2, or 5 fold}
 #'
 #'    \item{"yellow to red"}{makes graphs like Figure 1 of
@@ -195,7 +195,7 @@
 #'   Jones 2022 CPT, doi 10.1002/psp4.12864}}
 #'
 #'   \item{"green to red"}{uses the same colors as "yellow to red" except that
-#'   the "good" range of values will be a light green instead of white}
+#'   the range of values around 1 will be a light green instead of white}
 #'
 #'   \item{"none"}{no shading at all}
 #'
