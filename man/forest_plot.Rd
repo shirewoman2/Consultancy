@@ -52,10 +52,10 @@ up by the simulation file name behind the scenes, but that's likely not the
 prettiest way to label the y axis, which is where this argument comes in.
 If you already have a column in \code{forest_dataframe} with the label you
 want -- for example the column Inhibitor1 when your drug of interest is a
-victim or Substrate when it's the effector -- use that by specifying,
-for example, \code{y_axis_labels = Inhibitor1}. If you would like to
-manually specify which simulation file should be labeled what here, do so
-with a named character vector, e.g.,
+victim or Substrate when it's the effector -- use that by specifying, for
+example, \code{y_axis_labels = Inhibitor1}. If you would like to manually
+specify which simulation file should be labeled what here, do so with a
+named character vector, e.g.,
 \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
 "efavirenz")}. If left as NA, we'll use the simulation file names. You can
 optionally make the compound names prettier with the argument
@@ -189,16 +189,26 @@ number, we'll assume that's the percent you want added to the bottom.}
 at all.}
 
 \item{color_set}{the set of colors to use for shading the graph background to
-indicate the level of interaction depicted. Options are "grays" (default),
-"yellow to red" (makes graphs like Figure 1 of
-\href{https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12864}{Chen
-Jones 2022 CPT, doi 10.1002/psp4.12864}), "none" for no shading at all, or
-a named character vector of the colors you want for each interaction level,
-e.g., \code{color_set = c("insignificant" = "white", "weak" = "gray90",
-"moderate" = "gray75", strong = "gray50")}. The cutoff values listed match
-those in "Clinical Drug Interaction Studies -- Cytochrome P450 Enzyme- and
-Transporter-Mediated Drug Interactions: Guidance for industry", US Food and
-Drug Administration Center for Drug Evaluation and Research, 2020, p. 19.}
+  indicate the level of interaction depicted. Options are: \describe{
+  \item{"grays" (default)}{white for values close to 1 and progressively
+   darker grays for values with ratios outside of 1.25, 2, or 5 fold}
+
+   \item{"yellow to red"}{makes graphs like Figure 1 of
+  \href{https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12864}{Chen
+  Jones 2022 CPT, doi 10.1002/psp4.12864}}
+
+  \item{"green to red"}{uses the same colors as "yellow to red" except that
+  the range of values around 1 will be a light green instead of white}
+
+  \item{"none"}{no shading at all}
+
+  \item{a named character vector of the colors you want for each interaction
+  level}{e.g., \code{color_set = c("insignificant" = "white",
+  "weak" = "gray90", "moderate" = "gray75", strong = "gray50")}}} The cutoff
+  values (1.25, 2, or 5 fold) match those in "Clinical Drug Interaction
+  Studies -- Cytochrome P450 Enzyme- and Transporter-Mediated Drug
+  Interactions: Guidance for industry", US Food and Drug Administration
+  Center for Drug Evaluation and Research, 2020, p. 19.}
 
 \item{point_shape}{the shape of the points to show for the center statistic
 (e.g., the geometric mean). The default is to show a white triangle for

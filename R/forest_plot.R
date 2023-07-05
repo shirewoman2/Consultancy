@@ -24,10 +24,10 @@
 #'   prettiest way to label the y axis, which is where this argument comes in.
 #'   If you already have a column in \code{forest_dataframe} with the label you
 #'   want -- for example the column Inhibitor1 when your drug of interest is a
-#'   victim or Substrate when it's the effector -- use that by specifying,
-#'   for example, \code{y_axis_labels = Inhibitor1}. If you would like to
-#'   manually specify which simulation file should be labeled what here, do so
-#'   with a named character vector, e.g.,
+#'   victim or Substrate when it's the effector -- use that by specifying, for
+#'   example, \code{y_axis_labels = Inhibitor1}. If you would like to manually
+#'   specify which simulation file should be labeled what here, do so with a
+#'   named character vector, e.g.,
 #'   \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
 #'   "efavirenz")}. If left as NA, we'll use the simulation file names. You can
 #'   optionally make the compound names prettier with the argument
@@ -186,16 +186,26 @@
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
 #' @param color_set the set of colors to use for shading the graph background to
-#'   indicate the level of interaction depicted. Options are "grays" (default),
-#'   "yellow to red" (makes graphs like Figure 1 of
+#'   indicate the level of interaction depicted. Options are: \describe{
+#'   \item{"grays" (default)}{white for values close to 1 and progressively
+#'    darker grays for values with ratios outside of 1.25, 2, or 5 fold}
+#'
+#'    \item{"yellow to red"}{makes graphs like Figure 1 of
 #'   \href{https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12864}{Chen
-#'   Jones 2022 CPT, doi 10.1002/psp4.12864}), "none" for no shading at all, or
-#'   a named character vector of the colors you want for each interaction level,
-#'   e.g., \code{color_set = c("insignificant" = "white", "weak" = "gray90",
-#'   "moderate" = "gray75", strong = "gray50")}. The cutoff values listed match
-#'   those in "Clinical Drug Interaction Studies -- Cytochrome P450 Enzyme- and
-#'   Transporter-Mediated Drug Interactions: Guidance for industry", US Food and
-#'   Drug Administration Center for Drug Evaluation and Research, 2020, p. 19.
+#'   Jones 2022 CPT, doi 10.1002/psp4.12864}}
+#'
+#'   \item{"green to red"}{uses the same colors as "yellow to red" except that
+#'   the range of values around 1 will be a light green instead of white}
+#'
+#'   \item{"none"}{no shading at all}
+#'
+#'   \item{a named character vector of the colors you want for each interaction
+#'   level}{e.g., \code{color_set = c("insignificant" = "white",
+#'   "weak" = "gray90", "moderate" = "gray75", strong = "gray50")}}} The cutoff
+#'   values (1.25, 2, or 5 fold) match those in "Clinical Drug Interaction
+#'   Studies -- Cytochrome P450 Enzyme- and Transporter-Mediated Drug
+#'   Interactions: Guidance for industry", US Food and Drug Administration
+#'   Center for Drug Evaluation and Research, 2020, p. 19.
 #' @param point_shape the shape of the points to show for the center statistic
 #'   (e.g., the geometric mean). The default is to show a white triangle for
 #'   observed data and a white circle for simulated data, so \code{point_shape =
@@ -866,9 +876,9 @@ forest_plot <- function(forest_dataframe,
    }
    
    if((length(color_set) == 1 &&
-       color_set %in% c("none", "grays", "yellow to red") == FALSE) |
+       color_set %in% c("none", "grays", "yellow to red", "green to red") == FALSE) |
       (length(color_set) > 1 && length(color_set) != 4)){
-      warning("Acceptable input for `color_set` is `grays`, `yellow to red`, `none`, or a named character vector of the colors you want for each interaction level (see examples in help file), and your input was not among those options. We'll use the default, `grays`, for now.", 
+      warning("Acceptable input for `color_set` is `grays`, `yellow to red`, `green to red`, `none`, or a named character vector of the colors you want for each interaction level (see examples in help file), and your input was not among those options. We'll use the default, `grays`, for now.", 
               call. = FALSE)
       
       color_set <- "grays"
@@ -1020,6 +1030,10 @@ forest_plot <- function(forest_dataframe,
                                       "weak" = "gray95", 
                                       "moderate" = "gray90",
                                       "strong" = "gray75"), 
+                          "green to red" = c("negligible" = "#C7FEAC", 
+                                             "weak" = "#FFFF95",
+                                             "moderate" = "#FFDA95",
+                                             "strong" = "#FF9595"),
                           "yellow to red" = c("negligible" = "white", 
                                               "weak" = "#FFFF95",
                                               "moderate" = "#FFDA95",
