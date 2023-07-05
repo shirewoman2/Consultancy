@@ -621,7 +621,11 @@ annotateDetails <- function(existing_exp_details,
                                "NumTrials", "NumSubjTrial", "PercFemale", 
                                "Age_min", "Age_max", "NumDoses", "Regimen", 
                                "Inhibitor1", "Inhibitor2", "SimDuration", 
-                               "StartDayTime"))
+                               "StartDayTime", 
+                               paste0(rep(c("StartDayTime_", "StartHr_"), 
+                                          each = 7),
+                                      c("sub", "inhib", "inhib2", "met1", 
+                                        "met2", "secmet", "inhib1met"))))
       }
       
       if(any(str_detect(tolower(detail_set), "summary"))){
@@ -723,7 +727,7 @@ annotateDetails <- function(existing_exp_details,
             warning(paste0("You have asked to concatenate the compound column and also requested all details that match `", 
                            compound, 
                            "`. The problem, though, is that you have requested information for compounds that occupy more than one position in the Simulator, e.g., one is the substrate and one is inhibitor 1 in the same simulation, which means that there would be more than one value for a given detail. This wouldn't be workable in the results, so we cannot concatenate the compound column in this situation."), 
-                           call. = FALSE)
+                    call. = FALSE)
          } else {
             
             AllCompounds <- str_comma(sort(unique(Out$Compound)), conjunction = "or")
