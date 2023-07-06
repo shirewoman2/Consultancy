@@ -26,7 +26,7 @@ pksummary_table(
   adjust_conc_units = NA,
   include_dose_num = NA,
   prettify_columns = TRUE,
-  prettify_compound_names = TRUE,
+  prettify_compound_names = NA,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
   return_PK_pulled = FALSE,
@@ -176,9 +176,9 @@ other than what was used in the simulation? Default is NA to leave the
 units as is, but if you set the concentration units to something else, this
 will attempt to adjust the units to match that. This only adjusts only the
 simulated values, since we're assuming that that's the most likely problem
-and that observed units are relatively easy to fix, and it also only affect
-AUC and Cmax values. Acceptable input is any concentration unit listed
-in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
+and that observed units are relatively easy to fix, and it also only
+affects AUC and Cmax values. Acceptable input is any concentration unit
+listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
 "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
 automatically converted using the molecular weight of whatever you set for
 \code{compoundToExtract}.}
@@ -197,22 +197,26 @@ human-readable column names. TRUE makes pretty column names such as "Dose 1
 AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
 from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
-\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
-compound names prettier in the prettified column titles and in any Word
-output files. This was designed for simulations where the substrate and any
-metabolites, effectors, or effector metabolites are among the standard
-options for the simulator, and leaving \code{prettify_compound_names =
-TRUE} will make the name of those compounds something more human readable.
-For example, "SV-Rifampicin-MD" will become "rifampicin", and
-"Sim-Midazolam" will become "midazolam". Set each compound to the name
-you'd prefer to see in your column titles if you would like something
-different. For example, \code{prettify_compound_names = c("effector" =
-"teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
-includes \emph{all} the effectors and effector metabolites present, so, if
-you're setting the effector name, you really should use something like this
-if you're including effector metabolites: \code{prettify_compound_names =
-c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-"superstatin")}.}
+\item{prettify_compound_names}{set preferences for making compound names in
+  the simulation more human readable than the standard Simcyp
+  Simulator compound file names. Options: \describe{\item{NA (default)}{Make
+  the names of compounds that look like Simcyp Simulator compounds look
+  prettier but leave alone anything that \emph{doesn't} look like a standard
+  Simcyp Simulator compound file. For example, "SV-Rifampicin-MD" will become
+  "rifampicin", and "Sim-Midazolam" will become "midazolam", but "ABC123"
+  will stay the same.}
+
+  \item{TRUE}{attempt to prettify everything, which results in lower case
+  compound names and removes tags such as "Sim-" or "SV-" or "_fasted soln".
+  This makes no attempt at discerning which compounds might have been Simcyp
+  Simulator compound files and which might be a client drug name.}
+
+  \item{FALSE}{leave every compound name exactly as it was in the simulation.}
+
+  \item{a character vector of what you'd like the substrate and the effector
+  to be called}{Set each compound to the name you'd prefer to see in your
+  column titles this way. An example: \code{prettify_compound_names = c("effector" =
+  "teeswiftavir", "substrate" = "superstatin")}}}}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
 the same time. This only applies when the compound to extract is the

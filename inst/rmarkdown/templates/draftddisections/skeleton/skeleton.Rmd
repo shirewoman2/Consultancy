@@ -83,17 +83,12 @@ numbers <- c("one", "two", "three", "four", "five", "six", "seven", "eight",
 
 Numbers <- str_to_title(numbers)
 
-if(SingMult_inhib == "multiple"){
-   DoseDay <- "last"
-} else {
-   
-   DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-   LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
-   DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9),
-                                     "th",
-                                     ifelse(LastDig == 1, "st",
-                                            ifelse(LastDig == 2, "nd", "rd"))))
-}
+DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
+DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9),
+                                  "th",
+                                  ifelse(LastDig == 1, "st",
+                                         ifelse(LastDig == 2, "nd", "rd"))))
 
 DefaultCompound_txt <- ifelse(default_cmpd_file, 
                               paste("The default compound library file for",
@@ -133,7 +128,13 @@ PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file),
                          adjust_conc_units = "ng/mL") 
 
 pretfun <- function(X){
-   if(prettify_compound_names){
+   if(is.logical(prettify_compound_names)){
+      if(complete.cases(prettify_compound_names)){
+         X <- sub(prettify_compound_name(MyEffector, force = TRUE),
+               "effector", X)
+      } else 
+   }
+   if(complete.cases(prettify_compound_names)){
       X <- sub(as.character(prettify_compound_names["effector"]),
                "effector", X)
    } else {
@@ -363,7 +364,7 @@ FT <- FT %>%
    flextable::hline_bottom(border = officer::fp_border(width = 0.5)) %>%
    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "header") %>%
    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "body",
-                        j = 2:7) %>%
+                        j = 2:ncol(MyPKResults)) %>%
    flextable::vline_left(part = "all", border = officer::fp_border(width = 0.5)) %>%
    flextable::hline(border = officer::fp_border(width = 0.5),
                     part = "body", i = 1)

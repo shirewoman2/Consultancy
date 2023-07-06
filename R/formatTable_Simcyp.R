@@ -218,6 +218,10 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
+   highlight_so_colors <- tolower(highlight_so_colors)
+   highlight_so_colors <- sub("lisa", "traffic", highlight_so_colors)
+   highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
+   
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
    
@@ -338,10 +342,7 @@ formatTable_Simcyp <- function(DF,
          highlight_so_colors <- "yellow to red"
       }
       
-      highlight_so_colors <- tolower(highlight_so_colors)
-      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
-      
-      if(highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE && 
+      if(highlight_so_colors[1] %in% c("yellow to red", "traffic", "lisa") == FALSE && 
          is.matrix(col2rgb(highlight_so_colors)) == FALSE){
          warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
                  call. = FALSE)

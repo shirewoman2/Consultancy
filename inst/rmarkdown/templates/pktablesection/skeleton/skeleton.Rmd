@@ -4,7 +4,7 @@
 
 Deets <- existing_exp_details %>% filter(File == unique(MyPKResults[[i]]$File))
 MyEffector <- determine_myeffector(Deets = Deets, 
-                                   prettify_compound_names = TRUE)
+                                   prettify_compound_names = prettify_compound_names)
 
 MyAnnotations <- make_table_annotations(
    MyPKResults = MyPKResults[[i]], 
@@ -12,7 +12,7 @@ MyAnnotations <- make_table_annotations(
    # For PKpulled, i = File, j = CompoundID, k = Tissue
    PKpulled = PKpulled[[unique(MyPKResults[[i]]$File)]][[unique(MyPKResults[[i]]$CompoundID)]][[unique(MyPKResults[[i]]$Tissue)]],  
    MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
-   prettify_compound_names = TRUE,
+   prettify_compound_names = prettify_compound_names,
    Deets = Deets, 
    MeanType = MeanType, 
    tissue = unique(MyPKResults[[i]]$Tissue))

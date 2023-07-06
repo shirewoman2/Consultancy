@@ -231,22 +231,26 @@
 #'   human-readable column names. TRUE makes pretty column names such as "Dose 1
 #'   AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
 #'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
-#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
-#'   compound names prettier in the prettified column titles and in any Word
-#'   output files. This was designed for simulations where the substrate and any
-#'   metabolites, effectors, or effector metabolites are among the standard
-#'   options for the simulator, and leaving \code{prettify_compound_names =
-#'   TRUE} will make the name of those compounds something more human readable.
-#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
-#'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
-#'   you'd prefer to see in your column titles if you would like something
-#'   different. For example, \code{prettify_compound_names = c("effector" =
-#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
-#'   includes \emph{all} the effectors and effector metabolites present, so, if
-#'   you're setting the effector name, you really should use something like this
-#'   if you're including effector metabolites: \code{prettify_compound_names =
-#'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-#'   "superstatin")}.
+#' @param prettify_compound_names set preferences for making compound names in
+#'   the simulation more human readable than the standard Simcyp
+#'   Simulator compound file names. Options: \describe{\item{NA (default)}{Make
+#'   the names of compounds that look like Simcyp Simulator compounds look
+#'   prettier but leave alone anything that \emph{doesn't} look like a standard
+#'   Simcyp Simulator compound file. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam", but "ABC123"
+#'   will stay the same.}
+#'
+#'   \item{TRUE}{attempt to prettify everything, which results in lower case
+#'   compound names and removes tags such as "Sim-" or "SV-" or "_fasted soln".
+#'   This makes no attempt at discerning which compounds might have been Simcyp
+#'   Simulator compound files and which might be a client drug name.}
+#'
+#'   \item{FALSE}{leave every compound name exactly as it was in the simulation.}
+#'
+#'   \item{a character vector of what you'd like the substrate and the effector
+#'   to be called}{Set each compound to the name you'd prefer to see in your
+#'   column titles this way. An example: \code{prettify_compound_names = c("effector" =
+#'   "teeswiftavir", "substrate" = "superstatin")}}}
 #' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
 #'   the same time. This only applies when the compound to extract is the
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
@@ -366,7 +370,7 @@ pksummary_table <- function(sim_data_file = NA,
                             adjust_conc_units = NA,
                             include_dose_num = NA,
                             prettify_columns = TRUE,
-                            prettify_compound_names = TRUE, 
+                            prettify_compound_names = NA, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
                             return_PK_pulled = FALSE,
@@ -404,7 +408,7 @@ pksummary_table <- function(sim_data_file = NA,
       is.null(names(prettify_compound_names))){
       warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the effector(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
               call. = FALSE)
-      prettify_compound_names <- TRUE
+      prettify_compound_names <- NA
    }
    
    if(class(prettify_compound_names) == "character"){
@@ -416,7 +420,7 @@ pksummary_table <- function(sim_data_file = NA,
       if("substrate" %in% names(prettify_compound_names) == FALSE){
          warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of `substrate` and, if there are any effectors, `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
                  call. = FALSE)
-         prettify_compound_names <- TRUE
+         prettify_compound_names <- NA
       }
    }
    

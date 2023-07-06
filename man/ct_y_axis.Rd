@@ -12,7 +12,7 @@ ct_y_axis(
   y_axis_limits_lin,
   time_range,
   y_axis_interval = NA,
-  prettify_compound_names = TRUE,
+  prettify_compound_names = NA,
   y_axis_limits_log,
   Ylim_data,
   pad_y_axis,

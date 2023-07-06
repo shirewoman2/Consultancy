@@ -35,7 +35,7 @@ ct_plot(
   vline_style = "red dotted",
   legend_position = "none",
   legend_label = NA,
-  prettify_compound_names = TRUE,
+  prettify_compound_names = NA,
   linear_or_log = "both vertical",
   graph_labels = TRUE,
   graph_title = NA,
@@ -300,22 +300,26 @@ label in the legend for the line style and the shape. If left as the
 default NA when a legend is included and an effector is present, the label
 in the legend will be "Inhibitor".}
 
-\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
-compound names prettier in legend entries and in any Word output files.
-This was designed for simulations where the substrate and any metabolites,
-effectors, or effector metabolites are among the standard options for the
-simulator, and leaving \code{prettify_compound_names = TRUE} will make the
-name of those compounds something more human readable. For example,
-"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-become "midazolam". Set each compound to the name you'd prefer to see in
-your legend and Word output if you would like something different. For
-example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
-"substrate" = "superstatin")}. Please note that "inhibitor" includes
-\emph{all} the effectors and effector metabolites present, so, if you're
-setting the effector name, you really should use something like this if
-you're including effector metabolites: \code{prettify_compound_names =
-c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-"superstatin")}.}
+\item{prettify_compound_names}{set preferences for making compound names in
+  the simulation more human readable than the standard Simcyp
+  Simulator compound file names. Options: \describe{\item{NA (default)}{Make
+  the names of compounds that look like Simcyp Simulator compounds look
+  prettier but leave alone anything that \emph{doesn't} look like a standard
+  Simcyp Simulator compound file. For example, "SV-Rifampicin-MD" will become
+  "rifampicin", and "Sim-Midazolam" will become "midazolam", but "ABC123"
+  will stay the same.}
+
+  \item{TRUE}{attempt to prettify everything, which results in lower case
+  compound names and removes tags such as "Sim-" or "SV-" or "_fasted soln".
+  This makes no attempt at discerning which compounds might have been Simcyp
+  Simulator compound files and which might be a client drug name.}
+
+  \item{FALSE}{leave every compound name exactly as it was in the simulation.}
+
+  \item{a character vector of what you'd like the substrate and the effector
+  to be called}{Set each compound to the name you'd prefer to see in your
+  column titles this way. An example: \code{prettify_compound_names = c("effector" =
+  "teeswiftavir", "substrate" = "superstatin")}}}}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
   \item{"semi-log"}{y axis is log transformed}

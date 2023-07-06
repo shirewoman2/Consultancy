@@ -13,7 +13,8 @@ make_table_annotations(
   prettify_compound_names,
   Deets,
   MeanType,
-  tissue
+  tissue,
+  return_all_objects = FALSE
 )
 }
 \arguments{
