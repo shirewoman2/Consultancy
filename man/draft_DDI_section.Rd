@@ -20,7 +20,7 @@ draft_DDI_section(
   mean_type_PK = "geometric",
   mean_type_graph = "arithmetic",
   clin_study_name = "XXX",
-  prettify_compound_names = TRUE,
+  prettify_compound_names = NA,
   victim_sim = FALSE,
   default_cmpd_file = TRUE,
   figure_type_sub = "means only",
