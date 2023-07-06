@@ -285,17 +285,17 @@ formatTable_Simcyp <- function(DF,
          DF$Shade[NoShadeRows] <- FALSE
          DF <- DF %>% fill(Shade, .direction = "down") %>% 
             mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
-      }
-      
-      ShadeRows <- which(DF$Shade)
-      FT <- FT %>% 
-         flextable::bg(i = ShadeRows, bg = "#F2F2F2") %>% 
-         flextable::bg(i = NoShadeRows, bg = "white") %>% 
-         flextable::bg(part = "header", bg = "white")
-      
-      if(merge_shaded_cells){
+         
+         ShadeRows <- which(DF$Shade)
          FT <- FT %>% 
-            flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
+            flextable::bg(i = ShadeRows, bg = "#F2F2F2") %>% 
+            flextable::bg(i = NoShadeRows, bg = "white") %>% 
+            flextable::bg(part = "header", bg = "white")
+         
+         if(merge_shaded_cells){
+            FT <- FT %>% 
+               flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
+         }
       }
    } 
    

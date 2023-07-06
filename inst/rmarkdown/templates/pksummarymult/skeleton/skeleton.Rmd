@@ -76,13 +76,13 @@ if(single_table){
          str_comma(basename(unique(MyPKResults$File))))
    
    Annotations <- list(
-      "TableHeading" = paste0("Table XXX. Simulated ", 
+      "TableHeading" = paste0("*Table XXX. Simulated ", 
                               ifelse(Observedincluded, "and observed ", ""), 
                               MeanType, " mean ", str_comma(tissues),
-                              " PK parameters."),
-      "TableCaption" = paste0("Simulated values listed are ",
+                              " PK parameters.*"),
+      "TableCaption" = paste0("*Simulated values listed are ",
                               CapText1, ". ", CapText2, 
-                              " Source simulated data: ", AllFiles))
+                              " Source simulated data: ", AllFiles, "*"))
 } else {
    Annotations <- list("TableHeading" = "", 
                        "TableCaption" = "")
@@ -184,7 +184,7 @@ if(single_table == FALSE){
 
 ```
 
-`r Annotations[["TableCaption"]]`*
+`r Annotations[["TableCaption"]]`
 
 
 
