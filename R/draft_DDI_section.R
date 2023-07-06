@@ -359,7 +359,7 @@ draft_DDI_section <- function(sim_data_file,
       is.null(names(prettify_compound_names))){
       warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the effector(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
               call. = FALSE)
-      prettify_compound_names <- TRUE
+      prettify_compound_names <- NA
    }
    
    if(class(prettify_compound_names) == "character"){
@@ -371,7 +371,7 @@ draft_DDI_section <- function(sim_data_file,
       if(all(c("substrate", "effector") %in% names(prettify_compound_names)) == FALSE){
          warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of both `substrate` and `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
                  call. = FALSE)
-         prettify_compound_names <- TRUE
+         prettify_compound_names <- NA
       }
    }
    

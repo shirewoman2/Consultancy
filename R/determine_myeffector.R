@@ -25,29 +25,40 @@ determine_myeffector <- function(Deets, prettify_compound_names){
    if(any(complete.cases(MyEffector))){
       MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
       
-      if(class(prettify_compound_names) == "logical"){
-         if(complete.cases(prettify_compound_names) &&
-            prettify_compound_names){
-            MyEffector <- prettify_compound_name(MyEffector, 
-                                                 force = TRUE)
-         } else {
-            # This is when prettify is NA
-            MyEffector <- prettify_compound_name(MyEffector, 
-                                                 force = FALSE)
-         }
-      }
+      # Do we need the following error catch? Is there a better way to code this?
       
-      if(class(prettify_compound_names) == "character" &
-         "effector" %in% names(prettify_compound_names)){
-         names(prettify_compound_names)[
-            str_detect(tolower(names(prettify_compound_names)), 
-                       "effector")][1] <- "effector"
-         MyEffector <- prettify_compound_names["effector"]
-      }
+      # if(class(prettify_compound_names) == "character" &
+      #    "effector" %in% names(prettify_compound_names)){
+      #    names(prettify_compound_names)[
+      #       str_detect(tolower(names(prettify_compound_names)), 
+      #                  "effector")][1] <- "effector"
+      # }
+      
+      PrettyOption <- data.frame(IsLog = c(T, T, F), 
+                                 IsNA = c(F, T, F), 
+                                 ValueType = c("TorF", "na", "character")) %>% 
+         mutate(
+            ValueType = case_when(
+               IsLog == TRUE & IsNA == FALSE & ValueType == "TorF" ~ 
+                  as.character(prettify_compound_names), 
+               TRUE ~ ValueType), 
+            Value = case_when(
+               ValueType == "TRUE" ~ prettify_compound_name(MyEffector, 
+                                                            force = TRUE), 
+               ValueType == "FALSE" ~ MyEffector, 
+               ValueType == "na" ~ prettify_compound_name(MyEffector, 
+                                                          force = FALSE), 
+               ValueType == "character" ~ prettify_compound_names["effector"])) %>% 
+         filter(IsLog == is.logical(prettify_compound_names) & 
+                   IsNA == is.na(prettify_compound_names))
+      
+      MyEffector <- PrettyOption$Value
+      
    } else {
       MyEffector <- "none"
    }
    
-   return(MyEffector)
+   return(as.character(MyEffector))
    
 }
+

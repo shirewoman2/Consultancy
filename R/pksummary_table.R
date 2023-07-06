@@ -1559,29 +1559,6 @@ call. = FALSE)
       PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
       PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
       
-      # MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-      #                 Deets$Inhibitor2)
-      # 
-      # if(any(complete.cases(MyEffector))){
-      #    MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
-      #    
-      #    if(class(prettify_compound_names) == "logical" &&
-      #       prettify_compound_names){
-      #       MyEffector <- prettify_compound_name(MyEffector)
-      #    }
-      #    
-      #    if(class(prettify_compound_names) == "character" &
-      #       "effector" %in% names(prettify_compound_names)){
-      #       names(prettify_compound_names)[
-      #          str_detect(tolower(names(prettify_compound_names)), 
-      #                     "effector")][1] <- "effector"
-      #       MyEffector <- prettify_compound_names["effector"]
-      #    }
-      #    
-      #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
-      # }
-      # 
-      
       MyEffector <- determine_myeffector(Deets, prettify_compound_names)
       
       if(any(complete.cases(MyEffector))){

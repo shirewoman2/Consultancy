@@ -76,31 +76,81 @@ make_table_annotations <- function(MyPKResults, # only PK table
                     "inhibitor 2" = "Dose_inhib2",
                     "inhibitor 1 metabolite" = "Dose_inhib")
    
-   if(class(prettify_compound_names) == "logical" &&
-      # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
-      prettify_compound_names){
-      MyCompound <- prettify_compound_name(switch(MyCompoundID, 
-                                                  "substrate" = Deets$Substrate,
-                                                  "primary metabolite 1" = Deets$PrimaryMetabolite1,
-                                                  "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                                                  "secondary metabolite" = Deets$SecondaryMetabolite,
-                                                  "inhibitor 1" = Deets$Inhibitor1,
-                                                  "inhibitor 2" = Deets$Inhibitor2,
-                                                  "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))
-      MyDosedCompound <- prettify_compound_name(MyDosedCompound)
-   } else if(class(prettify_compound_names) == "character"){
-      MyCompound <- prettify_compound_names[MyCompoundID]
-      MyDosedCompound <- prettify_compound_name(MyDosedCompound)
-   } else {
-      MyCompound <- switch(MyCompoundID, 
-                           "substrate" = Deets$Substrate,
-                           "primary metabolite 1" = Deets$PrimaryMetabolite1,
-                           "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                           "secondary metabolite" = Deets$SecondaryMetabolite,
-                           "inhibitor 1" = Deets$Inhibitor1,
-                           "inhibitor 2" = Deets$Inhibitor2,
-                           "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
-   }
+   
+   PrettyOption <- data.frame(IsLog = c(T, T, F), 
+                              IsNA = c(F, T, F), 
+                              ValueType = c("TorF", "na", "character")) %>% 
+      mutate(
+         ValueType = case_when(IsLog == TRUE & 
+                                  IsNA == FALSE & 
+                                  ValueType == "TorF" ~ 
+                                  as.character(prettify_compound_names[1]), 
+            TRUE ~ ValueType), 
+         MyCompound = case_when(
+            ValueType == "TRUE" ~ prettify_compound_name(switch(MyCompoundID, 
+                                                                "substrate" = Deets$Substrate,
+                                                                "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                                                                "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                                                                "secondary metabolite" = Deets$SecondaryMetabolite,
+                                                                "inhibitor 1" = Deets$Inhibitor1,
+                                                                "inhibitor 2" = Deets$Inhibitor2,
+                                                                "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite), 
+                                                         force = TRUE), 
+            ValueType == "FALSE" ~ switch(MyCompoundID, 
+                                          "substrate" = Deets$Substrate,
+                                          "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                                          "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                                          "secondary metabolite" = Deets$SecondaryMetabolite,
+                                          "inhibitor 1" = Deets$Inhibitor1,
+                                          "inhibitor 2" = Deets$Inhibitor2,
+                                          "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite), 
+            ValueType == "na" ~ prettify_compound_name(switch(MyCompoundID, 
+                                                              "substrate" = Deets$Substrate,
+                                                              "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                                                              "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                                                              "secondary metabolite" = Deets$SecondaryMetabolite,
+                                                              "inhibitor 1" = Deets$Inhibitor1,
+                                                              "inhibitor 2" = Deets$Inhibitor2,
+                                                              "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite), 
+                                                       force = FALSE), 
+            ValueType == "character" ~ prettify_compound_names[MyCompoundID]), 
+         
+         MyDosedCompound = case_when(
+            ValueType == "TRUE" ~ prettify_compound_name(MyDosedCompound, force = TRUE), 
+            ValueType == "FALSE" ~ MyDosedCompound, 
+            ValueType == "na" ~ prettify_compound_name(MyDosedCompound, force = FALSE), 
+            ValueType == "character" ~ prettify_compound_names[MyDosedCompound])) %>% 
+      filter(IsLog == is.logical(prettify_compound_names) & 
+                IsNA == any(is.na(prettify_compound_names))) # FIXME -- This should be any(is.na()) for ALL instances here, and that's only part of the needed fix.
+   
+   MyCompound <- PrettyOption$MyCompound
+   MyDosedCompound <- PrettyOption$MyDosedCompound
+   
+   # if(class(prettify_compound_names) == "logical" &&
+   #    # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
+   #    prettify_compound_names){
+   #    MyCompound <- prettify_compound_name(switch(MyCompoundID, 
+   #                                                "substrate" = Deets$Substrate,
+   #                                                "primary metabolite 1" = Deets$PrimaryMetabolite1,
+   #                                                "primary metabolite 2" = Deets$PrimaryMetabolite2,
+   #                                                "secondary metabolite" = Deets$SecondaryMetabolite,
+   #                                                "inhibitor 1" = Deets$Inhibitor1,
+   #                                                "inhibitor 2" = Deets$Inhibitor2,
+   #                                                "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))
+   #    MyDosedCompound <- prettify_compound_name(MyDosedCompound)
+   # } else if(class(prettify_compound_names) == "character"){
+   #    MyCompound <- prettify_compound_names[MyCompoundID]
+   #    MyDosedCompound <- prettify_compound_name(MyDosedCompound)
+   # } else {
+   #    MyCompound <- switch(MyCompoundID, 
+   #                         "substrate" = Deets$Substrate,
+   #                         "primary metabolite 1" = Deets$PrimaryMetabolite1,
+   #                         "primary metabolite 2" = Deets$PrimaryMetabolite2,
+   #                         "secondary metabolite" = Deets$SecondaryMetabolite,
+   #                         "inhibitor 1" = Deets$Inhibitor1,
+   #                         "inhibitor 2" = Deets$Inhibitor2,
+   #                         "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+   # }
    
    DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
                           "12" = "BID", 
@@ -145,9 +195,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
       DoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
       LastDig <- as.numeric(str_sub(DoseDay_sub, start = -1, end = -1))
       DoseDay_sub <- paste0(DoseDay_sub, ifelse(LastDig %in% c(0, 4:9), 
-                                        "th", 
-                                        ifelse(LastDig == 1, "st", 
-                                               ifelse(LastDig == 2, "nd", "rd"))))
+                                                "th", 
+                                                ifelse(LastDig == 1, "st", 
+                                                       ifelse(LastDig == 2, "nd", "rd"))))
       
    } else {
       SingMult_inhib <- NA

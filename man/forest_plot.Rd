@@ -243,12 +243,13 @@ acceptable input looks like this: \code{rel_widths = c(5, 1)}}
 make any compound names included in \code{y_axis_labels} prettier. This was
 designed for simulations where the substrates or effectors are among the
 standard options for the simulator, and leaving
-\code{prettify_compound_names = TRUE} will make the name of those compounds
-something more human readable. For example, "SV-Rifampicin-MD" will become
-"rifampicin", and "Sim-Midazolam" will become "midazolam". If you don't
-specify this, we'll prettify if you supply a column name for
-\code{y_axis_labels} and we *won't* prettify if you supply a named
-character vector there.}
+\code{prettify_compound_names = NA} will make the name of those compounds
+something more human readable but leave things that are likely to be a
+client's drug name as is. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Midazolam" will become "midazolam", but "ABC123"
+will stay the same. If you don't specify this, we'll prettify if you supply
+a column name for \code{y_axis_labels} and we *won't* prettify if you
+supply a named character vector there.}
 
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter

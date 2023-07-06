@@ -135,13 +135,26 @@
 #'   it clearer what the numbers represent. If you specify anything other than
 #'   Dose_sub or Dose_inhib for \code{facet_column_x}, \code{y_axis_column}, or
 #'   \code{y_axis_column_secondary}, this will be ignored.
-#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
-#'   compound names prettier. This was designed for simulations where the
-#'   substrates or effectors are among the standard options for the simulator,
-#'   and leaving \code{prettify_compound_names = TRUE} will make the name of
-#'   those compounds something more human readable. For example,
-#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-#'   become "midazolam".
+#' @param prettify_compound_names set preferences for making compound names in
+#'   the simulation more human readable than the standard Simcyp
+#'   Simulator compound file names. Options: \describe{\item{NA (default)}{Make
+#'   the names of compounds that look like Simcyp Simulator compounds look
+#'   prettier but leave alone anything that \emph{doesn't} look like a standard
+#'   Simcyp Simulator compound file. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam", but "ABC123"
+#'   will stay the same.}
+#'
+#'   \item{TRUE}{attempt to prettify everything, which results in lower case
+#'   compound names and removes tags such as "Sim-" or "SV-" or "_fasted soln".
+#'   This makes no attempt at discerning which compounds might have been Simcyp
+#'   Simulator compound files and which might be a client drug name.}
+#'
+#'   \item{FALSE}{leave every compound name exactly as it was in the simulation.}
+#'
+#'   \item{a character vector of what you'd like the substrate and the effector
+#'   to be called}{Set each compound to the name you'd prefer to see in your
+#'   column titles this way. An example: \code{prettify_compound_names = c("effector" =
+#'   "teeswiftavir", "substrate" = "superstatin")}}}
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. \emph{Note:} We're still working on the legend position when
@@ -347,7 +360,7 @@ forest_plot_old <- function(forest_dataframe,
                         facet_column_x, 
                         x_order = NA,
                         dose_units = "mg",
-                        prettify_compound_names = TRUE, 
+                        prettify_compound_names = NA, 
                         legend_position = "none", 
                         color_set = "grays",
                         point_shape = c(24, 21),
@@ -798,7 +811,7 @@ forest_plot_old <- function(forest_dataframe,
    if(class(prettify_compound_names) != "logical"){
       warning("You appear to have supplied something to the argument `prettify_compound_names` other than TRUE or FALSE. Unfortunately, those are the only permissible values. We'll set this to TRUE.", 
               call. = FALSE)
-      prettify_compound_names <- TRUE
+      prettify_compound_names <- NA
    }
    
    # Making legend argument lower case to avoid case sensitivity

@@ -176,12 +176,13 @@
 #'   make any compound names included in \code{y_axis_labels} prettier. This was
 #'   designed for simulations where the substrates or effectors are among the
 #'   standard options for the simulator, and leaving
-#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
-#'   something more human readable. For example, "SV-Rifampicin-MD" will become
-#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". If you don't
-#'   specify this, we'll prettify if you supply a column name for
-#'   \code{y_axis_labels} and we *won't* prettify if you supply a named
-#'   character vector there.
+#'   \code{prettify_compound_names = NA} will make the name of those compounds
+#'   something more human readable but leave things that are likely to be a
+#'   client's drug name as is. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam", but "ABC123"
+#'   will stay the same. If you don't specify this, we'll prettify if you supply
+#'   a column name for \code{y_axis_labels} and we *won't* prettify if you
+#'   supply a named character vector there.
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -775,8 +776,10 @@ forest_plot <- function(forest_dataframe,
                                  # but they did set a column, it's likely a
                                  # column with substrate or inhibitor 1 names,
                                  # so prettify unless they request not to.
-                                 "not set" = prettify_compound_name(YCol), 
-                                 "TRUE" = prettify_compound_name(YCol), 
+                                 "not set" = prettify_compound_name(YCol, 
+                                                                    force = FALSE), 
+                                 "TRUE" = prettify_compound_name(YCol, 
+                                                                 force = TRUE), 
                                  "FALSE" = YCol))
       } 
    }
@@ -827,7 +830,8 @@ forest_plot <- function(forest_dataframe,
                                  # those to change. If not set, then here, DON'T
                                  # prettify.
                                  "not set" = y_axis_labels[File],
-                                 "TRUE" = prettify_compound_name(y_axis_labels[File]),
+                                 "TRUE" = prettify_compound_name(y_axis_labels[File], 
+                                                                 force = TRUE),
                                  "FALSE" = y_axis_labels[File]))
       } else {
          forest_dataframe$YCol <- forest_dataframe$File

@@ -715,18 +715,27 @@ ct_plot <- function(ct_dataframe = NA,
                 Inhibitor = as.character(ifelse(is.na(Inhibitor),
                                                 "none", Inhibitor)))
       
-      if(class(prettify_compound_names) == "logical" &&
-         complete.cases(prettify_compound_names) &&
-         prettify_compound_names){
-         MyEffector <- prettify_compound_name(MyEffector)
-      }
+      PrettyOption <- data.frame(IsLog = c(T, T, F), 
+                                 IsNA = c(F, T, F), 
+                                 ValueType = c("TorF", "na", "character")) %>% 
+         mutate(
+            ValueType = case_when(
+               IsLog == TRUE & IsNA == FALSE & ValueType == "TorF" ~ 
+                  as.character(prettify_compound_names), 
+               TRUE ~ ValueType), 
+            Value = case_when(
+               ValueType == "TRUE" ~ prettify_compound_name(MyEffector, 
+                                                            force = TRUE), 
+               ValueType == "FALSE" ~ MyEffector, 
+               ValueType == "na" ~ prettify_compound_name(MyEffector, 
+                                                          force = FALSE), 
+               ValueType == "character" ~ prettify_compound_names["effector"])) %>% 
+         filter(IsLog == is.logical(prettify_compound_names) & 
+                   IsNA == is.na(prettify_compound_names))
       
-      if(class(prettify_compound_names) == "character"){
-         MyEffector <- prettify_compound_names["inhibitor"]
-      }
+      MyEffector <- PrettyOption$Value
       
-      Data <- 
-         Data %>%
+      Data <- Data %>%
          mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
                 Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
                 Group = paste(Compound, Inhibitor, Trial)) %>%
