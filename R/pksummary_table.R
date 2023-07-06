@@ -221,9 +221,9 @@
 #'   units as is, but if you set the concentration units to something else, this
 #'   will attempt to adjust the units to match that. This only adjusts only the
 #'   simulated values, since we're assuming that that's the most likely problem
-#'   and that observed units are relatively easy to fix, and it also only affect
-#'   AUC and Cmax values. Acceptable input is any concentration unit listed
-#'   in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
+#'   and that observed units are relatively easy to fix, and it also only
+#'   affects AUC and Cmax values. Acceptable input is any concentration unit
+#'   listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
 #'   "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
 #'   \code{compoundToExtract}.
@@ -312,7 +312,7 @@
 #'   \item{a character vector of specific colors}{Any R-acceptable colors, will
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
 #'   If you do specify your own bespoke colors, you'll need to make sure that
-#'   you supply one color for every value in \code{highlight_so_cutoffs}.} 
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -960,7 +960,8 @@ call. = FALSE)
       # units -- only conc.
       if(Deets$Units_Cmax != adjust_conc_units){
          ColsToChange <- names(MyPKResults_all$aggregate)[
-            str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax")
+            intersect(which(str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax")), 
+                      which(!str_detect(names(MyPKResults_all$aggregate), "ratio")))
          ]
          
          for(i in ColsToChange){
@@ -981,7 +982,8 @@ call. = FALSE)
                                 "inhibitor 1" = Deets$MW_inhib, 
                                 "inhibitor 2" = Deets$MW_inhib2, 
                                 "inhibitor 1 metabolite" = Deets$MW_inhib1met)))
-            MyPKResults_all$aggregate[, i] <- TEMP$Conc
+            GoodRows <- which(!str_detect(TEMP$Statistic, "CV|cv|Skewness|Fold"))
+            MyPKResults_all$aggregate[GoodRows, i] <- TEMP$Conc[GoodRows]
             rm(TEMP)
             
             if("individual" %in% names(MyPKResults_all)){
