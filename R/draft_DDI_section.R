@@ -300,7 +300,7 @@ draft_DDI_section <- function(sim_data_file,
                               mean_type_PK = "geometric",
                               mean_type_graph = "arithmetic",
                               clin_study_name = "XXX",
-                              prettify_compound_names = TRUE,
+                              prettify_compound_names = NA,
                               victim_sim = FALSE, 
                               default_cmpd_file = TRUE,
                               
@@ -385,7 +385,7 @@ draft_DDI_section <- function(sim_data_file,
    # If the user did not supply experimental details, extract them.
    if("logical" %in% class(existing_exp_details)){ 
       Deets <- tryCatch(
-         extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+         extractExpDetails(sim_data_file = sim_data_file, 
                            exp_details = "all", 
                            annotate_output = FALSE), 
          error = function(x) "missing file")
@@ -394,11 +394,11 @@ draft_DDI_section <- function(sim_data_file,
                       "TRUE" = existing_exp_details, 
                       "FALSE" = deannotateDetails(existing_exp_details))
       
-      Deets <- as.data.frame(Deets) %>% filter(unique(ct_dataframe$File) %in% File)
+      Deets <- as.data.frame(Deets) %>% filter(File == sim_data_file)
       
-      if(nrow(Deets == 0)){
+      if(nrow(Deets) == 0){
          Deets <- tryCatch(
-            extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+            extractExpDetails(sim_data_file = sim_data_file, 
                               exp_details = "all", 
                               annotate_output = FALSE), 
             error = function(x) "missing file")
@@ -414,11 +414,21 @@ draft_DDI_section <- function(sim_data_file,
          as.data.frame()
    }
    
-   Deets <- Deets %>% filter(File == sim_data_file)
+   Deets <- Deets %>% filter(File == sim_data_file) 
    
    if(is.na(Deets$Inhibitor1)){
       stop("You do not appear to have an effector present in this simulation. This function is for drafting DDI methods and results only.", 
            call. = FALSE)
+   }
+   
+   # If they used a custom dosing regimen for either the substrate or the
+   # inhibitor, this simply will not work. It's just not set up to extract data
+   # in the right places.
+   if(any(c(Deets$Regimen_sub, Deets$Regimen_inhib, 
+            Deets$Regimen_inhib2) == "custom dosing")){
+      stop("At least one of the compounds in this simulation had a custom dosing regimen, and the draft_DDI_section function is just not set up to find the correct data in that scenario. We cannot generate draft methods and results sections here.", 
+           call. = FALSE)
+      
    }
    
    

@@ -18,80 +18,82 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 MyEffector <- determine_myeffector(Deets = Deets, 
                                    prettify_compound_names = prettify_compound_names)
+MySubstrate <- ifelse(prettify_compound_names, 
+                      prettify_compound_name(Deets$Substrate), Deets$Substrate)
 
-# SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
-#                                                           "Multiple Dose"), 
-#                        "multiple", "single")
-# SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
-#                                                               "Multiple Dose"), 
-#                          "multiple", "single")
-# 
-# SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
-#                       
-#                       switch(Deets$DoseRoute_sub, 
-#                              "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY", 
-#                              "Oral" = "oral", 
-#                              "IV" = "IV"), 
-#                       
-#                       ifelse(SingMult_sub == "single", "dose", "doses")
-# )
-# 
-# DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
-#                        "12" = "BID", 
-#                        "24" = "QD", 
-#                        "8" = "three times per day", 
-#                        "6" = "four times per day", 
-#                        "48" = "every other day", 
-#                        "NA" = "single dose")
-# DoseFreq_sub <- ifelse(is.null(DoseFreq_sub), 
-#                        # paste("Q", DoseFreq_sub, "H"), 
-#                        "CUSTOM DOSING - FILL IN MANUALLY",
-#                        DoseFreq_sub)
-# 
-# SDMD_inhib_txt <- paste(ifelse(SingMult_inhib == "single", "a single", "multiple"), 
-#                         
-#                         switch(Deets$DoseRoute_inhib, 
-#                                "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY", 
-#                                "Oral" = "oral", 
-#                                "IV" = "IV"), 
-#                         
-#                         ifelse(SingMult_inhib == "single", "dose", "doses")
-# )
-# 
-# DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
-#                          "12" = "BID", 
-#                          "24" = "QD", 
-#                          "8" = "three times per day", 
-#                          "6" = "four times per day", 
-#                          "48" = "every other day", 
-#                          "NA" = "single dose")
-# DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib), 
-#                          # paste("Q", DoseFreq_inhib, "H"), 
-#                          "CUSTOM DOSING - FILL IN MANUALLY",
-#                          DoseFreq_inhib)
-# 
-# NumDaysInhib <- suppressWarnings(
-#    Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
-# NumDaysInhib <- ifelse(is.na(NumDaysInhib), "CUSTOM DOSING - FILL IN MANUALLY", 
-#                        NumDaysInhib)
-# 
+SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
+                                                "Multiple Dose"),
+                       "multiple", "single")
+SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
+                                                    "Multiple Dose"),
+                         "multiple", "single")
+
+SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
+                      
+                      switch(Deets$DoseRoute_sub,
+                             "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY",
+                             "Oral" = "oral",
+                             "IV" = "IV"),
+                      
+                      ifelse(SingMult_sub == "single", "dose", "doses")
+)
+
+DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
+                       "12" = "BID",
+                       "24" = "QD",
+                       "8" = "three times per day",
+                       "6" = "four times per day",
+                       "48" = "every other day",
+                       "NA" = "single dose")
+DoseFreq_sub <- ifelse(is.null(DoseFreq_sub),
+                       # paste("Q", DoseFreq_sub, "H"),
+                       "CUSTOM DOSING - FILL IN MANUALLY",
+                       DoseFreq_sub)
+
+SDMD_inhib_txt <- paste(ifelse(SingMult_inhib == "single", "a single", "multiple"),
+                        
+                        switch(Deets$DoseRoute_inhib,
+                               "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY",
+                               "Oral" = "oral",
+                               "IV" = "IV"),
+                        
+                        ifelse(SingMult_inhib == "single", "dose", "doses")
+)
+
+DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
+                         "12" = "BID",
+                         "24" = "QD",
+                         "8" = "three times per day",
+                         "6" = "four times per day",
+                         "48" = "every other day",
+                         "NA" = "single dose")
+DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib),
+                         # paste("Q", DoseFreq_inhib, "H"),
+                         "CUSTOM DOSING - FILL IN MANUALLY",
+                         DoseFreq_inhib)
+
+NumDaysInhib <- suppressWarnings(
+   Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
+NumDaysInhib <- ifelse(is.na(NumDaysInhib), "CUSTOM DOSING - FILL IN MANUALLY",
+                       NumDaysInhib)
+
 numbers <- c("one", "two", "three", "four", "five", "six", "seven", "eight",
              "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
              "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty")
 
 Numbers <- str_to_title(numbers)
-# 
-# if(SingMult_inhib == "multiple"){
-#    DoseDay <- "last"
-# } else {
-#    
-#    DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-#    LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
-#    DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9), 
-#                                      "th", 
-#                                      ifelse(LastDig == 1, "st", 
-#                                             ifelse(LastDig == 2, "nd", "rd"))))
-# }
+
+if(SingMult_inhib == "multiple"){
+   DoseDay <- "last"
+} else {
+   
+   DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+   LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
+   DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9),
+                                     "th",
+                                     ifelse(LastDig == 1, "st",
+                                            ifelse(LastDig == 2, "nd", "rd"))))
+}
 
 DefaultCompound_txt <- ifelse(default_cmpd_file, 
                               paste("The default compound library file for",
@@ -126,20 +128,40 @@ PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file),
                          includeCV = includeCV,
                          includeConfInt = includeConfInt,
                          includeTrialMeans = includeTrialMeans,
-                         prettify_compound_names = prettify_compound_names) 
+                         include_dose_num = TRUE,
+                         prettify_compound_names = prettify_compound_names, 
+                         adjust_conc_units = "ng/mL") 
 
-suppressMessages(
-   PKToPull <- data.frame(
-      PrettifiedNames = sub(as.character(prettify_compound_names["effector"]),
-                            "effector", names(PKsum$Table))) %>%
-      left_join(AllPKParameters, multiple = "all") %>%
-      filter(complete.cases(PKparameter) &
-                !str_detect(PKparameter, "PercExtrap")) %>% pull(PKparameter) %>%
-      unique()
-)
+pretfun <- function(X){
+   if(prettify_compound_names){
+      X <- sub(as.character(prettify_compound_names["effector"]),
+               "effector", X)
+   } else {
+      X <- sub(MyEffector, "effector", X)
+   }
+   return(X)
+}
 
-Dose1included <- any(str_detect(PKToPull, "_dose1"))
-LastDoseincluded <- any(str_detect(PKToPull, "_last"))
+ugfun <- function(X){
+   if(prettify_compound_names){
+      X <- sub("effector", as.character(prettify_compound_names["effector"]),
+               X)
+   } else {
+      X <- sub("effector", MyEffector, X)
+   }
+   return(X)
+}
+
+PKToPull_DF <- data.frame(
+   PrettifiedNames = sapply(names(PKsum$Table), pretfun)) %>%
+   left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames),
+             multiple = "all", by = "PrettifiedNames") %>%
+   filter(complete.cases(PKparameter) &
+             !str_detect(PKparameter, "PercExtrap")) %>% 
+   unique()
+
+Dose1included <- any(str_detect(PKToPull_DF$PKparameter, "_dose1"))
+LastDoseincluded <- any(str_detect(PKToPull_DF$PKparameter, "_last"))
 Observedincluded <- any(complete.cases(observed_PK))
 
 FigText2 <- ifelse(Dose1included & LastDoseincluded, 
@@ -166,35 +188,49 @@ MyPKResults <- PKsum$Table
 # If not all the pk parameters were able to be pulled, then we get trouble when
 # formatting the table in the next chunk. Adding columns with blank values if
 # they're not there.
-if(ncol(MyPKResults) != 7){
-   PKWeShouldHave <- switch(SingMult_sub, 
-                            "multiple" = c("AUCtau_last","Cmax_last", 
-                                           "AUCtau_last_withInhib", "Cmax_last_withInhib", 
-                                           "AUCtau_ratio_last", "Cmax_ratio_last"),
-                            "single" = c("AUCinf_dose1", "Cmax_dose1", 
-                                         "AUCinf_dose1_withInhib", "Cmax_dose1_withInhib", 
-                                         "AUCinf_ratio_dose1", "Cmax_ratio_dose1"))
-   MissingPK <- setdiff(PKWeShouldHave, PKToPull)
+PKWeShouldHave <- switch(SingMult_sub, 
+                         "multiple" = c("AUCtau_last",
+                                        "Cmax_last", 
+                                        "AUCtau_last_withInhib",
+                                        "Cmax_last_withInhib", 
+                                        "AUCtau_ratio_last",
+                                        "Cmax_ratio_last"),
+                         "single" = switch(as.character(any(str_detect(PKToPull_DF$PKparameter, "AUCt_dose1"))), 
+                                           "TRUE" = c("AUCinf_dose1",
+                                                      "AUCt_dose1",
+                                                      "Cmax_dose1", 
+                                                      "AUCinf_dose1_withInhib",
+                                                      "AUCt_dose1_withInhib",
+                                                      "Cmax_dose1_withInhib", 
+                                                      "AUCinf_ratio_dose1",
+                                                      "AUCt_ratio_dose1",
+                                                      "Cmax_ratio_dose1"),
+                                           "FALSE" = c("AUCinf_dose1",
+                                                       "Cmax_dose1", 
+                                                       "AUCinf_dose1_withInhib",
+                                                       "Cmax_dose1_withInhib", 
+                                                       "AUCinf_ratio_dose1",
+                                                       "Cmax_ratio_dose1")))
+MissingPK <- setdiff(PKWeShouldHave, PKToPull_DF$PKparameter)
+
+if(length(MissingPK) > 0){
    ToAdd <- as.data.frame(matrix(NA, nrow = nrow(MyPKResults), ncol = length(MissingPK)))
    names(ToAdd) <- MissingPK
    
    MyPKResults <- bind_cols(MyPKResults, ToAdd)
-   
-   # Getting the right order of columns
-   TempNames <- data.frame(
-      PrettifiedNames1 = names(MyPKResults), 
-      PrettifiedNames = sub(as.character(prettify_compound_names["effector"]),
-                            "effector", names(MyPKResults))) %>%
-      left_join(AllPKParameters, multiple = "all", by = join_by(PrettifiedNames)) %>%
-      mutate(PKparameter = ifelse(is.na(PKparameter), PrettifiedNames, PKparameter)) %>% 
-      select(PrettifiedNames1, PKparameter) %>% unique() %>% 
-      mutate(PKparameter = factor(PKparameter, levels = c("Statistic", 
-                                                          PKWeShouldHave))) %>% 
-      arrange(PKparameter)
-   
-   MyPKResults <- MyPKResults[, TempNames$PrettifiedNames1]
-   
 }
+
+# Getting the right order of columns
+TempNames <- PKToPull_DF %>% 
+   bind_rows(data.frame(PrettifiedNames = "Statistic", 
+                        PKparameter = "Statistic")) %>% 
+   mutate(PKparameter = factor(PKparameter, levels = c("Statistic", 
+                                                       PKWeShouldHave))) %>% 
+   arrange(PKparameter)
+
+MyPKResults <- MyPKResults[, ugfun(TempNames$PrettifiedNames)]
+
+
 
 ```
 
@@ -215,28 +251,98 @@ FT <- flextable::flextable(
    flextable::set_table_properties(layout = "fixed") %>%
    flextable::width(width = 1) %>%
    
-   flextable::delete_part(part = "header") %>%
-   flextable::add_header(V1 = "",
-                         V2 = ifelse(is.logical(prettify_compound_names) && 
-                                        prettify_compound_names == TRUE,
-                                     str_to_title(MySubstrate), MySubstrate),
-                         V3 = ifelse(is.logical(prettify_compound_names) && 
-                                        prettify_compound_names == TRUE,
-                                     str_to_title(MySubstrate), MySubstrate),
-                         V4 = paste(ifelse(is.logical(prettify_compound_names) && 
-                                              prettify_compound_names == TRUE,
-                                           str_to_title(MySubstrate), MySubstrate), "plus", 
-                                    ifelse(is.logical(prettify_compound_names) && 
-                                              prettify_compound_names == TRUE,
-                                           str_to_title(MyEffector), MyEffector)),
-                         V5 = paste(ifelse(is.logical(prettify_compound_names) && 
-                                              prettify_compound_names == TRUE,
-                                           str_to_title(MySubstrate), MySubstrate), "plus", 
-                                    ifelse(is.logical(prettify_compound_names) && 
-                                              prettify_compound_names == TRUE,
-                                           str_to_title(MyEffector), MyEffector)),
-                         V6 = "GMR",
-                         V7 = "GMR") %>%
+   flextable::delete_part(part = "header")
+
+if(ncol(MyPKResults) == 7){
+   
+   FT <- FT %>%
+      flextable::add_header(
+         # Statistic
+         V1 = "",
+         
+         # AUCinf_dose1 or AUCtau_last
+         V2 = ifelse(is.logical(prettify_compound_names) && 
+                        prettify_compound_names == TRUE,
+                     str_to_title(MySubstrate), MySubstrate),
+         
+         # Cmax
+         V3 = ifelse(is.logical(prettify_compound_names) && 
+                        prettify_compound_names == TRUE,
+                     str_to_title(MySubstrate), MySubstrate),
+         
+         # AUC with effector
+         V4 = paste(ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MySubstrate), MySubstrate), "plus", 
+                    ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MyEffector), MyEffector)),
+         
+         # Cmax with effector
+         V5 = paste(ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MySubstrate), MySubstrate), "plus", 
+                    ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MyEffector), MyEffector)),
+         
+         # GMRs
+         V6 = "GMR",
+         V7 = "GMR") 
+   
+} else if(ncol(MyPKResults) == 10){
+   FT <- FT %>% 
+      flextable::add_header(
+         # Statistic
+         V1 = "",
+         
+         # AUCinf_dose1
+         V2 = ifelse(is.logical(prettify_compound_names) && 
+                        prettify_compound_names == TRUE,
+                     str_to_title(MySubstrate), MySubstrate),
+         
+         # AUCt_dose1
+         V3 = ifelse(is.logical(prettify_compound_names) && 
+                        prettify_compound_names == TRUE,
+                     str_to_title(MySubstrate), MySubstrate),
+         
+         # Cmax_dose1
+         V4 = ifelse(is.logical(prettify_compound_names) && 
+                        prettify_compound_names == TRUE,
+                     str_to_title(MySubstrate), MySubstrate),
+         
+         # AUCinf_dose1_withInhib
+         V5 = paste(ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MySubstrate), MySubstrate), "plus", 
+                    ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MyEffector), MyEffector)),
+         
+         # AUCt_dose1_withInhib
+         V6 = paste(ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MySubstrate), MySubstrate), "plus", 
+                    ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MyEffector), MyEffector)),
+         
+         # Cmax_dose1_withInhib
+         V7 = paste(ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MySubstrate), MySubstrate), "plus", 
+                    ifelse(is.logical(prettify_compound_names) && 
+                              prettify_compound_names == TRUE,
+                           str_to_title(MyEffector), MyEffector)),
+         
+         # GMRs
+         V8 = "GMR",
+         V9 = "GMR", 
+         V10 = "GMR") 
+   
+}
+
+FT <- FT %>%
    flextable::merge_h(part = "header") %>%
    flextable::add_body(values = TableSubHead) %>%
    
