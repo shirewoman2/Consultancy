@@ -7,14 +7,13 @@
 #'   extractConcTime
 #' @param time_range the user-supplied input for time_range
 #' @param t0 the user-supplied input for t0
-#' @param x_axis_interval x axis interval to use
 #' @param compoundToExtract user-requested compound to extract/graph
 #' @param pad_x_axis user-supplied value for padding x axis
 #' @param EnzPlot T or F for whether this is an enzyme-abundance plut
 #'
 #' @return values to use for ct_plots
 #' 
-ct_x_axis <- function(Data, time_range, t0, x_axis_interval,
+ct_x_axis <- function(Data, time_range, t0, 
                       compoundToExtract, pad_x_axis, EnzPlot){
     
     if(all(complete.cases(time_range)) && class(time_range) == "numeric" &

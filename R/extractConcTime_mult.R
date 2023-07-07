@@ -145,7 +145,7 @@
 #'   not converted because there are simply too many units to manage easily, so
 #'   please check that the units are what you expected in the end.
 #' @param time_units_to_use time units to use so that all data will be
-#'   comparable. Options are "hours" (default) or "minutes".
+#'   comparable. Options are "hours" (default), "days", or "minutes".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate" (default), "individual",
 #'   or "both". Aggregated data are not calculated here but are pulled from the

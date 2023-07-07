@@ -1338,7 +1338,6 @@ call. = FALSE)
    XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
                        time_range = time_range, 
                        t0 = "simulation start",
-                       x_axis_interval = x_axis_interval,
                        pad_x_axis = pad_x_axis,
                        compoundToExtract = AnchorCompound, 
                        EnzPlot = EnzPlot)
