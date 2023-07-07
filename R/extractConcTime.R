@@ -624,7 +624,7 @@ extractConcTime <- function(sim_data_file,
    }
    
    SimTimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
-   SimTimeUnits <- ifelse(str_detect(SimTimeUnits, "Time.* \\(h\\)"), "hours", "minutes")
+   SimTimeUnits <- ifelse(str_detect(SimTimeUnits, "Time.* \\(h\\)"), "hours", "days")
    
    # Extracting each compound ----------------------------------------------
    

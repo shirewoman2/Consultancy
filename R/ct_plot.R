@@ -688,9 +688,12 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # Setting up the x axis using the subfunction ct_x_axis
-   XStuff <- ct_x_axis(Data = Data, time_range = time_range, t0 = t0,
-                       x_axis_interval = x_axis_interval, pad_x_axis = pad_x_axis,
-                       compoundToExtract = compoundToExtract, EnzPlot = EnzPlot)
+   XStuff <- ct_x_axis(Data = Data, 
+                       time_range = time_range, 
+                       t0 = t0,
+                       pad_x_axis = pad_x_axis,
+                       compoundToExtract = compoundToExtract, 
+                       EnzPlot = EnzPlot)
    xlab <- XStuff$xlab
    Data <- XStuff$Data # Is this necessary??
    time_range <- XStuff$time_range
@@ -1110,6 +1113,7 @@ ct_plot <- function(ct_dataframe = NA,
       # geom_ribbon. Hacking around that.
       A <- A +
          scale_x_time(time_range = time_range_relative, 
+                      time_units = TimeUnits,
                       pad_x_axis = pad_x_axis)
       
       if(EnzPlot){
@@ -1136,6 +1140,7 @@ ct_plot <- function(ct_dataframe = NA,
                                          0, y_axis_limits_lin[1]),
                                   YmaxRnd)) +
          scale_x_time(time_range = time_range_relative, 
+                      time_units = TimeUnits,
                       pad_x_axis = pad_x_axis)
       
       if(EnzPlot){
