@@ -33,7 +33,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                    prettify_compound_names,
                                    Deets,
                                    MeanType,
-                                   tissue){
+                                   tissue, 
+                                   return_all_objects = FALSE){
    
    
    # Main info ------------------------------------------------------------
@@ -141,12 +142,17 @@ make_table_annotations <- function(MyPKResults, # only PK table
       NumDaysInhib <- ifelse(is.na(NumDaysInhib), "CUSTOM DOSING - FILL IN MANUALLY",
                              NumDaysInhib)
       
-      DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-      LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
-      DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9), 
+      DoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+      LastDig <- as.numeric(str_sub(DoseDay_sub, start = -1, end = -1))
+      DoseDay_sub <- paste0(DoseDay_sub, ifelse(LastDig %in% c(0, 4:9), 
                                         "th", 
                                         ifelse(LastDig == 1, "st", 
                                                ifelse(LastDig == 2, "nd", "rd"))))
+      
+   } else {
+      SingMult_inhib <- NA
+      DoseFreq_inhib <- NA
+      NumDaysInhib <- NA
       
    }
    
@@ -175,7 +181,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                          MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
                                              "inhibitor 1 metabolite") == FALSE,
                       paste(" with or without", Deets$Dose_inhib, "mg",
-                             MyEffector, DoseFreq_inhib),
+                            MyEffector, DoseFreq_inhib),
                       "")
    
    Heading <- paste0("*Table XXX. Simulated ",
@@ -210,8 +216,24 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    # Return -----------------------------------------------------------
    
-   return(list("TableHeading" = Heading, 
-               "TableCaption" = Caption))
+   if(return_all_objects){
+      return(list("TableHeading" = Heading, 
+                  "TableCaption" = Caption, 
+                  "MyCompoundID" = MyCompoundID,
+                  "MyCompound" = MyCompound,
+                  "MyDosedCompound" = MyDosedCompound, 
+                  "MyDoseRoute" = MyDoseRoute, 
+                  "MyDose" = MyDose, 
+                  "DoseFreq_sub" = DoseFreq_sub,
+                  "Dose1included" = Dose1included, 
+                  "LastDoseincluded" = LastDoseincluded, 
+                  "Observedincluded" = Observedincluded, 
+                  "MyEffector" = MyEffector, # note that this is only 1 effector
+                  "DoseDay_sub" = DoseDay_sub))
+   } else {
+      return(list("TableHeading" = Heading, 
+                  "TableCaption" = Caption))
+   }
    
 }
 
