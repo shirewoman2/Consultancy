@@ -176,6 +176,43 @@
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
 #'   file into multiple tables. This only applies to the Word output.
+#' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
+#'   simulated-to-observed ratios. Anything that is above those values or below
+#'   the inverse of those values will be highlighted. To figure out what cells
+#'   to highlight, this looks for a column titled "Statistic" or "Stat", then
+#'   looks for what row contains "S/O" or "simulated (something something)
+#'   observed" (as in, we'll use some wildcards to try to match your specific
+#'   text). Next, it looks for any values in that same row that are above those
+#'   cutoffs. This overrides anything else you specified for highlighting. The
+#'   default is NA, for \emph{not} highlighting based on S/O value. Acceptable
+#'   input for, say, highlighting values that are > 125\% or < 80\% of the
+#'   observed and also, with a second color, values that are > 150\% or < 66\%
+#'   would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you would like the
+#'   middle range of values to be highlighted, include 1 in your cutoffs. For
+#'   example, say you would like everything that's < 80\% or > 125\% to be
+#'   highlighted red but you'd like the "good" values from 80\% to 125\% to be
+#'   green, you can get that by specifying
+#'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+#'   c("green", "red")}. This only applies when you save the table as a Word file.
+#' @param highlight_so_colors optionally specify a set of colors to use in the
+#'   Word file output for highlighting S/O values outside the limits you
+#'   specified with \code{highlight_so_cutoffs}. Options: \describe{
+#'
+#'   \item{"yellow to red" (default)}{A range of light yellow to light orange to
+#'   light red. If you have included 1 in your cutoffs and you leave
+#'   \code{highlight_so_colors} with the default setting, values in the middle,
+#'   "good" range of S/O values will be highlighted a light green.}
+#'
+#'   \item{"traffic"}{light green, yellow, and red designed to display values
+#'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
+#'   values. This color scheme was borrowed from Lisa, so if you've seen her
+#'   slides, these will look familiar.}
+#'
+#'   \item{a character vector of specific colors}{Any R-acceptable colors, will
+#'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
+#'   If you do specify your own bespoke colors, you'll need to make sure that
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.} 
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
@@ -202,6 +239,8 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 extract_forest_data = FALSE, 
                                 existing_exp_details = NA,
                                 save_table = NA, 
+                                highlight_so_cutoffs = NA, 
+                                highlight_so_colors = "yellow to red", 
                                 single_table = TRUE,
                                 fontsize = 11){
    
@@ -452,7 +491,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
          pivot_longer(cols = -c("Statistic", "File", "Dose_sub", "Dose_inhib", 
                                 "Substrate", "Inhibitor1"), 
-                      names_to = "Parameter", 
+                      names_to = "PKparameter", 
                       values_to = "Value") %>% 
          mutate(Statistic = StatNames[Statistic],
                 # If they used " / " in their specification of PK parameters and
@@ -468,19 +507,23 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                 # currently work with forest_plot, but that's OK. I'd want to
                 # KNOW what they're trying to do before adapting the forest_plot
                 # function to accommodate anything unusual.
-                Parameter = case_when(
-                   Parameter == "AUCinf_dose1_withInhib / AUCinf_dose1" ~ "AUCinf_ratio_dose1", 
-                   Parameter == "AUCt_dose1_withInhib / AUCt_dose1" ~ "AUCt_ratio_dose1", 
-                   Parameter == "AUCtau_last_withInhib / AUCtau_last" ~ "AUCtau_ratio_last", 
-                   Parameter == "Cmax_dose1_withInhib / Cmax_dose1" ~ "Cmax_ratio_dose1", 
-                   Parameter == "Cmax_last_withInhib / Cmax_last" ~ "Cmax_ratio_last", 
+                PKparameter = case_when(
+                   PKparameter == "AUCinf_dose1_withInhib / AUCinf_dose1" ~ "AUCinf_ratio_dose1", 
+                   PKparameter == "AUCt_dose1_withInhib / AUCt_dose1" ~ "AUCt_ratio_dose1", 
+                   PKparameter == "AUCtau_last_withInhib / AUCtau_last" ~ "AUCtau_ratio_last", 
+                   PKparameter == "Cmax_dose1_withInhib / Cmax_dose1" ~ "Cmax_ratio_dose1", 
+                   PKparameter == "Cmax_last_withInhib / Cmax_last" ~ "Cmax_ratio_last",
+                   PKparameter == "AUCinf_dose1 Ratio" ~ "AUCinf_ratio_dose1",
+                   PKparameter == "Cmax_dose1 Ratio" ~ "Cmax_ratio_dose1",
+                   PKparameter == "AUCinf Ratio" ~ "AUCinf_ratio",
+                   PKparameter == "Cmax Ratio" ~ "Cmax_ratio",
                    # Not even sure you can *get* these next few, but including just in case
-                   Parameter == "Cmax_withInhib / Cmax" ~ "Cmax_ratio", 
-                   Parameter == "AUCinf_withInhib / AUCinf" ~ "AUCinf_ratio", 
-                   Parameter == "AUCt_withInhib / AUCt" ~ "AUCt_ratio", 
-                   Parameter == "AUCtau_withInhib / AUCtau" ~ "AUCtau_ratio", 
-                   TRUE ~ Parameter)) %>% 
-         filter(str_detect(Parameter, "AUCinf_[^Perc]|AUCt|Cmax")) %>% 
+                   PKparameter == "Cmax_withInhib / Cmax" ~ "Cmax_ratio", 
+                   PKparameter == "AUCinf_withInhib / AUCinf" ~ "AUCinf_ratio", 
+                   PKparameter == "AUCt_withInhib / AUCt" ~ "AUCt_ratio", 
+                   PKparameter == "AUCtau_withInhib / AUCtau" ~ "AUCtau_ratio", 
+                   TRUE ~ PKparameter)) %>% 
+         filter(str_detect(PKparameter, "AUCinf_[^P]|AUCt|Cmax")) %>% 
          pivot_wider(names_from = Statistic, values_from = Value)
       
       if(nrow(FD) == 0){
