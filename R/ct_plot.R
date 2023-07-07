@@ -842,7 +842,7 @@ ct_plot <- function(ct_dataframe = NA,
    Ylim_data <- switch(figure_type, 
                        "trial means" = bind_rows(sim_data_trial, obs_data), 
                        "percentiles" = bind_rows(sim_data_trial, sim_data_mean, obs_data), 
-                       "Freddy" = bind_rows(sim_data_trial, sim_data_mean, obs_data),
+                       "freddy" = bind_rows(sim_data_trial, sim_data_mean, obs_data),
                        "percentile ribbon" = bind_rows(sim_data_trial, sim_data_mean, obs_data), 
                        "means only" = sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
    )
