@@ -1027,11 +1027,11 @@ ct_plot <- function(ct_dataframe = NA,
          
          ## linear plot
          A <- A +
-            geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) +
+            geom_line(lwd = ifelse(is.na(line_width), 0.5, line_width)) +
             geom_line(data = sim_data_mean %>%
                          filter(Trial %in% c("per5", "per95")),
                       alpha = AlphaToUse, 
-                      lwd = ifelse(is.na(line_width), 1, line_width))
+                      lwd = ifelse(is.na(line_width), 0.5, line_width))
          
       } else {
          # This is when there is no effector present or the graph is of the
@@ -1040,10 +1040,10 @@ ct_plot <- function(ct_dataframe = NA,
          ## linear plot
          A <- A +
             geom_line(alpha = AlphaToUse, 
-                      lwd = ifelse(is.na(line_width), 1, line_width)) +
+                      lwd = ifelse(is.na(line_width), 0.5, line_width)) +
             geom_line(data = sim_data_mean %>%
                          filter(Trial == MyMeanType),
-                      lwd = ifelse(is.na(line_width), 1, line_width)) +
+                      lwd = ifelse(is.na(line_width), 0.5, line_width)) +
             geom_line(data = sim_data_mean %>%
                          filter(Trial %in% c("per5", "per95")),
                       linetype = line_type[2],
