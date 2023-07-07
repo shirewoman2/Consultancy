@@ -49,6 +49,11 @@ if(FromCalcPKRatios){
    MyPKResults$Tissue <- tissue
    compoundsToExtract <- compoundToExtract
    MyPKResults$CompoundID <- compoundToExtract
+   PKpulled <- expand.grid(PKparameter = PKToPull, 
+                           File = MyPKResults$File, 
+                           Tissue = unique(MyPKResults$Tissue), 
+                           CompoundID = compoundToExtract)
+   
 } 
 
 if(single_table){
@@ -165,6 +170,10 @@ if(single_table == FALSE){
                         "File" = paste0(
                            "PK for the file '", 
                            unique(MyPKResults[[i]]$File), "'"))
+      
+      Heading <- ifelse(FromCalcPKRatios, 
+                        sub("for the file", "for the file pair", Heading), 
+                        Heading)
       
       TableSection <- knitr::knit_child(
          system.file("rmarkdown/templates/pktablesection/skeleton/skeleton.Rmd",

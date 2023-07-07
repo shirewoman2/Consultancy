@@ -659,6 +659,7 @@ call. = FALSE)
 call. = FALSE)
             }
             
+            PKpulled[[i]][[j]] <- PKparameters
             
             if(checkDataSource){
                OutQC[[i]][[j]][[k]] <- temp$QC
