@@ -81,6 +81,14 @@
 #' @param tissue the tissue to use for extracting PK data and for graphing.
 #'   Options are "plasma" (default) or "blood".
 #' @param fontsize the font size to use in the table. Default is 11.
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #' @param mean_type_PK What kind of means and CVs do you want listed in the
 #'   output PK summary table? Options are "arithmetic" or "geometric" (default).
 #' @param mean_type_graph graph "arithmetic" (default) or "geometric" means or
@@ -297,10 +305,11 @@ draft_DDI_section <- function(sim_data_file,
                               concatVariability = FALSE,
                               tissue = "plasma",
                               fontsize = 11,
+                              include_dose_num = NA,
                               mean_type_PK = "geometric",
                               mean_type_graph = "arithmetic",
                               clin_study_name = "XXX",
-                              prettify_compound_names = NA,
+                              prettify_compound_names = TRUE,
                               victim_sim = FALSE, 
                               default_cmpd_file = TRUE,
                               

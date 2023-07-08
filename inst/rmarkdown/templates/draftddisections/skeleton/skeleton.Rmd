@@ -83,17 +83,12 @@ numbers <- c("one", "two", "three", "four", "five", "six", "seven", "eight",
 
 Numbers <- str_to_title(numbers)
 
-if(SingMult_inhib == "multiple"){
-   DoseDay <- "last"
-} else {
-   
-   DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-   LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
-   DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9),
-                                     "th",
-                                     ifelse(LastDig == 1, "st",
-                                            ifelse(LastDig == 2, "nd", "rd"))))
-}
+DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
+DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9),
+                                  "th",
+                                  ifelse(LastDig == 1, "st",
+                                         ifelse(LastDig == 2, "nd", "rd"))))
 
 DefaultCompound_txt <- ifelse(default_cmpd_file, 
                               paste("The default compound library file for",
@@ -104,7 +99,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # METHODS
 
-#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
+#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compounds_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
 `r ifelse(Deets$NumTrials %in% 1:20, Numbers[Deets$NumTrials], Deets$NumTrials)` virtual trials of `r Deets$NumSubjTrial` `r tidyPop(Deets$Population)$Population` (`r Deets$PercFemale*100`% female) aged `r Deets$Age_min` to `r Deets$Age_max` years receiving `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyEffector, MySubstrate)` model is provided in Appendix A – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
 
@@ -112,7 +107,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # RESULTS
 
-### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(str_to_title(MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
+### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compounds_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
 Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "mMultiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyEffector` are depicted in Figure XXX. `r ifelse(include_enz_plot, paste0("Simulated hepatic ", enzyme, " levels in the absence and during administration of ", MyEffector, " are indicated in Figure XXX. "), "")`The simulated geometric mean `r ifelse(SingMult_sub == "single", "AUC~inf~", "AUC~tau~")` and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyEffector` are listed in Table XXX.
 
@@ -128,7 +123,7 @@ PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file),
                          includeCV = includeCV,
                          includeConfInt = includeConfInt,
                          includeTrialMeans = includeTrialMeans,
-                         include_dose_num = TRUE,
+                         include_dose_num = TRUE, # will adjust later
                          prettify_compound_names = prettify_compound_names, 
                          adjust_conc_units = "ng/mL") 
 
@@ -230,6 +225,25 @@ TempNames <- PKToPull_DF %>%
 
 MyPKResults <- MyPKResults[, ugfun(TempNames$PrettifiedNames)]
 
+if(is.na(include_dose_num)){
+   # Dropping dose number depending on input. First, checking whether they have
+   # both dose 1 and last-dose data.
+   DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
+                  "last" = any(str_detect(names(MyPKResults), "Last dose")))
+   include_dose_num <- all(DoseCheck)
+}
+
+# include_dose_num now should be either T or F no matter what, so checking
+# that.
+if(is.logical(include_dose_num) == FALSE){
+   warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+           call. = FALSE)
+   include_dose_num <- TRUE
+}
+
+if(include_dose_num == FALSE){
+   names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+}
 
 
 ```
@@ -363,7 +377,7 @@ FT <- FT %>%
    flextable::hline_bottom(border = officer::fp_border(width = 0.5)) %>%
    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "header") %>%
    flextable::hline_top(border = officer::fp_border(width = 0.5), part = "body",
-                        j = 2:7) %>%
+                        j = 2:ncol(MyPKResults)) %>%
    flextable::vline_left(part = "all", border = officer::fp_border(width = 0.5)) %>%
    flextable::hline(border = officer::fp_border(width = 0.5),
                     part = "body", i = 1)
