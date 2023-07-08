@@ -22,6 +22,7 @@ pksummary_mult(
   concatVariability = FALSE,
   variability_format = "to",
   adjust_conc_units = NA,
+  include_dose_num = NA,
   prettify_columns = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
@@ -179,6 +180,15 @@ listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
 "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
 automatically converted using the molecular weight of whatever you set for
 \code{compoundToExtract}.}
+
+\item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
+the dose number when listing the PK parameter. By default, the parameter
+will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+you have PK data for both the first dose and the last dose. Also by
+default, if you have data only for the first dose or only for the last
+dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+the default behavior and get exactly what you want.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
