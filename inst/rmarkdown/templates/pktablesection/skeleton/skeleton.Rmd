@@ -6,11 +6,15 @@ Deets <- existing_exp_details %>% filter(File == unique(MyPKResults[[i]]$File))
 MyEffector <- determine_myeffector(Deets = Deets, 
                                    prettify_compound_names = TRUE)
 
+PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
+PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
+   left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
+   pull(PKparameter) %>% unique()
+
 MyAnnotations <- make_table_annotations(
    MyPKResults = MyPKResults[[i]], 
    MyFile = unique(MyPKResults[[i]]$File), 
-   # For PKpulled, i = File, j = CompoundID, k = Tissue
-   PKpulled = PKpulled[[unique(MyPKResults[[i]]$File)]][[unique(MyPKResults[[i]]$CompoundID)]][[unique(MyPKResults[[i]]$Tissue)]],  
+   PKpulled = PKpulled_i,  
    MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
    prettify_compound_names = TRUE,
    Deets = Deets, 

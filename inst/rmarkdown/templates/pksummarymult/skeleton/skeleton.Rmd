@@ -134,9 +134,13 @@ if(single_table){
 if(single_table == FALSE){
    
    MyPKResults <- 
-      split(MyPKResults, f = list(MyPKResults$Tissue, 
+      split(MyPKResults, f = list(MyPKResults$File, 
                                   MyPKResults$CompoundID, 
-                                  MyPKResults$File))
+                                  MyPKResults$Tissue))
+   PKpulled <- 
+      split(PKpulled, f = list(PKpulled$File, 
+                               PKpulled$CompoundID, 
+                               PKpulled$Tissue))
    
    MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
    
