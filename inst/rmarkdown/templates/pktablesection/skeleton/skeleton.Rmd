@@ -6,11 +6,15 @@ Deets <- existing_exp_details %>% filter(File == unique(MyPKResults[[i]]$File))
 MyEffector <- determine_myeffector(Deets = Deets, 
                                    prettify_compound_names = TRUE)
 
+PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
+PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
+   left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
+   pull(PKparameter) %>% unique()
+
 MyAnnotations <- make_table_annotations(
    MyPKResults = MyPKResults[[i]], 
    MyFile = unique(MyPKResults[[i]]$File), 
-   # For PKpulled, i = File, j = CompoundID, k = Tissue
-   PKpulled = PKpulled[[unique(MyPKResults[[i]]$File)]][[unique(MyPKResults[[i]]$CompoundID)]][[unique(MyPKResults[[i]]$Tissue)]],  
+   PKpulled = PKpulled_i,  
    MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
    prettify_compound_names = TRUE,
    Deets = Deets, 
@@ -22,6 +26,26 @@ MyAnnotations <- make_table_annotations(
 `r MyAnnotations[["TableHeading"]]`
 
 ```{r}
+
+if(is.na(include_dose_num)){
+   # Dropping dose number depending on input. First, checking whether they have
+   # both dose 1 and last-dose data.
+   DoseCheck <- c("first" = any(str_detect(names(MyPKResults[[i]]), "Dose 1")), 
+                  "last" = any(str_detect(names(MyPKResults[[i]]), "Last dose")))
+   include_dose_num <- all(DoseCheck)
+}
+
+# include_dose_num now should be either T or F no matter what, so checking
+# that.
+if(is.logical(include_dose_num) == FALSE){
+   warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+           call. = FALSE)
+   include_dose_num <- TRUE
+}
+
+if(include_dose_num == FALSE){
+   names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose ", "", names(MyPKResults[[i]]))
+}
 
 TempTable <- MyPKResults[[i]] %>%
    select(-any_of(c("CompoundID", "Tissue", "File"))) %>%

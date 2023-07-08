@@ -49,6 +49,11 @@ if(FromCalcPKRatios){
    MyPKResults$Tissue <- tissue
    compoundsToExtract <- compoundToExtract
    MyPKResults$CompoundID <- compoundToExtract
+   PKpulled <- expand.grid(PKparameter = PKToPull, 
+                           File = MyPKResults$File, 
+                           Tissue = unique(MyPKResults$Tissue), 
+                           CompoundID = compoundToExtract)
+   
 } 
 
 if(single_table){
@@ -115,6 +120,26 @@ if(single_table){
          select(!CompoundID)
    }
    
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(names(MyPKResults[[i]]), "Dose 1")), 
+                     "last" = any(str_detect(names(MyPKResults[[i]]), "Last dose")))
+      include_dose_num <- all(DoseCheck)
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+      include_dose_num <- TRUE
+   }
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose ", "", names(MyPKResults[[i]]))
+   }
+   
    formatTable_Simcyp(MyPKResults,
                       shading_column = File, 
                       fontsize = fontsize,
@@ -129,9 +154,13 @@ if(single_table){
 if(single_table == FALSE){
    
    MyPKResults <- 
-      split(MyPKResults, f = list(MyPKResults$Tissue, 
+      split(MyPKResults, f = list(MyPKResults$File, 
                                   MyPKResults$CompoundID, 
-                                  MyPKResults$File))
+                                  MyPKResults$Tissue))
+   PKpulled <- 
+      split(PKpulled, f = list(PKpulled$File, 
+                               PKpulled$CompoundID, 
+                               PKpulled$Tissue))
    
    MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
    
@@ -165,6 +194,10 @@ if(single_table == FALSE){
                         "File" = paste0(
                            "PK for the file '", 
                            unique(MyPKResults[[i]]$File), "'"))
+      
+      Heading <- ifelse(FromCalcPKRatios, 
+                        sub("for the file", "for the file pair", Heading), 
+                        Heading)
       
       TableSection <- knitr::knit_child(
          system.file("rmarkdown/templates/pktablesection/skeleton/skeleton.Rmd",

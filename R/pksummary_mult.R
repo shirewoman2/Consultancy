@@ -178,6 +178,14 @@
 #'   the variability is concatenated. Options are "to" (default) to get output
 #'   like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
 #'   output like "X - Y".
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -296,6 +304,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            concatVariability = FALSE, 
                            variability_format = "to",
                            adjust_conc_units = NA, 
+                           include_dose_num = NA,
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
                            checkDataSource = TRUE, 
@@ -624,6 +633,7 @@ call. = FALSE)
                   includeTrialMeans = includeTrialMeans,
                   concatVariability = concatVariability,
                   variability_format = variability_format,
+                  include_dose_num = TRUE, # will remove later if needed but we need this for some of the table heading info
                   adjust_conc_units = adjust_conc_units,
                   prettify_columns = prettify_columns, 
                   extract_forest_data = extract_forest_data,
@@ -659,6 +669,12 @@ call. = FALSE)
 call. = FALSE)
             }
             
+            PKpulled[[i]][[j]][[k]] <-
+               data.frame(File = i, 
+                          CompoundID = j, 
+                          Tissue = k, 
+                          PKpulled = setdiff(names(MyPKResults[[i]][[j]][[k]]), 
+                                             c("Statistic", "File")))
             
             if(checkDataSource){
                OutQC[[i]][[j]][[k]] <- temp$QC
@@ -672,11 +688,13 @@ call. = FALSE)
          }
          
          MyPKResults[[i]][[j]] <- bind_rows(MyPKResults[[i]][[j]])
+         PKpulled[[i]][[j]] <- bind_rows(PKpulled[[i]][[j]])
          OutQC[[i]][[j]] <- bind_rows(OutQC[[i]][[j]])
          FD[[i]][[j]] <- bind_rows(FD[[i]][[j]])
       }
       
       MyPKResults[[i]] <- bind_rows(MyPKResults[[i]])
+      PKpulled[[i]] <- bind_rows(PKpulled[[i]])
       OutQC[[i]] <- bind_rows(OutQC[[i]])
       FD[[i]] <- bind_rows(FD[[i]])
       
@@ -691,6 +709,7 @@ call. = FALSE)
    }
    
    MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = length) > 0])
+   PKpulled <- bind_rows(PKpulled[sapply(PKpulled, FUN = length) > 0])
    OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = length) > 0])
    
    if(extract_forest_data){
