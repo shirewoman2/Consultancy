@@ -78,6 +78,18 @@
 #'   figure; the default values will be used for the vertical one. If you
 #'   request Word output, only the vertical plot will be saved in Word format;
 #'   the horizontal plot will be saved as a png file.}}
+#' @param time_range_LL time range to use for the lower-left graph; defaults to
+#'   "first dose" but any option acceptable for \code{time_range} for the
+#'   function \code{\link{ct_plot}} will also work.
+#' @param time_range_LR time range to use for the lower-right graph; defaults to
+#'   "first dose" but any option acceptable for \code{time_range} for the
+#'   function \code{\link{ct_plot}} will also work.
+#' @param graph_title_U graph title for the upper, full-time-range graph;
+#'   defaults to "Full time range"
+#' @param graph_title_LL graph title for the lower left graph; defaults to
+#'   "First dose"
+#' @param graph_title_LR graph title for the lower right graph; defaults to
+#'   "Last dose"
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. If you include the legend but then some graphs do have a legend and
@@ -121,6 +133,11 @@ ct_plot3 <- function(ct_dataframe,
                      figure_type = "means only",
                      mean_type = "arithmetic",
                      linear_or_log = "semi-log", 
+                     time_range_LL = "first dose",
+                     time_range_LR = "last dose",
+                     graph_title_U = "Full time range",
+                     graph_title_LL = "First dose", 
+                     graph_title_LR = "Last dose",
                      legend_position = "none",
                      qc_graph = FALSE,
                      existing_exp_details = NA,
@@ -197,30 +214,30 @@ ct_plot3 <- function(ct_dataframe,
                            qc_graph = FALSE,
                            ..., # comment this for development
                            save_graph = NA) +
-         ggtitle("Full time range")
+         ggtitle(graph_title_U)
       
       # Suppressing messages and warnings after the 1st set.
       suppressWarnings(suppressMessages(
          B <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                              time_range = "first dose",
+                              time_range = time_range_LL,
                               figure_type = figure_type,
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log,
                               qc_graph = FALSE,
                               ..., # comment this for development
                               save_graph = NA) +
-            ggtitle("First dose")))
+            ggtitle(graph_title_LL)))
       
       suppressWarnings(suppressMessages(
          C <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                              time_range = "last dose", 
+                              time_range = time_range_LR, 
                               figure_type = figure_type,
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log,
                               qc_graph = FALSE,
                               ..., # comment this for development
                               save_graph = NA) +
-            ggtitle("Last dose")))
+            ggtitle(graph_title_LR)))
       
       Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
                                nrow = 2, common.legend = TRUE, legend = "bottom")
@@ -241,7 +258,7 @@ ct_plot3 <- function(ct_dataframe,
                    save_graph = NA, 
                    qc_graph = FALSE,
                    ...) + # comment this for development
-         ggtitle("Full time range")
+         ggtitle(graph_title_U)
       
       suppressWarnings(suppressMessages(
          B <- ct_plot(ct_dataframe = ct_dataframe,
@@ -250,10 +267,10 @@ ct_plot3 <- function(ct_dataframe,
                       linear_or_log = linear_or_log,
                       legend_position = "none",
                       ..., # comment this for development
-                      time_range = "first dose", 
+                      time_range = time_range_LL, 
                       qc_graph = FALSE,
                       save_graph = NA) +
-            ggtitle("First dose")))
+            ggtitle(graph_title_LL)))
       
       suppressWarnings(suppressMessages(
          C <- ct_plot(ct_dataframe = ct_dataframe,
@@ -263,9 +280,9 @@ ct_plot3 <- function(ct_dataframe,
                       legend_position = "none",
                       qc_graph = FALSE,
                       ..., # comment this for development
-                      time_range = "last dose", 
+                      time_range = time_range_LR, 
                       save_graph = NA) +
-            ggtitle("Last dose")))
+            ggtitle(graph_title_LR)))
       
       if(legend_position == "none"){
          Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
