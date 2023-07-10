@@ -44,6 +44,15 @@ make_table_annotations <- function(MyPKResults, # only PK table
                    "FALSE" = deannotateDetails(Deets)) %>% 
       filter(File == MyFile)
    
+   # There are some situations where we want to just pass through generic info,
+   # so that's why I'm returning things here rather than stopping.
+   if(nrow(Deets) == 0){
+      return(list(Heading = "*Table XXX. Simulated PK data*",
+                  Caption = paste0("*Source simulated data: ",
+                                   basename(MyFile), "*")))
+      
+   }
+   
    ## General info on MyCompoundID ----------------------------------------
    Dose1included <- any(str_detect(PKpulled, "_dose1"))
    LastDoseincluded <- any(str_detect(PKpulled, "_last"))
@@ -111,7 +120,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                           "NA" = "single dose")
    DoseFreq_sub <- ifelse(is.null(DoseFreq_sub), 
                           # paste("Q", DoseFreq_sub, "H"), 
-                          "CUSTOM DOSING - FILL IN MANUALLY",
+                          "CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY",
                           DoseFreq_sub)
    
    
@@ -134,7 +143,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                "NA" = "single dose")
       DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib), 
                                # paste("Q", DoseFreq_inhib, "H"), 
-                               "CUSTOM DOSING - FILL IN MANUALLY",
+                               "CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY",
                                DoseFreq_inhib)
       
       NumDaysInhib <- suppressWarnings(
@@ -145,9 +154,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
       DoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
       LastDig <- as.numeric(str_sub(DoseDay_sub, start = -1, end = -1))
       DoseDay_sub <- paste0(DoseDay_sub, ifelse(LastDig %in% c(0, 4:9), 
-                                        "th", 
-                                        ifelse(LastDig == 1, "st", 
-                                               ifelse(LastDig == 2, "nd", "rd"))))
+                                                "th", 
+                                                ifelse(LastDig == 1, "st", 
+                                                       ifelse(LastDig == 2, "nd", "rd"))))
       
    } else {
       SingMult_inhib <- NA
@@ -190,7 +199,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                      MyCompound, " after ", FigText2, " of ",
                      paste(Deets[[MyDose]], "mg", MyDosedCompound), 
                      FigText3, " in ", 
-                     tidyPop(Deets$Population)$PopulationSimpleLower, ".*")
+                     tidyPop(Deets$Population)$Population, ".*")
    
    
    # Caption ---------------------------------------------------------------
