@@ -99,7 +99,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # METHODS
 
-#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compounds_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
+#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compound_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
 `r ifelse(Deets$NumTrials %in% 1:20, Numbers[Deets$NumTrials], Deets$NumTrials)` virtual trials of `r Deets$NumSubjTrial` `r tidyPop(Deets$Population)$Population` (`r Deets$PercFemale*100`% female) aged `r Deets$Age_min` to `r Deets$Age_max` years receiving `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyEffector, MySubstrate)` model is provided in Appendix A – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
 
@@ -107,7 +107,7 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # RESULTS
 
-### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compounds_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
+### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compound_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyEffector)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
 Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyEffector` and `r ifelse(SingMult_sub == "mMultiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyEffector` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyEffector` are depicted in Figure XXX. `r ifelse(include_enz_plot, paste0("Simulated hepatic ", enzyme, " levels in the absence and during administration of ", MyEffector, " are indicated in Figure XXX. "), "")`The simulated geometric mean `r ifelse(SingMult_sub == "single", "AUC~inf~", "AUC~tau~")` and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyEffector` are listed in Table XXX.
 
@@ -147,8 +147,16 @@ ugfun <- function(X){
    return(X)
 }
 
-PKToPull_DF <- data.frame(
-   PrettifiedNames = sapply(names(PKsum$Table), pretfun)) %>%
+if(prettify_compound_names){
+   PKToPull_DF <- data.frame(
+      PrettifiedNames = sub(MyEffector, "effector", names(PKsum$Table)))
+} else {
+   
+   PKToPull_DF <- data.frame(
+      PrettifiedNames = sapply(names(PKsum$Table), pretfun)) 
+}
+
+PKToPull_DF <- PKToPull_DF %>% 
    left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames),
              multiple = "all", by = "PrettifiedNames") %>%
    filter(complete.cases(PKparameter) &
