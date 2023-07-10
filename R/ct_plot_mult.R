@@ -550,7 +550,8 @@ ct_plot_mult <- function(ct_dataframe,
                  y_axis_label = y_axis_label,
                  legend_position = legend_position,
                  legend_label = legend_label, 
-                 graph_labels = FALSE, 
+                 graph_labels = ifelse(graph_arrangement == "separate files", 
+                                       graph_labels, FALSE), 
                  graph_title = Title_i,
                  ..., # comment this when developing
                  graph_title_size = graph_title_size)
