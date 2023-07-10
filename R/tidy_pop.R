@@ -3,14 +3,19 @@
 #' \code{tidyPop}
 #'
 #' @param input_pop input population to tidy up; this has been designed to work
-#'   with \code{\link{extractExpDetails}} with the output item named "Population"
+#'   with \code{\link{extractExpDetails}} with the output item named
+#'   "Population"
+#' @param dialect Use "British" (default) or "American" spelling when there's a
+#'   difference. Currently only affects "paediatric" vs. "pediatric"
+#'   populations.
 #'
-#' @return a tidied set of names for a simulated population 
+#' @return a tidied set of names for a simulated population
 #' @export
 #'
 #' @examples
 #' # No examples yet
-tidyPop <- function(input_pop){
+tidyPop <- function(input_pop, 
+                    dialect = "British"){
     
     PopNiceNames <- c(
         "Healthy Volunteers" = "healthy volunteers",
@@ -19,21 +24,43 @@ tidyPop <- function(input_pop){
         # Healthy Volunteers"
         "Chinese" = "Chinese subjects",
         "Chinese Healthy Volunteers" = "Chinese healthy volunteers",
-        "CirrhosisCP - A" = "cirrhosis patients with Child-Pugh score of A",
-        "CirrhosisCP - B" = "cirrhosis patients with Child-Pugh score of B",
-        "CirrhosisCP - C" = "cirrhosis patients with Child-Pugh score of C",
-        "Geriatric NEC" = "normal elderly control subjects",
+        "Chinese Geriatric" = "Chinese geriatric healthy volunteers",
+        "Chinese Paediatric" = ifelse(dialect == "British", 
+                                      "Chinese paediatric healthy volunteers",
+                                      "Chinese pediatric healthy volunteers"),
+        "CirrhosisCP - A" = "cirrhosis patients with a Child-Pugh score of A",
+        "CirrhosisCP - B" = "cirrhosis patients with a Child-Pugh score of B",
+        "CirrhosisCP - C" = "cirrhosis patients with a Child-Pugh score of C",
+        "Cirrhosis CP-A" = "cirrhosis patients with a Child-Pugh score of A",
+        "Cirrhosis CP-B" = "cirrhosis patients with a Child-Pugh score of B",
+        "Cirrhosis CP-C" = "cirrhosis patients with a Child-Pugh score of C",
+        "Geriatric NEC" = "geriatric Northern European Caucasian healthy volunteers",
         "Japanese" = "Japanese healthy volunteers",
-        "Japanese Paediatric" = "Japanese pediatric subjects",
+        "Japanese Paediatric" = "Japanese pediatric healthy volunteers",
         "Morbidly Obese" = "morbidly obese subjects",
-        "NEurCaucasian" = "Northern European Caucasian subjects",
+        "NEurCaucasian" = "Northern European Caucasian healthy volunteers",
+        "North American African American" = "North American African-American healthy volunteers",
+        "North American Asian" = "North American Asian-American healthy volunteers",
+        "North American Hispanic_Latino" = "North American Latino healthy volunteers",
+        "North American White" = "North American Caucasian healthy volunteers",
         "Obese" = "obese subjects",
-        "Paediatric" = "pediatric subjects",
-        "Pregnancy" = "pregnant subjects",
+        "Paediatric" = ifelse(dialect == "British", 
+                              "paediatric healthy volunteers",
+                              "pediatric healthy volunteers"),
+        "Paed-Cancer-Haem" = ifelse(dialect == "British", 
+                              "paediatric blood cancer patients",
+                              "pediatric blood cancer patients"),
+        "Paed-Cancer-Solid" = ifelse(dialect == "British", 
+                                    "paediatric cancer patients",
+                                    "pediatric cancer patients"),
+        "Pregnancy" = "pregnant healthy volunteers",
         "Preterm" = "preterm infants",
         "PsoriasisDermal" = "dermal psoriasis patients",
         "RenalGFR_30-60" = "patients with renal GFR of 30-60",
+        "Renal Impaired_Mild" = "patients with mild renal impairment",
+        "Renal Impaired_Moderate" = "patients with moderate renal impairment",
         "RenalGFR_less_30" = "patients with renal GFR less than 30",
+        "Renal Impaired_Severe" = "patients with severe renal impairment",
         "Rheumatoid Arthritis" = "rheumatoid arthritis patients")
     
     
@@ -44,7 +71,7 @@ tidyPop <- function(input_pop){
                                str_trim(
                                    str_extract(
                                        Population,
-                                       "patients|(morbidly obese|obese|pediatric|pregnant)? subjects")),
+                                       "patients|(morbidly obese|obese|p(a)?ediatric|pregnant)? subjects")),
                                "healthy volunteers")
     PopulationSimple <- ifelse(Population == "preterm infants",
                                "preterm infants", PopulationSimple)

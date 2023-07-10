@@ -4,11 +4,16 @@
 \alias{tidyPop}
 \title{Tidying Simcyp simulator population names for reports, etc.}
 \usage{
-tidyPop(input_pop)
+tidyPop(input_pop, dialect = "British")
 }
 \arguments{
 \item{input_pop}{input population to tidy up; this has been designed to work
-with \code{\link{extractExpDetails}} with the output item named "Population"}
+with \code{\link{extractExpDetails}} with the output item named
+"Population"}
+
+\item{dialect}{Use "British" (default) or "American" spelling when there's a
+difference. Currently only affects "paediatric" vs. "pediatric"
+populations.}
 }
 \value{
 a tidied set of names for a simulated population
