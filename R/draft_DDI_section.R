@@ -423,7 +423,7 @@ draft_DDI_section <- function(sim_data_file,
          as.data.frame()
    }
    
-   Deets <- Deets %>% filter(File == sim_data_file) 
+   Deets <- as.data.frame(Deets) %>% filter(File == sim_data_file) 
    
    if(is.na(Deets$Inhibitor1)){
       stop("You do not appear to have an effector present in this simulation. This function is for drafting DDI methods and results only.", 
