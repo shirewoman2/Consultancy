@@ -199,7 +199,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                      MyCompound, " after ", FigText2, " of ",
                      paste(Deets[[MyDose]], "mg", MyDosedCompound), 
                      FigText3, " in ", 
-                     tidyPop(Deets$Population)$PopulationSimpleLower, ".*")
+                     tidyPop(Deets$Population)$Population, ".*")
    
    
    # Caption ---------------------------------------------------------------
