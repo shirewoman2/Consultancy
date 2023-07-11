@@ -1,11 +1,11 @@
 #' Graph of simulated vs. observed PK
 #'
 #' \code{so_graph} makes a graph of simulated vs. observed PK, including
-#' indicating where the predicted parameters fell within 1.5- or 2-fold of the
-#' observed. When the PK parameter is a geometric mean ratio of the parameter in
-#' the presence of an effector / the parameter in the absence of the effector,
-#' the 1.5-fold line will be replaced with a curve as described in Guest Galetin
-#' 2011 Drug Metab Dispos.
+#' indicating where the predicted parameters fell within X fold of the observed.
+#' When the PK parameter is a geometric mean ratio of the parameter in the
+#' presence of an effector / the parameter in the absence of the effector, the
+#' lines will be replaced with a curve as described in [Guest Galetin 2011 Drug
+#' Metab Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/).
 #'
 #' @param PKtable a table in the same format as output from the function
 #'   \code{\link{pksummary_mult}}
@@ -13,9 +13,12 @@
 #'   \code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
 #'   parameter included in \code{PKtable}. To see the full set of possible
 #'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
-#' @param boundary_indicator how to indicate the boundaries of 1.5-fold and
-#'   2-fold comparisons of simulated / observed. Options are "lines" (default)
-#'   "fill" to get a shaded area, or "none" to remove any indicators of those
+#' @param boundaries Numerical boundaries to show on the graph. Defaults to the
+#'   1.5- and 2-fold boundaries. Indicate boundaries you want like this:
+#'   \code{boundaries = c(1.25, 1.5, 2)}
+#' @param boundary_indicator how to indicate the boundaries for simulated /
+#'   observed. Options are "lines" (default), "fill" to get a shaded area, or
+#'   "none" to remove any indicators of those
 #'   boundaries. \strong{NOTE: There is a known bug within RStudio that causes
 #'   filled semi-transparent areas like you get with the "fill" option to NOT
 #'   get graphed for certain versions of RStudio.} To get around this, within
@@ -144,6 +147,7 @@
 
 so_graph <- function(PKtable, 
                      PKparameters = NA, 
+                     boundaries = c(1.5, 2),
                      boundary_indicator = "lines",
                      boundary_color_set = "red black", 
                      boundary_line_width = 0.7, 
@@ -179,7 +183,10 @@ so_graph <- function(PKtable,
    boundary_indicator <- ifelse(str_detect(tolower(boundary_indicator), "fil"), 
                                 "fill", "lines")
    
-   # Checking color input
+   boundaries <- sort(unique(c(1, as.numeric(boundaries), 1/as.numeric(boundaries))))
+   boundaries <- boundaries[boundaries >= 1]
+   
+   # Checking color input # FIXME
    if(length(boundary_color_set) == 1 && 
       boundary_color_set %in% c("red black", "red green", "muted red green", 
                                 "black")){
@@ -196,6 +203,9 @@ so_graph <- function(PKtable,
    # than 2 colors, replicate the colors and then just take the 1st two items.
    BoundColors <- sapply(BoundColors, FUN = function(x) str_split_1(x, " "))
    BoundColors <- rep(BoundColors, 2)[1:2]
+   
+   # FIXME - placeholder only
+   BoundColors <- rainbow(length(boundaries))
    
    # Check whether they supplied valid color values
    if(is.matrix(col2rgb(BoundColors)) == FALSE){
@@ -236,55 +246,78 @@ so_graph <- function(PKtable,
    point_size_user <- point_size
    
    # Setting up data for boundaries on graphs
-   Fold1.5_upper <- data.frame(Observed = 10^seq(-3, 6, length.out = 100)) %>% 
-      mutate(LimitName = "upper", 
-             Simulated = Observed * 1.5)
-   Fold1.5_lower <- Fold1.5_upper %>% 
-      mutate(LimitName = "lower", 
-             Simulated = Observed / 1.5)
+   Boundaries_num <- boundaries
+   Boundaries <- list()
+   Guest <- list()
+   Poly <- list()
+   PolyGuest <- list()
    
-   Fold2_upper <- data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
-      mutate(LimitName = "upper", 
-             Simulated = Observed * 2)
-   Fold2_lower <- Fold2_upper %>% 
-      mutate(LimitName = "lower", 
-             Simulated = Observed / 2)
-   Unity <- data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
-      mutate(Simulated = Observed)
+   for(j in Boundaries_num){
+      
+      # Regular boundaries
+      Boundaries[[as.character(j)]] <-
+         list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+                 mutate(LimitName = "upper", 
+                        Simulated = Observed * j), 
+              "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+                 mutate(LimitName = "upper", 
+                        Simulated = Observed / j))
+      
+      # Guest boundaries
+      Guest[[as.character(j)]] <- 
+         list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
+                 mutate(Limit = ifelse(Observed >= 1, 
+                                       (1 + 2*(Observed - 1))/Observed,
+                                       (1 + 2*((1/Observed) - 1))/(1/Observed)),
+                        LimitName = "upper",
+                        Simulated = Observed * Limit),
+              "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
+                 mutate(Limit = ifelse(Observed >= 1, 
+                                       (1 + 2*(Observed - 1))/Observed,
+                                       (1 + 2*((1/Observed) - 1))/(1/Observed)),
+                        LimitName = "lower", 
+                        Simulated = Observed / Limit))
+      
+   }
    
-   # Guest curves
-   GuestCurve_upper <- data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
-      mutate(Limit = ifelse(Observed >= 1, 
-                            (1 + 2*(Observed - 1))/Observed,
-                            (1 + 2*((1/Observed) - 1))/(1/Observed)),
-             LimitName = "upper",
-             Simulated = Observed * Limit)
+   # Setting up polygons -- This needs to be done a bit differently b/c we'll
+   # need to combine each boundary w/the one before it except for the smallest
+   # boundary.
+   for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
+      Poly[[as.character(Boundaries_num[j_index]) ]] <- 
+         Boundaries[[as.character(Boundaries_num[j_index])]][["Upper"]] %>%
+         arrange(Observed) %>%
+         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]][["Upper"]] %>%
+                      arrange(desc(Observed))) %>%
+         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]][["Lower"]] %>%
+                      arrange(Observed)) %>%
+         bind_rows(Boundaries[[as.character(Boundaries_num[j_index])]][["Lower"]] %>% 
+                      arrange(desc(Observed)))
+      
+      PolyGuest[[as.character(Boundaries_num[j_index]) ]] <- 
+         Guest[[as.character(Boundaries_num[j_index])]][["Upper"]] %>%
+         arrange(Observed) %>%
+         bind_rows(Guest[[as.character(Boundaries_num[j_index-1])]][["Upper"]] %>%
+                      arrange(desc(Observed))) %>%
+         bind_rows(Guest[[as.character(Boundaries_num[j_index-1])]][["Lower"]] %>%
+                      arrange(Observed)) %>%
+         bind_rows(Guest[[as.character(Boundaries_num[j_index])]][["Lower"]] %>% 
+                      arrange(desc(Observed)))
+   }
    
-   GuestCurve_lower <- GuestCurve_upper %>% 
-      mutate(LimitName = "lower", 
-             Simulated = Observed / Limit)
+   Poly[[as.character(Boundaries_num[1])]] <- 
+      Boundaries[[as.character(Boundaries_num[1])]][["Upper"]] %>% 
+      arrange(Observed) %>% 
+      bind_rows(Boundaries[[as.character(Boundaries_num[1])]][["Lower"]] %>% 
+                   arrange(desc(Observed)))
    
+   PolyGuest[[as.character(Boundaries_num[1]) ]] <- 
+      Guest[[as.character(Boundaries_num[1])]][["Upper"]] %>% 
+      arrange(Observed) %>% 
+      bind_rows(Guest[[as.character(Boundaries_num[1])]][["Lower"]] %>% 
+                   arrange(desc(Observed)))
    
-   # Setting up polygons
-   Poly2x <- Fold2_upper %>% arrange(Observed) %>% 
-      bind_rows(Fold1.5_upper %>% arrange(desc(Observed))) %>% 
-      bind_rows(Fold1.5_lower %>% arrange(Observed)) %>% 
-      bind_rows(Fold2_lower %>% arrange(desc(Observed)))
-   
-   Poly1.5x <- Fold1.5_upper %>% arrange(Observed) %>% 
-      bind_rows(Fold1.5_lower %>% arrange(desc(Observed)))
-   
-   Poly2xGuest <- Fold2_upper %>% arrange(Observed) %>% 
-      bind_rows(GuestCurve_upper %>% arrange(desc(Observed))) %>% 
-      bind_rows(GuestCurve_lower %>% arrange(Observed)) %>% 
-      bind_rows(Fold2_lower %>% arrange(desc(Observed)))
-   
-   Poly1.5xGuest <- GuestCurve_upper %>% arrange(Observed) %>% 
-      bind_rows(GuestCurve_lower %>% arrange(desc(Observed)))
-   
-   # Arranging input data
-   
-   # First, de-prettifying column names
+   # Arranging and tidying input data. First, de-prettifying column names.
    PKnames <- data.frame(OrigName = names(PKtable)) %>% 
       mutate(PrettifiedNames = sub("with .* ", "with effector ", OrigName)) %>% 
       left_join(AllPKParameters_pretty,  by = join_by(PrettifiedNames)) %>% 
@@ -448,40 +481,38 @@ so_graph <- function(PKtable,
          round_up(max(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)))
       
       G[[i]] <- ggplot()  +
-         geom_line(data = Unity, aes(x = Observed, y = Simulated),
+         geom_line(data = Boundaries[["1"]][["Upper"]],
+                   aes(x = Observed, y = Simulated),
                    linetype = "dashed", color = "black",
                    linewidth = boundary_line_width)
       
       if(str_detect(boundary_indicator, "line")){
-         G[[i]] <- G[[i]] + 
-            geom_line(data = Fold2_upper, aes(x = Observed, y = Simulated),
-                      color = BoundColors[1], linewidth = boundary_line_width) +
-            geom_line(data = Fold2_lower, aes(x = Observed, y = Simulated),
-                      color = BoundColors[1], linewidth = boundary_line_width) +
-            geom_line(data = switch(as.character(str_detect(i, "ratio")), 
-                                    "TRUE" = GuestCurve_upper,
-                                    "FALSE" = Fold1.5_upper),
-                      aes(x = Observed, y = Simulated),
-                      color = BoundColors[2], linewidth = boundary_line_width) +
-            geom_line(data = switch(as.character(str_detect(i, "ratio")), 
-                                    "TRUE" = GuestCurve_lower, 
-                                    "FALSE" = Fold1.5_lower),
-                      aes(x = Observed, y = Simulated),
-                      color = BoundColors[2], linewidth = boundary_line_width) 
+         for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
+            G[[i]] <- G[[i]] + 
+               geom_line(data = switch(as.character(str_detect(i, "ratio")), 
+                                       "TRUE" = Guest[[j_index]][["Upper"]], 
+                                       "FALSE" = Boundaries[[j_index]][["Upper"]]),
+                         aes(x = Observed, y = Simulated),
+                         color = BoundColors[j_index], 
+                         linewidth = boundary_line_width) +
+               geom_line(data = switch(as.character(str_detect(i, "ratio")), 
+                                       "TRUE" = Guest[[j_index]][["Lower"]], 
+                                       "FALSE" = Boundaries[[j_index]][["Lower"]]),
+                         aes(x = Observed, y = Simulated),
+                         color = BoundColors[j_index], 
+                         linewidth = boundary_line_width)
+         }
       }
       
       if(str_detect(boundary_indicator, "fill")){
-         G[[i]] <- G[[i]] +
-            geom_polygon(data = switch(as.character(str_detect(i, "ratio")), 
-                                       "TRUE" = Poly2xGuest, 
-                                       "FALSE" = Poly2x),
-                         aes(x = Observed, y = Simulated),
-                         fill = BoundColors[1], alpha = 0.2) +
-            geom_polygon(data = switch(as.character(str_detect(i, "ratio")),
-                                       "TRUE" = Poly1.5xGuest,
-                                       "FALSE" = Poly1.5x), 
-                         aes(x = Observed, y = Simulated),
-                         fill = BoundColors[2], alpha = 0.2)
+         for(j_index in 1:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!! Also note that it starts at 1 for polygons!
+            G[[i]] <- G[[i]] +
+               geom_polygon(data = switch(as.character(str_detect(i, "ratio")), 
+                                          "TRUE" = PolyGuest[[j_index]], 
+                                          "FALSE" = Poly[[j_index]]),
+                            aes(x = Observed, y = Simulated), inherit.aes = F,
+                            fill = BoundColors[j_index], alpha = 0.2) 
+         }
       }
       
       MaxMinRatio <- range(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)

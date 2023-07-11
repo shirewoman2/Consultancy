@@ -7,6 +7,7 @@
 so_graph(
   PKtable,
   PKparameters = NA,
+  boundaries = c(1.5, 2),
   boundary_indicator = "lines",
   boundary_color_set = "red black",
   boundary_line_width = 0.7,
@@ -34,9 +35,13 @@ so_graph(
 parameter included in \code{PKtable}. To see the full set of possible
 parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 
-\item{boundary_indicator}{how to indicate the boundaries of 1.5-fold and
-2-fold comparisons of simulated / observed. Options are "lines" (default)
-"fill" to get a shaded area, or "none" to remove any indicators of those
+\item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
+1.5- and 2-fold boundaries. Indicate boundaries you want like this:
+\code{boundaries = c(1.25, 1.5, 2)}}
+
+\item{boundary_indicator}{how to indicate the boundaries for simulated /
+observed. Options are "lines" (default), "fill" to get a shaded area, or
+"none" to remove any indicators of those
 boundaries. \strong{NOTE: There is a known bug within RStudio that causes
 filled semi-transparent areas like you get with the "fill" option to NOT
 get graphed for certain versions of RStudio.} To get around this, within
@@ -173,11 +178,11 @@ a set of arranged ggplot2 graphs
 }
 \description{
 \code{so_graph} makes a graph of simulated vs. observed PK, including
-indicating where the predicted parameters fell within 1.5- or 2-fold of the
-observed. When the PK parameter is a geometric mean ratio of the parameter in
-the presence of an effector / the parameter in the absence of the effector,
-the 1.5-fold line will be replaced with a curve as described in Guest Galetin
-2011 Drug Metab Dispos.
+indicating where the predicted parameters fell within X fold of the observed.
+When the PK parameter is a geometric mean ratio of the parameter in the
+presence of an effector / the parameter in the absence of the effector, the
+lines will be replaced with a curve as described in [Guest Galetin 2011 Drug
+Metab Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/).
 }
 \examples{
 # Assuming you have run pksummary_mult on a few files with observed data
