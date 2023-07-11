@@ -290,7 +290,9 @@ so_graph <- function(PKtable,
       left_join(AllPKParameters_pretty,  by = join_by(PrettifiedNames)) %>% 
       mutate(NewName = ifelse(is.na(PKparameter), OrigName, PKparameter))
    
-   SO <- PKtable
+   SO <- PKtable %>% 
+      mutate(Statistic = ifelse(str_detect(Statistic, "^Simulated"),
+                                "Simulated", Statistic))
    names(SO) <- PKnames$NewName
    
    suppressWarnings(
