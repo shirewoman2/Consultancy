@@ -8,8 +8,8 @@ getReferences(main_directory = ".", save_output = NA)
 }
 \arguments{
 \item{main_directory}{the main directory from which you want a list of all
-the files, in quotes; default assumes the main directory is your current working
-directory}
+the files, in quotes; default assumes the main directory is your current
+working directory}
 
 \item{save_output}{optionally save the output by supplying a file name in
 quotes here, e.g., "My references.csv". If you leave off ".csv", it will
@@ -21,8 +21,9 @@ A data.frame containing columns "Directory" for the directory and,
   Optionally save output to a csv file.
 }
 \description{
-Get a list of all the pdf, Word, and Excel files in, e.g., the "DataRec"
-folder and subfolder. Can be useful for the bibliography section of a report.
+Get a list of all the pdf, Word, Excel, PowerPoint, Simcyp Simulator
+workspace, XML, jpg, png, or text files in, e.g., the "DataRec" folder and
+subfolder. Can be useful for the bibliography section of a report.
 }
 \examples{
 getReferences()
