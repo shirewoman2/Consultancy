@@ -2,10 +2,6 @@
 #'
 #' \code{so_graph} makes a graph of simulated vs. observed PK, including
 #' indicating where the predicted parameters fell within X fold of the observed.
-#' When the PK parameter is a geometric mean ratio of the parameter in the
-#' presence of an effector / the parameter in the absence of the effector, the
-#' lines will be replaced with a curve as described in [Guest Galetin 2011 Drug
-#' Metab Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/).
 #'
 #' @param PKtable a table in the same format as output from the function
 #'   \code{\link{pksummary_mult}}
@@ -16,6 +12,17 @@
 #' @param boundaries Numerical boundaries to show on the graph. Defaults to the
 #'   1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 #'   \code{boundaries = c(1.25, 1.5, 2)}
+#' @param boundaries_Guest Numerical boundaries to show on the graph when the PK
+#'   parameter is a mean ratio of the parameter in the presence of an effector /
+#'   the parameter in the absence of the effector. The default boundary for
+#'   Guest curves is 2, which will show both the Guest curve and a straight
+#'   line. Honestly, we recommend leaving this as 2 for clarity of the graph.
+#'   For these PK parameters, if there are any values listed for
+#'   \code{boundaries_Guest}, the lines will be replaced with a curve as
+#'   described in [Guest Galetin 2011 Drug Metab
+#'   Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/). If you'd rather show
+#'   straight lines for these parameters instead of Guest curves, set this to
+#'   NA.
 #' @param boundary_indicator how to indicate the boundaries for simulated /
 #'   observed. Options are "lines" (default), "fill" to get a shaded area, or
 #'   "none" to remove any indicators of those
@@ -35,7 +42,7 @@
 #'   shading. You also can set this to any set of colors you'd like, e.g.,
 #'   \code{boundary_color_set = c("yellow", "blue")}. The number of colors
 #'   should equal the number of boundaries that you've indicated or the graph
-#'   won't be easily interpretable. 
+#'   won't be easily interpretable.
 #' @param boundary_line_width line width; default is 0.7. This only applies when
 #'   \code{boundary_indicator} is set to "lines", the default.
 #' @param point_color_column (optional) the column in \code{PKtable} that should
@@ -150,6 +157,7 @@
 so_graph <- function(PKtable, 
                      PKparameters = NA, 
                      boundaries = c(1.5, 2),
+                     boundaries_Guest = 2,
                      boundary_indicator = "lines",
                      boundary_color_set = "red black", 
                      boundary_line_width = 0.7, 
@@ -198,8 +206,18 @@ so_graph <- function(PKtable,
               call. = FALSE)
    }
    
-   boundaries <- sort(unique(c(1, as.numeric(boundaries), 1/as.numeric(boundaries))))
+   boundaries <- sort(unique(c(1, as.numeric(boundaries[boundaries > 0]),
+                               1/as.numeric(boundaries[boundaries > 0]))))
    boundaries <- boundaries[boundaries >= 1]
+   
+   if(any(boundaries_Guest < 1)){
+      warning("At least one of the numbers you specified for boundaries_Guest was < 1. We will automatically use both the original number you specified and its inverse for boundaries_Guest.", 
+              call. = FALSE)
+   }
+   
+   boundaries_Guest <- sort(unique(c(1, as.numeric(boundaries_Guest[boundaries_Guest > 0]),
+                                     1/as.numeric(boundaries_Guest[boundaries_Guest > 0]))))
+   boundaries_Guest <- boundaries_Guest[boundaries_Guest >= 1]
    
    # Checking color input
    boundary_color_set <- tolower(boundary_color_set)
@@ -326,11 +344,118 @@ so_graph <- function(PKtable,
                                                       length(boundaries)-1))
          )
       
+      if(any(complete.cases(boundaries_Guest))){
+         ColorChoicesGuest <- paste(
+            boundary_color_set, boundary_indicator,
+            cut(length(boundaries_Guest), breaks = c(0:3, Inf)))
+         
+         boundary_color_set_guest <- 
+            switch(ColorChoicesGuest, 
+                   ## red black lines
+                   
+                   # 1 boundary, e.g., it's only unity
+                   "red black lines (0,1]" = "black", 
+                   
+                   # 2 boundaries
+                   "red black lines (1,2]" = c("black", "black"), 
+                   
+                   # 3 boundaries
+                   "red black lines (2,3]" = c("black", "black", "red"), 
+                   
+                   # >3 boundaries
+                   "red black lines (3,Inf]" = colorRampPalette(c("black", "red"))(
+                      length(boundaries)), 
+                   
+                   
+                   ## red black fill
+                   
+                   # 1 boundary, e.g., it's only unity
+                   "red black fill (0,1]" = "black", 
+                   
+                   # 2 boundaries
+                   "red black fill (1,2]" = c("black", "black"), 
+                   
+                   # 3 boundaries
+                   "red black fill (2,3]" = c("black", "black", "red"), 
+                   
+                   # >3 boundaries
+                   "red black fill (3,Inf]" = c("black", 
+                                                colorRampPalette(c("black", "#FFC000", "red"))(
+                                                   length(boundaries) - 1)), 
+                   
+                   
+                   ## red green lines
+                   # 1 boundary, e.g., it's only unity
+                   "red green lines (0,1]" = "#17A142", 
+                   
+                   # 2 boundaries
+                   "red green lines (1,2]" = c("#17A142", "#17A142"), 
+                   
+                   # 3 boundaries
+                   "red green lines (2,3]" = c("#17A142", "#17A142", "red"), 
+                   
+                   # >3 boundaries
+                   "red green lines (3,Inf]" = c("#17A142", 
+                                                 colorRampPalette(c("#17A142", "red"))(
+                                                    length(boundaries) - 1)), 
+                   
+                   
+                   ## red green fill
+                   # 1 boundary, e.g., it's only unity
+                   "red green fill (0,1]" = "#17A142", 
+                   
+                   # 2 boundaries
+                   "red green fill (1,2]" = c("#17A142", "#17A142"), 
+                   
+                   # 3 boundaries
+                   "red green fill (2,3]" = c("#17A142", "#17A142", "red"), 
+                   
+                   # >3 boundaries
+                   "red green fill (3,Inf]" = c("#17A142", 
+                                                colorRampPalette(c("#17A142", "red"))(
+                                                   length(boundaries) - 1)), 
+                   
+                   
+                   ## muted red green lines
+                   # 1 boundary, e.g., it's only unity
+                   "muted red green lines (0,1]" = "#A4E4AF", 
+                   
+                   # 2 boundaries
+                   "muted red green lines (1,2]" = c("#A4E4AF", "#A4E4AF"), 
+                   
+                   # 3 boundaries
+                   "muted red green lines (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
+                   
+                   # >3 boundaries
+                   "muted red green lines (3,Inf]" = c("#A4E4AF", 
+                                                       colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                          length(boundaries)-1)), 
+                   
+                   
+                   ## muted red green fill
+                   # 1 boundary, e.g., it's only unity
+                   "muted red green fill (0,1]" = "#A4E4AF", 
+                   
+                   # 2 boundaries
+                   "muted red green fill (1,2]" = c("#A4E4AF", "#A4E4AF"), 
+                   
+                   # 3 boundaries
+                   "muted red green fill (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
+                   
+                   # >3 boundaries
+                   "muted red green fill (3,Inf]" = c("#A4E4AF", 
+                                                      colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                         length(boundaries)-1))
+            )
+      }
+      
    } else {
       boundary_color_set <- rep(boundary_color_set, length(boundaries))
+      boundary_color_set_guest <- rep(boundary_color_set, length(boundaries_Guest))
    }
    
    boundary_color_set <- boundary_color_set[1:length(boundaries)]
+   boundary_color_set_guest <- boundary_color_set_guest[1:length(boundaries_Guest)]
    
    # Will need to figure out what PK parameters are and will need deprettified
    # names when reshaping and organizing data here and lower in function
@@ -365,14 +490,15 @@ so_graph <- function(PKtable,
    
    # Setting up data for boundaries on graphs
    Boundaries_num <- boundaries
+   Boundaries_num_guest <- boundaries_Guest
    Boundaries <- list()
    Guest <- list()
    Poly <- list()
    PolyGuest <- list()
    
+   # Regular boundaries
    for(j in Boundaries_num){
       
-      # Regular boundaries
       Boundaries[[as.character(j)]] <-
          list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
                  mutate(LimitName = "upper", 
@@ -380,25 +506,23 @@ so_graph <- function(PKtable,
               "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
                  mutate(LimitName = "upper", 
                         Simulated = Observed / j))
-      
-      # Guest boundaries
-      if(j == 1 | j > 2){
-         Guest[[as.character(j)]] <- Boundaries[[as.character(j)]]
-      } else if(j > 1 & j <= 2){
-         Guest[[as.character(j)]] <- 
-            list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
-                    mutate(Limit = ifelse(Observed >= 1, 
-                                          (1 + 2*(Observed - 1))/Observed,
-                                          (1 + 2*((1/Observed) - 1))/(1/Observed)),
-                           LimitName = "upper",
-                           Simulated = Observed * Limit),
-                 "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
-                    mutate(Limit = ifelse(Observed >= 1, 
-                                          (1 + 2*(Observed - 1))/Observed,
-                                          (1 + 2*((1/Observed) - 1))/(1/Observed)),
-                           LimitName = "lower", 
-                           Simulated = Observed / Limit))
-      } 
+   }
+   
+   # Guest boundaries
+   for(j in Boundaries_num_guest){
+      Guest[[as.character(j)]] <- 
+         list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
+                 mutate(Limit = ifelse(Observed >= 1, 
+                                       (1 + j*(Observed - 1))/Observed,
+                                       (1 + j*((1/Observed) - 1))/(1/Observed)),
+                        LimitName = "upper",
+                        Simulated = Observed * Limit),
+              "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
+                 mutate(Limit = ifelse(Observed >= 1, 
+                                       (1 + j*(Observed - 1))/Observed,
+                                       (1 + j*((1/Observed) - 1))/(1/Observed)),
+                        LimitName = "lower", 
+                        Simulated = Observed / Limit))
    }
    
    # Setting up polygons -- This needs to be done a bit differently b/c we'll
@@ -427,6 +551,9 @@ so_graph <- function(PKtable,
          bind_rows(Boundaries[[as.character(Boundaries_num[j_index])]][["Lower"]] %>% 
                       arrange(desc(Observed)))
       
+   }
+   
+   for(j_index in 2:length(Boundaries_num_guest)){ # <--- Note that this is by index and not name!!!!
       PolyGuest[[as.character(Boundaries_num[j_index]) ]] <- 
          Guest[[as.character(Boundaries_num[j_index])]][["Upper"]] %>%
          arrange(Observed) %>%
@@ -610,15 +737,6 @@ so_graph <- function(PKtable,
       if(boundary_indicator == "lines"){
          for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
             
-            # For GMRs, it probably makes the most sense to include the Guest
-            # curves for every boundary between 1 and 2 but then only include
-            # the straight lines for 2. For the scenario in the Guest paper,
-            # where the boundaries would only be 2 fold changes, I want both
-            # Guest curves and straight lines at the 2-fold boundary. If they
-            # also included 1.5 in their cutoffs, then maybe Guest curves at
-            # values between 1 and 2 but only straight lines at 2? Am I being
-            # too flexible?!?! Should we just tell users that, if it's a GMR,
-            # we're only showing Guest curves at the 2 fold boundaries?
             if(str_detect(i, "ratio") & Boundaries_num[j_index] == 2){
                G[[i]] <- G[[i]] + 
                   geom_line(data = Boundaries[[j_index]][["Upper"]],

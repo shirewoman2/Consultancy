@@ -8,6 +8,7 @@ so_graph(
   PKtable,
   PKparameters = NA,
   boundaries = c(1.5, 2),
+  boundaries_Guest = 2,
   boundary_indicator = "lines",
   boundary_color_set = "red black",
   boundary_line_width = 0.7,
@@ -38,6 +39,18 @@ parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 \item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
 1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 \code{boundaries = c(1.25, 1.5, 2)}}
+
+\item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
+parameter is a mean ratio of the parameter in the presence of an effector /
+the parameter in the absence of the effector. The default boundary for
+Guest curves is 2, which will show both the Guest curve and a straight
+line. Honestly, we recommend leaving this as 2 for clarity of the graph.
+For these PK parameters, if there are any values listed for
+\code{boundaries_Guest}, the lines will be replaced with a curve as
+described in [Guest Galetin 2011 Drug Metab
+Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/). If you'd rather show
+straight lines for these parameters instead of Guest curves, set this to
+NA.}
 
 \item{boundary_indicator}{how to indicate the boundaries for simulated /
 observed. Options are "lines" (default), "fill" to get a shaded area, or
@@ -181,10 +194,6 @@ a set of arranged ggplot2 graphs
 \description{
 \code{so_graph} makes a graph of simulated vs. observed PK, including
 indicating where the predicted parameters fell within X fold of the observed.
-When the PK parameter is a geometric mean ratio of the parameter in the
-presence of an effector / the parameter in the absence of the effector, the
-lines will be replaced with a curve as described in [Guest Galetin 2011 Drug
-Metab Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/).
 }
 \examples{
 # Assuming you have run pksummary_mult on a few files with observed data
