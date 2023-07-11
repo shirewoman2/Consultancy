@@ -52,7 +52,7 @@ getReferences <- function(main_directory = ".",
            call. = FALSE)
    }
    
-   Refs <- data.frame(FullPath = ) %>% 
+   Refs <- data.frame(FullPath = Refs) %>% 
       mutate(File = basename(FullPath),
              Directory = dirname(FullPath)) %>% 
       arrange(Directory, File)
