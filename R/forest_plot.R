@@ -238,12 +238,12 @@
 #'   the bottom and nothing to the top of the y axis. If you only specify one
 #'   number, we'll assume that's the percent you want added to the bottom.
 #' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My conc time graph.png" or "My conc time
-#'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
-#'   be saved as a png file, but if you specify a different graphical file
-#'   extension, it will be saved as that file format. Acceptable graphical file
-#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-#'   Leaving this as NA means the file will not be saved to disk.
+#'   in quotes here, e.g., "My forest plot.png" or "My forest plot.docx". If you
+#'   leave off ".png" or ".docx" from the file name, it will be saved as a png
+#'   file, but if you specify a different graphical file extension, it will be
+#'   saved as that file format. Acceptable graphical file extensions are "eps",
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+#'   means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -1422,7 +1422,7 @@ forest_plot <- function(forest_dataframe,
          Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
          FileName <- sub(paste0(".", Ext), "", FileName)
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                  "png", "bmp", "svg", "jpg"), 
+                                  "png", "bmp", "svg", "jpg", "docx"), 
                        Ext, "png")
          FileName <- paste0(FileName, ".", Ext)
       } else {
@@ -1430,16 +1430,33 @@ forest_plot <- function(forest_dataframe,
          Ext <- "png"
       }
       
-      suppressWarnings(
-         ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                plot = switch(as.character(show_numbers_on_right), 
-                              "TRUE" = patchwork::wrap_plots(G, 
-                                                             NumTable, 
-                                                             nrow = 1,
-                                                             widths = rel_widths),
-                              "FALSE" = G))
-      )
-      
+      if(Ext == "docx"){
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         rmarkdown::render(system.file("rmarkdown/templates/forestplot/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_dir = OutPath, 
+                           output_file = FileName, 
+                           quiet = TRUE)
+         
+      } else {
+         
+         suppressWarnings(
+            ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                   plot = switch(as.character(show_numbers_on_right), 
+                                 "TRUE" = patchwork::wrap_plots(G, 
+                                                                NumTable, 
+                                                                nrow = 1,
+                                                                widths = rel_widths),
+                                 "FALSE" = G))
+         )
+      }
    }
    
    return(switch(as.character(show_numbers_on_right), 

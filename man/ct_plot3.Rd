@@ -10,6 +10,11 @@ ct_plot3(
   figure_type = "means only",
   mean_type = "arithmetic",
   linear_or_log = "semi-log",
+  time_range_LL = "first dose",
+  time_range_LR = "last dose",
+  graph_title_U = "Full time range",
+  graph_title_LL = "First dose",
+  graph_title_LR = "Last dose",
   legend_position = "none",
   qc_graph = FALSE,
   existing_exp_details = NA,
@@ -94,6 +99,23 @@ output, you'll get a warning and the graph will include one that was.}
   figure; the default values will be used for the vertical one. If you
   request Word output, only the vertical plot will be saved in Word format;
   the horizontal plot will be saved as a png file.}}}
+
+\item{time_range_LL}{time range to use for the lower-left graph; defaults to
+"first dose" but any option acceptable for \code{time_range} for the
+function \code{\link{ct_plot}} will also work.}
+
+\item{time_range_LR}{time range to use for the lower-right graph; defaults to
+"first dose" but any option acceptable for \code{time_range} for the
+function \code{\link{ct_plot}} will also work.}
+
+\item{graph_title_U}{graph title for the upper, full-time-range graph;
+defaults to "Full time range"}
+
+\item{graph_title_LL}{graph title for the lower left graph; defaults to
+"First dose"}
+
+\item{graph_title_LR}{graph title for the lower right graph; defaults to
+"Last dose"}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one

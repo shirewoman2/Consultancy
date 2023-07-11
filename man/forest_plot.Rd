@@ -292,12 +292,12 @@ clearer what the numbers represent. If you specify anything other than
 Dose_sub or Dose_inhib for \code{facet_column_x}, this will be ignored.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
-in quotes here, e.g., "My conc time graph.png" or "My conc time
-graph.docx". If you leave off ".png" or ".docx" from the file name, it will
-be saved as a png file, but if you specify a different graphical file
-extension, it will be saved as that file format. Acceptable graphical file
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
-Leaving this as NA means the file will not be saved to disk.}
+in quotes here, e.g., "My forest plot.png" or "My forest plot.docx". If you
+leave off ".png" or ".docx" from the file name, it will be saved as a png
+file, but if you specify a different graphical file extension, it will be
+saved as that file format. Acceptable graphical file extensions are "eps",
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
 
