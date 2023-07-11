@@ -49,15 +49,17 @@ RStudio, go to Tools --> Global Options --> General --> Graphics --> And
 then set "Graphics device: backend" to "AGG". Honestly, this is a better
 option for higher-quality graphics anyway!}
 
-\item{boundary_color_set}{set of colors to use for indicating the 1.5-fold
-and 2-fold boundaries of the simulated / observed ratio. The default is
-"red black", which results in a black line at the 1.5-fold boundary and a
-red one at the 2-fold boundary. Other options are "red green", "muted red
-green" (a lighter, somewhat more muted red and green that work well for
-indicating the boundary when you're using shading instead of lines), and
-"black", which will result in only black lines or shading. You also can set
-this to any two colors you'd like, e.g., \code{boundary_color_set =
-c("yellow", "blue")}}
+\item{boundary_color_set}{set of colors to use for indicating the X-fold
+boundaries of the simulated / observed ratio. The default is "red black",
+which, for the default boundaries, results in a black line at the 1.5-fold
+boundary and a red one at the 2-fold boundary. Other options are "red
+green", "muted red green" (a lighter, somewhat more muted red and green
+that work well for indicating the boundary when you're using shading
+instead of lines), and "black", which will result in only black lines or
+shading. You also can set this to any set of colors you'd like, e.g.,
+\code{boundary_color_set = c("yellow", "blue")}. The number of colors
+should equal the number of boundaries that you've indicated or the graph
+won't be easily interpretable.}
 
 \item{boundary_line_width}{line width; default is 0.7. This only applies when
 \code{boundary_indicator} is set to "lines", the default.}

@@ -331,15 +331,15 @@ formatTable_Simcyp <- function(DF,
          highlight_so_cutoffs <- highlight_so_cutoffs[which(highlight_so_cutoffs >= 1)]
       }
       
+      highlight_so_colors <- tolower(highlight_so_colors)
+      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
+      
       if(length(highlight_so_cutoffs) != length(highlight_so_colors) &
          highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE){
          warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       }
-      
-      highlight_so_colors <- tolower(highlight_so_colors)
-      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
       
       if(highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE && 
          is.matrix(col2rgb(highlight_so_colors)) == FALSE){
@@ -393,7 +393,7 @@ formatTable_Simcyp <- function(DF,
                    "yellow to red TRUE (4,Inf]" = 
                       c("#C7FEAC", 
                         colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                           length(highlight_so_cutoffs))), 
+                           length(highlight_so_cutoffs) - 1)), 
                    
                    ## traffic
                    
