@@ -192,6 +192,8 @@ extractPK <- function(sim_data_file,
       returnAggregateOrIndiv <- c("aggregate", "individual")
    }
    
+   ## Checking exp details --------------------------------------------------
+   
    # Checking experimental details to only pull details that apply
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails(sim_data_file = sim_data_file, 
@@ -228,6 +230,8 @@ extractPK <- function(sim_data_file,
       #                " is not a Simulator output file and will be skipped."))
       return(list())
    }
+   
+   ## Figuring out correct tab names ---------------------------------------
    
    # version <= 20: Has "AUC" tab for each compound that was integrated. Sheet
    # names are harder to decipher: AUC0 is 1st dose, but last dose will be on
@@ -274,10 +278,57 @@ extractPK <- function(sim_data_file,
                                   "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
                                   "inhibitor 2" = "\\(Inh 2\\)"), 
                            switch(tissue, 
-                                  "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
-                                  "unbound plasma" = "\\(CuPlasma",
-                                  "blood" = "\\(CBlood", 
-                                  "unbound blood" = "\\(CuBlood")))][1]
+                                  "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                  "unbound plasma" = "\\(CuP",
+                                  "blood" = "\\(CB", 
+                                  "unbound blood" = "\\(CuB")))][1]
+      
+      # Sometimes, the tab name gets clipped so far that you can't even tell
+      # which tissue it is. In that situation, we need to check what tissue was
+      # on any possible Tab_first sheets. We'd get an NA above even if that tab
+      # were present if it was either clipped at the C or clipped at Cu. In both
+      # of those situations, we need to figure out what the tissue is.
+      if(is.na(Tab_first)){
+         Tab_first_clipped <- 
+            SheetNames[
+               str_detect(SheetNames, 
+                          paste0("Int AUC 1st(_CI|_SD)?", 
+                                 switch(compoundToExtract,
+                                        "substrate" = "\\(Sub\\)", 
+                                        "primary metabolite 1" = "\\(Sub Met\\)",
+                                        "primary metabolite 2" = "\\(Sub Met2\\)",
+                                        "secondary metabolite" = "\\(Sub SM\\)", 
+                                        "inhibitor 1" = "\\(Inh 1\\)",
+                                        "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                        "inhibitor 2" = "\\(Inh 2\\)"), 
+                                 "\\(C(u)?\\."))]
+         
+         
+         if(any(complete.cases(Tab_first_clipped))){
+            
+            TissueCheck <- c()
+            
+            for(i in Tab_first_clipped){
+               suppressMessages(
+                  TEMP <- readxl::read_excel(path = sim_data_file, 
+                                             sheet = i,
+                                             range = "A1:H1",
+                                             col_names = FALSE)
+               )
+               
+               TissueCheck[i] <- 
+                  any(str_detect(t(TEMP)[1], switch(tissue, 
+                                                    "plasma" = "\\(CPlasma", 
+                                                    "unbound plasma" = "CuPlasma", 
+                                                    "blood" = "\\(CBlood", 
+                                                    "unbound blood" = "CuBlood")))
+               
+               rm(TEMP)
+            }
+            
+            Tab_first <- names(TissueCheck)[TissueCheck == TRUE][1]
+         }
+      }
       
       Tab_last <- SheetNames[
          str_detect(SheetNames, 
@@ -291,12 +342,60 @@ extractPK <- function(sim_data_file,
                                   "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
                                   "inhibitor 2" = "\\(Inh 2\\)"), 
                            switch(tissue, 
-                                  "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
-                                  "unbound plasma" = "\\(CuPlasma",
-                                  "blood" = "\\(CBlood", 
-                                  "unbound blood" = "\\(CuBlood")))][1]
+                                  "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                  "unbound plasma" = "\\(CuP",
+                                  "blood" = "\\(CB", 
+                                  "unbound blood" = "\\(CuB")))][1]
+      
+      # Sometimes, the tab name gets clipped so far that you can't even tell
+      # which tissue it is. In that situation, we need to check what tissue was
+      # on any possible Tab_last sheets. We'd get an NA above even if that tab
+      # were present if it was either clipped at the C or clipped at Cu. In both
+      # of those situations, we need to figure out what the tissue is.
+      if(is.na(Tab_last)){
+         Tab_last_clipped <- 
+            SheetNames[
+               str_detect(SheetNames, 
+                          paste0("Int AUC last(_CI|_SD)?", 
+                                 switch(compoundToExtract,
+                                        "substrate" = "\\(Sub\\)", 
+                                        "primary metabolite 1" = "\\(Sub Met\\)",
+                                        "primary metabolite 2" = "\\(Sub Met2\\)",
+                                        "secondary metabolite" = "\\(Sub SM\\)", 
+                                        "inhibitor 1" = "\\(Inh 1\\)",
+                                        "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                        "inhibitor 2" = "\\(Inh 2\\)"), 
+                                 "\\(C(u)?\\."))]
+         
+         
+         if(any(complete.cases(Tab_last_clipped))){
+            
+            TissueCheck <- c()
+            
+            for(i in Tab_last_clipped){
+               suppressMessages(
+                  TEMP <- readxl::read_excel(path = sim_data_file, 
+                                             sheet = i,
+                                             range = "A1:H1",
+                                             col_names = FALSE)
+               )
+               
+               TissueCheck[i] <- 
+                  any(str_detect(t(TEMP)[1], switch(tissue, 
+                                                    "plasma" = "\\(CPlasma", 
+                                                    "unbound plasma" = "CuPlasma", 
+                                                    "blood" = "\\(CBlood", 
+                                                    "unbound blood" = "CuBlood")))
+               rm(TEMP)
+            }
+            
+            Tab_last <- names(TissueCheck)[TissueCheck == TRUE][1]
+         } 
+      }
       
    } else {
+      
+      # Simulator versions earlier than V21
       
       Tab_first <- SheetNames[
          str_detect(SheetNames, 
@@ -310,10 +409,10 @@ extractPK <- function(sim_data_file,
                                   "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
                                   "inhibitor 2" = "\\(Inh 2\\)"), 
                            switch(tissue, 
-                                  "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
-                                  "unbound plasma" = "\\(CuPlasma",
-                                  "blood" = "\\(CBlood", 
-                                  "unbound blood" = "\\(CuBlood")))][1]
+                                  "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                  "unbound plasma" = "\\(CuP",
+                                  "blood" = "\\(CB", 
+                                  "unbound blood" = "\\(CuB")))][1]
       
       # Determining the name of the tab that contains PK data for the last
       # dose. This will create a vector of ALL the AUC tabs for that tissue
@@ -330,10 +429,10 @@ extractPK <- function(sim_data_file,
                                   "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
                                   "inhibitor 2" = "\\(Inh 2\\)"), 
                            switch(tissue, 
-                                  "plasma" = "\\(CPl.*?\\)", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
-                                  "unbound plasma" = "\\(CuPlasma",
-                                  "blood" = "\\(CBlood", 
-                                  "unbound blood" = "\\(CuBlood")))]
+                                  "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                  "unbound plasma" = "\\(CuP",
+                                  "blood" = "\\(CB", 
+                                  "unbound blood" = "\\(CuB")))]
       
       if(length(Tab_last_check) > 0){
          LastDoseNum <- data.frame(Tab_last = Tab_last_check) %>% 
