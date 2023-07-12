@@ -237,6 +237,8 @@ so_graph <- function(PKtable,
       boundary_color_set <- "red black"
    } 
    
+   boundary_color_set_orig <- boundary_color_set
+   
    if(boundary_color_set[1] %in% c("red green", "red black", 
                                    "muted red green") &
       boundary_indicator != "none"){
@@ -346,7 +348,7 @@ so_graph <- function(PKtable,
       
       if(any(complete.cases(boundaries_Guest))){
          ColorChoicesGuest <- paste(
-            boundary_color_set, boundary_indicator,
+            boundary_color_set_orig, boundary_indicator,
             cut(length(boundaries_Guest), breaks = c(0:3, Inf)))
          
          boundary_color_set_guest <- 
@@ -363,25 +365,27 @@ so_graph <- function(PKtable,
                    "red black lines (2,3]" = c("black", "black", "red"), 
                    
                    # >3 boundaries
-                   "red black lines (3,Inf]" = colorRampPalette(c("black", "red"))(
-                      length(boundaries)), 
+                   "red black lines (3,Inf]" = c("black", 
+                                                 colorRampPalette(c("black", "red"))(
+                                                    length(boundaries) - 1)), 
                    
                    
-                   ## red black fill
+                   ## red black fill -- Need 1 extra color for fill b/c last
+                   ## color will be for the straight line polygon
                    
                    # 1 boundary, e.g., it's only unity
-                   "red black fill (0,1]" = "black", 
+                   "red black fill (0,1]" = c("black", "black"),
                    
                    # 2 boundaries
-                   "red black fill (1,2]" = c("black", "black"), 
+                   "red black fill (1,2]" = c("black", "black", "red"), 
                    
                    # 3 boundaries
-                   "red black fill (2,3]" = c("black", "black", "red"), 
+                   "red black fill (2,3]" = c("black", "black", "#FFC000", "red"), 
                    
                    # >3 boundaries
                    "red black fill (3,Inf]" = c("black", 
                                                 colorRampPalette(c("black", "#FFC000", "red"))(
-                                                   length(boundaries) - 1)), 
+                                                   length(boundaries))), 
                    
                    
                    ## red green lines
@@ -389,7 +393,7 @@ so_graph <- function(PKtable,
                    "red green lines (0,1]" = "#17A142", 
                    
                    # 2 boundaries
-                   "red green lines (1,2]" = c("#17A142", "#17A142"), 
+                   "red green lines (1,2]" = c("#17A142", "red"), 
                    
                    # 3 boundaries
                    "red green lines (2,3]" = c("#17A142", "#17A142", "red"), 
@@ -400,20 +404,23 @@ so_graph <- function(PKtable,
                                                     length(boundaries) - 1)), 
                    
                    
-                   ## red green fill
+                   ## red green fill -- Need 1 extra color for fill b/c last
+                   ## color will be for the straight line polygon
                    # 1 boundary, e.g., it's only unity
-                   "red green fill (0,1]" = "#17A142", 
+                   "red green fill (0,1]" = c("#17A142", "#17A142"), 
                    
                    # 2 boundaries
-                   "red green fill (1,2]" = c("#17A142", "#17A142"), 
+                   "red green fill (1,2]" = c("#17A142", "#17A142", "red"), 
                    
                    # 3 boundaries
-                   "red green fill (2,3]" = c("#17A142", "#17A142", "red"), 
+                   "red green fill (2,3]" = c("#17A142", 
+                                              colorRampPalette(c("#17A142", "red"))(
+                                                 length(boundaries))),
                    
                    # >3 boundaries
                    "red green fill (3,Inf]" = c("#17A142", 
                                                 colorRampPalette(c("#17A142", "red"))(
-                                                   length(boundaries) - 1)), 
+                                                   length(boundaries))), 
                    
                    
                    ## muted red green lines
@@ -432,30 +439,28 @@ so_graph <- function(PKtable,
                                                           length(boundaries)-1)), 
                    
                    
-                   ## muted red green fill
+                   ## muted red green fill -- Need 1 extra color for fill b/c last
+                   ## color will be for the straight line polygon
                    # 1 boundary, e.g., it's only unity
-                   "muted red green fill (0,1]" = "#A4E4AF", 
+                   "muted red green fill (0,1]" = c("#A4E4AF", "#A4E4AF"),
                    
                    # 2 boundaries
-                   "muted red green fill (1,2]" = c("#A4E4AF", "#A4E4AF"), 
+                   "muted red green fill (1,2]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
                    
                    # 3 boundaries
-                   "muted red green fill (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
+                   "muted red green fill (2,3]" = c("#A4E4AF", "#A4E4AF", "#FFFF95", "#E6A2A2"), 
                    
                    # >3 boundaries
                    "muted red green fill (3,Inf]" = c("#A4E4AF", 
                                                       colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                         length(boundaries)-1))
+                                                         length(boundaries)))
             )
       }
       
    } else {
       boundary_color_set <- rep(boundary_color_set, length(boundaries))
-      boundary_color_set_guest <- rep(boundary_color_set, length(boundaries_Guest))
+      boundary_color_set_guest <- rep(boundary_color_set, length(boundaries_Guest) + 1)
    }
-   
-   boundary_color_set <- boundary_color_set[1:length(boundaries)]
-   boundary_color_set_guest <- boundary_color_set_guest[1:length(boundaries_Guest)]
    
    # Will need to figure out what PK parameters are and will need deprettified
    # names when reshaping and organizing data here and lower in function
@@ -493,6 +498,7 @@ so_graph <- function(PKtable,
    Boundaries_num_guest <- boundaries_Guest
    Boundaries <- list()
    Guest <- list()
+   GuestStraight <- list()
    Poly <- list()
    PolyGuest <- list()
    
@@ -523,6 +529,13 @@ so_graph <- function(PKtable,
                                        (1 + j*((1/Observed) - 1))/(1/Observed)),
                         LimitName = "lower", 
                         Simulated = Observed / Limit))
+      GuestStraight[[as.character(j)]] <- 
+         list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+                 mutate(LimitName = "upper", 
+                        Simulated = Observed * j), 
+              "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+                 mutate(LimitName = "upper", 
+                        Simulated = Observed / j))
    }
    
    # Setting up polygons -- This needs to be done a bit differently b/c we'll
@@ -554,15 +567,28 @@ so_graph <- function(PKtable,
    }
    
    for(j_index in 2:length(Boundaries_num_guest)){ # <--- Note that this is by index and not name!!!!
-      PolyGuest[[as.character(Boundaries_num[j_index]) ]] <- 
-         Guest[[as.character(Boundaries_num[j_index])]][["Upper"]] %>%
+      
+      PolyGuest[[as.character(Boundaries_num_guest[j_index])]] <- 
+         Guest[[as.character(Boundaries_num_guest[j_index])]][["Upper"]] %>%
          arrange(Observed) %>%
-         bind_rows(Guest[[as.character(Boundaries_num[j_index-1])]][["Upper"]] %>%
+         bind_rows(Guest[[as.character(Boundaries_num_guest[j_index-1])]][["Upper"]] %>%
                       arrange(desc(Observed))) %>%
-         bind_rows(Guest[[as.character(Boundaries_num[j_index-1])]][["Lower"]] %>%
+         bind_rows(Guest[[as.character(Boundaries_num_guest[j_index-1])]][["Lower"]] %>%
                       arrange(Observed)) %>%
-         bind_rows(Guest[[as.character(Boundaries_num[j_index])]][["Lower"]] %>% 
+         bind_rows(Guest[[as.character(Boundaries_num_guest[j_index])]][["Lower"]] %>% 
                       arrange(desc(Observed)))
+      
+      if(j_index == length(Boundaries_num_guest)){
+         PolyGuest[[j_index + 1]] <- 
+            GuestStraight[[as.character(Boundaries_num_guest[j_index])]][["Upper"]] %>%
+            arrange(Observed) %>%
+            bind_rows(Guest[[as.character(Boundaries_num_guest[j_index])]][["Upper"]] %>%
+                         arrange(desc(Observed))) %>%
+            bind_rows(Guest[[as.character(Boundaries_num_guest[j_index])]][["Lower"]] %>%
+                         arrange(Observed)) %>%
+            bind_rows(GuestStraight[[as.character(Boundaries_num_guest[j_index])]][["Lower"]] %>% 
+                         arrange(desc(Observed)))
+      }
    }
    
    # Arranging and tidying input data. First, de-prettifying column names.
@@ -735,9 +761,35 @@ so_graph <- function(PKtable,
                    linewidth = boundary_line_width)
       
       if(boundary_indicator == "lines"){
-         for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
+         if(str_detect(i, "ratio")){
             
-            if(str_detect(i, "ratio") & Boundaries_num[j_index] == 2){
+            for(j_index in 2:length(Boundaries_num_guest)){ # <--- Note that this is by index and not name!!!!
+               G[[i]] <- G[[i]] + 
+                  geom_line(data = Guest[[j_index]][["Upper"]],
+                            aes(x = Observed, y = Simulated),
+                            color = boundary_color_set_guest[j_index], 
+                            linewidth = boundary_line_width) +
+                  geom_line(data = Guest[[j_index]][["Lower"]], 
+                            aes(x = Observed, y = Simulated),
+                            color = boundary_color_set_guest[j_index], 
+                            linewidth = boundary_line_width)
+               
+               if(j_index == length(Boundaries_num_guest)){
+                  G[[i]] <- G[[i]] +
+                     geom_line(data = GuestStraight[[j_index]][["Upper"]],
+                               aes(x = Observed, y = Simulated),
+                               color = boundary_color_set_guest[j_index], 
+                               linewidth = boundary_line_width) +
+                     geom_line(data = GuestStraight[[j_index]][["Lower"]],
+                               aes(x = Observed, y = Simulated),
+                               color = boundary_color_set_guest[j_index], 
+                               linewidth = boundary_line_width)
+               }
+            }
+            
+         } else {
+            
+            for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
                G[[i]] <- G[[i]] + 
                   geom_line(data = Boundaries[[j_index]][["Upper"]],
                             aes(x = Observed, y = Simulated),
@@ -748,31 +800,36 @@ so_graph <- function(PKtable,
                             color = boundary_color_set[j_index], 
                             linewidth = boundary_line_width)
             }
-            
-            G[[i]] <- G[[i]] + 
-               geom_line(data = switch(as.character(str_detect(i, "ratio")), 
-                                       "TRUE" = Guest[[j_index]][["Upper"]], 
-                                       "FALSE" = Boundaries[[j_index]][["Upper"]]),
-                         aes(x = Observed, y = Simulated),
-                         color = boundary_color_set[j_index], 
-                         linewidth = boundary_line_width) +
-               geom_line(data = switch(as.character(str_detect(i, "ratio")), 
-                                       "TRUE" = Guest[[j_index]][["Lower"]], 
-                                       "FALSE" = Boundaries[[j_index]][["Lower"]]),
-                         aes(x = Observed, y = Simulated),
-                         color = boundary_color_set[j_index], 
-                         linewidth = boundary_line_width)
          }
       }
       
       if(boundary_indicator == "fill"){
-         for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
-            G[[i]] <- G[[i]] +
-               geom_polygon(data = switch(as.character(str_detect(i, "ratio")), 
-                                          "TRUE" = PolyGuest[[j_index]], 
-                                          "FALSE" = Poly[[j_index]]),
-                            aes(x = Observed, y = Simulated), inherit.aes = F,
-                            fill = boundary_color_set[j_index], alpha = 0.2) 
+         if(str_detect(i, "ratio")){
+            
+            for(j_index in 2:length(Boundaries_num_guest)){ # <--- Note that this is by index and not name!!!!
+               G[[i]] <- G[[i]] +
+                  geom_polygon(data = PolyGuest[[j_index]],
+                               aes(x = Observed, y = Simulated), inherit.aes = F,
+                               fill = boundary_color_set_guest[j_index], 
+                               alpha = 0.2)
+               
+               if(j_index == length(Boundaries_num_guest)){
+                  G[[i]] <- G[[i]] +
+                     geom_polygon(data = PolyGuest[[j_index + 1]],
+                                  aes(x = Observed, y = Simulated), inherit.aes = F,
+                                  fill = boundary_color_set_guest[j_index + 1], 
+                                  alpha = 0.2)
+               }
+            }
+            
+         } else {
+            
+            for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
+               G[[i]] <- G[[i]] +
+                  geom_polygon(data = Poly[[j_index]],
+                               aes(x = Observed, y = Simulated), inherit.aes = F,
+                               fill = boundary_color_set[j_index], alpha = 0.2) 
+            }
          }
       }
       
