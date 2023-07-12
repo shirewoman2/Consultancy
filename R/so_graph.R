@@ -43,8 +43,17 @@
 #'   \code{boundary_color_set = c("yellow", "blue")}. The number of colors
 #'   should equal the number of boundaries that you've indicated or the graph
 #'   won't be easily interpretable.
+#' @param boundary_line_types optionally specify the line types to use for the
+#'   boundaries (only applicable when \code{boundary_indicator = "lines"});
+#'   leaving this as "default" results in a dashed line at unity and solid lines
+#'   for all others, but you can specify this with any R-acceptable line types,
+#'   e.g., \code{boundary_line_types = c("dotted", "dashed", "solid")}. To see
+#'   the possibilities, type \code{ggpubr::show_line_types()} into the console.
 #' @param boundary_line_width line width; default is 0.7. This only applies when
 #'   \code{boundary_indicator} is set to "lines", the default.
+#' @param axis_titles optionally specify what you'd like for the x and y axis
+#'   titles with a named character vector. The default is 
+#'   \code{axis_titles = c("x" = "Observed", "y" = "Simulated")} 
 #' @param point_color_column (optional) the column in \code{PKtable} that should
 #'   be used for determining which color the points will be. This should be
 #'   unquoted. For example, if you have a column named "Study" in the data.frame
@@ -160,7 +169,9 @@ so_graph <- function(PKtable,
                      boundaries_Guest = 2,
                      boundary_indicator = "lines",
                      boundary_color_set = "red black", 
+                     boundary_line_types = "default",
                      boundary_line_width = 0.7, 
+                     axis_titles = c("y" = "Simulated", "x" = "Observed"),
                      point_color_column, 
                      point_color_set = "default",
                      legend_label_point_color = NA, 
@@ -484,6 +495,25 @@ so_graph <- function(PKtable,
          pull(PKparameter)
    }
    
+   if(boundary_line_types[1] == "default"){
+      boundary_line_types_straight <- c("dashed", 
+                                        rep("solid", length(boundaries) - 1))
+      boundary_line_types_guest <- c("dashed", 
+                                     rep("solid", length(boundaries_Guest) - 1))
+   } else {
+      boundary_line_types_straight <- rep(boundary_line_types,
+                                          length(boundaries))
+      boundary_line_types_guest <- rep(boundary_line_types,
+                                       length(boundaries_Guest))
+   }
+   
+   names(axis_titles) <- tolower(names(axis_titles))
+   if(all(c("x", "y") %in% names(axis_titles)) == FALSE){
+      warning("It is not clear what you want for the x axis title and what you want for the y. Please check the help file for the argument `axis_titles`. For now, we'll use the default values.", 
+              call. = FALSE)
+      axis_titles <- c("y" = "Simulated", "x" = "Observed")
+   }
+   
    # Main body of function --------------------------------------------------
    
    ## Getting data arranged  ------------------------------------------------
@@ -757,7 +787,8 @@ so_graph <- function(PKtable,
       G[[i]] <- ggplot()  +
          geom_line(data = Boundaries[["1"]][["Upper"]],
                    aes(x = Observed, y = Simulated),
-                   linetype = "dashed", color = "black",
+                   linetype = boundary_line_types_straight[1],
+                   color = "black",
                    linewidth = boundary_line_width)
       
       if(boundary_indicator == "lines"){
@@ -768,22 +799,26 @@ so_graph <- function(PKtable,
                   geom_line(data = Guest[[j_index]][["Upper"]],
                             aes(x = Observed, y = Simulated),
                             color = boundary_color_set_guest[j_index], 
-                            linewidth = boundary_line_width) +
+                            linewidth = boundary_line_width, 
+                            linetype = boundary_line_types_guest[j_index]) +
                   geom_line(data = Guest[[j_index]][["Lower"]], 
                             aes(x = Observed, y = Simulated),
                             color = boundary_color_set_guest[j_index], 
-                            linewidth = boundary_line_width)
+                            linewidth = boundary_line_width, 
+                            linetype = boundary_line_types_guest[j_index])
                
                if(j_index == length(Boundaries_num_guest)){
                   G[[i]] <- G[[i]] +
                      geom_line(data = GuestStraight[[j_index]][["Upper"]],
                                aes(x = Observed, y = Simulated),
                                color = boundary_color_set_guest[j_index], 
-                               linewidth = boundary_line_width) +
+                               linewidth = boundary_line_width, 
+                               linetype = boundary_line_types_guest[j_index]) +
                      geom_line(data = GuestStraight[[j_index]][["Lower"]],
                                aes(x = Observed, y = Simulated),
-                               color = boundary_color_set_guest[j_index], 
-                               linewidth = boundary_line_width)
+                               color = boundary_color_set_guest_guest[j_index], 
+                               linewidth = boundary_line_width, 
+                               linetype = boundary_line_types[j_index])
                }
             }
             
@@ -794,11 +829,13 @@ so_graph <- function(PKtable,
                   geom_line(data = Boundaries[[j_index]][["Upper"]],
                             aes(x = Observed, y = Simulated),
                             color = boundary_color_set[j_index], 
-                            linewidth = boundary_line_width) +
+                            linewidth = boundary_line_width, 
+                            linetype = boundary_line_types_straight[j_index]) +
                   geom_line(data = Boundaries[[j_index]][["Lower"]],
                             aes(x = Observed, y = Simulated),
                             color = boundary_color_set[j_index], 
-                            linewidth = boundary_line_width)
+                            linewidth = boundary_line_width, 
+                            linetype = boundary_line_types_straight[j_index])
             }
          }
       }
@@ -833,10 +870,13 @@ so_graph <- function(PKtable,
          }
       }
       
-      MaxMinRatio <- range(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)
-      MaxMinRatio <- MaxMinRatio[2] / MaxMinRatio[1]
+      PossBreaks <- sort(c(10^(-3:6),
+                           3*10^(-3:6),
+                           5*10^(-3:6)))
+      PossBreaks <- PossBreaks[PossBreaks >= Limits[1] &
+                                  PossBreaks <= Limits[2]]
       
-      if(MaxMinRatio > 100){
+      if(length(PossBreaks) >= 5){
          MajBreaks <- 10^(-3:6)
          MinBreaks <- rep(1:9)*rep(10^(-3:6), each = 9)
       } else {
@@ -899,8 +939,14 @@ so_graph <- function(PKtable,
          )
       
       G[[i]] <- G[[i]] + 
-         scale_y_log10(breaks = MajBreaks, minor_breaks = MinBreaks) +
-         scale_x_log10(breaks = MajBreaks, minor_breaks = MinBreaks) +
+         xlab(axis_titles["x"]) +
+         ylab(axis_titles["y"]) +
+         scale_y_log10(breaks = MajBreaks, 
+                       minor_breaks = MinBreaks, 
+                       labels = scales::label_comma(MajBreaks)) +
+         scale_x_log10(breaks = MajBreaks, 
+                       minor_breaks = MinBreaks, 
+                       labels = scales::label_comma(MajBreaks)) +
          coord_cartesian(xlim = Limits, ylim = Limits) + # this causes the shading to disappear for Guest curves. no idea why, but I think it's a bug w/coord_cartesian.
          ggtitle(PKexpressions[[i]]) +
          theme_bw() +

@@ -11,7 +11,9 @@ so_graph(
   boundaries_Guest = 2,
   boundary_indicator = "lines",
   boundary_color_set = "red black",
+  boundary_line_types = "default",
   boundary_line_width = 0.7,
+  axis_titles = c(y = "Simulated", x = "Observed"),
   point_color_column,
   point_color_set = "default",
   legend_label_point_color = NA,
@@ -74,8 +76,19 @@ shading. You also can set this to any set of colors you'd like, e.g.,
 should equal the number of boundaries that you've indicated or the graph
 won't be easily interpretable.}
 
+\item{boundary_line_types}{optionally specify the line types to use for the
+boundaries (only applicable when \code{boundary_indicator = "lines"});
+leaving this as "default" results in a dashed line at unity and solid lines
+for all others, but you can specify this with any R-acceptable line types,
+e.g., \code{boundary_line_types = c("dotted", "dashed", "solid")}. To see
+the possibilities, type \code{ggpubr::show_line_types()} into the console.}
+
 \item{boundary_line_width}{line width; default is 0.7. This only applies when
 \code{boundary_indicator} is set to "lines", the default.}
+
+\item{axis_titles}{optionally specify what you'd like for the x and y axis
+titles with a named character vector. The default is 
+\code{axis_titles = c("x" = "Observed", "y" = "Simulated")}}
 
 \item{point_color_column}{(optional) the column in \code{PKtable} that should
 be used for determining which color the points will be. This should be
