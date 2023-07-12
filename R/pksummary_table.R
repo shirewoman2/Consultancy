@@ -188,6 +188,10 @@
 #'   individual values rather than being pulled directly from the output.
 #' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
 #'   in the table
+#' @param includeSD TRUE or FALSE (default) for whether to include rows for the
+#'   standard deviation in the table
+#' @param includeMedian TRUE or FALSE (default) for whether to include rows for
+#'   the median in the table
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
 #'   confidence intervals were included in the simulator output file. Note that
 #'   the confidence intervals are geometric since that's what the simulator
@@ -313,6 +317,9 @@
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
 #'   If you do specify your own bespoke colors, you'll need to make sure that
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param return_PK_pulled TRUE or FALSE (default) for whether to return as a
+#'   list item what PK parameters were pulled. This is used internally for
+#'   writing table headings later.
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -357,7 +364,9 @@ pksummary_table <- function(sim_data_file = NA,
                             sheet_report = NA,
                             mean_type = NA,
                             includeCV = TRUE,
+                            includeSD = FALSE,
                             includeConfInt = TRUE,
+                            includeMedian = FALSE, 
                             includeRange = FALSE,
                             includePerc = FALSE,
                             includeTrialMeans = FALSE,
@@ -1208,7 +1217,9 @@ call. = FALSE)
                    "MinMean" = includeTrialMeans, 
                    "MaxMean" = includeTrialMeans, 
                    "min" = includeRange, 
-                   "max" = includeRange)
+                   "max" = includeRange, 
+                   "SD" = includeSD, 
+                   "median" = includeMedian)
    VarOptions <- names(VarOptions)[which(VarOptions)]
    VarOptions <- intersect(VarOptions, MyPKResults$Stat)
    
@@ -1383,14 +1394,14 @@ call. = FALSE)
                          "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                          "min", "max", "per5", "per95", 
                          ifelse(MeanType == "geometric", "GCV", "CV"), 
-                         "MinMean", "MaxMean", "S_O")) %>%
+                         "MinMean", "MaxMean", "S_O", "SD", "median")) %>%
       pivot_wider(names_from = PKParam, values_from = Value) %>% 
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O")), 
-             Stat = factor(Stat, levels = c("mean", "geomean", "CV", "GCV",
+             Stat = factor(Stat, levels = c("mean", "geomean", "median", "CV", "GCV", 
                                             "min", "max",
                                             "CI90_low", "CI90_high", "CI95_low", 
                                             "CI95_high", "per5", "per95",
-                                            "MinMean", "MaxMean", "S_O"))) %>% 
+                                            "MinMean", "MaxMean", "SD", "S_O"))) %>% 
       arrange(SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
@@ -1454,6 +1465,7 @@ call. = FALSE)
                   "mean" = "Simulated",
                   "GCV" = "CV%",
                   "CV" = "CV%",
+                  "SD" = "Standard deviation",
                   "CI90_low" = "90% CI - Lower",
                   "CI90_high" = "90% CI - Upper",
                   "CI90concat" = "90% CI",
@@ -1465,6 +1477,7 @@ call. = FALSE)
                   "per95concat" = "5th to 95th Percentile",
                   "min" = "Minimum", 
                   "max" = "Maximum",
+                  "median" = "Median",
                   "Rangeconcat" = "Range",
                   # "geomean_obs" = "Observed",
                   # "CV_obs" = "CV%",
@@ -1642,6 +1655,14 @@ call. = FALSE)
       
       if(includeRange){
          ColsToInclude <- c(ColsToInclude, "max", "min")
+      }
+      
+      if(includeMedian){
+         ColsToInclude <- c(ColsToInclude, "median")
+      }
+      
+      if(includeSD){
+         ColsToInclude <- c(ColsToInclude, "SD")
       }
       
       OutQC <- MyPKResults_all$QC %>% 

@@ -158,6 +158,10 @@
 #'   individual values rather than being pulled directly from the output.
 #' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
 #'   in the table
+#' @param includeSD TRUE or FALSE (default) for whether to include rows for the
+#'   standard deviation in the table
+#' @param includeMedian TRUE or FALSE (default) for whether to include rows for
+#'   the median in the table
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
 #'   confidence intervals were included in the simulator output file. Note that
 #'   the confidence intervals are geometric since that's what the simulator
@@ -296,8 +300,10 @@ pksummary_mult <- function(sim_data_files = NA,
                            observed_PK = NA,
                            existing_exp_details = NA, 
                            mean_type = NA, 
-                           includeCV = TRUE, 
-                           includeConfInt = TRUE, 
+                           includeCV = TRUE,
+                           includeSD = FALSE,
+                           includeConfInt = TRUE,
+                           includeMedian = FALSE, 
                            includeRange = FALSE,
                            includePerc = FALSE, 
                            includeTrialMeans = FALSE, 
@@ -627,6 +633,8 @@ call. = FALSE)
                   existing_exp_details = Deets,
                   mean_type = mean_type,
                   includeCV = includeCV,
+                  includeSD = includeSD, 
+                  includeMedian = includeMedian,
                   includeRange = includeRange,
                   includeConfInt = includeConfInt, 
                   includePerc = includePerc, 

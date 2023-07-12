@@ -15,7 +15,9 @@ pksummary_mult(
   existing_exp_details = NA,
   mean_type = NA,
   includeCV = TRUE,
+  includeSD = FALSE,
   includeConfInt = TRUE,
+  includeMedian = FALSE,
   includeRange = FALSE,
   includePerc = FALSE,
   includeTrialMeans = FALSE,
@@ -140,12 +142,18 @@ table? Options are "arithmetic" or "geometric" (default).}
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}
 
+\item{includeSD}{TRUE or FALSE (default) for whether to include rows for the
+standard deviation in the table}
+
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that
 the confidence intervals are geometric since that's what the simulator
 outputs (see an AUC tab and the summary statistics; these values are the
 ones for, e.g., "90\% confidence interval around the geometric mean(lower
 limit)").}
+
+\item{includeMedian}{TRUE or FALSE (default) for whether to include rows for
+the median in the table}
 
 \item{includeRange}{TRUE or FALSE (default) for whether to include the
 minimum and maximum values}
