@@ -276,3 +276,10 @@
 #' @format a data.frame 
 "BufObsForestData"
 
+
+
+#' Example simulated vs. observed PK data for use with the so_graph function
+#'
+#' @format A data.frame 
+"SOdata"
+

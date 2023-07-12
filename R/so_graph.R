@@ -359,112 +359,61 @@ so_graph <- function(PKtable,
       
       if(any(complete.cases(boundaries_Guest))){
          ColorChoicesGuest <- paste(
-            boundary_color_set_orig, boundary_indicator,
+            boundary_color_set_orig, 
             cut(length(boundaries_Guest), breaks = c(0:3, Inf)))
          
          boundary_color_set_guest <- 
-            switch(ColorChoicesGuest, 
-                   ## red black lines
+            switch(ColorChoicesGuest,
+                   ## red black -- Need 1 extra color for b/c last
+                   ## color will be for the straight line
                    
                    # 1 boundary, e.g., it's only unity
-                   "red black lines (0,1]" = "black", 
+                   "red black (0,1]" = c("black", "black"),
                    
                    # 2 boundaries
-                   "red black lines (1,2]" = c("black", "black"), 
+                   "red black (1,2]" = c("black", "black", "red"), 
                    
                    # 3 boundaries
-                   "red black lines (2,3]" = c("black", "black", "red"), 
+                   "red black (2,3]" = c("black", "black", "#FFC000", "red"), 
                    
                    # >3 boundaries
-                   "red black lines (3,Inf]" = c("black", 
-                                                 colorRampPalette(c("black", "red"))(
-                                                    length(boundaries) - 1)), 
+                   "red black (3,Inf]" = c("black", 
+                                           colorRampPalette(c("black", "#FFC000", "red"))(
+                                              length(boundaries))), 
                    
-                   
-                   ## red black fill -- Need 1 extra color for fill b/c last
-                   ## color will be for the straight line polygon
-                   
+                   ## red green -- Need 1 extra color for b/c last
+                   ## color will be for the straight line 
                    # 1 boundary, e.g., it's only unity
-                   "red black fill (0,1]" = c("black", "black"),
+                   "red green (0,1]" = c("#17A142", "#17A142"), 
                    
                    # 2 boundaries
-                   "red black fill (1,2]" = c("black", "black", "red"), 
+                   "red green (1,2]" = c("#17A142", "#17A142", "red"), 
                    
                    # 3 boundaries
-                   "red black fill (2,3]" = c("black", "black", "#FFC000", "red"), 
+                   "red green (2,3]" = c("#17A142", 
+                                         colorRampPalette(c("#17A142", "red"))(
+                                            length(boundaries))),
                    
                    # >3 boundaries
-                   "red black fill (3,Inf]" = c("black", 
-                                                colorRampPalette(c("black", "#FFC000", "red"))(
-                                                   length(boundaries))), 
+                   "red green (3,Inf]" = c("#17A142", 
+                                           colorRampPalette(c("#17A142", "red"))(
+                                              length(boundaries))), 
                    
-                   
-                   ## red green lines
+                   ## muted red green -- Need 1 extra color for b/c last
+                   ## color will be for the straight line 
                    # 1 boundary, e.g., it's only unity
-                   "red green lines (0,1]" = "#17A142", 
+                   "muted red green (0,1]" = c("#A4E4AF", "#A4E4AF"),
                    
                    # 2 boundaries
-                   "red green lines (1,2]" = c("#17A142", "red"), 
+                   "muted red green (1,2]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
                    
                    # 3 boundaries
-                   "red green lines (2,3]" = c("#17A142", "#17A142", "red"), 
+                   "muted red green (2,3]" = c("#A4E4AF", "#A4E4AF", "#FFFF95", "#E6A2A2"), 
                    
                    # >3 boundaries
-                   "red green lines (3,Inf]" = c("#17A142", 
-                                                 colorRampPalette(c("#17A142", "red"))(
-                                                    length(boundaries) - 1)), 
-                   
-                   
-                   ## red green fill -- Need 1 extra color for fill b/c last
-                   ## color will be for the straight line polygon
-                   # 1 boundary, e.g., it's only unity
-                   "red green fill (0,1]" = c("#17A142", "#17A142"), 
-                   
-                   # 2 boundaries
-                   "red green fill (1,2]" = c("#17A142", "#17A142", "red"), 
-                   
-                   # 3 boundaries
-                   "red green fill (2,3]" = c("#17A142", 
-                                              colorRampPalette(c("#17A142", "red"))(
-                                                 length(boundaries))),
-                   
-                   # >3 boundaries
-                   "red green fill (3,Inf]" = c("#17A142", 
-                                                colorRampPalette(c("#17A142", "red"))(
-                                                   length(boundaries))), 
-                   
-                   
-                   ## muted red green lines
-                   # 1 boundary, e.g., it's only unity
-                   "muted red green lines (0,1]" = "#A4E4AF", 
-                   
-                   # 2 boundaries
-                   "muted red green lines (1,2]" = c("#A4E4AF", "#A4E4AF"), 
-                   
-                   # 3 boundaries
-                   "muted red green lines (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
-                   
-                   # >3 boundaries
-                   "muted red green lines (3,Inf]" = c("#A4E4AF", 
-                                                       colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                          length(boundaries)-1)), 
-                   
-                   
-                   ## muted red green fill -- Need 1 extra color for fill b/c last
-                   ## color will be for the straight line polygon
-                   # 1 boundary, e.g., it's only unity
-                   "muted red green fill (0,1]" = c("#A4E4AF", "#A4E4AF"),
-                   
-                   # 2 boundaries
-                   "muted red green fill (1,2]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
-                   
-                   # 3 boundaries
-                   "muted red green fill (2,3]" = c("#A4E4AF", "#A4E4AF", "#FFFF95", "#E6A2A2"), 
-                   
-                   # >3 boundaries
-                   "muted red green fill (3,Inf]" = c("#A4E4AF", 
-                                                      colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                         length(boundaries)))
+                   "muted red green (3,Inf]" = c("#A4E4AF", 
+                                                 colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                    length(boundaries)))
             )
       }
       
@@ -823,14 +772,14 @@ so_graph <- function(PKtable,
                   G[[i]] <- G[[i]] +
                      geom_line(data = GuestStraight[[j_index]][["Upper"]],
                                aes(x = Observed, y = Simulated),
-                               color = boundary_color_set_guest[j_index], 
+                               color = boundary_color_set_guest[j_index + 1], 
                                linewidth = boundary_line_width, 
                                linetype = boundary_line_types_guest[j_index]) +
                      geom_line(data = GuestStraight[[j_index]][["Lower"]],
                                aes(x = Observed, y = Simulated),
-                               color = boundary_color_set_guest_guest[j_index], 
+                               color = boundary_color_set_guest[j_index + 1], 
                                linewidth = boundary_line_width, 
-                               linetype = boundary_line_types[j_index])
+                               linetype = boundary_line_types_guest[j_index])
                }
             }
             
