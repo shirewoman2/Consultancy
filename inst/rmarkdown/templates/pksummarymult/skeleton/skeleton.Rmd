@@ -123,8 +123,8 @@ if(single_table){
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
       # both dose 1 and last-dose data.
-      DoseCheck <- c("first" = any(str_detect(names(MyPKResults[[i]]), "Dose 1")), 
-                     "last" = any(str_detect(names(MyPKResults[[i]]), "Last dose")))
+      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
+                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
       include_dose_num <- all(DoseCheck)
    }
    
@@ -137,7 +137,7 @@ if(single_table){
    }
    
    if(include_dose_num == FALSE){
-      names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose ", "", names(MyPKResults[[i]]))
+      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
    }
    
    formatTable_Simcyp(MyPKResults,
