@@ -488,11 +488,16 @@ so_graph <- function(PKtable,
    if(any(is.na(PKparameters))){
       PKparameters <- names(PKtable)
       
-      # Need to get the un-prettified names here
-      PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
-         left_join(AllPKParameters_pretty, by = join_by(PrettifiedNames)) %>% 
-         filter(complete.cases(PKparameter)) %>% 
-         pull(PKparameter)
+      # Need to get the un-prettified names here. First, check whether they're
+      # pretty or R friendly.
+      if(any(PKparameters %in% AllPKParameters$PKparameter)){
+         PKparameters <- PKparameters[PKparameters %in% AllPKParameters$PKparameter]
+      } else {
+         PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
+            left_join(AllPKParameters_pretty, by = join_by(PrettifiedNames)) %>% 
+            filter(complete.cases(PKparameter)) %>% 
+            pull(PKparameter)
+      }
    }
    
    if(boundary_line_types[1] == "default"){
@@ -622,15 +627,22 @@ so_graph <- function(PKtable,
    }
    
    # Arranging and tidying input data. First, de-prettifying column names.
-   PKnames <- data.frame(OrigName = names(PKtable)) %>% 
-      mutate(PrettifiedNames = sub("with .* ", "with effector ", OrigName)) %>% 
-      left_join(AllPKParameters_pretty,  by = join_by(PrettifiedNames)) %>% 
-      mutate(NewName = ifelse(is.na(PKparameter), OrigName, PKparameter))
-   
    SO <- PKtable %>% 
       mutate(Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic))
-   names(SO) <- PKnames$NewName
+   
+   if(any(names(PKtable) %in% AllPKParameters$PKparameter)){
+      PKnames <- data.frame(PKparameter = PKparameters) %>% 
+         left_join(AllPKParameters_pretty, by = "PKparameter") %>% 
+         mutate(NewName = PKparameter)
+   } else {
+      PKnames <- data.frame(OrigName = names(PKtable)) %>% 
+         mutate(PrettifiedNames = sub("with .* ", "with effector ", OrigName)) %>% 
+         left_join(AllPKParameters_pretty,  by = join_by(PrettifiedNames)) %>% 
+         mutate(NewName = ifelse(is.na(PKparameter), OrigName, PKparameter))
+      
+      names(SO) <- PKnames$NewName
+   }
    
    suppressWarnings(
       SO <- SO %>% 
