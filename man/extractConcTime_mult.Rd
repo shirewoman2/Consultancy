@@ -87,7 +87,13 @@ data, play around with those data, and then later decide you want to pull
 more concentration-time data for comparisons, this data.frame can already
 exist. When that is the case, this function will \emph{add} data to that
 data.frame. It will \emph{not} overwrite existing data unless
-\code{overwrite} is set to TRUE.}
+\code{overwrite} is set to TRUE. However, it also will NOT open any
+simulation files that already exist and look for any possible new tissues
+and compounds. If you want to add new tissues and compounds that you
+previously did NOT extract without overwriting the concentration-time data
+you already have, we recommend running a separate instance of
+\code{extractConcTime_mult} and then using \code{\link{dplyr::bind_rows}}
+to add the new data to the existing ct_dataframe.}
 
 \item{overwrite}{TRUE or FALSE (default) on whether to re-extract the
 concentration-time data from output files that are already included in

@@ -47,8 +47,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if(nrow(Deets) == 0){
-      return(list(Heading = "*Table XXX. Simulated PK data*",
-                  Caption = paste0("*Source simulated data: ",
+      return(list(TableHeading = "*Table XXX. Simulated PK data*",
+                  TableCaption = paste0("*Source simulated data: ",
                                    basename(MyFile), "*")))
       
    }
@@ -195,7 +195,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    Heading <- paste0("*Table XXX. Simulated ",
                      ifelse(Observedincluded, "and observed", ""),
-                     MeanType, " mean ", tissue, " PK parameters for ",
+                     MeanType, " mean ", 
+                     str_comma(tissue), " PK parameters for ",
                      MyCompound, " after ", FigText2, " of ",
                      paste(Deets[[MyDose]], "mg", MyDosedCompound), 
                      FigText3, " in ", 

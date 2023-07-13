@@ -585,7 +585,9 @@ ct_plot_mult <- function(ct_dataframe,
          
          if(any(duplicated(DatasetCheck$File))){
             Split_i <- str_split(sub("\\.xlsx", "", basename(i)), pattern = "\\.")[[1]]
-            FileName <- paste0(Split_i[3], " ", Split_i[4], " ",
+            FileName <- paste0(Split_i[3], " ",
+                               Split_i[2], " ",
+                               Split_i[4], " ",
                                ifelse(is.na(Split_i[5]) | Split_i[5] == "none",
                                       "", 
                                       paste0(" subsection ADAM ", Split_i[5])),
