@@ -302,7 +302,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          # and user is just getting everything that's new, and this takes
          # time to run. Come up with a better way to add more compounds
          # later.
-         if(compoundsToExtract == "all"){
+         if(any(compoundsToExtract == "all")){
             sim_data_files_topull <- setdiff(unique(DataToFetch$File), 
                                              unique(ct_dataframe$File))
          } else {
