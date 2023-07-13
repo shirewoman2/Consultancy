@@ -85,7 +85,13 @@
 #'   more concentration-time data for comparisons, this data.frame can already
 #'   exist. When that is the case, this function will \emph{add} data to that
 #'   data.frame. It will \emph{not} overwrite existing data unless
-#'   \code{overwrite} is set to TRUE.
+#'   \code{overwrite} is set to TRUE. However, it also will NOT open any
+#'   simulation files that already exist and look for any possible new tissues
+#'   and compounds. If you want to add new tissues and compounds that you
+#'   previously did NOT extract without overwriting the concentration-time data
+#'   you already have, we recommend running a separate instance of
+#'   \code{extractConcTime_mult} and then using \code{\link{dplyr::bind_rows}}
+#'   to add the new data to the existing ct_dataframe. 
 #' @param overwrite TRUE or FALSE (default) on whether to re-extract the
 #'   concentration-time data from output files that are already included in
 #'   \code{ct_dataframe}. Since pulling data from Excel files is slow, by
@@ -274,13 +280,23 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Checking on what combinations of data the user has requested and what
    # data are already present in ct_dataframe.
+   if(compoundsToExtract[1] == "all"){
+      compoundsToExtract_orig <- "all"
+      compoundsToExtract <- c(MainCompoundIDs, ADCCompoundIDs)
+   } else {
+      compoundsToExtract_orig <- compoundsToExtract
+   }
+   
    Requested <- expand.grid(Tissue = tissues,
                             CompoundID = compoundsToExtract,
-                            File = sim_data_files)
+                            File = sim_data_files) %>% 
+      mutate(ID = paste(File, Tissue, CompoundID))
    
+   # Checking for existing conc-time data
    if(exists(substitute(ct_dataframe)) && 
       "data.frame" %in% class(ct_dataframe) && 
       nrow(ct_dataframe) > 0){
+      
       if("File" %in% names(ct_dataframe) == FALSE){
          ct_dataframe$File <- "unknown file"
       }
@@ -288,35 +304,29 @@ extractConcTime_mult <- function(sim_data_files = NA,
       ct_dataframe <- ct_dataframe %>%
          mutate(ID = paste(File, Tissue, CompoundID))
       
-      suppressMessages(
-         DataToFetch <- ct_dataframe %>% select(File, Tissue, CompoundID) %>%
-            unique() %>% mutate(ExistsAlready = TRUE) %>%
-            right_join(Requested) %>%
-            filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
-            mutate(ID = paste(File, Tissue, CompoundID))
-      )
-      
       if(overwrite == FALSE){
-         # If the user reuqested "all" for compoundsToExtract, then don't
-         # check every time for any new compounds b/c there likely are none
-         # and user is just getting everything that's new, and this takes
-         # time to run. Come up with a better way to add more compounds
-         # later.
-         if(any(compoundsToExtract == "all")){
-            sim_data_files_topull <- setdiff(unique(DataToFetch$File), 
-                                             unique(ct_dataframe$File))
-         } else {
-            sim_data_files_topull <- unique(DataToFetch$File)
-         }
+         
+         DataToFetch <- Requested %>% 
+            filter(!File %in% ct_dataframe$File)
+         
+         sim_data_files_topull <- unique(as.character(DataToFetch$File))
+         
       } else {
-         sim_data_files_topull <- sim_data_files
+         
+         DataToFetch <- Requested
+         
+         sim_data_files_topull <- unique(sim_data_files)
          ct_dataframe <- ct_dataframe %>%
-            filter(!ID %in% DataToFetch$ID)
+            filter(!File %in% DataToFetch$File)
       }
+      
    } else {
+      
+      # This is when there's no existing data, so we're just getting everything. 
       DataToFetch <- Requested
       sim_data_files_topull <- sim_data_files
       ct_dataframe <- data.frame()
+      
    }
    
    if(length(sim_data_files_topull) == 0){
@@ -507,7 +517,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             "released payload" = "released payload")
       }
       
-      if(compoundsToExtract[1] == "all"){
+      if(compoundsToExtract_orig[1] == "all"){
          compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
       } else {
          # If the requested compound is not present in the Excel file, remove
@@ -516,7 +526,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                            names(CompoundCheck)[complete.cases(CompoundCheck)])
       }
       
-      if(compoundsToExtract[1] != "all" &&
+      if(compoundsToExtract_orig[1] != "all" &&
          all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
          warning(paste0("For the file ", ff, ", the compound(s) ",
                         str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
@@ -718,7 +728,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       # Removing any compounds not included in user request. If user requested
       # "all" for compoundsToExtract, need to change that to a character
       # vector from here on in the function.
-      if(compoundsToExtract[1] == "all"){
+      if(compoundsToExtract_orig[1] == "all"){
          compoundsToExtract <- c("substrate", "inhibitor 1",
                                  "inhibitor 2", "inhibitor 1 metabolite",
                                  "primary metabolite 1",
