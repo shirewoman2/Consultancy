@@ -7,9 +7,13 @@
 so_graph(
   PKtable,
   PKparameters = NA,
+  boundaries = c(1.5, 2),
+  boundaries_Guest = 2,
   boundary_indicator = "lines",
   boundary_color_set = "red black",
+  boundary_line_types = "default",
   boundary_line_width = 0.7,
+  axis_titles = c(y = "Simulated", x = "Observed"),
   point_color_column,
   point_color_set = "default",
   legend_label_point_color = NA,
@@ -34,9 +38,25 @@ so_graph(
 parameter included in \code{PKtable}. To see the full set of possible
 parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 
-\item{boundary_indicator}{how to indicate the boundaries of 1.5-fold and
-2-fold comparisons of simulated / observed. Options are "lines" (default)
-"fill" to get a shaded area, or "none" to remove any indicators of those
+\item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
+1.5- and 2-fold boundaries. Indicate boundaries you want like this:
+\code{boundaries = c(1.25, 1.5, 2)}}
+
+\item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
+parameter is a mean ratio of the parameter in the presence of an effector /
+the parameter in the absence of the effector. The default boundary for
+Guest curves is 2, which will show both the Guest curve and a straight
+line. Honestly, we recommend leaving this as 2 for clarity of the graph.
+For these PK parameters, if there are any values listed for
+\code{boundaries_Guest}, the lines will be replaced with a curve as
+described in [Guest Galetin 2011 Drug Metab
+Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/). If you'd rather show
+straight lines for these parameters instead of Guest curves, set this to
+NA.}
+
+\item{boundary_indicator}{how to indicate the boundaries for simulated /
+observed. Options are "lines" (default), "fill" to get a shaded area, or
+"none" to remove any indicators of those
 boundaries. \strong{NOTE: There is a known bug within RStudio that causes
 filled semi-transparent areas like you get with the "fill" option to NOT
 get graphed for certain versions of RStudio.} To get around this, within
@@ -44,18 +64,31 @@ RStudio, go to Tools --> Global Options --> General --> Graphics --> And
 then set "Graphics device: backend" to "AGG". Honestly, this is a better
 option for higher-quality graphics anyway!}
 
-\item{boundary_color_set}{set of colors to use for indicating the 1.5-fold
-and 2-fold boundaries of the simulated / observed ratio. The default is
-"red black", which results in a black line at the 1.5-fold boundary and a
-red one at the 2-fold boundary. Other options are "red green", "muted red
-green" (a lighter, somewhat more muted red and green that work well for
-indicating the boundary when you're using shading instead of lines), and
-"black", which will result in only black lines or shading. You also can set
-this to any two colors you'd like, e.g., \code{boundary_color_set =
-c("yellow", "blue")}}
+\item{boundary_color_set}{set of colors to use for indicating the X-fold
+boundaries of the simulated / observed ratio. The default is "red black",
+which, for the default boundaries, results in a black line at the 1.5-fold
+boundary and a red one at the 2-fold boundary. Other options are "red
+green", "muted red green" (a lighter, somewhat more muted red and green
+that work well for indicating the boundary when you're using shading
+instead of lines), and "black", which will result in only black lines or
+shading. You also can set this to any set of colors you'd like, e.g.,
+\code{boundary_color_set = c("yellow", "blue")}. The number of colors
+should equal the number of boundaries that you've indicated or the graph
+won't be easily interpretable.}
+
+\item{boundary_line_types}{optionally specify the line types to use for the
+boundaries (only applicable when \code{boundary_indicator = "lines"});
+leaving this as "default" results in a dashed line at unity and solid lines
+for all others, but you can specify this with any R-acceptable line types,
+e.g., \code{boundary_line_types = c("dotted", "dashed", "solid")}. To see
+the possibilities, type \code{ggpubr::show_line_types()} into the console.}
 
 \item{boundary_line_width}{line width; default is 0.7. This only applies when
 \code{boundary_indicator} is set to "lines", the default.}
+
+\item{axis_titles}{optionally specify what you'd like for the x and y axis
+titles with a named character vector. The default is 
+\code{axis_titles = c("x" = "Observed", "y" = "Simulated")}}
 
 \item{point_color_column}{(optional) the column in \code{PKtable} that should
 be used for determining which color the points will be. This should be
@@ -173,11 +206,7 @@ a set of arranged ggplot2 graphs
 }
 \description{
 \code{so_graph} makes a graph of simulated vs. observed PK, including
-indicating where the predicted parameters fell within 1.5- or 2-fold of the
-observed. When the PK parameter is a geometric mean ratio of the parameter in
-the presence of an effector / the parameter in the absence of the effector,
-the 1.5-fold line will be replaced with a curve as described in Guest Galetin
-2011 Drug Metab Dispos.
+indicating where the predicted parameters fell within X fold of the observed.
 }
 \examples{
 # Assuming you have run pksummary_mult on a few files with observed data

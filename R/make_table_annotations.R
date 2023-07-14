@@ -21,6 +21,7 @@
 #' @param tissue tissue in which the PK parameters were measured
 #'
 #' @return a list with a) TableHeading text and b) TableCaption text
+#' @export
 #'
 #' @examples
 #' # None yet
