@@ -468,6 +468,9 @@ formatTable_Simcyp <- function(DF,
       flextable::border_inner_v(part = "all", 
                                 border = officer::fp_border(width = 0.5)) %>% 
       flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
+      flextable::hline_bottom(part = "body", 
+                              border = officer::fp_border(width = 0.5)) %>% 
+      flextable::fix_border_issues() %>% 
       
       # making the width autofitted to contents
       flextable::set_table_properties(width = 1, layout = "autofit")
