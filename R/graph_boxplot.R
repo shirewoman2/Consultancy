@@ -1,4 +1,3 @@
-
 #' Make boxplots or boxplots overlaid with individual points
 #'
 #' \code{graph_boxplot} takes as input a data.frame of numeric values and the
@@ -73,7 +72,6 @@
 #' @param fig_width figure width in inches; default is 6
 #'
 #' @return a ggplot2 graph
-#' @import tidyverse
 #' @export
 #'
 #' @examples
