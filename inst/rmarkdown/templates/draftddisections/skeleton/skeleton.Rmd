@@ -18,8 +18,10 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 MyEffector <- determine_myeffector(Deets = Deets, 
                                    prettify_compound_names = prettify_compound_names)
-MySubstrate <- ifelse(prettify_compound_names, 
-                      prettify_compound_name(Deets$Substrate), Deets$Substrate)
+MySubstrate <- ifelse(class(prettify_compound_names) == "logical", 
+                      ifelse(prettify_compound_names, 
+                             prettify_compound_name(Deets$Substrate), Deets$Substrate), 
+                      prettify_compound_names["substrate"])
 
 SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
                                                 "Multiple Dose"),
@@ -142,11 +144,11 @@ ugfun <- function(X){
    return(X)
 }
 
-if(prettify_compound_names){
+if((class(prettify_compound_names) == "logical" && prettify_compound_names) |
+   (class(prettify_compound_names) == "character")){
    PKToPull_DF <- data.frame(
       PrettifiedNames = sub(MyEffector, "effector", names(PKsum$Table)))
 } else {
-   
    PKToPull_DF <- data.frame(
       PrettifiedNames = sapply(names(PKsum$Table), pretfun)) 
 }

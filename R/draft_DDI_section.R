@@ -445,11 +445,12 @@ draft_DDI_section <- function(sim_data_file,
    # If user did not provide extracted conc time data, extract them.
    if(class(ct_dataframe) == "logical"){
       ct_dataframe <- extractConcTime_mult(sim_data_files = sim_data_file, 
-                                           tissue = tissue, 
+                                           tissues = tissue, 
                                            compoundsToExtract = c("substrate", "inhibitor 1"), 
                                            returnAggregateOrIndiv = "both")
    }
    
+   # Note that draft_DDI_section can only accommodate 1 file and 1 tissue
    ct_dataframe <- ct_dataframe %>%
       filter(File == sim_data_file & Tissue == tissue)
    

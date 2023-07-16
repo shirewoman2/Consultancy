@@ -5,7 +5,7 @@
 2. The geometric mean ratio is the exponential of the difference $$\text{geometric mean ratio} = e^{\mu_\text{numerator} - \mu_\text{denominator}} $$
 
 3. Calculate the variance of the ratio $$ \text{variance of the log-transformed ratio} = \frac{Var(ln(\text{numerator sim values}))}{N_{\text{numerator sim}}} +$$ $$\frac{Var(ln(\text{denominator sim values}))}{N_{\text{denominator sim}}} $$
-where N is the number of subjects in that simulation and variance (Var) is calculated as $$Var(X) = \frac{1}{n} \sum_{i=1}^n (x_i - \mu)^2 $$ 
+where N is the number of subjects in that simulation and variance (Var) is calculated as $$Var(X) = \frac{1}{N} \sum_{i=1}^N (x_i - \mu)^2 $$ 
 
 4. Calculate the Student's t distribution critical value for a significance level of `r conf_int * 100`% (&alpha; = `r 1 - conf_int`).  $$t_{1 - \frac{\alpha}{2}} = `r round(qnorm(1-(1-conf_int)/2), 2)`$$
 
