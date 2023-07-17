@@ -4,7 +4,11 @@
 \alias{remove_file_timestamp}
 \title{Remove date/time stamps from Excel results files created by the Autorunner}
 \usage{
-remove_file_timestamp(sim_data_files = NA, regex_to_match = NA)
+remove_file_timestamp(
+  sim_data_files = NA,
+  regex_to_match = NA,
+  return_file_names = FALSE
+)
 }
 \arguments{
 \item{sim_data_files}{the Simcyp Simulator results Excel files to clean up.
@@ -24,14 +28,20 @@ files all start with "abc1a-", list that here, in quotes, and anything that
 doesn't contain "abc1a-" will be ignored. Don't include the "xlsx" part of
 the file name, though, because we'll add that. Wildcards and other regex
 are acceptable.}
+
+\item{return_file_names}{TRUE or FALSE (default) for whether to return the
+original and revised file names. If you want to check what the new file
+names would be before running this, try running
+\code{\link{detect_file_timestamp}} first.}
 }
 \value{
 Does not return anything in R; only changes file names
 }
 \description{
 \code{remove_file_timestamp} will remove date/time stamps that have EXACTLY
-the same format as the Simcyp Autorunner's. For example: "myfile - 2023-10-31
-13-29-15.xlsx" will become "myfile.xlsx". UNDER CONSTRUCTION.
+the same format as the Simcyp Autorunner's output. For example: "myfile -
+2023-10-31 13-29-15.xlsx" will become "myfile.xlsx". BE CAREFUL because
+there's no undo button; your file names will be permanently changed.
 }
 \examples{
 # None yet

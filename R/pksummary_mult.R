@@ -318,7 +318,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            fontsize = 11, 
                            highlight_so_cutoffs = NA, 
                            highlight_so_colors = "yellow to red", 
-                           single_table = TRUE,
+                           single_table = FALSE,
                            ...){
    
    # Error catching ----------------------------------------------------------

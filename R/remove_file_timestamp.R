@@ -1,8 +1,9 @@
 #' Remove date/time stamps from Excel results files created by the Autorunner
 #'
 #' \code{remove_file_timestamp} will remove date/time stamps that have EXACTLY
-#' the same format as the Simcyp Autorunner's. For example: "myfile - 2023-10-31
-#' 13-29-15.xlsx" will become "myfile.xlsx". UNDER CONSTRUCTION.
+#' the same format as the Simcyp Autorunner's output. For example: "myfile -
+#' 2023-10-31 13-29-15.xlsx" will become "myfile.xlsx". BE CAREFUL because
+#' there's no undo button; your file names will be permanently changed.
 #'
 #' @param sim_data_files the Simcyp Simulator results Excel files to clean up.
 #'   There are three options: \enumerate{\item{Leave this as NA (default)
@@ -19,7 +20,11 @@
 #'   files all start with "abc1a-", list that here, in quotes, and anything that
 #'   doesn't contain "abc1a-" will be ignored. Don't include the "xlsx" part of
 #'   the file name, though, because we'll add that. Wildcards and other regex
-#'   are acceptable. 
+#'   are acceptable.
+#' @param return_file_names TRUE or FALSE (default) for whether to return the
+#'   original and revised file names. If you want to check what the new file
+#'   names would be before running this, try running
+#'   \code{\link{detect_file_timestamp}} first. 
 #'
 #' @return Does not return anything in R; only changes file names
 #' @export
@@ -29,33 +34,36 @@
 #'
 #' 
 remove_file_timestamp <- function(sim_data_files = NA,
-                                  regex_to_match = NA){
+                                  regex_to_match = NA, 
+                                  return_file_names = FALSE){
    
    # Error catching ---------------------------------------------------
    
-   # FIXME
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
    
    # Main body of function ---------------------------------------------------
    
-   if(length(sim_data_files) == 1 &&
-      (is.na(sim_data_files) | sim_data_files == "recursive")){
-      Regex <- ifelse(is.na(regex_to_match), 
-                      "xlsx$",
-                      paste0(regex_to_match, ".*\\.xlsx$"))
-      sim_data_files <- list.files(pattern = "xlsx$",
-                                   recursive = (complete.cases(sim_data_files) &&
-                                                   sim_data_files == "recursive"))
-      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-   } 
+   suppressWarnings(
+      Changes <- detect_file_timestamp(sim_data_files = sim_data_files, 
+                                       regex_to_match = regex_to_match))
    
-   Changes <- data.frame(Orig = sim_data_files) %>% 
-      mutate(Revised = sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
-                           "", Orig)) %>% 
-      filter(str_detect(Orig, " - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}"))
+   if(any(duplicated(Changes$Revised))){
+      stop("We cannot proceed because the following files would have the same name:
+", 
+str_c(Changes$Original[Changes$Revised %in% 
+                      Changes$Revised[duplicated(Changes$Revise)]], 
+      collapse = "\n"))
+   }
    
    for(i in 1:nrow(Changes)){
-      file.rename(from = Changes$Orig[i], 
+      file.rename(from = Changes$Original[i], 
                   to = Changes$Revised[i])
    }
+   
+   if(return_file_names)
+      return(Changes)
 }
 
