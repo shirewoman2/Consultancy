@@ -32,7 +32,7 @@ pksummary_mult(
   fontsize = 11,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
-  single_table = TRUE,
+  single_table = FALSE,
   ...
 )
 }

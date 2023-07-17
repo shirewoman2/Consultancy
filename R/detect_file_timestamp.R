@@ -1,9 +1,11 @@
-#' Remove date/time stamps from Excel results files created by the Autorunner
+#' Figure out what date/time stamps on Excel results files would be removed by
+#' the function \code{\link{remove_file_timestamp}}
 #'
-#' \code{remove_file_timestamp} will remove date/time stamps that have EXACTLY
+#' \code{detect_file_timestamp} will find any date/time stamps that have EXACTLY
 #' the same format as the Simcyp Autorunner's output. For example: "myfile -
-#' 2023-10-31 13-29-15.xlsx" will become "myfile.xlsx". BE CAREFUL because
-#' there's no undo button; your file names will be permanently changed.
+#' 2023-10-31 13-29-15.xlsx" will be noted and, if you run
+#' \code{\link{remove_file_timestamp}}, would become "myfile.xlsx". BE CAREFUL
+#' because there's no undo button; your file names will be permanently changed.
 #'
 #' @param sim_data_files the Simcyp Simulator results Excel files to clean up.
 #'   There are three options: \enumerate{\item{Leave this as NA (default)
@@ -21,21 +23,17 @@
 #'   doesn't contain "abc1a-" will be ignored. Don't include the "xlsx" part of
 #'   the file name, though, because we'll add that. Wildcards and other regex
 #'   are acceptable.
-#' @param return_file_names TRUE or FALSE (default) for whether to return the
-#'   original and revised file names. If you want to check what the new file
-#'   names would be before running this, try running
-#'   \code{\link{detect_file_timestamp}} first. 
 #'
-#' @return Does not return anything in R; only changes file names
+#' @return a data.frame with the original file names and what the new file names
+#'   would be if you run \code{\link{remove_file_timestamp}}
 #' @export
 #'
 #' @examples
 #' # None yet
 #'
 #' 
-remove_file_timestamp <- function(sim_data_files = NA,
-                                  regex_to_match = NA, 
-                                  return_file_names = FALSE){
+detect_file_timestamp <- function(sim_data_files = NA,
+                                  regex_to_match = NA){
    
    # Error catching ---------------------------------------------------
    
@@ -46,24 +44,30 @@ remove_file_timestamp <- function(sim_data_files = NA,
    
    # Main body of function ---------------------------------------------------
    
-   suppressWarnings(
-      Changes <- detect_file_timestamp(sim_data_files = sim_data_files, 
-                                       regex_to_match = regex_to_match))
+   if(length(sim_data_files) == 1 &&
+      (is.na(sim_data_files) | sim_data_files == "recursive")){
+      Regex <- ifelse(is.na(regex_to_match), 
+                      "xlsx$",
+                      paste0(regex_to_match, ".*\\.xlsx$"))
+      sim_data_files <- list.files(pattern = "xlsx$",
+                                   recursive = (complete.cases(sim_data_files) &&
+                                                   sim_data_files == "recursive"))
+      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+   } 
+   
+   Changes <- data.frame(Original = sim_data_files) %>% 
+      mutate(Revised = sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
+                           "", Original)) %>% 
+      filter(str_detect(Original, " - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}"))
    
    if(any(duplicated(Changes$Revised))){
-      stop("We cannot proceed because the following files would have the same name:
+      warning("The following files would have the same name if you run remove_file_timestamp:
 ", 
 str_c(Changes$Original[Changes$Revised %in% 
                       Changes$Revised[duplicated(Changes$Revise)]], 
       collapse = "\n"))
    }
    
-   for(i in 1:nrow(Changes)){
-      file.rename(from = Changes$Original[i], 
-                  to = Changes$Revised[i])
-   }
-   
-   if(return_file_names)
-      return(Changes)
+   return(Changes)
 }
 
