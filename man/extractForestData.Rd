@@ -70,7 +70,11 @@ a data.frame of data to use for making forest plots
 \code{extractForestData} automatically extracts data for generating forest
 plots from Simulator output files and formats them for use with
 \code{\link{forest_plot}} or the forest plot shiny app. This will take some
-time to run since it needs to open multiple Excel files.
+time to run since it needs to open multiple Excel files. For detailed
+instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Forest plots/Examples-for-making-forest-plots.docx". (Sorry, we
+are unable to include a link to it here.)
 }
 \examples{
 

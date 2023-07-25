@@ -3,7 +3,12 @@
 #' \code{calc_PK_ratios} matches PK data from a pair of simulator output Excel
 #' files and calculates the mean and confidence intervals of the ratios of the
 #' requested PK parameters. To do this for multiple pairs of simulator output
-#' files, please see the function \code{\link{calc_PK_ratios_mult}}.
+#' files, please see the function \code{\link{calc_PK_ratios_mult}}. For
+#' detailed instructions and examples, please see the SharePoint file "Simcyp
+#' PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+#' examples and instructions/Calculating PK ratios from separate
+#' simulations/Calculating-PK-ratios.docx". (Sorry, we are unable to include a
+#' link to it here.)
 #'
 #' @param sim_data_file_numerator a simulator output Excel file that will
 #'   provide the numerator for the calculated ratios.

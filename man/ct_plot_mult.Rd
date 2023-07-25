@@ -68,8 +68,8 @@ attention to the position of commas and quotes there!}
   need to specify anything for \code{save_graph}. (In fact, anything you
   specify for \code{save_graph} will be ignored.)}
 
-\item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy
-of the graphical file(s) where the left panel shows the original graphs and
+\item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
+the graphical file(s) where the left panel shows the original graphs and
 the right panel shows information about the file used to get the data and
 the trial design. This works MUCH faster when you have already used
 \code{\link{extractExpDetails_mult}} to get information about how your
@@ -268,7 +268,11 @@ ADAM-model data. If you have more than one dataset per file, the graph titles
 won't necessarily be clear, so please pay attention to what data you're
 including. If you get unexpected or unclear output, try using
 \code{\link{ct_plot_overlay}} to graph your data; it might work better for
-what you want to show.
+what you want to show. For detailed instructions and examples, please see the
+SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+Files/SimcypConsultancy function examples and instructions/Concentration-time
+plots 2 - multiple plots at once/Concentration-time-plot-examples-2.docx".
+(Sorry, we are unable to include a link to it here.)
 }
 \details{
 \strong{A note on the order of the graphs:} This function arranges graphs

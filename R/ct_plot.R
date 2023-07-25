@@ -8,7 +8,12 @@
 #' graphs while only setting a minimal number of arguments. If you want to plot
 #' enzyme abundance data, please see \code{\link{enz_plot}}. Please also see
 #' "Details" at the bottom of this help file for some general notes and advice
-#' on how to use this function most effectively to get the graph you want.
+#' on how to use this function most effectively to get the graph you want. For
+#' detailed instructions and examples, please see the SharePoint file "Simcyp
+#' PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+#' examples and instructions/Concentration-time plots 1 - one sim at a
+#' time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+#' include a link to it here.)
 #'
 #' \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 #' inhibitors, or inhibitor metabolites are available in all tissues. If it's
@@ -314,7 +319,7 @@
 #'   different graphical file extension, it will be saved as that file format.
 #'   Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
 #'   "tiff", "png", "bmp", or "svg". Leaving this as NA means the file will not
-#'   be saved to disk. 
+#'   be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'

@@ -1,7 +1,12 @@
 #' Extract details about the experimental design
 #'
 #' \code{extractExpDetails} looks up experimental design details from a Simcyp
-#' Simulator output file.
+#' Simulator output file. For detailed instructions and examples, please see the
+#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#' Files/SimcypConsultancy function examples and instructions/Checking
+#' simulation experimental
+#' details/Checking-simulation-experimental-details.docx". (Sorry, we are unable
+#' to include a link to it here.)
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
 #'   in quotes. \strong{A note:} There are just a few items that we will attempt

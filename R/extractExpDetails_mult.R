@@ -3,7 +3,12 @@
 #' \code{extractExpDetails_mult} takes a character vector of Simcyp Simulator
 #' output files -- or all the Excel files in the current directory if no files
 #' are specified -- and collects experimental details for the simulations into a
-#' single table. It optionally saves that table to a csv or Excel file.
+#' single table. It optionally saves that table to a csv or Excel file. For
+#' detailed instructions and examples, please see the SharePoint file "Simcyp
+#' PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+#' examples and instructions/Checking simulation experimental
+#' details/Checking-simulation-experimental-details.docx". (Sorry, we are unable
+#' to include a link to it here.)
 #'
 #' @param sim_data_files a character vector of simulator output files, each in
 #'   quotes and encapsulated with \code{c(...)}, NA to extract experimental

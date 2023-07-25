@@ -286,7 +286,11 @@ percentiles and, optionally, comparisons to observed data. This function
 automatically finds the correct tabs and the correct cells in a Simulator
 output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 see the notes at the bottom of this help file for how to supply observed data
-in a standardized fashion that this function can read.}}
+in a standardized fashion that this function can read.}} For detailed
+instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
+include a link to it here.)
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up

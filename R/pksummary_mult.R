@@ -6,7 +6,11 @@
 #' automatically finds the correct tabs and the correct cells in a Simulator
 #' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
-#' in a standardized fashion that this function can read.}}
+#' in a standardized fashion that this function can read.}} For detailed
+#' instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+#' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
+#' include a link to it here.)
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame of the observed PK
@@ -267,7 +271,7 @@
 #'   \item{a character vector of specific colors}{Any R-acceptable colors, will
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
 #'   If you do specify your own bespoke colors, you'll need to make sure that
-#'   you supply one color for every value in \code{highlight_so_cutoffs}.} 
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param ...
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple

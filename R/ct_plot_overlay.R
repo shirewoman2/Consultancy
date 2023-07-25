@@ -5,7 +5,11 @@
 #' concentration-time data for multiple tissues, compounds, or Simcyp Simulator
 #' output files for easy comparisons. \emph{Note:} There are some nuances to
 #' overlaying observed data. Please see the "Details" section at the bottom of
-#' this help file.
+#' this help file. For detailed instructions and examples, please see the
+#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#' Files/SimcypConsultancy function examples and instructions/Concentration-time
+#' plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx".
+#' (Sorry, we are unable to include a link to it here.)
 #'
 #' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include

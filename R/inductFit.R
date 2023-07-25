@@ -13,7 +13,11 @@
 #' will fail to deliver any fitted parameters, which is meant to be a benefit
 #' but could be an annoyance depending on your perspective. Because this does
 #' not include those boundaries, you may get different results between this
-#' function and Howie's script.}}
+#' function and Howie's script.}} For detailed
+#' instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+#' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Fitting induction data/Fitting-induction-data.docx". (Sorry, we
+#' are unable to include a link to it here.)
 #'
 #' @param DF the data.frame containing induction data with a column for the drug
 #'   concentration, a column for the fold induction observed, and, if you want
@@ -174,7 +178,7 @@
 #'   quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
 #'   file will save only the fitted parameters. However, if you would like a
 #'   Word file with a) the equations used, b) the fitted parameters, and c) the
-#'   graphs, end this file name with ".docx" instead. 
+#'   graphs, end this file name with ".docx" instead.
 #'
 #' @return Returns a list of \describe{ \item{Fit}{the fitted parameters}
 #'   \item{Fit_means}{the mean fitted parameters for all donors} \item{Graph}{a

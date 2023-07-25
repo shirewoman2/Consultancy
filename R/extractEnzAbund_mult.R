@@ -10,7 +10,11 @@
 #' get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
 #' \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
 #' open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
-#' Be sure to close all of the source Excel files.
+#' Be sure to close all of the source Excel files. For detailed instructions and
+#' examples, please see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp
+#' PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
+#' (Sorry, we are unable to include a link to it here.)
 #'
 #' @param sim_data_files a character vector of simulator output files, each in
 #'   quotes and encapsulated with \code{c(...)}, NA to extract enzyme-abundance

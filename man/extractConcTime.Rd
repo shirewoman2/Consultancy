@@ -142,7 +142,11 @@ a single, tidy data.frame. There are some nuances to how it deals with
 observed data; please see the details at the bottom of this help file. Not
 all substrate metabolites, inhibitors, or inhibitor metabolites are available
 in all tissues. If it's not present in your Excel output, we can't extract it
-here.
+here. For detailed instructions and examples, please see the SharePoint file
+"Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+function examples and instructions/Concentration-time plots 1 - one sim at a
+time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+include a link to it here.)
 }
 \details{
 \strong{A note on observed data:} When observed data are included in a

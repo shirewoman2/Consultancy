@@ -270,7 +270,11 @@ A list or a data.frame of PK data that optionally includes where the
 \description{
 \code{calc_PK_ratios_mult} matches PK data from pairs of simulator output
 Excel files and calculates the mean and confidence intervals of the ratios of
-the requested PK parameters.
+the requested PK parameters. For detailed instructions and examples, please
+see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+Files/SimcypConsultancy function examples and instructions/Calculating PK
+ratios from separate simulations/Calculating-PK-ratios.docx". (Sorry, we are
+unable to include a link to it here.)
 }
 \examples{
 # No examples yet.

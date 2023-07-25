@@ -2,7 +2,11 @@
 #'
 #' \code{calc_PK_ratios_mult} matches PK data from pairs of simulator output
 #' Excel files and calculates the mean and confidence intervals of the ratios of
-#' the requested PK parameters.
+#' the requested PK parameters. For detailed instructions and examples, please
+#' see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#' Files/SimcypConsultancy function examples and instructions/Calculating PK
+#' ratios from separate simulations/Calculating-PK-ratios.docx". (Sorry, we are
+#' unable to include a link to it here.)
 #'
 #' @param sim_data_file_pairs a data.frame or a csv file with at least two
 #'   columns: "Numerator", listing the files to use for the numerator of each
@@ -212,7 +216,7 @@
 #'   \item{a character vector of specific colors}{Any R-acceptable colors, will
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
 #'   If you do specify your own bespoke colors, you'll need to make sure that
-#'   you supply one color for every value in \code{highlight_so_cutoffs}.} 
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
