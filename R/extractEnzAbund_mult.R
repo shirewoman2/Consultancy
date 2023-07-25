@@ -78,7 +78,7 @@
 #' 
 
 extractEnzAbund_mult <- function(sim_data_files = NA,
-                                 sim_enz_dataframe = EnzAbund,
+                                 sim_enz_dataframe = NA,
                                  overwrite = FALSE,
                                  enzymes = "CYP3A4",
                                  tissues = "liver",
@@ -87,192 +87,193 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                                  existing_exp_details = NA, 
                                  fromMultFunction = FALSE, 
                                  ...){
-    
-    # Error catching -------------------------------------------------------
-    
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
-    
-    # Checking whether they've supplied extractConcTime args instead of
-    # extractConctTime_mult args
-    if("sim_data_file" %in% names(match.call()) &
-       "sim_data_files" %in% names(match.call()) == FALSE){
-        sim_data_files <- sys.call()$sim_data_file
-    }
-    
-    if("enzyme" %in% names(match.call()) &
-       "enzymes" %in% names(match.call()) == FALSE){
-        enzymes <- sys.call()$enzyme
-    }
-    
-    if("tissue" %in% names(match.call()) &
-       "tissues" %in% names(match.call()) == FALSE){
-        tissues <- sys.call()$tissue
-    }
-    
-    
-    # Main body of function -----------------------------------------------
-    
-    enzymesToExtract <- toupper(enzymes)
-    
-    sim_data_files <- unique(sim_data_files)
-    
-    # If user did not supply files, then extract all the files in the current
-    # folder that end in "xlsx" or in all subfolders if they wanted it to be
-    # recursive.
-    if(length(sim_data_files) == 1 &&
-       (is.na(sim_data_files) | sim_data_files == "recursive")){
-       sim_data_files <- list.files(pattern = "xlsx$",
-                                    recursive = (complete.cases(sim_data_files) &&
-                                                    sim_data_files == "recursive"))
-       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-    }
-    
-    # Checking on what combinations of data the user has requested and what
-    # data are already present in sim_enz_dataframe.
-    Requested <- expand.grid(Tissue = tissues,
-                             Enzyme = enzymesToExtract,
-                             File = sim_data_files)
-    
-    if(exists(substitute(sim_enz_dataframe)) && 
-       "data.frame" %in% class(sim_enz_dataframe) && 
-       nrow(sim_enz_dataframe) > 0){
-        if("File" %in% names(sim_enz_dataframe) == FALSE){
-            sim_enz_dataframe$File <- "unknown file"
-        }
-        
-        sim_enz_dataframe <- sim_enz_dataframe %>%
-            mutate(ID = paste(File, Tissue, Enzyme))
-        
-        DataToFetch <- sim_enz_dataframe %>% select(File, Tissue, Enzyme) %>%
-            unique() %>% mutate(ExistsAlready = TRUE) %>%
-            right_join(Requested) %>%
-            filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
-            mutate(ID = paste(File, Tissue, Enzyme))
-        
-        if(overwrite == FALSE){
-            sim_data_files_topull <- unique(DataToFetch$File)
-        } else {
-            sim_data_files_topull <- sim_data_files
-            sim_enz_dataframe <- sim_enz_dataframe %>%
-                filter(!ID %in% DataToFetch$ID)
-        }
-    } else {
-        DataToFetch <- Requested
-        sim_data_files_topull <- sim_data_files
-        sim_enz_dataframe <- data.frame()
-    }
-    
-    if(length(sim_data_files_topull) == 0){
-        message("There are no data to pull that are not already present in your current data.frame. Returning current data.frame.")
-        return(sim_enz_dataframe)
-    }
-    
-    
-    ## Start of loop through files -------------------------------------------
-    MultData <- list()
-    
-    for(ff in sim_data_files_topull){
-        message(paste("Extracting data from file =", ff))
-        MultData[[ff]] <- list()
-        
-        # Getting summary data for the simulation(s)
-        if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
-            Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
-        } else {
-            Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                            "TRUE" = existing_exp_details, 
-                            "FALSE" = deannotateDetails(existing_exp_details)) 
+   
+   # Error catching -------------------------------------------------------
+   
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Checking whether they've supplied extractConcTime args instead of
+   # extractConctTime_mult args
+   if("sim_data_file" %in% names(match.call()) &
+      "sim_data_files" %in% names(match.call()) == FALSE){
+      sim_data_files <- sys.call()$sim_data_file
+   }
+   
+   if("enzyme" %in% names(match.call()) &
+      "enzymes" %in% names(match.call()) == FALSE){
+      enzymes <- sys.call()$enzyme
+   }
+   
+   if("tissue" %in% names(match.call()) &
+      "tissues" %in% names(match.call()) == FALSE){
+      tissues <- sys.call()$tissue
+   }
+   
+   
+   # Main body of function -----------------------------------------------
+   
+   enzymesToExtract <- toupper(enzymes)
+   
+   sim_data_files <- unique(sim_data_files)
+   
+   # If user did not supply files, then extract all the files in the current
+   # folder that end in "xlsx" or in all subfolders if they wanted it to be
+   # recursive.
+   if(length(sim_data_files) == 1 &&
+      (is.na(sim_data_files) | sim_data_files == "recursive")){
+      sim_data_files <- list.files(pattern = "xlsx$",
+                                   recursive = (complete.cases(sim_data_files) &&
+                                                   sim_data_files == "recursive"))
+      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+   }
+   
+   # Checking on what combinations of data the user has requested and what
+   # data are already present in sim_enz_dataframe.
+   Requested <- expand.grid(Tissue = tissues,
+                            Enzyme = enzymesToExtract,
+                            File = sim_data_files)
+   
+   if("logical" %in% class(sim_enz_dataframe) == FALSE &&
+      exists(substitute(sim_enz_dataframe)) && 
+      "data.frame" %in% class(sim_enz_dataframe) && 
+      nrow(sim_enz_dataframe) > 0){
+      if("File" %in% names(sim_enz_dataframe) == FALSE){
+         sim_enz_dataframe$File <- "unknown file"
+      }
+      
+      sim_enz_dataframe <- sim_enz_dataframe %>%
+         mutate(ID = paste(File, Tissue, Enzyme))
+      
+      DataToFetch <- sim_enz_dataframe %>% select(File, Tissue, Enzyme) %>%
+         unique() %>% mutate(ExistsAlready = TRUE) %>%
+         right_join(Requested) %>%
+         filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
+         mutate(ID = paste(File, Tissue, Enzyme))
+      
+      if(overwrite == FALSE){
+         sim_data_files_topull <- unique(DataToFetch$File)
+      } else {
+         sim_data_files_topull <- sim_data_files
+         sim_enz_dataframe <- sim_enz_dataframe %>%
+            filter(!ID %in% DataToFetch$ID)
+      }
+   } else {
+      DataToFetch <- Requested
+      sim_data_files_topull <- sim_data_files
+      sim_enz_dataframe <- data.frame()
+   }
+   
+   if(length(sim_data_files_topull) == 0){
+      message("There are no data to pull that are not already present in your current data.frame. Returning current data.frame.")
+      return(sim_enz_dataframe)
+   }
+   
+   
+   ## Start of loop through files -------------------------------------------
+   MultData <- list()
+   
+   for(ff in sim_data_files_topull){
+      message(paste("Extracting data from file =", ff))
+      MultData[[ff]] <- list()
+      
+      # Getting summary data for the simulation(s)
+      if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+         Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
+      } else {
+         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                         "TRUE" = existing_exp_details, 
+                         "FALSE" = deannotateDetails(existing_exp_details)) 
+         
+         if("data.frame" %in% class(Deets)){
+            Deets <- Deets %>% filter(File == ff)
             
-            if("data.frame" %in% class(Deets)){
-                Deets <- Deets %>% filter(File == ff)
-                
-                if(nrow(Deets == 0)){
-                    Deets <- extractExpDetails(sim_data_file = ff, 
-                                               exp_details = "Input Sheet")
-                }
+            if(nrow(Deets == 0)){
+               Deets <- extractExpDetails(sim_data_file = ff, 
+                                          exp_details = "Input Sheet")
             }
-        }
-        
-        if(length(Deets) == 0){
-            # Using "warning" instead of "stop" here b/c I want this to be able to
-            # pass through to other functions and just skip any files that
-            # aren't simulator output.
-            warning(paste("The file", ff,
-                          "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-                    call. = FALSE)
-            next()
-        }
-        
-        # Each tissue will be on its own sheet in the Excel file, so each
-        # will need their own iterations of the loop for reading different
-        # sheets.
-        for(j in tissues){
+         }
+      }
+      
+      if(length(Deets) == 0){
+         # Using "warning" instead of "stop" here b/c I want this to be able to
+         # pass through to other functions and just skip any files that
+         # aren't simulator output.
+         warning(paste("The file", ff,
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                 call. = FALSE)
+         next()
+      }
+      
+      # Each tissue will be on its own sheet in the Excel file, so each
+      # will need their own iterations of the loop for reading different
+      # sheets.
+      for(j in tissues){
+         
+         message(paste("Extracting data for tissue =", j))
+         
+         MultData[[ff]][[j]] <- list()
+         
+         for(k in enzymesToExtract){
             
-            message(paste("Extracting data for tissue =", j))
+            message(paste("Extracting data for enzyme =", k))
             
-            MultData[[ff]][[j]] <- list()
+            MultData[[ff]][[j]][[k]] <- extractEnzAbund(
+               sim_data_file = ff,
+               enzyme = k,
+               tissue = j,
+               returnAggregateOrIndiv = returnAggregateOrIndiv, 
+               existing_exp_details = Deets)
             
-            for(k in enzymesToExtract){
-                
-                message(paste("Extracting data for enzyme =", k))
-                
-                MultData[[ff]][[j]][[k]] <- extractEnzAbund(
-                    sim_data_file = ff,
-                    enzyme = k,
-                    tissue = j,
-                    returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                    existing_exp_details = Deets)
-                
-            } # end of enzyme k loop
-            
-            MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
-            
-        } # end of tissue j loop
-        
-        MultData[[ff]] <- bind_rows(MultData[[ff]])
-        
-        # When the particular combination of enzyme and tissue is not
-        # available in that file, extractEnzAbund will return an empty
-        # data.frame, which we don't want to be included in the final
-        # data. Not adding info for File in that scenario b/c it would
-        # add a row to what would have been an empty data.frame.
-        if(nrow(MultData[[ff]]) > 0){
-            MultData[[ff]] <- MultData[[ff]] %>% mutate(File = ff)
-        }
-        
-        # MUST remove Deets or you can get the wrong info for each file!!!
-        rm(Deets) 
-        
-    } # end of file ff loop
-    
-    MultData <- bind_rows(MultData)
-    
-    # all data together -------------------------------------------------
-    sim_enz_dataframe <- bind_rows(sim_enz_dataframe, MultData) %>% 
-        arrange(across(any_of(c("File", "Enzyme", "Inhibitor",
-                                "Individual", "Trial", "Time")))) %>%
-        select(any_of(c("Enzyme", "Tissue", "Inhibitor", "Species",
-                        "Individual", "Trial", "Time", "Abundance",
-                        "Time_units", "DoseNum_sub", "DoseNum_inhib1", 
-                        "DoseNum_inhib2", "File")))
-    
-    if("DoseNum_inhib1" %in% names(sim_enz_dataframe) && 
-       all(is.na(sim_enz_dataframe$DoseNum_inhib1))){
-       sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib1)
-    }
-    
-    if("DoseNum_inhib2" %in% names(sim_enz_dataframe) && 
-       all(is.na(sim_enz_dataframe$DoseNum_inhib2))){
-       sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib2)
-    }
-    
-    
-    
-    return(sim_enz_dataframe)
-    
+         } # end of enzyme k loop
+         
+         MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
+         
+      } # end of tissue j loop
+      
+      MultData[[ff]] <- bind_rows(MultData[[ff]])
+      
+      # When the particular combination of enzyme and tissue is not
+      # available in that file, extractEnzAbund will return an empty
+      # data.frame, which we don't want to be included in the final
+      # data. Not adding info for File in that scenario b/c it would
+      # add a row to what would have been an empty data.frame.
+      if(nrow(MultData[[ff]]) > 0){
+         MultData[[ff]] <- MultData[[ff]] %>% mutate(File = ff)
+      }
+      
+      # MUST remove Deets or you can get the wrong info for each file!!!
+      rm(Deets) 
+      
+   } # end of file ff loop
+   
+   MultData <- bind_rows(MultData)
+   
+   # all data together -------------------------------------------------
+   sim_enz_dataframe <- bind_rows(sim_enz_dataframe, MultData) %>% 
+      arrange(across(any_of(c("File", "Enzyme", "Inhibitor",
+                              "Individual", "Trial", "Time")))) %>%
+      select(any_of(c("Enzyme", "Tissue", "Inhibitor", "Species",
+                      "Individual", "Trial", "Time", "Abundance",
+                      "Time_units", "DoseNum_sub", "DoseNum_inhib1", 
+                      "DoseNum_inhib2", "File")))
+   
+   if("DoseNum_inhib1" %in% names(sim_enz_dataframe) && 
+      all(is.na(sim_enz_dataframe$DoseNum_inhib1))){
+      sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib1)
+   }
+   
+   if("DoseNum_inhib2" %in% names(sim_enz_dataframe) && 
+      all(is.na(sim_enz_dataframe$DoseNum_inhib2))){
+      sim_enz_dataframe <- sim_enz_dataframe %>% select(-DoseNum_inhib2)
+   }
+   
+   
+   
+   return(sim_enz_dataframe)
+   
 }
 
 

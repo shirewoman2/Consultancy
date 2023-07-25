@@ -6,7 +6,7 @@
 \usage{
 extractEnzAbund_mult(
   sim_data_files = NA,
-  sim_enz_dataframe = EnzAbund,
+  sim_enz_dataframe = NA,
   overwrite = FALSE,
   enzymes = "CYP3A4",
   tissues = "liver",

@@ -183,7 +183,7 @@
 
 extractConcTime_mult <- function(sim_data_files = NA,
                                  obs_to_sim_assignment = NA,
-                                 ct_dataframe = ConcTime,
+                                 ct_dataframe = NA,
                                  overwrite = FALSE,
                                  tissues = "plasma",
                                  compoundsToExtract = "all",
@@ -293,7 +293,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
       mutate(ID = paste(File, Tissue, CompoundID))
    
    # Checking for existing conc-time data
-   if(exists(substitute(ct_dataframe)) && 
+   if("logical" %in% class(ct_dataframe) == FALSE &&
+      exists(substitute(ct_dataframe)) && 
       "data.frame" %in% class(ct_dataframe) && 
       nrow(ct_dataframe) > 0){
       
