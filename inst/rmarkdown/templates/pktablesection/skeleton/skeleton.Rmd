@@ -2,24 +2,46 @@
 
 ```{r}
 
-Deets <- existing_exp_details %>% filter(File == unique(MyPKResults[[i]]$File))
+if(FromCalcPKRatios){
+   MyFiles <- str_split_1(unique(MyPKResults[[i]]$File), " / ")
+} else {
+   MyFiles <- unique(MyPKResults[[i]]$File)
+}
+
+Deets <- existing_exp_details %>% filter(File %in% MyFiles)
 MyEffector <- determine_myeffector(Deets = Deets, 
                                    prettify_compound_names = TRUE)
 
-PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
-PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
-   left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
-   pull(PKparameter) %>% unique()
-
-MyAnnotations <- make_table_annotations(
-   MyPKResults = MyPKResults[[i]], 
-   MyFile = unique(MyPKResults[[i]]$File), 
-   PKpulled = PKpulled_i,  
-   MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
-   prettify_compound_names = TRUE,
-   Deets = Deets, 
-   MeanType = MeanType, 
-   tissue = unique(MyPKResults[[i]]$Tissue))
+if(FromCalcPKRatios){
+   MyAnnotations <- 
+      list("TableHeading" = 
+              paste0(
+                 "*Table XXX. Simulated ", MeanType, " mean ", 
+                 unique(MyPKResults[[i]]$Tissue),  " PK parameters for the file pair ", 
+                 str_comma(MyFiles), "*"), 
+           
+           "TableCaption" = 
+              paste0("*Simulated values listed are the ", MeanType, 
+                     " means. CV: coefficient of variation; CI: confidence interval. Source simulated data: ", 
+                     str_comma(MyFiles), "*"))
+   
+} else {
+   
+   PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
+   PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
+      left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
+      pull(PKparameter) %>% unique()
+   
+   MyAnnotations <- make_table_annotations(
+      MyPKResults = MyPKResults[[i]], 
+      MyFile = unique(MyPKResults[[i]]$File), 
+      PKpulled = PKpulled_i,  
+      MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
+      prettify_compound_names = TRUE,
+      Deets = Deets, 
+      MeanType = MeanType, 
+      tissue = unique(MyPKResults[[i]]$Tissue))
+}
 
 ```
 

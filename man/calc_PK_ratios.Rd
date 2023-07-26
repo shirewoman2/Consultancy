@@ -19,6 +19,7 @@ calc_PK_ratios(
   conf_int = 0.9,
   includeCV = TRUE,
   includeConfInt = TRUE,
+  include_dose_num = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   rounding = NA,

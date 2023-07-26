@@ -184,6 +184,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            conf_int = 0.9, 
                            includeCV = TRUE, 
                            includeConfInt = TRUE,
+                           include_dose_num = NA,
                            prettify_columns = TRUE,
                            prettify_compound_names = TRUE,
                            rounding = NA,
@@ -751,6 +752,27 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       # Prettifying effector names as necessary
       names(MyPKResults) <- sub("effector", MyEffector, names(MyPKResults))
    }
+   
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
+                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
+      include_dose_num <- all(DoseCheck)
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+      include_dose_num <- TRUE
+   }
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+   }
+   
    
    # Saving --------------------------------------------------------------
    MyPKResults_out <- MyPKResults
