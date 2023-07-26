@@ -50,7 +50,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    if(nrow(Deets) == 0){
       return(list(TableHeading = "*Table XXX. Simulated PK data*",
                   TableCaption = paste0("*Source simulated data: ",
-                                   basename(MyFile), "*")))
+                                        basename(MyFile), "*")))
       
    }
    
@@ -112,13 +112,18 @@ make_table_annotations <- function(MyPKResults, # only PK table
                            "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
    }
    
-   DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
-                          "12" = "BID", 
-                          "24" = "QD", 
-                          "8" = "three times per day", 
-                          "6" = "four times per day", 
-                          "48" = "every other day", 
-                          "NA" = "single dose")
+   if("DoseInt_sub" %in% names(Deets)){
+      DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
+                             "12" = "BID", 
+                             "24" = "QD", 
+                             "8" = "three times per day", 
+                             "6" = "four times per day", 
+                             "48" = "every other day", 
+                             "NA" = "single dose")
+   } else {
+      DoseFreq_sub <- "single dose"
+   }
+   
    DoseFreq_sub <- ifelse(is.null(DoseFreq_sub), 
                           # paste("Q", DoseFreq_sub, "H"), 
                           "CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY",
@@ -127,7 +132,14 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    ## Info on any effectors included ---------------------------------
    
-   # Note that make_table_annotations was designed for there being only 1 effector. 
+   AllEffectors <- c("inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets), 
+                                            Deets$Inhibitor1, NA), 
+                     "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets), 
+                                            Deets$Inhibitor2, NA), 
+                     "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets), 
+                                                       Deets$Inhibitor1, NA))
+   AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
+   
    MyEffector <- determine_myeffector(Deets, prettify_compound_names)
    
    if(MyEffector != "none"){
@@ -135,13 +147,18 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                                           "Multiple Dose"), 
                                "multiple", "single")
       
-      DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
-                               "12" = "BID", 
-                               "24" = "QD", 
-                               "8" = "three times per day", 
-                               "6" = "four times per day", 
-                               "48" = "every other day", 
-                               "NA" = "single dose")
+      if("DoseInt_inhib" %in% names(Deets)){
+         DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
+                                  "12" = "BID", 
+                                  "24" = "QD", 
+                                  "8" = "three times per day", 
+                                  "6" = "four times per day", 
+                                  "48" = "every other day", 
+                                  "NA" = "single dose")
+      } else {
+         DoseFreq_inhib <- "single dose"
+      }
+      
       DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib), 
                                # paste("Q", DoseFreq_inhib, "H"), 
                                "CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY",
@@ -187,12 +204,14 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                             "oral", Deets[[MyDoseRoute]]), 
                                      "doses"))
    
-   FigText3 <- ifelse(MyEffector != "none" & 
-                         MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
-                                             "inhibitor 1 metabolite") == FALSE,
-                      paste(" with or without", Deets$Dose_inhib, "mg",
-                            MyEffector, DoseFreq_inhib),
-                      "")
+   FigText3 <- ifelse(
+      MyEffector != "none" & 
+         (MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
+                              "inhibitor 1 metabolite") == FALSE |
+             length(setdiff(names(AllEffectors), MyCompoundID)) > 0),
+      paste(" with or without", Deets$Dose_inhib, "mg",
+            MyEffector, DoseFreq_inhib),
+      "")
    
    Heading <- paste0("*Table XXX. Simulated ",
                      ifelse(Observedincluded, "and observed", ""),
