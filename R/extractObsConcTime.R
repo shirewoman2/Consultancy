@@ -381,16 +381,29 @@ extractObsConcTime <- function(obs_data_file,
       
       for(i in names(obs_data)){
          
-         if(nrow(DoseInts[[i]]) > 0){
-            DoseInts[[i]] <- DoseInts[[i]] %>% 
+         # For metabolites, we need the parent compound dosing interval info.
+         # Dealing with that here.
+         j <- switch(i, 
+                     "substrate" = "substrate", 
+                     "inhibitor 1" = "inhibitor 1", 
+                     "inhibitor 2" = "inhibitor 2", 
+                     "primary metabolite 1" = "substrate", 
+                     "primary metabolite 2" = "substrate", 
+                     "secondary metabolite" = "substrate", 
+                     "inhibitor 1 metabolite" = "inhibitor 1")
+         
+         if(j %in% names(DoseInts) && 
+            nrow(DoseInts[[j]]) > 0){
+            DoseInts[[j]] <- DoseInts[[j]] %>% 
                mutate(Interval = cut(DoseTime, 
-                                     breaks = c(unique(DoseInts[[i]]$DoseTime), Inf), 
+                                     breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
                                      include.lowest = TRUE, right = FALSE))
             
             obs_data[[i]] <- obs_data[[i]] %>% 
-               mutate(Interval = cut(Time, breaks = c(unique(DoseInts[[i]]$DoseTime), Inf), 
+               mutate(Interval = cut(Time, 
+                                     breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
                                      include.lowest = TRUE, right = FALSE)) %>% 
-               left_join(DoseInts[[i]], 
+               left_join(DoseInts[[j]] %>% mutate(CompoundID = i), 
                          by = join_by(CompoundID, Individual, Interval)) %>% 
                mutate(DoseNum = as.numeric(Interval))
          }
