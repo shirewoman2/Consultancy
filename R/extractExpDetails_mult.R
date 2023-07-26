@@ -234,7 +234,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # regimen, etc.), are now character data. Making them all be character.
    CheckChar <- AllExpDetails %>% 
       filter(Detail %in% unique(c(names(existing_exp_details), 
-                                  lapply(MyDeets, names))) &
+                                  unlist(lapply(MyDeets, names)))) &
                 Class == "numeric") %>% 
       pull(Detail)
    
