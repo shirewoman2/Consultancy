@@ -1235,8 +1235,8 @@ extractExpDetails <- function(sim_data_file,
       
       # Checking that the workspace file is available. This will ignore the
       # date/time stamp on the Excel results if it's still there.
-      if(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
-             ".wksz", sim_data_file) %in% list.files(pattern = "wksz$")){
+      if(file.exists(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
+             ".wksz", sim_data_file))){
          
          TEMP <- extractExpDetails_XML(
             sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
