@@ -48,15 +48,17 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if(nrow(Deets) == 0){
-      return(list(TableHeading = "*Table XXX. Simulated PK data*",
+      return(list(TableHeading = paste0("*Table XXX. Simulated ",
+                                        ifelse(Observedincluded, "and observed ", ""),
+                                        "PK data*"),
                   TableCaption = paste0("*Source simulated data: ",
                                         basename(MyFile), "*")))
       
    }
    
    ## General info on MyCompoundID ----------------------------------------
-   Dose1included <- any(str_detect(PKpulled, "_dose1"))
-   LastDoseincluded <- any(str_detect(PKpulled, "_last"))
+   Dose1included <- any(str_detect(names(MyPKResults), "_dose1|Dose 1"))
+   LastDoseincluded <- any(str_detect(names(MyPKResults), "_last|Last dose"))
    Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
    
    MyDosedCompound <- switch(MyCompoundID, 
@@ -68,14 +70,18 @@ make_table_annotations <- function(MyPKResults, # only PK table
                              "inhibitor 2" = Deets$Inhibitor2,
                              "inhibitor 1 metabolite" = Deets$Inhibitor1)
    
-   MyDoseRoute <- switch(MyCompoundID, 
-                         "substrate" = "DoseRoute_sub",
-                         "primary metabolite 1" = "DoseRoute_sub",
-                         "primary metabolite 2" = "DoseRoute_sub",
-                         "secondary metabolite" = "DoseRoute_sub",
-                         "inhibitor 1" = "DoseRoute_inhib",
-                         "inhibitor 2" = "DoseRoute_inhib2",
-                         "inhibitor 1 metabolite" = "DoseRoute_inhib1")
+   MyDoseRoute <- Deets[[switch(MyCompoundID, 
+                                "substrate" = "DoseRoute_sub",
+                                "primary metabolite 1" = "DoseRoute_sub",
+                                "primary metabolite 2" = "DoseRoute_sub",
+                                "secondary metabolite" = "DoseRoute_sub",
+                                "inhibitor 1" = "DoseRoute_inhib",
+                                "inhibitor 2" = "DoseRoute_inhib2",
+                                "inhibitor 1 metabolite" = "DoseRoute_inhib1")]]
+   MyDoseRoute <- switch(MyDoseRoute, 
+                         "Oral" = "oral", 
+                         "IV" = "IV", 
+                         "Inhaled" = "inhaled")
    
    MyDose <- switch(MyCompoundID, 
                     "substrate" = "Dose_sub",
@@ -190,19 +196,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    FigText2 <- switch(DosesIncluded, 
                       "Dose1 Last" = paste("the first and multiple", 
-                                           ifelse(Deets[[MyDoseRoute]] == "Oral", 
-                                                  "oral", Deets[[MyDoseRoute]]),
-                                           "doses"),
+                                           MyDoseRoute, "doses"),
                       
                       "Dose1" = paste("the first",
-                                      ifelse(Deets[[MyDoseRoute]] == "Oral", 
-                                             "oral", Deets[[MyDoseRoute]]), 
-                                      "dose"),
+                                      MyDoseRoute, "dose"),
                       
                       "Last" = paste("multiple",
-                                     ifelse(Deets[[MyDoseRoute]] == "Oral", 
-                                            "oral", Deets[[MyDoseRoute]]), 
-                                     "doses"))
+                                     MyDoseRoute, "doses"))
    
    FigText3 <- ifelse(
       MyEffector != "none" & 
@@ -214,7 +214,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
       "")
    
    Heading <- paste0("*Table XXX. Simulated ",
-                     ifelse(Observedincluded, "and observed", ""),
+                     ifelse(Observedincluded, "and observed ", ""),
                      MeanType, " mean ", 
                      str_comma(tissue), " PK parameters for ",
                      MyCompound, " after ", FigText2, " of ",
@@ -236,11 +236,11 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    CapText2 <- paste0(sub("; $", ".", CapText2a), 
                       ifelse(Observedincluded, 
-                             " S/O: simulated/observed; source observed data: Clinical Study XXX; ",
+                             "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
                              ""))
    
    Caption <- paste0("*Simulated values listed are ", 
-                     CapText1, ". ", CapText2, " Source simulated data: ",
+                     CapText1, ". ", CapText2, "source simulated data: ",
                      basename(MyFile), "*")
    
    
