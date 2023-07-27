@@ -1118,6 +1118,7 @@ ct_plot <- function(ct_dataframe = NA,
       # geom_ribbon. Hacking around that.
       A <- A +
          scale_x_time(time_range = time_range_relative, 
+                      x_axis_interval = x_axis_interval, 
                       time_units = TimeUnits,
                       pad_x_axis = pad_x_axis)
       
@@ -1145,6 +1146,7 @@ ct_plot <- function(ct_dataframe = NA,
                                          0, y_axis_limits_lin[1]),
                                   YmaxRnd)) +
          scale_x_time(time_range = time_range_relative, 
+                      x_axis_interval = x_axis_interval, 
                       time_units = TimeUnits,
                       pad_x_axis = pad_x_axis)
       
