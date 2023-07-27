@@ -358,11 +358,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Tidying and error catching for any observed data
    if("character" %in% class(obs_to_sim_assignment) && 
-      obs_to_sim_assignment == "use existing_exp_details"){
+      str_detect(tolower(obs_to_sim_assignment), "use existing|use.*details")){
       if("logical" %in% class(existing_exp_details)){
          warning("You requested that we match observed data to simulated data based on `existing_exp_details`, but you haven't supplied anything for `existing_exp_details`. We cannot extract any observed data.", 
                  call. = FALSE)
          ObsAssign <- list()
+         obs_to_sim_assignment <- NA
       } else {
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 
@@ -372,6 +373,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extact any observed data.", 
                     call. = FALSE)
             ObsAssign <- list()
+            obs_to_sim_assignment <- NA
          } else {
             ObsAssign <- Deets %>% select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
@@ -394,6 +396,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                warning("We can't find the Excel files that match the observed overlay files in your simulations. We cannot extract any observed data.", 
                        call. = FALSE)
                ObsAssign <- list()
+               obs_to_sim_assignment <- NA
             } else {
                ObsAssign <- split(ObsAssign, f = ObsAssign$File)
             }
@@ -928,7 +931,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                }
             }
             
-            MultObsData <- bind_rows(MultObsData)
+            MultObsData <- bind_rows(MultObsData) %>% 
+               filter(complete.cases(CompoundID))
             MultObsData <- match_units(DF_to_adjust = MultObsData,
                                        goodunits = list("Conc_units" = conc_units_to_use,
                                                         "Time_units" = time_units_to_use))
