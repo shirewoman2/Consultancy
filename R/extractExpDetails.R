@@ -481,6 +481,7 @@ extractExpDetails <- function(sim_data_file,
             filter(!str_detect(Deet, "ADAMI"))
          ADAMIreps <- NA
          NonADAMIreps <- NA
+         MyInputDeets <- intersect(MyInputDeets, InputDeets$Deet)
       } else {
          ADAMIreps <- InputDeets %>% filter(str_detect(Deet, "ADAMI")) %>% 
             pull(Deet)
