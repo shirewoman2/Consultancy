@@ -714,6 +714,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
                      MultData[[ff]][[j]][[k]] %>%
                      mutate(File = ff)
                   
+                  # Adding some NA values to Deets as needed for the next bit to
+                  # work w/out generating a ton of warnings.
+                  MissingCols <- setdiff(paste0("MW", 
+                                                c("_sub", "_met1", "_met2", "_secmet",
+                                                  "_inhib", "_inhib2", "_inhib1met")), 
+                                         names(Deets))
+                  if(length(MissingCols) > 0){
+                     ToAdd <- as.data.frame(matrix(ncol = length(MissingCols)))
+                     names(ToAdd) <- MissingCols
+                     Deets <- Deets %>% bind_cols(ToAdd)
+                  }
+                  
                   MolWts <- c("substrate" = Deets$MW_sub, 
                               "primary metabolite 1" = Deets$MW_met1, 
                               "primary metabolite 2" = Deets$MW_met2,

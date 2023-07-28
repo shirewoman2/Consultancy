@@ -1806,6 +1806,7 @@ extractConcTime <- function(sim_data_file,
    } # end of loop for each compound m   
    
    # Putting everything together ----------------------------------------
+   
    Data <- list()
    
    if("aggregate" %in% returnAggregateOrIndiv){
