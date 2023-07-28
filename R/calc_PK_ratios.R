@@ -3,7 +3,12 @@
 #' \code{calc_PK_ratios} matches PK data from a pair of simulator output Excel
 #' files and calculates the mean and confidence intervals of the ratios of the
 #' requested PK parameters. To do this for multiple pairs of simulator output
-#' files, please see the function \code{\link{calc_PK_ratios_mult}}.
+#' files, please see the function \code{\link{calc_PK_ratios_mult}}. For
+#' detailed instructions and examples, please see the SharePoint file "Simcyp
+#' PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+#' examples and instructions/Calculating PK ratios from separate
+#' simulations/Calculating-PK-ratios.docx". (Sorry, we are unable to include a
+#' link to it here.)
 #'
 #' @param sim_data_file_numerator a simulator output Excel file that will
 #'   provide the numerator for the calculated ratios.
@@ -179,6 +184,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            conf_int = 0.9, 
                            includeCV = TRUE, 
                            includeConfInt = TRUE,
+                           include_dose_num = NA,
                            prettify_columns = TRUE,
                            prettify_compound_names = TRUE,
                            rounding = NA,
@@ -746,6 +752,27 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       # Prettifying effector names as necessary
       names(MyPKResults) <- sub("effector", MyEffector, names(MyPKResults))
    }
+   
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
+                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
+      include_dose_num <- all(DoseCheck)
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+      include_dose_num <- TRUE
+   }
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+   }
+   
    
    # Saving --------------------------------------------------------------
    MyPKResults_out <- MyPKResults

@@ -11,7 +11,11 @@
 #' axis to look. \strong{If you're a little confused here or you're just the
 #' kind of person who prefers to wing it rather than reading the instructions
 #' when assembling furniture, we recommend skipping to the end of this help file
-#' and trying out the examples to see what we mean.}
+#' and trying out the examples to see what we mean.} For detailed
+#' instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+#' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Forest plots/Examples-for-making-forest-plots.docx". (Sorry, we
+#' are unable to include a link to it here.)
 #'
 #' @param forest_dataframe a data.frame with extracted forest-plot data,
 #'   generated from running \code{\link{extractForestData}} on Simulator output

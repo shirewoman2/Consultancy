@@ -81,8 +81,8 @@ one, enclose them with \code{c(...)}.}
   "Simcyp inputs (and QC)" tab of a compound data sheet plus trial design
   information}
 
-  \item{"methods" or "trial design"}{all the details that show up in the 
-  methods section of a report: number of trials, number of individuals 
+  \item{"methods" or "trial design"}{all the details that show up in the
+  methods section of a report: number of trials, number of individuals
   simulated, population, percent female, age range, dose amount and regimen,
    etc.}
 
@@ -179,7 +179,12 @@ amount of information, we recommend looking at just one compound at a time.
 You can set the \code{compoundID} argument to just the compound ID you want
 -- "substrate", "inhibitor 1", etc. -- or set the \code{compound} argument to
 just the compound you want -- "midazolam" or "Client Drug X" -- and that will
-also help make things less overwhelming and easier to find.
+also help make things less overwhelming and easier to find. For detailed
+instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Checking simulation experimental
+details/Checking-simulation-experimental-details.docx". (Sorry, we are unable
+to include a link to it here.)
 }
 \examples{
 

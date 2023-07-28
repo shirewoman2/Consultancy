@@ -5,7 +5,11 @@
 #' concentration-time data for multiple tissues, compounds, or Simcyp Simulator
 #' output files for easy comparisons. \emph{Note:} There are some nuances to
 #' overlaying observed data. Please see the "Details" section at the bottom of
-#' this help file.
+#' this help file. For detailed instructions and examples, please see the
+#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#' Files/SimcypConsultancy function examples and instructions/Concentration-time
+#' plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx".
+#' (Sorry, we are unable to include a link to it here.)
 #'
 #' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include
@@ -967,6 +971,42 @@ call. = FALSE)
       obs_dataframe <- filter(Trial == "mango") # hack to keep all the column names just in case
    }
    
+   # Need to assign File to correct obs data. 
+   if(all(is.na(obs_dataframe$File)) & 
+      any(complete.cases(obs_to_sim_assignment))){
+      # If the user specified values for obs_data_assignment, then use those for
+      # File.
+      
+      # Making sure that the split pattern will work in case the user omitted
+      # spaces.
+      obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
+      ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
+      
+      if(all(sapply(ObsAssign, length) == 1)){
+         obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
+      } else {
+         obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
+         
+         for(j in 1:length(ObsAssign)){
+            FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
+                                      File = ObsAssign[[j]])
+            suppressMessages(
+               obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
+            )
+            rm(FileAssign)
+         }
+         obs_dataframe <- bind_rows(obs_dataframe)
+      }
+      
+   } else if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
+      # If there are some assignments for File but some missing, just warn
+      # the user about that b/c it's not clear how to assign the ones that
+      # are missing.
+      warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
+              call. = FALSE)
+      obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
+   }
+   
    # Not mapping observed data to a column if File was originally NA for all
    # and that's what colorBy_column is or that's what linetype_column is. Also
    # not mapping if user has specified obs_color.
@@ -1681,47 +1721,6 @@ call. = FALSE)
          LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
       } else {
          LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
-      }
-      
-      # Need to assign File to correct obs data. At this point, obs_dataframe WILL
-      # have values for File if the user wanted the observed data to be
-      # assigned to ALL the sim files. 
-      if(all(is.na(obs_dataframe$File))){
-         if(any(complete.cases(obs_to_sim_assignment))){
-            # If the user *did* specify values for obs_data_assignment, then use
-            # those for File.
-            
-            # Making sure that the split pattern will work in case the user omitted
-            # spaces.
-            obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
-            ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
-            
-            if(all(sapply(ObsAssign, length) == 1)){
-               obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
-            } else {
-               obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
-               
-               for(j in 1:length(ObsAssign)){
-                  FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
-                                            File = ObsAssign[[j]])
-                  suppressMessages(
-                     obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
-                  )
-                  rm(FileAssign)
-               }
-               obs_dataframe <- bind_rows(obs_dataframe)
-            }
-         }
-         
-      } else {
-         # If there are some assignments for File but some missing, just warn
-         # the user about that b/c it's not clear how to assign the ones that
-         # are missing.
-         if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
-            warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
-                    call. = FALSE)
-            obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
-         }
       }
       
       A <- addObsPoints(obs_data = obs_dataframe, 

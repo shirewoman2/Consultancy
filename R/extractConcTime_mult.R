@@ -32,9 +32,19 @@
 #'   output, e.g. they are sensitivity analyses or a file where you were doing
 #'   some calculations, those files will be skipped.
 #' @param obs_to_sim_assignment the assignment of which observed files go with
-#'   which simulated files. There are three ways to supply this:
+#'   which simulated files. (NA, which is the default, means no observed data
+#'   will be extracted.) There are four ways to supply this:
 #'
-#'   \describe{\item{a character vector of the observed data files, each in
+#'   \describe{\item{"use existing_exp_details"}{If you have already
+#'   extracted the simulation experimental details with the function
+#'   \code{\link{extractExpDetails_mult}} and you included observed data overlay
+#'   files in your simulations, as long as those XML files have their
+#'   corresponding Excel files in the \emph{same} location, we can use that
+#'   information to figure out which observed Excel file should go with which
+#'   simulation. Note that this \strong{does} require you to supply something
+#'   for the argument \code{existing_exp_details} to work.}
+#'
+#'   \item{a character vector of the observed data files, each in
 #'   quotes and encapsulated with \code{c(...)}}{If all the observed data can be
 #'   compared to all the simulated data, then an example of acceptable input
 #'   would be: \code{obs_to_sim_assignment = "obsdata1.xlsx"}. However, if you
@@ -91,7 +101,7 @@
 #'   previously did NOT extract without overwriting the concentration-time data
 #'   you already have, we recommend running a separate instance of
 #'   \code{extractConcTime_mult} and then using \code{\link{dplyr::bind_rows}}
-#'   to add the new data to the existing ct_dataframe. 
+#'   to add the new data to the existing ct_dataframe.
 #' @param overwrite TRUE or FALSE (default) on whether to re-extract the
 #'   concentration-time data from output files that are already included in
 #'   \code{ct_dataframe}. Since pulling data from Excel files is slow, by
@@ -183,7 +193,7 @@
 
 extractConcTime_mult <- function(sim_data_files = NA,
                                  obs_to_sim_assignment = NA,
-                                 ct_dataframe = ConcTime,
+                                 ct_dataframe = NA,
                                  overwrite = FALSE,
                                  tissues = "plasma",
                                  compoundsToExtract = "all",
@@ -293,7 +303,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
       mutate(ID = paste(File, Tissue, CompoundID))
    
    # Checking for existing conc-time data
-   if(exists(substitute(ct_dataframe)) && 
+   if("logical" %in% class(ct_dataframe) == FALSE &&
+      exists(substitute(ct_dataframe)) && 
       "data.frame" %in% class(ct_dataframe) && 
       nrow(ct_dataframe) > 0){
       
@@ -346,7 +357,52 @@ extractConcTime_mult <- function(sim_data_files = NA,
    }
    
    # Tidying and error catching for any observed data
-   if("logical" %in% class(obs_to_sim_assignment)){
+   if("character" %in% class(obs_to_sim_assignment) && 
+      str_detect(tolower(obs_to_sim_assignment), "use existing|use.*details")){
+      if("logical" %in% class(existing_exp_details)){
+         warning("You requested that we match observed data to simulated data based on `existing_exp_details`, but you haven't supplied anything for `existing_exp_details`. We cannot extract any observed data.", 
+                 call. = FALSE)
+         ObsAssign <- list()
+         obs_to_sim_assignment <- NA
+      } else {
+         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                         "TRUE" = existing_exp_details, 
+                         "FALSE" = deannotateDetails(existing_exp_details))
+         
+         if("ObsOverlayFile" %in% names(Deets) == FALSE){
+            warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extact any observed data.", 
+                    call. = FALSE)
+            ObsAssign <- list()
+            obs_to_sim_assignment <- NA
+         } else {
+            ObsAssign <- Deets %>% select(File, ObsOverlayFile) %>% 
+               rename(ObsFile = ObsOverlayFile) %>% 
+               mutate(ObsFile = sub("\\.xml$", ".xlsx", ObsFile), 
+                      ObsFile = gsub("\\\\", "/", ObsFile), 
+                      ObsFile = sub("Users/.*/Certara", 
+                                    paste0("Users/", Sys.info()["user"], 
+                                           "/Certara"), ObsFile))
+            
+            if(any(file.exists(ObsAssign$ObsFile) == FALSE)){
+               warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:", 
+                              str_c(ObsAssign$ObsFile[file.exists(ObsAssign$ObsFile) == FALSE], 
+                                    collapse = "\n")), 
+                       call. = FALSE)
+            }
+            
+            ObsAssign <- ObsAssign %>% filter(file.exists(ObsFile))
+            
+            if(nrow(ObsAssign) == 0){
+               warning("We can't find the Excel files that match the observed overlay files in your simulations. We cannot extract any observed data.", 
+                       call. = FALSE)
+               ObsAssign <- list()
+               obs_to_sim_assignment <- NA
+            } else {
+               ObsAssign <- split(ObsAssign, f = ObsAssign$File)
+            }
+         }
+      }
+   } else if("logical" %in% class(obs_to_sim_assignment)){
       # this is when the user has not specified anything for
       # obs_to_sim_assignment.
       ObsAssign <- list()
@@ -875,7 +931,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                }
             }
             
-            MultObsData <- bind_rows(MultObsData)
+            MultObsData <- bind_rows(MultObsData) %>% 
+               filter(complete.cases(CompoundID))
             MultObsData <- match_units(DF_to_adjust = MultObsData,
                                        goodunits = list("Conc_units" = conc_units_to_use,
                                                         "Time_units" = time_units_to_use))

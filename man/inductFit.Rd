@@ -242,7 +242,11 @@ that, if sufficient data to describe the curve do not exist, the function
 will fail to deliver any fitted parameters, which is meant to be a benefit
 but could be an annoyance depending on your perspective. Because this does
 not include those boundaries, you may get different results between this
-function and Howie's script.}}
+function and Howie's script.}} For detailed
+instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Fitting induction data/Fitting-induction-data.docx". (Sorry, we
+are unable to include a link to it here.)
 }
 \examples{
 data(IndData)

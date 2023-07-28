@@ -315,7 +315,11 @@ in a standardized fashion that this function can read.} \item{If you would
 like to make a single PK table for multiple files at once, please see the
 function \code{\link{pksummary_mult}}.} \item{You can specify which compound
 (substrate, inhibitor 1, etc.) and which tissue (plasma, blood, or unbound
-versions of each) you want to get the PK data for.}}
+versions of each) you want to get the PK data for.}} For detailed
+instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
+include a link to it here.)
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up

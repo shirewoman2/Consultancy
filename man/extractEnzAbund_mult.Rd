@@ -6,7 +6,7 @@
 \usage{
 extractEnzAbund_mult(
   sim_data_files = NA,
-  sim_enz_dataframe = EnzAbund,
+  sim_enz_dataframe = NA,
   overwrite = FALSE,
   enzymes = "CYP3A4",
   tissues = "liver",
@@ -93,7 +93,11 @@ them. For example, if you ask for data from the files "sim1.xlsx" and
 get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
 \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
 open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
-Be sure to close all of the source Excel files.
+Be sure to close all of the source Excel files. For detailed instructions and
+examples, please see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp
+PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
+(Sorry, we are unable to include a link to it here.)
 }
 \examples{
 ConcTimeData <-

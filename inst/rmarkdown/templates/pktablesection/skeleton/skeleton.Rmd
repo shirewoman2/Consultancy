@@ -2,24 +2,48 @@
 
 ```{r}
 
-Deets <- existing_exp_details %>% filter(File == unique(MyPKResults[[i]]$File))
+if(FromCalcPKRatios){
+   MyFiles <- str_split_1(unique(MyPKResults[[i]]$File), " / ")
+} else {
+   MyFiles <- unique(MyPKResults[[i]]$File)
+}
+
+Deets <- existing_exp_details %>% filter(File %in% MyFiles)
 MyEffector <- determine_myeffector(Deets = Deets, 
                                    prettify_compound_names = TRUE)
 
-PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
-PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
-   left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
-   pull(PKparameter) %>% unique()
-
-MyAnnotations <- make_table_annotations(
-   MyPKResults = MyPKResults[[i]], 
-   MyFile = unique(MyPKResults[[i]]$File), 
-   PKpulled = PKpulled_i,  
-   MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
-   prettify_compound_names = TRUE,
-   Deets = Deets, 
-   MeanType = MeanType, 
-   tissue = unique(MyPKResults[[i]]$Tissue))
+if(FromCalcPKRatios){
+   MyAnnotations <- 
+      list("TableHeading" = 
+              paste0(
+                 "*Table XXX. Simulated ", MeanType, " mean ", 
+                 unique(MyPKResults[[i]]$Tissue),  " PK parameters for the file pair ", 
+                 str_comma(MyFiles), "*"), 
+           
+           "TableCaption" = 
+              paste0("*Simulated values listed are the ", MeanType, 
+                     " means. CV: coefficient of variation; CI: confidence interval. Source simulated data: ", 
+                     str_comma(MyFiles), "*"))
+   
+} else {
+   
+   PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
+   if(any(str_detect(PKpulled_i, " "))){
+      PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
+         left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
+         pull(PKparameter) %>% unique()
+   } 
+   
+   MyAnnotations <- make_table_annotations(
+      MyPKResults = MyPKResults[[i]] %>% purrr::discard(~all(is.na(.))), 
+      MyFile = unique(MyPKResults[[i]]$File), 
+      PKpulled = PKpulled_i,  
+      MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
+      prettify_compound_names = TRUE,
+      Deets = Deets, 
+      MeanType = MeanType, 
+      tissue = unique(MyPKResults[[i]]$Tissue))
+}
 
 ```
 
@@ -30,26 +54,27 @@ MyAnnotations <- make_table_annotations(
 if(is.na(include_dose_num)){
    # Dropping dose number depending on input. First, checking whether they have
    # both dose 1 and last-dose data.
-   DoseCheck <- c("first" = any(str_detect(names(MyPKResults[[i]]), "Dose 1")), 
-                  "last" = any(str_detect(names(MyPKResults[[i]]), "Last dose")))
-   include_dose_num <- all(DoseCheck)
+   DoseCheck <- c("first" = any(str_detect(names(MyPKResults[[i]] %>% purrr::discard(~all(is.na(.)))), "Dose 1")), 
+                  "last" = any(str_detect(names(MyPKResults[[i]] %>% purrr::discard(~all(is.na(.)))), "Last dose")))
+   include_dose_num_i <- all(DoseCheck)
+   rm(DoseCheck)
 }
 
 # include_dose_num now should be either T or F no matter what, so checking
 # that.
-if(is.logical(include_dose_num) == FALSE){
+if(is.logical(include_dose_num_i) == FALSE){
    warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
            call. = FALSE)
-   include_dose_num <- TRUE
+   include_dose_num_i <- TRUE
 }
 
-if(include_dose_num == FALSE){
+if(include_dose_num_i == FALSE){
    names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose ", "", names(MyPKResults[[i]]))
 }
 
 TempTable <- MyPKResults[[i]] %>%
-   select(-any_of(c("CompoundID", "Tissue", "File"))) %>%
-   purrr::discard(~all(is.na(.)))
+   purrr::discard(~all(is.na(.))) %>% 
+   select(-any_of(c("CompoundID", "Tissue", "File")))
 names(TempTable) <- sub("effector", MyEffector, names(TempTable))
 
 formatTable_Simcyp(TempTable,

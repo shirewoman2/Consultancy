@@ -19,6 +19,7 @@ calc_PK_ratios_mult(
   includeConfInt = TRUE,
   rounding = NA,
   checkDataSource = TRUE,
+  include_dose_num = NA,
   extract_forest_data = FALSE,
   existing_exp_details = NA,
   save_table = NA,
@@ -162,6 +163,15 @@ forest plots, which requires numbers that are \emph{not} rounded.}}}
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
 
+\item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
+the dose number when listing the PK parameter. By default, the parameter
+will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+you have PK data for both the first dose and the last dose. Also by
+default, if you have data only for the first dose or only for the last
+dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+the default behavior and get exactly what you want.}
+
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
 the same time. If set to TRUE, this will return a list that includes data
 formatted for use with the function \code{\link{forest_plot}}. This will
@@ -240,12 +250,6 @@ file into multiple tables. This only applies to the Word output.}
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
 
-\item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
-human-readable column names. TRUE makes pretty column names such as "AUCinf
-(h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-\code{\link{extractPK}}, e.g., "AUCinf_dose1". We're still tweaking this to
-make it look just right!}
-
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in the prettified column titles and in any Word
 output files. This was designed for simulations where the substrate and any
@@ -270,7 +274,11 @@ A list or a data.frame of PK data that optionally includes where the
 \description{
 \code{calc_PK_ratios_mult} matches PK data from pairs of simulator output
 Excel files and calculates the mean and confidence intervals of the ratios of
-the requested PK parameters.
+the requested PK parameters. For detailed instructions and examples, please
+see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+Files/SimcypConsultancy function examples and instructions/Calculating PK
+ratios from separate simulations/Calculating-PK-ratios.docx". (Sorry, we are
+unable to include a link to it here.)
 }
 \examples{
 # No examples yet.

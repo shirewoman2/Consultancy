@@ -1,5 +1,5 @@
 ---
-title: "Multiple PK summary tables together"
+title: "PK summary tables"
 author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
 date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
 output: word_document
@@ -49,7 +49,7 @@ if(FromCalcPKRatios){
    MyPKResults$Tissue <- tissue
    compoundsToExtract <- compoundToExtract
    MyPKResults$CompoundID <- compoundToExtract
-   PKpulled <- expand.grid(PKparameter = PKToPull, 
+   PKpulled <- expand.grid(PKpulled = PKToPull, 
                            File = MyPKResults$File, 
                            Tissue = unique(MyPKResults$Tissue), 
                            CompoundID = compoundToExtract)
@@ -207,7 +207,8 @@ if(single_table == FALSE){
       
       cat(TableSection, sep = "\n")
       
-      rm(Heading)
+      rm(Heading, include_dose_num_i, Deets, MyEffector, MyFiles, 
+         MyAnnotations, PKpulled_i, TempTable)
       
    }
    

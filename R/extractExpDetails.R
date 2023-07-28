@@ -1,7 +1,12 @@
 #' Extract details about the experimental design
 #'
 #' \code{extractExpDetails} looks up experimental design details from a Simcyp
-#' Simulator output file.
+#' Simulator output file. For detailed instructions and examples, please see the
+#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#' Files/SimcypConsultancy function examples and instructions/Checking
+#' simulation experimental
+#' details/Checking-simulation-experimental-details.docx". (Sorry, we are unable
+#' to include a link to it here.)
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
 #'   in quotes. \strong{A note:} There are just a few items that we will attempt
@@ -461,6 +466,28 @@ extractExpDetails <- function(sim_data_file,
       InputDeets$ValueCol <- InputDeets$NameCol + 1
       
       ## Main set of parameters -----------------------------------------
+      
+      # Dealing w/potential replicate values. CompoundType and pKa may be
+      # replicated but will have the same value, so when we take the unique
+      # value, that will drop away.
+      
+      # Checking for any ADAMI parameters. (May need to adapt this later for
+      # other variations on ADAM models or anything else where there will be
+      # multiple cells with identical labels.)
+      ADAMIrow <- which(InputTab$...1 == "ADAMI Parameters")
+      
+      if(length(ADAMIrow) == 0){
+         InputDeets <- InputDeets %>% 
+            filter(!str_detect(Deet, "ADAMI"))
+         ADAMIreps <- NA
+         NonADAMIreps <- NA
+         MyInputDeets <- intersect(MyInputDeets, InputDeets$Deet)
+      } else {
+         ADAMIreps <- InputDeets %>% filter(str_detect(Deet, "ADAMI")) %>% 
+            pull(Deet)
+         NonADAMIreps <- sub("_ADAMI", "", ADAMIreps)
+      }
+      
       # sub function for finding correct cell
       pullValue <- function(deet){
          
@@ -472,9 +499,13 @@ extractExpDetails <- function(sim_data_file,
             (AllExpDetails %>% 
                 filter(Detail == deet & Sheet == "Input Sheet") %>% 
                 pull(OffsetRows))
+         
          if(length(Row) == 0){
             Val <- NA
          } else {
+            if(deet %in% ADAMIreps){Row <- Row[Row > ADAMIrow]}
+            if(deet %in% NonADAMIreps){Row <- Row[Row < ADAMIrow]}
+            
             Val <- InputTab[Row,
                             InputDeets$ValueCol[
                                which(InputDeets$Deet == deet)]] %>% pull()
@@ -493,11 +524,11 @@ extractExpDetails <- function(sim_data_file,
             rm(StartDay, StartTime)
          }
          
-         # Ontogeny profile is listed twice in output for some reason.
-         # Only keeping the 1st value. Really, keeping only the unique
-         # set of values for all deets. This will still throw an error
-         # if there is more than one value, but we'd want to know that
-         # anyway, so not just keeping the 1st value listed.
+         # Ontogeny profile along w/CompoundType and pKa are often listed twice
+         # in output for some reason. Only keeping the unique set of values for
+         # all deets. This will still throw a warning if there is more than one
+         # value, but we'd want to know that anyway, so that's why I'm not just
+         # keeping the 1st value listed.
          Val <- sort(unique(Val))
          
          # Accounting for when fu,p is scripted
@@ -1205,8 +1236,8 @@ extractExpDetails <- function(sim_data_file,
       
       # Checking that the workspace file is available. This will ignore the
       # date/time stamp on the Excel results if it's still there.
-      if(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
-             ".wksz", sim_data_file) %in% list.files(pattern = "wksz$")){
+      if(file.exists(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
+             ".wksz", sim_data_file))){
          
          TEMP <- extractExpDetails_XML(
             sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 

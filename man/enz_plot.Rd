@@ -44,9 +44,9 @@ enz_plot(
 from running the function \code{\link{extractEnzAbund}}. Not quoted.}
 
 \item{gut_tissue}{Which of the two types of gut tissue would you like to
-plot? Acceptable options are "colon" or "small intestine". Applicable only
-when the tissue extracted with \code{\link{extractEnzAbund}} was gut and
-ignored in all other cases.}
+plot? Acceptable options are "colon" (default) or "small intestine".
+Applicable only when the tissue extracted with
+\code{\link{extractEnzAbund}} was gut and ignored in all other cases.}
 
 \item{figure_type}{type of figure to plot. Options are:
 
@@ -291,7 +291,11 @@ Output is a ggplot2 graph or two ggplot2 graphs arranged with
 \description{
 Using simulated enzyme-abundance data generated from running the function
 \code{\link{extractEnzAbund}}, make publication-quality graphs that match the
-consultancy template formatting instructions.
+consultancy template formatting instructions. For detailed instructions and
+examples, please see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp
+PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
+(Sorry, we are unable to include a link to it here.)
 }
 \examples{
 enz_plot(sim_enz_dataframe = CYP3A4_liver)

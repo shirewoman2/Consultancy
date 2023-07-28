@@ -10,7 +10,11 @@
 #' won't necessarily be clear, so please pay attention to what data you're
 #' including. If you get unexpected or unclear output, try using
 #' \code{\link{ct_plot_overlay}} to graph your data; it might work better for
-#' what you want to show.
+#' what you want to show. For detailed instructions and examples, please see the
+#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#' Files/SimcypConsultancy function examples and instructions/Concentration-time
+#' plots 2 - multiple plots at once/Concentration-time-plot-examples-2.docx".
+#' (Sorry, we are unable to include a link to it here.)
 #'
 #' \strong{A note on the order of the graphs:} This function arranges graphs
 #' first by file, then by compound ID, and then by tissue, and all sorting is
@@ -55,8 +59,8 @@
 #'   need to specify anything for \code{save_graph}. (In fact, anything you
 #'   specify for \code{save_graph} will be ignored.)
 #'
-#' @param qc_graph TRUE or FALSE (default) on whether to create a second copy
-#'   of the graphical file(s) where the left panel shows the original graphs and
+#' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
+#'   the graphical file(s) where the left panel shows the original graphs and
 #'   the right panel shows information about the file used to get the data and
 #'   the trial design. This works MUCH faster when you have already used
 #'   \code{\link{extractExpDetails_mult}} to get information about how your
@@ -209,7 +213,7 @@
 #'   "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA means the file
 #'   will not be automatically saved to disk, except when \code{graph_arrangment
 #'   = "separate files"}, when anything you specify here will be ignored and it
-#'   will be saved by file name anyway. 
+#'   will be saved by file name anyway.
 #' @param file_suffix optionally add a file suffix to explain what each graph
 #'   it. For example, you might run this function once and with
 #'   \code{figure_type = "means only"} and once with \code{figure_type =

@@ -81,9 +81,21 @@
 #' @param time_range_LL time range to use for the lower-left graph; defaults to
 #'   "first dose" but any option acceptable for \code{time_range} for the
 #'   function \code{\link{ct_plot}} will also work.
+#' @param x_axis_interval_LL optionally set the lower left graph x-axis major
+#'   tick-mark interval. Acceptable input: any number or leave as NA to accept
+#'   default values, which are generally reasonable guesses as to aesthetically
+#'   pleasing and PK-relevant intervals.
+#' @param x_axis_interval_U optionally set the upper graph x-axis major
+#'   tick-mark interval. Acceptable input: any number or leave as NA to accept
+#'   default values, which are generally reasonable guesses as to aesthetically
+#'   pleasing and PK-relevant intervals.
 #' @param time_range_LR time range to use for the lower-right graph; defaults to
 #'   "first dose" but any option acceptable for \code{time_range} for the
 #'   function \code{\link{ct_plot}} will also work.
+#' @param x_axis_interval_LR optionally set the lower right graph x-axis major
+#'   tick-mark interval. Acceptable input: any number or leave as NA to accept
+#'   default values, which are generally reasonable guesses as to aesthetically
+#'   pleasing and PK-relevant intervals.
 #' @param graph_title_U graph title for the upper, full-time-range graph;
 #'   defaults to "Full time range"
 #' @param graph_title_LL graph title for the lower left graph; defaults to
@@ -133,11 +145,14 @@ ct_plot3 <- function(ct_dataframe,
                      figure_type = "means only",
                      mean_type = "arithmetic",
                      linear_or_log = "semi-log", 
-                     time_range_LL = "first dose",
-                     time_range_LR = "last dose",
                      graph_title_U = "Full time range",
+                     x_axis_interval_U = NA, 
                      graph_title_LL = "First dose", 
+                     time_range_LL = "first dose",
+                     x_axis_interval_LL = NA,
                      graph_title_LR = "Last dose",
+                     time_range_LR = "last dose",
+                     x_axis_interval_LR = NA,
                      legend_position = "none",
                      qc_graph = FALSE,
                      existing_exp_details = NA,
@@ -207,37 +222,40 @@ ct_plot3 <- function(ct_dataframe,
    if(overlay){
       
       A <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                           time_range = NA,
                            figure_type = figure_type,
                            mean_type = mean_type, 
                            linear_or_log = linear_or_log,
+                           time_range = NA,
+                           x_axis_interval = x_axis_interval_U,
+                           graph_title = graph_title_U,
                            qc_graph = FALSE,
-                           ..., # comment this for development
-                           save_graph = NA) +
-         ggtitle(graph_title_U)
+                           ..., 
+                           save_graph = NA)
       
       # Suppressing messages and warnings after the 1st set.
       suppressWarnings(suppressMessages(
          B <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                              time_range = time_range_LL,
                               figure_type = figure_type,
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log,
+                              time_range = time_range_LL,
+                              x_axis_interval = x_axis_interval_LL,
+                              graph_title = graph_title_LL,
                               qc_graph = FALSE,
-                              ..., # comment this for development
-                              save_graph = NA) +
-            ggtitle(graph_title_LL)))
+                              ..., 
+                              save_graph = NA)))
       
       suppressWarnings(suppressMessages(
          C <- ct_plot_overlay(ct_dataframe = ct_dataframe,
-                              time_range = time_range_LR, 
                               figure_type = figure_type,
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log,
+                              time_range = time_range_LR, 
+                              graph_title = graph_title_LR,
+                              x_axis_interval = x_axis_interval_LR,
                               qc_graph = FALSE,
-                              ..., # comment this for development
-                              save_graph = NA) +
-            ggtitle(graph_title_LR)))
+                              ..., 
+                              save_graph = NA)))
       
       Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
                                nrow = 2, common.legend = TRUE, legend = "bottom")
@@ -255,22 +273,24 @@ ct_plot3 <- function(ct_dataframe,
                    linear_or_log = linear_or_log,
                    legend_position = legend_position,
                    time_range = NA, 
+                   x_axis_interval = x_axis_interval_U,
+                   graph_title = graph_title_U,
                    save_graph = NA, 
                    qc_graph = FALSE,
-                   ...) + # comment this for development
-         ggtitle(graph_title_U)
-      
+                   ...)
+         
       suppressWarnings(suppressMessages(
          B <- ct_plot(ct_dataframe = ct_dataframe,
                       figure_type = figure_type,
                       mean_type = mean_type, 
                       linear_or_log = linear_or_log,
                       legend_position = "none",
-                      ..., # comment this for development
+                      ..., 
                       time_range = time_range_LL, 
+                      x_axis_interval = x_axis_interval_LL,
+                      graph_title = graph_title_LL,
                       qc_graph = FALSE,
-                      save_graph = NA) +
-            ggtitle(graph_title_LL)))
+                      save_graph = NA)))
       
       suppressWarnings(suppressMessages(
          C <- ct_plot(ct_dataframe = ct_dataframe,
@@ -279,10 +299,11 @@ ct_plot3 <- function(ct_dataframe,
                       linear_or_log = linear_or_log,
                       legend_position = "none",
                       qc_graph = FALSE,
-                      ..., # comment this for development
+                      ..., 
                       time_range = time_range_LR, 
-                      save_graph = NA) +
-            ggtitle(graph_title_LR)))
+                      x_axis_interval = x_axis_interval_LR,
+                      graph_title = graph_title_LR,
+                      save_graph = NA)))
       
       if(legend_position == "none"){
          Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 

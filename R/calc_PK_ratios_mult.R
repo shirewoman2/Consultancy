@@ -2,7 +2,11 @@
 #'
 #' \code{calc_PK_ratios_mult} matches PK data from pairs of simulator output
 #' Excel files and calculates the mean and confidence intervals of the ratios of
-#' the requested PK parameters.
+#' the requested PK parameters. For detailed instructions and examples, please
+#' see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#' Files/SimcypConsultancy function examples and instructions/Calculating PK
+#' ratios from separate simulations/Calculating-PK-ratios.docx". (Sorry, we are
+#' unable to include a link to it here.)
 #'
 #' @param sim_data_file_pairs a data.frame or a csv file with at least two
 #'   columns: "Numerator", listing the files to use for the numerator of each
@@ -116,11 +120,14 @@
 #'   outputs (see an AUC tab and the summary statistics; these values are the
 #'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
 #'   limit)").
-#' @param prettify_columns TRUE (default) or FALSE for whether to make easily
-#'   human-readable column names. TRUE makes pretty column names such as "AUCinf
-#'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
-#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1". We're still tweaking this to
-#'   make it look just right!
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
@@ -212,7 +219,7 @@
 #'   \item{a character vector of specific colors}{Any R-acceptable colors, will
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
 #'   If you do specify your own bespoke colors, you'll need to make sure that
-#'   you supply one color for every value in \code{highlight_so_cutoffs}.} 
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #'
@@ -236,6 +243,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 includeConfInt = TRUE,
                                 rounding = NA,
                                 checkDataSource = TRUE, 
+                                include_dose_num = NA,
                                 extract_forest_data = FALSE, 
                                 existing_exp_details = NA,
                                 save_table = NA, 
@@ -317,6 +325,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          conf_int = conf_int, 
          includeCV = includeCV, 
          includeConfInt = includeConfInt, 
+         include_dose_num = include_dose_num, 
          prettify_columns = FALSE, 
          prettify_compound_names = FALSE, 
          rounding = "none", 

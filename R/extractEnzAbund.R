@@ -1,7 +1,11 @@
 #' Extract enzyme abundance data from a simulator output Excel file
 #'
 #' Extracts enzyme abundance data from a simulator output Excel file. The
-#' appropriate tab must be present in the output file.
+#' appropriate tab must be present in the output file. For detailed instructions
+#' and examples, please see the SharePoint file "Simcyp PBPKConsult R Files -
+#' Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
+#' (Sorry, we are unable to include a link to it here.)
 #'
 #' \strong{Note:} Unlike the similar function for extracting drug
 #' concentrations, \code{\link{extractConcTime}}, This has not been set up yet

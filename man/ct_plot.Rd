@@ -388,7 +388,12 @@ function arguments are optional; most of the time, you'll get decent-looking
 graphs while only setting a minimal number of arguments. If you want to plot
 enzyme abundance data, please see \code{\link{enz_plot}}. Please also see
 "Details" at the bottom of this help file for some general notes and advice
-on how to use this function most effectively to get the graph you want.
+on how to use this function most effectively to get the graph you want. For
+detailed instructions and examples, please see the SharePoint file "Simcyp
+PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+examples and instructions/Concentration-time plots 1 - one sim at a
+time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+include a link to it here.)
 }
 \details{
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,

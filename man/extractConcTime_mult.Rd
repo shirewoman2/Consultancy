@@ -7,7 +7,7 @@
 extractConcTime_mult(
   sim_data_files = NA,
   obs_to_sim_assignment = NA,
-  ct_dataframe = ConcTime,
+  ct_dataframe = NA,
   overwrite = FALSE,
   tissues = "plasma",
   compoundsToExtract = "all",
@@ -33,9 +33,19 @@ output, e.g. they are sensitivity analyses or a file where you were doing
 some calculations, those files will be skipped.}
 
 \item{obs_to_sim_assignment}{the assignment of which observed files go with
-  which simulated files. There are three ways to supply this:
+  which simulated files. (NA, which is the default, means no observed data
+  will be extracted.) There are four ways to supply this:
 
-  \describe{\item{a character vector of the observed data files, each in
+  \describe{\item{"use existing_exp_details"}{If you have already
+  extracted the simulation experimental details with the function
+  \code{\link{extractExpDetails_mult}} and you included observed data overlay
+  files in your simulations, as long as those XML files have their
+  corresponding Excel files in the \emph{same} location, we can use that
+  information to figure out which observed Excel file should go with which
+  simulation. Note that this \strong{does} require you to supply something
+  for the argument \code{existing_exp_details} to work.}
+
+  \item{a character vector of the observed data files, each in
   quotes and encapsulated with \code{c(...)}}{If all the observed data can be
   compared to all the simulated data, then an example of acceptable input
   would be: \code{obs_to_sim_assignment = "obsdata1.xlsx"}. However, if you

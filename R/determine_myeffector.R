@@ -17,10 +17,13 @@ determine_myeffector <- function(Deets, prettify_compound_names){
                    "TRUE" = as.data.frame(Deets), 
                    "FALSE" = deannotateDetails(Deets))
    
-   MyEffector <- c("Inhibitor1" = ifelse("Inhibitor1" %in% names(Deets), 
-                                         Deets$Inhibitor1, NA), 
-                   "Inhibitor2" = ifelse("Inhibitor2" %in% names(Deets), 
-                                         Deets$Inhibitor2, NA))
+   MyEffector <- 
+      c("Inhibitor1" = switch(as.character("Inhibitor1" %in% names(Deets)), 
+                              "TRUE" = str_comma(Deets$Inhibitor1), 
+                              "FALSE" = as.character(NA)), 
+        "Inhibitor2" = switch(as.character("Inhibitor2" %in% names(Deets)), 
+                              "TRUE" = str_comma(Deets$Inhibitor2), 
+                              "FALSE" = as.character(NA)))
    
    if(any(complete.cases(MyEffector))){
       MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])

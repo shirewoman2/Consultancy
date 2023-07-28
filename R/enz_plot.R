@@ -2,7 +2,11 @@
 #'
 #' Using simulated enzyme-abundance data generated from running the function
 #' \code{\link{extractEnzAbund}}, make publication-quality graphs that match the
-#' consultancy template formatting instructions.
+#' consultancy template formatting instructions. For detailed instructions and
+#' examples, please see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp
+#' PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
+#' (Sorry, we are unable to include a link to it here.)
 #'
 #' @param sim_enz_dataframe the data.frame of enzyme abundance data obtained
 #'   from running the function \code{\link{extractEnzAbund}}. Not quoted.
@@ -46,9 +50,9 @@
 #'   rest, try setting \code{obs_color = "none"}. -LSh}}
 #'
 #' @param gut_tissue Which of the two types of gut tissue would you like to
-#'   plot? Acceptable options are "colon" or "small intestine". Applicable only
-#'   when the tissue extracted with \code{\link{extractEnzAbund}} was gut and
-#'   ignored in all other cases.
+#'   plot? Acceptable options are "colon" (default) or "small intestine".
+#'   Applicable only when the tissue extracted with
+#'   \code{\link{extractEnzAbund}} was gut and ignored in all other cases.
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
 #'   "median" for median concentrations. If that option was not included in the

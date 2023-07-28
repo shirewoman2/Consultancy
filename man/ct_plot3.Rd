@@ -10,11 +10,14 @@ ct_plot3(
   figure_type = "means only",
   mean_type = "arithmetic",
   linear_or_log = "semi-log",
-  time_range_LL = "first dose",
-  time_range_LR = "last dose",
   graph_title_U = "Full time range",
+  x_axis_interval_U = NA,
   graph_title_LL = "First dose",
+  time_range_LL = "first dose",
+  x_axis_interval_LL = NA,
   graph_title_LR = "Last dose",
+  time_range_LR = "last dose",
+  x_axis_interval_LR = NA,
   legend_position = "none",
   qc_graph = FALSE,
   existing_exp_details = NA,
@@ -100,22 +103,37 @@ output, you'll get a warning and the graph will include one that was.}
   request Word output, only the vertical plot will be saved in Word format;
   the horizontal plot will be saved as a png file.}}}
 
+\item{graph_title_U}{graph title for the upper, full-time-range graph;
+defaults to "Full time range"}
+
+\item{x_axis_interval_U}{optionally set the upper graph x-axis major
+tick-mark interval. Acceptable input: any number or leave as NA to accept
+default values, which are generally reasonable guesses as to aesthetically
+pleasing and PK-relevant intervals.}
+
+\item{graph_title_LL}{graph title for the lower left graph; defaults to
+"First dose"}
+
 \item{time_range_LL}{time range to use for the lower-left graph; defaults to
 "first dose" but any option acceptable for \code{time_range} for the
 function \code{\link{ct_plot}} will also work.}
+
+\item{x_axis_interval_LL}{optionally set the lower left graph x-axis major
+tick-mark interval. Acceptable input: any number or leave as NA to accept
+default values, which are generally reasonable guesses as to aesthetically
+pleasing and PK-relevant intervals.}
+
+\item{graph_title_LR}{graph title for the lower right graph; defaults to
+"Last dose"}
 
 \item{time_range_LR}{time range to use for the lower-right graph; defaults to
 "first dose" but any option acceptable for \code{time_range} for the
 function \code{\link{ct_plot}} will also work.}
 
-\item{graph_title_U}{graph title for the upper, full-time-range graph;
-defaults to "Full time range"}
-
-\item{graph_title_LL}{graph title for the lower left graph; defaults to
-"First dose"}
-
-\item{graph_title_LR}{graph title for the lower right graph; defaults to
-"Last dose"}
+\item{x_axis_interval_LR}{optionally set the lower right graph x-axis major
+tick-mark interval. Acceptable input: any number or leave as NA to accept
+default values, which are generally reasonable guesses as to aesthetically
+pleasing and PK-relevant intervals.}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
