@@ -766,6 +766,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Observed data ------------------------------------------------------
    
+   # FIXME - Need to return to this and use match_obs_to_sim function to make
+   # the match. I think it will a) work better and b) reduce complexity to have
+   # that functionality in only one place.
+   
    if((any(complete.cases(obs_to_sim_assignment)) & length(ObsAssign) == 0) |   # <--- scenario when one obs file should be used for all sim files
       ("ObsFile" %in% names(MultData) &&                                        # <--- scenario when some obs files were already extracted but some were not b/c they weren't assigned to a sim file
        length(setdiff(names(ObsAssign), unique(MultData$File))) > 0 &&
