@@ -224,6 +224,20 @@
 #'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 #'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 #'   the default behavior and get exactly what you want.
+#' @param rounding option for what rounding to perform, if any. Options are:
+#'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
+#'   to Simcyp Consultancy Team standards: to three significant figures when the
+#'   value is < 100 or to the ones place if the value is >= 100. Please see the
+#'   function \code{\link{round_consultancy}}, which does the rounding here.}
+#'   \item{"none"}{No rounding will be performed.} \item{"significant X" where
+#'   "X" is a number}{Output will be rounded to X significant figures. "signif
+#'   X" also works fine.} \item{"round X" where "X" is a number}{Output will be
+#'   rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
+#'   will be rounded using the function \code{\link{round_consultancy}}, but
+#'   nothing will be rounded in the output R object. This can be useful when you
+#'   want to have nicely rounded and formatted output in a Word file but you
+#'   \emph{also} want to use the results from \code{pksummary_table} to make
+#'   forest plots, which requires numbers that are \emph{not} rounded.}}
 #' @param adjust_conc_units Would you like to adjust the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
@@ -378,6 +392,7 @@ pksummary_table <- function(sim_data_file = NA,
                             variability_format = "to",
                             adjust_conc_units = NA,
                             include_dose_num = NA,
+                            rounding = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
@@ -1392,8 +1407,8 @@ call. = FALSE)
    # Formatting and selecting only rows where there are data
    MyPKResults <- MyPKResults %>%
       mutate(Value = if_else(str_detect(Stat, "CV"), 
-                             round_consultancy(100*Value),
-                             round_consultancy(Value))) %>%
+                           round_opt(100*Value, rounding),
+                             round_opt(Value, rounding))) %>%
       filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
                          "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                          "min", "max", "per5", "per95", 
