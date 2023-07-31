@@ -656,6 +656,13 @@ annotateDetails <- function(existing_exp_details,
       # This is when they have requested individual details.
       DetailSet <- unique(c(DetailSet, setdiff(detail_set, DetailSet)))
       
+      # Replacing any "_X" details with the compound suffixes
+      Xdetails <- DetailSet[str_detect(DetailSet, "_X")]
+      Xdetails <- unlist(lapply(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
+                                  "_met1", "_met2", "_secmet"),
+                                FUN = function(x) sub("_X", x, Xdetails)))
+      DetailSet <- c(DetailSet, Xdetails)
+      
       Out <- Out %>% filter(Detail %in% 
                                switch(as.character(complete.cases(compound)),
                                       "TRUE" = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
