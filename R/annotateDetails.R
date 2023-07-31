@@ -417,7 +417,7 @@ annotateDetails <- function(existing_exp_details,
          filter(!Detail %in% c("Detail", "Value")) %>% 
          group_by(across(any_of(c("File", "Detail", "CompoundID", "SimulatorSection", 
                                   "Notes", "Value")))) %>% 
-         summarize(Sheet = str_comma(Sheet, conjunction = "or")) %>% 
+         summarize(Sheet = str_comma(sort(Sheet), conjunction = "or")) %>% 
          mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
                                   Detail == "SimDuration", 
                                "Summary", Sheet),
@@ -635,12 +635,17 @@ annotateDetails <- function(existing_exp_details,
       
       if(any(str_detect(tolower(detail_set), "summary"))){
          DetailSet <- c(DetailSet, 
-                        Out %>% filter(Sheet == "Summary") %>% pull(Detail))
+                        Out %>% filter(Sheet %in% c("Input Sheet", 
+                                                    "Input Sheet or Summary", 
+                                                    "Input Sheet, Summary, or workspace XML file",
+                                                    "calculated, Summary, or workspace XML file")) %>% pull(Detail))
       }
       
       if(any(str_detect(tolower(detail_set), "input sheet"))){
          DetailSet <- c(DetailSet, 
-                        Out %>% filter(Sheet == "Input Sheet") %>% pull(Detail))
+                        Out %>% filter(Sheet %in% c("Input Sheet", 
+                                                    "Input Sheet or Summary", 
+                                                    "Input Sheet, Summary, or workspace XML file")) %>% pull(Detail))
       }
       
       if(any(str_detect(tolower(detail_set), "population"))){
