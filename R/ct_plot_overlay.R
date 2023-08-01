@@ -972,89 +972,94 @@ call. = FALSE)
    }
    
    # Need to assign File to correct obs data. 
-   if(all(is.na(obs_dataframe$File)) & 
-      any(complete.cases(obs_to_sim_assignment))){
-      # If the user specified values for obs_data_assignment, then use those for
-      # File.
-      
-      # Making sure that the split pattern will work in case the user omitted
-      # spaces.
-      obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
-      ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
-      
-      if(all(sapply(ObsAssign, length) == 1)){
-         obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
-      } else {
-         obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
+   if(nrow(obs_dataframe) > 0){
+      if(all(is.na(obs_dataframe$File)) & 
+         any(complete.cases(obs_to_sim_assignment))){
+         # If the user specified values for obs_data_assignment, then use those for
+         # File.
          
-         for(j in 1:length(ObsAssign)){
-            FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
-                                      File = ObsAssign[[j]])
-            suppressMessages(
-               obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
-            )
-            rm(FileAssign)
+         # Making sure that the split pattern will work in case the user omitted
+         # spaces.
+         obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
+         ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
+         
+         if(all(sapply(ObsAssign, length) == 1)){
+            obs_dataframe <- obs_dataframe %>% mutate(File = obs_to_sim_assignment[ObsFile])
+         } else {
+            obs_dataframe <- split(as.data.frame(obs_dataframe), f = obs_dataframe$ObsFile)
+            
+            for(j in 1:length(ObsAssign)){
+               FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
+                                         File = ObsAssign[[j]])
+               suppressMessages(
+                  obs_dataframe[[j]] <- FileAssign %>% full_join(obs_dataframe[[j]] %>% select(-File))
+               )
+               rm(FileAssign)
+            }
+            obs_dataframe <- bind_rows(obs_dataframe)
          }
-         obs_dataframe <- bind_rows(obs_dataframe)
+         
+      } else if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
+         # If there are some assignments for File but some missing, just warn
+         # the user about that b/c it's not clear how to assign the ones that
+         # are missing.
+         warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
+                 call. = FALSE)
+         obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
       }
       
-   } else if(any(is.na(obs_dataframe$File)) & any(complete.cases(obs_dataframe$File))){
-      # If there are some assignments for File but some missing, just warn
-      # the user about that b/c it's not clear how to assign the ones that
-      # are missing.
-      warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
-              call. = FALSE)
-      obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
-   }
-   
-   # Not mapping observed data to a column if File was originally NA for all
-   # and that's what colorBy_column is or that's what linetype_column is. Also
-   # not mapping if user has specified obs_color.
-   MapObsFile_color <- nrow(obs_dataframe) > 0 && 
-      as_label(colorBy_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
-   MapObsFile_line <- nrow(obs_dataframe) > 0 && 
-      as_label(linetype_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
-   MapObsData <- ifelse(nrow(obs_dataframe) > 0 &&
-                           ("File" %in% c(as_label(colorBy_column), as_label(linetype_column)) &
-                               all(is.na(obs_dataframe$File))) | complete.cases(obs_color_user),
-                        FALSE, TRUE)
-   
-   # Setting this up so that observed data will be shown for all Files
-   if(nrow(obs_dataframe) > 0 && 
-      "File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
-                    as_label(facet2_column), as_label(linetype_column)) &&
-      all(is.na(obs_dataframe$File))){
+      # Not mapping observed data to a column if File was originally NA for all
+      # and that's what colorBy_column is or that's what linetype_column is. Also
+      # not mapping if user has specified obs_color.
+      MapObsFile_color <- nrow(obs_dataframe) > 0 && 
+         as_label(colorBy_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
+      MapObsFile_line <- nrow(obs_dataframe) > 0 && 
+         as_label(linetype_column) == "File" & all(is.na(obs_dataframe$File)) == FALSE
+      MapObsData <- ifelse(nrow(obs_dataframe) > 0 &&
+                              ("File" %in% c(as_label(colorBy_column), as_label(linetype_column)) &
+                                  all(is.na(obs_dataframe$File))) | complete.cases(obs_color_user),
+                           FALSE, TRUE)
       
-      ToAdd <- expand_grid(ObsFile = unique(obs_dataframe$ObsFile), 
-                           File = unique(sim_dataframe$File))
-      suppressMessages(
-         obs_dataframe <- obs_dataframe %>% select(-File) %>% 
-            left_join(ToAdd) %>% 
-            unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                        "Compound", "Inhibitor",
-                                        "colorBy_column", "FC1", "FC2")), 
-                  sep = " ", remove = FALSE))
+      # Setting this up so that observed data will be shown for all Files
+      if("File" %in% c(as_label(colorBy_column), as_label(facet1_column), 
+                       as_label(facet2_column), as_label(linetype_column)) &&
+         all(is.na(obs_dataframe$File))){
+         
+         ToAdd <- expand_grid(ObsFile = unique(obs_dataframe$ObsFile), 
+                              File = unique(sim_dataframe$File))
+         suppressMessages(
+            obs_dataframe <- obs_dataframe %>% select(-File) %>% 
+               left_join(ToAdd) %>% 
+               unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
+                                           "Compound", "Inhibitor",
+                                           "colorBy_column", "FC1", "FC2")), 
+                     sep = " ", remove = FALSE))
+         
+         if(as_label(colorBy_column) == "File"){
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(colorBy_column = File)
+         }
+         
+         if(as_label(linetype_column) == "File"){
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(linetype_column = File)
+         }
+      } 
       
-      if(as_label(colorBy_column) == "File"){
-         obs_dataframe <- obs_dataframe %>% 
-            mutate(colorBy_column = File)
+      # Dealing with the fact that the observed data will list the inhibitor as
+      # "inhibitor" unless the user changes it, but that sim data will list its
+      # name
+      if(any(obs_dataframe$Inhibitor == "inhibitor")){
+         sim_dataframe <- sim_dataframe %>% 
+            mutate(Inhibitor = as.character(Inhibitor),
+                   Inhibitor = ifelse(Inhibitor == "none",
+                                      Inhibitor, "inhibitor"),
+                   Inhibitor = factor(Inhibitor, levels = c("none", "inhibitor")))
       }
-      
-      if(as_label(linetype_column) == "File"){
-         obs_dataframe <- obs_dataframe %>% 
-            mutate(linetype_column = File)
-      }
-   } 
-   
-   # Dealing with the fact that the observed data will list the inhibitor as
-   # "inhibitor" unless the user changes it, but that sim data will list its
-   # name
-   if(nrow(obs_dataframe) > 0 & any(obs_dataframe$Inhibitor == "inhibitor")){
-      sim_dataframe <- sim_dataframe %>% 
-         mutate(Inhibitor = as.character(Inhibitor),
-                Inhibitor = ifelse(Inhibitor == "none",
-                                   Inhibitor, "inhibitor"),
-                Inhibitor = factor(Inhibitor, levels = c("none", "inhibitor")))
+   } else {
+      MapObsData <- FALSE
+      MapObsFile_color <- FALSE
+      MapObsFile_line <- FALSE
    }
    
    # Now that all columns in both sim and obs data are filled in whenever they
@@ -1063,9 +1068,13 @@ call. = FALSE)
       simcheck <- sim_dataframe %>% 
          filter(colorBy_column %in% names(color_labels)) %>% 
          select(colorBy_column) %>% unique() %>% pull()
-      obscheck <- obs_dataframe %>% 
-         filter(colorBy_column %in% names(color_labels)) %>% 
-         select(colorBy_column) %>% unique() %>% pull()
+      if(nrow(obs_dataframe) > 0){
+         obscheck <- obs_dataframe %>% 
+            filter(colorBy_column %in% names(color_labels)) %>% 
+            select(colorBy_column) %>% unique() %>% pull()
+      } else {
+         obscheck <- simcheck
+      }
       
       if(length(sort(unique(c(simcheck, obscheck)))) > 
          length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column])){
@@ -1093,9 +1102,11 @@ call. = FALSE)
                mutate(colorBy_column = color_labels[colorBy_column], 
                       colorBy_column = factor(colorBy_column, levels = color_labels))
             
-            obs_dataframe <- obs_dataframe %>% 
-               mutate(colorBy_column = color_labels[colorBy_column], 
-                      colorBy_column = factor(colorBy_column, levels = color_labels))
+            if(nrow(obs_dataframe) > 0){
+               obs_dataframe <- obs_dataframe %>% 
+                  mutate(colorBy_column = color_labels[colorBy_column], 
+                         colorBy_column = factor(colorBy_column, levels = color_labels))
+            }
          }
       }
    }
@@ -1106,9 +1117,13 @@ call. = FALSE)
       simcheck <- sim_dataframe %>% 
          filter(linetype_column %in% names(linetype_labels)) %>% 
          select(linetype_column) %>% unique() %>% pull()
-      obscheck <- obs_dataframe %>% 
-         filter(linetype_column %in% names(linetype_labels)) %>% 
-         select(linetype_column) %>% unique() %>% pull()
+      if(nrow(obs_dataframe) > 0){
+         obscheck <- obs_dataframe %>% 
+            filter(linetype_column %in% names(linetype_labels)) %>% 
+            select(linetype_column) %>% unique() %>% pull()
+      } else {
+         obscheck <- simcheck
+      }
       
       if(length(sort(unique(c(simcheck, obscheck)))) > 
          length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column])){
@@ -1136,9 +1151,11 @@ call. = FALSE)
                mutate(linetype_column = linetype_labels[linetype_column], 
                       linetype_column = factor(linetype_column, levels = linetype_labels))
             
-            obs_dataframe <- obs_dataframe %>% 
-               mutate(linetype_column = linetype_labels[linetype_column], 
-                      linetype_column = factor(linetype_column, levels = linetype_labels))
+            if(nrow(obs_dataframe) > 0){
+               obs_dataframe <- obs_dataframe %>% 
+                  mutate(linetype_column = linetype_labels[linetype_column], 
+                         linetype_column = factor(linetype_column, levels = linetype_labels))
+            }
          }
       }
    }
