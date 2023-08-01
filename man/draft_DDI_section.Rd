@@ -365,7 +365,7 @@ and an effector is present, the label in the legend will be "Inhibitor".}
 \item{linear_or_log_enz}{the type of enzyme-abundance graph to be returned.
 Options are the same as for the substrate plot.}
 
-\item{save_draft}{the name of the Word file to use for saving the output. If
+\item{save_draft}{the name of the Word file to use for saving the output. Do not include any slashes, dollar signs, or periods in the file name. If
 left as NA, this will be set to "Draft DDI report section for XXXX.docx"
 where "XXXX" is the name of the simulator output Excel file.}
 }

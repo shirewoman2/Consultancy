@@ -31,7 +31,7 @@
 #'   here, e.g., \code{compound = "midaz|keto"} to find any compound with either
 #'   "midaz" or "keto" in the name. Not case sensitive.
 #' @param save_output optionally save the output by supplying an Excel file name
-#'   in quotes here, e.g., "Simulation details.xlsx". If you leave off the file
+#'   in quotes here, e.g., "Simulation details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file
 #'   extension, it will be saved as an xlsx file. This will save the output with
 #'   one tab per compound ID (one for substrate, one for inhibitor 1, etc.)
 #'

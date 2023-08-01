@@ -133,7 +133,7 @@ if the values are NA for all files}
 
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx". If you leave off the file extension, it will be saved as a
+details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
 csv file.}
 }
 \value{

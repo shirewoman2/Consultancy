@@ -38,7 +38,7 @@ on its dimensions.}
 in quotes here, e.g., "My conc time graph.png". If you do not designate a
 file extension, it will be saved as a png file, but if you specify a
 different file extension, it will be saved as that file format. Acceptable
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
 Leaving this as NA means the file will not be automatically saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 3}

@@ -11,7 +11,7 @@
 #' @param PKpulled PK that are included in the table. All must be included in
 #'   AllPKParameters$PKparameter.
 #' @param save_table optionally save the output table by supplying a file name
-#'   in quotes here, e.g., "My nicely formatted table.docx".
+#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =

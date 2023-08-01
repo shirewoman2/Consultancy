@@ -284,7 +284,7 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file. (If you assign the output of
+#'   the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (If you assign the output of
 #'   \code{pksummary_table} to an R object, you can also save the table later to
 #'   a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
 #'   supply only the file extension, e.g., \code{save_table = "docx"}, the name

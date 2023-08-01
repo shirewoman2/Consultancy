@@ -245,7 +245,7 @@
 #'   something like this if you're including effector metabolites:
 #'   \code{prettify_compound_names = c("effector" = "teeswiftavir and
 #'   1-OH-teeswiftavir", "substrate" = "superstatin")}. (Order doesn't matter.)
-#' @param save_draft the name of the Word file to use for saving the output. If
+#' @param save_draft the name of the Word file to use for saving the output. Do not include any slashes, dollar signs, or periods in the file name. If
 #'   left as NA, this will be set to "Draft DDI report section for XXXX.docx"
 #'   where "XXXX" is the name of the simulator output Excel file.
 #' @param includeCV TRUE or FALSE (default) for whether to include rows for CV

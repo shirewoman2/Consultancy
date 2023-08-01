@@ -236,7 +236,7 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the table saved as a Word or csv file. (You can also save the table to a
+#'   the table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (You can also save the table to a
 #'   Word file later with the function \code{\link{formatTable_Simcyp}}.) If you
 #'   supply only the file extension, e.g., \code{save_table = "docx"}, the name
 #'   of the file will be "PK summary table" with that extension. If you supply

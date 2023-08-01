@@ -171,7 +171,7 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file. If you supply only the file
+#'   the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. If you supply only the file
 #'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
 #'   the file name plus "PK summary table" with that extension and output will
 #'   be located in the same folder as \code{sim_data_file}. If you supply
