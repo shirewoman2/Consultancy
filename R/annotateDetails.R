@@ -387,7 +387,6 @@ annotateDetails <- function(existing_exp_details,
                                 pull(Detail)) == FALSE)
    }
    
-   
    CompoundNames <- Out %>%
       filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
                            "PrimaryMetabolite2", "SecondaryMetabolite", 
@@ -405,12 +404,38 @@ annotateDetails <- function(existing_exp_details,
       select(-Detail) %>% 
       mutate(CompoundNameID = paste(File, CompoundID))
    
+   # Need to deal with _X in detail names
+   Suffixes <- c("_sub" = "substrate", 
+                 "_inhib" = "inhibitor 1", 
+                 "_inhib2" = "inhibitor 2", 
+                 "_inhib1met" = "inhibitor 1 metabolite", 
+                 "_met1" = "primary metabolite 1", 
+                 "_met2" = "primary metabolite 2", 
+                 "_secmet" = "secondary metabolite")
+   
+   ExpDetailDefinitions_expand <- 
+      ExpDetailDefinitions %>% filter(str_detect(Detail, "_X")) %>% 
+      rename(DetailOrig = Detail)
+   
+   ExpDetailDefinitions_expand <- ExpDetailDefinitions_expand %>% 
+      left_join(data.frame(
+         DetailOrig = rep(ExpDetailDefinitions_expand$DetailOrig, each = 7),
+         Detail = unlist(lapply(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
+                                  "_met1", "_met2", "_secmet"),
+                                FUN = function(x) sub("_X", x, ExpDetailDefinitions_expand$DetailOrig)))), 
+         by = "DetailOrig") %>% 
+      mutate(Suffix = str_extract(Detail, "_sub|_inhib$|_inhib2|_met1|_met2|_secmet|_inhib1met"), 
+             CompoundID = Suffixes[Suffix]) %>% 
+      select(-DetailOrig, -Suffix)
+   
    suppressMessages(
       Out <- Out %>% 
          arrange(File) %>% 
          mutate(CompoundNameID = paste(File, CompoundID)) %>% 
          filter(CompoundNameID %in% CompoundNames$CompoundNameID | is.na(CompoundID)) %>% 
-         left_join(ExpDetailDefinitions, by = c("Detail", "CompoundID")) %>% 
+         left_join(bind_rows(ExpDetailDefinitions_expand, 
+                             ExpDetailDefinitions %>% filter(!str_detect(Detail, "_X$"))),
+                   by = c("Detail", "CompoundID")) %>% 
          # Finding some artifacts from row binding output from both of
          # extractExpDetails and extractExpDetails_mult. I think this should
          # fix the issue.
