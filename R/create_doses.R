@@ -31,6 +31,8 @@
 #'   subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 #'   180, 192)}; if this is filled out, values in \code{dose_interval},
 #'   \code{num_doses}, and \code{end_time} will all be ignored.
+#' @param simulator_version the version of the simulator that will be used. This
+#'   affects what columns will be included in hte output.
 #' @param compound_ID specify the compound that's being dosed. Options are
 #'   "Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
 #'   case sensitive. If you list more than one compound, you must also list more
@@ -64,7 +66,7 @@
 #'   left as NA, this will generate a data.frame in R but no output will be
 #'   saved.
 #'
-#' @return a data.frame 
+#' @return a data.frame
 #' @export
 #'
 #' @examples
