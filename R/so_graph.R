@@ -587,7 +587,7 @@ so_graph <- function(PKtable,
    } else {
       PKnames <- data.frame(OrigName = names(PKtable)) %>% 
          mutate(PrettifiedNames = sub("with .* ", "with effector ", OrigName)) %>% 
-         left_join(AllPKParameters_pretty,  by = join_by(PrettifiedNames)) %>% 
+         left_join(AllPKParameters_pretty %>% unique(),  by = join_by(PrettifiedNames)) %>% 
          mutate(NewName = ifelse(is.na(PKparameter), OrigName, PKparameter))
       
       names(SO) <- PKnames$NewName
