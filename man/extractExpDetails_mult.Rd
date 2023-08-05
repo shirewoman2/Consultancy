@@ -9,7 +9,7 @@ extractExpDetails_mult(
   exp_details = "all",
   existing_exp_details = "none",
   overwrite = FALSE,
-  annotate_output = TRUE,
+  annotate_output = FALSE,
   save_output = NA,
   ...
 )

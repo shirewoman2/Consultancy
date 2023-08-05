@@ -118,7 +118,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    exp_details = "all", 
                                    existing_exp_details = "none", 
                                    overwrite = FALSE,
-                                   annotate_output = TRUE,
+                                   annotate_output = FALSE,
                                    save_output = NA, 
                                    ...){
    
@@ -208,7 +208,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    CustomDosing <- c()
    
    for(i in sim_data_files_topull){
-      message(paste("Extracting data from file =", i))
+      message(paste("Extracting simulation experimental details from file =", i))
       MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
                                         exp_details = exp_details) 
       
