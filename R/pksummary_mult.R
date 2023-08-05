@@ -534,7 +534,7 @@ call. = FALSE)
       OutQC[[i]] <- list()
       FD[[i]] <- list()
       
-      message(paste0("Extracting data from `", i, "`"))
+      message(paste0("Extracting PK data from `", i, "`"))
       
       # Checking that the file is, indeed, a simulator output file.
       SheetNames <- tryCatch(readxl::excel_sheets(i),
