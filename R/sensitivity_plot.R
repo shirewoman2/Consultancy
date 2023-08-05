@@ -35,6 +35,15 @@
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
+#' @param time_range time range to show relative to the start of the simulation.
+#'   Options: \describe{
+#'
+#'   \item{NA}{(default) entire time range of data}
+#'
+#'   \item{a start time and end time in hours}{only data in that time range,
+#'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
+#'   }
+#'
 #' @param title (optional) a title to include on your graph in quotes
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -64,6 +73,7 @@ sensitivity_plot <- function(SA_file,
                              linear_or_log = "linear",
                              y_axis_limits_lin = NA,
                              y_axis_limits_log = NA,
+                             time_range = NA,
                              title = NA,
                              save_graph = NA,
                              fig_height = 4,
@@ -135,23 +145,22 @@ sensitivity_plot <- function(SA_file,
         SimT0Col <- ifelse(length(SimT0Col) == 0, 4, SimT0Col)
         
         if(length(ObsRow) > 0){
-            ObsData <- as.data.frame(t(SAdata.xl[(ObsRow + 1):nrow(SAdata.xl),
-                                                 2:ncol(SAdata.xl)]))
-            names(ObsData) <- SAdata.xl[(ObsRow + 1):nrow(SAdata.xl), 1]
-            ObsData$Index <- 1:nrow(ObsData)
-            
-            ObsData <- ObsData %>% 
-                pivot_longer(cols = -Index, names_to = "Parameter", values_to = "Value") %>% 
-                mutate(Parameter = ifelse(str_detect(Parameter, "Time"), "Time", Parameter), 
-                       Parameter = sub(", DV 1", "", Parameter)) %>% 
-                filter(complete.cases(Value)) %>% unique() %>% 
-                pivot_wider(names_from = Parameter, values_from = Value) %>% 
-                select(-Index) %>% 
-                pivot_longer(cols = -Time, 
-                             names_to = "Subject", values_to = "Conc") %>% 
-                mutate(Simulated = FALSE)
-            
-            SAdata <- as.data.frame(t(SAdata.xl[1:(ObsRow - 1), c(SimT0Col:ncol(SAdata.xl))]))
+           ObsData <- list()
+           
+           for(i in seq(from = ObsRow + 1, to = nrow(SAdata.xl), by = 2)){
+              ObsData[[i]] <- as.data.frame(t(SAdata.xl[i:(i + 1), 2:ncol(SAdata.xl)])) 
+              names(ObsData[[i]]) <- c("Time", "Conc")
+              ObsData[[i]] <- ObsData[[i]] %>% 
+                 filter(complete.cases(Time)) %>% 
+                 mutate(Subject = SAdata.xl[i+1, 1])
+           }
+           
+           ObsData <- bind_rows(ObsData) %>% 
+              mutate(Subject = sub(", DV 1", "", Subject))
+           
+           SAdata <- as.data.frame(t(SAdata.xl[1:(ObsRow-1), c(SimT0Col:ncol(SAdata.xl))]))
+           
+           
         } else {
             SAdata <- as.data.frame(t(SAdata.xl[, c(SimT0Col:ncol(SAdata.xl))]))
         }
@@ -194,7 +203,8 @@ sensitivity_plot <- function(SA_file,
                             "Fugut" = expression(f[u[gut]]), 
                             "ka" = expression(k[a]), 
                             "Lag Time" = expression("lag time (h)"),
-                            "Vss" = expression(V[ss]~"(L/kg)"))
+                            "Vss" = expression(V[ss]~"(L/kg)"), 
+                            "Peff" = expression(P[eff,human]))
     
     if(class(ind_var_label) == "logical" && is.na(ind_var_label)){
         if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))){
@@ -227,7 +237,8 @@ sensitivity_plot <- function(SA_file,
         
         G <- G +
             labs(color = ind_var_label) +
-            scale_x_time(pad_x_axis = FALSE) +
+            scale_x_time(pad_x_axis = FALSE, 
+                         time_range = time_range) +
             xlab("Time (h)") +
             ylab("Concentration (ng/mL)")
         
