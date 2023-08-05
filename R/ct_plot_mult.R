@@ -291,8 +291,9 @@ ct_plot_mult <- function(ct_dataframe,
    }
    
    # Getting experimental details if they didn't supply them and want to have a
-   # QC graph
-   if(qc_graph == TRUE){
+   # QC graph or if they want to match observed data
+   if(qc_graph == TRUE | 
+      any(complete.cases(obs_to_sim_assignment))){
       
       if("logical" %in% class(existing_exp_details)){ 
          Deets <- tryCatch(
@@ -422,43 +423,12 @@ ct_plot_mult <- function(ct_dataframe,
       ObsCT <- ct_dataframe %>% filter(Simulated == FALSE)
       ct_dataframe <- ct_dataframe %>% filter(Simulated == TRUE)
       
-      if(all(is.na(obs_to_sim_assignment))){
-         # If there are no values assigned for File and the user did not
-         # specify anything for obs_to_sim_assignment, then make all the
-         # observed data go with all the simulated data.
-         FileAssign <- expand_grid(ObsFile = ObsCT %>% pull(ObsFile) %>% unique(), 
-                                   File = unique(ct_dataframe$File)) %>% 
-            filter(complete.cases(File))
-         suppressMessages(
-            ObsCT <- FileAssign %>% full_join(ObsCT %>% select(-File))
-         )
-      } else {
-         # If the user *did* specify values for obs_to_sim_assignment, then use
-         # those for File.
-         
-         # Making sure that the split pattern will work in case the user omitted
-         # spaces.
-         obs_to_sim_assignment <- gsub(",[^ ]", ", ", obs_to_sim_assignment)
-         ObsAssign <- str_split(obs_to_sim_assignment, pattern = ", ")
-         
-         if(all(sapply(ObsAssign, length) == 1)){
-            ObsCT <- ObsCT %>% mutate(File = obs_to_sim_assignment[ObsFile])
-         } else {
-            ObsCT <- split(as.data.frame(ObsCT), f = ObsCT$ObsFile)
-            
-            for(j in 1:length(ObsAssign)){
-               FileAssign <- expand_grid(ObsFile = names(obs_to_sim_assignment)[j], 
-                                         File = ObsAssign[[j]])
-               suppressMessages(
-                  ObsCT[[j]] <- FileAssign %>% full_join(ObsCT[[j]] %>% select(-File))
-               )
-               rm(FileAssign)
-            }
-            ObsCT <- bind_rows(ObsCT)
-         }
+      if(any(complete.cases(obs_to_sim_assignment))){
+         ct_dataframe <- match_obs_to_sim(ct_dataframe = ct_dataframe, 
+                                          obs_dataframe = ObsCT, 
+                                          obs_to_sim_assignment = obs_to_sim_assignment, 
+                                          existing_exp_details = Deets)
       }
-      
-      ct_dataframe <- ct_dataframe %>% bind_rows(ObsCT)
    }
    
    
