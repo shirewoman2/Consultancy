@@ -16,7 +16,8 @@ sensitivity_plot(
   title = NA,
   save_graph = NA,
   fig_height = 4,
-  fig_width = 5
+  fig_width = 5,
+  return_data = FALSE
 )
 }
 \arguments{
@@ -71,12 +72,16 @@ in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Do not include any slashes, dollar signs, or periods in the file name.
 Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 4}
 
 \item{fig_width}{figure width in inches; default is 5}
+
+\item{return_data}{TRUE or FALSE (default) on whether to return the data used
+to make the graph}
 }
 \value{
 a ggplot2 graph
