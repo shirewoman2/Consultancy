@@ -157,7 +157,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
          which(file.exists(sim_data_files) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present, so we cannot extract any information about the simulation experimental details."), 
+                     " is/are not present, so we cannot extract any information about the simulation experimental details.\n"), 
               call. = FALSE)
       sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
    }

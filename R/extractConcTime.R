@@ -216,7 +216,7 @@ extractConcTime <- function(sim_data_file,
       # pass through to other functions and just skip any files that
       # aren't simulator output.
       warning(paste("The file", sim_data_file,
-                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
               call. = FALSE)
       return(list())
    }
@@ -286,23 +286,10 @@ extractConcTime <- function(sim_data_file,
       Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
    } 
    
-   # # Checking that the file is, indeed, a simulator output file. <-- This is
-   # # redundant b/c we need to check sheet names anyway, so that's where we're
-   # # checking that it's a simulator output file.
-   # if(length(Deets) == 0){
-   #     # Using "warning" instead of "stop" here b/c I want this to be able to
-   #     # pass through to other functions and just skip any files that
-   #     # aren't simulator output.
-   #     warning(paste("The file", sim_data_file,
-   #                   "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-   #             call. = FALSE)
-   #     return(list())
-   # }
-   
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
                      sim_data_file, 
-                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
+                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
               call. = FALSE)
    }
    
@@ -352,7 +339,7 @@ extractConcTime <- function(sim_data_file,
    TissueType <- ifelse(str_detect(tissue, "plasma|blood|portal|peripheral"),
                         "systemic", "tissue")
    if(any(str_detect(compoundToExtract, "metabolite")) & TissueType == "tissue"){
-      warning("You have requested metabolite concentrations in a solid tissue, which the simulator does not provide. Substrate or Inhibitor 1 concentrations will be provided instead, depending on whether you requested a substrate or inhibitor metabolite.",
+      warning("You have requested metabolite concentrations in a solid tissue, which the simulator does not provide. Substrate or Inhibitor 1 concentrations will be provided instead, depending on whether you requested a substrate or inhibitor metabolite.\n",
               call. = FALSE)
       compoundToExtract <- compoundToExtract[!str_detect(compoundToExtract,
                                                          "metabolite")]
@@ -500,14 +487,14 @@ extractConcTime <- function(sim_data_file,
          warning(paste0("You requested data for ", str_comma(compoundToExtract),
                         " in ", tissue,
                         " from the file '",
-                        sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped."),
+                        sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped.\n"),
                  call. = FALSE)
          return(data.frame())
       } else {
          stop(paste0("You requested data for ", str_comma(compoundToExtract),
                      " in ", tissue,
                      " from the file '",
-                     sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped."),
+                     sim_data_file, "', but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped.\n"),
               call. = FALSE)
       }
    }
@@ -655,13 +642,13 @@ extractConcTime <- function(sim_data_file,
                if(fromMultFunction){
                   warning(paste0(str_to_title(m), 
                                  " concentrations are not available for ",
-                                 tissue, " and thus will not be extracted."),
+                                 tissue, " and thus will not be extracted.\n"),
                           call. = FALSE)
                   NotAvail <- TRUE
                } else {
                   stop(paste0(str_to_title(m), 
                               " concentrations are not available for ",
-                              tissue, " and thus cannot be extracted."),
+                              tissue, " and thus cannot be extracted.\n"),
                        call. = FALSE)
                }
             }
@@ -669,13 +656,13 @@ extractConcTime <- function(sim_data_file,
             if(fromMultFunction){
                warning(paste0(str_to_title(m), 
                               " concentrations are not available for ",
-                              tissue, " and thus will not be extracted."),
+                              tissue, " and thus will not be extracted.\n"),
                        call. = FALSE) 
                NotAvail <- TRUE
             } else {
                stop(paste0(str_to_title(m), 
                            " concentrations are not available for ",
-                           tissue, " and thus cannot be extracted."),
+                           tissue, " and thus cannot be extracted.\n"),
                     call. = FALSE) 
             }
          }
@@ -1635,7 +1622,7 @@ extractConcTime <- function(sim_data_file,
                   } else {
                      if(tissue == "plasma" & compoundToExtract == "substrate" &
                         all(AllCompoundsID == "substrate")){
-                        warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.",
+                        warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
                                 call. = FALSE)
                      } else {
                         warning("WARNING: This function is extracting observed data from simulator output, ",
@@ -1643,7 +1630,7 @@ extractConcTime <- function(sim_data_file,
                                 "whether the observed compound was in the presence of an effector. Since ",
                                 "you are extracting something other than the substrate and/or extracting from a ",
                                 "tissue other than plasma, we do not have enough information to assign the compoundID and it will be ",
-                                "listed as `UNKNOWN` in your data. The safer way to include observed data is to supply a separate file for 'obs_data_file'.",
+                                "listed as `UNKNOWN` in your data. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
                                 call. = FALSE)
                      }
                      
@@ -1744,7 +1731,7 @@ extractConcTime <- function(sim_data_file,
                                  str_comma(Missing), 
                                  ", which is/are not present in the simulated data. Observed data for ", 
                                  str_comma(Missing), 
-                                 " will not be included in the output."),
+                                 " will not be included in the output.\n"),
                           call. = FALSE)
                   obs_data <- obs_data %>% 
                      filter(!CompoundID %in% Missing)
@@ -1775,7 +1762,7 @@ extractConcTime <- function(sim_data_file,
                              "obs", "obs+inhibitor")))
          
          if(any(is.na(obs_data$Inhibitor)) & length(AllEffectors) == 0){
-            warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?",
+            warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?\n",
                     call. = FALSE)
          }
       }

@@ -75,7 +75,7 @@ extractFmFe <- function(sim_data_file,
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
                      sim_data_file, 
-                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
+                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
               call. = FALSE)
    }
    
@@ -87,7 +87,7 @@ extractFmFe <- function(sim_data_file,
    if(length(SheetToExtract) == 0){
       warning(paste0("The simulator output file provided, `", 
                      sim_data_file, 
-                     "``, does not appear to have a sheet titled `Time variance %fm and fe`, which is what we need for extracting dynamic fm and fe values."),
+                     "``, does not appear to have a sheet titled `Time variance %fm and fe`, which is what we need for extracting dynamic fm and fe values.\n"),
               call. = FALSE)
       return(data.frame())
    }

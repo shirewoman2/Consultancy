@@ -89,7 +89,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
          which(file.exists(sim_workspace_files) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted."), 
+                     " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
       sim_workspace_files <- setdiff(sim_workspace_files, MissingSimFiles)
    }
@@ -107,7 +107,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
       warning(paste0("The compound(s) ", 
                      str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
                      " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`"))), 
+                     str_comma(paste0("`", PossCmpd, "`")), "\n"), 
               call. = FALSE)
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }

@@ -117,7 +117,7 @@ extractExpDetails <- function(sim_data_file,
       # pass through to extractExpDetails_mult and just skip any files that
       # aren't simulator output.
       warning(paste0("The file `", sim_data_file,
-                     "` does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                     "` does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
               call. = FALSE)
       return(list())
    }
@@ -229,7 +229,7 @@ extractExpDetails <- function(sim_data_file,
                                    AllExpDetails$Detail))
       warning(paste0("These study details are not among the possible options: ",
                      Problem,
-                     ", so they will be omitted. Please enter 'data(ExpDetailDefinitions)' into the console for all options."),
+                     ", so they will be omitted. Please enter 'data(ExpDetailDefinitions)' into the console for all options.\n"),
               call. = FALSE)
       exp_details <- intersect(exp_details, AllExpDetails$Detail)
    }

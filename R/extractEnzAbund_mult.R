@@ -206,7 +206,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", ff,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
                  call. = FALSE)
          next()
       }

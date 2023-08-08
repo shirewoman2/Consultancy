@@ -250,17 +250,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
       warning(paste0("The compound(s) ", 
                      str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
                      " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`"))), 
+                     str_comma(paste0("`", PossCmpd, "`")), "\n"), 
               call. = FALSE)
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }
    
    if(any(complete.cases(obs_data_files))){
       if(any(complete.cases(obs_to_sim_assignment[1]))){
-         warning("You specified values for both the `obs_to_sim_assignment` argument and for the soon-to-be-deprecated `obs_data_files` argument. Only the value for `obs_to_sim_assignment` will be used.", 
+         warning("You specified values for both the `obs_to_sim_assignment` argument and for the soon-to-be-deprecated `obs_data_files` argument. Only the value for `obs_to_sim_assignment` will be used.\n", 
                  call. = FALSE)
       } else {
-         warning("You used the soon-to-be-deprecated argument `obs_data_files` to indicate which observed files to use. Please use the argument `obs_to_sim_assignment` in the future. Please see the help file for more information.", 
+         warning("You used the soon-to-be-deprecated argument `obs_data_files` to indicate which observed files to use. Please use the argument `obs_to_sim_assignment` in the future. Please see the help file for more information.\n", 
                  call. = FALSE) 
          obs_to_sim_assignment <- obs_data_files
       }
@@ -351,7 +351,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          which(file.exists(sim_data_files_topull) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted."), 
+                     " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
       sim_data_files_topull <- setdiff(sim_data_files_topull, MissingSimFiles)
    }
@@ -365,7 +365,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       ### SCENARIO A: Match w/expdetails -------------------------------------
       
       if("logical" %in% class(existing_exp_details)){
-         warning("You requested that we match observed data to simulated data based on `existing_exp_details`, but you haven't supplied anything for `existing_exp_details`. We cannot extract any observed data.", 
+         warning("You requested that we match observed data to simulated data based on `existing_exp_details`, but you haven't supplied anything for `existing_exp_details`. We cannot extract any observed data.\n", 
                  call. = FALSE)
          ObsAssign <- data.frame()
          obs_to_sim_assignment <- NA
@@ -375,7 +375,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "FALSE" = deannotateDetails(existing_exp_details))
          
          if("ObsOverlayFile" %in% names(Deets) == FALSE){
-            warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extact any observed data.", 
+            warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extact any observed data.\n", 
                     call. = FALSE)
             ObsAssign <- data.frame()
             obs_to_sim_assignment <- NA
@@ -391,14 +391,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
             if(any(file.exists(ObsAssign$ObsFile) == FALSE)){
                warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:", 
                               str_c(ObsAssign$ObsFile[file.exists(ObsAssign$ObsFile) == FALSE], 
-                                    collapse = "\n")), 
+                                    collapse = "\n"), "\n"), 
                        call. = FALSE)
             }
             
             ObsAssign <- ObsAssign %>% filter(file.exists(ObsFile))
             
             if(nrow(ObsAssign) == 0){
-               warning("We can't find the Excel files that match the observed overlay files in your simulations. We cannot extract any observed data.", 
+               warning("We can't find the Excel files that match the observed overlay files in your simulations. We cannot extract any observed data.\n", 
                        call. = FALSE)
                ObsAssign <- data.frame()
                obs_to_sim_assignment <- NA
@@ -471,7 +471,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
       
       if(all(c("FILE", "OBSFILE") %in% names(ObsAssign)) == FALSE){
-         warning("You have specified values for `obs_to_sim_assignment`, but it's not clear which should be for the observed files and which for the simulated files. Please check the help file for acceptable input. For now, we will not extract data from any observed data files.", 
+         warning("You have specified values for `obs_to_sim_assignment`, but it's not clear which should be for the observed files and which for the simulated files. Please check the help file for acceptable input. For now, we will not extract data from any observed data files.\n", 
                  call. = FALSE)
          ObsAssign <- NA
       } else {
@@ -485,7 +485,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             Dups <- ObsAssign$File[duplicated(ObsAssign$File)]
             warning(paste0("You have more than one observed data file assigned to the simulator files ",
                            str_comma(paste0("`", Dups, "`")),
-                           ". This function can only handle one observed file per simulator file, so only the first observed file listed will be used."),
+                           ". This function can only handle one observed file per simulator file, so only the first observed file listed will be used.\n"),
                     call. = FALSE)
             ObsAssign <- ObsAssign[!duplicated(ObsAssign$File), ]
          }
@@ -499,7 +499,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                               str_comma(names(obs_to_sim_assignment[
                                  which(obs_to_sim_assignment %in%
                                           unique(c(sim_data_files, ct_dataframe$File)) == FALSE)])), 
-                              "."), 
+                              ".\n"), 
                        call. = FALSE)
                
                ObsAssign <-
@@ -514,7 +514,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   which(file.exists(ObsAssign$ObsFile) == FALSE)]
                warning(paste0("The file(s) ", 
                               str_comma(paste0("`", MissingObsFiles, "`")), 
-                              " is/are not present and thus will not be extracted."), 
+                              " is/are not present and thus will not be extracted.\n"), 
                        call. = FALSE)
                ObsAssign <- ObsAssign %>% filter(!ObsFile %in% MissingObsFiles)
             }
@@ -569,7 +569,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", ff,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
                  call. = FALSE)
          next()
       }
@@ -609,7 +609,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
          warning(paste0("For the file ", ff, ", the compound(s) ",
                         str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
-                        " was/were not available."),
+                        " was/were not available.\n"),
                  call. = FALSE)
       }
       
