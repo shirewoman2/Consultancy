@@ -173,14 +173,16 @@ match_obs_to_sim <- function(ct_dataframe,
          # file existing_exp_details.
          ObsData_j[[k]] <- calc_dosenumber(
             ct_dataframe = ObsData_j[[k]], 
-            existing_exp_details = existing_exp_details)
+            existing_exp_details = existing_exp_details %>% 
+               filter(File == k))
          
          # Matching units
          ObsData_j[[k]] <- match_units(ObsData_j[[k]], 
                                        goodunits = ct_dataframe[[k]])
          
          # Adding inhibitor name as needed
-         MyEffector <- determine_myeffector(existing_exp_details,
+         MyEffector <- determine_myeffector(existing_exp_details %>% 
+                                               filter(File == k),
                                             prettify_compound_names = FALSE)
          
          ObsData_j[[k]]$Inhibitor[ObsData_j[[k]]$Inhibitor != "none"] <- 

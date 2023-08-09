@@ -175,7 +175,8 @@ extractExpDetails_XML <- function(sim_workspace_files,
                   # Check whether switch is on, i.e., set to "true" or "1". The
                   # switch and the new tag to use both will be at the same level
                   # as the original value. (At least, that's what I've
-                  # encountered so far.)
+                  # encountered so far.) If the switch is ON, then use the id
+                  # listed in the column "SwitchTo".
                   SwitchPosition <- 
                      switch(DeetLevels, 
                             # There shouldn't be anything that's only 1 or 2 here
