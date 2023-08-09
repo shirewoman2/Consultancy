@@ -27,6 +27,7 @@ pksummary_table(
   variability_format = "to",
   adjust_conc_units = NA,
   include_dose_num = NA,
+  rounding = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   extract_forest_data = FALSE,
@@ -200,6 +201,21 @@ dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
 
+\item{rounding}{option for what rounding to perform, if any. Options are:
+\describe{\item{NA or "Consultancy"}{All output will be rounded according
+to Simcyp Consultancy Team standards: to three significant figures when the
+value is < 100 or to the ones place if the value is >= 100. Please see the
+function \code{\link{round_consultancy}}, which does the rounding here.}
+\item{"none"}{No rounding will be performed.} \item{"significant X" where
+"X" is a number}{Output will be rounded to X significant figures. "signif
+X" also works fine.} \item{"round X" where "X" is a number}{Output will be
+rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
+will be rounded using the function \code{\link{round_consultancy}}, but
+nothing will be rounded in the output R object. This can be useful when you
+want to have nicely rounded and formatted output in a Word file but you
+\emph{also} want to use the results from \code{pksummary_table} to make
+forest plots, which requires numbers that are \emph{not} rounded.}}}
+
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "Dose 1
 AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
@@ -243,7 +259,7 @@ writing table headings later.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file. (If you assign the output of
+the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (If you assign the output of
 \code{pksummary_table} to an R object, you can also save the table later to
 a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
 supply only the file extension, e.g., \code{save_table = "docx"}, the name

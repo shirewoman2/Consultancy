@@ -96,7 +96,7 @@
 #'   find what you need.
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-#'   details.xlsx". If you leave off the file extension, it will be saved as a
+#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
 #'   csv file.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
@@ -118,7 +118,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    exp_details = "all", 
                                    existing_exp_details = "none", 
                                    overwrite = FALSE,
-                                   annotate_output = TRUE,
+                                   annotate_output = FALSE,
                                    save_output = NA, 
                                    ...){
    
@@ -157,7 +157,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
          which(file.exists(sim_data_files) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present, so we cannot extract any information about the simulation experimental details."), 
+                     " is/are not present, so we cannot extract any information about the simulation experimental details.\n"), 
               call. = FALSE)
       sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
    }
@@ -208,7 +208,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    CustomDosing <- c()
    
    for(i in sim_data_files_topull){
-      message(paste("Extracting data from file =", i))
+      message(paste("Extracting simulation experimental details from file =", i))
       MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
                                         exp_details = exp_details) 
       

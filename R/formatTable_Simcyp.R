@@ -90,7 +90,7 @@
 #'   Color can be specified using any R-friendly color name or hex code, e.g.,
 #'   "red" or "#D8212D".
 #' @param save_table optionally save the output table by supplying a file name
-#'   in quotes here, e.g., "My nicely formatted table.docx". If you leave off
+#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off
 #'   the file extension, we'll assume you want it to be ".docx". If there is a
 #'   column titled "File" in your table, we'll add a caption listing which files
 #'   were included.

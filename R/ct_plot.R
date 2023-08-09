@@ -318,7 +318,7 @@
 #'   or ".docx", the graph will be saved as a png file, but if you specify a
 #'   different graphical file extension, it will be saved as that file format.
 #'   Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
-#'   "tiff", "png", "bmp", or "svg". Leaving this as NA means the file will not
+#'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA means the file will not
 #'   be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
@@ -464,7 +464,7 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(length(obs_color) > 1){
-      warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.", 
+      warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.\n", 
               call. = FALSE)
       obs_color <- obs_color[1]
    }
@@ -483,7 +483,7 @@ ct_plot <- function(ct_dataframe = NA,
                          "freddy", "means only", "overlay", 
                          "percentile ribbon", "percentile ribbons", 
                          "ribbon") == FALSE){
-      warning("The only acceptable options for figure_type are `trial means`, `percentiles`, `percentile ribbon`, `means only`, or `Freddy`. We'll set your graph type to `percentiles` for now.",
+      warning("The only acceptable options for figure_type are `trial means`, `percentiles`, `percentile ribbon`, `means only`, or `Freddy`. We'll set your graph type to `percentiles` for now.\n",
               call. = FALSE)
       figure_type <- "percentiles"
    }
@@ -508,14 +508,14 @@ ct_plot <- function(ct_dataframe = NA,
    # argument correctly and set up the character vector of preferences.
    HLineAES <- str_split(hline_style, pattern = " ")[[1]]
    if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
-      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.\n", 
               call. = FALSE)
       HLineAES <- c("red", "dotted")
    }
    
    VLineAES <- str_split(vline_style, pattern = " ")[[1]]
    if(length(VLineAES) < 2 & any(complete.cases(vline_position))){
-      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.", 
+      warning("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want.\n", 
               call. = FALSE)
       VLineAES <- c("red", "dotted")
    }
@@ -550,7 +550,7 @@ ct_plot <- function(ct_dataframe = NA,
       
       if(qc_graph == TRUE & 
          (class(Deets)[1] == "character" || nrow(Deets) == 0)){
-         warning("We couldn't find the source Excel file for this graph, so we can't QC it.", 
+         warning("We couldn't find the source Excel file for this graph, so we can't QC it.\n", 
                  call. = FALSE)
          qc_graph <- FALSE
       }
@@ -603,7 +603,7 @@ ct_plot <- function(ct_dataframe = NA,
                      ", but those are not included in your data. Instead, the ",
                      ifelse(MyMeanType[1] == "mean", 
                             "arithmetic mean", MyMeanType[1]),
-                     "s will be used."),
+                     "s will be used.\n"),
               call. = FALSE)
       MyMeanType <- MyMeanType[1] %>% as.character()
       
@@ -688,7 +688,7 @@ ct_plot <- function(ct_dataframe = NA,
    if(figure_type %in% c("trial means", "freddy") &
       suppressWarnings(length(sort(as.numeric(
          as.character(unique(Data$Trial)))))) == 0){
-      warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.",
+      warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.\n",
               call. = FALSE)
    }
    
@@ -742,7 +742,7 @@ ct_plot <- function(ct_dataframe = NA,
       complete.cases(MyEffector) &&
       compoundToExtract != "inhibitor 1" &&
       length(complete.cases(obs_shape)) < 2){
-      warning("There is an inhibitor or effector present, but you have specified only one shape for the observed data. The same shape will be used for both.",
+      warning("There is an inhibitor or effector present, but you have specified only one shape for the observed data. The same shape will be used for both.\n",
               call. = FALSE)
       obs_shape <- rep(obs_shape, 2)
    }
@@ -751,7 +751,7 @@ ct_plot <- function(ct_dataframe = NA,
       complete.cases(MyEffector) &&
       compoundToExtract != "inhibitor 1" &&
       length(complete.cases(line_color)) < 2){
-      warning("There is an inhibitor or effector present, but you have specified only one line color. The same line color will be used for both.",
+      warning("There is an inhibitor or effector present, but you have specified only one line color. The same line color will be used for both.\n",
               call. = FALSE)
       line_color <- rep(line_color, 2)
    }
@@ -760,7 +760,7 @@ ct_plot <- function(ct_dataframe = NA,
       complete.cases(MyEffector) &&
       compoundToExtract != "inhibitor 1" &&
       length(complete.cases(line_type)) < 2){
-      warning("There is an inhibitor or effector present, but you have specified only one line type. The same line type will be used for both.",
+      warning("There is an inhibitor or effector present, but you have specified only one line type. The same line type will be used for both.\n",
               call. = FALSE)
       line_type <- rep(line_type, 2)
    }
@@ -828,7 +828,7 @@ ct_plot <- function(ct_dataframe = NA,
    if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
       warning(paste0("You have requested a figure type of '", 
                      figure_type, 
-                     "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
+                     "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.\n"),
               call. = FALSE)
    }
    
@@ -836,7 +836,7 @@ ct_plot <- function(ct_dataframe = NA,
                                                                    "percentile ribbon", "ribbon")){
       warning(paste0("You have requested a figure type of '", 
                      figure_type, 
-                     "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template."),
+                     "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.\n"),
               call. = FALSE)
    }
    
@@ -911,7 +911,7 @@ ct_plot <- function(ct_dataframe = NA,
    if(Eff_plusminus & EnzPlot == FALSE & figure_type != "means only"){
       # This is when there is an effector present and the graph is of the
       # substrate or a substrate metabolite
-      warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.",
+      warning("When there is an effector present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'.\n",
               call. = FALSE)
    }
    
@@ -1212,7 +1212,7 @@ ct_plot <- function(ct_dataframe = NA,
    
    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
       linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
-      warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
+      warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.\n",
               call. = FALSE)
    }
    

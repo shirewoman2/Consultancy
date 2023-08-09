@@ -12,10 +12,12 @@ sensitivity_plot(
   linear_or_log = "linear",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  time_range = NA,
   title = NA,
   save_graph = NA,
   fig_height = 4,
-  fig_width = 5
+  fig_width = 5,
+  return_data = FALSE
 )
 }
 \arguments{
@@ -54,6 +56,15 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
 
+\item{time_range}{time range to show relative to the start of the simulation.
+  Options: \describe{
+
+  \item{NA}{(default) entire time range of data}
+
+  \item{a start time and end time in hours}{only data in that time range,
+  e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
+  }}
+
 \item{title}{(optional) a title to include on your graph in quotes}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
@@ -62,11 +73,15 @@ graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
 extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Do not include any slashes, dollar signs, or periods in the file name.
 Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 4}
 
 \item{fig_width}{figure width in inches; default is 5}
+
+\item{return_data}{TRUE or FALSE (default) on whether to return the data used
+to make the graph}
 }
 \value{
 a ggplot2 graph

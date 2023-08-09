@@ -725,9 +725,9 @@ so_graph <- function(PKtable,
             if(length(point_shape) < NumShapesNeeded){
                # This odd syntax will work both when point_shape is a single value
                # and when it is multiple values.
-               point_shape <- rep(point_shape, NumShapesNeeded)[1:NumShapesNeeded] 
-            } else if(length(point_shape) < NumShapesNeeded){
-               point_shape <- point_shape[1:NumShapesNeeded] 
+               MyShapes <- rep(point_shape, NumShapesNeeded)[1:NumShapesNeeded] 
+            } else if(length(point_shape) >= NumShapesNeeded){
+               MyShapes <- point_shape[1:NumShapesNeeded] 
             }
          }
       }

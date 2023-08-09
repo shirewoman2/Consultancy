@@ -9,7 +9,7 @@ extractExpDetails_mult(
   exp_details = "all",
   existing_exp_details = "none",
   overwrite = FALSE,
-  annotate_output = TRUE,
+  annotate_output = FALSE,
   save_output = NA,
   ...
 )
@@ -105,7 +105,7 @@ find what you need.}
 
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx". If you leave off the file extension, it will be saved as a
+details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
 csv file.}
 }
 \value{

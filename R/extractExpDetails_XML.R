@@ -43,7 +43,7 @@
 #'   correct data.}
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-#'   details.xlsx". If you leave off the file extension, it will be saved as a
+#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
 #'   csv file.
 #'
 #' @return Returns a data.frame of the experimental details
@@ -89,7 +89,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
          which(file.exists(sim_workspace_files) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted."), 
+                     " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
       sim_workspace_files <- setdiff(sim_workspace_files, MissingSimFiles)
    }
@@ -107,7 +107,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
       warning(paste0("The compound(s) ", 
                      str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
                      " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`"))), 
+                     str_comma(paste0("`", PossCmpd, "`")), "\n"), 
               call. = FALSE)
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }
@@ -175,7 +175,8 @@ extractExpDetails_XML <- function(sim_workspace_files,
                   # Check whether switch is on, i.e., set to "true" or "1". The
                   # switch and the new tag to use both will be at the same level
                   # as the original value. (At least, that's what I've
-                  # encountered so far.)
+                  # encountered so far.) If the switch is ON, then use the id
+                  # listed in the column "SwitchTo".
                   SwitchPosition <- 
                      switch(DeetLevels, 
                             # There shouldn't be anything that's only 1 or 2 here

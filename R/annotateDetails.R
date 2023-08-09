@@ -124,7 +124,7 @@
 #'   one, enclose them with \code{c(...)}.
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-#'   details.xlsx". If you leave off the file extension, it will be saved as a
+#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
 #'   csv file.
 #'
 #' @return Returns a data.frame of simulation experimental details including the
@@ -387,7 +387,6 @@ annotateDetails <- function(existing_exp_details,
                                 pull(Detail)) == FALSE)
    }
    
-   
    CompoundNames <- Out %>%
       filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
                            "PrimaryMetabolite2", "SecondaryMetabolite", 
@@ -405,19 +404,45 @@ annotateDetails <- function(existing_exp_details,
       select(-Detail) %>% 
       mutate(CompoundNameID = paste(File, CompoundID))
    
+   # Need to deal with _X in detail names
+   Suffixes <- c("_sub" = "substrate", 
+                 "_inhib" = "inhibitor 1", 
+                 "_inhib2" = "inhibitor 2", 
+                 "_inhib1met" = "inhibitor 1 metabolite", 
+                 "_met1" = "primary metabolite 1", 
+                 "_met2" = "primary metabolite 2", 
+                 "_secmet" = "secondary metabolite")
+   
+   ExpDetailDefinitions_expand <- 
+      ExpDetailDefinitions %>% filter(str_detect(Detail, "_X")) %>% 
+      rename(DetailOrig = Detail)
+   
+   ExpDetailDefinitions_expand <- ExpDetailDefinitions_expand %>% 
+      left_join(data.frame(
+         DetailOrig = rep(ExpDetailDefinitions_expand$DetailOrig, each = 7),
+         Detail = unlist(lapply(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
+                                  "_met1", "_met2", "_secmet"),
+                                FUN = function(x) sub("_X", x, ExpDetailDefinitions_expand$DetailOrig)))), 
+         by = "DetailOrig") %>% 
+      mutate(Suffix = str_extract(Detail, "_sub|_inhib$|_inhib2|_met1|_met2|_secmet|_inhib1met"), 
+             CompoundID = Suffixes[Suffix]) %>% 
+      select(-DetailOrig, -Suffix)
+   
    suppressMessages(
       Out <- Out %>% 
          arrange(File) %>% 
          mutate(CompoundNameID = paste(File, CompoundID)) %>% 
          filter(CompoundNameID %in% CompoundNames$CompoundNameID | is.na(CompoundID)) %>% 
-         left_join(ExpDetailDefinitions, by = c("Detail", "CompoundID")) %>% 
+         left_join(bind_rows(ExpDetailDefinitions_expand, 
+                             ExpDetailDefinitions %>% filter(!str_detect(Detail, "_X$"))),
+                   by = c("Detail", "CompoundID")) %>% 
          # Finding some artifacts from row binding output from both of
          # extractExpDetails and extractExpDetails_mult. I think this should
          # fix the issue.
          filter(!Detail %in% c("Detail", "Value")) %>% 
          group_by(across(any_of(c("File", "Detail", "CompoundID", "SimulatorSection", 
                                   "Notes", "Value")))) %>% 
-         summarize(Sheet = str_comma(Sheet, conjunction = "or")) %>% 
+         summarize(Sheet = str_comma(sort(Sheet), conjunction = "or")) %>% 
          mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
                                   Detail == "SimDuration", 
                                "Summary", Sheet),
@@ -635,12 +660,17 @@ annotateDetails <- function(existing_exp_details,
       
       if(any(str_detect(tolower(detail_set), "summary"))){
          DetailSet <- c(DetailSet, 
-                        Out %>% filter(Sheet == "Summary") %>% pull(Detail))
+                        Out %>% filter(Sheet %in% c("Input Sheet", 
+                                                    "Input Sheet or Summary", 
+                                                    "Input Sheet, Summary, or workspace XML file",
+                                                    "calculated, Summary, or workspace XML file")) %>% pull(Detail))
       }
       
       if(any(str_detect(tolower(detail_set), "input sheet"))){
          DetailSet <- c(DetailSet, 
-                        Out %>% filter(Sheet == "Input Sheet") %>% pull(Detail))
+                        Out %>% filter(Sheet %in% c("Input Sheet", 
+                                                    "Input Sheet or Summary", 
+                                                    "Input Sheet, Summary, or workspace XML file")) %>% pull(Detail))
       }
       
       if(any(str_detect(tolower(detail_set), "population"))){
@@ -650,6 +680,13 @@ annotateDetails <- function(existing_exp_details,
       
       # This is when they have requested individual details.
       DetailSet <- unique(c(DetailSet, setdiff(detail_set, DetailSet)))
+      
+      # Replacing any "_X" details with the compound suffixes
+      Xdetails <- DetailSet[str_detect(DetailSet, "_X")]
+      Xdetails <- unlist(lapply(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
+                                  "_met1", "_met2", "_secmet"),
+                                FUN = function(x) sub("_X", x, Xdetails)))
+      DetailSet <- c(DetailSet, Xdetails)
       
       Out <- Out %>% filter(Detail %in% 
                                switch(as.character(complete.cases(compound)),

@@ -101,13 +101,13 @@ extractEnzAbund <- function(sim_data_file,
     }
     
     if(length(tissue) != 1){
-        warning("You must enter one and only one tissue option. (Default is liver.)",
+        warning("You must enter one and only one tissue option. (Default is liver.)\n",
                 call. = FALSE)
         return(data.frame())
     }
     
     if(tissue %in% c("gut", "liver", "kidney") == FALSE){
-        warning("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.",
+        warning("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.\n",
              call. = FALSE)
         return(data.frame())
     }
@@ -139,7 +139,7 @@ extractEnzAbund <- function(sim_data_file,
     if(Deets$PopRepSim == "Yes"){
         warning(paste0("The simulator file supplied, `", 
                        sim_data_file, 
-                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data."),
+                       "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
                 call. = FALSE)
     }
     
@@ -162,7 +162,7 @@ extractEnzAbund <- function(sim_data_file,
                                                  "liver" = "(liver)",
                                                  "gut" = "(gut)",
                                                  "kidney" = "(kidney)")), 
-                    "` and could not find it, so these data cannot be returned."), 
+                    "` and could not find it, so these data cannot be returned.\n"), 
              call. = FALSE)
         return(data.frame())
     }
