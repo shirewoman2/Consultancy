@@ -296,7 +296,7 @@ in quotes here, e.g., "My forest plot.png" or "My forest plot.docx". If you
 leave off ".png" or ".docx" from the file name, it will be saved as a png
 file, but if you specify a different graphical file extension, it will be
 saved as that file format. Acceptable graphical file extensions are "eps",
-"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Leaving this as NA
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA
 means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
