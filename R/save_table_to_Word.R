@@ -4,7 +4,7 @@
 #' template file as is used for the function pksummary_mult. UNDER CONSTRUCTION.
 #' I haven't done almost any error catching here yet. -LSh
 #'
-#' @param MyPKResults PK table that includes the columsn File, Statistic,
+#' @param PKtable PK table that includes the columsn File, Statistic,
 #'   Tissue, CompoundID, and then also columns named in the standard way
 #'   (prettified or un-prettified) for PK tables from the SimcypConsultancy
 #'   package.
@@ -24,6 +24,10 @@
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
 #'   file into multiple tables. This only applies to the Word output.
+#' @param prettify_columns TRUE (default) or FALSE for whether to make easily
+#'   human-readable column names. TRUE makes pretty column names such as "Dose 1
+#'   AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
+#'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
 #'   the dose number when listing the PK parameter. By default, the parameter
 #'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
@@ -79,34 +83,47 @@
 #' # None yet
 #' 
 save_table_to_Word <- function(
-      MyPKResults, 
+      PKtable, 
       PKpulled, # make this automatically determined later
-      save_table,
       existing_exp_details,
       mean_type = "geometric", 
       single_table = FALSE, 
       include_dose_num = NA,
+      prettify_columns = TRUE, # want to add prettify compound names but haven't yet
+      save_table,
       fontsize = 11, 
       highlight_so_cutoffs = NA, 
       highlight_so_colors = NA){
    
-   # MyPKResults needs to have the following columns:
+   # PKtable needs to have the following columns:
    # File
    # Statistic -- must contain "S/O" if you want "observed" to show up in table headings
    # Tissue
    # CompoundID
    # PK parameters
    
-   tissues = sort(unique(MyPKResults$Tissue)) 
-   compoundsToExtract <- sort(unique(MyPKResults$CompoundID))
-   # PKpulled <- intersect(names(MyPKResults), 
+   if("Tissue" %in% names(PKtable) == FALSE){
+      warning("You'll get better-looking output if you include a column in PKtable titled `Tissue` that indicates what tissue the PK are for, e.g., blood or plasma.\n", 
+              call. = FALSE)
+      PKtable$Tissue <- "NOT SPECIFIED"
+   }
+   
+   if("CompoundID" %in% names(PKtable) == FALSE){
+      warning("We need the column `CompoundID` to appear in PKtable to make things work correctly. We'll assume that your table contained PK for the substrate for now, but you might want to include a column in PKtable titled `CompoundID` that indicates what compound ID the PK are for, e.g., substrate, inhibitor 1, etc.\n", 
+              call. = FALSE)
+      PKtable$CompoundID <- "substrate"
+   }
+   
+   tissues = sort(unique(PKtable$Tissue)) 
+   compoundsToExtract <- sort(unique(PKtable$CompoundID))
+   # PKpulled <- intersect(names(PKtable), 
    #                       unique(c(AllPKParameters$PKparameter, 
    #                                AllPKParameters$BasePKparameter) # FIXME 
    
    PKToPull <- PKpulled
    PKpulled <- expand.grid(PKpulled = PKpulled, 
-                           File = unique(MyPKResults$File), 
-                           Tissue = unique(MyPKResults$Tissue), 
+                           File = unique(PKtable$File), 
+                           Tissue = unique(PKtable$Tissue), 
                            CompoundID = compoundsToExtract)
    
    FromCalcPKRatios = FALSE
@@ -119,6 +136,12 @@ save_table_to_Word <- function(
    }
    
    FileName <- basename(save_table)
+   
+   if(prettify_columns){
+      MyPKResults <- prettify_column_names(PKtable)  
+   } else {
+      MyPKResults <- PKtable
+   }
    
    rmarkdown::render(
       system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 

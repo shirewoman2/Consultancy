@@ -5,29 +5,27 @@
 \title{Save a bespoke PK table to Word using the pksummary_mult rmarkdown template}
 \usage{
 save_table_to_Word(
-  MyPKResults,
+  PKtable,
   PKpulled,
-  save_table,
   existing_exp_details,
   mean_type = "geometric",
   single_table = FALSE,
   include_dose_num = NA,
+  prettify_columns = TRUE,
+  save_table,
   fontsize = 11,
   highlight_so_cutoffs = NA,
   highlight_so_colors = NA
 )
 }
 \arguments{
-\item{MyPKResults}{PK table that includes the columsn File, Statistic,
+\item{PKtable}{PK table that includes the columsn File, Statistic,
 Tissue, CompoundID, and then also columns named in the standard way
 (prettified or un-prettified) for PK tables from the SimcypConsultancy
 package.}
 
 \item{PKpulled}{PK that are included in the table. All must be included in
 AllPKParameters$PKparameter.}
-
-\item{save_table}{optionally save the output table by supplying a file name
-in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
@@ -52,6 +50,14 @@ default, if you have data only for the first dose or only for the last
 dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
+
+\item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
+human-readable column names. TRUE makes pretty column names such as "Dose 1
+AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
+from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+
+\item{save_table}{optionally save the output table by supplying a file name
+in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
