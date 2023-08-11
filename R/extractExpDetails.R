@@ -307,7 +307,7 @@ extractExpDetails <- function(sim_data_file,
          # Tidying up some specific idiosyncracies of simulator output
          Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
          Val <- ifelse(str_detect(deet, "^Unit"),
-                       gsub("Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(",
+                       gsub("Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(|\\(blood\\)",
                             "", Val), Val)
          Val <- ifelse(deet %in% c("SimDuration"),
                        as.numeric(Val), Val)
