@@ -292,8 +292,8 @@ extractExpDetails <- function(sim_data_file,
          
          # Accounting for when fu,p is scripted
          if(length(Val) > 0 && 
-            (complete.cases(Val) && 
-             str_detect(deet, "^fu_") & str_detect(Val, "script"))){
+            (any(complete.cases(Val)) && 
+             str_detect(deet, "^fu_") & any(str_detect(Val, "script")))){
             SumDeets$Class[SumDeets$Deet == deet] <- "character"
             assign("SumDeets", SumDeets, envir = parent.frame())
          }
@@ -303,6 +303,10 @@ extractExpDetails <- function(sim_data_file,
                           "character" = as.character(Val),
                           "numeric" = as.numeric(Val))
          )
+         
+         if(length(Val) > 1){
+            Val <- str_comma(Val)
+         }
          
          # Tidying up some specific idiosyncracies of simulator output
          Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
@@ -533,8 +537,8 @@ extractExpDetails <- function(sim_data_file,
          
          # Accounting for when fu,p is scripted
          if(length(Val) > 0 && 
-            (complete.cases(Val) && 
-             str_detect(deet, "^fu_") & str_detect(Val, "script"))){
+            (any(complete.cases(Val)) && 
+             str_detect(deet, "^fu_") & any(str_detect(Val, "script")))){
             InputDeets$Class[InputDeets$Deet == deet] <- "character"
             assign("InputDeets", InputDeets, envir = parent.frame())
          }
@@ -544,6 +548,10 @@ extractExpDetails <- function(sim_data_file,
                           "character" = as.character(Val),
                           "numeric" = as.numeric(Val))
          )
+         
+         if(length(Val) > 1){
+            Val <- str_comma(Val)
+         }
          
          # Tidying up some specific idiosyncracies of simulator output
          Val <- ifelse(length(Val) == 0 || 
@@ -557,6 +565,7 @@ extractExpDetails <- function(sim_data_file,
       MyInputDeets1 <-
          MyInputDeets[!str_detect(MyInputDeets, 
                                   "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation|SimulatorVersion")]
+      MyInputDeets1 <- MyInputDeets1[1:50]
       
       if(length(MyInputDeets1) > 0){
          for(i in MyInputDeets1){
