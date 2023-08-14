@@ -565,7 +565,7 @@ extractExpDetails <- function(sim_data_file,
       MyInputDeets1 <-
          MyInputDeets[!str_detect(MyInputDeets, 
                                   "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation|SimulatorVersion")]
-      MyInputDeets1 <- MyInputDeets1[1:50]
+      MyInputDeets1 <- MyInputDeets1
       
       if(length(MyInputDeets1) > 0){
          for(i in MyInputDeets1){
