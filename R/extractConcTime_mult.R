@@ -375,7 +375,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "FALSE" = deannotateDetails(existing_exp_details))
          
          if("ObsOverlayFile" %in% names(Deets) == FALSE){
-            warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extact any observed data.\n", 
+            warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extract any observed data.\n", 
                     call. = FALSE)
             ObsAssign <- data.frame()
             obs_to_sim_assignment <- NA

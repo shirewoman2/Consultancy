@@ -577,7 +577,8 @@ so_graph <- function(PKtable,
    
    # Arranging and tidying input data. First, de-prettifying column names.
    SO <- PKtable %>% 
-      mutate(Statistic = ifelse(str_detect(Statistic, "^Simulated"),
+      mutate(Statistic = as.character(Statistic), 
+             Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic))
    
    if(any(names(PKtable) %in% AllPKParameters$PKparameter)){

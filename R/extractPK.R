@@ -493,7 +493,8 @@ extractPK <- function(sim_data_file,
    ParamAUC0 <- AllPKParameters %>% filter(Sheet == "AUC0") %>% 
       pull(PKparameter) %>% unique()
    
-   ParamAUClast <- AllPKParameters %>% filter(Sheet == "AUCX") %>% 
+   ParamAUClast <- AllPKParameters %>% 
+      filter(Sheet == "AUCX" & !str_detect(PKparameter, "_dose1")) %>% 
       pull(PKparameter) %>% unique()
    
    ParamCLTSS <- AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
