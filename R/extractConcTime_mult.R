@@ -360,7 +360,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    ## Tidying and error catching for any observed data ----------------------
    
    if("character" %in% class(obs_to_sim_assignment) && 
-      str_detect(tolower(obs_to_sim_assignment), "use existing|use.*details")){
+      any(str_detect(tolower(obs_to_sim_assignment), "use existing|use.*details"))){
       
       ### SCENARIO A: Match w/expdetails -------------------------------------
       
@@ -564,7 +564,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          }
       }
       
-      if(length(Deets) == 0){
+      if(nrow(Deets) == 0){
          # Using "warning" instead of "stop" here b/c I want this to be able to
          # pass through to other functions and just skip any files that
          # aren't simulator output.
