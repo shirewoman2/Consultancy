@@ -388,21 +388,33 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                     paste0("Users/", Sys.info()["user"], 
                                            "/Certara"), ObsFile))
             
-            if(any(file.exists(ObsAssign$ObsFile) == FALSE)){
-               warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:", 
-                              str_c(ObsAssign$ObsFile[file.exists(ObsAssign$ObsFile) == FALSE], 
-                                    collapse = "\n"), "\n"), 
-                       call. = FALSE)
-            }
-            
-            ObsAssign <- ObsAssign %>% filter(file.exists(ObsFile))
-            
-            if(nrow(ObsAssign) == 0){
-               warning("We can't find the Excel files that match the observed overlay files in your simulations. We cannot extract any observed data.\n", 
-                       call. = FALSE)
+            if(nrow(ObsAssign %>% filter(complete.cases(ObsFile) & 
+                                         File %in% sim_data_files_topull)) == 0){
                ObsAssign <- data.frame()
                obs_to_sim_assignment <- NA
-            } 
+            } else {
+               if(any(file.exists(ObsAssign$ObsFile[
+                  complete.cases(ObsAssign$ObsFile) &
+                  ObsAssign$File %in% sim_data_files_topull]) == FALSE)){
+                  warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:", 
+                                 str_c(ObsAssign$ObsFile[
+                                    file.exists(ObsAssign$ObsFile[
+                                       complete.cases(ObsAssign$ObsFile) &
+                                          ObsAssign$File %in% sim_data_files_topull]) == FALSE], 
+                                    collapse = "\n"), "\n"), 
+                          call. = FALSE)
+               }
+               
+               ObsAssign <- ObsAssign %>% filter(file.exists(ObsFile) & 
+                                                    File %in% sim_data_files_topull)
+               
+               if(nrow(ObsAssign) == 0){
+                  warning("We can't find the Excel files that match the observed overlay files in your simulations. We cannot extract any observed data.\n", 
+                          call. = FALSE)
+                  ObsAssign <- data.frame()
+                  obs_to_sim_assignment <- NA
+               } 
+            }
          }
       }
    } else if("logical" %in% class(obs_to_sim_assignment)){

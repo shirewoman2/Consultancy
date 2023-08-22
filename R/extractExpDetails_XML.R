@@ -263,6 +263,14 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                 "numeric" = as.numeric(DeetValue), 
                                 "character" = as.character(DeetValue))
             
+            # There will be some cases where we don't switch *to* some other
+            # value but just need to set the value to NA. Dealing with those
+            # here.
+            if(m == "ObsOverlayFile" & 
+               XML::xmlValue(RootNode[["GraphsData"]][["UseObservedData"]]) == "false"){
+               DeetValue <- NA
+            }
+            
             Deets[[i]][[DeetInfo$Detail]] <- DeetValue
             
             rm(DeetInfo, DeetLevels, DeetValue)
