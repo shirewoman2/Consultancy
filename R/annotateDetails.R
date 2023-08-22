@@ -419,13 +419,13 @@ annotateDetails <- function(existing_exp_details,
    
    ExpDetailDefinitions_expand <- ExpDetailDefinitions_expand %>% 
       left_join(data.frame(
-         DetailOrig = rep(ExpDetailDefinitions_expand$DetailOrig, each = 7),
-         Detail = unlist(lapply(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
-                                  "_met1", "_met2", "_secmet"),
-                                FUN = function(x) sub("_X", x, ExpDetailDefinitions_expand$DetailOrig)))), 
+         DetailOrig = rep(ExpDetailDefinitions_expand$DetailOrig, each = 7)) %>% 
+            mutate(Suffix = rep(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
+                                  "_met1", "_met2", "_secmet"), 
+                                nrow(ExpDetailDefinitions_expand)),
+                   Detail = paste0(sub("_X", "", DetailOrig), Suffix)),
          by = "DetailOrig") %>% 
-      mutate(Suffix = str_extract(Detail, "_sub|_inhib$|_inhib2|_met1|_met2|_secmet|_inhib1met"), 
-             CompoundID = Suffixes[Suffix]) %>% 
+      mutate(CompoundID = Suffixes[Suffix]) %>% 
       select(-DetailOrig, -Suffix)
    
    suppressMessages(
