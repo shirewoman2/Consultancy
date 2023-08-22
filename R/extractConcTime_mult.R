@@ -773,7 +773,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    }
    
    MultData <- bind_rows(MultData)
-   if(nrow(MultData) > 0 & complete.cases(obs_to_sim_assignment[1])){
+   if(nrow(MultData) > 0 & any(complete.cases(obs_to_sim_assignment))){
       # If they specified observed data files, it's better to use those than
       # to use the data included with the simulation. There's more information
       # that way.
