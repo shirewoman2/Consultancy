@@ -41,8 +41,9 @@ prettify_column_names <- function(PKtable,
                                             PrettifiedNames))) %>% 
       unique()
    
-   PKparameters <- names(PKtable)[!names(PKtable) %in% c("Statistic", "File", 
-                                                         "Tissue", "CompoundID")]
+   # FIXME 
+   PKparameters <- names(PKtable) #[!names(PKtable) %in% c("Statistic", "File", 
+                                   #                      "Tissue", "CompoundID")]
    PKparameters <- PKparameters[PKparameters %in% c(AllPKParameters_mod$PKparameter, 
                                                     AllPKParameters$PKparameter)]
    # # If user specified tab, then need to adjust PK parameters here, too.
@@ -108,7 +109,7 @@ prettify_column_names <- function(PKtable,
    #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
    # }
    
-   names(PKtable)[1:(length(PrettyCol) + 1)] <- c("Statistic", PrettyCol)
+   names(PKtable) <- PrettyCol
    
    # } else if(complete.cases(sheet_PKparameters) & 
    #           any(str_detect(names(PKtable_all[[1]]), "_dose1|_last")) == FALSE){
