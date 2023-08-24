@@ -31,6 +31,9 @@
 #'   mathematical equations? We agree but can't easily include equations in the
 #'   help file. However, if you run this and save the output to a Word file, the
 #'   equations will be included in the output.
+#' @param distribution_type use a "t" distribution (default) or a "Z"
+#'   distribution. Note: The Simcyp Simulator calculates geometric confidence
+#'   intervals with a t distribution.
 #' @param compoundToExtract For which compound do you want to extract PK data?
 #'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
 #'   metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
@@ -152,7 +155,8 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. If you supply only the file
+#'   the main PK table saved as a Word or csv file.  Do not include any slashes,
+#'   dollar signs, or periods in the file name. If you supply only the file
 #'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
 #'   the file name plus "PK summary table" with that extension and output will
 #'   be located in the same folder as \code{sim_data_file}. If you supply
@@ -163,6 +167,14 @@
 #'   its own and will have "- QC" added to the end of the file name.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from
@@ -173,6 +185,7 @@
 calc_PK_ratios <- function(sim_data_file_numerator,
                            sim_data_file_denominator, 
                            paired = TRUE,
+                           distribution_type = "t",
                            compoundToExtract = "substrate",
                            tissue = "plasma",
                            PKparameters = "AUC tab", 
@@ -201,8 +214,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    
    # Check for appropriate input for arguments
    tissue <- tolower(tissue)
-   if(tissue %in% c("plasma", "blood") == FALSE){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+   if(tissue %in% c("plasma", "blood", "unbound plasma", "unbound") == FALSE){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
               call. = FALSE)
       tissue <- "plasma"
    }
@@ -219,6 +232,13 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    # Making sure they always have a space.
    PKparameters <- sub("( )?/( )?", " / ", PKparameters)
    
+   if(tolower(distribution_type) %in% c("z", "t")){
+      distribution_type <- ifelse(tolower(distribution_type) == "z", 
+                                  "Z", "t")
+   } else {
+      stop("You have supplied a value for distribution_type that doesn't work. It must be either `t` (default and what the Simulator uses) or `Z`.\n", 
+           call. = FALSE)
+   }
    
    # Main body of function -------------------------------------------------
    
@@ -253,7 +273,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
          Deets <- Deets %>% filter(File %in% c(sim_data_file_numerator, 
                                                sim_data_file_denominator))
          
-         if(nrow(Deets != 2)){
+         if(nrow(Deets) != 2){
             Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                               sim_data_file_denominator), 
                                             exp_details = "Summary tab", 
@@ -273,6 +293,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                returnExpDetails = FALSE) 
    )
    
+   if(length(PKnumerator) == 0){
+      warning("We couldn't find PK values matching the requested compound ID and tissue for the numerator simulation, so we can't return any PK comparisons.\n", 
+              call. = FALSE)
+      return(data.frame())
+   }
+   
    suppressWarnings(
       PKdenominator <- extractPK(sim_data_file = sim_data_file_denominator, 
                                  compoundToExtract = compoundToExtract, 
@@ -283,6 +309,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                  returnExpDetails = FALSE,
                                  returnAggregateOrIndiv = "both")
    )
+   
+   if(length(PKdenominator) == 0){
+      warning("We couldn't find PK values matching the requested compound ID and tissue for the denominator simulation, so we can't return any PK comparisons.\n", 
+              call. = FALSE)
+      return(data.frame())
+   }
    
    # RETURN TO THIS LATER. We could add code to check and compare them for file
    # 2 to make absolutely sure they match when they should. Future plan... For
@@ -324,25 +356,52 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       # b/c aggregated data will NOT include, e.g., AUCinf, if there was any
       # trouble extrapolating to infinity.
       
+      if(any(Comparisons$PKparam_num %in% names(PKnumerator$aggregate) == FALSE)){
+         warning(
+            paste0("The parameters ", 
+                   str_comma(paste0("`", setdiff(Comparisons$PKparam_num,
+                                                 names(PKnumerator$aggregate)), 
+                                    "`")), 
+                   " were not available in the numerator simulation and thus will not be included in your output.\n"),
+            call. = FALSE)
+         
+         Comparisons <- Comparisons %>% 
+            filter(PKparam_num %in% names(PKnumerator$aggregate))
+      }
+      
+      if(any(Comparisons$PKparam_denom %in% names(PKdenominator$aggregate) == FALSE)){
+         warning(
+            paste0("The parameters ", 
+                   str_comma(paste0("`", setdiff(Comparisons$PKparam_denom,
+                                                 names(PKdenominator$aggregate)), 
+                                    "`")), 
+                   " were not available in the denominator simulation and thus will not be included in your output.\n"),
+            call. = FALSE)
+         
+         Comparisons <- Comparisons %>% 
+            filter(PKparam_denom %in% names(PKdenominator$aggregate))
+      }
+      
       if(all(names(PKnumerator$aggregate) %in% names(PKdenominator$aggregate)) == FALSE){
          warning(
             paste0("The parameters ", 
                    str_comma(paste0("`", setdiff(names(PKnumerator$aggregate),
-                                                 names(PKdenominator$aggregate)))), 
-                   " were available in the numerator but not in the denominator simulation and thus will not be included in your output."),
+                                                 names(PKdenominator$aggregate)), 
+                                    "`")), 
+                   " were available in the numerator but not in the denominator simulation and thus will not be included in your output.\n"),
             call. = FALSE)
          
          Comparisons <- Comparisons %>% 
             filter(PKparam_num %in% names(PKdenominator$aggregate))
       }
       
-      if(all(names(PKdenominator$individual) %in% names(PKnumerator$individual)) == FALSE){
+      if(all(names(PKdenominator$aggregate) %in% names(PKnumerator$aggregate)) == FALSE){
          warning(
             paste0("The parameters ", 
-                   str_comma(paste0("`", setdiff(names(PKdenominator$individual),
-                                                 names(PKnumerator$individual)), 
+                   str_comma(paste0("`", setdiff(names(PKdenominator$aggregate),
+                                                 names(PKnumerator$aggregate)), 
                                     "`")), 
-                   " were available in the denominator but not in the numerator simulation and thus cannot be included in your output."),
+                   " were available in the denominator but not in the numerator simulation and thus cannot be included in your output.\n"),
             call. = FALSE)
          
          Comparisons <- Comparisons %>% 
@@ -475,13 +534,17 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                mean_type, 
                # NB: As of 2023-06-15, the default statistic for gm_conf is a t
                # statistic, which matches the output from the Simulator. -LSh
-               "geometric" = round_opt(gm_conf(Value, CI = conf_int)[1], rounding),
-               "arithmetic" = round_opt(confInt(Value, CI = conf_int)[1], rounding)),
+               "geometric" = round_opt(gm_conf(Value, CI = conf_int, 
+                                               distribution_type = distribution_type)[1], rounding),
+               "arithmetic" = round_opt(confInt(Value, CI = conf_int, 
+                                                distribution_type = distribution_type)[1], rounding)),
             
             CI_u = switch(
                mean_type, 
-               "geometric" = round_opt(gm_conf(Value, CI = conf_int)[2], rounding),
-               "arithmetic" = round_opt(confInt(Value, CI = conf_int)[2], rounding))) %>%
+               "geometric" = round_opt(gm_conf(Value, CI = conf_int, 
+                                               distribution_type = distribution_type)[2], rounding),
+               "arithmetic" = round_opt(confInt(Value, CI = conf_int, 
+                                                distribution_type = distribution_type)[2], rounding))) %>%
          
          pivot_longer(cols = -c("Parameter", "ValType"), 
                       names_to = "Statistic", 
@@ -521,8 +584,28 @@ calc_PK_ratios <- function(sim_data_file_numerator,
          Var_delta <- sum(Var_num, Var_denom)
          SD_delta <- sqrt(Var_delta)
          
-         CI_lower_delta <- LogGeomeanRatio - qnorm(1-(1-conf_int)/2)*SD_delta
-         CI_upper_delta <- LogGeomeanRatio + qnorm(1-(1-conf_int)/2)*SD_delta
+         # Z distribution. This is generally fine but is not what the Simulator
+         # uses.
+         if(distribution_type == "Z"){
+            CI_lower_delta <- LogGeomeanRatio - qnorm(1-(1-conf_int)/2)*SD_delta
+            CI_upper_delta <- LogGeomeanRatio + qnorm(1-(1-conf_int)/2)*SD_delta
+         } else if(distribution_type == "t"){
+            # t distribution, which is what the Simulator uses
+            CI_lower_delta <- LogGeomeanRatio -
+               qt(p = 1-(1-conf_int)/2, 
+                  df = (min(c(length(x_num) - 1, length(x_denom) - 1)))) * SD_delta
+            CI_upper_delta <- LogGeomeanRatio + 
+               qt(p = 1-(1-conf_int)/2, 
+                  df = (min(c(length(x_num) - 1, length(x_denom) - 1)))) * SD_delta
+            # df to use from
+            # https://stats.libretexts.org/Courses/Las_Positas_College/Math_40%3A_Statistics_and_Probability/09%3A_Inferences_with_Two_Samples/9.03%3A_Inferences_for_Two_Population_Means_-_Unknown_Standard_Deviations
+            # which seems to align with what I'm reading elsewhere as well and with
+            # how the t distribution is calculated in the Excel template file
+            # people were using for calculating ratios before we made this
+            # function, although another option is to take (n1 - 1) + (n2 - 1). The
+            # difference in resultant values between the two approaches is very
+            # small, at least when n was 100 for both.
+         }
          
          Out <- c("GeomeanRatio" = exp(LogGeomeanRatio), 
                   "GeoRatio_CI_lower" = exp(CI_lower_delta),
