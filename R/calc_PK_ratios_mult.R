@@ -396,7 +396,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                     round_fun = ifelse(complete.cases(rounding) & 
                                           rounding == "Word only", 
                                        "none", rounding))) %>% 
-      select(-File, File)
+      relocate(CompoundID, Tissue, File, .after = last_col())
    
    
    # Saving --------------------------------------------------------------

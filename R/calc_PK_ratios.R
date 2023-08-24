@@ -856,6 +856,10 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
    }
    
+   # Noting compound ID and tissue
+   MyPKResults$CompoundID <- compoundToExtract
+   MyPKResults$Tissue <- tissue
+   
    
    # Saving --------------------------------------------------------------
    MyPKResults_out <- MyPKResults

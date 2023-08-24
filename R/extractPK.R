@@ -614,8 +614,12 @@ call. = FALSE)
       ParamAUC <- setdiff(ParamAUC,
                           c("AUCt_ratio_dose1", "AUCt_dose1", 
                             "AUCt_dose1_withInhib",
+                            "CLt_dose1", "CLt_dose1_withInhib", 
+                            "CLt_ratio_dose1",
                             "Cmax_dose1", "Cmax_dose1_withInhib",
-                            "Cmax_ratio_dose1", "tmax_dose1"))
+                            "Cmax_ratio_dose1", 
+                            "tmax_dose1", "tmax_dose1_withInhib", 
+                            "tmax_ratio_dose1"))
    }
    
    if(length(PKparameters) == 0){
@@ -698,7 +702,7 @@ call. = FALSE)
                     "unbound plasma" = which(str_detect(t(AUC_xl[1, ]), "CuPlasma"))[1], 
                     "blood" = which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1], 
                     "unbound blood" = which(str_detect(t(AUC_xl[1, ]), "CuBlood"))[1])
-      ColStart <- sort(ColStart)
+      ColStart <- ColStart[tissue]
       if(is.na(ColStart[tissue])){
          # Using "warning" instead of "stop" here b/c I want this to be
          # able to pass through to other functions.
