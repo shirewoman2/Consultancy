@@ -34,7 +34,7 @@
 #'   named character vector, e.g.,
 #'   \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
 #'   "efavirenz")}. If left as NA, we'll use the simulation file names. You can
-#'   optionally make the y axis label names prettier with the argument
+#'   optionally make the compound names prettier with the argument
 #'   \code{prettify_ylabel}.
 #' @param y_order optionally set the order of simulation files on the y axis. If
 #'   \code{y_order} is left as NA, the y axis will be sorted according to the
@@ -185,10 +185,7 @@
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
 #'   "Sim-Midazolam" will become "midazolam". If you leave this as NA, we'll
 #'   prettify if you supply a column name for \code{y_axis_labels} and we
-#'   *won't* prettify if you supply a named character vector there. Note for
-#'   more-advanced R users: We also won't prettify when this is left as NA if
-#'   you supply a column name for \code{y_axis_labels} and that column is a
-#'   factor.
+#'   *won't* prettify if you supply a named character vector there.
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -446,32 +443,11 @@ forest_plot <- function(forest_dataframe,
       prettify_ylabel <- NA
    }
    
-   YLabClass <- tryCatch(class(y_axis_labels), 
-                         error = function(x) "quosure")
-   
-   if(YLabClass == "quosure"){
-      # This is when y_axis_labels is a column in forest_dataframe. 
-      y_axis_labels <- rlang::enquo(y_axis_labels)
-   }
-   
    # Changing prettify_ylabel to "character" and setting NA to "not
    # set". Using this lower down in the script.
    prettify_ylabel <- ifelse(is.na(prettify_ylabel), 
                              "not set",
                              as.character(prettify_ylabel))
-   
-   # If they want to use a specific column for y axis labels and that column is
-   # factor data and they haven't specified anything for prettify_ylabel, they
-   # probably don't want to prettify anything. Why? Because if they can make a
-   # column factor, then they're probably more-advanced R users and could set up
-   # that column however they want. If they've got it set to factor and then we
-   # change the values in the column by prettifying, then the values won't match
-   # the levels any more.
-   if(prettify_ylabel == "not set" & 
-      (YLabClass == "quosure" &&
-       class(forest_dataframe %>% pull(!!y_axis_labels)) == "factor")){
-      prettify_ylabel <- "FALSE"
-   }
    
    x_axis_number_type <- ifelse(str_detect(x_axis_number_type, "perc"), 
                                 "percents", x_axis_number_type)
@@ -784,7 +760,12 @@ forest_plot <- function(forest_dataframe,
    
    # Setting up y_axis_labels and checking for possible problems. This has to
    # come AFTER rbinding the observed data.
+   YLabClass <- tryCatch(class(y_axis_labels), 
+                         error = function(x) "quosure")
+   
    if(YLabClass == "quosure"){
+      # This is when y_axis_labels is a column in forest_dataframe. 
+      y_axis_labels <- rlang::enquo(y_axis_labels)
       
       # If they didn't specify anything for y_axis_labels, this should actually
       # be character data.
@@ -882,25 +863,20 @@ forest_plot <- function(forest_dataframe,
                  call. = FALSE)
          y_order <- "strongest inhibitor to strongest inducer"
       } else if(length(y_order) > 1){
-         YOrderExtra <- setdiff(y_order, forest_dataframe$File)
+         YOrderExtra <- setdiff(y_order, unique(forest_dataframe$YCol))
          if(length(YOrderExtra) > 0){
-            warning(paste0("The files `", str_comma(YOrderExtra), 
+            warning(paste0("The y axis values `", str_comma(YOrderExtra), 
                            "` are included for the y order but are not present in your data. They will be ignored."), 
                     call. = FALSE)
-            y_order <- y_order[y_order %in% forest_dataframe$File]
+            y_order <- y_order[y_order %in% forest_dataframe$YCol]
          }
          
-         YOrderMissing <- setdiff(forest_dataframe$File, y_order)
+         YOrderMissing <- setdiff(unique(forest_dataframe$YCol), y_order)
          if(length(YOrderMissing) > 0){
-            warning(paste0("The files `", str_comma(YOrderMissing), 
+            warning(paste0("The y axis values `", str_comma(YOrderMissing), 
                            "` are present in your data but are not included in `y_order`. We'll put them on the bottom of your graph."))
             y_order <- c(y_order, YOrderMissing)
          }
-      }
-   } else {
-      if(YLabClass == "quosure" &&
-         class(forest_dataframe %>% pull(!!y_axis_labels)) == "factor"){
-         y_order <- levels(forest_dataframe %>% pull(!!y_axis_labels))
       }
    }
    
@@ -1012,6 +988,7 @@ forest_plot <- function(forest_dataframe,
          "strongest inducer to strongest inhibitor" = rev(StInhib_StInd), 
          "as is" = unique(forest_dataframe$YCol),
          "user" = y_order)))
+   
    
    ##  Dealing with possible facet_column_x --------------------------------
    if(as_label(facet_column_x) != "<empty>"){

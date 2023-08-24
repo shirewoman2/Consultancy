@@ -58,7 +58,7 @@ specify which simulation file should be labeled what here, do so with a
 named character vector, e.g.,
 \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
 "efavirenz")}. If left as NA, we'll use the simulation file names. You can
-optionally make the y axis label names prettier with the argument
+optionally make the compound names prettier with the argument
 \code{prettify_ylabel}.}
 
 \item{y_order}{optionally set the order of simulation files on the y axis. If
@@ -248,10 +248,7 @@ TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
 "Sim-Midazolam" will become "midazolam". If you leave this as NA, we'll
 prettify if you supply a column name for \code{y_axis_labels} and we
-*won't* prettify if you supply a named character vector there. Note for
-more-advanced R users: We also won't prettify when this is left as NA if
-you supply a column name for \code{y_axis_labels} and that column is a
-factor.}
+*won't* prettify if you supply a named character vector there.}
 
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter
