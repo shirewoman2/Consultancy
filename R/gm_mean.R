@@ -172,6 +172,9 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #' @param CI The confidence interval desired; default is 95%. Enter this
 #'   value as a decimal, e.g., 0.95.
 #' @param na.rm Should NA values be removed? (logical)
+#' @param distribution_type use a "t" distribution (default) or a "Z"
+#'   distribution. Note: The Simcyp Simulator calculates geometric confidence
+#'   intervals with a t distribution.
 #'
 #' @examples
 #' x <- rnorm(100, 5, 1)
@@ -180,7 +183,18 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #'
 #' @export
 
-confInt <- function(x, CI = 0.95, na.rm = TRUE) {
+confInt <- function(x, 
+                    CI = 0.95, 
+                    na.rm = TRUE, 
+                    distribution_type = "t"){
+   
+   if(tolower(distribution_type) %in% c("z", "t")){
+      distribution_type <- ifelse(tolower(distribution_type) == "z", 
+                                  "Z", "t")
+   } else {
+      stop("You have supplied a value for distribution_type that doesn't work. It must be either `t` (default and what the Simulator uses) or `Z`.\n", 
+           call. = FALSE)
+   }
    
    if(na.rm){
       x <- x[complete.cases(x)]
@@ -194,6 +208,16 @@ confInt <- function(x, CI = 0.95, na.rm = TRUE) {
    
    Up <- mean(x) + qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
    Low <- mean(x) - qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
+   
+   Up <- switch(distribution_type, 
+                "Z" = mean(x) + qnorm(1-alpha/2)*sd(x)/sqrt(length(x)),
+                "t" = mean(x) + qt(p = 1-alpha/2, df = (length(x) - 1)) * 
+                   sd(x)/sqrt(length(x)))
+   
+   Low <- switch(distribution_type, 
+                 "Z" = mean(x) - qnorm(1-alpha/2)*sd(x)/sqrt(length(x)),
+                 "t" = mean(x) - qt(p = 1-alpha/2, df = (length(x) - 1)) * 
+                    sd(x)/sqrt(length(x)))
    
    Out <- c("lower" = Low, "upper" = Up)
    
@@ -245,6 +269,14 @@ gm_conf <- function(x,
                     na.rm = TRUE, 
                     zero.propagate = FALSE, 
                     distribution_type = "t") {
+   
+   if(tolower(distribution_type) %in% c("z", "t")){
+      distribution_type <- ifelse(tolower(distribution_type) == "z", 
+                                  "Z", "t")
+   } else {
+      stop("You have supplied a value for distribution_type that doesn't work. It must be either `t` (default and what the Simulator uses) or `Z`.\n", 
+           call. = FALSE)
+   }
    
    if(na.rm){
       x <- x[complete.cases(x)]
