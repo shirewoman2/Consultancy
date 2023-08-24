@@ -36,7 +36,8 @@ forest_plot(
   dose_units = "mg",
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5
+  fig_width = 5,
+  prettify_compound_names = NA
 )
 }
 \arguments{
@@ -303,6 +304,10 @@ means the file will not be saved to disk.}
 \item{fig_height}{figure height in inches; default is 6}
 
 \item{fig_width}{figure width in inches; default is 5}
+
+\item{prettify_compound_names}{SOON TO BE DEPRECATED. This is the same thing
+as "prettify_ylabel", which we think is more general and thus more accurate
+at describing what this argument does.}
 }
 \value{
 Output is a graph.

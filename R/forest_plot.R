@@ -251,6 +251,9 @@
 #'   means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
+#' @param prettify_compound_names SOON TO BE DEPRECATED. This is the same thing
+#'   as "prettify_ylabel", which we think is more general and thus more accurate
+#'   at describing what this argument does.
 #'
 #' @return Output is a graph.
 #' @export
@@ -408,13 +411,20 @@ forest_plot <- function(forest_dataframe,
                         dose_units = "mg",
                         save_graph = NA,
                         fig_height = 6,
-                        fig_width = 5){
+                        fig_width = 5, 
+                        prettify_compound_names = NA){
    
    # Error catching and data tidying ------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
            call. = FALSE)
+   }
+   
+   if(is.na(prettify_ylabel) & complete.cases(prettify_compound_names)){
+      prettify_ylabel <- prettify_compound_names
+      warning("You specified a value for `prettify_compound_names`, an argument we are planning to deprecate. We will use this value for the new argument, `prettify_ylabel`.\n", 
+              call. = FALSE)
    }
    
    # Setting things up for nonstandard evaluation 
