@@ -46,9 +46,7 @@ if(FromCalcPKRatios){
    # calc_PK_ratios only has a single tissue option for now, so need to set
    # tissues to tissue. Same w/compounds. 
    tissues <- tissue
-   MyPKResults$Tissue <- tissue
    compoundsToExtract <- compoundToExtract
-   MyPKResults$CompoundID <- compoundToExtract
    PKpulled <- expand.grid(PKpulled = PKToPull, 
                            File = MyPKResults$File, 
                            Tissue = unique(MyPKResults$Tissue), 
@@ -101,7 +99,7 @@ if(single_table){
 
 if("File" %in% names(MyPKResults)){
    MyPKResults <- MyPKResults %>% 
-      select(!File, File)
+      relocate(File, .after = last_col())
 }
 
 if(single_table){
