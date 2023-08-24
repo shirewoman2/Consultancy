@@ -34,8 +34,8 @@
 #'   named character vector, e.g.,
 #'   \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
 #'   "efavirenz")}. If left as NA, we'll use the simulation file names. You can
-#'   optionally make the compound names prettier with the argument
-#'   \code{prettify_compound_names}.
+#'   optionally make the y axis label names prettier with the argument
+#'   \code{prettify_ylabel}.
 #' @param y_order optionally set the order of simulation files on the y axis. If
 #'   \code{y_order} is left as NA, the y axis will be sorted according to the
 #'   AUC ratio with inhibitors on top and inducers on the bottom. If you would
@@ -176,16 +176,19 @@
 #'   and "100 mg" instead of just "50" and "100". This just helps make it
 #'   clearer what the numbers represent. If you specify anything other than
 #'   Dose_sub or Dose_inhib for \code{facet_column_x}, this will be ignored.
-#' @param prettify_compound_names NA (default), TRUE, or FALSE on whether to
-#'   make any compound names included in \code{y_axis_labels} prettier. This was
-#'   designed for simulations where the substrates or effectors are among the
-#'   standard options for the simulator, and leaving
-#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
-#'   something more human readable. For example, "SV-Rifampicin-MD" will become
-#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". If you don't
-#'   specify this, we'll prettify if you supply a column name for
-#'   \code{y_axis_labels} and we *won't* prettify if you supply a named
-#'   character vector there.
+#' @param prettify_ylabel NA (default), TRUE, or FALSE on whether to attempt to
+#'   make text included in \code{y_axis_labels} prettier. This was designed for
+#'   the situation where the y axis is labeled with the compound used in the
+#'   simulation and where the substrates or effectors are among the standard
+#'   options for the simulator. Setting \code{prettify_ylabel =
+#'   TRUE} will make the name of those compounds something more human readable.
+#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
+#'   "Sim-Midazolam" will become "midazolam". If you leave this as NA, we'll
+#'   prettify if you supply a column name for \code{y_axis_labels} and we
+#'   *won't* prettify if you supply a named character vector there. Note for
+#'   more-advanced R users: We also won't prettify when this is left as NA if
+#'   you supply a column name for \code{y_axis_labels} and that column is a
+#'   factor.
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -246,7 +249,8 @@
 #'   leave off ".png" or ".docx" from the file name, it will be saved as a png
 #'   file, but if you specify a different graphical file extension, it will be
 #'   saved as that file format. Acceptable graphical file extensions are "eps",
-#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA
+#'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
+#'   slashes, dollar signs, or periods in the file name. Leaving this as NA
 #'   means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
@@ -363,7 +367,7 @@
 #' # rather than being automatically prettified
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = Inhibitor1,
-#'             prettify_compound_names = FALSE)
+#'             prettify_ylabel = FALSE)
 #'
 #' # -- Include a table of the numbers used for the centre statistic and
 #' # variability along the right side of the graph.
@@ -398,7 +402,7 @@ forest_plot <- function(forest_dataframe,
                         graph_title_size = 14,
                         table_title = NA,
                         rel_widths = c(5, 1),
-                        prettify_compound_names = NA, 
+                        prettify_ylabel = NA, 
                         include_dose_num = NA,
                         include_ratio_in_labels = TRUE, 
                         error_bar_height = NA,
@@ -436,17 +440,38 @@ forest_plot <- function(forest_dataframe,
    }
    
    # Cleaning up inputs
-   if(class(prettify_compound_names) != "logical"){
-      warning("You appear to have supplied something to the argument `prettify_compound_names` other than TRUE, FALSE, or NA. Unfortunately, those are the only permissible values. We'll set this to NA.", 
+   if(class(prettify_ylabel) != "logical"){
+      warning("You appear to have supplied something to the argument `prettify_ylabel` other than TRUE, FALSE, or NA. Unfortunately, those are the only permissible values. We'll set this to NA.", 
               call. = FALSE)
-      prettify_compound_names <- NA
+      prettify_ylabel <- NA
    }
    
-   # Changing prettify_compound_names to "character" and setting NA to "not
+   YLabClass <- tryCatch(class(y_axis_labels), 
+                         error = function(x) "quosure")
+   
+   if(YLabClass == "quosure"){
+      # This is when y_axis_labels is a column in forest_dataframe. 
+      y_axis_labels <- rlang::enquo(y_axis_labels)
+   }
+   
+   # Changing prettify_ylabel to "character" and setting NA to "not
    # set". Using this lower down in the script.
-   prettify_compound_names <- ifelse(is.na(prettify_compound_names), 
-                                     "not set",
-                                     as.character(prettify_compound_names))
+   prettify_ylabel <- ifelse(is.na(prettify_ylabel), 
+                             "not set",
+                             as.character(prettify_ylabel))
+   
+   # If they want to use a specific column for y axis labels and that column is
+   # factor data and they haven't specified anything for prettify_ylabel, they
+   # probably don't want to prettify anything. Why? Because if they can make a
+   # column factor, then they're probably more-advanced R users and could set up
+   # that column however they want. If they've got it set to factor and then we
+   # change the values in the column by prettifying, then the values won't match
+   # the levels any more.
+   if(prettify_ylabel == "not set" & 
+      (YLabClass == "quosure" &&
+       class(forest_dataframe %>% pull(!!y_axis_labels)) == "factor")){
+      prettify_ylabel <- "FALSE"
+   }
    
    x_axis_number_type <- ifelse(str_detect(x_axis_number_type, "perc"), 
                                 "percents", x_axis_number_type)
@@ -479,7 +504,7 @@ forest_plot <- function(forest_dataframe,
                     "include_dose_num" = include_dose_num,
                     "include_ratio_in_labels" = include_ratio_in_labels,
                     "y_axis_title" = y_axis_title, 
-                    "prettify_compound_names" = prettify_compound_names, 
+                    "prettify_ylabel" = prettify_ylabel, 
                     "x_axis_title" = x_axis_title,
                     "x_axis_number_type" = x_axis_number_type,
                     "error_bar_height" = error_bar_height,
@@ -759,12 +784,7 @@ forest_plot <- function(forest_dataframe,
    
    # Setting up y_axis_labels and checking for possible problems. This has to
    # come AFTER rbinding the observed data.
-   YLabClass <- tryCatch(class(y_axis_labels), 
-                         error = function(x) "quosure")
-   
    if(YLabClass == "quosure"){
-      # This is when y_axis_labels is a column in forest_dataframe. 
-      y_axis_labels <- rlang::enquo(y_axis_labels)
       
       # If they didn't specify anything for y_axis_labels, this should actually
       # be character data.
@@ -774,8 +794,8 @@ forest_plot <- function(forest_dataframe,
       } else {
          forest_dataframe <- forest_dataframe %>% 
             mutate(YCol = !!y_axis_labels, 
-                   YCol = switch(prettify_compound_names, 
-                                 # If they didn't set prettify_compound_names
+                   YCol = switch(prettify_ylabel, 
+                                 # If they didn't set prettify_ylabel
                                  # but they did set a column, it's likely a
                                  # column with substrate or inhibitor 1 names,
                                  # so prettify unless they request not to.
@@ -824,7 +844,7 @@ forest_plot <- function(forest_dataframe,
       if(any(complete.cases(y_axis_labels))){
          
          forest_dataframe <- forest_dataframe %>% 
-            mutate(YCol = switch(prettify_compound_names, 
+            mutate(YCol = switch(prettify_ylabel, 
                                  # If user didn't specify whether they wanted
                                  # prettification but did use specific values
                                  # for y_axis_labels, they probably don't want
@@ -876,6 +896,11 @@ forest_plot <- function(forest_dataframe,
                            "` are present in your data but are not included in `y_order`. We'll put them on the bottom of your graph."))
             y_order <- c(y_order, YOrderMissing)
          }
+      }
+   } else {
+      if(YLabClass == "quosure" &&
+         class(forest_dataframe %>% pull(!!y_axis_labels)) == "factor"){
+         y_order <- levels(forest_dataframe %>% pull(!!y_axis_labels))
       }
    }
    
@@ -986,10 +1011,7 @@ forest_plot <- function(forest_dataframe,
          "strongest inhibitor to strongest inducer" = StInhib_StInd, 
          "strongest inducer to strongest inhibitor" = rev(StInhib_StInd), 
          "as is" = unique(forest_dataframe$YCol),
-         "user" = forest_dataframe %>% 
-            mutate(File = factor(File, levels = y_order)) %>% 
-            arrange(File) %>% pull(YCol) %>% unique())))
-   
+         "user" = y_order)))
    
    ##  Dealing with possible facet_column_x --------------------------------
    if(as_label(facet_column_x) != "<empty>"){

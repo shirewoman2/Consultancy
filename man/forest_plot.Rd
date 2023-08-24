@@ -27,7 +27,7 @@ forest_plot(
   graph_title_size = 14,
   table_title = NA,
   rel_widths = c(5, 1),
-  prettify_compound_names = NA,
+  prettify_ylabel = NA,
   include_dose_num = NA,
   include_ratio_in_labels = TRUE,
   error_bar_height = NA,
@@ -58,8 +58,8 @@ specify which simulation file should be labeled what here, do so with a
 named character vector, e.g.,
 \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
 "efavirenz")}. If left as NA, we'll use the simulation file names. You can
-optionally make the compound names prettier with the argument
-\code{prettify_compound_names}.}
+optionally make the y axis label names prettier with the argument
+\code{prettify_ylabel}.}
 
 \item{y_order}{optionally set the order of simulation files on the y axis. If
   \code{y_order} is left as NA, the y axis will be sorted according to the
@@ -239,16 +239,19 @@ title.}
 numeric vector. The default makes the graph 5x larger than the table, and
 acceptable input looks like this: \code{rel_widths = c(5, 1)}}
 
-\item{prettify_compound_names}{NA (default), TRUE, or FALSE on whether to
-make any compound names included in \code{y_axis_labels} prettier. This was
-designed for simulations where the substrates or effectors are among the
-standard options for the simulator, and leaving
-\code{prettify_compound_names = TRUE} will make the name of those compounds
-something more human readable. For example, "SV-Rifampicin-MD" will become
-"rifampicin", and "Sim-Midazolam" will become "midazolam". If you don't
-specify this, we'll prettify if you supply a column name for
-\code{y_axis_labels} and we *won't* prettify if you supply a named
-character vector there.}
+\item{prettify_ylabel}{NA (default), TRUE, or FALSE on whether to attempt to
+make text included in \code{y_axis_labels} prettier. This was designed for
+the situation where the y axis is labeled with the compound used in the
+simulation and where the substrates or effectors are among the standard
+options for the simulator. Setting \code{prettify_ylabel =
+TRUE} will make the name of those compounds something more human readable.
+For example, "SV-Rifampicin-MD" will become "rifampicin", and
+"Sim-Midazolam" will become "midazolam". If you leave this as NA, we'll
+prettify if you supply a column name for \code{y_axis_labels} and we
+*won't* prettify if you supply a named character vector there. Note for
+more-advanced R users: We also won't prettify when this is left as NA if
+you supply a column name for \code{y_axis_labels} and that column is a
+factor.}
 
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter
@@ -296,7 +299,8 @@ in quotes here, e.g., "My forest plot.png" or "My forest plot.docx". If you
 leave off ".png" or ".docx" from the file name, it will be saved as a png
 file, but if you specify a different graphical file extension, it will be
 saved as that file format. Acceptable graphical file extensions are "eps",
-"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
+slashes, dollar signs, or periods in the file name. Leaving this as NA
 means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
@@ -434,7 +438,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
 # rather than being automatically prettified
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,
-            prettify_compound_names = FALSE)
+            prettify_ylabel = FALSE)
 
 # -- Include a table of the numbers used for the centre statistic and
 # variability along the right side of the graph.
