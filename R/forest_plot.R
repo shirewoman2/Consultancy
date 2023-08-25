@@ -1241,10 +1241,13 @@ forest_plot <- function(forest_dataframe,
                                          levels = names({{Param_exp}}), 
                                          labels = {{Param_exp}}))
       
-      G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
-                                        y = YCol_num, shape = SimOrObs)) +
-         geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax,
-                                    ymin = Ymin, ymax = Ymax, fill = IntLevel),
+      G <- ggplot(forest_dataframe, 
+                  aes(x = Centre, xmin = Lower, xmax = Upper, 
+                      y = YCol_num, shape = SimOrObs)) +
+         geom_rect(data = Rect, 
+                   aes(xmin = Xmin, xmax = Xmax,
+                       ymin = Ymin, ymax = Ymax, 
+                       fill = IntLevel),
                    inherit.aes = FALSE) +
          scale_fill_manual(values = FillColor)
       
@@ -1285,7 +1288,8 @@ forest_plot <- function(forest_dataframe,
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
                                         y = PKParam_num, shape = SimOrObs)) +
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, 
-                                    ymin = Ymin, ymax = Ymax, fill = IntLevel), 
+                                    ymin = Ymin, ymax = Ymax,
+                                    fill = IntLevel), 
                    inherit.aes = FALSE, 
                    color = NA) +
          scale_fill_manual(values = FillColor)
@@ -1333,6 +1337,8 @@ forest_plot <- function(forest_dataframe,
       ylab(switch(as.character(y_axis_title == "none"), 
                   "TRUE" = NULL, 
                   "FALSE" = y_axis_title)) +
+      guides(fill = guide_legend(override.aes = list(colour = "black",
+                                                     linewidth = 0.1))) + # <-- This adds a box around all the glyphs in the legend and works better than using legend.key within the theme call.
       theme_consultancy() +
       theme(
          axis.line.x.bottom = switch(as.character(show_borders), 
@@ -1347,6 +1353,7 @@ forest_plot <- function(forest_dataframe,
                                    # already borders.
                                    "FALSE" = element_line(color = "black", 
                                                           linewidth = 0.25)), 
+         # legend.key = element_rect(colour="black", size = 0.5), # <-- Alternate attempt to add borders around legend boxes, but this one results in a box with a little bit of space between the rectangle glyph and the border. The "guides" option earlier works better.
          legend.position = legend_position, ### KEEP THIS
          strip.text = element_text(face = "bold"),
          strip.text.y.left = element_text(angle = 0),
