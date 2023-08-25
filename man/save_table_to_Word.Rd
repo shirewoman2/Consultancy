@@ -6,7 +6,7 @@
 \usage{
 save_table_to_Word(
   PKtable,
-  PKpulled,
+  PKpulled = NA,
   existing_exp_details,
   mean_type = "geometric",
   single_table = FALSE,
@@ -19,13 +19,26 @@ save_table_to_Word(
 )
 }
 \arguments{
-\item{PKtable}{PK table that includes the columsn File, Statistic,
-Tissue, CompoundID, and then also columns named in the standard way
-(prettified or un-prettified) for PK tables from the SimcypConsultancy
-package.}
+\item{PKtable}{PK table that includes the columns File, Statistic, Tissue,
+CompoundID, and then also columns named in the standard way (prettified or
+un-prettified) for PK tables from the SimcypConsultancy package. Well, that
+is, your input for PKtable must meet those criteria if you want it to be
+formatted in any way or if you want to split it into multiple tables using
+the argument \code{single_table} or have highlighting applied with
+\code{highlight_so_cutoffs}. If you \emph{don't} care about that, supply
+any old data.frame or tibble, and this will save it to Word. If you supply
+a flextable (see the
+\href{https://davidgohel.github.io/flextable/}{eponymous package} if you
+don't know what we're talking about), we also won't touch the formatting
+and will return your flextable as is in the Word document.}
 
 \item{PKpulled}{PK that are included in the table. All must be included in
-AllPKParameters$PKparameter.}
+AllPKParameters$PKparameter or AllPKParameters$PrettifiedNames (although
+the latter is buggy and not working atm). If left as NA, no changes at all
+will be done to the table in terms of formatting, layout, etc., but that
+includes that it will be saved as a single table regardless of input for
+\code{single_table}. (Saving as multiple tables with the argument
+\code{single_table} requires a very specific layout here.)}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
@@ -56,8 +69,9 @@ human-readable column names. TRUE makes pretty column names such as "Dose 1
 AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
 from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
-\item{save_table}{optionally save the output table by supplying a file name
-in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name.}
+\item{save_table}{save the output table by supplying a file name in quotes
+here, e.g., "My nicely formatted table.docx".  Do not include any slashes,
+dollar signs, or periods in the file name.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}

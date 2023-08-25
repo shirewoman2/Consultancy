@@ -4,14 +4,28 @@
 #' template file as is used for the function pksummary_mult. UNDER CONSTRUCTION.
 #' I haven't done almost any error catching here yet. -LSh
 #'
-#' @param PKtable PK table that includes the columsn File, Statistic,
-#'   Tissue, CompoundID, and then also columns named in the standard way
-#'   (prettified or un-prettified) for PK tables from the SimcypConsultancy
-#'   package.
+#' @param PKtable PK table that includes the columns File, Statistic, Tissue,
+#'   CompoundID, and then also columns named in the standard way (prettified or
+#'   un-prettified) for PK tables from the SimcypConsultancy package. Well, that
+#'   is, your input for PKtable must meet those criteria if you want it to be
+#'   formatted in any way or if you want to split it into multiple tables using
+#'   the argument \code{single_table} or have highlighting applied with
+#'   \code{highlight_so_cutoffs}. If you \emph{don't} care about that, supply
+#'   any old data.frame or tibble, and this will save it to Word. If you supply
+#'   a flextable (see the
+#'   \href{https://davidgohel.github.io/flextable/}{eponymous package} if you
+#'   don't know what we're talking about), we also won't touch the formatting
+#'   and will return your flextable as is in the Word document.
 #' @param PKpulled PK that are included in the table. All must be included in
-#'   AllPKParameters$PKparameter.
-#' @param save_table optionally save the output table by supplying a file name
-#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name.
+#'   AllPKParameters$PKparameter or AllPKParameters$PrettifiedNames (although
+#'   the latter is buggy and not working atm). If left as NA, no changes at all
+#'   will be done to the table in terms of formatting, layout, etc., but that
+#'   includes that it will be saved as a single table regardless of input for
+#'   \code{single_table}. (Saving as multiple tables with the argument
+#'   \code{single_table} requires a very specific layout here.)
+#' @param save_table save the output table by supplying a file name in quotes
+#'   here, e.g., "My nicely formatted table.docx".  Do not include any slashes,
+#'   dollar signs, or periods in the file name.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -84,7 +98,7 @@
 #' 
 save_table_to_Word <- function(
       PKtable, 
-      PKpulled, # make this automatically determined later
+      PKpulled = NA, # make this automatically determined later
       existing_exp_details,
       mean_type = "geometric", 
       single_table = FALSE, 
@@ -95,39 +109,12 @@ save_table_to_Word <- function(
       highlight_so_cutoffs = NA, 
       highlight_so_colors = NA){
    
-   # PKtable needs to have the following columns:
+   # PKtable needs to have the following columns to get saved w/pksummarymult Rmd file:
    # File
    # Statistic -- must contain "S/O" if you want "observed" to show up in table headings
    # Tissue
    # CompoundID
    # PK parameters
-   
-   if("Tissue" %in% names(PKtable) == FALSE){
-      warning("You'll get better-looking output if you include a column in PKtable titled `Tissue` that indicates what tissue the PK are for, e.g., blood or plasma.\n", 
-              call. = FALSE)
-      PKtable$Tissue <- "NOT SPECIFIED"
-   }
-   
-   if("CompoundID" %in% names(PKtable) == FALSE){
-      warning("We need the column `CompoundID` to appear in PKtable to make things work correctly. We'll assume that your table contained PK for the substrate for now, but you might want to include a column in PKtable titled `CompoundID` that indicates what compound ID the PK are for, e.g., substrate, inhibitor 1, etc.\n", 
-              call. = FALSE)
-      PKtable$CompoundID <- "substrate"
-   }
-   
-   tissues = sort(unique(PKtable$Tissue)) 
-   compoundsToExtract <- sort(unique(PKtable$CompoundID))
-   # PKpulled <- intersect(names(PKtable), 
-   #                       unique(c(AllPKParameters$PKparameter, 
-   #                                AllPKParameters$BasePKparameter) # FIXME 
-   
-   PKToPull <- PKpulled
-   PKpulled <- expand.grid(PKpulled = PKpulled, 
-                           File = unique(PKtable$File), 
-                           Tissue = unique(PKtable$Tissue), 
-                           CompoundID = compoundsToExtract)
-   
-   FromCalcPKRatios = FALSE
-   paired = FALSE # Probably don't need this
    
    OutPath <- dirname(save_table)
    
@@ -137,17 +124,56 @@ save_table_to_Word <- function(
    
    FileName <- basename(save_table)
    
-   if(prettify_columns){
-      MyPKResults <- prettify_column_names(PKtable)  
+   if(is.na(PKpulled) | "flextable" %in% class(PKtable)){
+      
+      rmarkdown::render(
+         system.file("rmarkdown/templates/savetable/skeleton/skeleton.Rmd", 
+                     package="SimcypConsultancy"),
+         output_dir = OutPath, 
+         output_file = FileName, 
+         quiet = TRUE)
+      
    } else {
-      MyPKResults <- PKtable
+      
+      if("Tissue" %in% names(PKtable) == FALSE){
+         warning("You'll get better-looking output if you include a column in PKtable titled `Tissue` that indicates what tissue the PK are for, e.g., blood or plasma.\n", 
+                 call. = FALSE)
+         PKtable$Tissue <- "NOT SPECIFIED"
+      }
+      
+      if("CompoundID" %in% names(PKtable) == FALSE){
+         warning("We need the column `CompoundID` to appear in PKtable to make things work correctly. We'll assume that your table contained PK for the substrate for now, but you might want to include a column in PKtable titled `CompoundID` that indicates what compound ID the PK are for, e.g., substrate, inhibitor 1, etc.\n", 
+                 call. = FALSE)
+         PKtable$CompoundID <- "substrate"
+      }
+      
+      tissues = sort(unique(PKtable$Tissue)) 
+      compoundsToExtract <- sort(unique(PKtable$CompoundID))
+      # PKpulled <- intersect(names(PKtable), 
+      #                       unique(c(AllPKParameters$PKparameter, 
+      #                                AllPKParameters$BasePKparameter) # FIXME 
+      
+      PKToPull <- PKpulled
+      PKpulled <- expand.grid(PKpulled = PKpulled, 
+                              File = unique(PKtable$File), 
+                              Tissue = unique(PKtable$Tissue), 
+                              CompoundID = compoundsToExtract)
+      
+      FromCalcPKRatios = FALSE
+      paired = FALSE # Probably don't need this
+      
+      if(prettify_columns){
+         MyPKResults <- prettify_column_names(PKtable)  
+      } else {
+         MyPKResults <- PKtable
+      }
+      
+      rmarkdown::render(
+         system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
+                     package="SimcypConsultancy"),
+         output_dir = OutPath, 
+         output_file = FileName, 
+         quiet = TRUE)
+      
    }
-   
-   rmarkdown::render(
-      system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
-                  package="SimcypConsultancy"),
-      output_dir = OutPath, 
-      output_file = FileName, 
-      quiet = TRUE)
-   
 }
