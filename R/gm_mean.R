@@ -206,9 +206,6 @@ confInt <- function(x,
    
    alpha <- 1-CI
    
-   Up <- mean(x) + qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
-   Low <- mean(x) - qnorm(1-alpha/2)*sd(x)/sqrt(length(x))
-   
    Up <- switch(distribution_type, 
                 "Z" = mean(x) + qnorm(1-alpha/2)*sd(x)/sqrt(length(x)),
                 "t" = mean(x) + qt(p = 1-alpha/2, df = (length(x) - 1)) * 
