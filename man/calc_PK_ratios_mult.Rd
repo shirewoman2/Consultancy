@@ -69,8 +69,8 @@ data for multiple compounds, but we have not done that at this point. Email
 Laura Shireman if that's something you really want.}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
+Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+blood".}
 
 \item{PKparameters}{PK parameters you want to extract from the simulator
   output file. Options are: \describe{
@@ -194,7 +194,8 @@ figure out some information about your experimental set up.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. If you supply only the file
+the main PK table saved as a Word or csv file.  Do not include any slashes,
+dollar signs, or periods in the file name. If you supply only the file
 extension, e.g., \code{save_table = "docx"}, the name of the file will be
 the file name plus "PK summary table" with that extension and output will
 be located in the same folder as \code{sim_data_file}. If you supply

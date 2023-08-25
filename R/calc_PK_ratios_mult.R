@@ -88,8 +88,8 @@
 #'   \code{sim_data_file_denominator}, list that tab here. Most of the time,
 #'   this should be left as NA.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default) or "blood" (possible but not as thoroughly
-#'   tested).
+#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
+#'   blood".
 #' @param mean_type What kind of means and confidence intervals do you want
 #'   listed in the output table? Options are "arithmetic" or "geometric"
 #'   (default).
@@ -171,7 +171,8 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. If you supply only the file
+#'   the main PK table saved as a Word or csv file.  Do not include any slashes,
+#'   dollar signs, or periods in the file name. If you supply only the file
 #'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
 #'   the file name plus "PK summary table" with that extension and output will
 #'   be located in the same folder as \code{sim_data_file}. If you supply
@@ -260,7 +261,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    
    # Check for appropriate input for arguments
    tissue <- tolower(tissue)
-   if(tissue %in% c("plasma", "blood") == FALSE){
+   if(tissue %in% c("plasma", "blood", "unbound plasma", "unbound blood") == FALSE){
       warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
               call. = FALSE)
       tissue <- "plasma"
