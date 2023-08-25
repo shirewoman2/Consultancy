@@ -17,25 +17,25 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 ```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
 if(FromCalcPKRatios){
-    if(paired){
-        OptionalSection <- knitr::knit_child(
-            system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
-                        package="SimcypConsultancy"), 
-            envir = environment(), 
-            quiet = TRUE)
-        
-        cat(OptionalSection, sep = "\n")
-        
-    } else {
-        OptionalSection <- knitr::knit_child(
-            system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
-                        package="SimcypConsultancy"), 
-            envir = environment(), 
-            quiet = TRUE)
-        
-        cat(OptionalSection, sep = "\n")
-        
-    }
+   if(paired){
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   } else {
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   }
 } 
 
 ```
@@ -72,7 +72,7 @@ Annotations <- make_table_annotations(MyPKResults = MyPKResults,
 ```{r makeTablePKSummaryOutput}
 
 if("File" %in% names(MyPKResults)){
-    MyPKResults <- MyPKResults %>% relocate(File, .after = last_col())
+   MyPKResults <- MyPKResults %>% relocate(File, .after = last_col())
 }
 
 formatTable_Simcyp(MyPKResults, 
