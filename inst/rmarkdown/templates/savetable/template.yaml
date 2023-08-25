@@ -1,0 +1,4 @@
+name: savetable
+description: >
+   Save a table to Word
+create_dir: FALSE

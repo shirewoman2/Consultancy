@@ -1,0 +1,28 @@
+---
+title: "PK summary tables"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupPKSummaryOutput, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600, 
+                      fig.width = 6, 
+                      fig.height = 5)
+
+```
+
+```{r}
+if("flextable" %in% class(PKtable)){
+   PKtable
+} else {
+   formatTable_Simcyp(PKtable, 
+                      fontsize = fontsize, 
+                      bold_cells = list(c(0, NA)),
+                      center_1st_column = TRUE)
+}
+
+```
+
