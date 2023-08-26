@@ -138,6 +138,70 @@ extractExpDetails <- function(sim_data_file,
    # names, which columns contain their values for substrates or inhibitors,
    # and what kind of data to format the output as at the end. Using data
    # object AllExpDetails.
+   
+   Suffixes <- c("substrate" = "_sub",
+                 "inhibitor 1" = "_inhib", 
+                 "inhibitor 2" = "_inhib2",
+                 "inhibitor 1 metabolite" = "_inhib1met",
+                 "primary metabolite 1" = "_met1",
+                 "primary metabolite 2" = "_met2",
+                 "secondary metabolite" = "_secmet")
+   
+   # Columns farther to the right on the summary tab that need to have a higher
+   # value for NameCol and ValueCol
+   SummaryRightCols <- c("Abs_model",
+                         "DistributionModel",
+                         "DoseInt", 
+                         "DoseRoute",
+                         "Dose", 
+                         "NumDoses",
+                         "PercDoseInhaled",
+                         "PercDoseSwallowed",
+                         "PrandialSt", 
+                         "Regimen",
+                         "StartDayTime",
+                         "Units_dose")
+   
+   # FIXME
+   
+   NotSpecifCmpd <- AllExpDetails %>% filter(DeetChangesByCmpd == FALSE)
+   SpecifCmpd <- AllExpDetails %>% filter(DeetChangesByCmpd == TRUE)
+   SpecifCmpd <- SpecifCmpd %>% 
+      left_join(expand_grid(Detail = SpecifCmpd$Detail, 
+                            CompoundID = c("substrate", 
+                                           "inhibitor 1",
+                                           "inhibitor 2", 
+                                           "inhibitor 1 metabolite", 
+                                           "primary metabolite 1", 
+                                           "primary metabolite 2", 
+                                           "secondary metabolite")), 
+                by = "Detail", 
+                relationship = "many-to-many") %>%
+      filter(CmpdsDeetAvail == CompoundID | CmpdsDeetAvail == "all" |
+                (CompoundID %in% c("substrate", "inhibitor 1") & 
+                    CmpdsDeetAvail == "substrate, inhibitor 1")) %>% 
+      mutate(Suffix = Suffixes[CompoundID], 
+             Detail = paste0(Detail, Suffix), 
+             NameCol = case_when(Detail %in% paste0(SummaryRightCols, "_sub") ~ 5, 
+                                 Detail %in% paste0(SummaryRightCols, "_inhib") ~ 5, 
+                                 Sheet %in% c("Input Sheet") ~ NA,
+                                 TRUE ~ 1), 
+             ValueCol = case_when(Detail %in% paste0(SummaryRightCols, "_sub") ~ 6, 
+                                  Detail %in% paste0(SummaryRightCols, "_inhib") ~ 7, 
+                                  !Detail %in% paste0(SummaryRightCols, "_inhib") &
+                                     CompoundID == "substrate" ~ 2,
+                                  !Detail %in% paste0(SummaryRightCols, "_inhib") &
+                                     CompoundID == "inhibitor 1" ~ 3,
+                                  Sheet %in% c("Input Sheet") ~ NA,
+                                  TRUE ~ ValueCol))
+   
+   
+   
+   
+   
+   
+   
+   
    SumDeets <- AllExpDetails %>% filter(Sheet == "Summary") %>% 
       rename(Deet = Detail)
    PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
@@ -150,15 +214,14 @@ extractExpDetails <- function(sim_data_file,
    }
    
    if(exp_details_input[1] == "summary tab"){
-      exp_details <- c(SumDeets$Deet, "StartHr_sub", "StartHr_inhib")
+      exp_details <- c(SumDeets$Deet, "StartHr")
       # Note that StartHr_inhib2, even if there were an inhibitor 2, is
       # not available from the Summary Sheet. It IS available from the
       # Input Sheet, though.
    }
    
    if(exp_details_input[1] == "input sheet"){
-      exp_details <- c(InputDeets$Deet, "StartHr_sub", "StartHr_inhib",
-                       "StartHr_inhib2")
+      exp_details <- c(InputDeets$Deet, "StartHr")
    }
    
    if(exp_details_input[1] == "population tab"){
@@ -206,21 +269,12 @@ extractExpDetails <- function(sim_data_file,
       exp_details <- exp_details[!exp_details == "AGP"]
    }
    
-   # Since StartHr_sub and StartHr_inhib are calculated from StartDayTime_sub
-   # and StartDayTime_inhib, those must be included in exp_details to
-   # extract. If the user wanted "Input Sheet" details, we can actually
-   # calculate this without reading the summary tab, which takes more time,
-   # so omitting in that instance.
-   if("StartHr_sub" %in% exp_details & exp_details_input[1] != "input sheet"){
-      exp_details <- unique(c(exp_details, "StartDayTime_sub",
-                              "SimStartDayTime"))
-   }
-   if("StartHr_inhib" %in% exp_details & exp_details_input[1] != "input sheet"){
-      exp_details <- unique(c(exp_details, "StartDayTime_inhib",
-                              "SimStartDayTime"))
-   }
-   if("StartHr_inhib2" %in% exp_details & exp_details_input[1] != "input sheet"){
-      exp_details <- unique(c(exp_details, "StartDayTime_inhib2",
+   # Since StartHr values are calculated from StartDayTime, those values must be
+   # included in exp_details to extract. If the user wanted "Input Sheet"
+   # details, we can actually calculate this without reading the summary tab,
+   # which takes more time, so omitting in that instance.
+   if("StartHr" %in% exp_details & exp_details_input[1] != "input sheet"){
+      exp_details <- unique(c(exp_details, "StartDayTime",
                               "SimStartDayTime"))
    }
    
@@ -1245,7 +1299,7 @@ extractExpDetails <- function(sim_data_file,
       # Checking that the workspace file is available. This will ignore the
       # date/time stamp on the Excel results if it's still there.
       if(file.exists(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
-             ".wksz", sim_data_file))){
+                         ".wksz", sim_data_file))){
          
          TEMP <- extractExpDetails_XML(
             sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
