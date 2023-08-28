@@ -162,7 +162,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
                next
             }
             
-            for(k in exp_details){
+            for(k in exp_details[exp_details %in% CompoundDetails]){
                
                DeetInfo <- AllExpDetails %>% 
                   filter(Sheet == "workspace XML file" & Detail == k)
@@ -212,23 +212,22 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                    "character" = as.character(DeetValue))
                
                # Decoding as necessary. Add to the options for k as needed.
-               if(k %in% c("DistributionModel_X")){
+               if(k %in% c("DistributionModel")){
                   DeetValue <- switch(k, 
-                                      "DistributionModel_X" = 
+                                      "DistributionModel" = 
                                          switch(DeetValue, 
                                                 "1" = "Full PBPK Model", 
                                                 "0" = "Minimal PBPK Model"))
                }
                
-               Deets[[i]][[gsub("_X$", switch(j, 
+               Deets[[i]][[paste0(k, switch(j, 
                                               "substrate" = "_sub", 
                                               "primary metabolite 1" = "_met1",
                                               "primary metabolite 2" = "_met2",
                                               "secondary metabolite" = "_secmet",
                                               "inhibitor 1" = "_inhib",
                                               "inhibitor 2" = "_inhib2", 
-                                              "inhibitor 1 metabolite" = "_inhib1met"),
-                                k)]] <- DeetValue 
+                                              "inhibitor 1 metabolite" = "_inhib1met"))]] <- DeetValue 
                
                rm(DeetInfo, DeetLevels, DeetValue)
             }
