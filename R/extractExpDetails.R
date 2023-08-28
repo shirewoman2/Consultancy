@@ -139,69 +139,8 @@ extractExpDetails <- function(sim_data_file,
    # and what kind of data to format the output as at the end. Using data
    # object AllExpDetails.
    
-   Suffixes <- c("substrate" = "_sub",
-                 "inhibitor 1" = "_inhib", 
-                 "inhibitor 2" = "_inhib2",
-                 "inhibitor 1 metabolite" = "_inhib1met",
-                 "primary metabolite 1" = "_met1",
-                 "primary metabolite 2" = "_met2",
-                 "secondary metabolite" = "_secmet")
-   
-   # Columns farther to the right on the summary tab that need to have a higher
-   # value for NameCol and ValueCol
-   SumTabRtSide <- c("Abs_model",
-                     "DistributionModel",
-                     "DoseInt", 
-                     "DoseRoute",
-                     "Dose", 
-                     "NumDoses",
-                     "PercDoseInhaled",
-                     "PercDoseSwallowed",
-                     "PrandialSt", 
-                     "Regimen",
-                     "StartDayTime",
-                     "Units_dose")
-   
-   NotSpecifCmpd <- AllExpDetails %>% filter(ColsChangeWithCmpd == FALSE)
-   SpecifCmpd <- AllExpDetails %>% filter(ColsChangeWithCmpd == TRUE)
-   SpecifCmpd <- SpecifCmpd %>% 
-      left_join(expand_grid(Detail = unique(SpecifCmpd$Detail), 
-                            CompoundID = c("substrate", 
-                                           "inhibitor 1",
-                                           "inhibitor 2", 
-                                           "inhibitor 1 metabolite", 
-                                           "primary metabolite 1", 
-                                           "primary metabolite 2", 
-                                           "secondary metabolite")), 
-                by = "Detail", 
-                relationship = "many-to-many") %>%
-      select(Detail, CompoundID, everything()) %>% 
-      filter(CmpdsForWhichDeetAvail == CompoundID | CmpdsForWhichDeetAvail == "all" |
-                (CompoundID %in% c("substrate", "inhibitor 1") & 
-                    CmpdsForWhichDeetAvail == "substrate, inhibitor 1") |
-                (CompoundID %in% c("substrate", "inhibitor 1", "inhibitor 2") & 
-                    CmpdsForWhichDeetAvail == "substrate, inhibitor 1, inhibitor 2") |
-                (CompoundID == "substrate" & 
-                    CmpdsForWhichDeetAvail == "substrate")) %>% 
-      mutate(Suffix = Suffixes[CompoundID], 
-             Detail = paste0(Detail, Suffix), 
-             NameCol = case_when(Detail %in% paste0(SumTabRtSide, "_sub") ~ 5, 
-                                 Detail %in% paste0(SumTabRtSide, "_inhib") ~ 5, 
-                                 TRUE ~ 1), 
-             ValueCol = case_when(Detail %in% paste0(SumTabRtSide, "_sub") ~ 6, 
-                                  Detail %in% paste0(SumTabRtSide, "_inhib") ~ 7, 
-                                  !Detail %in% paste0(SumTabRtSide, "_inhib") &
-                                     CompoundID == "substrate" ~ 2,
-                                  !Detail %in% paste0(SumTabRtSide, "_inhib") &
-                                     CompoundID == "inhibitor 1" ~ 3,
-                                  TRUE ~ ValueCol), 
-             NameCol = ifelse(Sheet == "Input Sheet", NA, NameCol), 
-             ValueCol = ifelse(Sheet == "Input Sheet", NA, ValueCol))
-   
-   AllExpDetails_fun <- bind_rows(NotSpecifCmpd, SpecifCmpd)
-   
    # Summary tab only includes info on Substrate & Inhibitor1
-   SumDeets <- AllExpDetails_fun %>% 
+   SumDeets <- AllExpDetails %>% 
       filter(Sheet == "Summary" &
                 (is.na(CompoundID) | 
                     CompoundID %in% c("substrate", "inhibitor 1")) &
@@ -215,15 +154,15 @@ extractExpDetails <- function(sim_data_file,
    # If it's on input sheet but isn't for a specific compound, then it's about
    # the trial design b/c we haven't set this up to pull any information from
    # the "Simulation Toolbox" or "Software Version Detail" sections.
-   InputDeets <- AllExpDetails_fun %>% filter(Sheet == "Input Sheet") %>% 
+   InputDeets <- AllExpDetails %>% filter(Sheet == "Input Sheet") %>% 
       rename(Deet = Detail) %>% arrange(Deet) %>% 
       mutate(CompoundID = ifelse(is.na(CompoundID), "Trial Design", CompoundID))
    
-   PopDeets <- AllExpDetails_fun %>% filter(Sheet == "population") %>% 
+   PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
       rename(Deet = Detail) %>% arrange(Deet)
    
    if(exp_details_input[1] == "all"){
-      exp_details <- unique(AllExpDetails_fun$Detail)
+      exp_details <- unique(AllExpDetails$Detail)
    }
    
    if(exp_details_input[1] == "summary tab"){
@@ -247,7 +186,7 @@ extractExpDetails <- function(sim_data_file,
       exp_details <- sort(unique(
          c("Substrate", "Inhibitor1", "Inhibitor2", "Metabolite1",
            "Metabolite2", "SecondaryMetabolite", "Inhibitor1Metabolite",
-           AllExpDetails_fun %>% 
+           AllExpDetails %>% 
               filter(complete.cases(CDSInputMatch)) %>% 
               pull(Detail))))
    }
@@ -296,14 +235,14 @@ extractExpDetails <- function(sim_data_file,
                               "SimStartDayTime"))
    }
    
-   if(any(exp_details %in% AllExpDetails_fun$Detail == FALSE)){
+   if(any(exp_details %in% AllExpDetails$Detail == FALSE)){
       Problem <- str_comma(unique(setdiff(exp_details,
-                                          AllExpDetails_fun$Detail)))
+                                          AllExpDetails$Detail)))
       warning(paste0("These study details are not among the possible options: ",
                      Problem,
                      ", so they will be omitted. Please enter 'data(ExpDetailDefinitions)' into the console for all options.\n"),
               call. = FALSE)
-      exp_details <- intersect(exp_details, AllExpDetails_fun$Detail)
+      exp_details <- intersect(exp_details, AllExpDetails$Detail)
    }
    
    if(length(exp_details) == 0){
@@ -355,7 +294,7 @@ extractExpDetails <- function(sim_data_file,
       pullValue <- function(deet){
          
          # Setting up regex to search
-         ToDetect <- AllExpDetails_fun %>% 
+         ToDetect <- AllExpDetails %>% 
             filter(Detail == deet & Sheet == "Summary") %>% pull(Regex_row)
          NameCol <- SumDeets$NameCol[which(SumDeets$Deet == deet)]
          Row <- which(str_detect(SummaryTab[, NameCol] %>% pull(), ToDetect))
@@ -570,11 +509,11 @@ extractExpDetails <- function(sim_data_file,
       pullValue <- function(deet){
          
          # Setting up regex to search
-         ToDetect <- AllExpDetails_fun %>% 
+         ToDetect <- AllExpDetails %>% 
             filter(Detail == deet & Sheet == "Input Sheet") %>% pull(Regex_row)
          NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
          Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect)) +
-            (AllExpDetails_fun %>% 
+            (AllExpDetails %>% 
                 filter(Detail == deet & Sheet == "Input Sheet") %>% 
                 pull(OffsetRows))
          
@@ -1280,7 +1219,7 @@ extractExpDetails <- function(sim_data_file,
       pullValue <- function(deet){
          
          # Setting up regex to search
-         ToDetect <- AllExpDetails_fun %>% 
+         ToDetect <- AllExpDetails %>% 
             filter(Detail == deet & Sheet == "population") %>% pull(Regex_row)
          NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
          
