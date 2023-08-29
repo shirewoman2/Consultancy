@@ -182,6 +182,11 @@
 #'   \item{ADAMParameter}{TRUE or FALSE for whether the
 #'   parameter only comes into play when it's an ADAM model}
 #'
+#'   \item{DiscoveryParameter}{Is this detail available for Simcyp Discovery
+#'   simulations? Options are "Simulator only", "Discovery only", or "Simulator
+#'   and Discovery". This is used to determine which details to check and which
+#'   regex to use for those details.}
+#'
 #'   \item{OffsetRows}{When there just isn't good regex in the
 #'   specific row for this detail, we need to look for a value and then go down
 #'   this number of rows to get to the actual value we want.}
@@ -200,6 +205,11 @@
 #'   this detail.}
 #'
 #'   \item{CodingNotes}{Notes specifically to coders}
+#'
+#'   \item{CompoundID}{CompoundID (a.k.a. compound position in the Simulator)}
+#'
+#'   \item{Suffix}{suffix to append for this detail when it's for a specific
+#'   compound ID}
 #'
 #'   }
 "AllExpDetails"
@@ -228,6 +238,33 @@
 #'
 #'  }
 "ExpDetailDefinitions"
+
+
+#' All possible experimental details for \code{\link{extractExpDetails}}
+#'
+#' All possible experimental details that can be extracted from a Simcyp
+#' Discovery output file using \code{\link{extractExpDetails}} or
+#' \code{\link{extractExpDetails_mult}}. For the version that includes
+#' additional columns only used for coding purposes, see
+#' \code{\link{AllExpDetails}}.
+#'
+#' @format A data.frame with the following columns: \describe{
+#'
+#'  \item{Detail}{the experimental detail name to use with
+#'  \code{\link{extractExpDetails}} for the argument \code{exp_details}}
+#'
+#'  \item{Compound ID}{the specific compound this experimental detail applies
+#'  to, e.g., "substrate", "inhibitor 1", etc.}
+#'
+#'  \item{SimulatorSection}{the part of the simulator that this detail applies
+#'  to}
+#'
+#'   \item{Notes}{an explanation of what the experimental detail is}
+#'
+#'   \item{Sheet}{Which simulator output sheet this detail is extracted from}
+#'
+#'   }
+"ExpDetailDefinitions_Discovery"
 
 
 #' Example output from \code{extractExpDetails_mult}

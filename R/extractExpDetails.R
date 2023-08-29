@@ -260,7 +260,6 @@ extractExpDetails <- function(sim_data_file,
    # Need to note when to look for custom dosing tabs
    CustomDosing <- NA
    
-   
    # Pulling details from the summary tab ----------------------------------
    MySumDeets <- sort(intersect(exp_details, SumDeets$Deet))
    # If all of the details are from one of the other sheets, then don't
@@ -272,7 +271,7 @@ extractExpDetails <- function(sim_data_file,
    }
    
    if(exp_details_input[1] %in% c("population tab")){
-      MySumDeets <- "Population"
+      MySumDeets <- c("Population", "SimulatorVersion")
    }
    
    if(length(MySumDeets) > 0){
@@ -290,12 +289,24 @@ extractExpDetails <- function(sim_data_file,
          names(SummaryTab) <- paste0("...", 1:ncol(SummaryTab))
       }
       
+      # We'll select details based on whether this was a Discovery simulation. 
+      DiscoveryCol <- switch(as.character(str_detect(SummaryTab[1, 1], "Discovery")), 
+                             "TRUE" = c("Simulator and Discovery", 
+                                        "Discovery only"), 
+                             "FALSE" = c("Simulator only", 
+                                         "Simulator and Discovery"))
+      
+      # Need to filter to keep only details that we can possibly find based on
+      # what type of simulator was used
+      SumDeets <- SumDeets %>% filter(DiscoveryParameter %in% DiscoveryCol)
+      MySumDeets <- MySumDeets[MySumDeets %in% SumDeets$Deet]
+      
       # sub function for finding correct cell
       pullValue <- function(deet){
          
          # Setting up regex to search
-         ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & Sheet == "Summary") %>% pull(Regex_row)
+         ToDetect <- SumDeets %>% 
+            filter(Deet == deet) %>% pull(Regex_row)
          NameCol <- SumDeets$NameCol[which(SumDeets$Deet == deet)]
          Row <- which(str_detect(SummaryTab[, NameCol] %>% pull(), ToDetect))
          Val <- SummaryTab[Row, SumDeets$ValueCol[SumDeets$Deet == deet]] %>%
@@ -341,9 +352,11 @@ extractExpDetails <- function(sim_data_file,
       
       for(i in MySumDeets){
          Out[[i]] <- pullValue(i)
+         
          if(str_detect(i, "^StartDayTime") & is.na(Out[[i]])){
             CustomDosing <- c(CustomDosing, TRUE)
          }
+         
          if(i == "Population" & is.na(Out[[i]])){
             # This can happen when the simulator output is actually from Simcyp
             # Discovery or the Simcyp Animal Simulator. Look for
@@ -351,6 +364,13 @@ extractExpDetails <- function(sim_data_file,
             Out[[i]] <- as.character(SummaryTab[which(SummaryTab$...1 == "Species"), 2])
          }
          
+      }
+      
+      # Simcyp Discovery only allows simulations with a substrate or metaboltie
+      # 1 and no other compounds, so everything else will be NA or NULL.
+      if(str_detect(SummaryTab[1, 1], "Discovery")){
+         Out[c("Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite", 
+               "PrimaryMetabolite2", "SecondaryMetabolite")] <- NA
       }
       
       # Removing details that don't apply, e.g., _inhib parameters when there
@@ -467,7 +487,18 @@ extractExpDetails <- function(sim_data_file,
          MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_inhib1met|Inhibitor1Metabolite")]
       }
       
-      InputDeets <- InputDeets %>% filter(Deet %in% MyInputDeets)
+      # We'll select details based on whether this was a Discovery simulation. 
+      DiscoveryCol <- switch(as.character(str_detect(InputTab[1, 1], "Discovery")), 
+                             "TRUE" = c("Simulator and Discovery", 
+                                        "Discovery only"), 
+                             "FALSE" = c("Simulator only", 
+                                         "Simulator and Discovery"))
+      
+      # Need to filter to keep only details that we can possibly find based on
+      # what type of simulator was used
+      InputDeets <- InputDeets %>% 
+         filter(Deet %in% MyInputDeets & DiscoveryParameter %in% DiscoveryCol)
+      MyInputDeets <- MyInputDeets[MyInputDeets %in% InputDeets$Deet]
       
       # Looking for locations of columns.
       ColLocations <- c("substrate" = 1,
@@ -509,13 +540,11 @@ extractExpDetails <- function(sim_data_file,
       pullValue <- function(deet){
          
          # Setting up regex to search
-         ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & Sheet == "Input Sheet") %>% pull(Regex_row)
+         ToDetect <- InputDeets %>% 
+            filter(Deet == deet) %>% pull(Regex_row)
          NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
          Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect)) +
-            (AllExpDetails %>% 
-                filter(Detail == deet & Sheet == "Input Sheet") %>% 
-                pull(OffsetRows))
+            (InputDeets %>% filter(Deet == deet) %>% pull(OffsetRows))
          
          if(length(Row) == 0){
             Val <- NA
@@ -595,8 +624,10 @@ extractExpDetails <- function(sim_data_file,
       }
       
       # Checking simulator version
-      Out[["SimulatorVersion"]] <- str_extract(as.character(InputTab[3, 1]),
-                                               "Version [12][0-9]")
+      Out[["SimulatorVersion"]] <- ifelse(str_detect(InputTab[1, 1], "Discovery"), 
+                                          as.character(InputTab[1, 1]), 
+                                          str_extract(as.character(InputTab[3, 1]),
+                                                      "Version [12][0-9]"))
       
       ## Pulling CL info ----------------------------------------------------
       MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
@@ -612,13 +643,16 @@ extractExpDetails <- function(sim_data_file,
                InputTab[ , NameCol] == "Enzyme" |
                   str_detect(InputTab[ , NameCol] %>%
                                 pull(),
-                             "^Biliary CLint") |
+                             "^Biliary (CLint|Clearance)") |
                   str_detect(InputTab[ , NameCol] %>%
                                 pull(),
-                             "^Additional HLM CLint") |
+                             "^Additional HLM CLint|^Additional Systemic Clearance") |
                   str_detect(InputTab[ , ValueCol] %>%
                                 pull(),
-                             "In Vivo Clear"))
+                             "In Vivo Clear") |
+                  str_detect(InputTab[ , NameCol] %>%
+                                pull(),
+                             "(Liver|Intestine|Biliary) Clearance"))
             CLRows <- CLRows[complete.cases(InputTab[CLRows + 1, NameCol])]
             
             # Checking for interaction data
@@ -630,6 +664,8 @@ extractExpDetails <- function(sim_data_file,
             }
             
             for(i in CLRows){
+               
+               # CL for a specific enzyme
                if(str_detect(as.character(InputTab[i, NameCol]), "Enzyme")){
                   
                   Enzyme <- gsub(" ", "", InputTab[i, NameCol + 1])
@@ -722,28 +758,49 @@ extractExpDetails <- function(sim_data_file,
                   
                } 
                
-               if(str_detect(as.character(InputTab[i, NameCol]), "^Biliary CLint")){
-                  # biliary CL
+               # Biliary CL
+               if(str_detect(as.character(InputTab[i, NameCol]), "^Biliary (CLint|Clearance)")){
                   suppressWarnings(
                      Out[[paste0("CLint_biliary", Suffix)]] <-
                         as.numeric(InputTab[i, NameCol + 1])
                   )
+                  
+                  MyNames <- as.character(t(
+                     InputTab[i:min(
+                        c(IntRowStart, CLRows[which(CLRows == i) + 1] - 1, 
+                          nrow(InputTab)), na.rm = T), NameCol]))
+                  
+                  suppressWarnings(
+                     Out[[paste0("CLint_biliary_fuinc", Suffix)]] <-
+                        as.numeric(InputTab[which(str_detect(MyNames, "Biliary fu inc")) + i - 1, 
+                                            NameCol + 1])
+                  )
                }
                
+               # Other HLM CL
                if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HLM CLint")){
-                  # Other HLM CL
                   suppressWarnings(
                      Out[[paste0("CLint_AddHLM", Suffix)]] <-
                         as.numeric(InputTab[i, NameCol + 1])
                   )
                }
                
+               # Other systemic CL
+               if(str_detect(as.character(InputTab[i, NameCol]), "^Additional Systemic Clearance")){
+                  suppressWarnings(
+                     Out[[paste0("CL_AddSystemic", Suffix)]] <-
+                        as.numeric(InputTab[i, NameCol + 1])
+                  )
+               }
+               
+               # in vivo CL
                if(str_detect(as.character(InputTab[i, ValueCol]),
                              "In Vivo Clearance")){
                   
-                  MyNames <- InputTab$...1[
-                     i:min(c(IntRowStart, CLRows[which(CLRows == i) + 1], 
-                             nrow(InputTab)), na.rm = T)]
+                  MyNames <- as.character(t(
+                     InputTab[i:min(
+                        c(IntRowStart, CLRows[which(CLRows == i) + 1] - 1, 
+                          nrow(InputTab)), na.rm = T), NameCol]))
                   
                   suppressWarnings(
                      Out[[paste0("CLiv_InVivoCL", Suffix)]] <- 
@@ -760,18 +817,6 @@ extractExpDetails <- function(sim_data_file,
                                             "Biliary Clearance")) + i - 1,
                            ValueCol])
                   )
-                  
-                  ## Already have renal CL, I think. At least have it
-                  ## already for test file. Check this again w/another
-                  ## file, though.
-                  
-                  # suppressWarnings(
-                  #     Out[[paste0("CLrenal_InVivoCL", Suffix)]] <- 
-                  #         as.numeric(InputTab[
-                  #             which(str_detect(MyNames,
-                  #                              "CL R [(]mL/min")) + i - 1,
-                  #             ValueCol])
-                  # )
                   
                   suppressWarnings(
                      Out[[paste0("CLadditional_InVivoCL", Suffix)]] <- 
@@ -790,6 +835,104 @@ extractExpDetails <- function(sim_data_file,
                   )
                   
                }
+               
+               # Discovery liver and intestinal CL
+               if(str_detect(as.character(InputTab[i, NameCol]), "^(Liver|Intestine) Clearance")){
+                  
+                  LivOrInt <- str_extract(InputTab[i, NameCol], "Liver|Intestine")
+                  
+                  MyNames <- as.character(t(
+                     InputTab[i:min(
+                        c(IntRowStart, CLRows[which(CLRows == i) + 1] - 1, 
+                          nrow(InputTab)), na.rm = T), NameCol]))
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_", LivOrInt, "_Type", Suffix)]] <- 
+                        as.character(InputTab[i, NameCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_", LivOrInt, "_UseSaturableKinetics", Suffix)]] <- 
+                        as.character(InputTab[
+                           which(str_detect(MyNames,
+                                            "Use Saturable Kinetics")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CLint_", LivOrInt, Suffix)]] <- 
+                        as.numeric(InputTab[
+                           which(str_detect(MyNames,
+                                            "CLint")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_Km_", LivOrInt, Suffix)]] <- 
+                        as.numeric(InputTab[
+                           which(str_detect(MyNames,
+                                            "Km \\(")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_Vmax_", LivOrInt, Suffix)]] <- 
+                        as.numeric(InputTab[
+                           which(str_detect(MyNames,
+                                            "Vmax \\(")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_", LivOrInt, "_fuinc", Suffix)]] <- 
+                        as.numeric(InputTab[
+                           which(str_detect(MyNames,
+                                            "fu inc")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_", LivOrInt, "_UseMetabolite", Suffix)]] <- 
+                        as.character(InputTab[
+                           which(str_detect(MyNames,
+                                            "Use Metabolite")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_", LivOrInt, "_MetabPerc", Suffix)]] <- 
+                        as.numeric(InputTab[
+                           which(str_detect(MyNames,
+                                            "Metabolite .%")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_", LivOrInt, "_ScrapingsCorrectionFactor", Suffix)]] <- 
+                        as.numeric(InputTab[
+                           which(str_detect(MyNames,
+                                            "\\(scrapings\\) Correction Factor")) + i - 1,
+                           ValueCol])
+                  )
+                  
+                  suppressWarnings(
+                     Out[[paste0("CL_", LivOrInt, "_ElutionCorrectionFactor", Suffix)]] <- 
+                        as.numeric(InputTab[
+                           which(str_detect(MyNames,
+                                            "\\(elution\\) Correction Factor")) + i - 1,
+                           ValueCol])
+                  )
+               }
+            }
+            
+            # Discovery perc available reabsorption
+            PercReabs <- which(str_detect(as.character(t(InputTab[, NameCol])),
+                                          "^Percent.*re-absorption"))
+            if(length(PercReabs) > 0){
+               suppressWarnings(
+                  Out[[paste0("PercentAvailReabsorption", Suffix)]] <- 
+                     as.numeric(InputTab[PercReabs, ValueCol]))
             }
             
             rm(CLRows, IntRowStart, NameCol, Suffix)
@@ -1173,6 +1316,15 @@ extractExpDetails <- function(sim_data_file,
       MyPopDeets <- intersect("A", "B")
    }
    
+   # If user asks for population details, then function is set up to read both
+   # what that population is and what the simulator version is by reading the
+   # summary tab, so this next line should work and will not give them any
+   # population details for Simcyp Discovery simulations until we set that up. 
+   MyPopDeets <- intersect(MyPopDeets, 
+                           (AllExpDetails %>% 
+                               filter(DiscoveryParameter %in% DiscoveryCol) %>% 
+                               pull(Detail)))
+   
    if(length(MyPopDeets) > 0){
       # Getting name of that tab.
       if(exists("SheetNames", inherit = FALSE) == FALSE){
@@ -1258,7 +1410,12 @@ extractExpDetails <- function(sim_data_file,
    if(any(c("workspace", "all") %in% exp_details_input)){
       
       # Checking that the workspace file is available. This will ignore the
-      # date/time stamp on the Excel results if it's still there.
+      # date/time stamp on the Excel results if it's still there. 
+      
+      # LSh: Note that this will NOT look at workspaces for Simcyp Discovery
+      # files b/c those have a different file extension. I haven't set up
+      # anything for extracting info from .dscw files, although I bet they're
+      # set up really similarly, so we probably could in the future.
       if(file.exists(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
                          ".wksz", sim_data_file))){
          
