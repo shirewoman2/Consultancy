@@ -347,8 +347,9 @@ extractExpDetails <- function(sim_data_file,
       # Checking whether this was an ADC sim b/c have to do this differently. 
       MySumDeets <- setdiff(MySumDeets, "ADCSimulation_sub")
       Out[["ADCSimulation_sub"]] <- 
-         str_detect(as.character(SummaryTab[, 1]), 
-                    SumDeets %>% filter(Deet == "ADCSimulation_sub") %>% pull(Regex_row))
+         any(str_detect(as.character(SummaryTab[, 1]), 
+                    SumDeets %>% filter(Deet == "ADCSimulation_sub") %>% 
+                       pull(Regex_row)), na.rm = T)
       
       for(i in MySumDeets){
          Out[[i]] <- pullValue(i)
@@ -619,8 +620,9 @@ extractExpDetails <- function(sim_data_file,
       # Checking whether this was an ADC sim. 
       if("ADCSimulation_sub" %in% MyInputDeets){
          Out[["ADCSimulation_sub"]] <- 
-            str_detect(as.character(InputTab[, 1]), 
-                       InputDeets %>% filter(Deet == "ADCSimulation_sub") %>% pull(Regex_row))
+            any(str_detect(as.character(InputTab[, 1]), 
+                       InputDeets %>% filter(Deet == "ADCSimulation_sub") %>%
+                          pull(Regex_row)), na.rm = T)
       }
       
       # Checking simulator version
@@ -848,7 +850,7 @@ extractExpDetails <- function(sim_data_file,
                   
                   suppressWarnings(
                      Out[[paste0("CL_", LivOrInt, "_Type", Suffix)]] <- 
-                        as.character(InputTab[i, NameCol])
+                        as.character(InputTab[i, ValueCol])
                   )
                   
                   suppressWarnings(
@@ -931,7 +933,7 @@ extractExpDetails <- function(sim_data_file,
                                           "^Percent.*re-absorption"))
             if(length(PercReabs) > 0){
                suppressWarnings(
-                  Out[[paste0("PercentAvailReabsorption", Suffix)]] <- 
+                  Out[[paste0("CL_PercentAvailReabsorption", Suffix)]] <- 
                      as.numeric(InputTab[PercReabs, ValueCol]))
             }
             
