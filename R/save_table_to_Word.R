@@ -124,7 +124,7 @@ save_table_to_Word <- function(
    
    FileName <- basename(save_table)
    
-   if(is.na(PKpulled) | "flextable" %in% class(PKtable)){
+   if(all(is.na(PKpulled)) | "flextable" %in% class(PKtable)){
       
       rmarkdown::render(
          system.file("rmarkdown/templates/savetable/skeleton/skeleton.Rmd", 
