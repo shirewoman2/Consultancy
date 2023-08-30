@@ -81,7 +81,7 @@ qc_sims <- function(existing_exp_details,
       select(any_of(c("Substrate", "PrimaryMetabolite1", "PrimaryMetabolite2", 
                       "SecondaryMetabolite", "Inhibitor1", "Inhibitor2", 
                       "Inhibitor1Metabolite"))) %>% 
-      select_if(function(x) any(complete.cases(x)))
+      select(where(function(x) any(complete.cases(x))))
    GoodCompoundIDs <- c("Substrate" = "substrate", 
                         "PrimaryMetabolite1" = "primary metabolite 1",
                         "PrimaryMetabolite2" = "primary metabolite 2", 
@@ -198,7 +198,9 @@ qc_sims <- function(existing_exp_details,
                # all simulations.
                
                formatXL(
-                  Out[[j]], FileName, sheet = j,
+                  DF = Out[[j]], 
+                  file = FileName, 
+                  sheet = j,
                   styles = list(
                      list(columns = which(names(Out[[j]]) == "Notes"), 
                           textposition = list(wrapping = TRUE)),
@@ -259,7 +261,9 @@ qc_sims <- function(existing_exp_details,
                MyStyles <- append(MyStyles, Diffs)
                
                formatXL(
-                  Out[[j]], FileName, sheet = j,
+                  DF = Out[[j]], 
+                  file = FileName, 
+                  sheet = j,
                   styles = MyStyles)
                
             }
