@@ -120,14 +120,10 @@ extractExpDetails_XML <- function(sim_workspace_files,
    
    # Main body of function ---------------------------------------------------
    
-   XMLDeets <- AllExpDetails %>% filter(Sheet == "workspace XML file") %>% 
-      mutate(Detail = sub("_sub|_inhib1met|_inhib$|_inhib2|_met1|_met2|_secmet", 
-                          "", Detail)) %>% 
-      unique()
+   XMLDeets <- AllExpDetails %>% filter(Sheet == "workspace XML file")
    
    if("all" %in% exp_details){
-      exp_details <- XMLDeets %>% filter(Sheet == "workspace XML file") %>% 
-         pull(Detail)
+      exp_details <- XMLDeets %>% pull(Detail)
    }
    
    CompoundDetails <- XMLDeets %>% 
@@ -167,7 +163,12 @@ extractExpDetails_XML <- function(sim_workspace_files,
                next
             }
             
-            for(k in exp_details[exp_details %in% CompoundDetails]){
+            exp_details_cmpd <- 
+               exp_details[exp_details %in% CompoundDetails &
+                              exp_details %in% (XMLDeets %>% filter(CompoundID == j) %>% 
+                              pull(Detail))]
+            
+            for(k in exp_details_cmpd){
                
                DeetInfo <- XMLDeets %>% 
                   filter(Sheet == "workspace XML file" & Detail == k)
