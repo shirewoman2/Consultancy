@@ -1,9 +1,9 @@
 #' Change a limited set of trial-design parameters in Simcyp Simulator workspace
-#' files. UNDER CONSTRUCTION. DOES NOT CURRENTLY WORK. 
+#' files. UNDER CONSTRUCTION. USE WITH CAUTION.
 #'
-#' \code{change_wksz_trial_design} changes a few trial-design parameters such as the
-#' number of subjects, the percent female, the dose or dose interval, etc. It
-#' does \emph{not} change populations because there are simply too many
+#' \code{change_wksz_trial_design} changes a few trial-design parameters such as
+#' the number of subjects, the percent female, the dose or dose interval, etc.
+#' It does \emph{not} change populations because there are simply too many
 #' parameters to change in an automatic faction like this. (At least, not at
 #' this point.) It also doesn't turn on or off a fixed trial design. This will
 #' change \emph{all} the workspace files provided to have the \emph{same}
@@ -22,11 +22,10 @@
 #'   Otherwise, specify a character vector of file names to use, e.g.,
 #'   \code{new_sim_workspace_files = c("new file 1.wksz", "new file
 #'   2.wksz")}
-#' @param fix_xml_paths TRUE (default) or FALSE to automatically fix any
-#'   discrepancies in user name on the SharePoint folder path for observed
-#'   overlay data files or fixed trial design files. This can be useful if, say,
-#'   someone else ran the development and verification simulations and you're
-#'   now running the application simulations.
+#' @param trial_design_parameters_to_set optionally specify a data.frame of
+#'   trial design parameters to set. Acceptable column names: NumTrials,
+#'   NumSubjTrial, PercFemale, AgeMin, AgeMax, SimDuration, activate_inhibitor1,
+#'   Dose_sub, Dose_inhib, DoseInt_sub, DoseInt_inhib, StartHr_sub, NumTimePts.
 #' @param NumTrials number of trials to use
 #' @param NumSubjTrial number of subjects per trial to use
 #' @param PercFemale percent of subjects who are female
@@ -47,9 +46,13 @@
 #' @param StartHr_sub start time for administering substrate in hours -- This
 #'   may be tricky to do! May need to also adjust StartDayTime_sub!
 #' @param StartHr_inhib start time for administering inhibitor 1 in hours
-#' @param NumTimePts number of time points to use ("Number of Time Samples"
-#'   in the Simulator)
-#' @param trial_design_parameters_to_set
+#' @param NumTimePts number of time points to use ("Number of Time Samples" in
+#'   the Simulator)
+#' @param fix_xml_paths TRUE (default) or FALSE to automatically fix any
+#'   discrepancies in user name on the SharePoint folder path for observed
+#'   overlay data files or fixed trial design files. This can be useful if, say,
+#'   someone else ran the development and verification simulations and you're
+#'   now running the application simulations.
 #'
 #' @return does not return anything in R but saves workspace files
 #' @export
@@ -59,7 +62,6 @@
 #' 
 change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      new_sim_workspace_files = NA,
-                                     fix_xml_paths = TRUE,
                                      trial_design_parameters_to_set = NA,
                                      NumTrials = "no change", 
                                      NumSubjTrial = "no change", 
@@ -74,7 +76,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      DoseInt_inhib = "no change", 
                                      StartHr_sub = "no change", 
                                      StartHr_inhib = "no change", 
-                                     NumTimePts = "no change"){
+                                     NumTimePts = "no change", 
+                                     fix_xml_paths = TRUE){
    
    # Error catching ----------------------------------------------------------
    
@@ -86,7 +89,7 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
    # If they left sim_workspace_files as NA and did not supply something for
    # that in trial_design_parameters_to_set, then they want to apply this function to all
    # the workspaces in the current folder. Getting the names of the workspaces.
-   if(class(trial_design_parameters_to_set) == "logical" | 
+   if("logical" %in% class(trial_design_parameters_to_set) | 
       ("data.frame" %in% class(trial_design_parameters_to_set) && 
        "sim_workspace_files" %in% names(trial_design_parameters_to_set) == FALSE)){
       sim_workspace_files <- sim_workspace_files[complete.cases(sim_workspace_files)]
@@ -124,7 +127,7 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
            call. = FALSE)
    }
    
-   if(class(trial_design_parameters_to_set) != "logical"){
+   if("logical" %in% class(trial_design_parameters_to_set) == FALSE ){
       if("data.frame" %in% class(trial_design_parameters_to_set) == FALSE){
          stop("You have supplied an object for `trial_design_parameters_to_set`, but it's not a data.frame, which is what it needs to be. Please check your input and the help file and try again.", 
               call. = FALSE)
@@ -162,7 +165,7 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
       ChangeLength <- ChangeLength[!ChangeLength == 1]
       
       if(length(unique(ChangeLength)) > 1){
-         stop("You have not provided the same number of inputs for each of the arguments `compoundID` through `Ind_gamma`, and all of these must have the same number of inputs or have just a single value, which will be repeated for all enzymes, compounds, and workspaces as needed. Please check this and try again.", 
+         stop("You have not provided the same number of inputs for each of the arguments `NumTrials` through `NumTimePts`, and all of these must have the same number of inputs or have just a single value, which will be repeated as needed. Please check this and try again.", 
               call. = FALSE)
       }
       
@@ -204,11 +207,10 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                                   new_sim_workspace_files), ".wksz"), 
              across(.cols = everything(), .fns = as.character)) %>% 
       pivot_longer(cols = -c(sim_workspace_files, new_sim_workspace_files), 
-                   names_to = "DetailOrig", 
+                   names_to = "Detail", 
                    values_to = "Value") %>% 
       filter(Value != "no change") %>% 
-      mutate(Detail = sub("_sub|_inhib", "_X", DetailOrig), 
-             CompoundID = str_extract(DetailOrig, "_sub|_inhib$")) %>%
+      mutate(CompoundID = str_extract(Detail, "_sub|_inhib$")) %>%
       # Setting tag names
       left_join(AllExpDetails %>% filter(Sheet == "workspace XML file") %>% 
                    select(Detail, Level1, Level2, Level3), 

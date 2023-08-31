@@ -3,12 +3,11 @@
 \name{change_wksz_trial_design}
 \alias{change_wksz_trial_design}
 \title{Change a limited set of trial-design parameters in Simcyp Simulator workspace
-files. UNDER CONSTRUCTION. DOES NOT CURRENTLY WORK.}
+files. UNDER CONSTRUCTION. USE WITH CAUTION.}
 \usage{
 change_wksz_trial_design(
   sim_workspace_files = NA,
   new_sim_workspace_files = NA,
-  fix_xml_paths = TRUE,
   trial_design_parameters_to_set = NA,
   NumTrials = "no change",
   NumSubjTrial = "no change",
@@ -23,7 +22,8 @@ change_wksz_trial_design(
   DoseInt_inhib = "no change",
   StartHr_sub = "no change",
   StartHr_inhib = "no change",
-  NumTimePts = "no change"
+  NumTimePts = "no change",
+  fix_xml_paths = TRUE
 )
 }
 \arguments{
@@ -42,13 +42,10 @@ Otherwise, specify a character vector of file names to use, e.g.,
 \code{new_sim_workspace_files = c("new file 1.wksz", "new file
 2.wksz")}}
 
-\item{fix_xml_paths}{TRUE (default) or FALSE to automatically fix any
-discrepancies in user name on the SharePoint folder path for observed
-overlay data files or fixed trial design files. This can be useful if, say,
-someone else ran the development and verification simulations and you're
-now running the application simulations.}
-
-\item{trial_design_parameters_to_set}{}
+\item{trial_design_parameters_to_set}{optionally specify a data.frame of
+trial design parameters to set. Acceptable column names: NumTrials,
+NumSubjTrial, PercFemale, AgeMin, AgeMax, SimDuration, activate_inhibitor1,
+Dose_sub, Dose_inhib, DoseInt_sub, DoseInt_inhib, StartHr_sub, NumTimePts.}
 
 \item{NumTrials}{number of trials to use}
 
@@ -83,16 +80,22 @@ may be tricky to do! May need to also adjust StartDayTime_sub!}
 
 \item{StartHr_inhib}{start time for administering inhibitor 1 in hours}
 
-\item{NumTimePts}{number of time points to use ("Number of Time Samples"
-in the Simulator)}
+\item{NumTimePts}{number of time points to use ("Number of Time Samples" in
+the Simulator)}
+
+\item{fix_xml_paths}{TRUE (default) or FALSE to automatically fix any
+discrepancies in user name on the SharePoint folder path for observed
+overlay data files or fixed trial design files. This can be useful if, say,
+someone else ran the development and verification simulations and you're
+now running the application simulations.}
 }
 \value{
 does not return anything in R but saves workspace files
 }
 \description{
-\code{change_wksz_trial_design} changes a few trial-design parameters such as the
-number of subjects, the percent female, the dose or dose interval, etc. It
-does \emph{not} change populations because there are simply too many
+\code{change_wksz_trial_design} changes a few trial-design parameters such as
+the number of subjects, the percent female, the dose or dose interval, etc.
+It does \emph{not} change populations because there are simply too many
 parameters to change in an automatic faction like this. (At least, not at
 this point.) It also doesn't turn on or off a fixed trial design. This will
 change \emph{all} the workspace files provided to have the \emph{same}
