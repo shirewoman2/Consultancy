@@ -45,6 +45,11 @@ make_table_annotations <- function(MyPKResults, # only PK table
                    "FALSE" = deannotateDetails(Deets)) %>% 
       filter(File == MyFile)
    
+   ## General info on MyCompoundID ----------------------------------------
+   Dose1included <- any(str_detect(names(MyPKResults), "_dose1|Dose 1"))
+   LastDoseincluded <- any(str_detect(names(MyPKResults), "_last|Last dose"))
+   Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
+   
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if(nrow(Deets) == 0){
@@ -55,11 +60,6 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                         basename(MyFile), "*")))
       
    }
-   
-   ## General info on MyCompoundID ----------------------------------------
-   Dose1included <- any(str_detect(names(MyPKResults), "_dose1|Dose 1"))
-   LastDoseincluded <- any(str_detect(names(MyPKResults), "_last|Last dose"))
-   Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
    
    MyDosedCompound <- switch(MyCompoundID, 
                              "substrate" = Deets$Substrate,
