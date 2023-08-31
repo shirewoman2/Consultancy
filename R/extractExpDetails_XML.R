@@ -79,6 +79,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
    }
    
    # If they didn't include ".wksz" at the end, add that.
+   sim_workspace_files <- sub("\\.xlsx$", "", sim_workspace_files)
    sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE] <-
       paste0(sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE], 
              ".wksz")
@@ -226,14 +227,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                                 "0" = "Minimal PBPK Model"))
                }
                
-               Deets[[i]][[paste0(k, switch(j, 
-                                              "substrate" = "_sub", 
-                                              "primary metabolite 1" = "_met1",
-                                              "primary metabolite 2" = "_met2",
-                                              "secondary metabolite" = "_secmet",
-                                              "inhibitor 1" = "_inhib",
-                                              "inhibitor 2" = "_inhib2", 
-                                              "inhibitor 1 metabolite" = "_inhib1met"))]] <- DeetValue 
+               Deets[[i]][[k]] <- DeetValue 
                
                rm(DeetInfo, DeetLevels, DeetValue)
             }
