@@ -32,7 +32,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                    PKpulled,
                                    MyCompoundID,
                                    prettify_compound_names,
-                                   Deets,
+                                   Deets = NA,
                                    MeanType,
                                    tissue, 
                                    return_all_objects = FALSE){
@@ -40,19 +40,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    # Main info ------------------------------------------------------------
    
-   Deets <- switch(as.character("File" %in% names(as.data.frame(Deets))), 
-                   "TRUE" = as.data.frame(Deets), 
-                   "FALSE" = deannotateDetails(Deets)) %>% 
-      filter(File == MyFile)
-   
-   ## General info on MyCompoundID ----------------------------------------
    Dose1included <- any(str_detect(names(MyPKResults), "_dose1|Dose 1"))
    LastDoseincluded <- any(str_detect(names(MyPKResults), "_last|Last dose"))
    Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
    
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
-   if(nrow(Deets) == 0){
+   if("logical" %in% class(Deets) || nrow(Deets) == 0){
       return(list(TableHeading = paste0("*Table XXX. Simulated ",
                                         ifelse(Observedincluded, "and observed ", ""),
                                         "PK data*"),
@@ -60,6 +54,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                         basename(MyFile), "*")))
       
    }
+   
+   Deets <- switch(as.character("File" %in% names(as.data.frame(Deets))), 
+                   "TRUE" = as.data.frame(Deets), 
+                   "FALSE" = deannotateDetails(Deets)) %>% 
+      filter(File == MyFile)
+   
+   ## General info on MyCompoundID ----------------------------------------
    
    MyDosedCompound <- switch(MyCompoundID, 
                              "substrate" = Deets$Substrate,
