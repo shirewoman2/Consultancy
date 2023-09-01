@@ -4,15 +4,15 @@
 #' template file as is used for the function pksummary_mult. UNDER CONSTRUCTION.
 #' I haven't done almost any error catching here yet. -LSh
 #'
-#' @param PKtable PK table that includes the columns File, Statistic, Tissue,
-#'   CompoundID, and then also columns named in the standard way (prettified or
-#'   un-prettified) for PK tables from the SimcypConsultancy package. Well, that
-#'   is, your input for PKtable must meet those criteria if you want it to be
-#'   formatted in any way or if you want to split it into multiple tables using
-#'   the argument \code{single_table} or have highlighting applied with
-#'   \code{highlight_so_cutoffs}. If you \emph{don't} care about that, supply
-#'   any old data.frame or tibble, and this will save it to Word. If you supply
-#'   a flextable (see the
+#' @param PKtable PK table (really, a data.frame or tibble) that includes the
+#'   columns File, Statistic, Tissue, CompoundID, and then also columns named in
+#'   the standard way (prettified or un-prettified) for PK parameters from the
+#'   SimcypConsultancy package. Well, that is, your input for PKtable must meet
+#'   those criteria if you want it to be formatted in any way or if you want to
+#'   split it into multiple tables using the argument \code{single_table} or
+#'   have highlighting applied with \code{highlight_so_cutoffs}. If you
+#'   \emph{don't} care about that, supply any old data.frame or tibble, and this
+#'   will save it to Word. If you supply a flextable (see the
 #'   \href{https://davidgohel.github.io/flextable/}{eponymous package} if you
 #'   don't know what we're talking about), we also won't touch the formatting
 #'   and will return your flextable as is in the Word document.
@@ -29,19 +29,24 @@
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
-#'   "Input Sheet"} or \code{exp_details = "all"}), you can save some processing
-#'   time by supplying that object here, unquoted. If left as NA, this function
-#'   will run \code{extractExpDetails} behind the scenes to figure out some
-#'   information about your experimental set up.
+#'   "Input Sheet"} or \code{exp_details = "all"}), we can use this information
+#'   to make nicely annotated table headings and captions. Not strictly
+#'   required, though.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
-#'   file into multiple tables. This only applies to the Word output.
+#'   file into multiple tables. This only applies to the Word output. If you
+#'   want to save the file with multiple tables, we do need your PK table to be
+#'   structures in a specific way so that we know where to separate things and
+#'   how to format the resulting individual tables. Your entry for
+#'   \code{PKtable} must contain the columns "File", "CompoundID", and "Tissue"
+#'   for this to work well and must contain the column "File" to work at all.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
-#'   human-readable column names. TRUE makes pretty column names such as "Dose 1
-#'   AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
-#'   from \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#'   human-readable column names for any columns with PK parameters. TRUE makes
+#'   pretty column names such as "Dose 1 AUCinf (h*ng/mL)" whereas FALSE leaves
+#'   the column with the R-friendly name from \code{\link{extractPK}}, e.g.,
+#'   "AUCinf_dose1".
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
 #'   the dose number when listing the PK parameter. By default, the parameter
 #'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
@@ -94,17 +99,23 @@
 #' @export
 #'
 #' @examples
-#' # None yet
+#' MyPKTable <- tibble(Statistic = c("Simulated", "CV%", "Observed", "S/O"),
+#'                         AUCinf = c(2756, 32.5, 1801, 1.53), 
+#'                         Cmax = c(852, 45.8, 775, 1.1), 
+#'                         `Half life` = c(7.75, 5.7, 6.05, 1.28))
+#' 
+#' \dontrun{
+#' save_table_to_Word(MyPKTable, save_table = "My PK table.docx")
+#' }
 #' 
 save_table_to_Word <- function(
       PKtable, 
-      PKpulled = NA, # make this automatically determined later
-      existing_exp_details,
+      save_table,
+      existing_exp_details = NA,
       mean_type = "geometric", 
       single_table = FALSE, 
       include_dose_num = NA,
       prettify_columns = TRUE, # want to add prettify compound names but haven't yet
-      save_table,
       fontsize = 11, 
       highlight_so_cutoffs = NA, 
       highlight_so_colors = NA){
@@ -124,7 +135,19 @@ save_table_to_Word <- function(
    
    FileName <- basename(save_table)
    
-   if(all(is.na(PKpulled)) | "flextable" %in% class(PKtable)){
+   if("flextable" %in% class(PKtable) |
+      "File" %in% names(PKtable) == FALSE |
+      (all(c("Tissue", "CompoundID") %in% names(PKtable)) == FALSE &
+       single_table == TRUE)){
+      
+      if("File" %in% names(PKtable) == FALSE & single_table == FALSE){
+         warning("You requested that we break up the table you provided in to multiple tables in the Word file, but your table doesn't include a column called `File`, which is what this function uses to break up the single table into multiples. We'll save your table as is.\n", 
+                 call. = FALSE)
+      }
+      
+      if("flextable" %in% class(PKtable) == FALSE){
+         PKtable <- flextable::flextable(PKtable)
+      }
       
       rmarkdown::render(
          system.file("rmarkdown/templates/savetable/skeleton/skeleton.Rmd", 
@@ -149,9 +172,32 @@ save_table_to_Word <- function(
       
       tissues = sort(unique(PKtable$Tissue)) 
       compoundsToExtract <- sort(unique(PKtable$CompoundID))
-      # PKpulled <- intersect(names(PKtable), 
-      #                       unique(c(AllPKParameters$PKparameter, 
-      #                                AllPKParameters$BasePKparameter) # FIXME 
+      
+      AllPKParameters_mod <- 
+         AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
+         mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                PrettifiedNames = str_trim(sub("Last dose|Dose 1", "", 
+                                               PrettifiedNames))) %>% 
+         unique()
+      
+      suppressMessages(
+         TableNames <-
+            data.frame(PKparameter = names(PKtable)) %>% 
+            mutate(IsPretty = PKparameter %in% c(AllPKParameters$PrettifiedNames, 
+                                                 AllPKParameters_mod$PrettifiedNames), 
+                   IsNotPretty = PKparameter %in% c(AllPKParameters_mod$PKparameter, 
+                                                    AllPKParameters$PKparameter),
+                   IsPKParam = IsPretty | IsNotPretty, 
+                   NeedsPrettifying = IsPKParam & IsNotPretty) %>% 
+            left_join(AllPKParameters %>% 
+                         select(PKparameter, PrettifiedNames) %>% 
+                         mutate(PKparameter_unpretty = PKparameter)) %>% 
+            unique() %>% 
+            mutate(PrettifiedNames = ifelse(is.na(PrettifiedNames), 
+                                            PKparameter, PrettifiedNames))
+      )
+      
+      PKpulled <- TableNames$PKparameter_unpretty[TableNames$IsPKParam == TRUE]
       
       PKToPull <- PKpulled
       PKpulled <- expand.grid(PKpulled = PKpulled, 

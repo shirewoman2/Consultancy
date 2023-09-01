@@ -6,54 +6,53 @@
 \usage{
 save_table_to_Word(
   PKtable,
-  PKpulled = NA,
-  existing_exp_details,
+  save_table,
+  existing_exp_details = NA,
   mean_type = "geometric",
   single_table = FALSE,
   include_dose_num = NA,
   prettify_columns = TRUE,
-  save_table,
   fontsize = 11,
   highlight_so_cutoffs = NA,
   highlight_so_colors = NA
 )
 }
 \arguments{
-\item{PKtable}{PK table that includes the columns File, Statistic, Tissue,
-CompoundID, and then also columns named in the standard way (prettified or
-un-prettified) for PK tables from the SimcypConsultancy package. Well, that
-is, your input for PKtable must meet those criteria if you want it to be
-formatted in any way or if you want to split it into multiple tables using
-the argument \code{single_table} or have highlighting applied with
-\code{highlight_so_cutoffs}. If you \emph{don't} care about that, supply
-any old data.frame or tibble, and this will save it to Word. If you supply
-a flextable (see the
+\item{PKtable}{PK table (really, a data.frame or tibble) that includes the
+columns File, Statistic, Tissue, CompoundID, and then also columns named in
+the standard way (prettified or un-prettified) for PK parameters from the
+SimcypConsultancy package. Well, that is, your input for PKtable must meet
+those criteria if you want it to be formatted in any way or if you want to
+split it into multiple tables using the argument \code{single_table} or
+have highlighting applied with \code{highlight_so_cutoffs}. If you
+\emph{don't} care about that, supply any old data.frame or tibble, and this
+will save it to Word. If you supply a flextable (see the
 \href{https://davidgohel.github.io/flextable/}{eponymous package} if you
 don't know what we're talking about), we also won't touch the formatting
 and will return your flextable as is in the Word document.}
 
-\item{PKpulled}{PK that are included in the table. All must be included in
-AllPKParameters$PKparameter or AllPKParameters$PrettifiedNames (although
-the latter is buggy and not working atm). If left as NA, no changes at all
-will be done to the table in terms of formatting, layout, etc., but that
-includes that it will be saved as a single table regardless of input for
-\code{single_table}. (Saving as multiple tables with the argument
-\code{single_table} requires a very specific layout here.)}
+\item{save_table}{save the output table by supplying a file name in quotes
+here, e.g., "My nicely formatted table.docx".  Do not include any slashes,
+dollar signs, or periods in the file name.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
-"Input Sheet"} or \code{exp_details = "all"}), you can save some processing
-time by supplying that object here, unquoted. If left as NA, this function
-will run \code{extractExpDetails} behind the scenes to figure out some
-information about your experimental set up.}
+"Input Sheet"} or \code{exp_details = "all"}), we can use this information
+to make nicely annotated table headings and captions. Not strictly
+required, though.}
 
 \item{mean_type}{What kind of means and CVs do you want listed in the output
 table? Options are "arithmetic" or "geometric" (default).}
 
 \item{single_table}{TRUE (default) or FALSE for whether to save all the PK
 data in a single table or break the data up by tissue, compound ID, and
-file into multiple tables. This only applies to the Word output.}
+file into multiple tables. This only applies to the Word output. If you
+want to save the file with multiple tables, we do need your PK table to be
+structures in a specific way so that we know where to separate things and
+how to format the resulting individual tables. Your entry for
+\code{PKtable} must contain the columns "File", "CompoundID", and "Tissue"
+for this to work well and must contain the column "File" to work at all.}
 
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter
@@ -65,13 +64,10 @@ ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
-human-readable column names. TRUE makes pretty column names such as "Dose 1
-AUCinf (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name
-from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
-
-\item{save_table}{save the output table by supplying a file name in quotes
-here, e.g., "My nicely formatted table.docx".  Do not include any slashes,
-dollar signs, or periods in the file name.}
+human-readable column names for any columns with PK parameters. TRUE makes
+pretty column names such as "Dose 1 AUCinf (h*ng/mL)" whereas FALSE leaves
+the column with the R-friendly name from \code{\link{extractPK}}, e.g.,
+"AUCinf_dose1".}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
@@ -114,6 +110,14 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
+
+\item{PKpulled}{PK that are included in the table. All must be included in
+AllPKParameters$PKparameter or AllPKParameters$PrettifiedNames (although
+the latter is buggy and not working atm). If left as NA, no changes at all
+will be done to the table in terms of formatting, layout, etc., but that
+includes that it will be saved as a single table regardless of input for
+\code{single_table}. (Saving as multiple tables with the argument
+\code{single_table} requires a very specific layout here.)}
 }
 \value{
 saves a table to a Word file
@@ -124,6 +128,13 @@ template file as is used for the function pksummary_mult. UNDER CONSTRUCTION.
 I haven't done almost any error catching here yet. -LSh
 }
 \examples{
-# None yet
+MyPKTable <- tibble(Statistic = c("Simulated", "CV\%", "Observed", "S/O"),
+                        AUCinf = c(2756, 32.5, 1801, 1.53), 
+                        Cmax = c(852, 45.8, 775, 1.1), 
+                        `Half life` = c(7.75, 5.7, 6.05, 1.28))
+
+\dontrun{
+save_table_to_Word(MyPKTable, save_table = "My PK table.docx")
+}
 
 }
