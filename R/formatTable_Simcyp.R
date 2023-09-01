@@ -40,6 +40,11 @@
 #'   the examples at the bottom of the help file.
 #' @param center_1st_column TRUE or FALSE (default) for whether to make the
 #'   alignment of the first column centered
+#' @param prettify_columns TRUE (default) or FALSE for whether to make easily
+#'   human-readable column names for any columns with PK parameters. TRUE makes
+#'   pretty column names such as "Dose 1 AUCinf (h*ng/mL)" whereas FALSE leaves
+#'   the column with the R-friendly name from \code{\link{extractPK}}, e.g.,
+#'   "AUCinf_dose1".
 #' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
 #'   simulated-to-observed ratios. Anything that is above those values or below
 #'   the inverse of those values will be highlighted. To figure out what cells
@@ -170,6 +175,7 @@ formatTable_Simcyp <- function(DF,
                                merge_shaded_cells = TRUE,
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
+                               prettify_columns = FALSE, 
                                highlight_so_cutoffs = NA, 
                                highlight_so_colors = "yellow to red",
                                highlight_cells = NA, 
@@ -216,6 +222,10 @@ formatTable_Simcyp <- function(DF,
                  call. = FALSE)
          bold_cells <- list(c(0, NA), c(NA, 1))
       }
+   }
+   
+   if(prettify_columns){
+      DF <- prettify_column_names(DF)
    }
    
    # Setting things up for nonstandard evaluation ----------------------------
