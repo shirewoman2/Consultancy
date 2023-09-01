@@ -8,7 +8,14 @@ if(FromCalcPKRatios){
    MyFiles <- unique(MyPKResults[[i]]$File)
 }
 
-Deets <- existing_exp_details %>% filter(File %in% MyFiles)
+if("logical" %in% class(existing_exp_details)){
+   # This is when existing_exp_details is NA.
+   Deets <- data.frame(Inhibitor1 = "UNKNOWN INHIBITOR", 
+                       File = MyFiles)
+} else {
+   Deets <- existing_exp_details %>% filter(File %in% MyFiles)
+}
+
 MyEffector <- determine_myeffector(Deets = Deets, 
                                    prettify_compound_names = TRUE)
 
@@ -40,7 +47,9 @@ if(FromCalcPKRatios){
       PKpulled = PKpulled_i,  
       MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
       prettify_compound_names = TRUE,
-      Deets = Deets, 
+      Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                     "TRUE" = data.frame(), 
+                     "FALSE" = Deets), 
       MeanType = MeanType, 
       tissue = unique(MyPKResults[[i]]$Tissue))
 }
