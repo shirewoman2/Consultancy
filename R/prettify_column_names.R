@@ -41,31 +41,21 @@ prettify_column_names <- function(PKtable,
                                             PrettifiedNames))) %>% 
       unique()
    
-   PKparameters <- names(PKtable)[!names(PKtable) %in% c("Statistic", "File", 
-                                                         "Tissue", "CompoundID")]
-   PKparameters <- PKparameters[PKparameters %in% c(AllPKParameters_mod$PKparameter, 
-                                                    AllPKParameters$PKparameter)]
-   # # If user specified tab, then need to adjust PK parameters here, too.
-   # if(complete.cases(sheet_PKparameters) & 
-   #    any(str_detect(names(PKtable), "_dose1|_last")) == FALSE){
-   #    
-   #    # We don't know whether an AUC was actually AUCtau, so make it AUCt.
-   #    PKparameters <- sub("AUCtau", "AUCt", PKparameters)
-   #    
-   #    suppressMessages(
-   #       PrettyCol <- data.frame(PKparameter = PKparameters) %>% 
-   #          left_join(AllPKParameters_mod) %>% 
-   #          pull(PrettifiedNames)
-   #    )
-   # } else {
    suppressMessages(
-      PrettyCol <- data.frame(PKparameter = PKparameters) %>% 
+      TableNames <-
+         data.frame(PKparameter = names(PKtable)) %>% 
+         mutate(IsPretty = PKparameter %in% c(AllPKParameters$PrettifiedNames, 
+                                              AllPKParameters_mod$PrettifiedNames), 
+                IsNotPretty = PKparameter %in% c(AllPKParameters_mod$PKparameter, 
+                                                 AllPKParameters$PKparameter),
+                IsPKParam = IsPretty | IsNotPretty, 
+                NeedsPrettifying = IsPKParam & IsNotPretty) %>% 
          left_join(AllPKParameters %>% 
                       select(PKparameter, PrettifiedNames)) %>% 
          unique() %>% 
-         pull(PrettifiedNames)
+         mutate(PrettifiedNames = ifelse(is.na(PrettifiedNames), 
+                                         PKparameter, PrettifiedNames))
    )
-   # }
    
    # if(complete.cases(adjust_conc_units)){
    #    PrettyCol <- gsub(Deets$Units_Cmax,  adjust_conc_units, PrettyCol)
@@ -108,7 +98,7 @@ prettify_column_names <- function(PKtable,
    #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
    # }
    
-   names(PKtable)[1:(length(PrettyCol) + 1)] <- c("Statistic", PrettyCol)
+   names(PKtable) <- TableNames$PrettifiedNames
    
    # } else if(complete.cases(sheet_PKparameters) & 
    #           any(str_detect(names(PKtable_all[[1]]), "_dose1|_last")) == FALSE){

@@ -11,7 +11,7 @@ make_table_annotations(
   PKpulled,
   MyCompoundID,
   prettify_compound_names,
-  Deets,
+  Deets = NA,
   MeanType,
   tissue,
   return_all_objects = FALSE

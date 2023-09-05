@@ -72,7 +72,7 @@ if(include_dose_num_i == FALSE){
    names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose ", "", names(MyPKResults[[i]]))
 }
 
-TempTable <- MyPKResults[[i]] %>%
+TempTable <- MyPKResults[[i]] %>% ungroup() %>% 
    purrr::discard(~all(is.na(.))) %>% 
    select(-any_of(c("CompoundID", "Tissue", "File")))
 names(TempTable) <- sub("effector", MyEffector, names(TempTable))
