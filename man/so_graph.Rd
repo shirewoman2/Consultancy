@@ -211,7 +211,19 @@ indicating where the predicted parameters fell within X fold of the observed.
 \examples{
 # Assuming you have run pksummary_mult on a few files with observed data
 # to generate an object called MyPKOutput, then:
-so_graph(MyPKOutput)
-so_graph(MyPKOutput, boundary_indicator = "fill")
+so_graph(PKtable = SOdata)
+so_graph(PKtable = SOdata, boundary_indicator = "fill")
+so_graph(PKtable = SOdata, 
+         axis_titles = c("y" = "Predicted", "x" = "Observed"))
+so_graph(PKtable = SOdata, ncol = 1)
+so_graph(PKtable = SOdata, point_shape_column = Study, 
+         legend_position = "bottom")
+so_graph(PKtable = SOdata, 
+         point_shape_column = Study, 
+         legend_label_point_shape = "Studies involving\nDrug X",
+         point_color_column = File,
+         legend_label_point_color = "Simulation file",
+         legend_position = "right")
+
 
 }
