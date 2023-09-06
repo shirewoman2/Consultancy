@@ -2,26 +2,26 @@
 #'
 #' \code{create_doses} generates a data.frame of dosing times and amounts -- one
 #' for every subject if subject IDs are provided -- based on the dosing regimen
-#' specified. This is meant for generating XML files for use in Phoenix WNL.
-#' \strong{Special notes for when you have more than one value for some items:}
-#' If you have multiple values for anything having to do with the compound --
-#' the compound ID, administration route, dose unit, or dose amount (all have
-#' the prefix "compound_") -- then all the other arguments having to do with
-#' compounds must have that same number of values or must have only one value,
-#' which will be repeated as needed. Really, this function will just be easier
-#' to use if you run it once for each compound you want. (See the examples at
-#' the bottom of the help file.) Similarly, if you have multiple values for
-#' anything having to do with the subject -- the subject ID, age, weight,
-#' height, or sex (all have the prefix "subj_") -- then all the other arguments
-#' having to do with subjects must have that same number of values or must have
-#' only one value, which will be repeated as needed. Any time you need to
-#' specify multiple values, you can make use of the R function \code{\link{rep}}
-#' to repeat elements of a vector. (See the R coding tip for the argument
-#' \code{compound_dose_amount} for an example.)
+#' specified. This is meant for generating XML files for use as observed data
+#' overlays for the Simcyp Simulator. \strong{Special notes for when you have
+#' more than one value for some items:} If you have multiple values for anything
+#' having to do with the compound -- the compound ID, administration route, dose
+#' unit, or dose amount (all have the prefix "compound_") -- then all the other
+#' arguments having to do with compounds must have that same number of values or
+#' must have only one value, which will be repeated as needed. Really, this
+#' function will just be easier to use if you run it once for each compound you
+#' want. (See the examples at the bottom of the help file.) Similarly, if you
+#' have multiple values for anything having to do with the subject -- the
+#' subject ID, age, weight, height, or sex (all have the prefix "subj_") -- then
+#' all the other arguments having to do with subjects must have that same number
+#' of values or must have only one value, which will be repeated as needed. Any
+#' time you need to specify multiple values, you can make use of the R function
+#' \code{\link{rep}} to repeat elements of a vector. (See the R coding tip for
+#' the argument \code{compound_dose_amount} for an example.)
 #'
 #'
 #' @param dose_interval the dosing interval in hours. Default is 24 for a QD
-#'   dosing regimen. Set this to NA for a single dose. 
+#'   dosing regimen. Set this to NA for a single dose.
 #' @param num_doses the number of doses to generate. If this is left as NA, then
 #'   the value for \code{end_time} will be used to determine the number of doses
 #'   administered.
@@ -33,15 +33,15 @@
 #'   \code{num_doses}, and \code{end_time} will all be ignored.
 #' @param simulator_version the version of the simulator that will be used. This
 #'   affects what columns will be included in hte output.
-#' @param compound_ID specify the compound that's being dosed. Options are
+#' @param compoundID specify the compound that's being dosed. Options are
 #'   "Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
 #'   case sensitive. If you list more than one compound, you must also list more
-#'   than one \code{compound_route}, \code{compound_dose_unit}, and
+#'   than one \code{compound_dose_route}, \code{compound_dose_unit}, and
 #'   \code{compound_dose_amount} or list just one of each with the understanding
 #'   that they will all be the same.
-#' @param compound_start the start time of compound administration (h); default
-#'   is 0.
-#' @param compound_route the route of administration. Options are "Oral"
+#' @param compound_dosing_start_time the start time of compound administration
+#'   (h); default is 0.
+#' @param compound_dose_route the route of administration. Options are "Oral"
 #'   (default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
 #'   "SC-Mechanistic", or "Auto-detect". Not case sensitive.
 #' @param compound_dose_unit the unit of dosing. Options are "mg" (default),
@@ -97,14 +97,14 @@
 #' # but still get just one csv file at the end:
 #'
 #' # Substrate is dosed one time at 10 mg starting at t = 168 h.
-#' Doses_sub <- create_doses(num_doses = 1, compound_ID = "Substrate",
-#'                           compound_start = 168,
+#' Doses_sub <- create_doses(num_doses = 1, compoundID = "Substrate",
+#'                           compound_dosing_start_time = 168,
 #'                           compound_dose_amount = 10)
 #'
 #' # Inhibitor is dosed QD at 500 mg for 336 h starting at t = 0 h.
 #' Doses_inhib <- create_doses(dose_interval = 24, end_time = 336,
-#'                             compound_ID = "Inhibitor 1",
-#'                             compound_start = 0,
+#'                             compoundID = "Inhibitor 1",
+#'                             compound_dosing_start_time = 0,
 #'                             compound_dose_amount = 500)
 #'
 #' MyDoses <- bind_rows(Doses_sub, Doses_inhib)
@@ -118,9 +118,9 @@ create_doses <- function(dose_interval = 24,
                          end_time = NA,
                          custom_dosing_schedule = NA,
                          simulator_version = 22,
-                         compound_ID = "Substrate",
-                         compound_start = 0,
-                         compound_route = "Oral",
+                         compoundID = "Substrate",
+                         compound_dosing_start_time = 0,
+                         compound_dose_route = "Oral",
                          compound_dose_unit = "mg",
                          compound_dose_amount = 100,
                          compound_inf_duration = NA,
@@ -175,9 +175,9 @@ create_doses <- function(dose_interval = 24,
            call. = FALSE)
    }
    
-   ArgLengths_cmpd <- c(length(compound_ID), length(compound_route), 
+   ArgLengths_cmpd <- c(length(compoundID), length(compound_dose_route), 
                         length(compound_dose_unit), length(compound_dose_amount))
-   names(ArgLengths_cmpd) <- c("compound_ID", "compound_route", 
+   names(ArgLengths_cmpd) <- c("compoundID", "compound_dose_route", 
                                "compound_dose_unit", "compound_dose_amount")
    MaxLength_cmpd <- max(ArgLengths_cmpd)
    if(all(ArgLengths_cmpd %in% c(1, MaxLength_cmpd)) == FALSE){
@@ -187,22 +187,22 @@ create_doses <- function(dose_interval = 24,
    
    
    # Fixing any case issues
-   compound_ID <- str_to_title(compound_ID)
+   compoundID <- str_to_title(compoundID)
    subj_sex <- str_sub(str_to_upper(subj_sex), 1, 1)
-   compound_route <- str_to_title(compound_route)
-   compound_route <- sub("Auto-Detect", "Auto-detect", compound_route)
+   compound_dose_route <- str_to_title(compound_dose_route)
+   compound_dose_route <- sub("Auto-Detect", "Auto-detect", compound_dose_route)
    
    # Checking for bad input
-   if(all(compound_ID %in% c("Substrate", "Inhibitor 1", "Inhibitor 2",
+   if(all(compoundID %in% c("Substrate", "Inhibitor 1", "Inhibitor 2",
                              "Inhibitor 3")) == FALSE){
-      stop("The entry for the argument `compound_ID` is incorrect. The only options for compound_ID are `Substrate`, `Inhiitor `, `Inhibitor 2`, or `Inhibitor 3`.", 
+      stop("The entry for the argument `compoundID` is incorrect. The only options for compoundID are `Substrate`, `Inhiitor `, `Inhibitor 2`, or `Inhibitor 3`.", 
            call. = FALSE)
    }
    
-   if(all(compound_route %in% c("Oral", "Intravenous", "Dermal", "Inhaled",
+   if(all(compound_dose_route %in% c("Oral", "Intravenous", "Dermal", "Inhaled",
                                 "SC-First Order", "SC-Mechanistic", 
                                 "Auto-detect")) == FALSE){
-      stop("The entry for the argument `compound_route` is incorrect. Please check the help file for acceptable options.", 
+      stop("The entry for the argument `compound_dose_route` is incorrect. Please check the help file for acceptable options.", 
            call. = FALSE)
    }
    
@@ -249,8 +249,8 @@ create_doses <- function(dose_interval = 24,
                           Subj_height = subj_height, 
                           Subj_sex = subj_sex)
    
-   CmpdInfo <- data.frame(Compound_ID = compound_ID, 
-                          Compound_route = compound_route,
+   CmpdInfo <- data.frame(Compound_ID = compoundID, 
+                          Compound_route = compound_dose_route,
                           Compound_dose_unit = compound_dose_unit,
                           Compound_dose_amount = compound_dose_amount, 
                           Compound_inf_duration = compound_inf_duration) 
@@ -261,8 +261,8 @@ create_doses <- function(dose_interval = 24,
    }
    
    # Dealing with possibly varying start times
-   MyStartTimes <- data.frame(Compound_ID = compound_ID,
-                              Compound_start = compound_start) %>% 
+   MyStartTimes <- data.frame(Compound_ID = compoundID,
+                              Compound_start = compound_dosing_start_time) %>% 
       unique()
    
    # Checking that input is reasonable for the compound start times. There
