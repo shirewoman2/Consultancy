@@ -100,6 +100,13 @@ prettify_column_names <- function(PKtable,
    
    names(PKtable) <- TableNames$PrettifiedNames
    
+   # } else if(complete.cases(sheet_PKparameters) & 
+   #           any(str_detect(names(PKtable_all[[1]]), "_dose1|_last")) == FALSE){
+   #    # This is when it's a user-defined sheet but we're not prettifying column
+   #    # names. We don't know whether an AUC was actually AUCtau, so make it
+   #    # AUCt.
+   #    PKparameters <- sub("AUCtau", "AUCt", PKparameters)
+   
    return(PKtable)
    
 }
