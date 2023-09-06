@@ -31,7 +31,7 @@
 #'   (default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
 #'   "SC-Mechanistic", or "Auto-detect". Not case sensitive.
 #' @param dose_interval the dosing interval in hours. Default is 24 for a QD
-#'   dosing regimen.
+#'   dosing regimen. Set this to NA for a single dose. 
 #' @param num_doses the number of doses to generate. If this is left as NA, then
 #'   the value for \code{end_time} will be used to determine the number of doses
 #'   administered.
@@ -123,7 +123,8 @@ format_obs_for_XML <- function(obs_dataframe,
                       rlang::as_label(height_column), 
                       rlang::as_label(sex_column)))) %>% 
       rename_with(~str_replace_all(., GoodNames)) %>% 
-      unique()
+      unique() %>% 
+      mutate(Sex = str_sub(str_to_upper(Sex), 1, 1))
    
    # MissingCols <- setdiff(
    #    CheckNames[CheckNames != "<empty>" &
@@ -165,8 +166,8 @@ format_obs_for_XML <- function(obs_dataframe,
                          rlang::as_label(height_column), 
                          rlang::as_label(sex_column)))) %>% 
          rename_with(~str_replace_all(., GoodNames)) %>% 
-         unique()
-      
+         unique() %>% 
+         mutate(Sex = str_sub(str_to_upper(subj_sex), 1, 1))
    }
    
    MissingCols <- setdiff(c("Subject", "Age", "Weight", "Height", "Sex"), 
