@@ -64,6 +64,10 @@
 #' @param save_output the file name to use for saving the output as a csv; if
 #'   left as NA, this will generate a data.frame in R but no output will be
 #'   saved.
+#' @param return_data TRUE or FALSE (default) for whether to return a data.frame
+#'   of the output at the end. If you're only using this to save csv files to
+#'   convert into XML overlay files, you probably don't need to get that object
+#'   back here, so that's why this argument exists.
 #'
 #' @return a data.frame
 #' @export
@@ -231,7 +235,7 @@ format_obs_for_XML <- function(obs_dataframe,
       message("DV IDs in the output file are:\n",
               str_c(MyDVIDs$Message, separate = "\n"))
    }
-      
+   
    Out <- create_doses(
       dose_interval = dose_interval,
       compound_dosing_start_time = dosing_start_time,
@@ -279,7 +283,9 @@ format_obs_for_XML <- function(obs_dataframe,
       
    }
    
-   return(Out)
-   
+   if(return_data){ 
+      return(Out)
+   }
    
 }
+
