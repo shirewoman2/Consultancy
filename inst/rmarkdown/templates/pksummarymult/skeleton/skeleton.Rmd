@@ -23,6 +23,10 @@ MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 ```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
 if(FromCalcPKRatios){
+   
+   highlight_so_cutoffs = NA
+   highlight_so_colors = "yellow to red"
+   
    if(paired){
       OptionalSection <- knitr::knit_child(
          system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
