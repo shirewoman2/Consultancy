@@ -110,6 +110,43 @@
 #'   outputs (see an AUC tab and the summary statistics; these values are the
 #'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
 #'   limit)").
+#' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
+#'   simulated-to-observed ratios. Anything that is above those values or below
+#'   the inverse of those values will be highlighted. To figure out what cells
+#'   to highlight, this looks for a column titled "Statistic" or "Stat", then
+#'   looks for what row contains "S/O" or "simulated (something something)
+#'   observed" (as in, we'll use some wildcards to try to match your specific
+#'   text). Next, it looks for any values in that same row that are above those
+#'   cutoffs. This overrides anything else you specified for highlighting. The
+#'   default is NA, for \emph{not} highlighting based on S/O value. Acceptable
+#'   input for, say, highlighting values that are > 125\% or < 80\% of the
+#'   observed and also, with a second color, values that are > 150\% or < 66\%
+#'   would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you would like the
+#'   middle range of values to be highlighted, include 1 in your cutoffs. For
+#'   example, say you would like everything that's < 80\% or > 125\% to be
+#'   highlighted red but you'd like the "good" values from 80\% to 125\% to be
+#'   green, you can get that by specifying
+#'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+#'   c("green", "red")}. This only applies when you save the table as a Word file.
+#' @param highlight_so_colors optionally specify a set of colors to use in the
+#'   Word file output for highlighting S/O values outside the limits you
+#'   specified with \code{highlight_so_cutoffs}. Options: \describe{
+#'
+#'   \item{"yellow to red" (default)}{A range of light yellow to light orange to
+#'   light red. If you have included 1 in your cutoffs and you leave
+#'   \code{highlight_so_colors} with the default setting, values in the middle,
+#'   "good" range of S/O values will be highlighted a light green.}
+#'
+#'   \item{"traffic"}{light green, yellow, and red designed to display values
+#'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
+#'   values. This color scheme was borrowed from Lisa, so if you've seen her
+#'   slides, these will look familiar.}
+#'
+#'   \item{a character vector of specific colors}{Any R-acceptable colors, will
+#'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
+#'   If you do specify your own bespoke colors, you'll need to make sure that
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -204,6 +241,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            checkDataSource = TRUE, 
                            returnExpDetails = FALSE,
                            save_table = NA, 
+                           highlight_so_cutoffs = NA, 
+                           highlight_so_colors = "yellow to red", 
                            fontsize = 11){
    
    # Error catching ----------------------------------------------------------
@@ -473,8 +512,9 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    # MyPKResults_all$aggregate[, i] <- TEMP$Conc
    # rm(TEMP)
    
+   ## Making paired comparisons -----------------------------------------
+   
    if(paired){
-      ## Making paired comparisons -----------------------------------------
       
       MyPKResults <- PKnumerator$individual %>% 
          pivot_longer(cols = -c(Individual, Trial), 
@@ -558,9 +598,9 @@ calc_PK_ratios <- function(sim_data_file_numerator,
          pivot_wider(names_from = Parameter, values_from = Value)
       
       
-   } else {
-      
       ## Making unpaired comparisons -----------------------------------------
+      
+   } else {
       
       # Using calculations recommended by Frederic Bois for the confidence
       # interval. (Note to self: See email from March 3, 2023. -LSh)
@@ -926,6 +966,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
          sim_data_file <- str_comma(c(basename(sim_data_file_numerator),
                                       basename(sim_data_file_denominator)))
          FromCalcPKRatios <- TRUE
+         
+         PKpulled <- Comparisons$PKparam_denom
          
          rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 

@@ -141,6 +141,7 @@ if(single_table){
    formatTable_Simcyp(MyPKResults,
                       shading_column = File, 
                       fontsize = fontsize,
+                      prettify_columns = TRUE, 
                       highlight_so_cutoffs = highlight_so_cutoffs, 
                       highlight_so_colors = highlight_so_colors)
 }
