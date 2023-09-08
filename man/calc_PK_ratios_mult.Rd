@@ -7,6 +7,7 @@
 calc_PK_ratios_mult(
   sim_data_file_pairs,
   paired = TRUE,
+  distribution_type = "t",
   compoundToExtract = "substrate",
   tissue = "plasma",
   PKparameters = "AUC tab",
@@ -56,6 +57,10 @@ denominator simulation. Would this be clearer if you could see the
 mathematical equations? We agree but can't easily include equations in the
 help file. However, if you run this and save the output to a Word file, the
 equations will be included in the output.}
+
+\item{distribution_type}{use a "t" distribution (default) or a "Z"
+distribution. Note: The Simcyp Simulator calculates geometric confidence
+intervals with a t distribution.}
 
 \item{compoundToExtract}{For which compound do you want to extract PK data?
 Options are: \itemize{\item{"substrate" (default),} \item{"primary

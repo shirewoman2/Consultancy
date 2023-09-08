@@ -194,6 +194,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    DosesIncluded <- c("Dose1" = Dose1included, "Last" = LastDoseincluded)
    DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded == TRUE], 
                           collapse = " ")
+   DosesIncluded <- ifelse(DosesIncluded == "", "no dose num included", DosesIncluded)
    
    FigText2 <- switch(DosesIncluded, 
                       "Dose1 Last" = paste("the first and multiple", 
@@ -203,7 +204,11 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                       MyDoseRoute, "dose"),
                       
                       "Last" = paste("multiple",
-                                     MyDoseRoute, "doses"))
+                                     MyDoseRoute, "doses"), 
+                      
+                      "no dose num included" = paste("the first and/or multiple", 
+                                                     MyDoseRoute, "doses")
+                      )
    
    FigText3 <- ifelse(
       MyEffector != "none" & 
