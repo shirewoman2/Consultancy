@@ -711,7 +711,7 @@ extractExpDetails <- function(sim_data_file,
                   # FIXME - left off here
                   suppressWarnings(
                      Out[[paste0("CL_", i, "_Type", Suffix)]] <- 
-                        as.character(InputTab[which(str_detect(MyNames), ValueCol])
+                        as.character(InputTab[which(str_detect(MyNames), ValueCol)])
                   )
                   
                   suppressWarnings(
@@ -962,8 +962,8 @@ extractExpDetails <- function(sim_data_file,
                      
                   }
                   
-                  rm(CLRows, IntRowStart, NameCol, Suffix)
                }
+               rm(CLRows, IntRowStart, NameCol, Suffix)
             }
          }
          
@@ -1333,304 +1333,304 @@ extractExpDetails <- function(sim_data_file,
             
          }
       }
+   }
+   
+   # Pulling details from the population tab -------------------------------
+   MyPopDeets <- intersect(exp_details, PopDeets$Deet)
+   # If all of the details are from one of the other sheets, then don't
+   # bother reading this sheet b/c that takes more processing time. (Some
+   # details show up on multiple sheets, so there are redundancies in this
+   # function to deal with that.)
+   if(exp_details_input[1] %in% c("summary tab", "input sheet")){
+      MyPopDeets <- intersect("A", "B")
+   }
+   
+   # If user asks for population details, then function is set up to read both
+   # what that population is and what the simulator version is by reading the
+   # summary tab, so this next line should work and will not give them any
+   # population details for Simcyp Discovery simulations until we set that up. 
+   MyPopDeets <- intersect(MyPopDeets, 
+                           (AllExpDetails %>% 
+                               filter(DiscoveryParameter %in% DiscoveryCol) %>% 
+                               pull(Detail)))
+   
+   if(length(MyPopDeets) > 0){
+      # Getting name of that tab.
+      if(exists("SheetNames", inherit = FALSE) == FALSE){
+         SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                                error = openxlsx::getSheetNames(sim_data_file))
+         
+      }
       
-      # Pulling details from the population tab -------------------------------
+      # If user has requested that the population tab be annotated, which is an
+      # option!, then there will be 2 matches to the population sheet name. We
+      # want the 1st one.
+      PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Population, 1, 20))][1]
+      
+      PopTab <- suppressMessages(tryCatch(
+         readxl::read_excel(path = sim_data_file, sheet = PopSheet,
+                            col_names = FALSE),
+         error = openxlsx::read.xlsx(sim_data_file, sheet = PopSheet,
+                                     colNames = FALSE)))
+      # If openxlsx read the file, the names are different. Fixing.
+      if(names(PopTab)[1] == "X1"){
+         names(PopTab) <- paste0("...", 1:ncol(PopTab))
+      }
+      
       MyPopDeets <- intersect(exp_details, PopDeets$Deet)
-      # If all of the details are from one of the other sheets, then don't
-      # bother reading this sheet b/c that takes more processing time. (Some
-      # details show up on multiple sheets, so there are redundancies in this
-      # function to deal with that.)
-      if(exp_details_input[1] %in% c("summary tab", "input sheet")){
-         MyPopDeets <- intersect("A", "B")
+      
+      # User can change the name of user-defined cytosolic phenotypes for GI
+      # tract, kidney, and liver. Changing this back to "Cyt1" to work for
+      # regex, though. For now, only extracting data for Cyt1 and not any more
+      # user-defined cytosolic phenotype parameters, so ignoring the others.
+      # If name is changed in one, it's changed in all. Columns are 3, 5, and
+      # 9.
+      if(any(str_detect(PopTab$...3, "Cyt1"), na.rm = T) == FALSE){
+         StartCytRow <- which(str_detect(PopTab$...3, "^User Cyt$"))[1]
+         
+         NewName <- gsub("Abundance : | Population Scalar", "", PopTab[StartCytRow + 1, 3])
+         
+         PopTab$...3 <- sub(NewName, "User Cyt1", PopTab$...3)
+         PopTab$...5 <- sub(NewName, "User Cyt1", PopTab$...5)
+         PopTab$...9 <- sub(NewName, "User Cyt1", PopTab$...9)
+         
       }
       
-      # If user asks for population details, then function is set up to read both
-      # what that population is and what the simulator version is by reading the
-      # summary tab, so this next line should work and will not give them any
-      # population details for Simcyp Discovery simulations until we set that up. 
-      MyPopDeets <- intersect(MyPopDeets, 
-                              (AllExpDetails %>% 
-                                  filter(DiscoveryParameter %in% DiscoveryCol) %>% 
-                                  pull(Detail)))
-      
-      if(length(MyPopDeets) > 0){
-         # Getting name of that tab.
-         if(exists("SheetNames", inherit = FALSE) == FALSE){
-            SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                                   error = openxlsx::getSheetNames(sim_data_file))
-            
+      # sub function for finding correct cell
+      pullValue <- function(deet){
+         
+         # Setting up regex to search
+         ToDetect <- AllExpDetails %>% 
+            filter(Detail == deet & Sheet == "population") %>% pull(Regex_row)
+         NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
+         
+         if(ncol(PopTab) < NameCol){
+            # This happens when it's an animal simulation.
+            return(NA)
          }
-         
-         # If user has requested that the population tab be annotated, which is an
-         # option!, then there will be 2 matches to the population sheet name. We
-         # want the 1st one.
-         PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Population, 1, 20))][1]
-         
-         PopTab <- suppressMessages(tryCatch(
-            readxl::read_excel(path = sim_data_file, sheet = PopSheet,
-                               col_names = FALSE),
-            error = openxlsx::read.xlsx(sim_data_file, sheet = PopSheet,
-                                        colNames = FALSE)))
-         # If openxlsx read the file, the names are different. Fixing.
-         if(names(PopTab)[1] == "X1"){
-            names(PopTab) <- paste0("...", 1:ncol(PopTab))
-         }
-         
-         MyPopDeets <- intersect(exp_details, PopDeets$Deet)
-         
-         # User can change the name of user-defined cytosolic phenotypes for GI
-         # tract, kidney, and liver. Changing this back to "Cyt1" to work for
-         # regex, though. For now, only extracting data for Cyt1 and not any more
-         # user-defined cytosolic phenotype parameters, so ignoring the others.
-         # If name is changed in one, it's changed in all. Columns are 3, 5, and
-         # 9.
-         if(any(str_detect(PopTab$...3, "Cyt1"), na.rm = T) == FALSE){
-            StartCytRow <- which(str_detect(PopTab$...3, "^User Cyt$"))[1]
-            
-            NewName <- gsub("Abundance : | Population Scalar", "", PopTab[StartCytRow + 1, 3])
-            
-            PopTab$...3 <- sub(NewName, "User Cyt1", PopTab$...3)
-            PopTab$...5 <- sub(NewName, "User Cyt1", PopTab$...5)
-            PopTab$...9 <- sub(NewName, "User Cyt1", PopTab$...9)
-            
-         }
-         
-         # sub function for finding correct cell
-         pullValue <- function(deet){
-            
-            # Setting up regex to search
-            ToDetect <- AllExpDetails %>% 
-               filter(Detail == deet & Sheet == "population") %>% pull(Regex_row)
-            NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
-            
-            if(ncol(PopTab) < NameCol){
-               # This happens when it's an animal simulation.
-               return(NA)
-            }
-            Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
-            if(length(Row) == 0){
-               Val <- NA
-            } else {
-               Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
-                  pull()
-               Val <- sort(unique(Val))
-            }
-            
-            suppressWarnings(
-               Val <- switch(PopDeets$Class[PopDeets$Deet == deet], 
-                             "character" = as.character(Val),
-                             "numeric" = as.numeric(Val))
-            )
-            
-            # Tidying up some specific idiosyncracies of simulator output
-            Val <- ifelse(complete.cases(Val) & Val == "n/a",
-                          NA, Val)
-            
-            return(Val)
-         }
-         
-         for(i in MyPopDeets){
-            Out[[i]] <- pullValue(i)
-         }
-      }
-      
-      # Pulling from workspace file -------------------------------------------
-      if(any(c("workspace", "all") %in% exp_details_input)){
-         
-         # Checking that the workspace file is available. This will ignore the
-         # date/time stamp on the Excel results if it's still there. 
-         
-         # LSh: Note that this will NOT look at workspaces for Simcyp Discovery
-         # files b/c those have a different file extension. I haven't set up
-         # anything for extracting info from .dscw files, although I bet they're
-         # set up really similarly, so we probably could in the future.
-         if(file.exists(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
-                            ".wksz", sim_data_file))){
-            
-            TEMP <- extractExpDetails_XML(
-               sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
-               compoundsToExtract = "all",
-               exp_details = "all") %>% 
-               # This currently removes anything that we already have from the
-               # Excel file. May change that later to verify that Excel and
-               # workspace match.
-               select(!any_of(c("Substrate", "Inhibitor1", "Inhibitor2", 
-                                "PrimaryMetabolite1", "PrimaryMetabolite2", 
-                                "SecondaryMetabolite", "Inhibitor1Metabolite", 
-                                paste0("DistributionModel",
-                                       c("inhib1met", 
-                                         "_met1", "_met2", "_secmet"))))) %>% 
-               as.list()
-            
-            Out <- c(Out, TEMP[setdiff(names(TEMP)[names(TEMP) != "Workspace"], 
-                                       names(Out))])
-            
-            rm(TEMP)
-         }
-      }
-      
-      
-      # Calculated details & data cleanup ----------------------------------------
-      if("StartHr_sub" %in% exp_details && 
-         "StartDayTime_sub" %in% names(Out) &&
-         Out$StartDayTime_sub != "custom dosing"){
-         Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                              time2 = Out$StartDayTime_sub)
-      }
-      
-      if(all(c("Inhibitor1", "StartDayTime_inhib") %in% names(Out)) &&
-         complete.cases(Out$StartDayTime_inhib) &&
-         Out$StartDayTime_inhib != "custom dosing"){
-         Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                                time2 = Out$StartDayTime_inhib)
-      }
-      
-      if(all(c("Inhibitor2", "StartDayTime_inhib2") %in% names(Out)) && 
-         complete.cases(Out$StartDayTime_inhib2) &&
-         Out$StartDayTime_inhib != "custom dosing"){
-         Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                                 time2 = Out$StartDayTime_inhib2)
-      }
-      
-      if("StartHr_inhib" %in% exp_details & 
-         all(c("StartDayTime_inhib", "SimStartDayTime") %in% names(Out)) &&
-         complete.cases(Out$StartDayTime_inhib) &&
-         Out$StartDayTime_inhib != "custom dosing"){
-         Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                                time2 = Out$StartDayTime_inhib)
-      }
-      
-      if("StartHr_inhib2" %in% exp_details & 
-         all(c("SimStartDayTime", "StartDayTime_inhib2") %in% names(Out)) &&
-         complete.cases(Out$StartDayTime_inhib2) &&
-         Out$StartDayTime_inhib2 != "custom dosing"){
-         Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                                 time2 = Out$StartDayTime_inhib2)
-      }
-      
-      # Removing StartDayTime_sub and SimStartDayTime if the user
-      # did not request them.
-      if("StartDayTime_sub" %in% exp_details_orig == FALSE){
-         Out[["StartDayTime_sub"]] <- NULL
-      }
-      if("StartDayTime_inhib" %in% exp_details_orig == FALSE){
-         Out[["StartDayTime_inhib"]] <- NULL
-      }
-      if("StartDayTime_inhib2" %in% exp_details_orig == FALSE){
-         Out[["StartDayTime_inhib2"]] <- NULL
-      }
-      if("SimStartDayTime" %in% exp_details_orig == FALSE){
-         Out[["SimStartDayTime"]] <- NULL
-      }
-      
-      # Other functions call on "Inhibitor1", etc., so we need those objects to
-      # exist. If user pulled data from Input Sheet, they might not, so setting
-      # them to NA if they don't exist.
-      if("Inhibitor1" %in% names(Out) == FALSE){
-         Out$Inhibitor1 <- NA
-      }
-      if("Inhibitor2" %in% names(Out) == FALSE){
-         Out$Inhibitor2 <- NA
-      }
-      if("PrimaryMetabolite1" %in% names(Out) == FALSE){
-         Out$PrimaryMetabolite1 <- NA
-      }
-      if("PrimaryMetabolite2" %in% names(Out) == FALSE){
-         Out$PrimaryMetabolite2 <- NA
-      }
-      if("SecondaryMetabolite" %in% names(Out) == FALSE){
-         Out$SecondaryMetabolite <- NA
-      }
-      if("Inhibitor1Metabolite" %in% names(Out) == FALSE){
-         Out$Inhibitor1Metabolite <- NA
-      }
-      
-      # Always including the file name. It's just a good practice and it makes
-      # extractExpDetails output more like extractExpDetails_mult.
-      Out$File <- sim_data_file
-      
-      # Species should be lower case and not have "Sim" in front of it to work
-      # more smoothly with other functions and also just look better. Setting
-      # "beagle" to "dog" and setting it to "human" if it's missing, which it will
-      # be for regular simulator output.
-      if("Species" %in% names(Out)){
-         Out$Species <- tolower(sub("Sim-", "", Out$Species))
-         Out$Species <- ifelse(Out$Species == "beagle", "dog", Out$Species)
-         
-         if(is.na(Out$Species)){
-            Out$Species <- "human"
-         }
-      }
-      
-      Out <- Out[sort(names(Out))]
-      
-      # Fixing an issue that trips up other code down the line: Sometimes, the
-      # user might specify a "multiple dose" regimen but then only administer
-      # a single dose. That messes up, e.g., extractPK b/c it looks on the
-      # wrong tab for the info it needs. When that happens, set the regimen to
-      # "Single Dose".
-      if(is.null(Out$Regimen_sub) == FALSE && 
-         complete.cases(Out$Regimen_sub) &&
-         Out$Regimen_sub == "Multiple Dose" && Out$NumDoses_sub == 1){
-         Out$Regimen_sub <- "Single Dose"
-      }
-      
-      if(is.null(Out$Regimen_inhib1) == FALSE && 
-         (complete.cases(Out$Inhibitor1) & 
-          complete.cases(Out$Regimen_inhib1) && 
-          (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1))){
-         Out$Regimen_inhib1 <- "Single Dose" 
-      }
-      
-      if(is.null(Out$Regimen_inhib2) == FALSE && 
-         (complete.cases(Out$Inhibitor2) & 
-          complete.cases(Out$Regimen_inhib2) && 
-          (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1))){
-         Out$Regimen_inhib2 <- "Single Dose" 
-      }
-      
-      if(annotate_output){
-         Out <- annotateDetails(Out)
-      } 
-      
-      if(complete.cases(save_output)){
-         FileName <- save_output
-         if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-            FileName <- sub(paste0(".", Ext), "", FileName)
-            Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
-                          Ext, "csv")
-            FileName <- paste0(FileName, ".", Ext)
+         Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
+         if(length(Row) == 0){
+            Val <- NA
          } else {
-            FileName <- paste0(FileName, ".csv")
-            Ext <- "csv"
+            Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
+               pull()
+            Val <- sort(unique(Val))
          }
          
-         switch(Ext, 
-                "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
-                "xlsx" = formatXL(
-                   as.data.frame(Out), 
-                   FileName, 
-                   sheet = "Simulation experimental details",
-                   styles = list(
-                      list(columns = which(names(Out) == "Notes"), 
-                           textposition = list(wrapping = TRUE)),
-                      list(rows = 0, font = list(bold = TRUE),
-                           textposition = list(alignment = "middle",
-                                               wrapping = TRUE)), 
-                      list(columns = which(str_detect(names(Out), "All files have this value")),
-                           fill = "#E7F3FF"), 
-                      list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
-                           font = list(bold = TRUE), 
-                           textposition = list(alignment = "middle",
-                                               wrapping = TRUE), 
-                           fill = "#E7F3FF"))))
+         suppressWarnings(
+            Val <- switch(PopDeets$Class[PopDeets$Deet == deet], 
+                          "character" = as.character(Val),
+                          "numeric" = as.numeric(Val))
+         )
+         
+         # Tidying up some specific idiosyncracies of simulator output
+         Val <- ifelse(complete.cases(Val) & Val == "n/a",
+                       NA, Val)
+         
+         return(Val)
       }
       
-      return(Out)
+      for(i in MyPopDeets){
+         Out[[i]] <- pullValue(i)
+      }
+   }
+   
+   # Pulling from workspace file -------------------------------------------
+   if(any(c("workspace", "all") %in% exp_details_input)){
+      
+      # Checking that the workspace file is available. This will ignore the
+      # date/time stamp on the Excel results if it's still there. 
+      
+      # LSh: Note that this will NOT look at workspaces for Simcyp Discovery
+      # files b/c those have a different file extension. I haven't set up
+      # anything for extracting info from .dscw files, although I bet they're
+      # set up really similarly, so we probably could in the future.
+      if(file.exists(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
+                         ".wksz", sim_data_file))){
+         
+         TEMP <- extractExpDetails_XML(
+            sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
+            compoundsToExtract = "all",
+            exp_details = "all") %>% 
+            # This currently removes anything that we already have from the
+            # Excel file. May change that later to verify that Excel and
+            # workspace match.
+            select(!any_of(c("Substrate", "Inhibitor1", "Inhibitor2", 
+                             "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                             "SecondaryMetabolite", "Inhibitor1Metabolite", 
+                             paste0("DistributionModel",
+                                    c("inhib1met", 
+                                      "_met1", "_met2", "_secmet"))))) %>% 
+            as.list()
+         
+         Out <- c(Out, TEMP[setdiff(names(TEMP)[names(TEMP) != "Workspace"], 
+                                    names(Out))])
+         
+         rm(TEMP)
+      }
    }
    
    
+   # Calculated details & data cleanup ----------------------------------------
+   if("StartHr_sub" %in% exp_details && 
+      "StartDayTime_sub" %in% names(Out) &&
+      Out$StartDayTime_sub != "custom dosing"){
+      Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                           time2 = Out$StartDayTime_sub)
+   }
    
+   if(all(c("Inhibitor1", "StartDayTime_inhib") %in% names(Out)) &&
+      complete.cases(Out$StartDayTime_inhib) &&
+      Out$StartDayTime_inhib != "custom dosing"){
+      Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                             time2 = Out$StartDayTime_inhib)
+   }
    
+   if(all(c("Inhibitor2", "StartDayTime_inhib2") %in% names(Out)) && 
+      complete.cases(Out$StartDayTime_inhib2) &&
+      Out$StartDayTime_inhib != "custom dosing"){
+      Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                              time2 = Out$StartDayTime_inhib2)
+   }
+   
+   if("StartHr_inhib" %in% exp_details & 
+      all(c("StartDayTime_inhib", "SimStartDayTime") %in% names(Out)) &&
+      complete.cases(Out$StartDayTime_inhib) &&
+      Out$StartDayTime_inhib != "custom dosing"){
+      Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                             time2 = Out$StartDayTime_inhib)
+   }
+   
+   if("StartHr_inhib2" %in% exp_details & 
+      all(c("SimStartDayTime", "StartDayTime_inhib2") %in% names(Out)) &&
+      complete.cases(Out$StartDayTime_inhib2) &&
+      Out$StartDayTime_inhib2 != "custom dosing"){
+      Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                              time2 = Out$StartDayTime_inhib2)
+   }
+   
+   # Removing StartDayTime_sub and SimStartDayTime if the user
+   # did not request them.
+   if("StartDayTime_sub" %in% exp_details_orig == FALSE){
+      Out[["StartDayTime_sub"]] <- NULL
+   }
+   if("StartDayTime_inhib" %in% exp_details_orig == FALSE){
+      Out[["StartDayTime_inhib"]] <- NULL
+   }
+   if("StartDayTime_inhib2" %in% exp_details_orig == FALSE){
+      Out[["StartDayTime_inhib2"]] <- NULL
+   }
+   if("SimStartDayTime" %in% exp_details_orig == FALSE){
+      Out[["SimStartDayTime"]] <- NULL
+   }
+   
+   # Other functions call on "Inhibitor1", etc., so we need those objects to
+   # exist. If user pulled data from Input Sheet, they might not, so setting
+   # them to NA if they don't exist.
+   if("Inhibitor1" %in% names(Out) == FALSE){
+      Out$Inhibitor1 <- NA
+   }
+   if("Inhibitor2" %in% names(Out) == FALSE){
+      Out$Inhibitor2 <- NA
+   }
+   if("PrimaryMetabolite1" %in% names(Out) == FALSE){
+      Out$PrimaryMetabolite1 <- NA
+   }
+   if("PrimaryMetabolite2" %in% names(Out) == FALSE){
+      Out$PrimaryMetabolite2 <- NA
+   }
+   if("SecondaryMetabolite" %in% names(Out) == FALSE){
+      Out$SecondaryMetabolite <- NA
+   }
+   if("Inhibitor1Metabolite" %in% names(Out) == FALSE){
+      Out$Inhibitor1Metabolite <- NA
+   }
+   
+   # Always including the file name. It's just a good practice and it makes
+   # extractExpDetails output more like extractExpDetails_mult.
+   Out$File <- sim_data_file
+   
+   # Species should be lower case and not have "Sim" in front of it to work
+   # more smoothly with other functions and also just look better. Setting
+   # "beagle" to "dog" and setting it to "human" if it's missing, which it will
+   # be for regular simulator output.
+   if("Species" %in% names(Out)){
+      Out$Species <- tolower(sub("Sim-", "", Out$Species))
+      Out$Species <- ifelse(Out$Species == "beagle", "dog", Out$Species)
+      
+      if(is.na(Out$Species)){
+         Out$Species <- "human"
+      }
+   }
+   
+   Out <- Out[sort(names(Out))]
+   
+   # Fixing an issue that trips up other code down the line: Sometimes, the
+   # user might specify a "multiple dose" regimen but then only administer
+   # a single dose. That messes up, e.g., extractPK b/c it looks on the
+   # wrong tab for the info it needs. When that happens, set the regimen to
+   # "Single Dose".
+   if(is.null(Out$Regimen_sub) == FALSE && 
+      complete.cases(Out$Regimen_sub) &&
+      Out$Regimen_sub == "Multiple Dose" && Out$NumDoses_sub == 1){
+      Out$Regimen_sub <- "Single Dose"
+   }
+   
+   if(is.null(Out$Regimen_inhib1) == FALSE && 
+      (complete.cases(Out$Inhibitor1) & 
+       complete.cases(Out$Regimen_inhib1) && 
+       (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1))){
+      Out$Regimen_inhib1 <- "Single Dose" 
+   }
+   
+   if(is.null(Out$Regimen_inhib2) == FALSE && 
+      (complete.cases(Out$Inhibitor2) & 
+       complete.cases(Out$Regimen_inhib2) && 
+       (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1))){
+      Out$Regimen_inhib2 <- "Single Dose" 
+   }
+   
+   if(annotate_output){
+      Out <- annotateDetails(Out)
+   } 
+   
+   if(complete.cases(save_output)){
+      FileName <- save_output
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
+                       Ext, "csv")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".csv")
+         Ext <- "csv"
+      }
+      
+      switch(Ext, 
+             "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
+             "xlsx" = formatXL(
+                as.data.frame(Out), 
+                FileName, 
+                sheet = "Simulation experimental details",
+                styles = list(
+                   list(columns = which(names(Out) == "Notes"), 
+                        textposition = list(wrapping = TRUE)),
+                   list(rows = 0, font = list(bold = TRUE),
+                        textposition = list(alignment = "middle",
+                                            wrapping = TRUE)), 
+                   list(columns = which(str_detect(names(Out), "All files have this value")),
+                        fill = "#E7F3FF"), 
+                   list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
+                        font = list(bold = TRUE), 
+                        textposition = list(alignment = "middle",
+                                            wrapping = TRUE), 
+                        fill = "#E7F3FF"))))
+   }
+   
+   return(Out)
+}
+
+
+
