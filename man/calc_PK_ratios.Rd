@@ -27,8 +27,6 @@ calc_PK_ratios(
   checkDataSource = TRUE,
   returnExpDetails = FALSE,
   save_table = NA,
-  highlight_so_cutoffs = NA,
-  highlight_so_colors = "yellow to red",
   fontsize = 11
 )
 }
@@ -218,27 +216,33 @@ the main PK table data will be in whatever file format you requested, if
 you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
 its own and will have "- QC" added to the end of the file name.}
 
-\item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
-simulated-to-observed ratios. Anything that is above those values or below
-the inverse of those values will be highlighted. To figure out what cells
-to highlight, this looks for a column titled "Statistic" or "Stat", then
-looks for what row contains "S/O" or "simulated (something something)
-observed" (as in, we'll use some wildcards to try to match your specific
-text). Next, it looks for any values in that same row that are above those
-cutoffs. This overrides anything else you specified for highlighting. The
-default is NA, for \emph{not} highlighting based on S/O value. Acceptable
-input for, say, highlighting values that are > 125\% or < 80\% of the
-observed and also, with a second color, values that are > 150\% or < 66\%
-would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you would like the
-middle range of values to be highlighted, include 1 in your cutoffs. For
-example, say you would like everything that's < 80\% or > 125\% to be
-highlighted red but you'd like the "good" values from 80\% to 125\% to be
-green, you can get that by specifying
+\item{fontsize}{the numeric font size for Word output. Default is 11 point.
+This only applies when you save the table as a Word file.}
+
+\item{highlight_so_cutoffs}{DOES NOT CURRENTLY APPLY. Will need to add option
+of including obs PK for this to work. -LSh optionally specify cutoffs for
+highlighting any simulated-to-observed ratios. Anything that is above those
+values or below the inverse of those values will be highlighted. To figure
+out what cells to highlight, this looks for a column titled "Statistic" or
+"Stat", then looks for what row contains "S/O" or "simulated (something
+something) observed" (as in, we'll use some wildcards to try to match your
+specific text). Next, it looks for any values in that same row that are
+above those cutoffs. This overrides anything else you specified for
+highlighting. The default is NA, for \emph{not} highlighting based on S/O
+value. Acceptable input for, say, highlighting values that are > 125\% or <
+80\% of the observed and also, with a second color, values that are > 150\%
+or < 66\% would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you
+would like the middle range of values to be highlighted, include 1 in your
+cutoffs. For example, say you would like everything that's < 80\% or >
+125\% to be highlighted red but you'd like the "good" values from 80\% to
+125\% to be green, you can get that by specifying
 \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
 c("green", "red")}. This only applies when you save the table as a Word file.}
 
-\item{highlight_so_colors}{optionally specify a set of colors to use in the
-  Word file output for highlighting S/O values outside the limits you
+\item{highlight_so_colors}{DOES NOT CURRENTLY APPLY. Will need to add option
+  of including obs PK for this to work. -LSh optionally specify a set of
+  colors to use in the Word file output for highlighting S/O values outside
+  the limits you
   specified with \code{highlight_so_cutoffs}. Options: \describe{
 
   \item{"yellow to red" (default)}{A range of light yellow to light orange to
@@ -256,9 +260,6 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
-
-\item{fontsize}{the numeric font size for Word output. Default is 11 point.
-This only applies when you save the table as a Word file.}
 }
 \value{
 A list or a data.frame of PK data that optionally includes where the
