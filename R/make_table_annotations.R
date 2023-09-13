@@ -240,7 +240,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                        ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
                               "CI: confidence interval; ", ""))
    
-   CapText2 <- paste0(sub("; $", ".", CapText2a), 
+   CapText2 <- paste0(sub("; $", ". ", CapText2a), 
                       ifelse(Observedincluded, 
                              "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
                              ""))
