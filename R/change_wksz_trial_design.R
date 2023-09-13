@@ -71,12 +71,16 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      SimDuration = "no change", 
                                      activate_inhibitor1 = "no change",
                                      Dose_sub = "no change", 
+                                     DoseRoute_sub = "no change",
                                      Dose_inhib = "no change",
+                                     DoseRoute_inhib = "no change",
                                      DoseInt_sub = "no change", 
                                      DoseInt_inhib = "no change", 
                                      StartHr_sub = "no change", 
                                      StartHr_inhib = "no change", 
                                      NumTimePts = "no change", 
+                                     ObsOverlayFile = "no change", 
+                                     UseObservedData = "no change",
                                      fix_xml_paths = TRUE){
    
    # Error catching ----------------------------------------------------------
@@ -134,11 +138,27 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
       }
       
       Changes <- trial_design_parameters_to_set %>% 
-         select(any_of(c("sim_workspace_files", "new_sim_workspace_files",
-                         "NumTrials", "NumSubjTrial", "PercFemale",
-                         "AgeMin", "AgeMax", "SimDuration", "activate_inhibitor1",
-                         "Dose_sub", "Dose_inhib", "DoseInt_sub", "DoseInt_inhib",
-                         "StartHr_sub", "StartHr_inhib", "NumTimePts")))
+         select(any_of(c("sim_workspace_files", 
+                         "new_sim_workspace_files",
+                         "NumTrials",
+                         "NumSubjTrial", 
+                         "PercFemale",
+                         "AgeMin",
+                         "AgeMax",
+                         "SimDuration", 
+                         "activate_inhibitor1",
+                         "Dose_sub", 
+                         "DoseRoute_sub",
+                         "Dose_inhib",
+                         "DoseRoute_inhib",
+                         "DoseInt_sub", 
+                         "DoseInt_inhib",
+                         "StartHr_sub",
+                         "StartHr_inhib",
+                         "NumTimePts", 
+                         "ObsOverlayFile",
+                         "FixedTrialDesign", 
+                         "FixedTrialDesignFile")))
       
    } else {
       
@@ -152,13 +172,18 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                       AgeMax = AgeMax, 
                       SimDuration = SimDuration, 
                       activate_inhibitor1 = activate_inhibitor1,
-                      Dose_sub = Dose_sub, 
+                      Dose_sub = Dose_sub,
+                      DoseRoute_sub = DoseRoute_sub,
                       Dose_inhib = Dose_inhib,
+                      DoseRoute_inhib = DoseRoute_inhib,
                       DoseInt_sub = DoseInt_sub, 
                       DoseInt_inhib = DoseInt_inhib, 
                       StartHr_sub = StartHr_sub, 
                       StartHr_inhib = StartHr_inhib, 
-                      NumTimePts = NumTimePts)
+                      NumTimePts = NumTimePts, 
+                      ObsOverlayFile = ObsOverlayFile,
+                      FixedTrialDesign = FixedTrialDesign, 
+                      FixedTrialDesignFile = FixedTrialDesignFile)
       
       # Checking lengths of arguments
       ChangeLength <- unlist(lapply(Changes, length))
@@ -205,6 +230,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                               sim_workspace_files), ".wksz"), 
              new_sim_workspace_files = paste0(sub("\\.xlsx|\\.wksz", "", 
                                                   new_sim_workspace_files), ".wksz"), 
+             ObsOverlayFile = gsub("/", "\\\\", ObsOverlayFile), 
+             FixedTrialDesignFile = gsub("/", "\\\\", FixedTrialDesignFile), 
              across(.cols = everything(), .fns = as.character)) %>% 
       pivot_longer(cols = -c(sim_workspace_files, new_sim_workspace_files), 
                    names_to = "Detail", 
@@ -306,6 +333,7 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                Level2 = "idStudyEndDay"))
       }
       
+      # Dealing w/all other changes
       for(j in 1:nrow(Changes[[i]])){
          MyChanges <- Changes[[i]][j, ] %>% 
             mutate(Level2 = ifelse(complete.cases(as.numeric(Level2)), 
@@ -313,7 +341,11 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
          DeetLevels <- t(MyChanges[, paste0("Level", 1:5)])
          DeetLevels <- min(which(is.na(DeetLevels))) - 1
          
-         if(DeetLevels == 2){
+         if(DeetLevels == 1){
+            XML::xmlValue(RootNode[[MyChanges$Level1]]) <- 
+               MyChanges$Value
+            
+         } else if(DeetLevels == 2){
             XML::xmlValue(RootNode[[MyChanges$Level1]][[MyChanges$Level2]]) <- 
                MyChanges$Value
             
