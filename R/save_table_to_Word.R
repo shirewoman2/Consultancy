@@ -180,22 +180,43 @@ save_table_to_Word <- function(
                                                PrettifiedNames))) %>% 
          unique()
       
-      suppressMessages(
-         TableNames <-
-            data.frame(PKparameter = names(PKtable)) %>% 
-            mutate(IsPretty = PKparameter %in% c(AllPKParameters$PrettifiedNames, 
-                                                 AllPKParameters_mod$PrettifiedNames), 
-                   IsNotPretty = PKparameter %in% c(AllPKParameters_mod$PKparameter, 
-                                                    AllPKParameters$PKparameter),
-                   IsPKParam = IsPretty | IsNotPretty, 
-                   NeedsPrettifying = IsPKParam & IsNotPretty) %>% 
-            left_join(AllPKParameters %>% 
-                         select(PKparameter, PrettifiedNames) %>% 
-                         mutate(PKparameter_unpretty = PKparameter)) %>% 
+      TableNames <-
+         data.frame(PKparameter = names(PKtable)) %>% 
+         mutate(IsPretty = PKparameter %in% c(AllPKParameters$PrettifiedNames, 
+                                              AllPKParameters_mod$PrettifiedNames), 
+                IsNotPretty = PKparameter %in% c(AllPKParameters_mod$PKparameter, 
+                                                 AllPKParameters$PKparameter),
+                IsPKParam = IsPretty | IsNotPretty, 
+                NeedsPrettifying = IsPKParam & IsNotPretty)
+      
+      TableNames <- split(TableNames, f = TableNames$NeedsPrettifying)
+      
+      if(is.null(nrow(TableNames[["TRUE"]])) == FALSE){
+         suppressMessages(
+            TableNames[["TRUE"]] <- TableNames[["TRUE"]] %>% 
+               left_join(AllPKParameters %>% 
+                            select(PKparameter, PrettifiedNames) %>% 
+                            mutate(PKparameter_unpretty = PKparameter)) %>% 
+               unique() %>% 
+               mutate(PrettifiedNames = ifelse(is.na(PrettifiedNames), 
+                                               PKparameter, PrettifiedNames))
+         )
+      }
+      
+      if(is.null(nrow(TableNames[["FALSE"]])) == FALSE){
+         suppressMessages(
+         TableNames[["FALSE"]] <- TableNames[["FALSE"]] %>% 
+            rename(PrettifiedNames = PKparameter) %>% 
+            left_join(AllPKParameters %>% bind_rows(AllPKParameters_mod) %>% 
+                         select(PKparameter, PrettifiedNames)) %>% 
             unique() %>% 
-            mutate(PrettifiedNames = ifelse(is.na(PrettifiedNames), 
-                                            PKparameter, PrettifiedNames))
-      )
+            mutate(PKparameter = ifelse(is.na(PKparameter), 
+                                        PrettifiedNames, PKparameter), 
+                   PKparameter_unpretty = PKparameter)
+         )
+      }
+      
+      TableNames <- bind_rows(TableNames)
       
       PKpulled <- TableNames$PKparameter_unpretty[TableNames$IsPKParam == TRUE]
       
