@@ -266,7 +266,7 @@ calc_dosenumber <- function(ct_dataframe,
                                     MyMaxDoseNum - 1, DoseNum))
       }
       
-      ct_dataframe[[i]] <- ct_dataframe[[i]] %>% select(-MaxDoseNum, -Breaks)
+      ct_dataframe[[i]] <- ct_dataframe[[i]] %>% select(-any_of(c("MaxDoseNum", "Breaks")))
       
       rm(MyIntervals, MyStartTimes, MyMaxDoseNum)
       # Later, if we expand extractExpDetails_mult to return the custom dosing

@@ -551,7 +551,8 @@ pksummary_table <- function(sim_data_file = NA,
       
       if("PKparameter" %in% names(observed_PK)){
          observed_PK <- observed_PK %>% 
-            mutate(PKparameter_rev = sub("_dose1|_last", "", PKparameter))
+            mutate(PKparameter_rev = sub("_dose1|_last", "", PKparameter)) %>% 
+            filter(File == sim_data_file)
          
          if(any(duplicated(observed_PK$PKparameter_rev))){
             warning("You have provided a specific sheet to use for the simulated PK parameters, which generally means that you are using a user-defined interval, which in turn means that we don't know which dose the simulated PK are for. The observed PK you provided include dose 1 and last-dose PK data, but we don't know which data to use. For now, we won't be able to calculate S/O values here or include observed data in the table.\n", 
