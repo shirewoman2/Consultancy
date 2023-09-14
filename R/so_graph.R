@@ -638,11 +638,11 @@ so_graph <- function(PKtable,
    if(as_label(point_color_column) != "<empty>"){
       SO <- SO %>% mutate(point_color_column = {{point_color_column}})
       
-      if(class(SO$point_color_column) == "numeric"){
+      if(class(SO$point_color_column) != "factor"){
          Levels <- sort(unique(SO$point_color_column))
          SO <- SO %>% 
             mutate(point_color_column = factor(point_color_column, levels = Levels))
-      }
+      } 
       
       # If nothing was set for point_color_column, then set the color to
       # "black". If there are only 2 groups for the point_color_column and
@@ -723,15 +723,15 @@ so_graph <- function(PKtable,
    if(as_label(point_shape_column) != "<empty>"){
       SO <- SO %>% mutate(point_shape_column = {{point_shape_column}})
       
-      if(class(SO$point_shape_column) == "numeric"){
+      if(class(SO$point_shape_column) != "factor"){
          Levels <- sort(unique(SO$point_shape_column))
          SO <- SO %>% 
             mutate(point_shape_column = factor(point_shape_column, levels = Levels))
       }
       
+      NumShapesNeeded <- length(sort(unique(SO$point_shape_column)))
+      
       if(any(complete.cases(point_shape))){
-         NumShapesNeeded <- length(sort(unique(SO$point_shape_column)))
-         
          if(NumShapesNeeded == 1){
             MyShapes <- point_shape[1]
          } else {
@@ -743,6 +743,8 @@ so_graph <- function(PKtable,
                MyShapes <- point_shape[1:NumShapesNeeded] 
             }
          }
+      } else {
+         MyShapes <- c(15:19, 8, 3:7, 9:14)[1:NumShapesNeeded]
       }
    }
    
@@ -877,40 +879,26 @@ so_graph <- function(PKtable,
                           aes(x = Observed, y = Simulated, 
                               color = point_color_column),
                           size = ifelse(is.na(point_size), 2, point_size)) + 
-               scale_color_manual(values = MyColors), 
+               scale_color_manual(values = MyColors, drop = FALSE), 
             
             # User has specified a column for point shape
             "FALSE TRUE" = 
-               switch(as.character(any(is.na(point_shape))), 
-                      "TRUE" = G[[i]] +
-                         geom_point(data = SO[[i]],
-                                    aes(x = Observed, y = Simulated, 
-                                        shape = point_shape_column),
-                                    size = ifelse(is.na(point_size), 2, point_size)), 
-                      "FALSE" = G[[i]] +
-                         geom_point(data = SO[[i]],
-                                    aes(x = Observed, y = Simulated, 
-                                        shape = point_shape_column),
-                                    size = ifelse(is.na(point_size), 2, point_size)) +
-                         scale_shape_manual(values = MyShapes)),
+               G[[i]] +
+               geom_point(data = SO[[i]],
+                          aes(x = Observed, y = Simulated, 
+                              shape = point_shape_column),
+                          size = ifelse(is.na(point_size), 2, point_size)) +
+               scale_shape_manual(values = MyShapes, drop = FALSE),
             
             # User has specified both color and point shape columns
             "TRUE TRUE" = 
-               switch(as.character(any(is.na(point_shape))), 
-                      "TRUE" = G[[i]] +
-                         geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
-                                                        color = point_color_column, 
-                                                        shape = point_shape_column),
-                                    size = ifelse(is.na(point_size), 2, point_size)) +
-                         scale_color_manual(values = MyColors), 
-                      "FALSE" = G[[i]] + 
-                         geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
-                                                        color = point_color_column, 
-                                                        shape = point_shape_column),
-                                    size = ifelse(is.na(point_size), 2, point_size)) +
-                         scale_color_manual(values = MyColors) +
-                         scale_shape_manual(values = MyShapes))
-         )
+               G[[i]] + 
+               geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
+                                              color = point_color_column, 
+                                              shape = point_shape_column),
+                          size = ifelse(is.na(point_size), 2, point_size)) +
+               scale_color_manual(values = MyColors, drop = FALSE) +
+               scale_shape_manual(values = MyShapes, drop = FALSE))
       
       G[[i]] <- G[[i]] + 
          xlab(axis_titles["x"]) +
