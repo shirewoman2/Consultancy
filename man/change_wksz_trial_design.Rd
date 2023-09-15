@@ -17,12 +17,16 @@ change_wksz_trial_design(
   SimDuration = "no change",
   activate_inhibitor1 = "no change",
   Dose_sub = "no change",
+  DoseRoute_sub = "no change",
   Dose_inhib = "no change",
+  DoseRoute_inhib = "no change",
   DoseInt_sub = "no change",
   DoseInt_inhib = "no change",
   StartHr_sub = "no change",
   StartHr_inhib = "no change",
   NumTimePts = "no change",
+  ObsOverlayFile = "no change",
+  UseObservedData = "no change",
   fix_xml_paths = TRUE
 )
 }
