@@ -505,50 +505,158 @@ extractConcTime <- function(sim_data_file,
                          sheet = Sheet,
                          col_names = FALSE))
    
-   # If "interaction" or "Csys" or other similar strings are part of the name
-   # of any of the compounds, that messes up the regex. Substituting to
-   # standardize the compound names.
-   sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Substrate),
-                           "SUBSTRATE", sim_data_xl$...1)
+   # If "interaction" or "Csys" or other similar strings are part of the name of
+   # any of the compounds, that messes up the regex. Substituting to standardize
+   # the compound names. Also need to consider the possibility that user may
+   # have had to hack things and may have the same compound in multiple
+   # positions. This is a MESS of code... Could I do this in some better
+   # manner???
+   NApos <- which(is.na(sim_data_xl$...1))
+   
+   CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1):(NApos[2]-1)] 
+   CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
+   
+   StartRow <- which(str_detect(sim_data_xl$...1, "Population Statistics"))[1]
+   EndRow <- NApos[NApos > StartRow][1] - 1
+   CmpdMatches2 <- sim_data_xl$...1[StartRow:EndRow]
+   CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "Time")) + 1]
+   CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "[CI]Sys( )?[1-9]?"))
+   
+   if(length(CmpdMatches1) != length(CmpdMatches2)){
+      warning("PLEASE TELL LAURA SHIREMAN YOU SAW AN ERROR CALLED `COMPOUNDCODE` WHEN TRYING TO EXTRACT CONCENTRATION TIME DATA")
+      # This will probably break here but i'm hoping this won't be a problem
+   }
+   
+   AllCompoundsInv <- names(AllCompounds)
+   names(AllCompoundsInv) <- AllCompounds
+   
+   CmpdMatches <- data.frame(NamesInExcel = CmpdMatches1, 
+                             CompoundCode = CmpdMatches2) %>% 
+      mutate(CompoundName = sub(" \\+ Interaction", "", NamesInExcel), 
+             CompoundID = AllCompoundsInv[CompoundName], 
+             CompoundID = ifelse(str_detect(CompoundCode, "ISys") & 
+                                    CompoundID %in% c("substrate", 
+                                                      "primary metabolite 1", 
+                                                      "primary metabolite 2", 
+                                                      "secondary metabolite"), 
+                                 AllCompoundsInv[str_detect(AllCompoundsInv, "inhibitor")][CompoundName], 
+                                 CompoundID))
+   rm(CmpdMatches1, CmpdMatches2, NApos, StartRow, EndRow, AllCompoundsInv)
+   
+   PossRows <- intersect(
+      which(str_detect(sim_data_xl$...1, 
+                       CmpdMatches$CompoundCode[
+                          which(CmpdMatches$CompoundID == "substrate")[1]])), 
+      which(str_detect(sim_data_xl$...1, 
+                       CmpdMatches$CompoundName[
+                          which(CmpdMatches$CompoundID == "substrate")[1]])))
+   
+   sim_data_xl$...1[PossRows] <- 
+      sub(gsub("\\(|\\)", ".", Deets$Substrate), 
+          "SUBSTRATE", sim_data_xl$...1[PossRows])
+   rm(PossRows)
    
    if(complete.cases(Deets$PrimaryMetabolite1)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite1),
-                              "PRIMET1", sim_data_xl$...1)
+      PossRows <- intersect(
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundCode[
+                             which(CmpdMatches$CompoundID == "primary metabolite 1")[1]])), 
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundName[
+                             which(CmpdMatches$CompoundID == "primary metabolite 1")[1]])))
+      
+      sim_data_xl$...1[PossRows] <- 
+         sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite1),
+             "PRIMET1", sim_data_xl$...1[PossRows])
+      rm(PossRows)
+      
    } else if("primary metabolite 1" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 1")
    }
    
    if(complete.cases(Deets$PrimaryMetabolite2)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite2),
-                              "PRIMET2", sim_data_xl$...1)
+      PossRows <- intersect(
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundCode[
+                             which(CmpdMatches$CompoundID == "primary metabolite 2")[1]])), 
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundName[
+                             which(CmpdMatches$CompoundID == "primary metabolite 2")[1]])))
+      
+      sim_data_xl$...1[PossRows] <- 
+         sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite2),
+             "PRIMET2", sim_data_xl$...1[PossRows])
+      rm(PossRows)
+      
    } else if("primary metabolite 2" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 2")
    }
    
    if(complete.cases(Deets$SecondaryMetabolite)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$SecondaryMetabolite),
-                              "SECMET", sim_data_xl$...1)
+      PossRows <- intersect(
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundCode[
+                             which(CmpdMatches$CompoundID == "secondary metabolite")[1]])), 
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundName[
+                             which(CmpdMatches$CompoundID == "secondary metabolite")[1]])))
+      
+      sim_data_xl$...1[PossRows] <- 
+         sub(gsub("\\(|\\)", ".", Deets$SecondaryMetabolite),
+             "SECMET", sim_data_xl$...1[PossRows])
+      rm(PossRows)
+      
    } else if("secondary metabolite" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "secondary metabolite")
    }
    
    if(complete.cases(Deets$Inhibitor1)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1),
-                              "EFFECTOR1INHIB", sim_data_xl$...1)
+      PossRows <- intersect(
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundCode[
+                             which(CmpdMatches$CompoundID == "inhibitor 1")[1]])), 
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundName[
+                             which(CmpdMatches$CompoundID == "inhibitor 1")[1]])))
+      
+      sim_data_xl$...1[PossRows] <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1),
+                                        "EFFECTOR1INHIB", sim_data_xl$...1[PossRows])
+      rm(PossRows)
+      
    } else if("inhibitor 1" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1")
    }
    
    if(complete.cases(Deets$Inhibitor2)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor2),
-                              "EFFECTOR2", sim_data_xl$...1)
+      PossRows <- intersect(
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundCode[
+                             which(CmpdMatches$CompoundID == "inhibitor 2")[1]])), 
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundName[
+                             which(CmpdMatches$CompoundID == "inhibitor 2")[1]])))
+      
+      sim_data_xl$...1[PossRows] <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor2),
+                                        "EFFECTOR2", sim_data_xl$...1[PossRows])
+      rm(PossRows)
+      
    } else if("inhibitor 2" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "inhibitor 2")
    }
    
    if(complete.cases(Deets$Inhibitor1Metabolite)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1Metabolite),
-                              "EFFECTOR1MET", sim_data_xl$...1)
+      PossRows <- intersect(
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundCode[
+                             which(CmpdMatches$CompoundID == "inhibitor 1 metabolite")[1]])), 
+         which(str_detect(sim_data_xl$...1, 
+                          CmpdMatches$CompoundName[
+                             which(CmpdMatches$CompoundID == "inhibitor 1 metabolite")[1]])))
+      
+      sim_data_xl$...1[PossRows] <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1Metabolite),
+                                        "EFFECTOR1MET", sim_data_xl$...1[PossRows])
+      rm(PossRows)
+      
    } else if("inhibitor 1 metabolite" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1 metabolite")
    }
@@ -1778,7 +1886,7 @@ extractConcTime <- function(sim_data_file,
       DosingScenario <- ifelse(CompoundType == "ADC", Deets$Regimen_sub, DosingScenario)
       
       if(adjust_obs_time & DosingScenario == "Multiple Dose" &
-         exists("obs_data", inherits = FALSE)){
+         exists("obs_data", where = -1)){
          # If this were a multiple-dose simulation, the observed data is,
          # presumably, at steady state. The simulated time we'd want those
          # data to match would be the *last* dose. Adjusting the time for the
@@ -1837,7 +1945,7 @@ extractConcTime <- function(sim_data_file,
                                        "geomean", "per5", "per95", "per10", "per90")))))
    }
    
-   Data <- calc_dosenumber(ct_dataframe = Data, 
+   Data <- calc_dosenumber(ct_dataframe = Data %>% mutate(File = sim_data_file), 
                            existing_exp_details = Deets)
    
    # Finalizing
