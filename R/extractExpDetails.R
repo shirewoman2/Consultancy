@@ -668,133 +668,82 @@ extractExpDetails <- function(sim_data_file,
                MyNames <- as.character(t(
                   InputTab[CLRows:nrow(InputTab), NameCol]))
                
-               # CL iv
-               suppressWarnings(
-                  Out[[paste0("CLiv_InVivoCL", Suffix)]] <- 
-                     as.numeric(InputTab[
-                        which(str_detect(MyNames,
-                                         "CL.*iv.*[(]mL")) + CLRows - 1,
-                        ValueCol])
-               )
+               DiscoveryDeets <- 
+                  data.frame(
+                     Detail = c("CLiv_InVivoCL", 
+                                "CLpo_InVivoCL", 
+                                "CLint_biliary_fuinc", 
+                                "CLrenal", 
+                                "CL_AddSystemic", 
+                                "CL_PercentAvailReabsorption"),
+                     RegexRow = c("CL.*iv.*[(]mL", 
+                                  "CL.*po.*[(]mL", 
+                                  "Biliary fu inc", 
+                                  "CL R .mL", 
+                                  "^Additional Systemic Clearance", 
+                                  "^Percent.*re-absorption"))
                
-               # CL po
-               suppressWarnings(
-                  Out[[paste0("CLpo_InVivoCL", Suffix)]] <- 
-                     as.numeric(InputTab[
-                        which(str_detect(MyNames,
-                                         "CL.*po.*[(]mL")) + CLRows - 1,
-                        ValueCol])
-               )
-               
-               # Biliary CL
-               suppressWarnings(
-                  Out[[paste0("CLint_biliary_fuinc", Suffix)]] <-
-                     as.numeric(InputTab[which(str_detect(MyNames, "Biliary fu inc")) + CLRows - 1, 
-                                         NameCol + 1])
-               )
-               
-               # Renal CL
-               
-               # Other systemic CL
-               suppressWarnings(
-                  Out[[paste0("CL_AddSystemic", Suffix)]] <-
-                     as.numeric(InputTab[which(str_detect(MyNames, "^Additional Systemic Clearance")) + CLRows - 1,
-                                         NameCol + 1])
-               )
+               for(i in 1:nrow(DiscoveryDeets)){
+                  MyRow <- which(str_detect(MyNames, DiscoveryDeets$RegexRow[i]))
+                  if(length(MyRow) == 0){
+                     Out[[paste0(DiscoveryDeets$Detail[i], Suffix)]] <- NA
+                  } else {
+                     suppressWarnings(
+                        Out[[paste0(DiscoveryDeets$Detail[i], Suffix)]] <-
+                           as.numeric(InputTab[MyRow + CLRows - 1, ValueCol])
+                     )
+                  }
+                  rm(MyRow)
+               }
                
                # Liver and intestinal CL
                LivOrInt <- c("Liver", "Intestine")[
                   c(any(str_detect(MyNames, "Liver")), any(str_detect(MyNames, "Intestine")))]
-               for(i in LivOrInt){
-                  StartOrganRow <- which(str_detect(MyNames, i))[1]
-                  EndOrganRow <- min(c(which(str_detect(MyNames, ))))
-                  # FIXME - left off here
-                  suppressWarnings(
-                     Out[[paste0("CL_", i, "_Type", Suffix)]] <- 
-                        as.character(InputTab[which(str_detect(MyNames), ValueCol)])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_", Organ, "_UseSaturableKinetics", Suffix)]] <- 
-                        as.character(InputTab[
-                           which(str_detect(MyNames,
-                                            "Use Saturable Kinetics")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CLint_", Organ, Suffix)]] <- 
-                        as.numeric(InputTab[
-                           which(str_detect(MyNames,
-                                            "CLint")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_Km_", Organ, Suffix)]] <- 
-                        as.numeric(InputTab[
-                           which(str_detect(MyNames,
-                                            "Km \\(")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_Vmax_", Organ, Suffix)]] <- 
-                        as.numeric(InputTab[
-                           which(str_detect(MyNames,
-                                            "Vmax \\(")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_", Organ, "_fuinc", Suffix)]] <- 
-                        as.numeric(InputTab[
-                           which(str_detect(MyNames,
-                                            "fu inc")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_", Organ, "_UseMetabolite", Suffix)]] <- 
-                        as.character(InputTab[
-                           which(str_detect(MyNames,
-                                            "Use Metabolite")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_", Organ, "_MetabPerc", Suffix)]] <- 
-                        as.numeric(InputTab[
-                           which(str_detect(MyNames,
-                                            "Metabolite .%")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_", Organ, "_ScrapingsCorrectionFactor", Suffix)]] <- 
-                        as.numeric(InputTab[
-                           which(str_detect(MyNames,
-                                            "\\(scrapings\\) Correction Factor")) + i - 1,
-                           ValueCol])
-                  )
-                  
-                  suppressWarnings(
-                     Out[[paste0("CL_", Organ, "_ElutionCorrectionFactor", Suffix)]] <- 
-                        as.numeric(InputTab[
-                           which(str_detect(MyNames,
-                                            "\\(elution\\) Correction Factor")) + i - 1,
-                           ValueCol])
-                  )
-               }
                
-               # perc available reabsorption
-               PercReabs <- which(str_detect(as.character(t(InputTab[, NameCol])),
-                                             "^Percent.*re-absorption"))
-               if(length(PercReabs) > 0){
-                  suppressWarnings(
-                     Out[[paste0("CL_PercentAvailReabsorption", Suffix)]] <- 
-                        as.numeric(InputTab[PercReabs, ValueCol]))
+               LivIndCL <- 
+                  data.frame(
+                     Detail = c("CL_XXX_Type", 
+                                "CL_XXX__UseSaturableKinetics", 
+                                "CLint_XXX", 
+                                "CL_Km_XXX", 
+                                "CL_Vmax_XXX", 
+                                "CL_XXX_fuinc", 
+                                "CL_XXX_UseMetabolite", 
+                                "CL_XXX_MetabPerc", 
+                                "CL_XXX_ScrapingsCorrectionFactor", 
+                                "CL_XXX_ElutionCorrectionFactor"), 
+                     RegexRow = c(paste(i, "Clearance Type"), 
+                                  "Use Saturable Kinetics", 
+                                  "CLint", 
+                                  "Km \\(", 
+                                  "Vmax \\(", 
+                                  "fu inc", 
+                                  "Use Metabolite", 
+                                  "Metabolite .%", 
+                                  "\\(scrapings\\) Correction Factor", 
+                                  "\\(elution\\) Correction Factor")
+                  )
+               
+               for(i in LivOrInt){
+                  OrganRows <- range(
+                     which(str_detect(MyNames, i) |
+                              str_detect(MyNames,
+                                         paste0(str_sub(i, 1, 1), "M")))
+                  )
+                  
+                  for(k in 1:nrow(LivIndCL)){
+                     MyRow <- which(str_detect(MyNames[OrganRows[1]:OrganRows[2]],
+                                               LivIndCL$RegexRow[k]))
+                     if(length(MyRow) == 0){
+                        Out[[paste0(sub("XXX", i, LivIndCL$Detail[k]), Suffix)]] <- NA
+                     } else {
+                        suppressWarnings(
+                           Out[[paste0(sub("XXX", i, LivIndCL$Detail[k]), Suffix)]] <-
+                              as.character(InputTab[MyRow + CLRows - 1, ValueCol])
+                        )
+                     }
+                     rm(MyRow)
+                  }
                }
                
             } else {
