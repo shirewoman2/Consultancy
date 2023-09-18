@@ -1886,7 +1886,7 @@ extractConcTime <- function(sim_data_file,
       DosingScenario <- ifelse(CompoundType == "ADC", Deets$Regimen_sub, DosingScenario)
       
       if(adjust_obs_time & DosingScenario == "Multiple Dose" &
-         exists("obs_data", where = -1)){
+         exists("obs_data", inherits = FALSE)){
          # If this were a multiple-dose simulation, the observed data is,
          # presumably, at steady state. The simulated time we'd want those
          # data to match would be the *last* dose. Adjusting the time for the
