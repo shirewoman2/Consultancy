@@ -43,14 +43,18 @@ that contains time data}
 data.frame that contains the subject ID}
 
 \item{DVID_column}{the column in the observed concentration-time data.frame
-that indicates any time the DV number in the PE file should change. For
-example, if you have some data in plasma and some in blood and have a
-column called "Tissue", you'd want to set this as \code{DVID_column =
-Tissue}. If you have an inhibitor present in some cases but not others, set
-this to the column with the inhibitor data. Any time the value changes in
-\code{obs_dataframe}, the number in the "DV" column will change in the
-output. We'll include a message to indicate which value was used for which
-DV number.}
+that indicates any time the DV number in the PE file should change. It's
+fine to omit this if everything should be "1". If you haven't already
+created a column for this with "1", "2", or "3" as the values for the DVID,
+you can specify which column you want to use and we'll assign the numbers
+for you. For example, if you have some data in plasma and some in blood and
+have a column called "Tissue", you'd set this as \code{DVID_column =
+Tissue}, and we'll assign one blood to "1" and plasma to "2" (numbers are
+automatically assigned alphabetically). If you have an inhibitor present in
+some cases but not others, set this to the column with the inhibitor data,
+and any time the value changes in \code{obs_dataframe}, the number in the
+"DV" column will change in the output. We'll include a message to indicate
+which value in the original data was used for which DV number.}
 
 \item{dose}{the amount of the dose. If this amount varies, please include one
 dose amount for each time. For example: \code{dose = c(100, 50, 50)} will
