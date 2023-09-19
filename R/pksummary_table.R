@@ -798,6 +798,8 @@ pksummary_table <- function(sim_data_file = NA,
                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                           exp_details = "Summary tab")
             }
+         } else {
+            Deets <- as.data.frame(Deets)
          }
       }
       
