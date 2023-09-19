@@ -75,7 +75,7 @@ change_xml_path <- function(sim_workspace_files = NA,
    }
    
    if(length(sim_workspace_files) == 0 & class(workspace_objects) != "list"){
-      stop("No workspace files could be found to change.")
+      return("No workspace files could be found to change.")
    }
    
    # Checking for mismatches between new and old file name lengths
