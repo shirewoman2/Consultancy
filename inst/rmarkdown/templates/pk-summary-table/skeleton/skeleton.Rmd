@@ -17,6 +17,10 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 ```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
 if(FromCalcPKRatios){
+   
+   highlight_so_cutoffs = NA
+   highlight_so_colors = "yellow to red"
+   
    if(paired){
       OptionalSection <- knitr::knit_child(
          system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
@@ -42,25 +46,13 @@ if(FromCalcPKRatios){
 
 ```{r FigtextPKSummary}
 
-# Dose1included <- any(str_detect(PKpulled, "_dose1"))
-# LastDoseincluded <- any(str_detect(PKpulled, "_last"))
-# Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
-
-MyCompoundID <- switch(compoundToExtract, 
-                       "substrate" = "Substrate",
-                       "primary metabolite 1" = "PrimaryMetabolite1",
-                       "primary metabolite 2" = "PrimaryMetabolite2",
-                       "secondary metabolite" = "SecondaryMetabolite",
-                       "inhibitor 1" = "Inhibitor1",
-                       "inhibitor 2" = "Inhibitor2",
-                       "inhibitor 1 metabolite" = "Inhibitor1Metabolite")
-
 Annotations <- make_table_annotations(MyPKResults = MyPKResults,
                                       MyFile = sim_data_file, 
                                       PKpulled = PKpulled, 
                                       MyCompoundID = compoundToExtract, 
                                       prettify_compound_names = prettify_compound_names, 
-                                      Deets = Deets, 
+                                      Deets = Deets %>% 
+                                         mutate(File = sim_data_file), 
                                       MeanType = MeanType, 
                                       tissue = tissue)
 
@@ -77,6 +69,7 @@ if("File" %in% names(MyPKResults)){
 
 formatTable_Simcyp(MyPKResults, 
                    fontsize = fontsize,
+                   prettify_columns = TRUE,
                    highlight_so_cutoffs = highlight_so_cutoffs, 
                    highlight_so_colors = highlight_so_colors)
 

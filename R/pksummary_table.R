@@ -541,9 +541,39 @@ pksummary_table <- function(sim_data_file = NA,
    # At this point, observed_PK, if it exists, should be a data.frame b/c it
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
+   
+   # Checking on whether user has requested a specific sheet for PK parameters
+   # b/c then we don't know which dose number things were. If they did, then we
+   # need them to have only supplied one value for each suffix-less PK
+   # parameter, e.g., they can't supply both Cmax_dose1 and Cmax_last in the
+   # observed data b/c we don't know which dose the simulated data are for.
+   if("data.frame" %in% class(observed_PK) & complete.cases(sheet_PKparameters)){
+      
+      if("PKparameter" %in% names(observed_PK)){
+         observed_PK <- observed_PK %>% 
+            mutate(PKparameter_rev = sub("_dose1|_last", "", PKparameter)) %>% 
+            filter(File == sim_data_file)
+         
+         if(any(duplicated(observed_PK$PKparameter_rev))){
+            warning("You have provided a specific sheet to use for the simulated PK parameters, which generally means that you are using a user-defined interval, which in turn means that we don't know which dose the simulated PK are for. The observed PK you provided include dose 1 and last-dose PK data, but we don't know which data to use. For now, we won't be able to calculate S/O values here or include observed data in the table.\n", 
+                    call. = FALSE)
+            observed_PK <- NA
+         }
+      } else {
+         
+         # This is when it's probably a wide DF and PK parameters are column names.
+         AllObsPK <- data.frame(OrigNames = names(observed_PK)) %>% 
+            mutate(RevNames = sub("_dose1|_last", "", OrigNames))
+         
+         if(any(duplicated(AllObsPK$RevNames))){
+            warning("You have provided a specific sheet to use for the simulated PK parameters, which generally means that you are using a user-defined interval, which in turn means that we don't know which dose the simulated PK are for. The observed PK you provided include dose 1 and last-dose PK data, but we don't know which data to use. For now, we won't be able to calculate S/O values here or include observed data in the table.\n", 
+                    call. = FALSE)
+            observed_PK <- NA
+         }
+      }
+   }
+   
    if("data.frame" %in% class(observed_PK)){
-      
-      
       # Reshape to wide format if necessary
       if(all(c("PKparameter", "Value") %in% names(observed_PK))){
          
@@ -1407,7 +1437,7 @@ call. = FALSE)
    # Formatting and selecting only rows where there are data
    MyPKResults <- MyPKResults %>%
       mutate(Value = if_else(str_detect(Stat, "CV"), 
-                           round_opt(100*Value, rounding),
+                             round_opt(100*Value, rounding),
                              round_opt(Value, rounding))) %>%
       filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
                          "CI90_low", "CI90_high", "CI95_low", "CI95_high",

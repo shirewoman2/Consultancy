@@ -13,18 +13,19 @@
 #' @param existing_exp_details the output from running
 #'   \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} on
 #'   the same simulations that were used for making \code{ct_dataframe}. Note:
-#'   We have not set up this function to check that your files match in order to
-#'   allow for some flexibility here. If you supply \code{existing_exp_details}
-#'   with more than one simulator output file, we'll just use the 1st one. If
-#'   you would like to have this calculate dose numbers on other data where you
-#'   wouldn't have simulation experimental details (example: observed data),
-#'   then supply a single-row data.frame with the following columns: \code{File}
-#'   (character, just set this to "all" or some other placeholder text),
-#'   \code{DoseInt_sub} (numeric), \code{StartHr_sub} (numeric; probably 0),
-#'   \code{NumDoses_sub} (numeric), and \code{Regimen_sub} (character;
-#'   presumably "Multiple Dose" here). If you want the dose number for other
-#'   compound IDs, then replace "_sub" with, e.g., "_inhib". Please run
-#'   \code{view(ExpDetailDefinitions)} to see examples of acceptable suffixes.
+#'   If you would like to have this calculate dose numbers on data where you
+#'   don't have simulation experimental details (example: observed data), then
+#'   please supply a single-row data.frame with the following columns, using
+#'   substrate dosing info as an example:
+#'   \describe{\item{File}{(character) each Simulator Excel file name (check
+#'   that the file names match perfectly!) or "all" if you want the same dosing
+#'   regimen for all files} \item{DoseInt_sub}{(numeric) the dosing interval in
+#'   hours} \item{StartHr_sub}{(numeric) the start time for the substrate;
+#'   probably 0} \item{NumDoses_sub}{(numeric) the number of doses overall}
+#'   \item{Regimen_sub}{(character) presumably "Multiple Dose" but "Single Dose"
+#'   is also acceptable}} If you want the dose number for other compound IDs, 
+#'   then replace "_sub" with, e.g., "_inhib". Please run 
+#'   \code{view(AllCompounds)} to see acceptable suffixes for each compound ID.
 #'
 #' @return Output is a data.frame of concentration-time data with
 #' @export
@@ -35,7 +36,7 @@
 calc_dosenumber <- function(ct_dataframe, 
                             existing_exp_details){
    
-   # Error catching ------------------------------------------------------
+   # Error catching and setting up --------------------------------------------
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
@@ -48,13 +49,63 @@ calc_dosenumber <- function(ct_dataframe,
       existing_exp_details <- deannotateDetails(existing_exp_details)
    }
    
-   # For now at least, I'm NOT setting this up to check whether all the files
-   # had the same dosing regimen or were, in fact, included in ct_dataframe b/c
-   # I want some flexibility in how this is applied. This will assume that the
-   # dosing regimen info in existing_exp_details pertains to ALL the data in
-   # ct_dataframe. Just using whatever is the 1st file in existing_exp_details
-   # to get the dosing regimen information.
-   existing_exp_details <- as.data.frame(existing_exp_details)[1, ]
+   if("File" %in% names(existing_exp_details) == FALSE){
+      if(nrow(existing_exp_details) > 1){
+         stop("You haven't included the file name in `existing_exp_details`, and `existing_exp_details` has more than one row, so we don't know which files should have which dosing regimen. We cannot assign any dose numbers.", 
+              call. = FALSE)
+      } else {
+         warning("There isn't a column called `File` in `existing_exp_details`, so we'll assume you want the same dosing regimen applied to all files in `ct_dataframe`.", 
+                 call. = FALSE)
+         
+         existing_exp_details$File <- "all"
+      }
+   }
+   
+   # Checking for any custom dosing. Custom dosing will only show up when you
+   # get exp details for one file at a time, atm. That means that, at present,
+   # if there was any custom dosing at all, that must mean that I'm only dealing
+   # with one file. In the future, I'll need to adjust this to deal with
+   # possibly multiple files.
+   if(any(paste0("CustomDosing", AllCompounds$Suffix) %in% 
+          names(existing_exp_details))){
+      AnyCustDosing <- TRUE
+      CD <- existing_exp_details[str_detect(names(existing_exp_details), 
+                                            "CustomDosing")]
+   } else {
+      AnyCustDosing <- FALSE
+   }
+   
+   if("list" %in% class(existing_exp_details)){
+      existing_exp_details <-
+         as.data.frame(existing_exp_details[
+            which(lapply(existing_exp_details, class) %in% 
+                     c("logical", "character", "numeric"))])
+   }
+   
+   if(all(existing_exp_details$File == "all", na.rm = T)){
+      if(nrow(existing_exp_details) > 1){
+         stop("You have set the file names in `existing_exp_details` to `all`, but `existing_exp_details` has more than one row, so we don't know which files should have which dosing regimen. We cannot assign any dose numbers.", 
+              call. = FALSE)
+      } 
+      
+      existing_exp_details <- existing_exp_details %>% 
+         select(-File) %>% 
+         mutate(Placeholder = "A") %>% 
+         left_join(data.frame(File = unique(ct_dataframe$File), 
+                              Placeholder = "A"), 
+                   by = "Placeholder") %>% 
+         select(-Placeholder)
+   }
+   
+   # Checking that all files are present in existing_exp_details and giving
+   # warning if not.
+   FileCheck <- setdiff(unique(ct_dataframe$File), 
+                        existing_exp_details$File)
+   if(length(FileCheck) > 0){
+      warning(paste0("The following files are not present in `existing_exp_details`, so we can't determine what the dose numbers were and will ignore these data: ", 
+                     str_c(FileCheck, collapse = "\n")), 
+              call. = FALSE)
+   }
    
    # Main body of function -------------------------------------------------
    
@@ -64,167 +115,169 @@ calc_dosenumber <- function(ct_dataframe,
                                        "NumDoses"), each = 3), 
                                  c("_sub", "_inhib", "_inhib2")), 
                           names(existing_exp_details))
+   
    if(length(MissingCols) > 0){
-      ToAdd <- as.data.frame(matrix(ncol = length(MissingCols)))
-      names(ToAdd) <- MissingCols
       existing_exp_details <- existing_exp_details %>% 
-         bind_cols(ToAdd)
+         bind_cols(as.data.frame(matrix(data = NA, 
+                                        ncol = length(MissingCols),
+                                        dimnames = list(NULL, MissingCols))))
    }
    
-   # Getting dose regimen info
-   MyIntervals <- 
-      c("substrate" = existing_exp_details$DoseInt_sub,
-        "primary metabolite 1" = existing_exp_details$DoseInt_sub,
-        "primary metabolite 2" = existing_exp_details$DoseInt_sub,
-        "secondary metabolite" = existing_exp_details$DoseInt_sub,
-        "inhibitor 1" = existing_exp_details$DoseInt_inhib,
-        "inhibitor 1 metabolite" = existing_exp_details$DoseInt_inhib,
-        "inhibitor 2" = existing_exp_details$DoseInt_inhib2, 
-        "UNKNOWN" = NA)
+   # Splitting existing_exp_details and ct_dataframe by file and going through 1
+   # file at a time.
+   existing_exp_details <- split(existing_exp_details,
+                                 f = existing_exp_details$File)
    
-   MyStartTimes <- 
-      c("substrate" = existing_exp_details$StartHr_sub,
-        "primary metabolite 1" = existing_exp_details$StartHr_sub,
-        "primarymetabolite 2" = existing_exp_details$StartHr_sub,
-        "secondary metabolite" = existing_exp_details$StartHr_sub,
-        "inhibitor 1" = existing_exp_details$StartHr_inhib,
-        "inhibitor 2" = existing_exp_details$StartHr_inhib2,
-        "inhibitor 1 metabolite" = existing_exp_details$StartHr_inhib, 
-        "UNKNOWN" = NA)
+   ct_dataframe <- split(ct_dataframe, 
+                         f = ct_dataframe$File)
    
-   MyMaxDoseNum <- 
-      c("substrate" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                             1, existing_exp_details$NumDoses_sub),
-        "primary metabolite 1" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                                        1, existing_exp_details$NumDoses_sub),
-        "primarymetabolite 2" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                                       1, existing_exp_details$NumDoses_sub),
-        "secondary metabolite" = ifelse(existing_exp_details$Regimen_sub == "Single Dose", 
-                                        1, existing_exp_details$NumDoses_sub),
-        "inhibitor 1" = ifelse(existing_exp_details$Regimen_inhib == "Single Dose", 
-                               1, existing_exp_details$NumDoses_inhib),
-        "inhibitor 2" = ifelse(existing_exp_details$Regimen_inhib2 == "Single Dose", 
-                               1, existing_exp_details$NumDoses_inhib2),
-        "inhibitor 1 metabolite" = ifelse(existing_exp_details$Regimen_inhib == "Single Dose", 
-                                          1, existing_exp_details$NumDoses_inhib), 
-        "UNKNOWN" = NA)
-   
-   # Converting data to numeric while also retaining names
-   suppressWarnings(
-      MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
-   suppressWarnings(
-      MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
-   suppressWarnings(
-      MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
-   
-   ct_dataframe <- ct_dataframe %>%
-      mutate(StartHr = MyStartTimes[CompoundID],
-             TimeSinceDose1 = Time - StartHr,
-             DoseInt = MyIntervals[CompoundID],
-             MaxDoseNum = MyMaxDoseNum[CompoundID],
-             DoseNum = (Time - StartHr) %/% DoseInt + 1,
-             # Taking care of possible artifacts
-             DoseNum = ifelse(DoseNum < 0, 0, DoseNum),
-             DoseNum = ifelse(DoseNum > MaxDoseNum, MaxDoseNum, DoseNum),
-             # If it was a single dose, make everything after StartHr dose
-             # 1 and everything before StartHr dose 0. If it was a single
-             # dose, then DoseInt is NA.
-             DoseNum = ifelse(is.na(DoseInt),
-                              ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
-   
-   # Checking for any custom dosing
-   if(any(str_detect(names(existing_exp_details), "CustomDosing"))){
-      CDCompounds <-
-         data.frame(CompoundSuffix = 
-                       str_extract(names(existing_exp_details)[str_detect(names(existing_exp_details),
-                                                                          "CustomDosing")],
-                                   "_sub|_inhib(2)?")) %>% 
-         mutate(CompoundID = recode(CompoundSuffix, "_sub" = "substrate", 
-                                    "_inhib" = "inhibitor 1", 
-                                    "_inhib2" = "inhibitor 2"))
+   for(i in intersect(names(existing_exp_details), 
+                      names(ct_dataframe))){
       
-      if(any(unique(ct_dataframe$CompoundID) %in% CDCompounds$CompoundID)){
+      # Getting dose regimen info
+      MyIntervals <- 
+         c("substrate" = existing_exp_details[[i]]$DoseInt_sub,
+           "primary metabolite 1" = existing_exp_details[[i]]$DoseInt_sub,
+           "primary metabolite 2" = existing_exp_details[[i]]$DoseInt_sub,
+           "secondary metabolite" = existing_exp_details[[i]]$DoseInt_sub,
+           "inhibitor 1" = existing_exp_details[[i]]$DoseInt_inhib,
+           "inhibitor 1 metabolite" = existing_exp_details[[i]]$DoseInt_inhib,
+           "inhibitor 2" = existing_exp_details[[i]]$DoseInt_inhib2, 
+           "UNKNOWN" = NA)
+      
+      MyStartTimes <- 
+         c("substrate" = existing_exp_details[[i]]$StartHr_sub,
+           "primary metabolite 1" = existing_exp_details[[i]]$StartHr_sub,
+           "primarymetabolite 2" = existing_exp_details[[i]]$StartHr_sub,
+           "secondary metabolite" = existing_exp_details[[i]]$StartHr_sub,
+           "inhibitor 1" = existing_exp_details[[i]]$StartHr_inhib,
+           "inhibitor 2" = existing_exp_details[[i]]$StartHr_inhib2,
+           "inhibitor 1 metabolite" = existing_exp_details[[i]]$StartHr_inhib, 
+           "UNKNOWN" = NA)
+      
+      MyMaxDoseNum <- 
+         c("substrate" = ifelse(existing_exp_details[[i]]$Regimen_sub == "Single Dose", 
+                                1, existing_exp_details[[i]]$NumDoses_sub),
+           "primary metabolite 1" = ifelse(existing_exp_details[[i]]$Regimen_sub == "Single Dose", 
+                                           1, existing_exp_details[[i]]$NumDoses_sub),
+           "primarymetabolite 2" = ifelse(existing_exp_details[[i]]$Regimen_sub == "Single Dose", 
+                                          1, existing_exp_details[[i]]$NumDoses_sub),
+           "secondary metabolite" = ifelse(existing_exp_details[[i]]$Regimen_sub == "Single Dose", 
+                                           1, existing_exp_details[[i]]$NumDoses_sub),
+           "inhibitor 1" = ifelse(existing_exp_details[[i]]$Regimen_inhib == "Single Dose", 
+                                  1, existing_exp_details[[i]]$NumDoses_inhib),
+           "inhibitor 2" = ifelse(existing_exp_details[[i]]$Regimen_inhib2 == "Single Dose", 
+                                  1, existing_exp_details[[i]]$NumDoses_inhib2),
+           "inhibitor 1 metabolite" = ifelse(existing_exp_details[[i]]$Regimen_inhib == "Single Dose", 
+                                             1, existing_exp_details[[i]]$NumDoses_inhib), 
+           "UNKNOWN" = NA)
+      
+      # Converting data to numeric while also retaining names
+      suppressWarnings(
+         MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
+      suppressWarnings(
+         MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
+      suppressWarnings(
+         MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
+      
+      ct_dataframe[[i]] <- ct_dataframe[[i]] %>%
+         mutate(StartHr = MyStartTimes[CompoundID],
+                TimeSinceDose1 = Time - StartHr,
+                DoseInt = MyIntervals[CompoundID],
+                MaxDoseNum = MyMaxDoseNum[CompoundID],
+                DoseNum = (Time - StartHr) %/% DoseInt + 1,
+                # Taking care of possible artifacts
+                DoseNum = ifelse(DoseNum < 0, 0, DoseNum),
+                DoseNum = ifelse(DoseNum > MaxDoseNum, MaxDoseNum, DoseNum),
+                # If it was a single dose, make everything after StartHr dose
+                # 1 and everything before StartHr dose 0. If it was a single
+                # dose, then DoseInt is NA.
+                DoseNum = ifelse(is.na(DoseInt),
+                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
+      
+      # Checking for any custom dosing
+      if(AnyCustDosing){
+         CDCompounds <-
+            data.frame(CDnames = names(CD), 
+                       CompoundSuffix = str_extract(names(CD),
+                                                    "_sub|_inhib(2)?")) %>% 
+            mutate(CompoundID = recode(CompoundSuffix, 
+                                       "_sub" = "substrate", 
+                                       "_inhib" = "inhibitor 1", 
+                                       "_inhib2" = "inhibitor 2")) %>% 
+            unique()
          
-         Dosing <- list()
-         # This is kind of a disaster... Looking for a better way to code this.
-         
-         for(j in CDCompounds$CompoundID){
+         if(any(unique(ct_dataframe[[i]]$CompoundID) %in% CDCompounds$CompoundID)){
             
-            # message(paste("CDCompounds$CompoundID j =", j))
-            Dosing[[j]] <-
-               existing_exp_details[[paste0("CustomDosing", 
-                                            CDCompounds$CompoundSuffix[CDCompounds$CompoundID == j])]] %>% 
-               mutate(CompoundID = CDCompounds$CompoundID[CDCompounds$CompoundID == j])
+            ct_dataframe[[i]] <- split(ct_dataframe[[i]], f = ct_dataframe[[i]]$CompoundID)
             
-            if(max(ct_dataframe$Time) > max(Dosing[[j]]$Time)){
-               Dosing[[j]] <- Dosing[[j]] %>% 
-                  bind_rows(data.frame(Time = max(ct_dataframe$Time) + 1, 
-                                       DoseNum = max(Dosing[[j]]$DoseNum)))
+            for(j in CDCompounds$CDnames){
+               
+               jj <- CDCompounds$CompoundID[CDCompounds$CDnames == j]
+               
+               # message(paste("CDCompounds$CompoundID j =", j))
+               if(max(ct_dataframe[[i]][[jj]]$Time) > max(CD[[j]]$Time)){
+                  CD[[j]] <- CD[[j]] %>% 
+                     # Need this next bit for using cut function appropriately
+                     bind_rows(data.frame(Time = max(ct_dataframe[[i]][[jj]]$Time) + 1, 
+                                          DoseNum = max(CD[[j]]$DoseNum)))
+               }
+               
+               # If there was a loading dose or something (not really sure what
+               # this would be), then there are two dose numbers listed for t0.
+               # Removing the earlier one so that this will work.
+               if(any(duplicated(CD[[j]]$Time))){
+                  warning(paste0("There were multiple dose numbers listed at the same time for the ",
+                                 j," in the file ", sim_data_file, 
+                                 "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed."),
+                          call. = FALSE)
+                  TimeToRemove <- which(duplicated(
+                     CD[[j]]$Time, fromLast = TRUE))
+                  CD[[j]] <- CD[[j]] %>% slice(-TimeToRemove)
+               }
+               
+               CD[[j]]$Breaks <-
+                  as.character(cut(CD[[j]]$Time, breaks = CD[[j]]$Time,
+                                   right = FALSE))
             }
             
-            # If there was a loading dose or something (not really sure what
-            # this would be), then there are two dose numbers listed for t0.
-            # Removing the earlier one so that this will work.
-            if(any(duplicated(Dosing[[j]]$Time))){
-               warning(paste0("There were multiple dose numbers listed at the same time for the ",
-                              j," in the file ", sim_data_file, 
-                              "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed."),
-                       call. = FALSE)
-               TimeToRemove <- which(duplicated(
-                  Dosing[[j]]$Time, fromLast = TRUE))
-               Dosing[[j]] <- Dosing[[j]] %>% slice(-TimeToRemove)
-            }
-            
-            Dosing[[j]]$Breaks <-
-               as.character(cut(Dosing[[j]]$Time, breaks = Dosing[[j]]$Time,
-                                right = FALSE))
-         }
-         
-         OrigCompounds <- unique(ct_dataframe$CompoundID)
-         ct_dataframe <- ct_dataframe %>% 
-            mutate(CD = ifelse(CompoundID %in% CDCompounds$CompoundID, 
-                               CompoundID, "not CD"))
-         
-         MyData <- list()
-         MyData[["not CD"]] <- ct_dataframe %>% filter(CD == "not CD")
-         
-         for(j in unique(ct_dataframe$CD)[!unique(ct_dataframe$CD) == "not CD"]){
-            
-            # message(paste("CDCompounds$CompoundID (not CD) j =", j))
-            MyData[[j]] <- ct_dataframe %>% filter(CD == j) %>% select(-DoseNum)
-            # This should make the right breaks for each possible compound
-            # with custom dosing. They should match the breaks in the
-            # appropriate list item in Dosing.
-            MyData[[j]]$Breaks <-
-               as.character(cut(MyData[[j]]$Time, breaks = Dosing[[j]]$Time,
+            ct_dataframe[[i]][[jj]]$DoseNum <- NULL
+            ct_dataframe[[i]][[jj]]$Breaks <-
+               as.character(cut(ct_dataframe[[i]][[jj]]$Time,
+                                breaks = CD[[j]]$Time,
                                 right = FALSE))
             
-            suppressMessages(
-               MyData[[j]] <- MyData[[j]] %>% 
-                  left_join(Dosing[[j]] %>% select(CompoundID, Breaks, DoseNum))
-            )
+            ct_dataframe[[i]][[jj]] <- ct_dataframe[[i]][[jj]] %>% 
+               left_join(CD[[j]] %>% select(Breaks, DoseNum), 
+                         by = "Breaks")
             
          }
          
-         ct_dataframe <- bind_rows(MyData)
-         if(length(setdiff(unique(OrigCompounds),
-                           unique(ct_dataframe$CompoundID))) > 0){
-            warning("PROBLEM WITH CUSTOM DOSING! Please tell Laura Shireman if you see this message.",
-                    call. = FALSE)
-         }
+         ct_dataframe[[i]] <- bind_rows(ct_dataframe[[i]])
       }
+      
+      # Checking for when the simulation ends right at the last dose b/c
+      # then, setting that number to 1 dose lower
+      if(length(ct_dataframe[[i]] %>% filter(DoseNum == max(ct_dataframe[[i]]$DoseNum)) %>%
+                pull(Time) %>% unique()) == 1){
+         MyMaxDoseNum <- max(ct_dataframe[[i]]$DoseNum)
+         ct_dataframe[[i]] <- ct_dataframe[[i]] %>%
+            mutate(DoseNum = ifelse(DoseNum == MyMaxDoseNum,
+                                    MyMaxDoseNum - 1, DoseNum))
+      }
+      
+      ct_dataframe[[i]] <- ct_dataframe[[i]] %>% select(-any_of(c("MaxDoseNum", "Breaks")))
+      
+      rm(MyIntervals, MyStartTimes, MyMaxDoseNum)
+      # Later, if we expand extractExpDetails_mult to return the custom dosing
+      # info, we'll need to also rm all the custom dosing info for each file
+      # here. For now, not necessary and might mess things up. 
+      
    }
    
-   # Checking for when the simulation ends right at the last dose b/c
-   # then, setting that number to 1 dose lower
-   if(length(ct_dataframe %>% filter(DoseNum == max(ct_dataframe$DoseNum)) %>%
-             pull(Time) %>% unique()) == 1){
-      MyMaxDoseNum <- max(ct_dataframe$DoseNum)
-      ct_dataframe <- ct_dataframe %>%
-         mutate(DoseNum = ifelse(DoseNum == MyMaxDoseNum,
-                                 MyMaxDoseNum - 1, DoseNum))
-   }
+   ct_dataframe <- bind_rows(ct_dataframe)
    
    return(ct_dataframe)
-   
 }
+
+

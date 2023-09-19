@@ -206,10 +206,17 @@ formatTable_Simcyp <- function(DF,
       }
       
       if(any(sapply(highlight_cells, length) < 2)){
-         warning("For highlighting cells, you must specify a row and a column for everything you want to be highlighted, and you have only specified one number for at least one of the items you asked to be highlighted. We don't know which rows or columns to highlight without that second number, so nothing will be highlighted.", 
+         warning("For highlighting cells, you must specify a row and a column for everything you want to be highlighted, and you have only specified one number for at least one of the items you asked to be highlighted. We don't know which rows or columns to highlight without that second number, so nothing will be highlighted.\n", 
                  call. = FALSE)
          highlight_cells <- NA
       }
+   }
+   
+   if(any(complete.cases(highlight_so_cutoffs)) & 
+      "Statistic" %in% names(DF) == FALSE){
+      warning("You requested highlighting by the S/O ratio, but we look for which row contains that ratio in a column titled `Statistic` and couldn't find that column. We thus don't know which row is for S/O ratios and thus cannot highlight by those values.\n", 
+              call. = FALSE)
+      highlight_so_cutoffs <- NA
    }
    
    if(any(complete.cases(bold_cells))){
@@ -218,7 +225,7 @@ formatTable_Simcyp <- function(DF,
       }
       
       if(any(sapply(bold_cells, length) < 2)){
-         warning("For making cells bold, you must specify a row and a column for everything you want to have bold-face text, and you have only specified one number for at least one of the items you asked to be bold face. We don't know which rows or columns to make bold face without that second number, so we'll use the default settings and make the 1st column and the header row bold.", 
+         warning("For making cells bold, you must specify a row and a column for everything you want to have bold-face text, and you have only specified one number for at least one of the items you asked to be bold face. We don't know which rows or columns to make bold face without that second number, so we'll use the default settings and make the 1st column and the header row bold.\n", 
                  call. = FALSE)
          bold_cells <- list(c(0, NA), c(NA, 1))
       }

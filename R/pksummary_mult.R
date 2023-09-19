@@ -481,6 +481,7 @@ call. = FALSE)
             observed_PKDF <- NULL
          } else {
             observed_PKDF <- observed_PKDF %>% 
+               filter(complete.cases(File)) %>% 
                left_join(expand_grid(PKparameter = unique(observed_PKDF$PKparameter), 
                                      File = sim_data_files), 
                          by = "PKparameter",
@@ -491,8 +492,8 @@ call. = FALSE)
    
    if(exists("observed_PKDF")){
       # If user has not included "xlsx" in file name, add that.
-      observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
-         paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
+      observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)] <-
+         paste0(observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)], 
                 ".xlsx")
    }
    

@@ -1211,6 +1211,13 @@ call. = FALSE)
                      filter(Sheet == "Absorption" & PKparameter == i) %>% 
                      select(PKparameter, SearchText)
                   
+                  # fa_apparent_sub is not always available.
+                  if(nrow(ToDetect) == 0){
+                     suppressMessages(rm(ToDetect))
+                     PKparameters_Abs <- setdiff(PKparameters_Abs, i)
+                     next
+                  }
+                  
                   # Looking for the regular expression specific to this parameter
                   # i. For the absorption tab, there are columns for the substrate
                   # and columns for Inhibitor 1. (There are also columns for

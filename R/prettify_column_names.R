@@ -34,6 +34,29 @@ prettify_column_names <- function(PKtable,
                                   prettify_compound_names = TRUE){
    
    
+   # Error catching ----------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Check for appropriate input for arguments
+   if("data.frame" %in% class(PKtable) == FALSE){
+      stop("PKtable must be a data.frame for this to work, and it doesn't appear to be.", 
+           call. = FALSE)
+   }
+   
+   # Main body of function ---------------------------------------------------
+   
+   # calc_PK_ratios columns will include "DenominatorSim" and "NumeratorSim".
+   # Noting that and saving original column names.
+   OrigColNames <- names(PKtable)
+   if(any(str_detect(OrigColNames, "NumeratorSim|DenominatorSim"))){
+      names(PKtable) <- sub(" NumeratorSim| DenominatorSim", "", names(PKtable))
+      names(PKtable) <- sub("_dose1 Ratio", "_ratio_dose1", names(PKtable))
+      names(PKtable) <- sub("_last Ratio", "_ratio_last", names(PKtable))
+   }
+   
    AllPKParameters_mod <- 
       AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
       mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
@@ -41,9 +64,23 @@ prettify_column_names <- function(PKtable,
                                             PrettifiedNames))) %>% 
       unique()
    
+   # Adding some prettified names that are not present in AllPKParameters
+   # only b/c they're not included in Simulator output. Sometimes, though, as
+   # when using calc_PK_ratios, you *can* get these parameters. 
+   ExtraPKParam <- data.frame(PKparameter = c("tmax_ratio_dose1",
+                                              "tmax_ratio_last", 
+                                              "tmax_ratio"), 
+                              PrettifiedNames = c("Dose 1 tmax ratio", 
+                                                  "Last dose tmax ratio", 
+                                                  "tmax ratio"))
+   
+   AllPKParameters_mod <- bind_rows(AllPKParameters_mod, 
+                                    ExtraPKParam)
+   
    suppressMessages(
       TableNames <-
-         data.frame(PKparameter = names(PKtable)) %>% 
+         data.frame(OrigColNames = OrigColNames, 
+                    PKparameter = names(PKtable)) %>% 
          mutate(IsPretty = PKparameter %in% c(AllPKParameters$PrettifiedNames, 
                                               AllPKParameters_mod$PrettifiedNames), 
                 IsNotPretty = PKparameter %in% c(AllPKParameters_mod$PKparameter, 
@@ -51,11 +88,28 @@ prettify_column_names <- function(PKtable,
                 IsPKParam = IsPretty | IsNotPretty, 
                 NeedsPrettifying = IsPKParam & IsNotPretty) %>% 
          left_join(AllPKParameters %>% 
-                      select(PKparameter, PrettifiedNames)) %>% 
+                      select(PKparameter, PrettifiedNames) %>% 
+                      bind_rows(ExtraPKParam)) %>% 
          unique() %>% 
          mutate(PrettifiedNames = ifelse(is.na(PrettifiedNames), 
                                          PKparameter, PrettifiedNames))
    )
+   
+   if(any(str_detect(OrigColNames, "NumeratorSim|DenominatorSim"))){
+      Suffix <- str_extract(OrigColNames, "NumeratorSim|DenominatorSim")
+      Suffix[is.na(Suffix)] <- ""
+      
+      TableNames$PrettifiedNames <- str_trim(paste(TableNames$PrettifiedNames, Suffix))
+   }
+   
+   # Check that all column names would be unique.
+   if(any(duplicated(TableNames$PrettifiedNames))){
+      warning("Some table names would be duplicated after prettification. Please check the output. For now, we're adding a number to the end of each replicate column name.\n", 
+              call. = FALSE)
+      TableNames$PrettifiedNames[duplicated(TableNames$PrettifiedNames)] <- 
+         paste(TableNames$PrettifiedNames[duplicated(TableNames$PrettifiedNames)], 
+               1:length(TableNames$PrettifiedNames[duplicated(TableNames$PrettifiedNames)]))
+   }
    
    # if(complete.cases(adjust_conc_units)){
    #    PrettyCol <- gsub(Deets$Units_Cmax,  adjust_conc_units, PrettyCol)

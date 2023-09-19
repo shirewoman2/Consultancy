@@ -14,14 +14,18 @@
 #' @param subject_column the column in the observed concentration-time
 #'   data.frame that contains the subject ID
 #' @param DVID_column the column in the observed concentration-time data.frame
-#'   that indicates any time the DV number in the PE file should change. For
-#'   example, if you have some data in plasma and some in blood and have a
-#'   column called "Tissue", you'd want to set this as \code{DVID_column =
-#'   Tissue}. If you have an inhibitor present in some cases but not others, set
-#'   this to the column with the inhibitor data. Any time the value changes in
-#'   \code{obs_dataframe}, the number in the "DV" column will change in the
-#'   output. We'll include a message to indicate which value was used for which
-#'   DV number.
+#'   that indicates any time the DV number in the PE file should change. It's
+#'   fine to omit this if everything should be "1". If you haven't already
+#'   created a column for this with "1", "2", or "3" as the values for the DVID,
+#'   you can specify which column you want to use and we'll assign the numbers
+#'   for you. For example, if you have some data in plasma and some in blood and
+#'   have a column called "Tissue", you'd set this as \code{DVID_column =
+#'   Tissue}, and we'll assign one blood to "1" and plasma to "2" (numbers are
+#'   automatically assigned alphabetically). If you have an inhibitor present in
+#'   some cases but not others, set this to the column with the inhibitor data,
+#'   and any time the value changes in \code{obs_dataframe}, the number in the
+#'   "DV" column will change in the output. We'll include a message to indicate
+#'   which value in the original data was used for which DV number. 
 #' @param dose the amount of the dose. If this amount varies, please include one
 #'   dose amount for each time. For example: \code{dose = c(100, 50, 50)} will
 #'   generate doses of 100 mg for the first dose and then 50 mg for the next two
@@ -64,6 +68,10 @@
 #' @param save_output the file name to use for saving the output as a csv; if
 #'   left as NA, this will generate a data.frame in R but no output will be
 #'   saved.
+#' @param return_data TRUE or FALSE (default) for whether to return a data.frame
+#'   of the output at the end. If you're only using this to save csv files to
+#'   convert into XML overlay files, you probably don't need to get that object
+#'   back here, so that's why this argument exists.
 #'
 #' @return a data.frame
 #' @export
@@ -140,6 +148,12 @@ format_obs_for_XML <- function(obs_dataframe,
    if("Sex" %in% names(obs_dataframe)){
       obs_dataframe <- obs_dataframe %>% 
          mutate(Sex = str_sub(str_to_upper(Sex), 1, 1))
+   }
+   
+   # If they didn't include DVID column, it's probably b/c everything should
+   # have DVID of 1.
+   if(rlang::as_label(DVID_column) == "<empty>"){
+      obs_dataframe$DVID <- 1
    }
    
    # MissingCols <- setdiff(
@@ -223,7 +237,7 @@ format_obs_for_XML <- function(obs_dataframe,
    
    if(all(is.na(FinalObsDF$`DV ID`))){
       FinalObsDF$`DV ID` <- 1
-   } else {
+   } else if(rlang::as_label(DVID_column) != "<empty>"){
       MyDVIDs <- data.frame(DVIDvalue = levels(FinalObsDF$`DV ID`)) %>% 
          mutate(DVID = 1:nrow(.), 
                 Message = paste(DVID, "=", DVIDvalue))
@@ -231,7 +245,7 @@ format_obs_for_XML <- function(obs_dataframe,
       message("DV IDs in the output file are:\n",
               str_c(MyDVIDs$Message, separate = "\n"))
    }
-      
+   
    Out <- create_doses(
       dose_interval = dose_interval,
       compound_dosing_start_time = dosing_start_time,
@@ -279,7 +293,9 @@ format_obs_for_XML <- function(obs_dataframe,
       
    }
    
-   return(Out)
-   
+   if(return_data){ 
+      return(Out)
+   }
    
 }
+

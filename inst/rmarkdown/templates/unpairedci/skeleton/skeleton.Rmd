@@ -5,6 +5,8 @@
 2. Calculate the variance of the ratio. $$\text{variance of the log-transformed ratio} = \frac{Var(ln(\text{numerator values}))}{N_{\text{numerator values}}} +$$ $$\frac{Var(ln(\text{denominator values}))}{N_{\text{denominator values}}} $$
 where N is the number of observations in that simulation and variance (Var) is calculated as $$Var(X) = \frac{1}{N} \sum_{i=1}^N (x_i - \mu)^2 $$ 
 
+3. Calculate the standard deviation of the difference. $$\text{standard deviation of the difference} = \sqrt{\text{variance of the log-transformed ratio from step 2}}$$
+
 ```{r}
 
 CriticalVal <- ifelse(distribution_type == "Z", 
@@ -13,9 +15,7 @@ CriticalVal <- ifelse(distribution_type == "Z",
                          df = (99)), 3))
 ```
 
-3. Calculate the critical value for a significance level of `r conf_int * 100`% (&alpha; = `r 1 - conf_int`). For a `r distribution_type` distribution where there are 100 observations in both simulations (e.g., 10 trials of 10 subjects), this is  $$t_{1 - \frac{\alpha}{2}} = `r CriticalVal`$$ *NB: The Simcyp Simulator uses a t distribution when calculating geometric confidence intervals.* 
-
-4. Calculate the standard deviation of the difference. $$\text{standard deviation of the difference} = \sqrt{var(ln(\text{numerator values})) + var(ln(\text{denominator values}))}$$
+4. Calculate the critical value for a significance level of `r conf_int * 100`% (&alpha; = `r 1 - conf_int`). For a `r distribution_type` distribution where there are 100 observations in both simulations (e.g., 10 trials of 10 subjects), this is  $$t_{1 - \frac{\alpha}{2}} = `r CriticalVal`$$ *NB: The Simcyp Simulator uses a t distribution when calculating geometric confidence intervals.* 
 
 5. Calculate the log-transformed confidence level. $$\text{log-transformed `r conf_int * 100`% CI} = (\mu_\text{numerator} - \mu_\text{denominator}) \pm$$ $$t_{1 - \frac{\sigma}{2}} \times \text{standard deviation of the difference}$$
 
