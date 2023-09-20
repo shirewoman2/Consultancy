@@ -32,13 +32,14 @@ include only the 1st dose and whatever dose number you do want and perhaps
 running this multiple times in a loop to get all the PK you need. A member
 of the R Working Group can help you set this up if you'd like.}
 
-\item{first_dose_time}{the time at which the first dose was administered.
-Leaving this as the default (NA) will set this to 0.}
+\item{first_dose_time}{the time at which the first dose was administered. If
+this is left as NA, the default value, this will be set to 0.}
 
-\item{last_dose_time}{NA the time at which the last dose was administered.
-Leaving this as the default (NA) means that we'll assume that the last dose
-was administered at the earliest time included in the data for the highest
-dose number.}
+\item{last_dose_time}{the time at which the last dose was administered. If
+this is left as NA, the default value, we'll assume that the last dose was
+administered at the earliest time included in the data for the highest dose
+number included in the data. It bears repeating here that this function
+only works well if all the data included have the same dosing regimen.}
 
 \item{dose_interval}{the dosing interval; default is NA which assumes that
 all data assigned with a given dose number should be used in calculating PK
@@ -61,13 +62,22 @@ to ALL profiles.}
 \item{fit_last_x_number_of_points}{optionally specify that you want to fit
 the last X number of points for each dose (replace with whatever number
 makes sense for your situation). Default of NA means that we'll fit all the
-data after tmax. Keep in mind that this will apply to ALL profiles.}
+data after tmax. Keep in mind that this will apply to ALL profiles.
+\emph{An important note for fitting simulated data:} If you supply
+simulated data with a lot of points, we will only use 100 of those
+concentration-time points to describe each dosing interval because
+performing, say, 10 trials x 10 subjects = 100 nonlinear regressions with a
+thousand points for each dose number requires excessive computing time
+needlessly because the regression must minimize the distance between the
+fitted curve and every one of those points. Simulated data are pretty
+predictable; your fitted parameters will not be less accurate with this
+approach. If you supply simulated data, it will probably be less confusing
+and yield more predictable results if you specify a value for
+\code{fit_points_after_x_time} rather than
+\code{fit_last_x_number_of_points}.}
 
-\item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
-parameters? Options are "aggregate", "individual", or "both". For aggregate
-data, values are pulled from simulator output -- not calculated -- and the
-output will be a data.frame with the PK parameters in columns and the
-statistics reported exactly as in the simulator output file.}
+\item{returnAggregateOrIndiv}{return aggregate and/or individual PK
+parameters? Options are "aggregate", "individual", or "both" (default).}
 
 \item{return_graphs_of_fits}{TRUE (default) or FALSE for whether to return a
 list of the graphs showing the fitted data any time the dose 1 AUC was
@@ -100,7 +110,8 @@ example, this will do fine with calculating the last-dose PK for two
 simulations where the last dose of substrate was at t = 168 h but not where
 one simulation last dose was at t = 168 h and one was at t = 48 h. If you've
 got a scenario like that, we recommend running this function multiple times,
-one for each dosing regimen.
+one for each dosing regimen. The input required for \code{ct_dataframe} is
+pretty specific; please see the help file for that argument.
 }
 \examples{
 # None yet

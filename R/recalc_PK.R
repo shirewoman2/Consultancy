@@ -34,12 +34,13 @@
 #'   matching PK profiles will be recalculated
 #' @param dosenum_match any values in the DoseNum column to match in the data;
 #'   matching PK profiles will be recalculated
-#' @param first_dose_time the time at which the first dose was administered.
-#'   Leaving this as the default (NA) will set this to 0.
-#' @param last_dose_time NA the time at which the last dose was administered.
-#'   Leaving this as the default (NA) means that we'll assume that the last dose
-#'   was administered at the earliest time included in the data for the highest
-#'   dose number.
+#' @param first_dose_time the time at which the first dose was administered. If
+#'   this is left as NA, the default value, this will be set to 0.
+#' @param last_dose_time the time at which the last dose was administered. If
+#'   this is left as NA, the default value, we'll assume that the last dose was
+#'   administered at the earliest time included in the data for the highest dose
+#'   number included in the data. It bears repeating here that this function
+#'   only works well if all the data included have the same dosing regimen.
 #' @param dose_interval the dosing interval; default is NA which assumes that
 #'   all data assigned with a given dose number should be used in calculating PK
 #'   values. Cases where this wouldn't necessarily be true: When there's a
@@ -56,22 +57,33 @@
 #'   the last X number of points for each dose (replace with whatever number
 #'   makes sense for your situation). Default of NA means that we'll fit all the
 #'   data after tmax. Keep in mind that this will apply to ALL profiles.
+#'   \emph{An important note for fitting simulated data:} If you supply
+#'   simulated data with a lot of points, we will only use 100 of those
+#'   concentration-time points to describe each dosing interval because
+#'   performing, say, 10 trials x 10 subjects = 100 nonlinear regressions with a
+#'   thousand points for each dose number requires excessive computing time
+#'   needlessly because the regression must minimize the distance between the
+#'   fitted curve and every one of those points. Simulated data are pretty
+#'   predictable; your fitted parameters will not be less accurate with this
+#'   approach. If you supply simulated data, it will probably be less confusing
+#'   and yield more predictable results if you specify a value for
+#'   \code{fit_points_after_x_time} rather than
+#'   \code{fit_last_x_number_of_points}.
 #' @param fit_points_after_x_time optionally specify that you want to fit only
 #'   points after a certain time after the most-recent dose. Default of NA means
 #'   that we'll fit all the data after tmax. Keep in mind that this will apply
 #'   to ALL profiles.
-#' @param returnAggregateOrIndiv return aggregate (default) and/or individual PK
-#'   parameters? Options are "aggregate", "individual", or "both". For aggregate
-#'   data, values are pulled from simulator output -- not calculated -- and the
-#'   output will be a data.frame with the PK parameters in columns and the
-#'   statistics reported exactly as in the simulator output file.
+#' @param returnAggregateOrIndiv return aggregate and/or individual PK
+#'   parameters? Options are "aggregate", "individual", or "both" (default).
 #' @param return_graphs_of_fits TRUE (default) or FALSE for whether to return a
 #'   list of the graphs showing the fitted data any time the dose 1 AUC was
 #'   extrapolated to infinity.
 #' @param save_graphs_of_fits TRUE or FALSE (default) for whether to save png
 #'   files of graphs showing the fitted data for any time the dose 1 AUC was
 #'   extrapolated to infinity. This will save one png per set of file,
-#'   compoundID, inhibitor, and tissue.
+#'   compoundID, inhibitor, and tissue. Note: This isn't quite working, so you
+#'   may want to just look at the graphs rather than saving them until I figure
+#'   out the problem. It's not saving all the graphs it should. -LSh
 #' @param fig_width figure width in inches for saving graphs of fits (you may
 #'   want this to be huge if there are a lot of profiles). Defaults to 8.5.
 #' @param fig_height figure height in inches for saving graphs of fits (you may
@@ -166,11 +178,37 @@ recalc_PK <- function(ct_dataframe,
       PossMatchCols[sapply(PossMatchCols, 
                            FUN = function(x) length(x[complete.cases(x)]) > 0)]
    
-   MatchIDs <- list()
-   for(i in names(PossMatchCols)){
-      MatchIDs[[i]] <- which(t(existing_PK_indiv[, i]) %in% PossMatchCols[[i]])
+   for(j in names(PossMatchCols)){
+      Missing <- setdiff(PossMatchCols[[j]], t(ct_dataframe[, j]))
+      if(length(Missing) > 0){
+         warning(paste0("The following values were not present in the column `", 
+                        j, "`:\n", 
+                        str_c(Missing, collapse = "\n"), 
+                        "\nThey will be ignored."), 
+                 call. = FALSE)
+         
+         PossMatchCols[[j]] <- intersect(PossMatchCols[[j]], t(ct_dataframe[, j]))
+         
+         if(length(PossMatchCols[[j]]) == 0){
+            stop(paste0("None of the values for the column `", 
+                        j, "` could be found in your data, so we cannot proceed. Please make sure you're only asking to recalculate PK that already exist in your data. Othewise, please use the function `calc_PK`."), 
+                 call. = FALSE)
+         }
+      }
    }
-   MatchIDs <- unique(existing_PK_indiv$ID[Reduce(intersect, MatchIDs)])
+   
+   PossMatches <- expand.grid(PossMatchCols)
+   
+   MatchIDs <- list()
+   for(i in 1:nrow(PossMatches)){
+      MatchIDs[[i]] <- list()
+      for(j in names(PossMatchCols)){
+         MatchIDs[[i]][[j]] <- which(t(existing_PK_indiv[, j]) %in% PossMatches[i, j])
+      }
+      MatchIDs[[i]] <- unique(existing_PK_indiv$ID[Reduce(intersect, MatchIDs[[i]])])
+   }
+   
+   MatchIDs <- unlist(MatchIDs)
    
    CTsubset <- ct_dataframe %>% filter(ID %in% MatchIDs)
    existing_PK_indiv <- existing_PK_indiv %>% filter(!ID %in% MatchIDs)

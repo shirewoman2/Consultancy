@@ -169,411 +169,414 @@ elimFit <- function(DF, concentration = Concentration,
                     useNLS_outnames = TRUE,
                     maxiter = 50,
                     graph = FALSE){
-
-      # Defining pipe operator and bang bang
-      `%>%` <- magrittr::`%>%`
-      `!!` <- rlang::`!!`
-
-      # Catching inappropriate model input
-      if(modelType %in% c("monoexponential", "biexponential",
-                          "triexponential") == FALSE){
-            return("Acceptable model types are 'monoexponential', 'biexponential', or 'triexponential'.")
+   
+   # Defining pipe operator and bang bang
+   `%>%` <- magrittr::`%>%`
+   `!!` <- rlang::`!!`
+   
+   # Catching inappropriate model input
+   if(modelType %in% c("monoexponential", "biexponential",
+                       "triexponential") == FALSE){
+      return("Acceptable model types are 'monoexponential', 'biexponential', or 'triexponential'.")
+   }
+   
+   # Setting up the input data.frame
+   DFinit <- DF
+   concentration <- rlang::enquo(concentration)
+   time <- rlang::enquo(time)
+   
+   # If the user supplied a value for "omit" but that value doesn't fall
+   # within DF, issue a warning but keep going.
+   if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DF) == FALSE) |
+      length(omit) == 0){
+      message("One or more of the values supplied for 'omit' do not fall within the range of the data.frame supplied. All of the points supplied were included in the regression.")
+   }
+   
+   DF <- DF %>% dplyr::select(!! concentration, !! time) %>%
+      dplyr::rename(TIME = !! time,
+                    CONC = !! concentration)
+   
+   # DFinit2 is for the purposes of graphing only.
+   DFinit2 <- DFinit %>% dplyr::select(!! concentration, !! time) %>%
+      dplyr::rename(TIME = !! time,
+                    CONC = !! concentration)
+   
+   # Adding user-supplied weights. I need to add it here and then remove it
+   # b/c I need to filter out the points that are before tmax and also
+   # anything they want to omit.
+   if(class(weights) == "numeric"){
+      DF$WEIGHT <- weights
+   }
+   
+   # Removing any rows the user requests
+   if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DF))){
+      DFomit <- DF %>% dplyr::slice(omit)
+      DF <- DF %>% dplyr::slice(-omit)
+      DFinit2 <- DFinit2 %>% dplyr::slice(-omit)
+   }
+   
+   DF <- DF[complete.cases(DF$CONC) & complete.cases(DF$TIME), ]
+   DF <- dplyr::arrange(DF, TIME)
+   
+   # Setting tmax if it wasn't already.
+   if(is.na(tmax)){
+      tmax <- DF$TIME[which.max(DF$CONC)]
+   }
+   DF <- DF[DF$TIME >= tmax, ]
+   
+   # Re-establishing weights now that points that are to be omitted have been.
+   if(class(weights) == "numeric"){
+      weights <- DF$WEIGHT
+   }
+   
+   # Accounting for the offset in time since tmax is often not at t0.
+   DF$Time.offset <- DF$TIME - tmax
+   
+   # Catching inappropriate input with < 2 rows
+   if(nrow(DF) < 2 | length(unique(DF$TIME)) <= 2){
+      if(returnDataUsed){
+         Result <- list(DataUsed = DFinit,
+                        Estimates = "Insufficient data to create model")
+         return(Result)
       }
-
-      # Setting up the input data.frame
-      DFinit <- DF
-      concentration <- rlang::enquo(concentration)
-      time <- rlang::enquo(time)
-
-      # If the user supplied a value for "omit" but that value doesn't fall
-      # within DF, issue a warning but keep going.
-      if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DF) == FALSE) |
-         length(omit) == 0){
-            message("One or more of the values supplied for 'omit' do not fall within the range of the data.frame supplied. All of the points supplied were included in the regression.")
+      else{
+         return("Insufficient data to create model")
       }
-
-      DF <- DF %>% dplyr::select(!! concentration, !! time) %>%
-            dplyr::rename(TIME = !! time,
-                          CONC = !! concentration)
-
-      # DFinit2 is for the purposes of graphing only.
-      DFinit2 <- DFinit %>% dplyr::select(!! concentration, !! time) %>%
-            dplyr::rename(TIME = !! time,
-                          CONC = !! concentration)
-
-      # Adding user-supplied weights. I need to add it here and then remove it
-      # b/c I need to filter out the points that are before tmax and also
-      # anything they want to omit.
-      if(class(weights) == "numeric"){
-            DF$WEIGHT <- weights
+   }
+   
+   # Determining good starting values for the fit if the user didn't
+   # already supply them
+   if(is.na(startValues[[1]][1])){
+      startValues.A <- max(DF$CONC)
+      tfirstlast <- DF[c(1, nrow(DF)), ]
+      startValues.k <- -1*((log(tfirstlast$CONC[2]) - log(tfirstlast$CONC[1]))/
+                              (tfirstlast$Time.offset[2] -
+                                  tfirstlast$Time.offset[1]))
+      
+      if(startValues.k == Inf | is.nan(startValues.k)){
+         startValues.k <- 0.01
       }
-
-      # Removing any rows the user requests
-      if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DF))){
-            DFomit <- DF %>% dplyr::slice(omit)
-            DF <- DF %>% dplyr::slice(-omit)
-            DFinit2 <- DFinit2 %>% dplyr::slice(-omit)
-      }
-
-      DF <- DF[complete.cases(DF$CONC) & complete.cases(DF$TIME), ]
-      DF <- dplyr::arrange(DF, TIME)
-
-      # Setting tmax if it wasn't already.
-      if(is.na(tmax)){
-            tmax <- DF$TIME[which.max(DF$CONC)]
-      }
-      DF <- DF[DF$TIME >= tmax, ]
-
-      # Re-establishing weights now that points that are to be omitted have been.
-      if(class(weights) == "numeric"){
-            weights <- DF$WEIGHT
-      }
-
-      # Accounting for the offset in time since tmax is often not at t0.
-      DF$Time.offset <- DF$TIME - tmax
-
-      # Catching inappropriate input with < 2 rows
-      if(nrow(DF) < 2 | length(unique(DF$TIME)) <= 2){
-            if(returnDataUsed){
-                  Result <- list(DataUsed = DFinit,
-                                 Estimates = "Insufficient data to create model")
-                  return(Result)
-            }
-            else{
-                  return("Insufficient data to create model")
-            }
-      }
-
-      # Determining good starting values for the fit if the user didn't
-      # already supply them
-      if(is.na(startValues[[1]][1])){
-            startValues.A <- max(DF$CONC)
-            tfirstlast <- DF[c(1, nrow(DF)), ]
-            startValues.k <- -1*((log(tfirstlast$CONC[2]) - log(tfirstlast$CONC[1]))/
-                                       (tfirstlast$Time.offset[2] -
-                                              tfirstlast$Time.offset[1]))
-
-            if(startValues.k == Inf | is.nan(startValues.k)){
-                  startValues.k <- 0.01
-            }
-
-            if(modelType == "monoexponential"){
-                  startValues <- list(A = startValues.A,
-                                      k = startValues.k)
-            }
-
-            if(modelType == "biexponential"){
-                  startValues <- list(A = startValues.A,
-                                      alpha = startValues.k,
-                                      B = startValues.A/2,
-                                      beta = 0.1) # Just guessing that this value might work
-            }
-
-            if(modelType == "triexponential"){
-                  startValues <- list(A = startValues.A,
-                                      alpha = startValues.k,
-                                      B = startValues.A/2,
-                                      beta = 0.1,
-                                      G = startValues.A/3,
-                                      gamma = 0.01) # Just guessing that this value might work
-            }
-
-      }
-
-
-      # Setting up the weights to use
-      if(class(weights) == "character"){
-
-            WeightOptions <- DF %>%
-                  dplyr::select(CONC, TIME) %>%
-                  dplyr::mutate(One_x = 1/TIME,
-                                One_x2 = 1/TIME^2,
-                                One_y = 1/CONC,
-                                One_y2 = 1/CONC^2)
-
-            weights <- tolower(weights)
-
-            MyWeights <- c("1/x" = "One_x", "1/x^2" = "One_x2",
-                           "1/y" = "One_y", "1/y^2" = "One_y2")
-
-            weights <- WeightOptions %>%  dplyr::pull(MyWeights[weights])
-      }
-
-      if(any(is.infinite(weights))){
-            stop("The weights used for the regression cannot include infinite numbers. Please change the weighting scheme to avoid this.")
-      }
-
-      # Fitting
-      Fit <- NULL
+      
       if(modelType == "monoexponential"){
-            # Determining whether to use nls or nls2 and then fitting
-            if(class(startValues) == "list"){
-                  Fit <- tryCatch(nls(CONC ~ A * exp(-k * Time.offset),
-                                      data = DF,
-                                      start = startValues,
-                                      weights = weights,
-                                      nls.control(maxiter = maxiter)),
-                                  error = function(x) return("Cannot fit to model"))
-            } else{
-                  if(nrow(startValues) != 2 |
-                     all(c("A", "k") %in%
-                         names(startValues)) == FALSE){
-                        stop("If you submit a data.frame with possible starting values for a monoexponential model, there must be two rows for each coefficient -- A and k -- to be fit.")
-                  }
-
-                  Fit <- tryCatch(nls2::nls2(CONC ~ A * exp(-k * Time.offset),
-                                             data = DF,
-                                             start = startValues,
-                                             weights = weights,
-                                             nls.control(maxiter = maxiter)),
-                                  error = function(x) return("Cannot fit to model"))
-            }
+         startValues <- list(A = startValues.A,
+                             k = startValues.k)
       }
-
+      
       if(modelType == "biexponential"){
-            # Determining whether to use nls or nls2 and then fitting
-            if(class(startValues) == "list"){
-                  Fit <- tryCatch(nls(
-                        CONC ~ A * exp(-alpha * Time.offset) +
-                              B * exp(-beta * Time.offset),
-                        data = DF,
-                        start = startValues,
-                        weights = weights,
-                        nls.control(maxiter = maxiter)),
-                        error = function(x) return("Cannot fit to model"))
-            } else{
-                  if(nrow(startValues) != 2 |
-                     all(c("A", "alpha", "B", "beta") %in%
-                         names(startValues)) == FALSE){
-                        stop("If you submit a data.frame with possible starting values for a biexponential model, there must be two rows for each coefficient -- A, alpha, B, and beta -- to be fit.")
-                  }
-
-                  Fit <- tryCatch(nls2::nls2(
-                        CONC ~ A * exp(-alpha * Time.offset) +
-                              B * exp(-beta * Time.offset),
-                        data = DF,
-                        start = startValues,
-                        nls.control(maxiter = maxiter),
-                        weights = weights),
-                        error = function(x) return("Cannot fit to model"))
-            }
+         startValues <- list(A = startValues.A,
+                             alpha = startValues.k,
+                             B = startValues.A/2,
+                             beta = 0.1) # Just guessing that this value might work
       }
-
+      
       if(modelType == "triexponential"){
-            # Determining whether to use nls or nls2
-            if(class(startValues) == "list"){
-                  Fit <- tryCatch(nls(
-                        CONC ~ A * exp(-alpha * Time.offset) +
-                              B * exp(-beta * Time.offset) +
-                              G * exp(-gamma * Time.offset),
-                        data = DF,
-                        start = startValues,
-                        weights = weights,
-                        nls.control(maxiter = maxiter)),
-                        error = function(x) return("Cannot fit to model"))
-            } else{
-                  if(nrow(startValues) != 2 |
-                     all(c("A", "alpha", "B", "beta", "G", "gamma") %in%
-                         names(startValues)) == FALSE){
-                        stop("If you submit a data.frame with possible starting values for a triexponential model, there must be two rows for each coefficient -- A, alpha, B, beta, G, and gamma -- to be fit.")
-                  }
-
-                  Fit <- tryCatch(nls2::nls2(
-                        CONC ~ A * exp(-alpha * Time.offset) +
-                              B * exp(-beta * Time.offset) +
-                              G * exp(-gamma * Time.offset),
-                        data = DF,
-                        start = startValues,
-                        weights = weights,
-                        nls.control(maxiter = maxiter)),
-                        error = function(x) return("Cannot fit to model"))
-            }
+         startValues <- list(A = startValues.A,
+                             alpha = startValues.k,
+                             B = startValues.A/2,
+                             beta = 0.1,
+                             G = startValues.A/3,
+                             gamma = 0.01) # Just guessing that this value might work
       }
-
-      # Setting up the data to graph
-      CurveData <- data.frame(Time.offset = seq(min(DF$Time.offset, na.rm = T),
-                                                max(DF$Time.offset, na.rm = T),
-                                                length.out = 100))
-
-      # Checking whether the fit worked at all
-      if(class(Fit) == "character"){
-            # This is for when the fit did NOT work. Returning a data.frame of
-            # NA values.
-            DataUsed <- DFinit
-            Estimates <- data.frame(Beta = NA, Estimate = NA, SE = NA,
-                                    tvalue = NA, pvalue = NA)
-
-            if(useNLS_outnames){
-                  names(Estimates) <- c("Beta", "Estimate", "Std. Error", "t value",
-                                        "Pr(>|t|)")
-            }
-
-            Estimates$Message <- "Cannot fit to model"
-
-            Graph <- ggplot2::ggplot(DFinit2, ggplot2::aes(x = TIME, y = CONC)) +
-                  ggplot2::geom_point() +
-                  ggplot2::scale_y_log10() +
-                  ggplot2::xlab(rlang::as_label(time)) + ggplot2::ylab(rlang::as_label(concentration))
-
-            if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DFinit))){
-                  Graph <- Graph +
-                        ggplot2::geom_point(data = DFomit, color = "red", shape = "O", size = 2)
-
-            }
-
-            Result <- list(DataUsed = DataUsed, Estimates = Estimates)
-
-      } else { # This is for when the fit did work fine.
-
-            Estimates <- as.data.frame(summary(Fit)[["coefficients"]])
-
-            if(modelType == "monoexponential"){
-                  CurveData <- CurveData %>%
-                        dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
-                                      k = Estimates[row.names(Estimates) == "k", "Estimate"],
-                                      CONC = A * exp(-k * Time.offset))
-
-                  Estimates <- Estimates %>%
-                        dplyr::mutate(Beta = row.names(Estimates)) %>%
-                        dplyr::select(Beta, everything())
-
-            }
-
-            if(modelType == "biexponential"){
-                  CurveData <- CurveData %>%
-                        dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
-                                      alpha = Estimates[row.names(Estimates) == "alpha", "Estimate"],
-                                      B = Estimates[row.names(Estimates) == "B", "Estimate"],
-                                      beta = Estimates[row.names(Estimates) == "beta", "Estimate"],
-                                      CONC = A * exp(-alpha * Time.offset) +
-                                            B * exp(-beta * Time.offset))
-
-                  # Figuring out which beta is which and making it consistent
-                  Betas <- Estimates %>%
-                        dplyr::mutate(ParamSet = c("Set1", "Set1", "Set2", "Set2"),
-                                      ParamType = rep(c("A0", "rate"), 2)) %>%
-                        dplyr::select(Estimate, ParamSet, ParamType) %>%
-                        tidyr::spread(key = ParamType, value = Estimate) %>%
-                        dplyr::arrange(-A0) %>%
-                        dplyr::mutate(ParamSet = c("A", "B"))
-
-                  A <- Betas$A0[Betas$ParamSet == "A"]
-                  alpha <- Betas$rate[Betas$ParamSet == "A"]
-                  B <- Betas$A0[Betas$ParamSet == "B"]
-                  beta <- Betas$rate[Betas$ParamSet == "B"]
-
-                  Betas <- data.frame(Beta = c("A", "alpha", "B", "beta"),
-                                      Estimate = c(A, alpha, B, beta)) %>%
-                        dplyr::mutate(Beta = factor(Beta, levels = Beta))
-
-                  Estimates <- Estimates %>% dplyr::left_join(Betas, by = "Estimate") %>%
-                        dplyr::arrange(Beta) %>%
-                        dplyr::select(Beta, everything())
-            }
-
-            if(modelType == "triexponential"){
-                  CurveData <- CurveData %>%
-                        dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
-                                      alpha = Estimates[row.names(Estimates) == "alpha", "Estimate"],
-                                      B = Estimates[row.names(Estimates) == "B", "Estimate"],
-                                      beta = Estimates[row.names(Estimates) == "beta", "Estimate"],
-                                      G = Estimates[row.names(Estimates) == "G", "Estimate"],
-                                      gamma = Estimates[row.names(Estimates) == "gamma", "Estimate"],
-                                      CONC = A * exp(-alpha * Time.offset) +
-                                            B * exp(-beta * Time.offset) +
-                                            G * exp(-gamma * Time.offset))
-
-                  # Figuring out which beta is which and making it consistent
-                  Betas <- Estimates %>%
-                        dplyr::mutate(ParamSet = c("Set1", "Set1", "Set2", "Set2",
-                                                   "Set3", "Set3"),
-                                      ParamType = rep(c("A0", "rate"), 3)) %>%
-                        dplyr::select(Estimate, ParamSet, ParamType) %>%
-                        tidyr::spread(key = ParamType, value = Estimate) %>%
-                        dplyr::arrange(-A0) %>%
-                        dplyr::mutate(ParamSet = c("A", "B", "G"))
-
-                  A <- Betas$A0[Betas$ParamSet == "A"]
-                  alpha <- Betas$rate[Betas$ParamSet == "A"]
-                  B <- Betas$A0[Betas$ParamSet == "B"]
-                  beta <- Betas$rate[Betas$ParamSet == "B"]
-                  G <- Betas$A0[Betas$ParamSet == "G"]
-                  gamma <- Betas$rate[Betas$ParamSet == "G"]
-
-                  Betas <- data.frame(Beta = c("A", "alpha", "B", "beta",
-                                               "G", "gamma"),
-                                      Estimate = c(A, alpha, B, beta, G, gamma)) %>%
-                        dplyr::mutate(Beta = factor(Beta, levels = Beta))
-
-                  Estimates <- Estimates %>% dplyr::left_join(Betas, by = "Estimate") %>%
-                        dplyr::arrange(Beta) %>%
-                        dplyr::select(Beta, everything())
-            }
-
-            CurveData <- CurveData %>%
-                  dplyr::mutate(TIME = Time.offset + tmax)
-
-            Graph <- ggplot2::ggplot(DFinit2, ggplot2::aes(x = TIME, y = CONC)) +
-                  ggplot2::geom_point() +
-                  ggplot2::geom_line(data = CurveData) +
-                  ggplot2::scale_y_log10() +
-                  ggplot2::xlab(rlang::as_label(time)) + ggplot2::ylab(rlang::as_label(concentration))
-
-            if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DFinit))){
-                  Graph <- Graph +
-                        ggplot2::geom_point(data = DFomit, color = "red", shape = "O", size = 2)
-
-            }
+      
+   }
+   
+   
+   # Setting up the weights to use
+   if(class(weights) == "character"){
+      
+      WeightOptions <- DF %>%
+         dplyr::select(CONC, TIME) %>%
+         dplyr::mutate(One_x = 1/TIME,
+                       One_x2 = 1/TIME^2,
+                       One_y = 1/CONC,
+                       One_y2 = 1/CONC^2)
+      
+      weights <- tolower(weights)
+      
+      MyWeights <- c("1/x" = "One_x", "1/x^2" = "One_x2",
+                     "1/y" = "One_y", "1/y^2" = "One_y2")
+      
+      weights <- WeightOptions %>%  dplyr::pull(MyWeights[weights])
+   }
+   
+   if(any(is.infinite(weights))){
+      stop("The weights used for the regression cannot include infinite numbers. Please change the weighting scheme to avoid this.")
+   }
+   
+   # Fitting
+   Fit <- NULL
+   if(modelType == "monoexponential"){
+      # Determining whether to use nls or nls2 and then fitting
+      if(class(startValues) == "list"){
+         Fit <- tryCatch(nls(CONC ~ A * exp(-k * Time.offset),
+                             data = DF,
+                             start = startValues,
+                             weights = weights,
+                             nls.control(maxiter = maxiter)),
+                         error = function(x) return("Cannot fit to model"))
+      } else{
+         if(nrow(startValues) != 2 |
+            all(c("A", "k") %in%
+                names(startValues)) == FALSE){
+            stop("If you submit a data.frame with possible starting values for a monoexponential model, there must be two rows for each coefficient -- A and k -- to be fit.")
+         }
+         
+         Fit <- tryCatch(nls2::nls2(CONC ~ A * exp(-k * Time.offset),
+                                    data = DF,
+                                    start = startValues,
+                                    weights = weights,
+                                    nls.control(maxiter = maxiter)),
+                         error = function(x) return("Cannot fit to model"))
       }
-
+   }
+   
+   if(modelType == "biexponential"){
+      # Determining whether to use nls or nls2 and then fitting
+      if(class(startValues) == "list"){
+         Fit <- tryCatch(nls(
+            CONC ~ A * exp(-alpha * Time.offset) +
+               B * exp(-beta * Time.offset),
+            data = DF,
+            start = startValues,
+            weights = weights,
+            nls.control(maxiter = maxiter)),
+            error = function(x) return("Cannot fit to model"))
+      } else{
+         if(nrow(startValues) != 2 |
+            all(c("A", "alpha", "B", "beta") %in%
+                names(startValues)) == FALSE){
+            stop("If you submit a data.frame with possible starting values for a biexponential model, there must be two rows for each coefficient -- A, alpha, B, and beta -- to be fit.")
+         }
+         
+         Fit <- tryCatch(nls2::nls2(
+            CONC ~ A * exp(-alpha * Time.offset) +
+               B * exp(-beta * Time.offset),
+            data = DF,
+            start = startValues,
+            nls.control(maxiter = maxiter),
+            weights = weights),
+            error = function(x) return("Cannot fit to model"))
+      }
+   }
+   
+   if(modelType == "triexponential"){
+      # Determining whether to use nls or nls2
+      if(class(startValues) == "list"){
+         Fit <- tryCatch(nls(
+            CONC ~ A * exp(-alpha * Time.offset) +
+               B * exp(-beta * Time.offset) +
+               G * exp(-gamma * Time.offset),
+            data = DF,
+            start = startValues,
+            weights = weights,
+            nls.control(maxiter = maxiter)),
+            error = function(x) return("Cannot fit to model"))
+      } else{
+         if(nrow(startValues) != 2 |
+            all(c("A", "alpha", "B", "beta", "G", "gamma") %in%
+                names(startValues)) == FALSE){
+            stop("If you submit a data.frame with possible starting values for a triexponential model, there must be two rows for each coefficient -- A, alpha, B, beta, G, and gamma -- to be fit.")
+         }
+         
+         Fit <- tryCatch(nls2::nls2(
+            CONC ~ A * exp(-alpha * Time.offset) +
+               B * exp(-beta * Time.offset) +
+               G * exp(-gamma * Time.offset),
+            data = DF,
+            start = startValues,
+            weights = weights,
+            nls.control(maxiter = maxiter)),
+            error = function(x) return("Cannot fit to model"))
+      }
+   }
+   
+   # Setting up the data to graph
+   CurveData <- data.frame(Time.offset = seq(min(DF$Time.offset, na.rm = T),
+                                             max(DF$Time.offset, na.rm = T),
+                                             length.out = 100))
+   
+   # Checking whether the fit worked at all
+   if(class(Fit) == "character"){
+      # This is for when the fit did NOT work. Returning a data.frame of
+      # NA values.
+      DataUsed <- DFinit
+      Estimates <- data.frame(Beta = NA, Estimate = NA, SE = NA,
+                              tvalue = NA, pvalue = NA)
+      
+      if(useNLS_outnames){
+         names(Estimates) <- c("Beta", "Estimate", "Std. Error", "t value",
+                               "Pr(>|t|)")
+      }
+      
+      Estimates$Message <- "Cannot fit to model"
+      
+      Graph <- ggplot2::ggplot(DFinit2, ggplot2::aes(x = TIME, y = CONC)) +
+         ggplot2::geom_point() +
+         ggplot2::scale_y_log10() +
+         ggplot2::xlab(rlang::as_label(time)) + ggplot2::ylab(rlang::as_label(concentration))
+      
+      if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DFinit))){
+         Graph <- Graph +
+            ggplot2::geom_point(data = DFomit, color = "red", shape = "O", size = 2)
+         
+      }
+      
+      Result <- list(DataUsed = DataUsed, Estimates = Estimates)
+      
+   } else { # This is for when the fit did work fine.
+      
+      Estimates <- as.data.frame(summary(Fit)[["coefficients"]])
+      
+      if(modelType == "monoexponential"){
+         CurveData <- CurveData %>%
+            dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
+                          k = Estimates[row.names(Estimates) == "k", "Estimate"],
+                          CONC = A * exp(-k * Time.offset))
+         
+         Estimates <- Estimates %>%
+            dplyr::mutate(Beta = row.names(Estimates)) %>%
+            dplyr::select(Beta, everything())
+         
+      }
+      
+      if(modelType == "biexponential"){
+         CurveData <- CurveData %>%
+            dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
+                          alpha = Estimates[row.names(Estimates) == "alpha", "Estimate"],
+                          B = Estimates[row.names(Estimates) == "B", "Estimate"],
+                          beta = Estimates[row.names(Estimates) == "beta", "Estimate"],
+                          CONC = A * exp(-alpha * Time.offset) +
+                             B * exp(-beta * Time.offset))
+         
+         # Figuring out which beta is which and making it consistent
+         Betas <- Estimates %>%
+            dplyr::mutate(ParamSet = c("Set1", "Set1", "Set2", "Set2"),
+                          ParamType = rep(c("A0", "rate"), 2)) %>%
+            dplyr::select(Estimate, ParamSet, ParamType) %>%
+            tidyr::spread(key = ParamType, value = Estimate) %>%
+            dplyr::arrange(-A0) %>%
+            dplyr::mutate(ParamSet = c("A", "B"))
+         
+         A <- Betas$A0[Betas$ParamSet == "A"]
+         alpha <- Betas$rate[Betas$ParamSet == "A"]
+         B <- Betas$A0[Betas$ParamSet == "B"]
+         beta <- Betas$rate[Betas$ParamSet == "B"]
+         
+         Betas <- data.frame(Beta = c("A", "alpha", "B", "beta"),
+                             Estimate = c(A, alpha, B, beta)) %>%
+            dplyr::mutate(Beta = factor(Beta, levels = Beta))
+         
+         Estimates <- Estimates %>% dplyr::left_join(Betas, by = "Estimate") %>%
+            dplyr::arrange(Beta) %>%
+            dplyr::select(Beta, everything())
+      }
+      
+      if(modelType == "triexponential"){
+         CurveData <- CurveData %>%
+            dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
+                          alpha = Estimates[row.names(Estimates) == "alpha", "Estimate"],
+                          B = Estimates[row.names(Estimates) == "B", "Estimate"],
+                          beta = Estimates[row.names(Estimates) == "beta", "Estimate"],
+                          G = Estimates[row.names(Estimates) == "G", "Estimate"],
+                          gamma = Estimates[row.names(Estimates) == "gamma", "Estimate"],
+                          CONC = A * exp(-alpha * Time.offset) +
+                             B * exp(-beta * Time.offset) +
+                             G * exp(-gamma * Time.offset))
+         
+         # Figuring out which beta is which and making it consistent
+         Betas <- Estimates %>%
+            dplyr::mutate(ParamSet = c("Set1", "Set1", "Set2", "Set2",
+                                       "Set3", "Set3"),
+                          ParamType = rep(c("A0", "rate"), 3)) %>%
+            dplyr::select(Estimate, ParamSet, ParamType) %>%
+            tidyr::spread(key = ParamType, value = Estimate) %>%
+            dplyr::arrange(-A0) %>%
+            dplyr::mutate(ParamSet = c("A", "B", "G"))
+         
+         A <- Betas$A0[Betas$ParamSet == "A"]
+         alpha <- Betas$rate[Betas$ParamSet == "A"]
+         B <- Betas$A0[Betas$ParamSet == "B"]
+         beta <- Betas$rate[Betas$ParamSet == "B"]
+         G <- Betas$A0[Betas$ParamSet == "G"]
+         gamma <- Betas$rate[Betas$ParamSet == "G"]
+         
+         Betas <- data.frame(Beta = c("A", "alpha", "B", "beta",
+                                      "G", "gamma"),
+                             Estimate = c(A, alpha, B, beta, G, gamma)) %>%
+            dplyr::mutate(Beta = factor(Beta, levels = Beta))
+         
+         Estimates <- Estimates %>% dplyr::left_join(Betas, by = "Estimate") %>%
+            dplyr::arrange(Beta) %>%
+            dplyr::select(Beta, everything())
+      }
+      
+      CurveData <- CurveData %>%
+         dplyr::mutate(TIME = Time.offset + tmax)
+      
+      Graph <- ggplot2::ggplot(DFinit2, ggplot2::aes(x = TIME, y = CONC)) +
+         ggplot2::geom_point() +
+         ggplot2::geom_line(data = CurveData) +
+         ggplot2::scale_y_log10() +
+         ggplot2::ylab(rlang::as_label(concentration)) +
+         scale_x_time(time_range = c(round_down_unit(min(DFinit2$TIME), 1), 
+                                     round_up_unit(max(DFinit2$TIME), 1))) + 
+         theme_consultancy()
+      
+      if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DFinit))){
+         Graph <- Graph +
+            ggplot2::geom_point(data = DFomit, color = "red", shape = "O", size = 2)
+         
+      }
+   }
+   
+   Result <- list(DataUsed = DFinit,
+                  Estimates = Estimates,
+                  Graph = Graph)
+   
+   # Here's what to do if the fit didn't work at all. I can't remember what
+   # caused this to happen, but I know I needed to catch this.
+   if(is.null(Fit)){
+      Estimates <- data.frame(Beta = NA, Estimate = NA, SE = NA,
+                              tvalue = NA, pvalue = NA)
+      names(Estimates) <- c("Beta", "Estimate", "Std. Error", "t value",
+                            "Pr(>|t|)")
+      Estimates$Message <- "Cannot fit to model"
+      
       Result <- list(DataUsed = DFinit,
                      Estimates = Estimates,
-                     Graph = Graph)
-
-      # Here's what to do if the fit didn't work at all. I can't remember what
-      # caused this to happen, but I know I needed to catch this.
-      if(is.null(Fit)){
-            Estimates <- data.frame(Beta = NA, Estimate = NA, SE = NA,
-                                    tvalue = NA, pvalue = NA)
-            names(Estimates) <- c("Beta", "Estimate", "Std. Error", "t value",
-                                  "Pr(>|t|)")
-            Estimates$Message <- "Cannot fit to model"
-
-            Result <- list(DataUsed = DFinit,
-                           Estimates = Estimates,
-                           Graph)
-      }
-
-      # If the user wants to use better names for the output data.frame, setting
-      # those here.
-      if(useNLS_outnames == FALSE & class(Fit) == "nls"){
-            names(Result[["Estimates"]]) <-
-                  c("Beta", "Estimate", "SE", "tvalue", "pvalue")
-      }
-
-      # If the user wanted to have an estimate of the residual sum of squares,
-      # adding that to the output data.frame.
-      if(returnRSS & !is.null(Fit) & class(Fit) == "nls"){
-            Result[["Estimates"]]$RSS <- as.numeric(Fit$m$deviance())
-      }
-
-      # Adjusting the final output to only contain the results requested.
-      if(returnDataUsed){
-            if(graph){
-                  Result <- Result[c("Estimates", "DataUsed", "Graph")]
-            } else{
-                  Result <- Result[c("Estimates", "DataUsed")]
-            }
+                     Graph)
+   }
+   
+   # If the user wants to use better names for the output data.frame, setting
+   # those here.
+   if(useNLS_outnames == FALSE & class(Fit) == "nls"){
+      names(Result[["Estimates"]]) <-
+         c("Beta", "Estimate", "SE", "tvalue", "pvalue")
+   }
+   
+   # If the user wanted to have an estimate of the residual sum of squares,
+   # adding that to the output data.frame.
+   if(returnRSS & !is.null(Fit) & class(Fit) == "nls"){
+      Result[["Estimates"]]$RSS <- as.numeric(Fit$m$deviance())
+   }
+   
+   # Adjusting the final output to only contain the results requested.
+   if(returnDataUsed){
+      if(graph){
+         Result <- Result[c("Estimates", "DataUsed", "Graph")]
       } else{
-            if(graph){
-                  Result <- Result[c("Estimates", "Graph")]
-            } else{
-                  Result <- Result[["Estimates"]]
-            }
+         Result <- Result[c("Estimates", "DataUsed")]
       }
-
-      return(Result)
-
+   } else{
+      if(graph){
+         Result <- Result[c("Estimates", "Graph")]
+      } else{
+         Result <- Result[["Estimates"]]
+      }
+   }
+   
+   return(Result)
+   
 }
 
 
