@@ -62,9 +62,12 @@ the function \code{\link{extractConcObsTime_mult}} or
 
 \item{mean_type}{plot "arithmetic" (default) or "geometric" mean
 concentrations or "median" concentrations as the main (thickest or only)
-line for each data set. If this aggregate measure is not available in the
-simulator output, you'll receive a warning message and we'll plot one that
-\emph{is} available. (Only arithmetic is available for now. -LSh)}
+line for each data set. If you haven't included mean data in
+\code{ct_dataframe}, the mean will be calculated for you using our best
+guess as to what the groups should be. In other words, you may want to
+calculate the means yourself just to be sure you're getting what you
+expect. Talk to Laura Sh. if you would like help here. If you don't want to
+show the means, set this to "none".}
 
 \item{figure_type}{the type of figure to plot. \describe{
 

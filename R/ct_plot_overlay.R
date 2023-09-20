@@ -886,8 +886,14 @@ call. = FALSE)
       factor(levels = c("mean", "geomean", "median")) %>% 
       sort()
    
-   if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
-             "median" = "median") %in% ct_dataframe$Trial == FALSE){
+   if(switch(mean_type, 
+             "arithmetic" = "mean", 
+             "geometric" = "geomean",
+             # NB: "none" is a pass-through argument for ct_plot_obs and won't
+             # come up for simulated data
+             "none" = "none",
+             "median" = "median") %in% ct_dataframe$Trial == FALSE &
+      mean_type != "none"){
       
       warning(paste0("You requested the ", 
                      switch(mean_type, "arithmetic" = "arithmetic means",
@@ -902,13 +908,16 @@ call. = FALSE)
       mean_type <-  switch(MyMeanType,
                            "mean" = "arithmetic", 
                            "geomean" = "geometric",
-                           "median" = "median")
+                           "median" = "median", 
+                           "none" = "none")
       
    } else {
       
-      MyMeanType <- switch(mean_type, "arithmetic" = "mean",
+      MyMeanType <- switch(mean_type,
+                           "arithmetic" = "mean",
                            "geometric" = "geomean",
-                           "median" = "median")
+                           "median" = "median", 
+                           "none" = "none")
       
    }
    
@@ -1385,8 +1394,13 @@ call. = FALSE)
    # that I think about it further...
    if(EnzPlot){
       AnchorCompound <- "substrate"
-   } else {
+   } else if(mean_type != "none"){
       AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
+         mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
+         filter(CompoundLevel == min(CompoundLevel)) %>% 
+         pull(CompoundID) %>% as.character()
+   } else {
+      AnchorCompound <- obs_dataframe %>% select(CompoundID) %>% unique() %>% 
          mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
          filter(CompoundLevel == min(CompoundLevel)) %>% 
          pull(CompoundID) %>% as.character()

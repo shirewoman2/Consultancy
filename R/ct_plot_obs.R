@@ -1,5 +1,3 @@
-ct_dataframe <- ClinCT_110
-
 #' Plot observed concentration-time data
 #'
 #' \code{ct_plot_obs} is meant to be used in conjunction with
@@ -11,9 +9,12 @@ ct_dataframe <- ClinCT_110
 #'   \code{\link{extractObsConcTime}}. Not quoted.
 #' @param mean_type plot "arithmetic" (default) or "geometric" mean
 #'   concentrations or "median" concentrations as the main (thickest or only)
-#'   line for each data set. If this aggregate measure is not available in the
-#'   simulator output, you'll receive a warning message and we'll plot one that
-#'   \emph{is} available. (Only arithmetic is available for now. -LSh)
+#'   line for each data set. If you haven't included mean data in
+#'   \code{ct_dataframe}, the mean will be calculated for you using our best
+#'   guess as to what the groups should be. In other words, you may want to
+#'   calculate the means yourself just to be sure you're getting what you
+#'   expect. Talk to Laura Sh. if you would like help here. If you don't want to
+#'   show the means, set this to "none".
 #' @param figure_type the type of figure to plot. \describe{
 #'
 #'   \item{"means only"}{(default) show only the mean, geometric mean, or median
@@ -354,7 +355,7 @@ ct_dataframe <- ClinCT_110
 #' # None yet
 #' 
 ct_plot_obs <- function(ct_dataframe, 
-                        mean_type = "arithmetic", # only option for now
+                        mean_type = "arithmetic", 
                         figure_type = "means only", 
                         linear_or_log = "semi-log",
                         colorBy_column,
@@ -402,18 +403,50 @@ ct_plot_obs <- function(ct_dataframe,
                         fig_height = 6,
                         fig_width = 5){
    
-   ct_dataframe <- ct_dataframe %>% filter(Simulated == FALSE)
-   
-   if("obs mean" %in% ct_dataframe$Trial == FALSE){
-      suppressMessages(
-         CTagg <- ct_dataframe %>% 
-            group_by(across(.cols = -c(Individual, Conc))) %>% 
-            summarize(Conc = mean(Conc, na.rm = T)) %>% 
-            mutate(Trial = "mean")
-      )
+   # Error catching ---------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+           call. = FALSE)
    }
    
-   ct_dataframe <- bind_rows(ct_dataframe, CTagg)
+   if(nrow(ct_dataframe) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+           call. = FALSE)
+   }
+   
+   if(figure_type == "trial means"){
+      warning("A figure type of `trial means` is not available for observed data. We'll set the figure type to `means only`.", 
+              call. = FALSE)
+   }
+   
+   # Main body of function -------------------------------------------------
+   
+   ct_dataframe <- ct_dataframe %>% filter(Simulated == FALSE)
+   
+   if("obs mean" %in% ct_dataframe$Trial == FALSE & 
+      mean_type != "none"){
+      suppressMessages(
+         CTagg <- ct_dataframe %>% 
+            group_by(across(.cols = -any_of(c("Individual", "Conc", 
+                                              "Age", "Weight_kg", 
+                                              "Height_cm", "Sex", 
+                                              "SerumCreatinine_umolL", "HSA_gL", 
+                                              "Haematocrit", "PhenotypeCYP2D6", 
+                                              "SmokingStatus")))) %>% 
+            summarize(Conc = switch(mean_type, 
+                                    "arithmetic" = mean(Conc, na.rm = T), 
+                                    "geometric" = gm_mean(Conc), 
+                                    "median" = median(Conc, na.rm = T))) %>% 
+            mutate(Trial = switch(mean_type, 
+                                  "arithmetic" = "mean", 
+                                  "geometric" = "geomean", 
+                                  "median" = "median"))
+      )
+      
+      ct_dataframe <- bind_rows(ct_dataframe, CTagg)
+      
+   }
    
    facet1_column <- rlang::enquo(facet1_column)
    facet2_column <- rlang::enquo(facet2_column)
@@ -433,7 +466,7 @@ ct_plot_obs <- function(ct_dataframe,
                    facet1_column = !!facet1_column,
                    facet2_column = !!facet2_column,
                    obs_to_sim_assignment = NA,
-                   mean_type = "arithmetic",
+                   mean_type = mean_type,
                    figure_type = figure_type, 
                    linear_or_log = linear_or_log,
                    color_labels = color_labels, 
@@ -471,7 +504,7 @@ ct_plot_obs <- function(ct_dataframe,
                    graph_title_size = graph_title_size, 
                    legend_position = legend_position,
                    prettify_compound_names = prettify_compound_names,
-                   qc_graph = qc_graph,
+                   qc_graph = FALSE,
                    existing_exp_details = NA,
                    save_graph = save_graph,
                    fig_height = fig_height,
