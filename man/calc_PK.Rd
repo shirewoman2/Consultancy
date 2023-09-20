@@ -13,6 +13,7 @@ calc_PK(
   fit_points_after_x_time = NA,
   fit_last_x_number_of_points = NA,
   returnAggregateOrIndiv = "both",
+  return_graphs_of_fits = TRUE,
   save_graphs_of_fits = FALSE,
   ncol = NULL,
   nrow = NULL,
@@ -68,9 +69,13 @@ data, values are pulled from simulator output -- not calculated -- and the
 output will be a data.frame with the PK parameters in columns and the
 statistics reported exactly as in the simulator output file.}
 
-\item{save_graphs_of_fits}{TRUE (default) or FALSE for whether to save png
+\item{return_graphs_of_fits}{TRUE (default) or FALSE for whether to return a
+list of the graphs showing the fitted data any time the dose 1 AUC was
+extrapolated to infinity.}
+
+\item{save_graphs_of_fits}{TRUE or FALSE (default) for whether to save png
 files of graphs showing the fitted data for any time the dose 1 AUC was
-extrapolated to infinity. This will save one pdf per set of file,
+extrapolated to infinity. This will save one png per set of file,
 compoundID, inhibitor, and tissue.}
 
 \item{ncol}{number of columns to use for graphing the fitted data}

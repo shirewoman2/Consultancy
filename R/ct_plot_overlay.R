@@ -501,15 +501,15 @@ ct_plot_overlay <- function(ct_dataframe,
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
    if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
-      stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
-", deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
-call. = FALSE)
+      stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:\n", 
+                 deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
+           call. = FALSE)
    }
    
    if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
-      stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:
-", deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
-call. = FALSE)
+      stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:\n", 
+                 deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
+           call. = FALSE)
    }
    
    if(length(obs_color) > 1){

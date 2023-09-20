@@ -21,7 +21,7 @@
 #'   running this multiple times in a loop to get all the PK you need. A member
 #'   of the R Working Group can help you set this up if you'd like.
 #' @param first_dose_time the time at which the first dose was administered.
-#'   Leaving this as the default (NA) will set this to 0. 
+#'   Leaving this as the default (NA) will set this to 0.
 #' @param last_dose_time NA the time at which the last dose was administered.
 #'   Leaving this as the default (NA) means that we'll assume that the last dose
 #'   was administered at the earliest time included in the data for the highest
@@ -51,9 +51,12 @@
 #'   data, values are pulled from simulator output -- not calculated -- and the
 #'   output will be a data.frame with the PK parameters in columns and the
 #'   statistics reported exactly as in the simulator output file.
-#' @param save_graphs_of_fits TRUE (default) or FALSE for whether to save png
+#' @param return_graphs_of_fits TRUE (default) or FALSE for whether to return a
+#'   list of the graphs showing the fitted data any time the dose 1 AUC was
+#'   extrapolated to infinity.
+#' @param save_graphs_of_fits TRUE or FALSE (default) for whether to save png
 #'   files of graphs showing the fitted data for any time the dose 1 AUC was
-#'   extrapolated to infinity. This will save one pdf per set of file,
+#'   extrapolated to infinity. This will save one png per set of file,
 #'   compoundID, inhibitor, and tissue.
 #' @param fig_width figure width in inches for saving graphs of fits (you may
 #'   want this to be huge if there are a lot of profiles). Defaults to 8.5.
@@ -75,6 +78,7 @@ calc_PK <- function(ct_dataframe,
                     fit_points_after_x_time = NA,
                     fit_last_x_number_of_points = NA, 
                     returnAggregateOrIndiv = "both", 
+                    return_graphs_of_fits = TRUE,
                     save_graphs_of_fits = FALSE, 
                     ncol = NULL, 
                     nrow = NULL, 
@@ -193,7 +197,7 @@ calc_PK <- function(ct_dataframe,
                                                        length.out = 100), ]
             
          }
-
+         
          if(is.na(fit_last_x_number_of_points)){
             Omit <- NA
          } else {
@@ -210,8 +214,8 @@ calc_PK <- function(ct_dataframe,
          
          if(any(TEMP == "Insufficient data to create model")){
             ElimFits[[j]] <- NULL
-            rm(TEMP)
-            
+            ExtrapProbs <- TRUE
+            AUCextrap_temp <- NA
          } else {
             
             if(any(is.na(TEMP$Estimates$Beta)) |
@@ -251,13 +255,15 @@ calc_PK <- function(ct_dataframe,
                   ggtitle(j) +
                   theme(title = element_text(size = 6))
             } 
+            
+            ElimFits[[j]] <- TEMP$Estimates
+            
+            ExtrapProbs <- any(is.na(ElimFits[[j]]$Beta))
+            
          }
-         
-         ElimFits[[j]] <- TEMP$Estimates
          
          rm(TEMP)
          
-         ExtrapProbs <- any(is.na(ElimFits[[j]]$Beta))
          Extrap <- ifelse(ExtrapProbs == FALSE, 
                           TRUE, FALSE)
          
@@ -301,16 +307,15 @@ calc_PK <- function(ct_dataframe,
             File = unique(ct_dataframe[[j]]$File), 
             ObsFile = unique(ct_dataframe[[j]]$ObsFile), 
             DoseNum = unique(ct_dataframe[[j]]$DoseNum), 
-            AUCinf = ifelse({ThisIsDose1}, AUCextrap_temp$AUC, NA),
-            AUCinf_fraction_extrapolated = ifelse({ThisIsDose1}, 
+            AUCinf = ifelse({ThisIsDose1 & Extrap}, AUCextrap_temp$AUC, NA),
+            AUCinf_fraction_extrapolated = ifelse({ThisIsDose1 & Extrap}, 
                                                   AUCextrap_temp$`Fraction extrapolated to infinity`, 
                                                   NA),
             ExtrapProbs = ExtrapProbs,
             AUCt = AUCt_temp, 
             Cmax = CmaxTmax_temp$Cmax, 
             tmax = CmaxTmax_temp$tmax) %>% 
-         mutate(CL = MyDose / ifelse({ThisIsDose1}, 
-                                     AUCextrap_temp$AUC, AUCt_temp) * 1000)
+         mutate(CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000)
       
       rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap)
    }
@@ -329,7 +334,7 @@ calc_PK <- function(ct_dataframe,
    if(any(PKtemp$ExtrapProbs)){
       warning(paste0(
          "The following combinations of data had problems with extrapolation to infinity. Data are listed by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
-         str_c(PKtemp$ID[PKtemp$ExtrapProbs], collapse = "\n")), 
+         str_c(unique(PKtemp$ID[PKtemp$ExtrapProbs], collapse = "\n"))), 
          call. = FALSE)
    }
    
@@ -394,6 +399,10 @@ calc_PK <- function(ct_dataframe,
    
    if(returnAggregateOrIndiv %in% c("aggregate", "both")){
       Out[["aggregate"]] <- PK_agg_temp 
+   }
+   
+   if(return_graphs_of_fits){
+      Out[["graphs"]] <- ElimFitGraphs
    }
    
    return(Out)
