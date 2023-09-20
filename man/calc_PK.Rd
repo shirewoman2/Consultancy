@@ -104,14 +104,16 @@ returns a list of individual and/or aggregate PK data
 \description{
 \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
 Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the
-supplied concentration-time data. This can accommodate multiple simulations
-and multiple compounds as long as the dosing regimen was the same. For
-example, this will do fine with calculating the last-dose PK for two
-simulations where the last dose of substrate was at t = 168 h but not where
-one simulation last dose was at t = 168 h and one was at t = 48 h. If you've
-got a scenario like that, we recommend running this function multiple times,
-one for each dosing regimen. The input required for \code{ct_dataframe} is
-pretty specific; please see the help file for that argument.
+supplied concentration-time data and, when applicable, the same parameters in
+the presence of an effector and the ratios of those values for effector /
+baseline. This can accommodate multiple simulations and multiple compounds as
+long as the dosing regimen was the same. For example, this will do fine with
+calculating the last-dose PK for two simulations where the last dose of
+substrate was at t = 168 h but not where one simulation last dose was at t =
+168 h and one was at t = 48 h. If you've got a scenario like that, we
+recommend running this function multiple times, one for each dosing regimen.
+The input required for \code{ct_dataframe} is pretty specific; please see the
+help file for that argument.
 }
 \examples{
 # None yet

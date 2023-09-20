@@ -3,14 +3,16 @@
 #'
 #' \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
 #' Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the
-#' supplied concentration-time data. This can accommodate multiple simulations
-#' and multiple compounds as long as the dosing regimen was the same. For
-#' example, this will do fine with calculating the last-dose PK for two
-#' simulations where the last dose of substrate was at t = 168 h but not where
-#' one simulation last dose was at t = 168 h and one was at t = 48 h. If you've
-#' got a scenario like that, we recommend running this function multiple times,
-#' one for each dosing regimen. The input required for \code{ct_dataframe} is
-#' pretty specific; please see the help file for that argument.
+#' supplied concentration-time data and, when applicable, the same parameters in
+#' the presence of an effector and the ratios of those values for effector /
+#' baseline. This can accommodate multiple simulations and multiple compounds as
+#' long as the dosing regimen was the same. For example, this will do fine with
+#' calculating the last-dose PK for two simulations where the last dose of
+#' substrate was at t = 168 h but not where one simulation last dose was at t =
+#' 168 h and one was at t = 48 h. If you've got a scenario like that, we
+#' recommend running this function multiple times, one for each dosing regimen.
+#' The input required for \code{ct_dataframe} is pretty specific; please see the
+#' help file for that argument.
 #'
 #' @param ct_dataframe a data.frame of concentration-time data in the same
 #'   format as those created by running \code{extractConcTime},
@@ -61,7 +63,7 @@
 #'   that we'll fit all the data after tmax. Keep in mind that this will apply
 #'   to ALL profiles.
 #' @param returnAggregateOrIndiv return aggregate and/or individual PK
-#'   parameters? Options are "aggregate", "individual", or "both" (default). 
+#'   parameters? Options are "aggregate", "individual", or "both" (default).
 #' @param return_graphs_of_fits TRUE (default) or FALSE for whether to return a
 #'   list of the graphs showing the fitted data any time the dose 1 AUC was
 #'   extrapolated to infinity.
@@ -349,6 +351,44 @@ calc_PK <- function(ct_dataframe,
          str_c(unique(PKtemp$ID[PKtemp$ExtrapProbs], collapse = "\n"))), 
          call. = FALSE)
    }
+   
+   ## Checking for possible DDI parameters to calculate -----------------------
+   
+   if(any(PKtemp$Inhibitor != "none")){
+      suppressMessages(
+         PKDDI <- PKtemp %>% select(-ID) %>% 
+            # Recoding inhibitor to be consistent. Only using "none" and "inhibitorX".
+            mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitorX")) %>% 
+            pivot_wider(names_from = Inhibitor, 
+                        values_from = Value) %>% 
+            mutate(Value = inhibitorX / none, 
+                   PKparameter = sub("_dose1", "_ratio_dose1", PKparameter), 
+                   PKparameter = sub("_last", "_ratio_last", PKparameter)) %>% 
+            select(CompoundID, Tissue, Individual, Trial,
+                   Simulated, File, ObsFile, DoseNum, PKparameter, Value) %>% 
+            # Remove any instances where there weren't matching data
+            filter(complete.cases(Value)) %>% 
+            # Get the inhibitor name back
+            left_join(PKtemp %>% 
+                         select(CompoundID, Tissue, Individual, 
+                                Trial, Simulated, File, 
+                                ObsFile, DoseNum, Inhibitor)) %>% 
+            mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
+                              ifelse(Simulated == TRUE, "simulated", "observed"),
+                              File, ObsFile, DoseNum))
+      )
+      
+      PKtemp <- bind_rows(PKtemp, PKDDI) %>% 
+         # Also fixing PK parameter names here since they should be different in
+         # the presence of an effector.
+         mutate(PKparameter = case_when(Inhibitor != "none" &
+                                           !str_detect(PKparameter, "ratio") ~ 
+                                           paste0(PKparameter, "_withInhib"), 
+                                        TRUE ~ PKparameter))
+      
+   }
+   
+   ## Calculating aggregate stats --------------------------------------------
    
    if(returnAggregateOrIndiv %in% c("aggregate", "both")){
       
