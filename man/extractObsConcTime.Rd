@@ -4,7 +4,7 @@
 \alias{extractObsConcTime}
 \title{Extract observed concentration-time data from an Excel file}
 \usage{
-extractObsConcTime(obs_data_file, returnDosingInfo = FALSE)
+extractObsConcTime(obs_data_file, add_t0 = FALSE, returnDosingInfo = FALSE)
 }
 \arguments{
 \item{obs_data_file}{name of the Excel file containing the observed
@@ -12,6 +12,14 @@ concentration-time data, in quotes. This is the file that is \emph{ready}
 to be converted to an XML file, not a file that contains only digitized
 time and concentration data and not the XML file itself that you would
 include in a Simulator workspace for observed data.}
+
+\item{add_t0}{TRUE or FALSE (default) for whether to add t0 points if they're
+missing. Sometimes, observed data do not include a measurement at t0
+because, presumably, the concentration should always be 0 at that time. If
+you're using these data to calculate PK, though, you'll miss that initial
+part of the AUC if t0 is missing. If \code{add_t0} is set to TRUE, this
+will add a concentration of 0 and time 0 for all of the individual
+concentration-time profiles.}
 
 \item{returnDosingInfo}{TRUE or FALSE (default) for whether to return a
 second data.frame with dosing and demographic information from the Excel
@@ -24,7 +32,7 @@ a data.frame or a list of two data.frames. The observed
   \describe{\item{Individual}{the individual ID}
 
   \item{CompoundID}{the compound ID listed in the observed file, e.g., "Sub
-  Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma"}
+  Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma" will become "substrate" and so on}
 
   \item{Tissue}{the tissue}
 
