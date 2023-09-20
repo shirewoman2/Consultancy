@@ -25,7 +25,7 @@
 #'   some cases but not others, set this to the column with the inhibitor data,
 #'   and any time the value changes in \code{obs_dataframe}, the number in the
 #'   "DV" column will change in the output. We'll include a message to indicate
-#'   which value in the original data was used for which DV number. 
+#'   which value in the original data was used for which DV number.
 #' @param dose the amount of the dose. If this amount varies, please include one
 #'   dose amount for each time. For example: \code{dose = c(100, 50, 50)} will
 #'   generate doses of 100 mg for the first dose and then 50 mg for the next two
@@ -44,9 +44,10 @@
 #'   "Auto-detect". Not case sensitive.
 #' @param dose_interval the dosing interval in hours. Default is NA for a single
 #'   dose. Set this to, e.g., 24 for a QD dosing regimen.
-#' @param num_doses the number of doses to generate. If this is left as NA, then
-#'   the value for \code{end_time} will be used to determine the number of doses
-#'   administered.
+#' @param num_doses the number of doses to generate. If this is left as NA and
+#'   you have specified the dose interval, then the value for \code{end_time}
+#'   will be used to determine the number of doses administered. If this is NA
+#'   and so is \code{dose_interval}, we'll assume you want a single dose.
 #' @param end_time the end time of the study in hours. If \code{num_doses} is
 #'   filled out, that value will be used preferentially.
 #' @param custom_dosing_schedule a custom dosing schedule to be used for each
