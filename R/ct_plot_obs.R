@@ -420,6 +420,12 @@ ct_plot_obs <- function(ct_dataframe,
               call. = FALSE)
    }
    
+   # If they didn't include the column "Simulated" and they're using this
+   # particular function, that's probably b/c all of the data are observed.
+   if("Simulated" %in% names(ct_dataframe)){
+         ct_dataframs$Simulated <- FALSE
+   }
+   
    # Main body of function -------------------------------------------------
    
    ct_dataframe <- ct_dataframe %>% filter(Simulated == FALSE)
