@@ -201,6 +201,11 @@ format_obs_for_XML <- function(obs_dataframe,
       
       if("Sex" %in% names(demog_dataframe)){
          demog_dataframe <- demog_dataframe %>%  
+            mutate(Sex = str_sub(str_to_upper(Sex), 1, 1))
+      }
+      
+      if("subj_sex" %in% names(demog_dataframe)){
+         demog_dataframe <- demog_dataframe %>%  
             mutate(Sex = str_sub(str_to_upper(subj_sex), 1, 1))
       }
    }
