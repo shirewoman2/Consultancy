@@ -1441,6 +1441,12 @@ forest_plot <- function(forest_dataframe,
          # Making sure they've got a good extension
          Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
          FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg", "docx") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
                                   "png", "bmp", "svg", "jpg", "docx"), 
                        Ext, "png")
