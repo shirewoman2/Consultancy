@@ -369,10 +369,10 @@ calc_PK <- function(ct_dataframe,
             # Remove any instances where there weren't matching data
             filter(complete.cases(Value)) %>% 
             # Get the inhibitor name back
-            left_join(PKtemp %>% 
+            left_join(PKtemp %>% filter(Inhibitor != "none") %>% 
                          select(CompoundID, Tissue, Individual, 
                                 Trial, Simulated, File, 
-                                ObsFile, DoseNum, Inhibitor)) %>% 
+                                ObsFile, DoseNum, Inhibitor) %>% unique()) %>% 
             mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
                               ifelse(Simulated == TRUE, "simulated", "observed"),
                               File, ObsFile, DoseNum))
