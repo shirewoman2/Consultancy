@@ -502,7 +502,6 @@ pksummary_mult <- function(sim_data_files = NA,
             
             names(observed_PKDF)[ColToUse] <- "Value"
             rm(ColToUse)
-               filter(complete.cases(File)) %>% 
          }
          
          # If they've only supplied a single set of PK parameters -- i.e., all

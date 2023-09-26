@@ -94,7 +94,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
    MissingSimFiles <- WkspFilesNoExt[
       sapply(WkspFilesNoExt, FUN = function(x){any(str_detect(WkspFile, x))}) == FALSE]
    
-   if(length(Missing) > 0){
+   if(length(MissingSimFiles) > 0){
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
                      " is/are not present and thus will not be extracted.\n"), 

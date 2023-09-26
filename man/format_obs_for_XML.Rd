@@ -80,9 +80,6 @@ default is 0.}
 \item{dose_interval}{the dosing interval in hours. Default is NA for a single
 dose. Set this to, e.g., 24 for a QD dosing regimen.}
 
-\item{dose_interval}{the dosing interval in hours. Default is NA for a single
-dose. Set this to, e.g., 24 for a QD dosing regimen.}
-
 \item{num_doses}{the number of doses to generate. If this is left as NA and
 you have specified the dose interval, then the value for \code{end_time}
 will be used to determine the number of doses administered. If this is NA
