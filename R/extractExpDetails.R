@@ -106,8 +106,7 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # If they didn't include ".xlsx" at the end, add that.
-   sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
-                           sim_data_file, paste0(sim_data_file, ".xlsx"))
+   sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
    
    # Checking that the file is, indeed, a simulator output file.
    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
@@ -672,12 +671,14 @@ extractExpDetails <- function(sim_data_file,
                   data.frame(
                      Detail = c("CLiv_InVivoCL", 
                                 "CLpo_InVivoCL", 
+                                "CLint_biliary",
                                 "CLint_biliary_fuinc", 
                                 "CLrenal", 
                                 "CL_AddSystemic", 
                                 "CL_PercentAvailReabsorption"),
                      RegexRow = c("CL.*iv.*[(]mL", 
                                   "CL.*po.*[(]mL", 
+                                  "Biliary Clearance ..L/min",
                                   "Biliary fu inc", 
                                   "CL R .mL", 
                                   "^Additional Systemic Clearance", 
@@ -724,25 +725,27 @@ extractExpDetails <- function(sim_data_file,
                                   "\\(elution\\) Correction Factor")
                   )
                
-               for(i in LivOrInt){
-                  OrganRows <- range(
-                     which(str_detect(MyNames, i) |
-                              str_detect(MyNames,
-                                         paste0(str_sub(i, 1, 1), "M")))
-                  )
-                  
-                  for(k in 1:nrow(LivIndCL)){
-                     MyRow <- which(str_detect(MyNames[OrganRows[1]:OrganRows[2]],
-                                               LivIndCL$RegexRow[k]))
-                     if(length(MyRow) == 0){
-                        Out[[paste0(sub("XXX", i, LivIndCL$Detail[k]), Suffix)]] <- NA
-                     } else {
-                        suppressWarnings(
-                           Out[[paste0(sub("XXX", i, LivIndCL$Detail[k]), Suffix)]] <-
-                              as.character(InputTab[MyRow + CLRows - 1, ValueCol])
-                        )
+               if(length(LivOrInt[complete.cases(LivOrInt)]) > 0){
+                  for(i in LivOrInt[complete.cases(LivOrInt)]){
+                     OrganRows <- range(
+                        which(str_detect(MyNames, i) |
+                                 str_detect(MyNames,
+                                            paste0(str_sub(i, 1, 1), "M")))
+                     )
+                     
+                     for(k in 1:nrow(LivIndCL)){
+                        MyRow <- which(str_detect(MyNames[OrganRows[1]:OrganRows[2]],
+                                                  LivIndCL$RegexRow[k]))
+                        if(length(MyRow) == 0){
+                           Out[[paste0(sub("XXX", i, LivIndCL$Detail[k]), Suffix)]] <- NA
+                        } else {
+                           suppressWarnings(
+                              Out[[paste0(sub("XXX", i, LivIndCL$Detail[k]), Suffix)]] <-
+                                 as.character(InputTab[MyRow + CLRows - 1, ValueCol])
+                           )
+                        }
+                        rm(MyRow)
                      }
-                     rm(MyRow)
                   }
                }
                
@@ -1390,15 +1393,16 @@ extractExpDetails <- function(sim_data_file,
       # Checking that the workspace file is available. This will ignore the
       # date/time stamp on the Excel results if it's still there. 
       
-      # LSh: Note that this will NOT look at workspaces for Simcyp Discovery
-      # files b/c those have a different file extension. I haven't set up
-      # anything for extracting info from .dscw files, although I bet they're
-      # set up really similarly, so we probably could in the future.
-      if(file.exists(sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
-                         ".wksz", sim_data_file))){
+      WkspFile <- c("Simulator" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
+                                      ".wksz", sim_data_file), 
+                    "Discovery" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.xlsx$",
+                                      ".dscw", sim_data_file))
+      WkspFile <- WkspFile[which(file.exists(WkspFile))]
+      
+      if(length(WkspFile) > 0){
          
          TEMP <- extractExpDetails_XML(
-            sim_workspace_files = sub("xlsx$", "wksz", sim_data_file), 
+            sim_workspace_files = WkspFile, 
             compoundsToExtract = "all",
             exp_details = "all") %>% 
             # This currently removes anything that we already have from the

@@ -1,18 +1,20 @@
 #' Extract experimental details for multiple Simcyp Simulator workspace files at
 #' once
 #'
-#' \code{extractExpDetails_XML} takes a character vector of Simcyp Simulator
-#' workspaces -- or all the workspace files in the current directory if no files
-#' are specified -- and collects experimental details for the simulations into a
-#' single table. It optionally saves that table to a csv or Excel file.
+#' \code{extractExpDetails_XML} takes a character vector of Simcyp Simulator or
+#' Simcyp Discovery workspaces -- or all the workspace files in the current
+#' directory if no files are specified -- and collects experimental details for
+#' the simulations into a single table. It optionally saves that table to a csv
+#' or Excel file.
 #' 
 
-#' @param sim_workspace_files a character vector of simulator output files, each
-#'   in quotes and encapsulated with \code{c(...)}, NA to extract experimental
-#'   details for \emph{all} the Simulator workspace files in the current folder,
-#'   or "recursive" to extract experimental details for \emph{all} the Simulator
-#'   workspace files in the current folder and \emph{all} subfolders. Example of
-#'   acceptable input: \code{c("sim1.wksz", "sim2.wksz")}.
+#' @param sim_workspace_files a character vector of simulator files, each in
+#'   quotes and encapsulated with \code{c(...)}, NA to extract experimental
+#'   details for \emph{all} the Simulator or Discovery workspace files in the
+#'   current folder, or "recursive" to extract experimental details for
+#'   \emph{all} the Simulator or Discovery workspace files in the current folder
+#'   and \emph{all} subfolders. Example of acceptable input: \code{c("sim1.wksz",
+#'   "sim2.wksz")}.
 #' @param exp_details experimental details you want to extract from the
 #'   simulator workspace files; currently "all" is the only acceptable input and
 #'   anything else will be ignored. These are much more limited than the options
@@ -43,8 +45,9 @@
 #'   correct data.}
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-#'   csv file.
+#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the
+#'   file name. If you leave off the file extension, it will be saved as a csv
+#'   file.
 #'
 #' @return Returns a data.frame of the experimental details
 #' @export
@@ -72,28 +75,33 @@ extractExpDetails_XML <- function(sim_workspace_files,
    # recursive.
    if(length(sim_workspace_files) == 1 &&
       (is.na(sim_workspace_files) | sim_workspace_files == "recursive")){
-      sim_workspace_files <- list.files(pattern = "wksz$",
+      sim_workspace_files <- list.files(pattern = "wksz$|dscw$",
                                         recursive = (complete.cases(sim_workspace_files) &&
                                                         sim_workspace_files == "recursive"))
       sim_workspace_files <- sim_workspace_files[!str_detect(sim_workspace_files, "^~")]
    }
    
-   # If they didn't include ".wksz" at the end, add that.
-   sim_workspace_files <- sub("\\.xlsx$", "", sim_workspace_files)
-   sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE] <-
-      paste0(sim_workspace_files[str_detect(sim_workspace_files, "\\.wksz$") == FALSE], 
-             ".wksz")
+   # If they didn't include ".wksz" or ".dscw" at the end, add that.
+   WkspFilesNoExt <- sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?(\\.xlsx|\\.dscw|\\.wksz)$",
+                         "", sim_workspace_files)
+   WkspFile <- list("Simulator" = paste0(WkspFilesNoExt, ".wksz"), 
+                    "Discovery" = paste0(WkspFilesNoExt, ".dscw"))
+   WkspFile$Simulator <- WkspFile$Simulator[which(file.exists(WkspFile$Simulator))]
+   WkspFile$Discovery <- WkspFile$Discovery[which(file.exists(WkspFile$Discovery))]
+   WkspFile <- as.character(unlist(WkspFile))
    
-   # Making sure that all the files exist before attempting to pull data
-   if(any(file.exists(sim_workspace_files) == FALSE)){
-      MissingSimFiles <- sim_workspace_files[
-         which(file.exists(sim_workspace_files) == FALSE)]
+   # Warning when file doesn't exist
+   MissingSimFiles <- WkspFilesNoExt[
+      sapply(WkspFilesNoExt, FUN = function(x){any(str_detect(WkspFile, x))}) == FALSE]
+   
+   if(length(Missing) > 0){
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
                      " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
-      sim_workspace_files <- setdiff(sim_workspace_files, MissingSimFiles)
    }
+   
+   sim_workspace_files <- WkspFile
    
    # Checking compound IDs
    compoundsToExtract <- tolower(compoundsToExtract)
@@ -167,7 +175,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
             exp_details_cmpd <- 
                exp_details[exp_details %in% CompoundDetails &
                               exp_details %in% (XMLDeets %>% filter(CompoundID == j) %>% 
-                              pull(Detail))]
+                                                   pull(Detail))]
             
             for(k in exp_details_cmpd){
                
