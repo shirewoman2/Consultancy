@@ -20,11 +20,12 @@
 #' the argument \code{compound_dose_amount} for an example.)
 #'
 #'
-#' @param dose_interval the dosing interval in hours. Default is 24 for a QD
-#'   dosing regimen. Set this to NA for a single dose.
-#' @param num_doses the number of doses to generate. If this is left as NA, then
-#'   the value for \code{end_time} will be used to determine the number of doses
-#'   administered.
+#' @param dose_interval the dosing interval in hours. Default is NA for a single
+#'   dose. Set this to, e.g., 24 for a QD dosing regimen.
+#' @param num_doses the number of doses to generate. If this is left as NA and
+#'   you have specified the dose interval, then the value for \code{end_time}
+#'   will be used to determine the number of doses administered. If this is NA
+#'   and so is \code{dose_interval}, we'll assume you want a single dose.
 #' @param end_time the end time of the dosing in hours. If \code{num_doses} is
 #'   filled out, that value will be used preferentially.
 #' @param custom_dosing_schedule a custom dosing schedule to be used for each
@@ -113,7 +114,7 @@
 #'
 #'                   
 
-create_doses <- function(dose_interval = 24, 
+create_doses <- function(dose_interval = NA, 
                          num_doses = NA,
                          end_time = NA,
                          custom_dosing_schedule = NA,
@@ -217,7 +218,7 @@ create_doses <- function(dose_interval = 24,
    ## Generate new data.frame with dosing rows ----------------------------
    
    if(all(is.na(custom_dosing_schedule))){
-      if(complete.cases(num_doses)){
+      if(complete.cases(num_doses) && num_doses > 1){
          DoseTimes <- seq(0, (num_doses - 1) * dose_interval, by = dose_interval)
       } else if(complete.cases(dose_interval)){
          DoseTimes <- seq(0, end_time, by = dose_interval)

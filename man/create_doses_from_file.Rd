@@ -11,9 +11,9 @@ create_doses_from_file(
   num_doses = NA,
   end_time = NA,
   custom_dosing_schedule = NA,
-  compound_ID = "Substrate",
-  compound_start = 0,
-  compound_route = "Oral",
+  compoundID = "Substrate",
+  compound_dosing_start_time = 0,
+  compound_dose_route = "Oral",
   compound_dose_unit = "mg",
   compound_dose_amount = 100,
   compound_inf_duration = NA,
@@ -45,17 +45,17 @@ subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 180, 192)}; if this is filled out, values in \code{dose_interval},
 \code{num_doses}, and \code{end_time} will all be ignored.}
 
-\item{compound_ID}{specify the compound that's being dosed. Options are
+\item{compoundID}{specify the compound that's being dosed. Options are
 "Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
 case sensitive. If you list more than one compound, you must also list more
-than one \code{compound_route}, \code{compound_dose_unit}, and
+than one \code{compound_dose_route}, \code{compound_dose_unit}, and
 \code{compound_dose_amount} or list just one of each with the understanding
 that they will all be the same.}
 
-\item{compound_start}{the start time of compound administration (h); default
-is 0.}
+\item{compound_dosing_start_time}{the start time of compound administration
+(h); default is 0.}
 
-\item{compound_route}{the route of administration. Options are "Oral"
+\item{compound_dose_route}{the route of administration. Options are "Oral"
 (default), "Intravenous", "Dermal", "Inhaled", "SC-First Order",
 "SC-Mechanistic", or "Auto-detect". Not case sensitive.}
 
@@ -134,8 +134,8 @@ create_dose_rows_from_file(study_file = "My dose info.csv",
 Doses_sub <- create_doses(study_file = "Subject metadata.csv",
                           subj_ID_column = SubjectID,
                           subj_age_column = Age,
-                          num_doses = 1, compound_ID = "Substrate",
-                          compound_start = 168,
+                          num_doses = 1, compoundID = "Substrate",
+                          compound_dosing_start_time = 168,
                           compound_dose_amount = 10)
 
 # Inhibitor is dosed QD at 500 mg for 336 h starting at t = 0 h.
@@ -143,8 +143,8 @@ Doses_inhib <- create_doses(study_file = "Subject metadata.csv",
                             subj_ID_column = SubjectID,
                             subj_age_column = Age,
                             dose_interval = 24, end_time = 336,
-                            compound_ID = "Inhibitor 1",
-                            compound_start = 0,
+                            compoundID = "Inhibitor 1",
+                            compound_dosing_start_time = 0,
                             compound_dose_amount = 500)
 
 MyDoses <- bind_rows(Doses_sub, Doses_inhib)

@@ -324,3 +324,11 @@
 #' @format A data.frame 
 "SOdata"
 
+
+#' All possible compound IDs, suffixes, etc.
+#'
+#' @format A data.frame 
+"AllCompounds"
+
+
+

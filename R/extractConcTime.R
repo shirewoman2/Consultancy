@@ -517,10 +517,15 @@ extractConcTime <- function(sim_data_file,
    CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
    
    StartRow <- which(str_detect(sim_data_xl$...1, "Population Statistics"))[1]
-   EndRow <- NApos[NApos > StartRow][1] - 1
+   EndRow <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))[1]
+   EndRow <- max(NApos[NApos < EndRow]) - 1
    CmpdMatches2 <- sim_data_xl$...1[StartRow:EndRow]
-   CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "Time")) + 1]
-   CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "[CI]Sys( )?[1-9]?"))
+   CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "Time|\\+ interaction")) + 1]
+   CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "[CI]Sys( )?[1-9]?(.*interaction)?"))
+   CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?interaction")] <- 
+      paste(str_extract(CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?interaction")], "[CI]Sys"), 
+            "interaction")
+   CmpdMatches2 <- unique(CmpdMatches2)
    
    if(length(CmpdMatches1) != length(CmpdMatches2)){
       warning("PLEASE TELL LAURA SHIREMAN YOU SAW AN ERROR CALLED `COMPOUNDCODE` WHEN TRYING TO EXTRACT CONCENTRATION TIME DATA")

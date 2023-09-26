@@ -45,6 +45,13 @@
 #'   pretty column names such as "Dose 1 AUCinf (h*ng/mL)" whereas FALSE leaves
 #'   the column with the R-friendly name from \code{\link{extractPK}}, e.g.,
 #'   "AUCinf_dose1".
+#' @param sort_column optionally specify a column to sort by. If none are
+#'   supplied, the table will not be sorted. If you would like to sort by more
+#'   than one column, we recommend sorting \emph{before} using this function,
+#'   e.g., \code{MyPKTable <- MyPKTable \%>\% arrange(Study, Dose)} to sort by
+#'   the column "Study" and then by the column "Dose" and \emph{then} supply
+#'   "MyPKTable" to \code{formatTable_Simcyp}. (This is just an example; your
+#'   table must include those two columns for that to work.)
 #' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
 #'   simulated-to-observed ratios. Anything that is above those values or below
 #'   the inverse of those values will be highlighted. To figure out what cells
@@ -72,16 +79,16 @@
 #'   \code{highlight_so_colors} with the default setting, values in the middle,
 #'   "good" range of S/O values will be highlighted a light green.}
 #'
-#'   \item{"traffic"}{light green, yellow, and red designed to display values 
+#'   \item{"traffic"}{light green, yellow, and red designed to display values
 #'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
-#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O 
-#'   values. This color scheme was borrowed from Lisa, so if you've seen her 
+#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
+#'   values. This color scheme was borrowed from Lisa, so if you've seen her
 #'   slides, these will look familiar.}
 #'
 #'   \item{a character vector of specific colors}{Any R-acceptable colors, will
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
-#'   If you do specify your own bespoke colors, you'll need to make sure that 
-#'   you supply one color for every value in \code{highlight_so_cutoffs}.} 
+#'   If you do specify your own bespoke colors, you'll need to make sure that
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param highlight_cells optionally specify cells in the table to be
 #'   highlighted with a numeric vector where the 1st number is the row number
 #'   and the 2nd number is the column number (just like regular row and column
@@ -95,8 +102,9 @@
 #'   Color can be specified using any R-friendly color name or hex code, e.g.,
 #'   "red" or "#D8212D".
 #' @param save_table optionally save the output table by supplying a file name
-#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off
-#'   the file extension, we'll assume you want it to be ".docx". If there is a
+#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
+#'   slashes, dollar signs, or periods in the file name. If you leave off the
+#'   file extension, we'll assume you want it to be ".docx". If there is a
 #'   column titled "File" in your table, we'll add a caption listing which files
 #'   were included.
 #' @param title_document optionally specify a title for the Word document
@@ -107,72 +115,74 @@
 #'
 #' @examples
 #' MyPKTable <- tibble(Statistic = c("Simulated", "CV%", "Observed", "S/O"),
-#'                         AUCinf = c(2756, 32.5, 1801, 1.53), 
-#'                         Cmax = c(852, 45.8, 775, 1.1), 
+#'                         AUCinf = c(2756, 32.5, 1801, 1.53),
+#'                         Cmax = c(852, 45.8, 775, 1.1),
 #'                         `Half life` = c(7.75, 5.7, 6.05, 1.28))
 #' formatTable_Simcyp(MyPKTable)
 #' formatTable_Simcyp(MyPKTable, center_1st_column = TRUE)
 #' formatTable_Simcyp(MyPKTable, fontsize = 18)
 #' formatTable_Simcyp(MyPKTable, shading_column = Statistic)
-#' 
+#'
 #' # Highlighting examples
 #' ## Highlighting S/O values outside bioequivalence of 125%.
 #' formatTable_Simcyp(MyPKTable,
 #'                    highlight_so_cutoffs = 1.25)
-#' 
+#'
 #' ## Highlighting S/O values with a few more colors based on the S/O.
 #' formatTable_Simcyp(MyPKTable,
 #'                    highlight_so_cutoffs = c(1.25, 1.5))
-#' 
+#'
 #' ## Highlighting S/O values and shading the "good" values green.
 #' formatTable_Simcyp(MyPKTable,
 #'                    highlight_so_cutoffs = c(1, 1.25, 1.5))
-#' 
+#'
 #' ## Highlight exactly the cells you want, e.g., row 1, column 2
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(1, 2))
-#' 
+#'
 #' ## Highlight all of column 2
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(NA, 2))
-#' 
+#'
 #' ## Highlight all of row 1
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(1, NA))
-#' 
+#'
 #' ## Highlight the 2nd column in the header
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(0, 2))
-#' 
+#'
 #' ## Set the highlight color to light blue instead of yellow
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(1, NA),
 #'                    highlight_color = "lightblue")
-#' 
+#'
 #' ## Highlighting multiple cells
-# 'formatTable_Simcyp(MyPKTable, highlight_cells = list(c(1, 2), c(3,3), c(4, 2)),
+#' formatTable_Simcyp(MyPKTable, highlight_cells = list(c(1, 2), c(3,3), c(4, 2)),
 #'                    highlight_color = "lightblue")
-#' 
+#'
 #' # Bold-face examples
 #' ## Make only the cell in row 4 and column 2 be bold face. This will
 #' ## override the default of having the header row and the 1st column in bold.
 #' formatTable_Simcyp(MyPKTable, bold_cells = c(4, 2))
-#' 
+#'
 #' ## Make the cell in row 4 and column 2 be bold face AND include the original
 #' ## defaults of having the header row and the 1st column be in bold.
 #' formatTable_Simcyp(MyPKTable, bold_cells = list(c(0, NA), c(NA, 1), c(4, 2)))
-#' 
+#'
 #' # Saving
 #' ## Adding a column called "File" so that there will be a caption in the Word
-#' ## document listing which files were included in the table. Also setting 
+#' ## document listing which files were included in the table. Also setting
 #' ## the document title.
 #' MyPKTable$File <- "abc-1a.xlsx"
-#' formatTable_Simcyp(MyPKTable, 
+#' formatTable_Simcyp(MyPKTable,
 #'                    highlight_so_cutoffs = c(1, 1.25, 1.5),
-#'                    save_table = "My data.docx", 
+#'                    save_table = "My data.docx",
 #'                    title_document = "PK data")
+#'
 #' 
-#' 
+
 
 formatTable_Simcyp <- function(DF, 
                                fontsize = 11, 
                                shading_column, 
                                merge_shaded_cells = TRUE,
+                               sort_column, 
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
                                prettify_columns = FALSE, 
@@ -235,9 +245,18 @@ formatTable_Simcyp <- function(DF,
       DF <- prettify_column_names(DF)
    }
    
+   if(prettify_columns){
+      DF <- prettify_column_names(DF)
+   }
+   
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
+   sort_column <- rlang::enquo(sort_column)
    
+   if(as_label(sort_column) != "<empty>"){
+      DF <- DF %>% group_by(across(.cols = any_of("File"))) %>% 
+         arrange(!!sort_column)
+   }
    
    # Main body of function -------------------------------------------------
    FT <- flextable::flextable(DF)

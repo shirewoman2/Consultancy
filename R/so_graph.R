@@ -997,8 +997,14 @@ so_graph <- function(PKtable,
          # Making sure they've got a good extension
          Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
          FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg", "docx") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                  "png", "bmp", "svg", "jpg"), 
+                                  "png", "bmp", "svg", "jpg", "docx"), 
                        Ext, "png")
          FileName <- paste0(FileName, ".", Ext)
       } else {
@@ -1006,10 +1012,31 @@ so_graph <- function(PKtable,
          Ext <- "png"
       }
       
-      # This is when they want any kind of graphical file format.
-      ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-             plot = G)
-      
+      if(Ext == "docx"){
+         
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         rmarkdown::render(system.file("rmarkdown/templates/sograph/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_dir = OutPath, 
+                           output_file = FileName, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+      } else {
+         # This is when they want any kind of graphical file format.
+         ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                plot = G)
+         
+      }
    }
    
    return(G)
