@@ -810,6 +810,37 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # all data together -------------------------------------------------
    
+   # Dealing with custom dosing regimens
+   if("Dose_sub" %in% names(ct_dataframe) &
+      "Dose_sub" %in% names(MultData) &&
+      (class(ct_dataframe$Dose_sub) == "character" |
+      class(MultData$Dose_sub) == "character")){
+      
+      MultData$Dose_sub <- as.character(MultData$Dose_sub)
+      ct_dataframe$Dose_sub <- as.character(ct_dataframe$Dose_sub)
+      
+   }
+   
+   if("Dose_inhib" %in% names(ct_dataframe) &
+      "Dose_inhib" %in% names(MultData) &&
+      (class(ct_dataframe$Dose_inhib) == "character" |
+       class(MultData$Dose_inhib) == "character")){
+      
+      MultData$Dose_inhib <- as.character(MultData$Dose_inhib)
+      ct_dataframe$Dose_inhib <- as.character(ct_dataframe$Dose_inhib)
+      
+   }
+   
+   if("Dose_inhib2" %in% names(ct_dataframe) &
+      "Dose_inhib2" %in% names(MultData) &&
+      (class(ct_dataframe$Dose_inhib2) == "character" |
+       class(MultData$Dose_inhib2) == "character")){
+      
+      MultData$Dose_inhib2 <- as.character(MultData$Dose_inhib2)
+      ct_dataframe$Dose_inhib2 <- as.character(ct_dataframe$Dose_inhib2)
+      
+   }
+   
    ct_dataframe <- bind_rows(ct_dataframe, MultData) %>% 
       select(-any_of(c("ID", "Breaks"))) %>% 
       arrange(across(any_of(c("File", "Compound", "Inhibitor", "Simulated",
