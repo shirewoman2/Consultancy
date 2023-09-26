@@ -522,9 +522,11 @@ pksummary_mult <- function(sim_data_files = NA,
       # Now error catching for either long or wide obs data
       
       # If user has not included "xlsx" in file name, add that.
-      observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)] <-
-         paste0(observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)], 
-                ".xlsx")
+      if(any(str_detect(observed_PKDF$File, "xlsx$") == FALSE)){
+         observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)] <-
+            paste0(observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)], 
+                   ".xlsx")
+      }
       
       if(Wide == FALSE & 
          all(c("PKparameter", "Value") %in% names(observed_PKDF)) == FALSE){
