@@ -245,6 +245,10 @@ formatTable_Simcyp <- function(DF,
       DF <- prettify_column_names(DF)
    }
    
+   if(prettify_columns){
+      DF <- prettify_column_names(DF)
+   }
+   
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
    sort_column <- rlang::enquo(sort_column)

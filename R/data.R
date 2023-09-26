@@ -137,65 +137,79 @@
 
 #' All possible experimental details for \code{\link{extractExpDetails}}
 #'
-#' All possible experimental details that can be extracted from a simulator
-#' output file using \code{\link{extractExpDetails}}. This version includes
-#' columns used only internally with coding. For the more user-friendly version,
-#' see \code{\link{ExpDetailDefinitions}}.
+#' INTERNAL USE: All possible experimental details that can be extracted from a
+#' simulator output file using \code{\link{extractExpDetails}}. This version
+#' includes columns used only internally with coding. For the more user-friendly
+#' version, see \code{\link{ExpDetailDefinitions}}.
 #'
-#' @format A data.frame with 21 columns: \describe{
+#' @format A data.frame with columns: \describe{
 #'
 #'   \item{Detail}{the experimental detail name to use with
 #'   \code{\link{extractExpDetails}} for the argument \code{exp_details}}
 #'
-#'   \item{CompoundID}{the specific compound ID this experimental detail applies
-#'   to, e.g., "substrate", "inhibitor 1", etc.}
-#'
 #'   \item{Notes}{an explanation of what the experimental detail is}
 #'
-#'   \item{Regex_col}{FOR INTERNAL USE. When searching the Input Sheet for
-#'   the set of columns to use, what regular expression should be used for
-#'   finding the correct column.}
-#'
-#'   \item{Regex_row}{FOR INTERNAL USE. When searching the specified column,
-#'   what regular expression should be used for finding the correct row.}
+#'   \item{Regex_row}{When searching the specified column, what regular
+#'   expression should be used for finding the correct row.}
 #'
 #'   \item{Class}{Data class}
 #'
-#'   \item{Sheet}{Which simulator output sheet this detail is extracted from}
+#'   \item{Sheet}{simulator output sheet this detail is extracted from}
 #'
-#'   \item{NameCol}{Which column in the simulator output tab will be searched
-#'   for this detail}
+#'   \item{NameCol}{the index of the column in the simulator output tab that will
+#'   be searched for matches to the text in the column "Regex_row".}
 #'
-#'   \item{ValueCol}{Which column in the simulator output tab will contains the
-#'   value used for this detail. This applies when the column doesn't move,
-#'   e.g., \emph{not} the Input Sheet.}
+#'   \item{ValueCol}{index of the column in the simulator output tab that
+#'   contains the value used for this detail. This applies when the column
+#'   doesn't move, e.g., \emph{not} Input Sheet compound-specific details.}
 #'
-#'   \item{CDSInputMatch}{FOR INTERNAL USE: Which compound data sheet item on
-#'   the "Simcyp Inputs and QC" tab matches this experimental detail}
+#'   \item{ColsChangeWithCmpd}{TRUE or FALSE for whether NameCol and/or ValueCol
+#'   change depending on what compound ID it is}
 #'
-#'   \item{SimulatorSection}{FOR INTERNAL USE: For matching with the CDS, which
+#'   \item{CmpdsForWhichDeetAvail}{Compounds for which this detail is available.
+#'   Many compound-specific details are available for all compounds (entry here
+#'   is "all"), but some are only available for the substrate (entry here would
+#'   be "substrate") or only for the substrate and inhibitor 1
+#'   ("substrate, inhibitor 1").}
+#'
+#'   \item{CDSInputMatch}{compound data sheet item on
+#'   the "Simcyp Inputs and QC" tab that matches this experimental detail}
+#'
+#'   \item{SimulatorSection}{For matching with the CDS, in which
 #'   section does this detail belong? Options: Absorption, Distribution,
 #'   Elimination, Interaction, Phys Chem and Blood Binding.}
 #'
-#'   \item{ADAMParameter}{FOR INTERNAL USE: TRUE or FALSE for whether the
+#'   \item{ADAMParameter}{TRUE or FALSE for whether the
 #'   parameter only comes into play when it's an ADAM model}
 #'
-#'   \item{OffsetRows}{FOR INTERNAL USE: When there just isn't good regex in the
+#'   \item{DiscoveryParameter}{Is this detail available for Simcyp Discovery
+#'   simulations? Options are "Simulator only", "Discovery only", or "Simulator
+#'   and Discovery". This is used to determine which details to check and which
+#'   regex to use for those details.}
+#'
+#'   \item{OffsetRows}{When there just isn't good regex in the
 #'   specific row for this detail, we need to look for a value and then go down
 #'   this number of rows to get to the actual value we want.}
 #'
-#'   \item{SortOrder}{FOR INTERNAL USE: Order in which this detail should show
+#'   \item{SortOrder}{Order in which this detail should show
 #'   up in the output of `annotateDetails`}
 #'
-#'   \item{Level1, Level2, etc.}{FOR INTERNAL USE: the level in the XML file
+#'   \item{Level1, Level2, etc.}{the level in the XML file
 #'   where the information lives}
 #'
-#'   \item{XMLswitch}{FOR INTERNAL USE: If there is a switch involved in the
+#'   \item{XMLswitch}{If there is a switch involved in the
 #'   XML file, what is the tag to use for checking on that switch}
 #'
-#'   \item{SwitchTo}{FOR INTERNAL USE: If the switch is turned to "1" or "true"
+#'   \item{SwitchTo}{If the XML switch is turned to "1" or "true"
 #'   in the XML file, this is the tag to switch to for looking up the value for
 #'   this detail.}
+#'
+#'   \item{CodingNotes}{Notes specifically to coders}
+#'
+#'   \item{CompoundID}{CompoundID (a.k.a. compound position in the Simulator)}
+#'
+#'   \item{Suffix}{suffix to append for this detail when it's for a specific
+#'   compound ID}
 #'
 #'   }
 "AllExpDetails"
@@ -224,6 +238,33 @@
 #'
 #'  }
 "ExpDetailDefinitions"
+
+
+#' All possible experimental details for \code{\link{extractExpDetails}}
+#'
+#' All possible experimental details that can be extracted from a Simcyp
+#' Discovery output file using \code{\link{extractExpDetails}} or
+#' \code{\link{extractExpDetails_mult}}. For the version that includes
+#' additional columns only used for coding purposes, see
+#' \code{\link{AllExpDetails}}.
+#'
+#' @format A data.frame with the following columns: \describe{
+#'
+#'  \item{Detail}{the experimental detail name to use with
+#'  \code{\link{extractExpDetails}} for the argument \code{exp_details}}
+#'
+#'  \item{Compound ID}{the specific compound this experimental detail applies
+#'  to, e.g., "substrate", "inhibitor 1", etc.}
+#'
+#'  \item{SimulatorSection}{the part of the simulator that this detail applies
+#'  to}
+#'
+#'   \item{Notes}{an explanation of what the experimental detail is}
+#'
+#'   \item{Sheet}{Which simulator output sheet this detail is extracted from}
+#'
+#'   }
+"ExpDetailDefinitions_Discovery"
 
 
 #' Example output from \code{extractExpDetails_mult}

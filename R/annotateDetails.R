@@ -404,38 +404,18 @@ annotateDetails <- function(existing_exp_details,
       select(-Detail) %>% 
       mutate(CompoundNameID = paste(File, CompoundID))
    
-   # Need to deal with _X in detail names
-   Suffixes <- c("_sub" = "substrate", 
-                 "_inhib" = "inhibitor 1", 
-                 "_inhib2" = "inhibitor 2", 
-                 "_inhib1met" = "inhibitor 1 metabolite", 
-                 "_met1" = "primary metabolite 1", 
-                 "_met2" = "primary metabolite 2", 
-                 "_secmet" = "secondary metabolite")
-   
-   ExpDetailDefinitions_expand <- 
-      ExpDetailDefinitions %>% filter(str_detect(Detail, "_X")) %>% 
-      rename(DetailOrig = Detail)
-   
-   ExpDetailDefinitions_expand <- ExpDetailDefinitions_expand %>% 
-      left_join(data.frame(
-         DetailOrig = rep(ExpDetailDefinitions_expand$DetailOrig, each = 7)) %>% 
-            mutate(Suffix = rep(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
-                                  "_met1", "_met2", "_secmet"), 
-                                nrow(ExpDetailDefinitions_expand)),
-                   Detail = paste0(sub("_X", "", DetailOrig), Suffix)),
-         by = "DetailOrig") %>% 
-      mutate(CompoundID = Suffixes[Suffix]) %>% 
-      select(-DetailOrig, -Suffix)
-   
    suppressMessages(
       Out <- Out %>% 
          arrange(File) %>% 
-         mutate(CompoundNameID = paste(File, CompoundID)) %>% 
+         mutate(CompoundNameID = paste(File, CompoundID), 
+                Detail_base = sub("_sub|_inhib1met|_inhib2|_inhib|_secmet|_met1|_met2", 
+                                  "", Detail)) %>% 
          filter(CompoundNameID %in% CompoundNames$CompoundNameID | is.na(CompoundID)) %>% 
-         left_join(bind_rows(ExpDetailDefinitions_expand, 
-                             ExpDetailDefinitions %>% filter(!str_detect(Detail, "_X$"))),
-                   by = c("Detail", "CompoundID")) %>% 
+         left_join(bind_rows(ExpDetailDefinitions, 
+                             ExpDetailDefinitions_Discovery) %>% 
+                      rename(Detail_base = Detail),
+                   by = c("Detail_base"), 
+                   relationship = "many-to-many") %>% 
          # Finding some artifacts from row binding output from both of
          # extractExpDetails and extractExpDetails_mult. I think this should
          # fix the issue.
@@ -462,9 +442,9 @@ annotateDetails <- function(existing_exp_details,
    Out <- Out %>% unique() %>% 
       mutate(
          # Elimination details
-         Sheet = ifelse(str_detect(Detail, "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
+         Sheet = ifelse(str_detect(Detail, "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^CL_"), 
                         "Input Sheet", Sheet), 
-         SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)"), 
+         SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^CL_"), 
                                    "Elimination", SimulatorSection), 
          
          # Interaction details
@@ -481,21 +461,67 @@ annotateDetails <- function(existing_exp_details,
          
          # Adding some notes
          Notes = case_when(
-            str_detect(Detail, "CLadditional_InVivo") ~ paste("Additional in vivo clearance for", CompoundID),
-            str_detect(Detail, "CLbiliary_InVivoCL") ~ paste("Additional in vivo biliary clearance for", CompoundID),
-            str_detect(Detail, "CLint_AddHLM") ~ paste("Addtional HLM CLint for", CompoundID),
-            str_detect(Detail, "CLint_biliary") ~ paste("Additional biliary CLint for", CompoundID),
-            str_detect(Detail, "CLint_CYP|CLint_UGT") ~ paste("Additional", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "CLint for", CompoundID),
-            str_detect(Detail, "CLiv_InVivo") ~ paste("In vivo CLiv for", CompoundID),
-            str_detect(Detail, "CLpo_InVivo") ~ paste("In vivo CLpo for", CompoundID),
-            str_detect(Detail, "fu_mic") ~ paste("fu,mic for", str_extract(Detail, "CYP[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID),
-            str_detect(Detail, "fu_mic") ~ paste("fu,mic for", str_extract(Detail, "UGT[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID),
-            str_detect(Detail, "Ki_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "competitive inhibition constant for", CompoundID), 
-            str_detect(Detail, "Km_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "Km for", CompoundID), 
-            str_detect(Detail, "Vmax_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "Vmax for", CompoundID), 
-            str_detect(Detail, "MBI_fu_mic") ~ paste("fu,mic for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
-            str_detect(Detail, "MBI_Kapp") ~ paste("Kapp for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
-            str_detect(Detail, "MBI_kinact") ~ paste("kinact for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
+            str_detect(Detail, "CLadditional_InVivo") ~ "Additional in vivo clearance",
+            str_detect(Detail, "CLbiliary_InVivoCL") ~ "Additional in vivo biliary clearance",
+            str_detect(Detail, "CLint_AddHLM") ~ "Addtional HLM CLint",
+            str_detect(Detail, "CLint_biliary") ~ "Additional biliary CLint",
+            
+            str_detect(Detail, "CLint_CYP|CLint_UGT|CLint_ENZ.USER[1-9]|CLint_Intestine|CLint_Liver") ~ 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver"),
+                     "CLint"),
+            
+            str_detect(Detail, "CLiv_InVivo") ~ "In vivo CLiv",
+            str_detect(Detail, "CLpo_InVivo") ~ "In vivo CLpo",
+            
+            str_detect(Detail, "CL_(Liver|Intestine).*UseMetabolite") ~
+               paste0(str_extract(Detail, "Liver|Intestine"), ": Use metabolite?"),
+            
+            str_detect(Detail, "CL_(Liver|Intestine)_Type") ~
+               paste(str_extract(Detail, "Liver|Intestine"), "clearance type"),
+            
+            str_detect(Detail, "CL_(Liver|Intestine).*MetabPerc") ~ 
+               paste(str_extract(Detail, "Liver|Intestine"), "metabolite percentage"),
+            
+            str_detect(Detail, "CL_(Liver|Intestine).*(Scrapings|Elution)Correction") ~ 
+               paste(str_extract(Detail, "Liver|Intestine"), 
+                     tolower(str_extract(Detail, "Scrapings|Elution")),
+                     "correction factor"),
+            
+            str_detect(Detail, "CL_(Liver|Intestine)_UseSaturableKinetics") ~ 
+               paste0(str_extract(Detail, "Liver|Intestine"), ": Use saturable kinetics?"),
+            
+            str_detect(Detail, "CL_(Liver|Intestine)_fuinc") ~ 
+               paste(str_extract(Detail, "Liver|Intestine"), "fu,inc"),
+            
+            str_detect(Detail, "CL_PercentAvailReabsorption") ~ 
+               "Percent available for reabsorption",
+            
+            str_detect(Detail, "fu_mic") ~ 
+               paste("fu,mic for", 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver")),
+            
+            str_detect(Detail, "Km_") ~ 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver"), "Km"), 
+            
+            str_detect(Detail, "Vmax_") ~ 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver"), "Vmax"), 
+            
+            str_detect(Detail, "Ki_") ~ 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), 
+                     "competitive inhibition constant"), 
+            
+            str_detect(Detail, "MBI_fu_mic") ~ 
+               paste("fu,mic for MBI of", 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}")), 
+            
+            str_detect(Detail, "MBI_Kapp") ~ 
+               paste("Kapp for MBI of", 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}")), 
+            
+            str_detect(Detail, "MBI_kinact") ~ 
+               paste("kinact for MBI of", 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}")), 
+            
             TRUE ~ Notes),
          
          # Setting factors for sorting

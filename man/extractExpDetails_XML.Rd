@@ -13,12 +13,13 @@ extractExpDetails_XML(
 )
 }
 \arguments{
-\item{sim_workspace_files}{a character vector of simulator output files, each
-in quotes and encapsulated with \code{c(...)}, NA to extract experimental
-details for \emph{all} the Simulator workspace files in the current folder,
-or "recursive" to extract experimental details for \emph{all} the Simulator
-workspace files in the current folder and \emph{all} subfolders. Example of
-acceptable input: \code{c("sim1.wksz", "sim2.wksz")}.}
+\item{sim_workspace_files}{a character vector of simulator files, each in
+quotes and encapsulated with \code{c(...)}, NA to extract experimental
+details for \emph{all} the Simulator or Discovery workspace files in the
+current folder, or "recursive" to extract experimental details for
+\emph{all} the Simulator or Discovery workspace files in the current folder
+and \emph{all} subfolders. Example of acceptable input: \code{c("sim1.wksz",
+"sim2.wksz")}.}
 
 \item{compoundsToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"all" (default) for
@@ -52,17 +53,19 @@ fixed-trial design.}
 
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-csv file.}
+details.xlsx".  Do not include any slashes, dollar signs, or periods in the
+file name. If you leave off the file extension, it will be saved as a csv
+file.}
 }
 \value{
 Returns a data.frame of the experimental details
 }
 \description{
-\code{extractExpDetails_XML} takes a character vector of Simcyp Simulator
-workspaces -- or all the workspace files in the current directory if no files
-are specified -- and collects experimental details for the simulations into a
-single table. It optionally saves that table to a csv or Excel file.
+\code{extractExpDetails_XML} takes a character vector of Simcyp Simulator or
+Simcyp Discovery workspaces -- or all the workspace files in the current
+directory if no files are specified -- and collects experimental details for
+the simulations into a single table. It optionally saves that table to a csv
+or Excel file.
 }
 \examples{
 
