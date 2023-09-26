@@ -513,18 +513,28 @@ extractConcTime <- function(sim_data_file,
    # manner???
    NApos <- which(is.na(sim_data_xl$...1))
    
+   # Looking for all possible compounds. If there is an inhibitor, this will
+   # include substrate alone as well as substrate + interaction.
    CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1):(NApos[2]-1)] 
    CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
    
+   # Next, need to figure out which combination of CSys and ISys 1 or ISys 3 or
+   # whatever number belongs to which actual compound. Looking for what
+   # compounds were listed under "Population Statistics" b/c that's where they 
+   # use that kind of coding. 
    StartRow <- which(str_detect(sim_data_xl$...1, "Population Statistics"))[1]
    EndRow <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))[1]
    EndRow <- max(NApos[NApos < EndRow]) - 1
    CmpdMatches2 <- sim_data_xl$...1[StartRow:EndRow]
-   CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "Time|\\+ interaction")) + 1]
+   # The coding shows up on rows AFTER the "Time" row or after the row that
+   # lists "+ interaction". Checking for that.  
+   CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "Time|\\+( )?interaction")) + 1]
    CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "[CI]Sys( )?[1-9]?(.*interaction)?"))
+   CmpdMatches2 <- CmpdMatches2[complete.cases(CmpdMatches2)]
    CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?interaction")] <- 
       paste(str_extract(CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?interaction")], "[CI]Sys"), 
             "interaction")
+   # Last step: Find the unique versions of the coding. 
    CmpdMatches2 <- unique(CmpdMatches2)
    
    if(length(CmpdMatches1) != length(CmpdMatches2)){
@@ -535,6 +545,14 @@ extractConcTime <- function(sim_data_file,
    AllCompoundsInv <- names(AllCompounds)
    names(AllCompoundsInv) <- AllCompounds
    
+   # Admittedly, this step here where we say that CmpdMatches1, which is the
+   # actual compound names, is going to be in the same order as CmpdMatches2,
+   # which lists the coded versions of the compounds, makes me nervous just b/c
+   # it's coding by index and the two items aren't perfectly matched -- we had
+   # to remove a bunch of excess junk in between them. So far, though, I haven't
+   # found an example of this failing. The order that compounds are listed --
+   # whether by their actual names or by their coded names -- seems to be the
+   # same always.
    CmpdMatches <- data.frame(NamesInExcel = CmpdMatches1, 
                              CompoundCode = CmpdMatches2) %>% 
       mutate(CompoundName = sub(" \\+ Interaction", "", NamesInExcel), 
