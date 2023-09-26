@@ -8,8 +8,8 @@
 #' this help file. For detailed instructions and examples, please see the
 #' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
 #' Files/SimcypConsultancy function examples and instructions/Concentration-time
-#' plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx".
-#' (Sorry, we are unable to include a link to it here.)
+#' plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx". (Sorry,
+#' we are unable to include a link to it here.)
 #'
 #' \strong{Notes on including observed data:} We recently added the option of
 #' including observed data and are in the process of testing this. To include
@@ -404,8 +404,9 @@
 #'   or ".docx", it will be saved as a png file, but if you specify a different
 #'   graphical file extension, it will be saved as that file format. Acceptable
 #'   graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
-#'   "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA means the file will not be
-#'   automatically saved to disk. 
+#'   "bmp", or "svg". Do not include any slashes, dollar signs, or periods in
+#'   the file name. Leaving this as NA means the file will not be automatically
+#'   saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -501,15 +502,15 @@ ct_plot_overlay <- function(ct_dataframe,
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
    if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
-      stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:
-", deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
-call. = FALSE)
+      stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:\n", 
+                 deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
+           call. = FALSE)
    }
    
    if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
-      stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:
-", deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
-call. = FALSE)
+      stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:\n", 
+                 deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
+           call. = FALSE)
    }
    
    if(length(obs_color) > 1){
@@ -885,8 +886,14 @@ call. = FALSE)
       factor(levels = c("mean", "geomean", "median")) %>% 
       sort()
    
-   if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
-             "median" = "median") %in% ct_dataframe$Trial == FALSE){
+   if(switch(mean_type, 
+             "arithmetic" = "mean", 
+             "geometric" = "geomean",
+             # NB: "none" is a pass-through argument for ct_plot_obs and won't
+             # come up for simulated data
+             "none" = "none",
+             "median" = "median") %in% ct_dataframe$Trial == FALSE &
+      mean_type != "none"){
       
       warning(paste0("You requested the ", 
                      switch(mean_type, "arithmetic" = "arithmetic means",
@@ -901,13 +908,16 @@ call. = FALSE)
       mean_type <-  switch(MyMeanType,
                            "mean" = "arithmetic", 
                            "geomean" = "geometric",
-                           "median" = "median")
+                           "median" = "median", 
+                           "none" = "none")
       
    } else {
       
-      MyMeanType <- switch(mean_type, "arithmetic" = "mean",
+      MyMeanType <- switch(mean_type,
+                           "arithmetic" = "mean",
                            "geometric" = "geomean",
-                           "median" = "median")
+                           "median" = "median", 
+                           "none" = "none")
       
    }
    
@@ -1384,8 +1394,13 @@ call. = FALSE)
    # that I think about it further...
    if(EnzPlot){
       AnchorCompound <- "substrate"
-   } else {
+   } else if(mean_type != "none"){
       AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
+         mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
+         filter(CompoundLevel == min(CompoundLevel)) %>% 
+         pull(CompoundID) %>% as.character()
+   } else {
+      AnchorCompound <- obs_dataframe %>% select(CompoundID) %>% unique() %>% 
          mutate(CompoundLevel = as.numeric(CompoundID)) %>% 
          filter(CompoundLevel == min(CompoundLevel)) %>% 
          pull(CompoundID) %>% as.character()
@@ -2198,6 +2213,12 @@ call. = FALSE)
          # Making sure they've got a good extension
          Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
          FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg", "docx") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
                                   "png", "bmp", "svg", "jpg", "docx"), 
                        Ext, "png")

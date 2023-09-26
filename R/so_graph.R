@@ -220,6 +220,11 @@ so_graph <- function(PKtable,
    
    if(length(boundary_indicator) != 1){
       warning("There's something wrong with your input for `boundary_indicator`, so we'll set this to the default value of `lines`.", 
+      boundary_indicator <- "lines"
+   }
+   
+   if(any(boundaries < 1)){
+      warning("At least one of the numbers you specified for boundaries was < 1. We will automatically use both the original number you specified and its inverse for boundaries.", 
               call. = FALSE)
       boundary_indicator <- "lines"
    }
@@ -638,11 +643,11 @@ so_graph <- function(PKtable,
    if(as_label(point_color_column) != "<empty>"){
       SO <- SO %>% mutate(point_color_column = {{point_color_column}})
       
-      if(class(SO$point_color_column) == "numeric"){
+      if(class(SO$point_color_column) != "factor"){
          Levels <- sort(unique(SO$point_color_column))
          SO <- SO %>% 
             mutate(point_color_column = factor(point_color_column, levels = Levels))
-      }
+      } 
       
       # If nothing was set for point_color_column, then set the color to
       # "black". If there are only 2 groups for the point_color_column and
@@ -678,6 +683,17 @@ so_graph <- function(PKtable,
                point_color_set <- "rainbow"
             }
          }
+                                      "TRUE" = "set1", 
+                                      "FALSE" = point_color_set)
+         } else {
+            point_color_set <- switch(as.character(point_color_set == "default"),
+                                      "TRUE" = "set2",
+                                      "FALSE" = point_color_set)
+            # There are limits to the number of colors available for Brewer
+            # palettes. Checking that and setting to "rainbow" if needed.
+            if((point_color_set == "set1" & NumColorsNeeded > 9) |
+               (point_color_set == "set2" & NumColorsNeeded > 8) |
+               (point_color_set == "Tableau" & NumColorsNeeded > 10)){
          
          suppressWarnings(
             MyColors <- 
@@ -714,6 +730,14 @@ so_graph <- function(PKtable,
             MyColors <- rep(point_color_set, 100)[1:NumColorsNeeded]
          }
       }
+                  "Tableau" = ggthemes::tableau_color_pal(
+                     palette = "Tableau 10")(NumColorsNeeded),
+                  "viridis" = viridis::viridis_pal()(NumColorsNeeded))
+         )   
+         # NB: For the RColorBrewer palettes, the minimum number of
+         # colors you can get is 3. Since sometimes we might only want 1
+         # or 2 colors, though, we have to add the [1:NumColorsNeeded]
+         # bit.
       
    } else {
       # Setting color to black if point_color_column unspecified
@@ -723,21 +747,35 @@ so_graph <- function(PKtable,
    if(as_label(point_shape_column) != "<empty>"){
       SO <- SO %>% mutate(point_shape_column = {{point_shape_column}})
       
-      if(class(SO$point_shape_column) == "numeric"){
+      if(class(SO$point_shape_column) != "factor"){
          Levels <- sort(unique(SO$point_shape_column))
          SO <- SO %>% 
             mutate(point_shape_column = factor(point_shape_column, levels = Levels))
       }
       
+   } else {
+      # Setting color to black if point_color_column unspecified
+      point__color_set <- "black"
+      }
+      
+      NumShapesNeeded <- length(sort(unique(SO$point_shape_column)))
+      
       if(any(complete.cases(point_shape))){
-         NumShapesNeeded <- length(sort(unique(SO$point_shape_column)))
-         
          if(NumShapesNeeded == 1){
             MyShapes <- point_shape[1]
          } else {
             if(length(point_shape) < NumShapesNeeded){
                # This odd syntax will work both when point_shape is a single value
                # and when it is multiple values.
+               MyShapes <- rep(point_shape, NumShapesNeeded)[1:NumShapesNeeded] 
+            } else if(length(point_shape) >= NumShapesNeeded){
+               MyShapes <- point_shape[1:NumShapesNeeded] 
+            }
+         }
+      } else {
+         MyShapes <- c(15:19, 8, 3:7, 9:14)[1:NumShapesNeeded]
+      }
+   }
                MyShapes <- rep(point_shape, NumShapesNeeded)[1:NumShapesNeeded] 
             } else if(length(point_shape) >= NumShapesNeeded){
                MyShapes <- point_shape[1:NumShapesNeeded] 
@@ -877,36 +915,36 @@ so_graph <- function(PKtable,
                           aes(x = Observed, y = Simulated, 
                               color = point_color_column),
                           size = ifelse(is.na(point_size), 2, point_size)) + 
-               scale_color_manual(values = MyColors), 
+               scale_color_manual(values = MyColors, drop = FALSE), 
             
             # User has specified a column for point shape
             "FALSE TRUE" = 
-               switch(as.character(any(is.na(point_shape))), 
-                      "TRUE" = G[[i]] +
-                         geom_point(data = SO[[i]],
-                                    aes(x = Observed, y = Simulated, 
-                                        shape = point_shape_column),
-                                    size = ifelse(is.na(point_size), 2, point_size)), 
-                      "FALSE" = G[[i]] +
-                         geom_point(data = SO[[i]],
-                                    aes(x = Observed, y = Simulated, 
-                                        shape = point_shape_column),
-                                    size = ifelse(is.na(point_size), 2, point_size)) +
-                         scale_shape_manual(values = MyShapes)),
+               G[[i]] +
+               geom_point(data = SO[[i]],
+                          aes(x = Observed, y = Simulated, 
+                              shape = point_shape_column),
+                          size = ifelse(is.na(point_size), 2, point_size)) +
+               scale_shape_manual(values = MyShapes, drop = FALSE),
             
             # User has specified both color and point shape columns
             "TRUE TRUE" = 
-               switch(as.character(any(is.na(point_shape))), 
-                      "TRUE" = G[[i]] +
-                         geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
-                                                        color = point_color_column, 
-                                                        shape = point_shape_column),
-                                    size = ifelse(is.na(point_size), 2, point_size)) +
-                         scale_color_manual(values = MyColors), 
-                      "FALSE" = G[[i]] + 
-                         geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
-                                                        color = point_color_column, 
-                                                        shape = point_shape_column),
+               G[[i]] + 
+               geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
+                                              color = point_color_column, 
+                                              shape = point_shape_column),
+                          size = ifelse(is.na(point_size), 2, point_size)) +
+               scale_color_manual(values = MyColors, drop = FALSE) +
+               scale_shape_manual(values = MyShapes, drop = FALSE))
+      
+      G[[i]] <- G[[i]] + 
+         xlab(axis_titles["x"]) +
+         ylab(axis_titles["y"]) +
+         scale_y_log10(breaks = MajBreaks, 
+                       minor_breaks = MinBreaks, 
+                       labels = scales::label_comma(MajBreaks)) +
+         scale_x_log10(breaks = MajBreaks, 
+                       minor_breaks = MinBreaks, 
+                       labels = scales::label_comma(MajBreaks)) +
                                     size = ifelse(is.na(point_size), 2, point_size)) +
                          scale_color_manual(values = MyColors) +
                          scale_shape_manual(values = MyShapes))
@@ -999,6 +1037,19 @@ so_graph <- function(PKtable,
                        "TRUE TRUE" = NULL),
          legend = legend_position, 
          common.legend = TRUE)
+                       # specified both
+                       "FALSE FALSE" = ncol,
+                       
+                       # specified only ncol
+                       "FALSE TRUE" = ncol,
+                       
+                       # specified only nrow
+                       "TRUE FALSE" = round_up_unit(length(G)/nrow, 1),
+                       
+                       # specified neither
+                       "TRUE TRUE" = NULL),
+         legend = legend_position, 
+         common.legend = TRUE)
    }
    
    
@@ -1009,8 +1060,14 @@ so_graph <- function(PKtable,
          # Making sure they've got a good extension
          Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
          FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg", "docx") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                  "png", "bmp", "svg", "jpg"), 
+                                  "png", "bmp", "svg", "jpg", "docx"), 
                        Ext, "png")
          FileName <- paste0(FileName, ".", Ext)
       } else {
@@ -1018,10 +1075,31 @@ so_graph <- function(PKtable,
          Ext <- "png"
       }
       
-      # This is when they want any kind of graphical file format.
-      ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-             plot = G)
-      
+      if(Ext == "docx"){
+         
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         rmarkdown::render(system.file("rmarkdown/templates/sograph/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_dir = OutPath, 
+                           output_file = FileName, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+      } else {
+         # This is when they want any kind of graphical file format.
+         ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                plot = G)
+         
+      }
    }
    
    return(G)

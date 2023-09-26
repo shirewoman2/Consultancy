@@ -14,6 +14,7 @@ either \code{\link{extractConcTime}} or \code{\link{extractConcTime_mult}}}
 \item{existing_exp_details}{the output from running
 \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} on
 the same simulations that were used for making \code{ct_dataframe}. Note:
+<<<<<<< HEAD
 We have not set up this function to check that your files match in order to
 allow for some flexibility here. If you supply \code{existing_exp_details}
 with more than one simulator output file, we'll just use the 1st one. If
@@ -26,6 +27,21 @@ then supply a single-row data.frame with the following columns: \code{File}
 presumably "Multiple Dose" here). If you want the dose number for other
 compound IDs, then replace "_sub" with, e.g., "_inhib". Please run
 \code{view(ExpDetailDefinitions)} to see examples of acceptable suffixes.}
+=======
+If you would like to have this calculate dose numbers on data where you
+don't have simulation experimental details (example: observed data), then
+please supply a single-row data.frame with the following columns, using
+substrate dosing info as an example:
+\describe{\item{File}{(character) each Simulator Excel file name (check
+that the file names match perfectly!) or "all" if you want the same dosing
+regimen for all files} \item{DoseInt_sub}{(numeric) the dosing interval in
+hours} \item{StartHr_sub}{(numeric) the start time for the substrate;
+probably 0} \item{NumDoses_sub}{(numeric) the number of doses overall}
+\item{Regimen_sub}{(character) presumably "Multiple Dose" but "Single Dose"
+is also acceptable}} If you want the dose number for other compound IDs, 
+then replace "_sub" with, e.g., "_inhib". Please run 
+\code{view(AllCompounds)} to see acceptable suffixes for each compound ID.}
+>>>>>>> beta
 }
 \value{
 Output is a data.frame of concentration-time data with

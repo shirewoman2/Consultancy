@@ -7,15 +7,17 @@ CONSTRUCTION}
 \usage{
 draft_DDI_section(
   sim_data_file,
-  exp_detail_data = NA,
+  existing_exp_details = NA,
   ct_dataframe = NA,
   PKparameters = NA,
   observed_PK = NA,
   includeCV = FALSE,
   includeConfInt = TRUE,
   includeTrialMeans = FALSE,
+  concatVariability = FALSE,
   tissue = "plasma",
   fontsize = 11,
+  include_dose_num = NA,
   mean_type_PK = "geometric",
   mean_type_graph = "arithmetic",
   clin_study_name = "XXX",
@@ -51,7 +53,7 @@ draft_DDI_section(
 \item{sim_data_file}{name of the Excel file containing the simulator output,
 in quotes}
 
-\item{exp_detail_data}{NA (default) or the output from running either
+\item{existing_exp_details}{NA (default) or the output from running either
 \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} --
 either is fine as long as it contains details for \code{sim_data_file}. You
 must have set the argument \code{exp_details} to "all" when you extracted
@@ -127,10 +129,26 @@ limit)").}
 range of trial means for a given parameter. Note: This is calculated from
 individual values rather than being pulled directly from the output.}
 
+\item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
+the variability. If "TRUE", the output will be formatted into a single row
+and listed as the lower confidence interval or percentile to the upper CI
+or percentile, e.g., "2400 to 2700". Please note that the current
+SimcypConsultancy template lists one row for each of the upper and lower
+values, so this should be set to FALSE for official reports.}
+
 \item{tissue}{the tissue to use for extracting PK data and for graphing.
 Options are "plasma" (default) or "blood".}
 
 \item{fontsize}{the font size to use in the table. Default is 11.}
+
+\item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
+the dose number when listing the PK parameter. By default, the parameter
+will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+you have PK data for both the first dose and the last dose. Also by
+default, if you have data only for the first dose or only for the last
+dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+the default behavior and get exactly what you want.}
 
 \item{mean_type_PK}{What kind of means and CVs do you want listed in the
 output PK summary table? Options are "arithmetic" or "geometric" (default).}
@@ -164,7 +182,7 @@ something like this if you're including effector metabolites:
 \item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
 simulation, so "TRUE" means that the client's drug was the victim. The only
 thing this affects is the sentence in the template report text "Performance
-verification of the XXX model is provided in Appendix B – Performance
+verification of the XXX model is provided in Appendix B - Performance
 Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
 victim DDI simulation, then this sentence will replace "XXX" with the name
 of the effector. If not, it will replace "XXX" with the name of the
@@ -347,7 +365,7 @@ and an effector is present, the label in the legend will be "Inhibitor".}
 \item{linear_or_log_enz}{the type of enzyme-abundance graph to be returned.
 Options are the same as for the substrate plot.}
 
-\item{save_draft}{the name of the Word file to use for saving the output. If
+\item{save_draft}{the name of the Word file to use for saving the output. Do not include any slashes, dollar signs, or periods in the file name. If
 left as NA, this will be set to "Draft DDI report section for XXXX.docx"
 where "XXXX" is the name of the simulator output Excel file.}
 }

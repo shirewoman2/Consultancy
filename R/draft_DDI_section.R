@@ -7,7 +7,7 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
 #'   in quotes
-#' @param exp_detail_data NA (default) or the output from running either
+#' @param existing_exp_details NA (default) or the output from running either
 #'   \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} --
 #'   either is fine as long as it contains details for \code{sim_data_file}. You
 #'   must have set the argument \code{exp_details} to "all" when you extracted
@@ -24,7 +24,7 @@
 #' @param victim_sim TRUE (default) or FALSE for whether this was a victim DDI
 #'   simulation, so "TRUE" means that the client's drug was the victim. The only
 #'   thing this affects is the sentence in the template report text "Performance
-#'   verification of the XXX model is provided in Appendix B – Performance
+#'   verification of the XXX model is provided in Appendix B - Performance
 #'   Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
 #'   victim DDI simulation, then this sentence will replace "XXX" with the name
 #'   of the effector. If not, it will replace "XXX" with the name of the
@@ -81,6 +81,14 @@
 #' @param tissue the tissue to use for extracting PK data and for graphing.
 #'   Options are "plasma" (default) or "blood".
 #' @param fontsize the font size to use in the table. Default is 11.
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
 #' @param mean_type_PK What kind of means and CVs do you want listed in the
 #'   output PK summary table? Options are "arithmetic" or "geometric" (default).
 #' @param mean_type_graph graph "arithmetic" (default) or "geometric" means or
@@ -237,7 +245,7 @@
 #'   something like this if you're including effector metabolites:
 #'   \code{prettify_compound_names = c("effector" = "teeswiftavir and
 #'   1-OH-teeswiftavir", "substrate" = "superstatin")}. (Order doesn't matter.)
-#' @param save_draft the name of the Word file to use for saving the output. If
+#' @param save_draft the name of the Word file to use for saving the output. Do not include any slashes, dollar signs, or periods in the file name. If
 #'   left as NA, this will be set to "Draft DDI report section for XXXX.docx"
 #'   where "XXXX" is the name of the simulator output Excel file.
 #' @param includeCV TRUE or FALSE (default) for whether to include rows for CV
@@ -251,6 +259,12 @@
 #' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
 #'   range of trial means for a given parameter. Note: This is calculated from
 #'   individual values rather than being pulled directly from the output.
+#' @param concatVariability TRUE or FALSE (default) for whether to concatenate
+#'   the variability. If "TRUE", the output will be formatted into a single row
+#'   and listed as the lower confidence interval or percentile to the upper CI
+#'   or percentile, e.g., "2400 to 2700". Please note that the current
+#'   SimcypConsultancy template lists one row for each of the upper and lower
+#'   values, so this should be set to FALSE for official reports.
 #' @param sim_enz_dataframe the data.frame of enzyme abundance data obtained
 #'   from running the function \code{\link{extractEnzAbund}}. Not quoted.
 #' @param figure_type_enz type of figure to plot for the enzyme-abundance graph.
@@ -280,7 +294,7 @@
 #'
 #' 
 draft_DDI_section <- function(sim_data_file,
-                              exp_detail_data = NA, 
+                              existing_exp_details = NA, 
                               ct_dataframe = NA, 
                               
                               PKparameters = NA,
@@ -288,8 +302,10 @@ draft_DDI_section <- function(sim_data_file,
                               includeCV = FALSE,
                               includeConfInt = TRUE,
                               includeTrialMeans = FALSE,
+                              concatVariability = FALSE,
                               tissue = "plasma",
                               fontsize = 11,
+                              include_dose_num = NA,
                               mean_type_PK = "geometric",
                               mean_type_graph = "arithmetic",
                               clin_study_name = "XXX",
@@ -323,155 +339,159 @@ draft_DDI_section <- function(sim_data_file,
                               linear_or_log_enz = "linear",
                               
                               save_draft = NA){
-    
-    # error catching -------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
-             call. = FALSE)
-    }
-    
-    if(class(ct_dataframe) != "logical" && nrow(ct_dataframe) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
-             call. = FALSE)
-    }
-    
-    if(class(ct_dataframe) != "logical" && 
-       nrow(ct_dataframe %>% filter(CompoundID == "substrate")) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows with substrate data.", 
-             call. = FALSE)
-    }
-        
-    if(class(ct_dataframe) != "logical" && 
-       nrow(ct_dataframe %>% filter(CompoundID == "inhibitor 1")) == 0){
-        stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows with inhibitor 1 concentration-time data, and we'll need that.", 
-             call. = FALSE)
-    }
-    
-    if(class(prettify_compound_names) == "character" &&
-       is.null(names(prettify_compound_names))){
-        warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the effector(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
-                call. = FALSE)
-        prettify_compound_names <- TRUE
-    }
-    
-    if(class(prettify_compound_names) == "character"){
-        if(any(str_detect(names(prettify_compound_names), "inhibitor"))){
-            names(prettify_compound_names)[
-                which(str_detect(names(prettify_compound_names), "inhibitor"))] <- "effector"
-        }
-        
-        if(all(c("substrate", "effector") %in% names(prettify_compound_names)) == FALSE){
-            warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of both `substrate` and `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
-                    call. = FALSE)
-            prettify_compound_names <- TRUE
-        }
-    }
-    
-    # Making most character arguments lower case to avoid case sensitivity
-    mean_type_PK <- tolower(mean_type_PK)
-    mean_type_graph <- tolower(mean_type_graph)
-    
-    # main body of function -----------------------------------------------
-    
-    ## exp details -----------------------------------------------------
-    # If the user did not supply experimental details, extract them.
-    if(class(exp_detail_data) == "logical"){
-        exp_detail_data <- extractExpDetails(sim_data_file, exp_details = "all")
-    }
-    
-    if(class(exp_detail_data) == "data.frame"){
-        
-        PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(exp_detail_data))
-        
-        # If exp_detail_data are annotated, de-annotate them. 
-        if(PrevAnnotated){
-            
-            exp_detail_data <- exp_detail_data %>% 
-                select(-any_of(c("SimulatorSection", "Sheet", "Notes",
-                                 "CompoundID", "Compound"))) %>% 
-                pivot_longer(cols = -Detail, 
-                             names_to = "File", values_to = "Value") %>% 
-                # Need to remove NA values here b/c they can otherwise lead to
-                # multiple values for a given detail when one value is for the
-                # correct compound and the other is for compounds that are present
-                # in other files but DO have that particular compound ID. For
-                # example, metabolite 1 might be OH-MDZ for some files and
-                # OH-bupropion for others, and that will have multiple rows. Removed
-                # NA values should mostly come out in the wash, I think, but there
-                # is a risk that we'll lose some NA values that should be included.
-                # I think that's an acceptable risk. - LSh
-                filter(complete.cases(Value)) %>% 
-                pivot_wider(names_from = Detail, values_from = Value)
-            
-        } 
-        
-        exp_detail_data <- exp_detail_data %>% filter(File == sim_data_file)
-    }
-    
-    # Checking for parameters we'll need in exp_detail_data
-    if(all(c("DoseRoute_sub", "Age_min", "Regimen_sub") %in%
-           names(exp_detail_data)) == FALSE){
-        stop("It appears that, when you generated `exp_detail_data`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. Please re-extract the simulation experimental details using extractExpDetails or extractExpDetails_mult and set `exp_details = 'all'` and then try running draft_DDI_section again.", 
-             call. = FALSE)
-    }
-    
-    if(is.na(exp_detail_data$Inhibitor1)){
-        stop("You do not appear to have an effector present in this simulation. This function is for drafting DDI methods and results only.", 
-             call. = FALSE)
-    }
-    
-    
-    ## conc time -----------------------------------------------------------
-    # If user did not provide extracted conc time data, extract them.
-    if(class(ct_dataframe) == "logical"){
-        ct_dataframe <- extractConcTime_mult(sim_data_files = sim_data_file, 
-                                             tissue = tissue, 
-                                             compoundsToExtract = c("substrate", "inhibitor 1"), 
-                                             returnAggregateOrIndiv = "both")
-    }
-    
-    ct_dataframe <- ct_dataframe %>%
-        filter(File == sim_data_file & Tissue == tissue)
-    
-    ## enz abund -----------------------------------------------------------
-    if(include_enz_plot & class(sim_enz_dataframe)[1] == "logical"){
-        sim_enz_dataframe <- extractEnzAbund(sim_data_file = sim_data_file,
-                                             enzyme = enzyme, 
-                                             tissue = "liver")
-    }
-    
-    ## knitting ----------------------------------------------------------
-    if(is.na(save_draft)){
-        save_draft <- paste0("Draft DDI report section for ",
-                             sub("xlsx", "docx", basename(sim_data_file)))
-    }
-    
-    if(str_detect(save_draft, "\\.")){
-        # Removing any extension so that we can paste ".docx" back on
-        Ext <- sub("\\.", "", str_extract(save_draft, "\\..*"))
-        save_draft <- sub(paste0(".", Ext), "", save_draft)
-    } 
-    
-    save_draft <- paste0(save_draft, ".docx")
-    
-    OutPath <- dirname(save_draft)
-    
-    if(OutPath == "."){
-        OutPath <- getwd()
-    }
-    
-    save_draft <- basename(save_draft)
-    
-    rmarkdown::render(system.file("rmarkdown/templates/draftddisections/skeleton/skeleton.Rmd",
-                                  package="SimcypConsultancy"), 
-                      output_dir = OutPath, 
-                      output_file = save_draft, 
-                      quiet = TRUE)
-    # Note: The "system.file" part of the call means "go to where the
-    # package is installed, search for the file listed, and return its
-    # full path.
-    
+   
+   # error catching -------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+           call. = FALSE)
+   }
+   
+   if(class(ct_dataframe) != "logical" && nrow(ct_dataframe) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+           call. = FALSE)
+   }
+   
+   if(class(ct_dataframe) != "logical" && 
+      nrow(ct_dataframe %>% filter(CompoundID == "substrate")) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows with substrate data.", 
+           call. = FALSE)
+   }
+   
+   if(class(ct_dataframe) != "logical" && 
+      nrow(ct_dataframe %>% filter(CompoundID == "inhibitor 1")) == 0){
+      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows with inhibitor 1 concentration-time data, and we'll need that.", 
+           call. = FALSE)
+   }
+   
+   if(class(prettify_compound_names) == "character" &&
+      is.null(names(prettify_compound_names))){
+      warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the effector(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+              call. = FALSE)
+      prettify_compound_names <- TRUE
+   }
+   
+   if(class(prettify_compound_names) == "character"){
+      if(any(str_detect(names(prettify_compound_names), "inhibitor"))){
+         names(prettify_compound_names)[
+            which(str_detect(names(prettify_compound_names), "inhibitor"))] <- "effector"
+      }
+      
+      if(all(c("substrate", "effector") %in% names(prettify_compound_names)) == FALSE){
+         warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of both `substrate` and `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+                 call. = FALSE)
+         prettify_compound_names <- TRUE
+      }
+   }
+   
+   # Making most character arguments lower case to avoid case sensitivity
+   mean_type_PK <- tolower(mean_type_PK)
+   mean_type_graph <- tolower(mean_type_graph)
+   
+   # main body of function -----------------------------------------------
+   
+   ## exp details -----------------------------------------------------
+   # If the user did not supply experimental details, extract them.
+   if("logical" %in% class(existing_exp_details)){ 
+      Deets <- tryCatch(
+         extractExpDetails(sim_data_file = sim_data_file, 
+                           exp_details = "all", 
+                           annotate_output = FALSE), 
+         error = function(x) "missing file")
+   } else {
+      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
+                      "TRUE" = existing_exp_details, 
+                      "FALSE" = deannotateDetails(existing_exp_details))
+      
+      Deets <- as.data.frame(Deets) %>% filter(File == sim_data_file)
+      
+      if(nrow(Deets) == 0){
+         Deets <- tryCatch(
+            extractExpDetails(sim_data_file = sim_data_file, 
+                              exp_details = "all", 
+                              annotate_output = FALSE), 
+            error = function(x) "missing file")
+      }
+   }
+   
+   # Checking for parameters we'll need in Deets
+   if(all(c("DoseRoute_sub", "Age_min", "Regimen_sub") %in%
+          names(Deets)) == FALSE){
+      warning("It appears that, when you generated `existing_exp_details`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. We will re-extract the simulation experimental details using extractExpDetails and set `exp_details = 'all'`.", 
+              call. = FALSE)
+      Deets <- extractExpDetails(sim_data_file, exp_details = "all") %>% 
+         as.data.frame()
+   }
+   
+   Deets <- as.data.frame(Deets) %>% filter(File == sim_data_file) 
+   
+   if(is.na(Deets$Inhibitor1)){
+      stop("You do not appear to have an effector present in this simulation. This function is for drafting DDI methods and results only.", 
+           call. = FALSE)
+   }
+   
+   # If they used a custom dosing regimen for either the substrate or the
+   # inhibitor, this simply will not work. It's just not set up to extract data
+   # in the right places.
+   if(any(c(Deets$Regimen_sub, Deets$Regimen_inhib, 
+            Deets$Regimen_inhib2) == "custom dosing")){
+      stop("At least one of the compounds in this simulation had a custom dosing regimen, and the draft_DDI_section function is just not set up to find the correct data in that scenario. We cannot generate draft methods and results sections here.", 
+           call. = FALSE)
+      
+   }
+   
+   
+   ## conc time -----------------------------------------------------------
+   # If user did not provide extracted conc time data, extract them.
+   if(class(ct_dataframe) == "logical"){
+      ct_dataframe <- extractConcTime_mult(sim_data_files = sim_data_file, 
+                                           tissues = tissue, 
+                                           compoundsToExtract = c("substrate", "inhibitor 1"), 
+                                           returnAggregateOrIndiv = "both")
+   }
+   
+   # Note that draft_DDI_section can only accommodate 1 file and 1 tissue
+   ct_dataframe <- ct_dataframe %>%
+      filter(File == sim_data_file & Tissue == tissue)
+   
+   ## enz abund -----------------------------------------------------------
+   if(include_enz_plot & class(sim_enz_dataframe)[1] == "logical"){
+      sim_enz_dataframe <- extractEnzAbund_mult(sim_data_files = sim_data_file,
+                                                enzyme = enzyme, 
+                                                tissue = c("liver", "gut"))
+   }
+   
+   ## knitting ----------------------------------------------------------
+   if(is.na(save_draft)){
+      save_draft <- paste0("Draft DDI report section for ",
+                           sub("xlsx", "docx", basename(sim_data_file)))
+   }
+   
+   if(str_detect(save_draft, "\\.")){
+      # Removing any extension so that we can paste ".docx" back on
+      Ext <- sub("\\.", "", str_extract(save_draft, "\\..*"))
+      save_draft <- sub(paste0(".", Ext), "", save_draft)
+   } 
+   
+   save_draft <- paste0(save_draft, ".docx")
+   
+   OutPath <- dirname(save_draft)
+   
+   if(OutPath == "."){
+      OutPath <- getwd()
+   }
+   
+   save_draft <- basename(save_draft)
+   
+   rmarkdown::render(system.file("rmarkdown/templates/draftddisections/skeleton/skeleton.Rmd",
+                                 package="SimcypConsultancy"), 
+                     output_dir = OutPath, 
+                     output_file = save_draft, 
+                     quiet = TRUE)
+   # Note: The "system.file" part of the call means "go to where the
+   # package is installed, search for the file listed, and return its
+   # full path.
+   
 }
 
 

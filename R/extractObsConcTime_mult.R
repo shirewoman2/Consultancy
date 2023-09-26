@@ -58,7 +58,7 @@
 #' @examples
 #' extractObsConcTime(obs_data_file = "My observed data.xlsx")
 #' 
-extractObsConcTime_mult <- function(obs_data_files, 
+extractObsConcTime_mult <- function(obs_data_files = NA, 
                                     returnDosingInfo = FALSE, 
                                     studyID = NA, 
                                     study_arm = NA){

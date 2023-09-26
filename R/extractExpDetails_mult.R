@@ -147,8 +147,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    }
    
    # If they didn't include ".xlsx" at the end, add that.
-   sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE] <-
-      paste0(sim_data_files[str_detect(sim_data_files, "\\.xlsx$") == FALSE], 
+   sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_files), ".xlsx")
+   
              ".xlsx")
    
    # Making sure that all the files exist before attempting to pull data
@@ -251,7 +251,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       existing_exp_details <- existing_exp_details %>% 
          mutate(across(.cols = any_of(MakeChar), 
                        .fns = as.character))
-
+      
    } else {
       MakeChar <- as.character(unlist(lapply(MyDeets, check4char)))
    }

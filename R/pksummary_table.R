@@ -541,8 +541,98 @@ pksummary_table <- function(sim_data_file = NA,
    # At this point, observed_PK, if it exists, should be a data.frame b/c it
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
-   if("data.frame" %in% class(observed_PK)){
+   
+   # Checking on whether user has requested a specific sheet for PK parameters
+   # b/c then we don't know which dose number things were. If they did, then we
+   # need them to have only supplied one value for each suffix-less PK
+   # parameter, e.g., they can't supply both Cmax_dose1 and Cmax_last in the
+   # observed data b/c we don't know which dose the simulated data are for.
+   if("data.frame" %in% class(observed_PK) & complete.cases(sheet_PKparameters)){
       
+      if("PKparameter" %in% names(observed_PK)){
+         observed_PK <- observed_PK %>% 
+            mutate(PKparameter_rev = sub("_dose1|_last", "", PKparameter)) %>% 
+            filter(File == sim_data_file)
+         
+         if(any(duplicated(observed_PK$PKparameter_rev))){
+            warning("You have provided a specific sheet to use for the simulated PK parameters, which generally means that you are using a user-defined interval, which in turn means that we don't know which dose the simulated PK are for. The observed PK you provided include dose 1 and last-dose PK data, but we don't know which data to use. For now, we won't be able to calculate S/O values here or include observed data in the table.\n", 
+                    call. = FALSE)
+            observed_PK <- NA
+         }
+      } else {
+         
+         # This is when it's probably a wide DF and PK parameters are column names.
+         AllObsPK <- data.frame(OrigNames = names(observed_PK)) %>% 
+            mutate(RevNames = sub("_dose1|_last", "", OrigNames))
+         
+         if(any(duplicated(AllObsPK$RevNames))){
+            warning("You have provided a specific sheet to use for the simulated PK parameters, which generally means that you are using a user-defined interval, which in turn means that we don't know which dose the simulated PK are for. The observed PK you provided include dose 1 and last-dose PK data, but we don't know which data to use. For now, we won't be able to calculate S/O values here or include observed data in the table.\n", 
+                    call. = FALSE)
+            observed_PK <- NA
+         }
+      }
+   }
+   
+   if("data.frame" %in% class(observed_PK)){
+      # Reshape to wide format if necessary
+      if(all(c("PKparameter", "Value") %in% names(observed_PK))){
+         
+         # If user specified a sheet and/or didn't specify dose number in the PK
+         # parameter name for obs PK, we don't know what dose the PK pertain to and
+         # that messes up everything else. Artificially adding that now and will
+         # remove it later.
+         if(any(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)){
+            observed_PK$PKparameter[
+               which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)] <- 
+               paste0(observed_PK$PKparameter[
+                  which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)], 
+                  "_last") 
+            # Using "last" here b/c more flexible; applicable to more PK
+            # parameters. If it were a single-dose sim, that wouldn't
+            # require a user-defined integration interval.
+            
+            observed_PK$PKparameter <- sub("AUCt_last", "AUCtau_last", observed_PK$PKparameter)
+         }
+         
+         observed_PK <- observed_PK %>% 
+            select(any_of(c("File", "PKparameter", "Value"))) %>%  # Return to this later to add options for including variability
+            # Only keeping parameters that we've set up data extraction for,
+            # and only keeping complete.cases of obs data
+            filter(PKparameter %in% AllPKParameters$PKparameter &
+                      complete.cases(Value))
+         
+         if("File" %in% names(observed_PK)){
+            observed_PK <- observed_PK %>% filter(str_detect(File, sim_data_file)) # ok for user to drop file extension; this should still work
+         } else {
+            # If File is not in the column names, then assume that it's the
+            # same as sim_data_file anyway.
+            observed_PK$File <- sim_data_file
+         }
+         
+         # Checking that they haven't provided more than one value for a
+         # given PK parameter for this sim_data_file. If they have, we don't
+         # know which observed data to compare.
+         ObsFileCheck <- observed_PK %>% 
+            unique() %>% group_by(File, PKparameter) %>% 
+            summarize(NVals = n())
+         
+         if(any(ObsFileCheck$NVals > 1)){
+            warning("You have supplied more than one value for a given PK parameter for this simulator output file, so we don't know which one to use. We will not be able to include observed data in your table.", 
+                    call. = FALSE)
+            observed_PK <- data.frame()
+         } else {
+            observed_PK <- observed_PK %>% 
+               pivot_wider(names_from = PKparameter, 
+                           values_from = Value)   
+         }
+      }
+      
+      if(nrow(observed_PK) < 1){
+         warning("None of the supplied observed PK were for the supplied sim_data_file. We cannot make any comparisons between simulated and observed PK.", 
+                 call. = FALSE)
+         observed_PK <- NA
+      } else {
+         
       
       # Reshape to wide format if necessary
       if(all(c("PKparameter", "Value") %in% names(observed_PK))){
@@ -704,6 +794,15 @@ pksummary_table <- function(sim_data_file = NA,
       warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters` or by supplying observed PK data. The order will be the default order from the Consultancy Report Template.", 
               call. = FALSE)
       PKorder <- "default"
+   }
+   
+   # If user specified PKorder, then use *either* PKparameters OR observed PK
+   # to set the order. Not setting order here; just checking whether user input
+   # is acceptable based on whether observed_PK exists.
+   if(PKorder != "default" & is.na(PKparameters[1]) & "logical" %in% class(observed_PK)){
+      warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters` or by supplying observed PK data. The order will be the default order from the Consultancy Report Template.", 
+              call. = FALSE)
+      PKorder <- "default"
    } 
    
    # At this point, we should have the sim_data_file. 
@@ -768,6 +867,8 @@ pksummary_table <- function(sim_data_file = NA,
                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                           exp_details = "Summary tab")
             }
+         } else {
+            Deets <- as.data.frame(Deets)
          }
       }
       
@@ -1407,7 +1508,7 @@ call. = FALSE)
    # Formatting and selecting only rows where there are data
    MyPKResults <- MyPKResults %>%
       mutate(Value = if_else(str_detect(Stat, "CV"), 
-                           round_opt(100*Value, rounding),
+                             round_opt(100*Value, rounding),
                              round_opt(Value, rounding))) %>%
       filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
                          "CI90_low", "CI90_high", "CI95_low", "CI95_high",

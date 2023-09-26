@@ -9,23 +9,42 @@ format_obs_for_XML(
   conc_column,
   time_column,
   subject_column,
+<<<<<<< HEAD
   compound_dose_amount = 100,
   compound_dose_unit = "mg",
   compound_inf_duration = NA,
   compound_start = 0,
   compound_route = "Oral",
   dose_interval = 24,
+=======
+  DVID_column,
+  dose = 100,
+  dose_unit = "mg",
+  inf_duration = NA,
+  dosing_start_time = 0,
+  dose_route = "Oral",
+  dose_interval = NA,
+>>>>>>> beta
   num_doses = NA,
   end_time = NA,
   custom_dosing_schedule = NA,
   simulator_version = 22,
+<<<<<<< HEAD
   compound_ID = "Substrate",
+=======
+  compoundID = "Substrate",
+>>>>>>> beta
   demog_dataframe,
   age_column,
   weight_column,
   height_column,
   sex_column,
+<<<<<<< HEAD
   save_output = NA
+=======
+  save_output = NA,
+  return_data = FALSE
+>>>>>>> beta
 )
 }
 \arguments{
@@ -40,6 +59,7 @@ that contains time data}
 \item{subject_column}{the column in the observed concentration-time
 data.frame that contains the subject ID}
 
+<<<<<<< HEAD
 \item{compound_dose_amount}{the amount of the dose. If this amount varies,
 please include one dose amount for each time. For example:
 \code{compound_dose_amount = c(100, 50, 50)} will generate doses of 100 mg
@@ -70,6 +90,52 @@ the value for \code{end_time} will be used to determine the number of doses
 administered.}
 
 \item{end_time}{the end time of the dosing in hours. If \code{num_doses} is
+=======
+\item{DVID_column}{the column in the observed concentration-time data.frame
+that indicates any time the DV number in the PE file should change. It's
+fine to omit this if everything should be "1". If you haven't already
+created a column for this with "1", "2", or "3" as the values for the DVID,
+you can specify which column you want to use and we'll assign the numbers
+for you. For example, if you have some data in plasma and some in blood and
+have a column called "Tissue", you'd set this as \code{DVID_column =
+Tissue}, and we'll assign one blood to "1" and plasma to "2" (numbers are
+automatically assigned alphabetically). If you have an inhibitor present in
+some cases but not others, set this to the column with the inhibitor data,
+and any time the value changes in \code{obs_dataframe}, the number in the
+"DV" column will change in the output. We'll include a message to indicate
+which value in the original data was used for which DV number.}
+
+\item{dose}{the amount of the dose. If this amount varies, please include one
+dose amount for each time. For example: \code{dose = c(100, 50, 50)} will
+generate doses of 100 mg for the first dose and then 50 mg for the next two
+doses. \strong{An R coding tip:} You don't \emph{have} to list everything
+multiple times; you can use the function \code{\link{rep}} to repeat
+elements. For example, here's how you could specify that the 1st dose
+should be 100 mg but the next 10 doses should be 50: \code{dose = c(100,
+rep(50, 10))}}
+
+\item{dose_unit}{the unit of dosing. Options are "mg" (default), "mg/m2", or
+"mg/kg".}
+
+\item{inf_duration}{the infusion duration (min) (optional)}
+
+\item{dosing_start_time}{the start time of compound administration (h);
+default is 0.}
+
+\item{dose_route}{the route of administration. Options are "Oral" (default),
+"Intravenous", "Dermal", "Inhaled", "SC-First Order", "SC-Mechanistic", or
+"Auto-detect". Not case sensitive.}
+
+\item{dose_interval}{the dosing interval in hours. Default is NA for a single
+dose. Set this to, e.g., 24 for a QD dosing regimen.}
+
+\item{num_doses}{the number of doses to generate. If this is left as NA and
+you have specified the dose interval, then the value for \code{end_time}
+will be used to determine the number of doses administered. If this is NA
+and so is \code{dose_interval}, we'll assume you want a single dose.}
+
+\item{end_time}{the end time of the study in hours. If \code{num_doses} is
+>>>>>>> beta
 filled out, that value will be used preferentially.}
 
 \item{custom_dosing_schedule}{a custom dosing schedule to be used for each
@@ -78,6 +144,7 @@ subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 \code{num_doses}, and \code{end_time} will all be ignored.}
 
 \item{simulator_version}{the version of the simulator that will be used. This
+<<<<<<< HEAD
 affects what columns will be included in hte output.}
 
 \item{compound_ID}{specify the compound that's being dosed. Options are
@@ -86,6 +153,15 @@ case sensitive. If you list more than one compound, you must also list more
 than one \code{compound_route}, \code{compound_dose_unit}, and
 \code{compound_dose_amount} or list just one of each with the understanding
 that they will all be the same.}
+=======
+affects what columns will be included in the output.}
+
+\item{compoundID}{specify the compound that's being dosed. Options are
+"Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
+case sensitive. If you list more than one compound, you must also list more
+than one \code{dose_route}, \code{dose_unit}, and \code{dose} or list just
+one of each with the understanding that they will all be the same.}
+>>>>>>> beta
 
 \item{demog_dataframe}{a data.frame of demographic information (optional)}
 
@@ -100,6 +176,14 @@ that they will all be the same.}
 \item{save_output}{the file name to use for saving the output as a csv; if
 left as NA, this will generate a data.frame in R but no output will be
 saved.}
+<<<<<<< HEAD
+=======
+
+\item{return_data}{TRUE or FALSE (default) for whether to return a data.frame
+of the output at the end. If you're only using this to save csv files to
+convert into XML overlay files, you probably don't need to get that object
+back here, so that's why this argument exists.}
+>>>>>>> beta
 }
 \value{
 a data.frame

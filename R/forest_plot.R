@@ -701,8 +701,22 @@ forest_plot <- function(forest_dataframe,
                                "SD" = "the standard deviation", 
                                "standard deviation" = "SD"), 
                         " will be used."), 
+              call. = FALSE)
+      } else {
+         warning(paste0("You requested a variability_type of ", 
+                        variability_type, ", but that was not available in your data. Instead, ", 
+                        switch(VarStat[1], 
+                               "CI_Lower" = "the geometric X% confidence interval", 
+                               "Centile_Lower" = "Xth to Yth percentiles",
+                               "range" = "the range",
+                               "ArithCV" = "the arithmetic CV",
+                               "GeoCV" = "the geometric CV",
+                               "SD" = "the standard deviation", 
+                               "standard deviation" = "SD"), 
+                        " will be used."), 
                  call. = FALSE)
       }
+   }
    }
    
    if(any(VarStat %in% c("GeoCV"))){
@@ -995,6 +1009,9 @@ forest_plot <- function(forest_dataframe,
       mutate(YCol = factor(YCol, levels = switch(
          YFileOrder, 
          "strongest inhibitor to strongest inducer" = StInhib_StInd, 
+         "strongest inducer to strongest inhibitor" = rev(StInhib_StInd), 
+         "as is" = unique(forest_dataframe$YCol),
+         "user" = y_order)))
          "strongest inducer to strongest inhibitor" = rev(StInhib_StInd), 
          "as is" = unique(forest_dataframe$YCol),
          "user" = y_order)))
@@ -1433,6 +1450,56 @@ forest_plot <- function(forest_dataframe,
             NumTable <- NumTable + ggtitle(TableTitle) 
          }
       }
+   
+   if(show_numbers_on_right){
+      if(as_label(facet_column_x) != "<empty>"){
+         warning("You have faceted your graph along the x direction and also requested the numbers be shown on the right sight. In that scenario, it wouldn't be clear which numbers belonged to which PK parameter in your graph, so we will not show those numbers.", 
+                 call. = FALSE)
+      } else {
+         
+         TableTitle <- ifelse(is.na(table_title),
+                              XTitle, table_title)
+         # Cleaning up and making things shorter
+         TableTitle <- sub("Ratio \\(", "Ratio\n(", TableTitle)
+         TableTitle <- sub("Confidence Interval", "CI", TableTitle)
+         
+         NumTable <- forest_dataframe %>% 
+            mutate(across(.cols = c(Centre, Lower, Upper), 
+                          .fns = function(x) x * 
+                             ifelse({x_axis_number_type} == "percents", 
+                                    100, 1)), 
+                   across(.cols = c(Centre, Lower, Upper), 
+                          .fns = function(x) round_consultancy(x)), 
+                   Nums = case_when({x_axis_number_type} == "percents" ~
+                                       paste0(Centre, "% (", 
+                                              Lower, "%, ", 
+                                              Upper, "%)"), 
+                                    TRUE ~ paste0(Centre, " (", 
+                                                  Lower, ", ", 
+                                                  Upper, ")")),
+                   Nums = sub(" \\(NA, NA\\)| \\(NA%, NA%\\)", "", Nums))
+         
+         NumTable <- ggplot(NumTable, aes(x = 1, y = PKParam_num, label = Nums)) +
+            geom_text(vjust = 0.5, hjust = 0.5, size = 3) +
+            facet_grid(YCol ~ .) +
+            scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
+                               labels = sapply(PKexpressions[levels(forest_dataframe$PKparameter)], FUN = `[`),
+                               expand = expansion(mult = pad_y_num)) +
+            theme(axis.ticks = element_blank(),
+                  axis.text = element_blank(),
+                  axis.title = element_blank(),
+                  strip.text = element_blank(),
+                  plot.title = element_text(hjust = 0.5, size = 11),
+                  plot.background = element_rect(fill="white", colour=NA),
+                  panel.background = element_rect(fill="white", color=NA),
+                  panel.border = element_rect(color = NA, fill = NA),
+                  strip.background = element_rect(color=NA, fill="white"),
+                  rect = element_rect(fill = "white", color = "white"))
+         
+         if(TableTitle != "none"){
+            NumTable <- NumTable + ggtitle(TableTitle) 
+         }
+      }
    }
    
    if(complete.cases(save_graph)){
@@ -1441,6 +1508,12 @@ forest_plot <- function(forest_dataframe,
          # Making sure they've got a good extension
          Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
          FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg", "docx") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
                                   "png", "bmp", "svg", "jpg", "docx"), 
                        Ext, "png")

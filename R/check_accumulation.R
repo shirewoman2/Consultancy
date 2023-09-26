@@ -53,7 +53,7 @@
 #'   in quotes here, e.g., "My conc time graph.png". If you do not designate a
 #'   file extension, it will be saved as a png file, but if you specify a
 #'   different file extension, it will be saved as that file format. Acceptable
-#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
 #'   Leaving this as NA means the file will not be automatically saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
@@ -227,62 +227,62 @@ check_accumulation <- function(ct_dataframe,
         
         OverlayCT <- ct_dataframe %>% 
             filter(Trial == MyMeanType & CompoundID == overlay_compoundID) %>% 
-            mutate(Inhibitor = ifelse(Inhibitor == "none", 
-                                      "without effector",
-                                      paste("with", MyEffector)), 
-                   Inhibitor = factor(Inhibitor, 
-                                      levels = c("without effector",
-                                                 paste("with", MyEffector))))
+           mutate(Inhibitor = ifelse(Inhibitor == "none", 
+                                     "without effector",
+                                     paste("with", MyEffector)), 
+                  Inhibitor = factor(Inhibitor, 
+                                     levels = c("without effector",
+                                                paste("with", MyEffector))))
         
         # Checking for differences in scale between accum_compoundID and
         # overlay_compoundID
         ScaleChallenges <- abs(max(SScheck$Conc, na.rm = T) - 
-                                   max(OverlayCT$Conc, na.rm = T))
+                                  max(OverlayCT$Conc, na.rm = T))
         
         if(complete.cases(ScaleChallenges) && ScaleChallenges > 100){
-            OverlayCT <- OverlayCT %>% 
-                mutate(Conc = Conc * round_up(max(SScheck$Conc, na.rm = T) /
-                                                  max(OverlayCT$Conc, na.rm = T)))
+           OverlayCT <- OverlayCT %>% 
+              mutate(Conc = Conc * round_up(max(SScheck$Conc, na.rm = T) /
+                                               max(OverlayCT$Conc, na.rm = T)))
         } 
         
         if(length(MyEffector) > 0){
-            G <- G + 
-                geom_line(data = OverlayCT, 
-                          aes(x = Time, y = Conc, linetype = Inhibitor), 
-                          inherit.aes = F, color = "gray50") +
-                scale_linetype_manual(values = c("solid", "dashed"))
+           G <- G + 
+              geom_line(data = OverlayCT, 
+                        aes(x = Time, y = Conc, linetype = Inhibitor), 
+                        inherit.aes = F, color = "gray50") +
+              scale_linetype_manual(values = c("solid", "dashed"))
         } else {
-            
-            G <- G + 
-                geom_line(data = OverlayCT, 
-                          aes(x = Time, y = Conc),
-                          inherit.aes = F, color = "gray50")
+           
+           G <- G + 
+              geom_line(data = OverlayCT, 
+                        aes(x = Time, y = Conc),
+                        inherit.aes = F, color = "gray50")
         }
         
         # Adding 2nd y axis if there were big differences in scale.
         if(complete.cases(ScaleChallenges) && ScaleChallenges> 100){
-            G <- G +
-                scale_y_continuous(
-                    paste(str_to_title(accum_compoundID), 
-                          switch(conc_point, 
-                                 "Cmin" = "Cmin (ng/mL)", 
-                                 "Cmax" = "Cmax (ng/mL)", 
-                                 "C0" = "C0 (ng/mL)",
-                                 "Clast" = "Clast (ng/mL)")), 
-                    sec.axis = sec_axis(~ . / round_down(ScaleChallenges),
-                                        name = paste(str_to_title(overlay_compoundID),
-                                                     "concentration (ng/mL)"))) +
-                theme(axis.line.y.right = element_line(color = "black"))
+           G <- G +
+              scale_y_continuous(
+                 paste(str_to_title(accum_compoundID), 
+                       switch(conc_point, 
+                              "Cmin" = "Cmin (ng/mL)", 
+                              "Cmax" = "Cmax (ng/mL)", 
+                              "C0" = "C0 (ng/mL)",
+                              "Clast" = "Clast (ng/mL)")), 
+                 sec.axis = sec_axis(~ . / round_down(ScaleChallenges),
+                                     name = paste(str_to_title(overlay_compoundID),
+                                                  "concentration (ng/mL)"))) +
+              theme(axis.line.y.right = element_line(color = "black"))
         } else {
-            
-            G <- G +
-                scale_y_continuous(limits = c(0, max(c(OverlayCT$Conc, 
-                                                       SScheck$Conc)))) +
-                ylab(switch(conc_point, 
-                            "Cmin" = expression(C[min]~"(ng/mL)"), 
-                            "Cmax" = expression(C[max]~"(ng/mL)"), 
-                            "C0" = expression(C[0]~"(ng/mL)"),
-                            "Clast" = expression(C[last]~"(ng/mL)")))
+           
+           G <- G +
+              scale_y_continuous(limits = c(0, max(c(OverlayCT$Conc, 
+                                                     SScheck$Conc)))) +
+              ylab(switch(conc_point, 
+                          "Cmin" = expression(C[min]~"(ng/mL)"), 
+                          "Cmax" = expression(C[max]~"(ng/mL)"), 
+                          "C0" = expression(C[0]~"(ng/mL)"),
+                          "Clast" = expression(C[last]~"(ng/mL)")))
         }
         
         # Adding legend item saying that points are for accum_compoundID and
@@ -291,53 +291,53 @@ check_accumulation <- function(ct_dataframe,
                             Conc = as.numeric(NA), 
                             Type = c(accum_compoundID, overlay_compoundID))
         G <- G +
-            geom_point(data = Empty, aes(x = Time, y = Conc, alpha = Type),
-                       inherit.aes = F) +
-            geom_line(data = Empty, aes(x = Time, y = Conc, alpha = Type),
-                      inherit.aes = F)  +
-            scale_alpha_manual(
-                name = "Compound", values = c(1,1),
-                breaks = c(accum_compoundID, overlay_compoundID))
+           geom_point(data = Empty, aes(x = Time, y = Conc, alpha = Type),
+                      inherit.aes = F) +
+           geom_line(data = Empty, aes(x = Time, y = Conc, alpha = Type),
+                     inherit.aes = F)  +
+           scale_alpha_manual(
+              name = "Compound", values = c(1,1),
+              breaks = c(accum_compoundID, overlay_compoundID))
         
     } else {
-        G <- G + 
-            scale_y_continuous(limits = c(0, max(SScheck$Conc))) +
-            ylab(switch(conc_point, 
-                        "Cmin" = expression(C[min]~"(ng/mL)"), 
-                        "Cmax" = expression(C[max]~"(ng/mL)"), 
-                        "C0" = expression(C[0]~"(ng/mL)"),
-                        "Clast" = expression(C[last]~"(ng/mL)")))
-        
+       G <- G + 
+          scale_y_continuous(limits = c(0, max(SScheck$Conc))) +
+          ylab(switch(conc_point, 
+                      "Cmin" = expression(C[min]~"(ng/mL)"), 
+                      "Cmax" = expression(C[max]~"(ng/mL)"), 
+                      "C0" = expression(C[0]~"(ng/mL)"),
+                      "Clast" = expression(C[last]~"(ng/mL)")))
+       
     }
     
     # Setting order of legend items 
     G <- G + 
-        guides(alpha = guide_legend(order = 1, 
-                                    override.aes =
-                                        list(linetype = c("blank", "solid"),
-                                             shape = c(16, NA),
-                                             size = c(2, 0.5),
-                                             color = c("#7030A0", "gray50"))), 
-               color = guide_legend(order = 2),
-               linetype = guide_legend(order = 3))
+       guides(alpha = guide_legend(order = 1, 
+                                   override.aes =
+                                      list(linetype = c("blank", "solid"),
+                                           shape = c(16, NA),
+                                           size = c(2, 0.5),
+                                           color = c("#7030A0", "gray50"))), 
+              color = guide_legend(order = 2),
+              linetype = guide_legend(order = 3))
     
     
     if(complete.cases(save_graph)){
-        FileName <- save_graph
-        if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-            FileName <- sub(paste0(".", Ext), "", FileName)
-            Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                     "png", "bmp", "svg", "jpg"), 
-                          Ext, "png")
-            FileName <- paste0(FileName, ".", Ext)
-        } else {
-            FileName <- paste0(FileName, ".png")
-        }
-        
-        ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-               plot = G)
+       FileName <- save_graph
+       if(str_detect(FileName, "\\.")){
+          # Making sure they've got a good extension
+          Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+          FileName <- sub(paste0(".", Ext), "", FileName)
+          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                   "png", "bmp", "svg", "jpg"), 
+                        Ext, "png")
+          FileName <- paste0(FileName, ".", Ext)
+       } else {
+          FileName <- paste0(FileName, ".png")
+       }
+       
+       ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+              plot = G)
     }
     
     return(G)

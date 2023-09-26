@@ -449,24 +449,24 @@ pksummary_mult <- function(sim_data_files = NA,
       observed_PKDF <- unique(observed_PK)
    }
    
-   if(exists("observed_PKDF", inherits = FALSE) &&
-      "File" %in% names(observed_PKDF) == FALSE){
+   if(exists("observed_PKDF", inherits = FALSE)){
       
-      # If there is only one value for each PK parameter, then use that set of
-      # PK data to compare to ALL of the simulated data.
-      if(any(names(observed_PKDF) %in% AllPKParameters$PKparameter)){
-         if(nrow(observed_PKDF) == 1){
-            observed_PKDF <- bind_cols(observed_PKDF, "File" = sim_data_files)
-         } else {
-            # If there is more than one value for each PK parameter, though,
-            # then we don't know what to compare. Give an error message and
-            # omit the S/O rows.
-            warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.
-", 
-call. = FALSE)
-            observed_PKDF <- NULL
-         }
-      } else {
+      # Checking whether data in long or wide format. 
+      Wide <- any(names(observed_PKDF) %in% AllPKParameters$PKparameter)
+      
+      if(Wide){
+         
+         if("File" %in% names(observed_PKDF) == FALSE){
+            
+            if(nrow(observed_PKDF) == 1){
+               # If there is only one value for each PK parameter, then use that
+               # set of PK data to compare to ALL of the simulated data.
+               observed_PKDF <- bind_cols(observed_PKDF, "File" = sim_data_files)
+            } else {
+               # If there is more than one value for each PK parameter, though,
+               # then we don't know what to compare. Give an error message and
+               # omit the S/O rows.
+               warning("You must either include a column titled 'File' with the observed PK so that this function knows which simulator output files to compare with these obseved data, or you must submit only one set of PK parameters and we'll compare that to all the simulated files. We don't know what to compare here, so we will omit the observed data.\n", 
          # Checking for unique PK parameters
          Check <- observed_PKDF %>% select(PKparameter, Value) %>% 
             unique() %>% group_by(PKparameter) %>% 
@@ -494,6 +494,93 @@ call. = FALSE)
       observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE] <-
          paste0(observed_PKDF$File[str_detect(observed_PKDF$File, "xlsx$") == FALSE], 
                 ".xlsx")
+   }
+   
+   # If user has not included "xlsx" in file name, add that.
+   sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
+      paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
+             ".xlsx")
+   
+   # Making sure that we're only extracting each file once
+   sim_data_files <- unique(sim_data_files)
+   
+   # Making sure that all the files exist before attempting to pull data
+   if(all(complete.cases(sim_data_files)) && 
+      any(file.exists(sim_data_files) == FALSE)){
+      MissingSimFiles <- sim_data_files[
+         which(file.exists(sim_data_files) == FALSE)]
+      warning(paste0("The file(s) ", 
+                     str_comma(paste0("`", MissingSimFiles, "`")), 
+                     " is/are not present and thus will not be extracted.
+                     "), 
+                       call. = FALSE)
+               observed_PKDF <- NA
+            }
+         }
+         
+      } else {
+         # Error catching for long format here
+         
+         # Making names consistent
+         if(any(c("pkparameter", "pkparam", "param", "parameter") %in%
+                tolower(names(observed_PKDF)))){
+            
+            ColToUse <- which(tolower(names(observed_PKDF)) %in% 
+                                 c("pkparameter", "pkparam", "param", 
+                                   "parameter"))[1]
+            names(observed_PKDF)[ColToUse] <- "PKparameter"
+            rm(ColToUse)
+         }
+         
+         if("Value" %in% names(observed_PKDF) == FALSE &&
+            any(c("geomean", "gm_mean", "gmean", "mean") %in%
+                tolower(names(observed_PKDF)))){
+            
+            ColToUse <- c(which(tolower(names(observed_PKDF)) == "geomean"), 
+                          which(tolower(names(observed_PKDF)) == "gm_mean"), 
+                          which(tolower(names(observed_PKDF)) == "gmean"), 
+                          which(tolower(names(observed_PKDF)) == "mean"))[1]
+            
+            warning(paste0("We were looking for a column named `Value` in your observed data and did not find it, but we *did* find a column called `", 
+                           names(observed_PKDF)[ColToUse],
+                           "`, which we think is what you might want. We'll use the data that column for the observed values.\n"), 
+                    call. = FALSE)
+            
+            names(observed_PKDF)[ColToUse] <- "Value"
+            rm(ColToUse)
+         }
+         
+         # If they've only supplied a single set of PK parameters -- i.e., all
+         # values in PKparameters are unique -- then make all PK apply to all
+         # files.
+         if(any(duplicated(observed_PKDF$PKparameter)) == FALSE &
+            ("File" %in% names(observed_PKDF) == FALSE ||
+             all(is.na(observed_PKDF$File)))){
+            
+            observed_PKDF <- observed_PKDF %>% ungroup() %>% 
+               select(-any_of("File")) %>% 
+               left_join(expand.grid(File = sim_data_files, 
+                                     PKparameter = observed_PKDF$PKparameter), 
+                         by = "PKparameter")
+         }
+      }   
+      
+      # Now error catching for either long or wide obs data
+      
+      # If user has not included "xlsx" in file name, add that.
+      if(any(str_detect(observed_PKDF$File, "xlsx$") == FALSE)){
+         observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)] <-
+            paste0(observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)], 
+                   ".xlsx")
+      }
+      
+      if(Wide == FALSE & 
+         all(c("PKparameter", "Value") %in% names(observed_PKDF)) == FALSE){
+         
+         warning("None of the data in `observed_PK` seem to be PK data. Please check the help file for options for arranging observed data for comparison to simulated data here. For now, we can't calculate S/O ratios.\n", 
+                 call. = FALSE)
+         observed_PKDF <- NA
+      }
    }
    
    # If user has not included "xlsx" in file name, add that.
@@ -544,10 +631,8 @@ call. = FALSE)
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.
-
-"), 
-call. = FALSE)
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+                 call. = FALSE)
          next
       }
       
@@ -560,6 +645,8 @@ call. = FALSE)
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          existing_exp_details <- extractExpDetails(i, exp_details = "Summary tab", 
+                                                   annotate_output = FALSE) %>% 
+            as.data.frame()
                                                    annotate_output = FALSE) %>% 
             as.data.frame()
       } else {
@@ -597,9 +684,9 @@ call. = FALSE)
          # pass through to other functions and just skip any files that
          # aren't simulator output.
          warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
 "), 
-call. = FALSE)
+                 call. = FALSE)
          next()
       }
       
@@ -692,9 +779,8 @@ call. = FALSE)
                               " AUCinf included NA values for the ", j, # CompoundID
                               " in the file `", 
                               i, 
-                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead.
-"),
-call. = FALSE)
+                              "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt for this instead.\n"),
+                       call. = FALSE)
             }
             
             PKpulled[[i]][[j]][[k]] <-
@@ -703,6 +789,7 @@ call. = FALSE)
                           Tissue = k, 
                           PKpulled = setdiff(names(MyPKResults[[i]][[j]][[k]]), 
                                              c("Statistic", "File")))
+            
             
             if(checkDataSource){
                OutQC[[i]][[j]][[k]] <- temp$QC
@@ -730,9 +817,9 @@ call. = FALSE)
    
    if(length(MyPKResults) == 0){
       warning("No PK data could be found in the files ", 
-              str_comma(paste0("`", sim_data_files, "`")), "
+              str_comma(paste0("`", sim_data_files, "`")), "\n",
 ",
-call. = FALSE)
+              call. = FALSE)
       return(list())
    }
    
@@ -754,9 +841,9 @@ call. = FALSE)
    
    if(extract_forest_data & # NOT SURE THIS IS NECESSARY
       any(str_detect(names(bind_rows(MyPKResults)), "ratio")) == FALSE){
-      warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.
+      warning("You requested forest data, but none of the PK parameters included in the output include geometric mean ratios. At least for now, the forest_plot function has only been set up to graph GMRs, so no forest plot data can be extracted.\n", 
 ", 
-call. = FALSE)
+              call. = FALSE)
       
       extract_forest_data <- FALSE
    } 

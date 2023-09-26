@@ -8,6 +8,13 @@
 #'   to be converted to an XML file, not a file that contains only digitized
 #'   time and concentration data and not the XML file itself that you would
 #'   include in a Simulator workspace for observed data.
+#' @param add_t0 TRUE or FALSE (default) for whether to add t0 points if they're
+#'   missing. Sometimes, observed data do not include a measurement at t0
+#'   because, presumably, the concentration should always be 0 at that time. If
+#'   you're using these data to calculate PK, though, you'll miss that initial
+#'   part of the AUC if t0 is missing. If \code{add_t0} is set to TRUE, this
+#'   will add a concentration of 0 and time 0 for all of the individual
+#'   concentration-time profiles.
 #' @param returnDosingInfo TRUE or FALSE (default) for whether to return a
 #'   second data.frame with dosing and demographic information from the Excel
 #'   file.
@@ -18,7 +25,7 @@
 #'   \describe{\item{Individual}{the individual ID}
 #'
 #'   \item{CompoundID}{the compound ID listed in the observed file, e.g., "Sub
-#'   Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma"}
+#'   Plasma", "Sub PM1 Plasma", "Sub (Inb) Plasma" will become "substrate" and so on}
 #'
 #'   \item{Tissue}{the tissue}
 #'
@@ -42,6 +49,7 @@
 #' extractObsConcTime(obs_data_file = "My observed data.xlsx")
 #' 
 extractObsConcTime <- function(obs_data_file, 
+                               add_t0 = FALSE, 
                                returnDosingInfo = FALSE){
    
    # Error catching ---------------------------------------------------------
@@ -427,6 +435,18 @@ extractObsConcTime <- function(obs_data_file,
                       "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
                       "SmokingStatus", "GestationalAge_wk", 
                       "PlacentaVol_L", "FetalWt_kg")))
+   
+   if(add_t0){
+      ToAdd <- obs_data %>% 
+         filter(DoseNum == 1) %>% 
+         select(-Time, -Conc) %>% unique() %>% 
+         mutate(Time = 0, 
+                Conc = 0)
+      
+      obs_data <- obs_data %>% 
+         bind_rows(ToAdd) %>% unique() %>% 
+         arrange(CompoundID, Inhibitor, Tissue, Individual, Time, Trial, Simulated)
+   }
    
    if(returnDosingInfo){
       Out <- list("ObsCT" = obs_data,
