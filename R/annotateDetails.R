@@ -404,29 +404,6 @@ annotateDetails <- function(existing_exp_details,
       select(-Detail) %>% 
       mutate(CompoundNameID = paste(File, CompoundID))
    
-   # Suffixes <- c("_sub" = "substrate", 
-   #               "_inhib" = "inhibitor 1", 
-   #               "_inhib2" = "inhibitor 2", 
-   #               "_inhib1met" = "inhibitor 1 metabolite", 
-   #               "_met1" = "primary metabolite 1", 
-   #               "_met2" = "primary metabolite 2", 
-   #               "_secmet" = "secondary metabolite")
-   # 
-   # ExpDetailDefinitions_expand <- 
-   #    ExpDetailDefinitions %>% filter(str_detect(Detail, "_X")) %>% 
-   #    rename(DetailOrig = Detail)
-   # 
-   # ExpDetailDefinitions_expand <- ExpDetailDefinitions_expand %>% 
-   #    left_join(data.frame(
-   #       DetailOrig = rep(ExpDetailDefinitions_expand$DetailOrig, each = 7)) %>% 
-   #          mutate(Suffix = rep(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
-   #                                "_met1", "_met2", "_secmet"), 
-   #                              nrow(ExpDetailDefinitions_expand)),
-   #                 Detail = paste0(sub("_X", "", DetailOrig), Suffix)),
-   #       by = "DetailOrig") %>% 
-   #    mutate(CompoundID = Suffixes[Suffix]) %>% 
-   #    select(-DetailOrig, -Suffix)
-   
    suppressMessages(
       Out <- Out %>% 
          arrange(File) %>% 
