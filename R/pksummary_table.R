@@ -633,66 +633,6 @@ pksummary_table <- function(sim_data_file = NA,
          observed_PK <- NA
       } else {
          
-      
-      # Reshape to wide format if necessary
-      if(all(c("PKparameter", "Value") %in% names(observed_PK))){
-         
-         # If user specified a sheet and/or didn't specify dose number in the PK
-         # parameter name for obs PK, we don't know what dose the PK pertain to and
-         # that messes up everything else. Artificially adding that now and will
-         # remove it later.
-         if(any(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)){
-            observed_PK$PKparameter[
-               which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)] <- 
-               paste0(observed_PK$PKparameter[
-                  which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)], 
-                  "_last") 
-            # Using "last" here b/c more flexible; applicable to more PK
-            # parameters. If it were a single-dose sim, that wouldn't
-            # require a user-defined integration interval.
-            
-            observed_PK$PKparameter <- sub("AUCt_last", "AUCtau_last", observed_PK$PKparameter)
-         }
-         
-         observed_PK <- observed_PK %>% 
-            select(any_of(c("File", "PKparameter", "Value"))) %>%  # Return to this later to add options for including variability
-            # Only keeping parameters that we've set up data extraction for,
-            # and only keeping complete.cases of obs data
-            filter(PKparameter %in% AllPKParameters$PKparameter &
-                      complete.cases(Value))
-         
-         if("File" %in% names(observed_PK)){
-            observed_PK <- observed_PK %>% filter(str_detect(File, sim_data_file)) # ok for user to drop file extension; this should still work
-         } else {
-            # If File is not in the column names, then assume that it's the
-            # same as sim_data_file anyway.
-            observed_PK$File <- sim_data_file
-         }
-         
-         # Checking that they haven't provided more than one value for a
-         # given PK parameter for this sim_data_file. If they have, we don't
-         # know which observed data to compare.
-         ObsFileCheck <- observed_PK %>% 
-            unique() %>% group_by(File, PKparameter) %>% 
-            summarize(NVals = n())
-         
-         if(any(ObsFileCheck$NVals > 1)){
-            warning("You have supplied more than one value for a given PK parameter for this simulator output file, so we don't know which one to use. We will not be able to include observed data in your table.", 
-                    call. = FALSE)
-            observed_PK <- data.frame()
-         } else {
-            observed_PK <- observed_PK %>% 
-               pivot_wider(names_from = PKparameter, 
-                           values_from = Value)   
-         }
-      }
-      
-      if(nrow(observed_PK) < 1){
-         warning("None of the supplied observed PK were for the supplied sim_data_file. We cannot make any comparisons between simulated and observed PK.", 
-                 call. = FALSE)
-         observed_PK <- NA
-      } else {
-         
          # There should be only 1 row in observed_PK, so removing any extras.
          if("File" %in% names(observed_PK) & nrow(observed_PK) > 1 & 
             complete.cases(sim_data_file) && 
@@ -785,15 +725,6 @@ pksummary_table <- function(sim_data_file = NA,
    if("data.frame" %in% class(observed_PK) &&
       ncol(observed_PK) == 1){
       observed_PK <- NA
-   }
-   
-   # If user specified PKorder, then use *either* PKparameters OR observed PK
-   # to set the order. Not setting order here; just checking whether user input
-   # is acceptable based on whether observed_PK exists.
-   if(PKorder != "default" & is.na(PKparameters[1]) & "logical" %in% class(observed_PK)){
-      warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters` or by supplying observed PK data. The order will be the default order from the Consultancy Report Template.", 
-              call. = FALSE)
-      PKorder <- "default"
    }
    
    # If user specified PKorder, then use *either* PKparameters OR observed PK

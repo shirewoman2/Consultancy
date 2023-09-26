@@ -449,14 +449,9 @@ the text makes sense in light of your exact graph. If you leave off ".png"
 or ".docx", it will be saved as a png file, but if you specify a different
 graphical file extension, it will be saved as that file format. Acceptable
 graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
-<<<<<<< HEAD
-"bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA means the file will not be
-automatically saved to disk.}
-=======
 "bmp", or "svg". Do not include any slashes, dollar signs, or periods in
 the file name. Leaving this as NA means the file will not be automatically
 saved to disk.}
->>>>>>> beta
 
 \item{fig_height}{figure height in inches; default is 6}
 
@@ -474,13 +469,8 @@ overlaying observed data. Please see the "Details" section at the bottom of
 this help file. For detailed instructions and examples, please see the
 SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
 Files/SimcypConsultancy function examples and instructions/Concentration-time
-<<<<<<< HEAD
-plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx".
-(Sorry, we are unable to include a link to it here.)
-=======
 plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx". (Sorry,
 we are unable to include a link to it here.)
->>>>>>> beta
 }
 \details{
 \strong{Notes on including observed data:} We recently added the option of

@@ -838,11 +838,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
       
       MultData$Dose_inhib2 <- as.character(MultData$Dose_inhib2)
       ct_dataframe$Dose_inhib2 <- as.character(ct_dataframe$Dose_inhib2)
-                                   obs_to_sim_assignment = ObsAssign, 
-                                   existing_exp_details = existing_exp_details)
       
    }
-   
    
    ct_dataframe <- bind_rows(ct_dataframe, MultData) %>% 
       select(-any_of(c("ID", "Breaks"))) %>% 

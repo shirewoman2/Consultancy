@@ -10,15 +10,9 @@ create_doses(
   end_time = NA,
   custom_dosing_schedule = NA,
   simulator_version = 22,
-<<<<<<< HEAD
-  compound_ID = "Substrate",
-  compound_start = 0,
-  compound_route = "Oral",
-=======
   compoundID = "Substrate",
   compound_dosing_start_time = 0,
   compound_dose_route = "Oral",
->>>>>>> beta
   compound_dose_unit = "mg",
   compound_dose_amount = 100,
   compound_inf_duration = NA,
@@ -50,11 +44,7 @@ subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 \item{simulator_version}{the version of the simulator that will be used. This
 affects what columns will be included in hte output.}
 
-<<<<<<< HEAD
-\item{compound_ID}{specify the compound that's being dosed. Options are
-=======
 \item{compoundID}{specify the compound that's being dosed. Options are
->>>>>>> beta
 "Substrate" (default), "Inhibitor 1", "Inhibitor 2", or "Inhibitor 3". Not
 case sensitive. If you list more than one compound, you must also list more
 than one \code{compound_dose_route}, \code{compound_dose_unit}, and

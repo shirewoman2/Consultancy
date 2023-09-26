@@ -404,30 +404,6 @@ annotateDetails <- function(existing_exp_details,
       select(-Detail) %>% 
       mutate(CompoundNameID = paste(File, CompoundID))
    
-   # Need to deal with _X in detail names
-   Suffixes <- c("_sub" = "substrate", 
-                 "_inhib" = "inhibitor 1", 
-                 "_inhib2" = "inhibitor 2", 
-                 "_inhib1met" = "inhibitor 1 metabolite", 
-                 "_met1" = "primary metabolite 1", 
-                 "_met2" = "primary metabolite 2", 
-                 "_secmet" = "secondary metabolite")
-   
-   ExpDetailDefinitions_expand <- 
-      ExpDetailDefinitions %>% filter(str_detect(Detail, "_X")) %>% 
-      rename(DetailOrig = Detail)
-   
-   ExpDetailDefinitions_expand <- ExpDetailDefinitions_expand %>% 
-      left_join(data.frame(
-         DetailOrig = rep(ExpDetailDefinitions_expand$DetailOrig, each = 7)) %>% 
-            mutate(Suffix = rep(c("_sub", "_inhib", "_inhib2", "_inhib1met", 
-                                  "_met1", "_met2", "_secmet"), 
-                                nrow(ExpDetailDefinitions_expand)),
-                   Detail = paste0(sub("_X", "", DetailOrig), Suffix)),
-         by = "DetailOrig") %>% 
-      mutate(CompoundID = Suffixes[Suffix]) %>% 
-      select(-DetailOrig, -Suffix)
-   
    suppressMessages(
       Out <- Out %>% 
          arrange(File) %>% 
@@ -482,45 +458,6 @@ annotateDetails <- function(existing_exp_details,
                         "Input Sheet", Sheet),
          SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
                                    "Transport", SimulatorSection), 
-         
-         # Adding some notes
-         Notes = case_when(
-            str_detect(Detail, "CLadditional_InVivo") ~ paste("Additional in vivo clearance for", CompoundID),
-            str_detect(Detail, "CLbiliary_InVivoCL") ~ paste("Additional in vivo biliary clearance for", CompoundID),
-            str_detect(Detail, "CLint_AddHLM") ~ paste("Addtional HLM CLint for", CompoundID),
-            str_detect(Detail, "CLint_biliary") ~ paste("Additional biliary CLint for", CompoundID),
-            str_detect(Detail, "CLint_CYP|CLint_UGT") ~ paste("Additional", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "CLint for", CompoundID),
-            str_detect(Detail, "CLiv_InVivo") ~ paste("In vivo CLiv for", CompoundID),
-            str_detect(Detail, "CLpo_InVivo") ~ paste("In vivo CLpo for", CompoundID),
-            str_detect(Detail, "fu_mic") ~ paste("fu,mic for", str_extract(Detail, "CYP[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID),
-            str_detect(Detail, "fu_mic") ~ paste("fu,mic for", str_extract(Detail, "UGT[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID),
-            str_detect(Detail, "Ki_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "competitive inhibition constant for", CompoundID), 
-            str_detect(Detail, "Km_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "Km for", CompoundID), 
-            str_detect(Detail, "Vmax_") ~ paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "Vmax for", CompoundID), 
-            str_detect(Detail, "MBI_fu_mic") ~ paste("fu,mic for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
-            str_detect(Detail, "MBI_Kapp") ~ paste("Kapp for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
-            str_detect(Detail, "MBI_kinact") ~ paste("kinact for MBI of", str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), "for", CompoundID), 
-            TRUE ~ Notes),
-         
-         # Setting factors for sorting
-         SimulatorSection = factor(SimulatorSection, 
-                                   levels = c("SimulatorVersion",
-                                              "Phys Chem and Blood Binding", 
-                                              "Absorption",
-                                              "Distribution",
-                                              "Elimination",
-                                              "Transport",
-                                              "Interaction",
-                                              "Trial Design", 
-                                              "Population")),
-         CompoundID = factor(CompoundID, 
-                             levels = c("substrate", 
-                                        "primary metabolite 1", 
-                                        "primary metabolite 2",
-                                        "secondary metabolite", 
-                                        "inhibitor 1", 
-                                        "inhibitor 2", 
-                                        "inhibitor 1 metabolite"))) %>% 
          
          # Adding some notes
          Notes = case_when(
@@ -853,30 +790,7 @@ annotateDetails <- function(existing_exp_details,
             group_by(File) %>% 
             summarize(N = length(which(Detected == TRUE)))
          
-         # Checking whether user has asked to concatenate compounds that occupy
-         # multiple positions in the simulator for the same simulation, e.g.,
-         # asked to concatenate info on the substrate and the inhibitor 1 b/c
-         # that would result in multiple values in the same cell.
-         CmpdCheck <- existing_exp_details %>% 
-            select(File, any_of(c("Substrate", 
-                                  "PrimaryMetabolite1", 
-                                  "PrimaryMetabolite2",
-                                  "SecondaryMetabolite", 
-                                  "Inhibitor1", 
-                                  "Inhibitor2", 
-                                  "Inhibitor1Metabolite"))) %>% 
-            mutate(across(.cols = -File, .fns = function(x){str_detect(tolower(x), compound)})) %>% 
-            pivot_longer(cols = -File, names_to = "CompoundID", 
-                         values_to = "Detected") %>% 
-            filter(complete.cases(Detected)) %>% 
-            group_by(File) %>% 
-            summarize(N = length(which(Detected == TRUE)))
-         
          if(any(CmpdCheck$N > 1)){
-                           compound, 
-                           "`. The problem, though, is that you have requested information for compounds that occupy more than one position in the Simulator, e.g., one is the substrate and one is inhibitor 1 in the same simulation, which means that there would be more than one value for a given detail. This wouldn't be workable in the results, so we cannot concatenate the compound column in this situation."), 
-                    call. = FALSE)
-         } else {
             
             warning(paste0("You have asked to concatenate the compound column and also requested all details that match `", 
                            compound, 

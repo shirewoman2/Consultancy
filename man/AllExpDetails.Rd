@@ -14,10 +14,6 @@ A data.frame with columns: \describe{
 
   \item{Regex_row}{When searching the specified column, what regular
   expression should be used for finding the correct row.}
-  finding the correct column.}
-
-  \item{Regex_row}{FOR INTERNAL USE. When searching the specified column,
-  what regular expression should be used for finding the correct row.}
 
   \item{Class}{Data class}
 
@@ -48,23 +44,6 @@ A data.frame with columns: \describe{
 
   \item{ADAMParameter}{TRUE or FALSE for whether the
   parameter only comes into play when it's an ADAM model}
-
-  \item{OffsetRows}{FOR INTERNAL USE: When there just isn't good regex in the
-  specific row for this detail, we need to look for a value and then go down
-  this number of rows to get to the actual value we want.}
-
-  \item{SortOrder}{FOR INTERNAL USE: Order in which this detail should show
-  up in the output of `annotateDetails`}
-
-  \item{Level1, Level2, etc.}{FOR INTERNAL USE: the level in the XML file
-  where the information lives}
-
-  \item{XMLswitch}{FOR INTERNAL USE: If there is a switch involved in the
-  XML file, what is the tag to use for checking on that switch}
-
-  \item{SwitchTo}{FOR INTERNAL USE: If the switch is turned to "1" or "true"
-  in the XML file, this is the tag to switch to for looking up the value for
-  this detail.}
 
   \item{DiscoveryParameter}{Is this detail available for Simcyp Discovery
   simulations? Options are "Simulator only", "Discovery only", or "Simulator

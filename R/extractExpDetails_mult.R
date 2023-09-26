@@ -149,8 +149,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_files), ".xlsx")
    
-             ".xlsx")
-   
    # Making sure that all the files exist before attempting to pull data
    if(any(file.exists(sim_data_files) == FALSE)){
       MissingSimFiles <- sim_data_files[

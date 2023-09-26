@@ -5,11 +5,7 @@
 \title{Extract observed concentration-time data from multiple Excel files}
 \usage{
 extractObsConcTime_mult(
-<<<<<<< HEAD
-  obs_data_files,
-=======
   obs_data_files = NA,
->>>>>>> beta
   returnDosingInfo = FALSE,
   studyID = NA,
   study_arm = NA

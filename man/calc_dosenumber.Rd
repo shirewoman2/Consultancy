@@ -14,20 +14,6 @@ either \code{\link{extractConcTime}} or \code{\link{extractConcTime_mult}}}
 \item{existing_exp_details}{the output from running
 \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} on
 the same simulations that were used for making \code{ct_dataframe}. Note:
-<<<<<<< HEAD
-We have not set up this function to check that your files match in order to
-allow for some flexibility here. If you supply \code{existing_exp_details}
-with more than one simulator output file, we'll just use the 1st one. If
-you would like to have this calculate dose numbers on other data where you
-wouldn't have simulation experimental details (example: observed data),
-then supply a single-row data.frame with the following columns: \code{File}
-(character, just set this to "all" or some other placeholder text),
-\code{DoseInt_sub} (numeric), \code{StartHr_sub} (numeric; probably 0),
-\code{NumDoses_sub} (numeric), and \code{Regimen_sub} (character;
-presumably "Multiple Dose" here). If you want the dose number for other
-compound IDs, then replace "_sub" with, e.g., "_inhib". Please run
-\code{view(ExpDetailDefinitions)} to see examples of acceptable suffixes.}
-=======
 If you would like to have this calculate dose numbers on data where you
 don't have simulation experimental details (example: observed data), then
 please supply a single-row data.frame with the following columns, using
@@ -41,7 +27,6 @@ probably 0} \item{NumDoses_sub}{(numeric) the number of doses overall}
 is also acceptable}} If you want the dose number for other compound IDs, 
 then replace "_sub" with, e.g., "_inhib". Please run 
 \code{view(AllCompounds)} to see acceptable suffixes for each compound ID.}
->>>>>>> beta
 }
 \value{
 Output is a data.frame of concentration-time data with

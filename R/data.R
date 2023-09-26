@@ -151,10 +151,6 @@
 #'
 #'   \item{Regex_row}{When searching the specified column, what regular
 #'   expression should be used for finding the correct row.}
-#'   finding the correct column.}
-#'
-#'   \item{Regex_row}{FOR INTERNAL USE. When searching the specified column,
-#'   what regular expression should be used for finding the correct row.}
 #'
 #'   \item{Class}{Data class}
 #'
@@ -335,8 +331,4 @@
 "AllCompounds"
 
 
-#' Example simulated vs. observed PK data for use with the so_graph function
-#'
-#' @format A data.frame 
-"SOdata"
 

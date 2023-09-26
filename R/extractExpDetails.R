@@ -222,25 +222,6 @@ extractExpDetails <- function(sim_data_file,
       exp_details <- exp_details[!exp_details == "AGP"]
    }
    
-   }
-   
-   if("HSA_male" %in% exp_details_orig){
-      exp_details <- unique(c(exp_details, "HSA_male", "HSA_C0_male",
-                              "HSA_C1_male", "HSA_C2_male"))
-      exp_details <- exp_details[!exp_details == "HSA_male"]
-   }
-   
-   if("HSA_female" %in% exp_details_orig){
-      exp_details <- unique(c(exp_details, "HSA_female", "HSA_C0_female",
-                              "HSA_C1_female", "HSA_C2_female"))
-      exp_details <- exp_details[!exp_details == "HSA_female"]
-   }
-   
-   if("AGP" %in% exp_details_orig){
-      exp_details <- unique(c(exp_details, "AGP_male", "AGP_female"))
-      exp_details <- exp_details[!exp_details == "AGP"]
-   }
-   
    # Since StartHr values are calculated from StartDayTime, those values must be
    # included in exp_details to extract. If the user wanted "Input Sheet"
    # details, we can actually calculate this without reading the summary tab,
@@ -277,7 +258,6 @@ extractExpDetails <- function(sim_data_file,
    
    # Need to note when to look for custom dosing tabs
    CustomDosing <- NA
-   
    
    # Pulling details from the summary tab ----------------------------------
    MySumDeets <- sort(intersect(exp_details, SumDeets$Deet))
@@ -566,7 +546,6 @@ extractExpDetails <- function(sim_data_file,
          NameCol <- InputDeets$NameCol[which(InputDeets$Deet == deet)]
          Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect)) +
             (InputDeets %>% filter(Deet == deet) %>% pull(OffsetRows))
-         
          
          if(length(Row) == 0){
             Val <- NA
@@ -937,15 +916,15 @@ extractExpDetails <- function(sim_data_file,
                   
                }
                rm(CLRows, IntRowStart, NameCol, Suffix)
-         }
+            }
          }
          
          ## Pulling interaction info -------------------------------------------
          MyInputDeets3 <- MyInputDeets[str_detect(MyInputDeets, "Interaction_")]
          
          if(length(MyInputDeets3) > 0){
-         
-         for(j in MyInputDeets3){
+            
+            for(j in MyInputDeets3){
                
                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
                NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
@@ -993,7 +972,7 @@ extractExpDetails <- function(sim_data_file,
                         # Hill coefficient gamma is the only time that an
                         # induction parameter name is only going to be one
                         # character long.
-                     
+                        
                         suppressWarnings(
                            Out[[paste0(
                               paste("IndMax", Enzyme,
@@ -1030,13 +1009,6 @@ extractExpDetails <- function(sim_data_file,
                         )
                         
                         rm(IndModelCheck)   
-                        Out[[paste0(
-                           paste("Ind_gamma", Enzyme,
-                                 sep = "_"), Suffix)]] <-
-                           as.numeric(InputTab[ThisIntRows[IndModelCheck[[5]][1]], NameCol + 1])
-                     )
-                     
-                     rm(IndModelCheck)   
                      }
                      
                      # competitive inhibition
@@ -1108,14 +1080,14 @@ extractExpDetails <- function(sim_data_file,
                }
                
                rm(Suffix, IntRows, IntRowStart, NameCol)
-         }
+            }
          }
          
          ## Dealing with StartDayTime_x --------------------------------------
          MyInputDeets4 <- MyInputDeets[str_detect(MyInputDeets, "^StartDayTime")]
          
          if(length(MyInputDeets4) > 0){
-         for(j in MyInputDeets4){
+            for(j in MyInputDeets4){
                
                NameCol <- InputDeets$NameCol[which(InputDeets$Deet == j)]
                Row_day <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Day"))
@@ -1140,19 +1112,19 @@ extractExpDetails <- function(sim_data_file,
                   Out[[j]] <- paste(paste0("Day ", Val_day),
                                     Val_time, sep = ", ")
                }
-         }
+            }
          }
          
          
          ## Transport parameters -----------------------------------------------
          MyInputDeets5 <- MyInputDeets[str_detect(MyInputDeets, "Transport_")]
          MyInputDeets5 <- InputDeets %>% 
-         filter(Deet %in% MyInputDeets5 & complete.cases(NameCol)) %>%
-         pull(Deet)
+            filter(Deet %in% MyInputDeets5 & complete.cases(NameCol)) %>%
+            pull(Deet)
          
          if(length(MyInputDeets5) > 0){
-         
-         for(j in MyInputDeets5){
+            
+            for(j in MyInputDeets5){
                
                Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
                NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
@@ -1251,7 +1223,7 @@ extractExpDetails <- function(sim_data_file,
                   
                   rm(Suffix, NameCol, OrganRows, TransRows)
                }
-         }
+            }
          }
       }
       
@@ -1267,32 +1239,32 @@ extractExpDetails <- function(sim_data_file,
          CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
          
          for(j in CustomDoseSheets){
-         
-         Suffix <- switch(str_extract(j, "Inh [12]|Sub"), 
-                          "Inh 1" = "_inhib", 
-                          "Inh 2" = "_inhib2", 
-                          "Sub" = "_sub")
-         
-         Dose_xl <- suppressMessages(tryCatch(
+            
+            Suffix <- switch(str_extract(j, "Inh [12]|Sub"), 
+                             "Inh 1" = "_inhib", 
+                             "Inh 2" = "_inhib2", 
+                             "Sub" = "_sub")
+            
+            Dose_xl <- suppressMessages(tryCatch(
                readxl::read_excel(path = sim_data_file, sheet = j,
                                   col_names = FALSE),
                error = openxlsx::read.xlsx(sim_data_file, sheet = j,
                                            colNames = FALSE)))
-         
-         Dosing <- Dose_xl[4:nrow(Dose_xl), ]
-         names(Dosing) <- make.names(Dose_xl[3,])
-         Dosing <- Dosing %>% 
+            
+            Dosing <- Dose_xl[4:nrow(Dose_xl), ]
+            names(Dosing) <- make.names(Dose_xl[3,])
+            Dosing <- Dosing %>% 
                rename(DoseNum = Dose.Number, 
                       Time1 = Time,
                       Dose = Dose, 
                       Dose_units = Dose.Units) 
-         names(Dosing)[names(Dosing) == "Dose"] <-
+            names(Dosing)[names(Dosing) == "Dose"] <-
                paste0("Dose", Suffix)
-         names(Dosing)[names(Dosing) == "Route.of.Administration"] <-
+            names(Dosing)[names(Dosing) == "Route.of.Administration"] <-
                paste0("DoseRoute", Suffix)
-         TimeUnits <- names(Dosing)[str_detect(names(Dosing), "Offset")]
-         names(Dosing)[str_detect(names(Dosing), "Offset")] <- "Time"
-         Dosing <- Dosing %>% 
+            TimeUnits <- names(Dosing)[str_detect(names(Dosing), "Offset")]
+            names(Dosing)[str_detect(names(Dosing), "Offset")] <- "Time"
+            Dosing <- Dosing %>% 
                mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
                                           "h", "min")) %>% 
                mutate(across(.cols = matches("DoseNum|Time$|Dose_sub|Dose_inhib|Dose_inhib2"), 
@@ -1300,17 +1272,17 @@ extractExpDetails <- function(sim_data_file,
                select(any_of(c("Time", "Time_units", "DoseNum", "Dose_sub", "Dose_inhib", 
                                "Dose_inhib2", "Dose_units", "DoseRoute_sub", 
                                "DoseRoute_inhib", "DoseRoute_inhib2")))
-         
-         Out[[paste0("CustomDosing", Suffix)]] <- Dosing
-         Out[[paste0("Dose", Suffix)]] <- "custom dosing"
-         Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
-         Out[[paste0("StartHr", Suffix)]] <- Dosing$Time[Dosing$DoseNum == 1]
-         Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
-         Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
-         Out[[paste0("Regimen", Suffix)]] <- "custom dosing"
-         
-         rm(Dosing, Suffix, Dose_xl)
-         
+            
+            Out[[paste0("CustomDosing", Suffix)]] <- Dosing
+            Out[[paste0("Dose", Suffix)]] <- "custom dosing"
+            Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
+            Out[[paste0("StartHr", Suffix)]] <- Dosing$Time[Dosing$DoseNum == 1]
+            Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
+            Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
+            Out[[paste0("Regimen", Suffix)]] <- "custom dosing"
+            
+            rm(Dosing, Suffix, Dose_xl)
+            
          }
       }
    }

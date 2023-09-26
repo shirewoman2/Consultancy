@@ -220,11 +220,6 @@ so_graph <- function(PKtable,
    
    if(length(boundary_indicator) != 1){
       warning("There's something wrong with your input for `boundary_indicator`, so we'll set this to the default value of `lines`.", 
-      boundary_indicator <- "lines"
-   }
-   
-   if(any(boundaries < 1)){
-      warning("At least one of the numbers you specified for boundaries was < 1. We will automatically use both the original number you specified and its inverse for boundaries.", 
               call. = FALSE)
       boundary_indicator <- "lines"
    }
@@ -683,17 +678,6 @@ so_graph <- function(PKtable,
                point_color_set <- "rainbow"
             }
          }
-                                      "TRUE" = "set1", 
-                                      "FALSE" = point_color_set)
-         } else {
-            point_color_set <- switch(as.character(point_color_set == "default"),
-                                      "TRUE" = "set2",
-                                      "FALSE" = point_color_set)
-            # There are limits to the number of colors available for Brewer
-            # palettes. Checking that and setting to "rainbow" if needed.
-            if((point_color_set == "set1" & NumColorsNeeded > 9) |
-               (point_color_set == "set2" & NumColorsNeeded > 8) |
-               (point_color_set == "Tableau" & NumColorsNeeded > 10)){
          
          suppressWarnings(
             MyColors <- 
@@ -730,14 +714,6 @@ so_graph <- function(PKtable,
             MyColors <- rep(point_color_set, 100)[1:NumColorsNeeded]
          }
       }
-                  "Tableau" = ggthemes::tableau_color_pal(
-                     palette = "Tableau 10")(NumColorsNeeded),
-                  "viridis" = viridis::viridis_pal()(NumColorsNeeded))
-         )   
-         # NB: For the RColorBrewer palettes, the minimum number of
-         # colors you can get is 3. Since sometimes we might only want 1
-         # or 2 colors, though, we have to add the [1:NumColorsNeeded]
-         # bit.
       
    } else {
       # Setting color to black if point_color_column unspecified
@@ -751,11 +727,6 @@ so_graph <- function(PKtable,
          Levels <- sort(unique(SO$point_shape_column))
          SO <- SO %>% 
             mutate(point_shape_column = factor(point_shape_column, levels = Levels))
-      }
-      
-   } else {
-      # Setting color to black if point_color_column unspecified
-      point__color_set <- "black"
       }
       
       NumShapesNeeded <- length(sort(unique(SO$point_shape_column)))
@@ -774,13 +745,6 @@ so_graph <- function(PKtable,
          }
       } else {
          MyShapes <- c(15:19, 8, 3:7, 9:14)[1:NumShapesNeeded]
-      }
-   }
-               MyShapes <- rep(point_shape, NumShapesNeeded)[1:NumShapesNeeded] 
-            } else if(length(point_shape) >= NumShapesNeeded){
-               MyShapes <- point_shape[1:NumShapesNeeded] 
-            }
-         }
       }
    }
    
@@ -945,20 +909,6 @@ so_graph <- function(PKtable,
          scale_x_log10(breaks = MajBreaks, 
                        minor_breaks = MinBreaks, 
                        labels = scales::label_comma(MajBreaks)) +
-                                    size = ifelse(is.na(point_size), 2, point_size)) +
-                         scale_color_manual(values = MyColors) +
-                         scale_shape_manual(values = MyShapes))
-         )
-      
-      G[[i]] <- G[[i]] + 
-         xlab(axis_titles["x"]) +
-         ylab(axis_titles["y"]) +
-         scale_y_log10(breaks = MajBreaks, 
-                       minor_breaks = MinBreaks, 
-                       labels = scales::label_comma(MajBreaks)) +
-         scale_x_log10(breaks = MajBreaks, 
-                       minor_breaks = MinBreaks, 
-                       labels = scales::label_comma(MajBreaks)) +
          coord_cartesian(xlim = Limits, ylim = Limits) + # this causes the shading to disappear for Guest curves. no idea why, but I think it's a bug w/coord_cartesian.
          ggtitle(PKexpressions[[i]]) +
          theme_bw() +
@@ -1024,19 +974,6 @@ so_graph <- function(PKtable,
                        "TRUE TRUE" = NULL),
          ncol = switch(NumCR, 
                        
-                       # specified both
-                       "FALSE FALSE" = ncol,
-                       
-                       # specified only ncol
-                       "FALSE TRUE" = ncol,
-                       
-                       # specified only nrow
-                       "TRUE FALSE" = round_up_unit(length(G)/nrow, 1),
-                       
-                       # specified neither
-                       "TRUE TRUE" = NULL),
-         legend = legend_position, 
-         common.legend = TRUE)
                        # specified both
                        "FALSE FALSE" = ncol,
                        

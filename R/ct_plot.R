@@ -1311,11 +1311,6 @@ ct_plot <- function(ct_dataframe = NA,
                  "horizontal and vertical" = AB)
    
    if(qc_graph){
-         annotateDetails(as.data.frame(Deets) %>%
-                            filter(File == unique(ct_dataframe$File)), 
-                         detail_set = "Methods") %>% 
-            select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
-         shading_column = Detail)
       
       QCTable <- formatTable_Simcyp(
          annotateDetails(as.data.frame(Deets) %>%

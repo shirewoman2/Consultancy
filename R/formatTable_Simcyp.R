@@ -122,7 +122,7 @@
 #' formatTable_Simcyp(MyPKTable, center_1st_column = TRUE)
 #' formatTable_Simcyp(MyPKTable, fontsize = 18)
 #' formatTable_Simcyp(MyPKTable, shading_column = Statistic)
-#' 
+#'
 #' # Highlighting examples
 #' ## Highlighting S/O values outside bioequivalence of 125%.
 #' formatTable_Simcyp(MyPKTable,
@@ -138,33 +138,33 @@
 #'
 #' ## Highlight exactly the cells you want, e.g., row 1, column 2
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(1, 2))
-#' 
+#'
 #' ## Highlight all of column 2
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(NA, 2))
-#' 
+#'
 #' ## Highlight all of row 1
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(1, NA))
-#' 
+#'
 #' ## Highlight the 2nd column in the header
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(0, 2))
-#' 
+#'
 #' ## Set the highlight color to light blue instead of yellow
 #' formatTable_Simcyp(MyPKTable, highlight_cells = c(1, NA),
 #'                    highlight_color = "lightblue")
-#' 
+#'
 #' ## Highlighting multiple cells
 #' formatTable_Simcyp(MyPKTable, highlight_cells = list(c(1, 2), c(3,3), c(4, 2)),
 #'                    highlight_color = "lightblue")
-#' 
+#'
 #' # Bold-face examples
 #' ## Make only the cell in row 4 and column 2 be bold face. This will
 #' ## override the default of having the header row and the 1st column in bold.
 #' formatTable_Simcyp(MyPKTable, bold_cells = c(4, 2))
-#' 
+#'
 #' ## Make the cell in row 4 and column 2 be bold face AND include the original
 #' ## defaults of having the header row and the 1st column be in bold.
 #' formatTable_Simcyp(MyPKTable, bold_cells = list(c(0, NA), c(NA, 1), c(4, 2)))
-#' 
+#'
 #' # Saving
 #' ## Adding a column called "File" so that there will be a caption in the Word
 #' ## document listing which files were included in the table. Also setting

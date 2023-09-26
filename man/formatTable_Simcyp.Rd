@@ -101,26 +101,15 @@ c("green", "red")}}
   \code{highlight_so_colors} with the default setting, values in the middle,
   "good" range of S/O values will be highlighted a light green.}
 
-<<<<<<< HEAD
-  \item{"traffic"}{light green, yellow, and red designed to display values 
-  outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
-  \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O 
-  values. This color scheme was borrowed from Lisa, so if you've seen her 
-=======
   \item{"traffic"}{light green, yellow, and red designed to display values
   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
   values. This color scheme was borrowed from Lisa, so if you've seen her
->>>>>>> beta
   slides, these will look familiar.}
 
   \item{a character vector of specific colors}{Any R-acceptable colors, will
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
-<<<<<<< HEAD
-  If you do specify your own bespoke colors, you'll need to make sure that 
-=======
   If you do specify your own bespoke colors, you'll need to make sure that
->>>>>>> beta
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
 
 \item{highlight_cells}{optionally specify cells in the table to be
@@ -138,14 +127,9 @@ Color can be specified using any R-friendly color name or hex code, e.g.,
 "red" or "#D8212D".}
 
 \item{save_table}{optionally save the output table by supplying a file name
-<<<<<<< HEAD
-in quotes here, e.g., "My nicely formatted table.docx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off
-the file extension, we'll assume you want it to be ".docx". If there is a
-=======
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 slashes, dollar signs, or periods in the file name. If you leave off the
 file extension, we'll assume you want it to be ".docx". If there is a
->>>>>>> beta
 column titled "File" in your table, we'll add a caption listing which files
 were included.}
 
@@ -167,13 +151,8 @@ can save the output to a Word file with the argument \code{save_table}.
 }
 \examples{
 MyPKTable <- tibble(Statistic = c("Simulated", "CV\%", "Observed", "S/O"),
-<<<<<<< HEAD
-                        AUCinf = c(2756, 32.5, 1801, 1.53), 
-                        Cmax = c(852, 45.8, 775, 1.1), 
-=======
                         AUCinf = c(2756, 32.5, 1801, 1.53),
                         Cmax = c(852, 45.8, 775, 1.1),
->>>>>>> beta
                         `Half life` = c(7.75, 5.7, 6.05, 1.28))
 formatTable_Simcyp(MyPKTable)
 formatTable_Simcyp(MyPKTable, center_1st_column = TRUE)
@@ -210,10 +189,7 @@ formatTable_Simcyp(MyPKTable, highlight_cells = c(1, NA),
                    highlight_color = "lightblue")
 
 ## Highlighting multiple cells
-<<<<<<< HEAD
-=======
 formatTable_Simcyp(MyPKTable, highlight_cells = list(c(1, 2), c(3,3), c(4, 2)),
->>>>>>> beta
                    highlight_color = "lightblue")
 
 # Bold-face examples
@@ -227,21 +203,12 @@ formatTable_Simcyp(MyPKTable, bold_cells = list(c(0, NA), c(NA, 1), c(4, 2)))
 
 # Saving
 ## Adding a column called "File" so that there will be a caption in the Word
-<<<<<<< HEAD
-## document listing which files were included in the table. Also setting 
-## the document title.
-MyPKTable$File <- "abc-1a.xlsx"
-formatTable_Simcyp(MyPKTable, 
-                   highlight_so_cutoffs = c(1, 1.25, 1.5),
-                   save_table = "My data.docx", 
-=======
 ## document listing which files were included in the table. Also setting
 ## the document title.
 MyPKTable$File <- "abc-1a.xlsx"
 formatTable_Simcyp(MyPKTable,
                    highlight_so_cutoffs = c(1, 1.25, 1.5),
                    save_table = "My data.docx",
->>>>>>> beta
                    title_document = "PK data")
 
 
