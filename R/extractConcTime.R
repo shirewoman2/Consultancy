@@ -533,10 +533,8 @@ extractConcTime <- function(sim_data_file,
       EndRow <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))[1]
       EndRow <- max(NApos[NApos < EndRow]) - 1
       CmpdMatches2 <- sim_data_xl$...1[StartRow:EndRow]
-      # The coding shows up on rows AFTER the "Time" row or after the row that
-      # lists "+ interaction". Checking for that.  
-      CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "Time|\\+( )?interaction")) + 1]
-      CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "[CI]Sys( )?[1-9]?(.*interaction)?"))
+      CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "CSys(.*interaction)?|ISys [1-9]?"))]
+      CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "CSys(.*interaction)?|ISys [1-9]?"))
       CmpdMatches2 <- CmpdMatches2[complete.cases(CmpdMatches2)]
       CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?interaction")] <- 
          paste(str_extract(CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?interaction")], "[CI]Sys"), 
