@@ -601,7 +601,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "secondary metabolite" = ifelse("SecondaryMetabolite" %in% names(Deets), 
                                                          Deets$SecondaryMetabolite, NA))
       
-      if(Deets$ADCSimulation){
+      # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub for
+      # back compatibility w/package versions < 2.6.0
+      if(any(Deets$ADCSimulation, Deets$ADCSimulation_sub, na.rm = TRUE)){
          CompoundCheck <- c(CompoundCheck, 
                             "conjugated protein" = "conjugated protein", 
                             "total protein" = "total protein", 
