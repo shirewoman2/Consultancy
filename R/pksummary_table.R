@@ -785,7 +785,7 @@ pksummary_table <- function(sim_data_file = NA,
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                    exp_details = "Summary tab")
+                                    exp_details = "Input Sheet")
       } else {
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 
@@ -794,9 +794,9 @@ pksummary_table <- function(sim_data_file = NA,
          if("data.frame" %in% class(Deets)){
             Deets <- Deets %>% filter(File == sim_data_file)
             
-            if(nrow(Deets == 0)){
+            if(nrow(Deets) == 0){
                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                          exp_details = "Summary tab")
+                                          exp_details = "Input Sheet")
             }
          } else {
             Deets <- as.data.frame(Deets)
@@ -818,8 +818,7 @@ pksummary_table <- function(sim_data_file = NA,
       # Checking for that here.
       if(length(Deets) == 0){
          warning(paste0("The file ", sim_data_file,
-                        " is not a Simulator output file and will be skipped.
-", call. = FALSE))
+                        " is not a Simulator output file and will be skipped.\n", call. = FALSE))
          return(list())
       }
    }
@@ -836,8 +835,7 @@ pksummary_table <- function(sim_data_file = NA,
                    "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))){
       warning(paste0("You requested PK data for the ", 
                      compoundToExtract, 
-                     " but that compound is not present in the simulation. We cannot return any PK data for it.
-"), call. = FALSE)
+                     " but that compound is not present in the simulation. We cannot return any PK data for it.\n"), call. = FALSE)
       return(list())
    }
    
