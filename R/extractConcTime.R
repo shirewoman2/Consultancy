@@ -286,7 +286,7 @@ extractConcTime <- function(sim_data_file,
       Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
    } 
    
-   if(Deets$PopRepSim == "Yes"){
+   if(is.null(Deets$PopRepSim) == FALSE && Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
                      sim_data_file, 
                      "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
@@ -361,7 +361,19 @@ extractConcTime <- function(sim_data_file,
       filter(PossCompounds %in% compoundToExtract) %>% pull(Type) %>% 
       unique()
    
-   if(TissueType == "systemic"){
+   if(Deets$SimulatorUsed == "Simcyp Discovery"){
+      if(compoundToExtract %in% c("substrate", 
+                                  "primary metabolite 1") == FALSE){
+         warning(paste0("This seems to be a Simcyp Discovery simulation, and the only compunds you can extract from that are `substrate` or `primary metabolite 1`, and you requested `", 
+                        compoundToExtract, "`. We'll return substrate concentrations instead.\n"), 
+                 call. = FALSE)
+         compoundToExtract <- "substrate"
+      }
+      
+      Sheet <- switch(compoundToExtract, 
+                      "substrate" = "Conc Profiles", 
+                      "primary metabolite 1" = "Sub Pri Metab Conc Profiles")
+   } else if(TissueType == "systemic"){
       
       # Only looking for only sheets with conc-time data and not AUC, etc.
       PossSheets <- SheetNames[
@@ -511,7 +523,7 @@ extractConcTime <- function(sim_data_file,
    # harmonizing to make sure that regex works and picks up the correct
    # CompoundID.
    
-   if(ADAM == FALSE){
+   if(ADAM == FALSE & Deets$SimulatorUsed == "Simcyp Simulator"){
       # If "interaction" or "Csys" or other similar strings are part of the name of
       # any of the compounds, that messes up the regex. Substituting to standardize
       # the compound names. Also need to consider the possibility that user may
