@@ -6,6 +6,7 @@
 \usage{
 extractFmFe(
   sim_data_file,
+  returnOnlyMaxMin = TRUE,
   returnAggregateOrIndiv = "both",
   existing_exp_details = NA
 )
@@ -13,6 +14,10 @@ extractFmFe(
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulated dynamic
 fm and fe data, in quotes}
+
+\item{returnOnlyMaxMin}{TRUE (default) or FALSE for whether to return only
+maximum and minimum fm values -- basically, return the table in the upper
+left corner of the "Time variant \%fm and fe" tab.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 enzyme abundance data? Options are "individual", "aggregate", or "both"
