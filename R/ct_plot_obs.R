@@ -15,6 +15,15 @@
 #'   calculate the means yourself just to be sure you're getting what you
 #'   expect. Talk to Laura Sh. if you would like help here. If you don't want to
 #'   show the means, set this to "none".
+#' @param nominal_times optionally specify what the nominal times were for the
+#'   concentration-time data. If left as NA, when we calculate the means, we'll
+#'   group the data by the times \emph{exactly} as listed in the individual
+#'   data. If you know that the nominal times were, say, 0, 0.5, 1, 2, and 4
+#'   hours but that the times listed in the data were the exact draw times, then
+#'   supply a numeric vector like this: \code{nominal_times = c(0, 0.5, 1, 2,
+#'   4)} and we will match each individual time with the nominal time closest to
+#'   it. This way, you'll get data from a draw time at, say, 4.1 h grouped with
+#'   another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.
 #' @param figure_type the type of figure to plot. \describe{
 #'
 #'   \item{"means only"}{(default) show only the mean, geometric mean, or median
@@ -146,6 +155,8 @@
 #'   line at all) to 1 (completely opaque or black). If left as the default NA,
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
+#' @param connect_obs_points TRUE (default) or FALSE for whether to add
+#'   connecting lines between observed data points from the same individual 
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
 #'   for determining the line types and also the shapes of the points for
 #'   depicting any observed data. For example, if \code{linetype_column} is set
@@ -356,6 +367,7 @@
 #' 
 ct_plot_obs <- function(ct_dataframe, 
                         mean_type = "arithmetic", 
+                        nominal_times = NA, 
                         figure_type = "means only", 
                         linear_or_log = "semi-log",
                         colorBy_column,
@@ -367,6 +379,7 @@ ct_plot_obs <- function(ct_dataframe,
                         obs_size = NA,
                         obs_fill_trans = NA, 
                         obs_line_trans = NA, 
+                        connect_obs_points = TRUE,
                         linetype_column, 
                         linetype_labels = NA, 
                         linetypes = c("solid", "dashed"),
@@ -430,6 +443,11 @@ ct_plot_obs <- function(ct_dataframe,
    
    ct_dataframe <- ct_dataframe %>% filter(Simulated == FALSE)
    
+   if(any(complete.cases(nominal_times))){
+      nominal_times <- as.numeric(nominal_times)
+      ct_dataframe$Time <- centerBin(ct_dataframe$Time, breaks = nominal_times)
+   }
+   
    if("obs mean" %in% ct_dataframe$Trial == FALSE & 
       mean_type != "none"){
       suppressMessages(
@@ -483,6 +501,7 @@ ct_plot_obs <- function(ct_dataframe,
                    obs_size = obs_size,
                    obs_fill_trans = obs_fill_trans, 
                    obs_line_trans = obs_line_trans, 
+                   connect_obs_points = connect_obs_points,
                    linetype_labels = linetype_labels, 
                    linetypes = linetypes,
                    line_width = line_width,

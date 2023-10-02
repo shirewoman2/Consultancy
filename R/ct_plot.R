@@ -194,6 +194,8 @@
 #'   line at all) to 1 (completely opaque or black). If left as the default NA,
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
+#' @param connect_obs_points TRUE or FALSE (default) for whether to add
+#'   connecting lines between observed data points from the same individual 
 #' @param showBLQ TRUE or FALSE (default) to display observed concentrations
 #'   that were clearly below the lower limit of quantitation, that is,
 #'   concentrations equal to 0 after time 0. The default (FALSE) removes these
@@ -381,6 +383,7 @@ ct_plot <- function(ct_dataframe = NA,
                     obs_size = NA,
                     obs_fill_trans = NA,
                     obs_line_trans = NA,
+                    connect_obs_points = FALSE,
                     showBLQ = FALSE, 
                     line_type = NA,
                     line_transparency = NA,
@@ -732,7 +735,7 @@ ct_plot <- function(ct_dataframe = NA,
          Data %>%
          mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
                 Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
-                Group = paste(Compound, Inhibitor, Trial)) %>%
+                Group = paste(Compound, Inhibitor, Trial, Individual)) %>%
          select(-CompoundIsEffector)
    }
    
@@ -782,7 +785,7 @@ ct_plot <- function(ct_dataframe = NA,
                    Trial %in% c("mean", "geomean", "per5", "per95", 
                                 "per10", "per90", "median") == FALSE) %>%
          group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
-                                  "Simulated", "Trial", "Group",
+                                  "Simulated", "Trial", "Individual", "Group",
                                   "Time", "Time_orig",
                                   "Time_units", "Conc_units")))) %>%
          summarize(Conc = switch(mean_type, 
@@ -790,18 +793,18 @@ ct_plot <- function(ct_dataframe = NA,
                                  "geometric" = gm_mean(Conc, na.rm = T),
                                  "median" = median(Conc, na.rm = T))) %>%
          ungroup() %>% 
-         mutate(Group = paste(Compound, Inhibitor, Trial))
+         mutate(Group = paste(Compound, Inhibitor, Trial, Individual))
    )
    
    sim_data_mean <- Data %>%
       filter(Simulated == TRUE  &
                 Trial %in% c(MyMeanType, "per5", "per95")) %>%
-      mutate(Group = paste(Compound, Inhibitor, Trial))
+      mutate(Group = paste(Compound, Inhibitor, Trial, Individual))
    
    # Setting up observed data per user input -------------------------------
    
    obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
-      mutate(Group = paste(Compound, Inhibitor, Trial))
+      mutate(Group = paste(Compound, Inhibitor, Trial, Individual))
    
    # If the user set obs_color to "none", then they must not want to include
    # observed data in the graph. Set nrow to 0 in that case.
@@ -1101,6 +1104,8 @@ ct_plot <- function(ct_dataframe = NA,
                         obs_line_trans_user = obs_line_trans_user,
                         obs_fill_trans = obs_fill_trans,
                         obs_fill_trans_user = obs_fill_trans_user,
+                        connect_obs_points = connect_obs_points,
+                        line_width = line_width,
                         figure_type = figure_type,
                         MapObsData = MapObsData, 
                         LegCheck = TRUE)

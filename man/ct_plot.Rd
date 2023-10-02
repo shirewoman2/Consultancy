@@ -24,6 +24,7 @@ ct_plot(
   obs_size = NA,
   obs_fill_trans = NA,
   obs_line_trans = NA,
+  connect_obs_points = FALSE,
   showBLQ = FALSE,
   line_type = NA,
   line_transparency = NA,
@@ -225,6 +226,9 @@ points overlapping. Acceptable values are from 0 (fully transparent, so no
 line at all) to 1 (completely opaque or black). If left as the default NA,
 the observed data points will be opaque, so the same as if this were set to
 1.}
+
+\item{connect_obs_points}{TRUE or FALSE (default) for whether to add
+connecting lines between observed data points from the same individual}
 
 \item{showBLQ}{TRUE or FALSE (default) to display observed concentrations
 that were clearly below the lower limit of quantitation, that is,

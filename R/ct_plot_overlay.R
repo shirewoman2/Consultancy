@@ -208,6 +208,8 @@
 #'   line at all) to 1 (completely opaque or black). If left as the default NA,
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
+#' @param connect_obs_points TRUE or FALSE (default) for whether to add
+#'   connecting lines between observed data points from the same individual 
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
 #'   for determining the line types and also the shapes of the points for
 #'   depicting any observed data. For example, if \code{linetype_column} is set
@@ -448,6 +450,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_size = NA,
                             obs_fill_trans = NA, 
                             obs_line_trans = NA, 
+                            connect_obs_points = FALSE, 
                             linetype_column, 
                             linetype_labels = NA, 
                             linetypes = c("solid", "dashed"),
@@ -925,7 +928,7 @@ call. = FALSE)
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
          unite(col = Group, any_of(c("File", "Trial", "Tissue", "Enzyme",
-                                     "Inhibitor",
+                                     "Inhibitor", "Individual",
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE) %>% 
          mutate(Abundance = Abundance / 100) %>% 
@@ -946,7 +949,7 @@ call. = FALSE)
       # for conc-time data
       ct_dataframe <- ct_dataframe %>%
          unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                     "Compound", "Inhibitor",
+                                     "Compound", "Inhibitor", "Individual",
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE) %>% 
          mutate(CompoundID = factor(CompoundID,
@@ -1041,7 +1044,7 @@ call. = FALSE)
             obs_dataframe <- obs_dataframe %>% select(-File) %>% 
                left_join(ToAdd) %>% 
                unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                           "Compound", "Inhibitor",
+                                           "Compound", "Inhibitor", "Individual",
                                            "colorBy_column", "FC1", "FC2")), 
                      sep = " ", remove = FALSE))
          
@@ -1254,23 +1257,23 @@ call. = FALSE)
       # If the user wants to color by Individual, presumably they want the
       # observed data to be colored by individual but still want the simulated
       # data to be black or gray. To deal with this, need to make a separate
-      # column for individual observed data and will have to set the levels to the
-      # obs individuals plus "simulated" to get things to be colored correctly and
-      # show up in the legend correctly.
+      # column for individual observed data and will have to set the levels to
+      # the obs individuals plus whatever the mean type was to get things to be
+      # colored correctly and show up in the legend correctly.
       ct_dataframe <- ct_dataframe %>% 
-         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+         mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
                 SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         "simulated")),
+                                                         MyMeanType)),
                 colorBy_column = SubjectID)
       sim_dataframe <- sim_dataframe %>% 
-         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+         mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
                 SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         "simulated")),
+                                                         MyMeanType)),
                 colorBy_column = SubjectID)
       obs_dataframe <- obs_dataframe %>% 
-         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+         mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
                 SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         "simulated")),
+                                                         MyMeanType)),
                 colorBy_column = SubjectID)
    }
    
@@ -1585,7 +1588,7 @@ call. = FALSE)
                                     "median" = median(Conc, na.rm = T))) %>%
             ungroup() %>% 
             unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                        "Compound", "Inhibitor",
+                                        "Compound", "Inhibitor", "Individual",
                                         "colorBy_column", "FC1", "FC2")), 
                   sep = " ", remove = FALSE)
       )
@@ -1683,7 +1686,7 @@ call. = FALSE)
    if(figure_type == "means only"){
       
       A <- A + 
-         geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
+         geom_line(linewidth = ifelse(is.na(line_width), 1, line_width), 
                    show.legend = AESCols["color"] != "Individual")
       
    }
@@ -1699,10 +1702,10 @@ call. = FALSE)
       
       A <- A +
          geom_line(alpha = AlphaToUse,
-                   lwd = ifelse(is.na(line_width), 1, line_width)) +
+                   linewidth = ifelse(is.na(line_width), 1, line_width)) +
          geom_line(data = sim_dataframe %>%
                       filter(Trial == MyMeanType),
-                   lwd = ifelse(is.na(line_width), 1, line_width))
+                   linewidth = ifelse(is.na(line_width), 1, line_width))
    }
    
    
@@ -1715,10 +1718,10 @@ call. = FALSE)
       
       A <- A +
          geom_line(alpha = AlphaToUse,
-                   lwd = ifelse(is.na(line_width), 0.8, line_width), 
+                   linewidth = ifelse(is.na(line_width), 0.8, line_width), 
                    show.legend = AESCols["color"] != "Individual") +
          geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
-                   lwd = ifelse(is.na(line_width), 1, line_width), 
+                   linewidth = ifelse(is.na(line_width), 1, line_width), 
                    show.legend = AESCols["color"] != "Individual")
    }
    
@@ -1731,7 +1734,7 @@ call. = FALSE)
       A <- A + 
          geom_ribbon(alpha = AlphaToUse, color = NA, 
                      show.legend = AESCols["color"] != "Individual") +
-         geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
+         geom_line(linewidth = ifelse(is.na(line_width), 1, line_width), 
                    show.legend = AESCols["color"] != "Individual") 
       
    }
@@ -1758,6 +1761,8 @@ call. = FALSE)
       A <- addObsPoints(obs_data = obs_dataframe, 
                         A = A, 
                         AES = AES,
+                        connect_obs_points = connect_obs_points,
+                        line_width = line_width,
                         obs_shape = obs_shape,
                         obs_shape_user = obs_shape_user,
                         obs_size = obs_size, 

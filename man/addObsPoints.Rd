@@ -2,7 +2,7 @@
 % Please edit documentation in R/addObsPoints.R
 \name{addObsPoints}
 \alias{addObsPoints}
-\title{Add observed data points to a concentration-time plot}
+\title{INTERNAL PACKAGE USE: Add observed data points to a concentration-time plot}
 \usage{
 addObsPoints(
   obs_data,
@@ -19,6 +19,8 @@ addObsPoints(
   obs_fill_trans_user,
   figure_type,
   MapObsData,
+  connect_obs_points,
+  line_width,
   LegCheck
 )
 }
@@ -29,6 +31,9 @@ addObsPoints(
 
 \item{MapObsData}{TRUE or FALSE for whether to map the observed data to
 specific columns. Originally from ct_plot_overlay.}
+
+\item{connect_obs_points}{TRUE or FALSE (default) for whether to add
+connecting lines between observed data points from the same individual}
 
 \item{LegCheck}{TRUE or FALSE for whether to include the legend. From
 ct_plot_overlay originally and should always be TRUE for ct_plot.}

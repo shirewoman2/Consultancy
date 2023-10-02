@@ -7,6 +7,7 @@
 ct_plot_obs(
   ct_dataframe,
   mean_type = "arithmetic",
+  nominal_times = NA,
   figure_type = "means only",
   linear_or_log = "semi-log",
   colorBy_column,
@@ -18,6 +19,7 @@ ct_plot_obs(
   obs_size = NA,
   obs_fill_trans = NA,
   obs_line_trans = NA,
+  connect_obs_points = TRUE,
   linetype_column,
   linetype_labels = NA,
   linetypes = c("solid", "dashed"),
@@ -68,6 +70,16 @@ guess as to what the groups should be. In other words, you may want to
 calculate the means yourself just to be sure you're getting what you
 expect. Talk to Laura Sh. if you would like help here. If you don't want to
 show the means, set this to "none".}
+
+\item{nominal_times}{optionally specify what the nominal times were for the
+concentration-time data. If left as NA, when we calculate the means, we'll
+group the data by the times \emph{exactly} as listed in the individual
+data. If you know that the nominal times were, say, 0, 0.5, 1, 2, and 4
+hours but that the times listed in the data were the exact draw times, then
+supply a numeric vector like this: \code{nominal_times = c(0, 0.5, 1, 2,
+4)} and we will match each individual time with the nominal time closest to
+it. This way, you'll get data from a draw time at, say, 4.1 h grouped with
+another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.}
 
 \item{figure_type}{the type of figure to plot. \describe{
 
@@ -209,6 +221,9 @@ points overlapping. Acceptable values are from 0 (fully transparent, so no
 line at all) to 1 (completely opaque or black). If left as the default NA,
 the observed data points will be opaque, so the same as if this were set to
 1.}
+
+\item{connect_obs_points}{TRUE (default) or FALSE for whether to add
+connecting lines between observed data points from the same individual}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
 for determining the line types and also the shapes of the points for

@@ -26,16 +26,16 @@ observed data.}
 second data.frame with dosing and demographic information from the Excel
 file.}
 
-\item{studyID}{either a single value for the study ID or a named character
-vector of which observed data files go with which study IDs. An example of
-acceptable input: \code{studyID = "HV 101"} or \code{studyID = c("HV 101" =
+\item{studyID}{(optional) either a single value for the study ID or a named
+character vector of which observed data files go with which study IDs. An
+example of acceptable input: \code{studyID = "HV 101"} or \code{studyID = c("HV 101" =
 "Observed CT 1.xlsx", "HV 102" = "Observed CT 2.xlsx")}. These are
 \emph{optional} and for your use only. We ask for them here because this
 information can be useful for graphing later.}
 
-\item{study_arm}{either a single value for the study arm or cohort or a named
-character vector of which observed data files go with which arms An example
-of acceptable input: \code{study_arm = "SAD 01"} or \code{study_arm =
+\item{study_arm}{(optional) either a single value for the study arm or cohort
+or a named character vector of which observed data files go with which arms
+An example of acceptable input: \code{study_arm = "SAD 01"} or \code{study_arm =
 c("SAD 01" = "Observed CT 1.xlsx", "MAD 05" = "Observed CT 2.xlsx")}. These
 are \emph{optional} and for your use only. We ask for them here because
 this information can be useful for graphing later.}

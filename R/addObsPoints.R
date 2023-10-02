@@ -1,4 +1,4 @@
-#' Add observed data points to a concentration-time plot
+#' INTERNAL PACKAGE USE: Add observed data points to a concentration-time plot
 #'
 #' \code{addObsPoints} adds observed data to \code{\link{ct_plot}} or
 #' \code{\link{ct_plot_overlay}} and sets the color and shape of those points
@@ -10,6 +10,8 @@
 #'   specific columns. Originally from ct_plot_overlay.
 #' @param LegCheck TRUE or FALSE for whether to include the legend. From
 #'   ct_plot_overlay originally and should always be TRUE for ct_plot.
+#' @param connect_obs_points TRUE or FALSE (default) for whether to add
+#'   connecting lines between observed data points from the same individual 
 #'
 #' @return a ggplot2 layer with observed data
 
@@ -27,6 +29,8 @@ addObsPoints <- function(obs_data,
                          obs_fill_trans_user, 
                          figure_type,
                          MapObsData, 
+                         connect_obs_points,
+                         line_width, 
                          LegCheck){
     
     # Dealing with idiosyncracies of ribbon figure type
@@ -85,6 +89,12 @@ addObsPoints <- function(obs_data,
         MixShape <- FALSE
         obs_color <- "black"
         
+    }
+    
+    if(connect_obs_points){
+       A <- A +
+          geom_line(data = obs_data, alpha = obs_line_trans,
+                    linewidth = ifelse(is.na(line_width), 0.5, line_width * 0.5))
     }
     
     if(MixShape){
