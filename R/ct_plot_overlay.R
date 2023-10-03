@@ -213,6 +213,13 @@
 #' @param obs_on_top TRUE (default) or FALSE for whether to show the observed
 #'   data on top of the simulated data. If FALSE, the simulated data will be on
 #'   top.
+#' @param include_errorbars TRUE or FALSE (default) for whether to include error
+#'   bars for observed data points. This ONLY applies when you have supplied
+#'   observed data from V22 or higher because those data files included a column
+#'   titled "SD/SE", which is what we'll use for determining the error bar
+#'   heights.
+#' @param errorbar_width width of error bars to use in hours (or, if you've used
+#'   some other time unit, in whatever units are in your data). Default is 0.5.
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
 #'   for determining the line types and also the shapes of the points for
 #'   depicting any observed data. For example, if \code{linetype_column} is set
@@ -455,6 +462,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_line_trans = NA, 
                             connect_obs_points = FALSE, 
                             obs_on_top = TRUE, 
+                            include_errorbars = FALSE, 
+                            errorbar_width = 0.5,
                             linetype_column, 
                             linetype_labels = NA, 
                             linetypes = c("solid", "dashed"),
@@ -1805,6 +1814,19 @@ call. = FALSE)
                         figure_type = figure_type,
                         MapObsData = MapObsData, 
                         LegCheck = LegCheck)
+   }
+   
+   if(nrow(obs_dataframe) > 0 && 
+      "SD_SE" %in% names(obs_dataframe) & include_errorbars){
+      if(figure_type == "percentile ribbon"){
+         A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
+                                aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+                                width = errorbar_width)
+      } else {
+         A <- A + geom_errorbar(data = obs_dataframe, 
+                                aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+                                width = errorbar_width)
+      }
    }
    
    

@@ -141,6 +141,13 @@
 #'   1.
 #' @param connect_obs_points TRUE (default) or FALSE for whether to add
 #'   connecting lines between observed data points from the same individual 
+#' @param include_errorbars TRUE or FALSE (default) for whether to include error
+#'   bars for observed data points. This ONLY applies when you have supplied
+#'   observed data from V22 or higher because those data files included a column
+#'   titled "SD/SE", which is what we'll use for determining the error bar
+#'   heights.
+#' @param errorbar_width width of error bars to use in hours (or, if you've used
+#'   some other time unit, in whatever units are in your data). Default is 0.5.
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
 #'   for determining the line types and also the shapes of the points for
 #'   depicting any observed data. For example, if \code{linetype_column} is set
@@ -364,6 +371,8 @@ ct_plot_obs <- function(ct_dataframe,
                         obs_line_trans = NA, 
                         connect_obs_points = TRUE,
                         indiv_on_top = FALSE, 
+                        include_errorbars = FALSE, 
+                        errorbar_width = 0.5,
                         linetype_column, 
                         linetype_labels = NA, 
                         linetypes = c("solid", "dashed"),
@@ -482,6 +491,8 @@ ct_plot_obs <- function(ct_dataframe,
                    obs_line_trans = obs_line_trans, 
                    obs_on_top = indiv_on_top,
                    connect_obs_points = connect_obs_points,
+                   include_errorbars = include_errorbars, 
+                   errorbar_width = errorbar_width,
                    linetype_labels = linetype_labels, 
                    linetypes = linetypes,
                    line_width = line_width,

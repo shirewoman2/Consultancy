@@ -21,6 +21,8 @@ ct_plot_overlay(
   obs_line_trans = NA,
   connect_obs_points = FALSE,
   obs_on_top = TRUE,
+  include_errorbars = FALSE,
+  errorbar_width = 0.5,
   linetype_column,
   linetype_labels = NA,
   linetypes = c("solid", "dashed"),
@@ -230,6 +232,15 @@ connecting lines between observed data points from the same individual}
 \item{obs_on_top}{TRUE (default) or FALSE for whether to show the observed
 data on top of the simulated data. If FALSE, the simulated data will be on
 top.}
+
+\item{include_errorbars}{TRUE or FALSE (default) for whether to include error
+bars for observed data points. This ONLY applies when you have supplied
+observed data from V22 or higher because those data files included a column
+titled "SD/SE", which is what we'll use for determining the error bar
+heights.}
+
+\item{errorbar_width}{width of error bars to use in hours (or, if you've used
+some other time unit, in whatever units are in your data). Default is 0.5.}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
 for determining the line types and also the shapes of the points for

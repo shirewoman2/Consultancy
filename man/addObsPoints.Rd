@@ -5,7 +5,7 @@
 \title{INTERNAL PACKAGE USE: Add observed data points to a concentration-time plot}
 \usage{
 addObsPoints(
-  obs_data,
+  obs_dataframe,
   A,
   AES,
   obs_shape,
@@ -25,7 +25,7 @@ addObsPoints(
 )
 }
 \arguments{
-\item{obs_data}{observed data as a data.frame}
+\item{obs_dataframe}{observed data as a data.frame}
 
 \item{A}{the existing ggplot2 graph to which the observed data will be added}
 

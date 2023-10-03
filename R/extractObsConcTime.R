@@ -335,7 +335,7 @@ extractObsConcTime <- function(obs_data_file,
    }
    
    obs_data <- obs_data %>%
-      mutate(across(.cols = c(Time, Conc), .fns = as.numeric)) %>%
+      mutate(across(.cols = any_of(c("Time", "Conc", "SD_SE")), .fns = as.numeric)) %>%
       mutate(CompoundID_obsfile = CompoundCode[as.character(DVID)],
              CompoundID = ObsCompoundIDs[CompoundID_obsfile],
              Inhibitor = ObsEffectors[CompoundID_obsfile],
@@ -426,7 +426,7 @@ extractObsConcTime <- function(obs_data_file,
                     .fns = as.numeric)) %>% 
       select(any_of(c("CompoundID", "Inhibitor", "Tissue", 
                       "Individual", "Trial",
-                      "Simulated", "Time", "Conc",
+                      "Simulated", "Time", "Conc", "SD_SE",
                       "Time_units",  "Conc_units", 
                       "Dose_sub", "Dose_inhib", "Dose_inhib2",
                       "Dose_units", "DoseNum",
