@@ -8,7 +8,6 @@ ct_plot_obs(
   ct_dataframe,
   mean_type = "arithmetic",
   nominal_times = NA,
-  figure_type = "means only",
   linear_or_log = "semi-log",
   colorBy_column,
   color_labels = NA,
@@ -20,6 +19,7 @@ ct_plot_obs(
   obs_fill_trans = NA,
   obs_line_trans = NA,
   connect_obs_points = TRUE,
+  indiv_on_top = FALSE,
   linetype_column,
   linetype_labels = NA,
   linetypes = c("solid", "dashed"),
@@ -80,23 +80,6 @@ supply a numeric vector like this: \code{nominal_times = c(0, 0.5, 1, 2,
 4)} and we will match each individual time with the nominal time closest to
 it. This way, you'll get data from a draw time at, say, 4.1 h grouped with
 another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.}
-
-\item{figure_type}{the type of figure to plot. \describe{
-
-  \item{"means only"}{(default) show only the mean, geometric mean, or median
-  (whatever you chose for "mean_type")}
-
-  \item{"percentiles"}{plots an opaque line for the mean data and lighter
-  lines for the 5th and 95th percentiles of the simulated data}
-
-  \item{"percentile ribbon"}{show an opaque line for the mean data and
-  transparent shading for the 5th to 95th percentiles. \strong{NOTE: There is
-  a known bug within RStudio that can cause filled semi-transparent areas
-  like you get with the "percentile ribbon" figure type to NOT get graphed
-  for certain versions of RStudio.} To get around this, within RStudio, go to
-  Tools --> Global Options --> General --> Graphics --> And then set
-  "Graphics device: backend" to "AGG". Honestly, this is a better option for
-  higher-quality graphics anyway!}}}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
   \item{"semi-log"}{y axis is log transformed; this is the default}

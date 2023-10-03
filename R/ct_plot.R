@@ -196,6 +196,9 @@
 #'   1.
 #' @param connect_obs_points TRUE or FALSE (default) for whether to add
 #'   connecting lines between observed data points from the same individual 
+#' @param obs_on_top TRUE (default) or FALSE for whether to show the observed
+#'   data on top of the simulated data. If FALSE, the simulated data will be on
+#'   top.
 #' @param showBLQ TRUE or FALSE (default) to display observed concentrations
 #'   that were clearly below the lower limit of quantitation, that is,
 #'   concentrations equal to 0 after time 0. The default (FALSE) removes these
@@ -384,6 +387,7 @@ ct_plot <- function(ct_dataframe = NA,
                     obs_fill_trans = NA,
                     obs_line_trans = NA,
                     connect_obs_points = FALSE,
+                    obs_on_top = TRUE,
                     showBLQ = FALSE, 
                     line_type = NA,
                     line_transparency = NA,
@@ -972,6 +976,31 @@ ct_plot <- function(ct_dataframe = NA,
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
+   if(nrow(obs_data) > 0 & obs_on_top == FALSE){
+      
+      MapObsData <- is.na(obs_color_user) & figure_type != "freddy"
+      
+      A <- addObsPoints(obs_data = obs_data, 
+                        A = A, 
+                        # Needed the argument AES for ct_plot_overlay, but
+                        # it's only ever going to be "linetype" for ct_plot.
+                        AES = "linetype", 
+                        obs_shape = obs_shape,
+                        obs_shape_user = obs_shape_user,
+                        obs_size = obs_size, 
+                        obs_color = obs_color,
+                        obs_color_user = obs_color_user,
+                        obs_line_trans = obs_line_trans,
+                        obs_line_trans_user = obs_line_trans_user,
+                        obs_fill_trans = obs_fill_trans,
+                        obs_fill_trans_user = obs_fill_trans_user,
+                        connect_obs_points = connect_obs_points,
+                        line_width = line_width,
+                        figure_type = figure_type,
+                        MapObsData = MapObsData, 
+                        LegCheck = TRUE)
+   }
+   
    
    ## figure_type: trial means -----------------------------------------------------------
    if(figure_type == "trial means"){
@@ -1084,9 +1113,9 @@ ct_plot <- function(ct_dataframe = NA,
       scale_color_manual(values = line_color) +
       scale_fill_manual(values = line_color)
    
-   # Observed data ---------------------------------------------------------
+   # Observed data on top ------------------------------------------------------
    
-   if(nrow(obs_data) > 0){
+   if(nrow(obs_data) > 0 & obs_on_top){
       
       MapObsData <- is.na(obs_color_user) & figure_type != "freddy"
       

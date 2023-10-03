@@ -209,7 +209,10 @@
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
 #' @param connect_obs_points TRUE or FALSE (default) for whether to add
-#'   connecting lines between observed data points from the same individual 
+#'   connecting lines between observed data points from the same individual
+#' @param obs_on_top TRUE (default) or FALSE for whether to show the observed
+#'   data on top of the simulated data. If FALSE, the simulated data will be on
+#'   top.
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
 #'   for determining the line types and also the shapes of the points for
 #'   depicting any observed data. For example, if \code{linetype_column} is set
@@ -451,6 +454,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_fill_trans = NA, 
                             obs_line_trans = NA, 
                             connect_obs_points = FALSE, 
+                            obs_on_top = TRUE, 
                             linetype_column, 
                             linetype_labels = NA, 
                             linetypes = c("solid", "dashed"),
@@ -1681,6 +1685,47 @@ call. = FALSE)
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
+   # Observed data on bottom -----------------------------------------------
+   
+   if(nrow(obs_dataframe) > 0){
+      
+      # Checking whether to show obs data points in the legend. If the
+      # column that is mapped to color or linetype has more than one item,
+      # then show this in the legend. 
+      LegCheck <- c(AESCols["color"], AESCols["linetype"])
+      LegCheck <- LegCheck[LegCheck != "<empty>"]
+      # If there's more than one unique value in whatever is in the color
+      # or linetype column or the Inhibitor column, then include it
+      if(length(LegCheck) == 0){
+         LegCheck <- FALSE 
+      } else if(length(LegCheck == 1)){
+         LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
+      } else {
+         LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
+      }
+      
+      if(obs_on_top == FALSE){
+         
+         A <- addObsPoints(obs_data = obs_dataframe, 
+                           A = A, 
+                           AES = AES,
+                           connect_obs_points = connect_obs_points,
+                           line_width = line_width,
+                           obs_shape = obs_shape,
+                           obs_shape_user = obs_shape_user,
+                           obs_size = obs_size, 
+                           obs_color = obs_color,
+                           obs_color_user = obs_color_user,
+                           obs_line_trans = obs_line_trans,
+                           obs_line_trans_user = obs_line_trans_user,
+                           obs_fill_trans = obs_fill_trans,
+                           obs_fill_trans_user = obs_fill_trans_user,
+                           figure_type = figure_type,
+                           MapObsData = MapObsData, 
+                           LegCheck = LegCheck)
+      }
+   }
+   
    
    ## Figure type: means only ---------------------------------------------
    if(figure_type == "means only"){
@@ -1739,24 +1784,9 @@ call. = FALSE)
       
    }
    
-   # Observed data -----------------------------------------------
+   # Observed data on top -----------------------------------------------
    
-   if(nrow(obs_dataframe) > 0){
-      
-      # Checking whether to show obs data points in the legend. If the
-      # column that is mapped to color or linetype has more than one item,
-      # then show this in the legend. 
-      LegCheck <- c(AESCols["color"], AESCols["linetype"])
-      LegCheck <- LegCheck[LegCheck != "<empty>"]
-      # If there's more than one unique value in whatever is in the color
-      # or linetype column or the Inhibitor column, then include it
-      if(length(LegCheck) == 0){
-         LegCheck <- FALSE 
-      } else if(length(LegCheck == 1)){
-         LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
-      } else {
-         LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
-      }
+   if(nrow(obs_dataframe) > 0 & obs_on_top){
       
       A <- addObsPoints(obs_data = obs_dataframe, 
                         A = A, 

@@ -20,6 +20,7 @@ ct_plot_overlay(
   obs_fill_trans = NA,
   obs_line_trans = NA,
   connect_obs_points = FALSE,
+  obs_on_top = TRUE,
   linetype_column,
   linetype_labels = NA,
   linetypes = c("solid", "dashed"),
@@ -225,6 +226,10 @@ the observed data points will be opaque, so the same as if this were set to
 
 \item{connect_obs_points}{TRUE or FALSE (default) for whether to add
 connecting lines between observed data points from the same individual}
+
+\item{obs_on_top}{TRUE (default) or FALSE for whether to show the observed
+data on top of the simulated data. If FALSE, the simulated data will be on
+top.}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
 for determining the line types and also the shapes of the points for

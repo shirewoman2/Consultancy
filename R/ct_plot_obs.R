@@ -24,22 +24,6 @@
 #'   4)} and we will match each individual time with the nominal time closest to
 #'   it. This way, you'll get data from a draw time at, say, 4.1 h grouped with
 #'   another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.
-#' @param figure_type the type of figure to plot. \describe{
-#'
-#'   \item{"means only"}{(default) show only the mean, geometric mean, or median
-#'   (whatever you chose for "mean_type")}
-#'
-#'   \item{"percentiles"}{plots an opaque line for the mean data and lighter
-#'   lines for the 5th and 95th percentiles of the simulated data}
-#'
-#'   \item{"percentile ribbon"}{show an opaque line for the mean data and
-#'   transparent shading for the 5th to 95th percentiles. \strong{NOTE: There is
-#'   a known bug within RStudio that can cause filled semi-transparent areas
-#'   like you get with the "percentile ribbon" figure type to NOT get graphed
-#'   for certain versions of RStudio.} To get around this, within RStudio, go to
-#'   Tools --> Global Options --> General --> Graphics --> And then set
-#'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
-#'   higher-quality graphics anyway!}}
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -368,7 +352,6 @@
 ct_plot_obs <- function(ct_dataframe, 
                         mean_type = "arithmetic", 
                         nominal_times = NA, 
-                        figure_type = "means only", 
                         linear_or_log = "semi-log",
                         colorBy_column,
                         color_labels = NA, 
@@ -380,6 +363,7 @@ ct_plot_obs <- function(ct_dataframe,
                         obs_fill_trans = NA, 
                         obs_line_trans = NA, 
                         connect_obs_points = TRUE,
+                        indiv_on_top = FALSE, 
                         linetype_column, 
                         linetype_labels = NA, 
                         linetypes = c("solid", "dashed"),
@@ -426,11 +410,6 @@ ct_plot_obs <- function(ct_dataframe,
    if(nrow(ct_dataframe) == 0){
       stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
            call. = FALSE)
-   }
-   
-   if(figure_type == "trial means"){
-      warning("A figure type of `trial means` is not available for observed data. We'll set the figure type to `means only`.", 
-              call. = FALSE)
    }
    
    # If they didn't include the column "Simulated" and they're using this
@@ -491,7 +470,7 @@ ct_plot_obs <- function(ct_dataframe,
                    facet2_column = !!facet2_column,
                    obs_to_sim_assignment = NA,
                    mean_type = mean_type,
-                   figure_type = figure_type, 
+                   figure_type = "means only", 
                    linear_or_log = linear_or_log,
                    color_labels = color_labels, 
                    legend_label_color = legend_label_color,
@@ -501,6 +480,7 @@ ct_plot_obs <- function(ct_dataframe,
                    obs_size = obs_size,
                    obs_fill_trans = obs_fill_trans, 
                    obs_line_trans = obs_line_trans, 
+                   obs_on_top = indiv_on_top,
                    connect_obs_points = connect_obs_points,
                    linetype_labels = linetype_labels, 
                    linetypes = linetypes,

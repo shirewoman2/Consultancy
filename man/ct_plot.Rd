@@ -25,6 +25,7 @@ ct_plot(
   obs_fill_trans = NA,
   obs_line_trans = NA,
   connect_obs_points = FALSE,
+  obs_on_top = TRUE,
   showBLQ = FALSE,
   line_type = NA,
   line_transparency = NA,
@@ -229,6 +230,10 @@ the observed data points will be opaque, so the same as if this were set to
 
 \item{connect_obs_points}{TRUE or FALSE (default) for whether to add
 connecting lines between observed data points from the same individual}
+
+\item{obs_on_top}{TRUE (default) or FALSE for whether to show the observed
+data on top of the simulated data. If FALSE, the simulated data will be on
+top.}
 
 \item{showBLQ}{TRUE or FALSE (default) to display observed concentrations
 that were clearly below the lower limit of quantitation, that is,
