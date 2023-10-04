@@ -537,6 +537,15 @@ extractConcTime <- function(sim_data_file,
       CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1):(NApos[2]-1)] 
       CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
       
+      # If the compound is not on the same tab as the substrate, then removing
+      # all the "Trial" rows removes all the rows with the compound name.
+      # Adjusting for that.
+      if(any(compoundToExtract %in% c("primary metabolite 1", "primary metabolite 2", 
+                                      "secondary metabolite", "inhibitor 2", 
+                                      "inhibitor 1 metabolite"))){
+         CmpdMatches1 <- rep(AllCompounds[[compoundToExtract]], length(CmpdMatches1))
+      }
+      
       # Next, need to figure out which combination of CSys and ISys 1 or ISys 3 or
       # whatever number belongs to which actual compound. Looking for what
       # compounds were listed under "Population Statistics" b/c that's where they 
