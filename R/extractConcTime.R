@@ -286,7 +286,7 @@ extractConcTime <- function(sim_data_file,
       Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
    } 
    
-   if(Deets$PopRepSim == "Yes"){
+   if(is.null(Deets$PopRepSim) == FALSE && Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
                      sim_data_file, 
                      "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
@@ -361,7 +361,19 @@ extractConcTime <- function(sim_data_file,
       filter(PossCompounds %in% compoundToExtract) %>% pull(Type) %>% 
       unique()
    
-   if(TissueType == "systemic"){
+   if(Deets$SimulatorUsed == "Simcyp Discovery"){
+      if(compoundToExtract %in% c("substrate", 
+                                  "primary metabolite 1") == FALSE){
+         warning(paste0("This seems to be a Simcyp Discovery simulation, and the only compunds you can extract from that are `substrate` or `primary metabolite 1`, and you requested `", 
+                        compoundToExtract, "`. We'll return substrate concentrations instead.\n"), 
+                 call. = FALSE)
+         compoundToExtract <- "substrate"
+      }
+      
+      Sheet <- switch(compoundToExtract, 
+                      "substrate" = "Conc Profiles", 
+                      "primary metabolite 1" = "Sub Pri Metab Conc Profiles")
+   } else if(TissueType == "systemic"){
       
       # Only looking for only sheets with conc-time data and not AUC, etc.
       PossSheets <- SheetNames[
@@ -508,46 +520,52 @@ extractConcTime <- function(sim_data_file,
    # If "interaction" or "Csys" or other similar strings are part of the name
    # of any of the compounds, that messes up the regex. Substituting to
    # standardize the compound names.
-   sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Substrate),
+   sim_data_xl$...1 <- sub(gsub("\\(|\\)|-|,", ".", Deets$Substrate),
                            "SUBSTRATE", sim_data_xl$...1)
    
    if(complete.cases(Deets$PrimaryMetabolite1)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite1),
+      sim_data_xl$...1 <- sub(gsub("\\(|\\)|-|,", ".", Deets$PrimaryMetabolite1),
                               "PRIMET1", sim_data_xl$...1)
    } else if("primary metabolite 1" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 1")
    }
    
    if(complete.cases(Deets$PrimaryMetabolite2)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$PrimaryMetabolite2),
+      sim_data_xl$...1 <- sub(gsub("\\(|\\)|-|,", ".", Deets$PrimaryMetabolite2),
                               "PRIMET2", sim_data_xl$...1)
    } else if("primary metabolite 2" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "primary metabolite 2")
    }
    
    if(complete.cases(Deets$SecondaryMetabolite)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$SecondaryMetabolite),
+      sim_data_xl$...1 <- sub(gsub("\\(|\\)|-|,", ".", Deets$SecondaryMetabolite),
                               "SECMET", sim_data_xl$...1)
    } else if("secondary metabolite" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "secondary metabolite")
    }
    
    if(complete.cases(Deets$Inhibitor1)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1),
+      sim_data_xl$...1 <- sub(gsub("\\(|\\)|-|,", ".", Deets$Inhibitor1),
                               "EFFECTOR1INHIB", sim_data_xl$...1)
    } else if("inhibitor 1" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1")
    }
    
    if(complete.cases(Deets$Inhibitor2)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor2),
+      sim_data_xl$...1 <- sub(gsub("\\(|\\)|-|,", ".", Deets$Inhibitor2),
                               "EFFECTOR2", sim_data_xl$...1)
    } else if("inhibitor 2" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "inhibitor 2")
    }
    
    if(complete.cases(Deets$Inhibitor1Metabolite)){
-      sim_data_xl$...1 <- sub(gsub("\\(|\\)", ".", Deets$Inhibitor1Metabolite),
+      # Weird extra sub step below will make things work right even if inhibitor
+      # 1 metabolite name included the name of inhibitor 1, e.g., when inhibitor
+      # 1 is "Carbamazepine" and inhibitor 1 metabolite is
+      # "Carbamazepine-10,11-epoxide". Probably should add this for other
+      # possible similar situations w/other compound IDs. FIXME. 
+      sim_data_xl$...1 <- sub(gsub("\\(|\\)|-|,", ".", 
+                                   sub(Deets$Inhibitor1, "EFFECTOR1INHIB", Deets$Inhibitor1Metabolite)),
                               "EFFECTOR1MET", sim_data_xl$...1)
    } else if("inhibitor 1 metabolite" %in% compoundToExtract){
       compoundToExtract <- setdiff(compoundToExtract, "inhibitor 1 metabolite")
@@ -1837,7 +1855,7 @@ extractConcTime <- function(sim_data_file,
                                        "geomean", "per5", "per95", "per10", "per90")))))
    }
    
-   Data <- calc_dosenumber(ct_dataframe = Data, 
+   Data <- calc_dosenumber(ct_dataframe = Data %>% mutate(File = sim_data_file), 
                            existing_exp_details = Deets)
    
    # Finalizing
