@@ -642,8 +642,8 @@ ct_plot_overlay <- function(ct_dataframe,
    obs_color_user <- obs_color
    obs_shape_user <- obs_shape
    
-   # Making sure the data.frame contains unique observations.
-   ct_dataframe <- unique(ct_dataframe)
+   # Making sure the data.frame contains unique observations and no unnecessary levels.
+   ct_dataframe <- unique(ct_dataframe) %>% droplevels()
    
    # Prettifying compound names 
    if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
