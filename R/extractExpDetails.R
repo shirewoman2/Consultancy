@@ -289,11 +289,13 @@ extractExpDetails <- function(sim_data_file,
       }
       
       # We'll select details based on whether this was a Discovery simulation. 
-      DiscoveryCol <- switch(as.character(str_detect(SummaryTab[1, 1], "Discovery")), 
-                             "TRUE" = c("Simulator and Discovery", 
-                                        "Discovery only"), 
-                             "FALSE" = c("Simulator only", 
-                                         "Simulator and Discovery"))
+      Out[["SimulatorUsed"]] <- ifelse(str_detect(SummaryTab[1, 1], "Discovery"), 
+                                       "Simcyp Discovery", "Simcyp Simulator")
+      DiscoveryCol <- switch(Out[["SimulatorUsed"]], 
+                             "Simcyp Discovery" = c("Simulator and Discovery", 
+                                                    "Discovery only"), 
+                             "Simcyp Simulator" = c("Simulator only", 
+                                                    "Simulator and Discovery"))
       
       # Need to filter to keep only details that we can possibly find based on
       # what type of simulator was used
@@ -488,12 +490,14 @@ extractExpDetails <- function(sim_data_file,
       }
       
       # We'll select details based on whether this was a Discovery simulation. 
-      DiscoverySim <- str_detect(InputTab[1, 1], "Discovery")
-      DiscoveryCol <- switch(as.character(DiscoverySim), 
-                             "TRUE" = c("Simulator and Discovery", 
-                                        "Discovery only"), 
-                             "FALSE" = c("Simulator only", 
-                                         "Simulator and Discovery"))
+      Out[["SimulatorUsed"]] <- ifelse(str_detect(InputTab[1, 1], "Discovery"), 
+                                       "Simcyp Discovery", "Simcyp Simulator")
+      
+      DiscoveryCol <- switch(Out[["SimulatorUsed"]], 
+                             "Simcyp Discovery" = c("Simulator and Discovery", 
+                                                    "Discovery only"), 
+                             "Simcyp Simulator" = c("Simulator only", 
+                                                    "Simulator and Discovery"))
       
       # Need to filter to keep only details that we can possibly find based on
       # what type of simulator was used
@@ -658,7 +662,7 @@ extractExpDetails <- function(sim_data_file,
             CLRows <- CLRows[complete.cases(InputTab[CLRows + 1, NameCol])]
             
             
-            if(DiscoverySim){
+            if(Out[["SimulatorUsed"]] == "Simcyp Discovery"){
                # Discovery sims have a slightly different setup on the Input
                # Sheet and only the 1st CLRows value should be used b/c that
                # section will contain all the info we need.

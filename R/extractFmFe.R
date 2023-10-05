@@ -8,6 +8,9 @@
 #'
 #' @param sim_data_file name of the Excel file containing the simulated dynamic
 #'   fm and fe data, in quotes
+#' @param returnOnlyMaxMin TRUE (default) or FALSE for whether to return only
+#'   maximum and minimum fm values -- basically, return the table in the upper
+#'   left corner of the "Time variant \%fm and fe" tab. 
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   enzyme abundance data? Options are "individual", "aggregate", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
@@ -30,6 +33,7 @@
 
 
 extractFmFe <- function(sim_data_file,
+                        returnOnlyMaxMin = TRUE, 
                         returnAggregateOrIndiv = "both", 
                         existing_exp_details = NA){
    
@@ -62,7 +66,7 @@ extractFmFe <- function(sim_data_file,
       if("data.frame" %in% class(Deets)){
          Deets <- Deets %>% filter(File == sim_data_file)
          
-         if(nrow(Deets == 0)){
+         if(nrow(Deets) == 0){
             Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                        exp_details = "Input Sheet")
          }
@@ -96,7 +100,34 @@ extractFmFe <- function(sim_data_file,
    sim_data_xl <- suppressMessages(
       readxl::read_excel(path = sim_data_file,
                          sheet = SheetToExtract,
+                         range = switch(as.character(returnOnlyMaxMin), 
+                                        "TRUE" = "A1:E50", # Guessing that there wouldn't be more than 50 lines here... Reasonable? 
+                                        "FALSE" = NULL),
                          col_names = FALSE))
+   
+   # Extracting only max and min --------------------------------------------
+   
+   if(returnOnlyMaxMin){
+      
+      EndRow <- which(is.na(sim_data_xl$...1[3:nrow(sim_data_xl)]))[1] + 1
+      
+      suppressMessages(
+      Out <- sim_data_xl[3:EndRow, 1:5] %>% 
+         rename(Max = ...2, 
+                tmax = ...3, 
+                Min = ...4, 
+                tmin = ...5) %>% 
+         mutate(Tissue = str_extract(tolower(...1), "liver|kidney|renal"), 
+                Enzyme = str_extract(...1, "(CYP|UGT)[1-9][ABCDEFJ][1-9]{1,2}|Additional"), 
+                EffectorPresent = str_detect(tolower(...1), "with inh"), 
+                Parameter = str_extract(...1, "fm|fe"), 
+                across(.cols = c(Max, tmax, Min, tmin), 
+                       .fns = as.numeric)) %>% 
+         select(Parameter, Tissue, Enzyme, EffectorPresent, Max, tmax, Min, tmin)
+      )
+      
+      return(Out)
+   }
    
    # Extracting aggregate data ---------------------------------------------
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
@@ -136,7 +167,7 @@ extractFmFe <- function(sim_data_file,
                               str_extract(tolower(ID), 
                                           "\\((liver|kidney|renal)\\)")), 
                 Enzyme = str_extract(ID,
-                                     "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), 
+                                     "(CYP|UGT)[1-9][ABCDEFJ][1-9]{1,2}"), 
                 Trial = str_trim(str_extract(tolower(ID),
                                              "(geometric)? mean| 5(th)? percentile| 95(th)? percentile|median")), 
                 Trial = case_when(Trial == "5th percentile" ~ "per5", 
@@ -144,7 +175,7 @@ extractFmFe <- function(sim_data_file,
                                   Trial == "geometric mean" ~ "geomean",
                                   TRUE ~ Trial),
                 EffectorPresent = str_detect(ID, "with inh"), 
-                FmOrFe = str_trim(str_extract(ID, " fe | fm ")))
+                Parameter = str_trim(str_extract(ID, " fe | fm ")))
       
       sim_data_mean <- sim_data_xl[c(TimeRow, RowsToUse + TimeRow - 1), ] %>% 
          t() %>%
@@ -192,7 +223,7 @@ extractFmFe <- function(sim_data_file,
                 Enzyme = str_extract(ID,
                                      "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), 
                 EffectorPresent = str_detect(ID, "with inh"), 
-                FmOrFe = str_trim(str_extract(ID, " fe | fm ")))
+                Parameter = str_trim(str_extract(ID, " fe | fm ")))
       
       sim_data_indiv <- sim_data_xl[c(TimeRow, RowsToUse), ] %>% 
          t() %>%
@@ -376,11 +407,11 @@ extractFmFe <- function(sim_data_file,
                                 str_comma(AllEffectors), "none"), 
              Substrate = Deets$Substrate, 
              Compound = AllCompounds[CompoundID]) %>%
-      arrange(across(any_of(c("FmOrFe", "Tissue", "Enzyme",
+      arrange(across(any_of(c("Parameter", "Tissue", "Enzyme",
                               "Substrate", "Inhibitor",
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Compound", "CompoundID", "Inhibitor", 
-                      "FmOrFe", "Enzyme", "Tissue", 
+                      "Parameter", "Enzyme", "Tissue", 
                       "Individual", "Trial", "Time", "Fraction",
                       "Time_units", 
                       "DoseNum_sub", "DoseNum_inhib1", "DoseNum_inhib2", 
