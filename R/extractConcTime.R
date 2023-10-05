@@ -361,7 +361,8 @@ extractConcTime <- function(sim_data_file,
       filter(PossCompounds %in% compoundToExtract) %>% pull(Type) %>% 
       unique()
    
-   if(Deets$SimulatorUsed == "Simcyp Discovery"){
+   if("SimulatorUsed" %in% names(Deets) &&
+      Deets$SimulatorUsed == "Simcyp Discovery"){
       if(compoundToExtract %in% c("substrate", 
                                   "primary metabolite 1") == FALSE){
          warning(paste0("This seems to be a Simcyp Discovery simulation, and the only compunds you can extract from that are `substrate` or `primary metabolite 1`, and you requested `", 
