@@ -1,7 +1,7 @@
 #' Create a graph of simulated concentrations to check for whether a perpetrator
 #' drug is at steady-state when the victim drug is dosed
 #'
-#' \cdoe{checkSS} creates a graph with time on the x axis and then some useful
+#' \code{checkSS} creates a graph with time on the x axis and then some useful
 #' concentration point -- C0, Cmax, Cmin (see notes on usage), or Clast for each
 #' dose -- on the y axis. You can optionally overlay this graph with the full
 #' concentration-time data for that same compound or a different one. For
