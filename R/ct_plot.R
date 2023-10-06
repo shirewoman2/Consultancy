@@ -748,8 +748,9 @@ ct_plot <- function(ct_dataframe = NA,
       Data <- 
          Data %>%
          mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
-                Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
-                Group = paste(Compound, Inhibitor, Trial, Individual)) %>%
+                Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor)) %>% 
+         unite(col = Group, remove = FALSE, 
+               any_of(c("Compound", "Inhibitor", "Trial", "Individual"))) %>%
          select(-CompoundIsEffector)
    }
    
@@ -807,18 +808,21 @@ ct_plot <- function(ct_dataframe = NA,
                                  "geometric" = gm_mean(Conc, na.rm = T),
                                  "median" = median(Conc, na.rm = T))) %>%
          ungroup() %>% 
-         mutate(Group = paste(Compound, Inhibitor, Trial, Individual))
+         unite(col = Group, remove = FALSE, 
+               any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
    )
    
    sim_data_mean <- Data %>%
       filter(Simulated == TRUE  &
                 Trial %in% c(MyMeanType, "per5", "per95")) %>%
-      mutate(Group = paste(Compound, Inhibitor, Trial, Individual))
+      unite(col = Group, remove = FALSE, 
+            any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
    
    # Setting up observed data per user input -------------------------------
    
    obs_dataframe <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
-      mutate(Group = paste(Compound, Inhibitor, Trial, Individual))
+      unite(col = Group, remove = FALSE,  
+            any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
    
    # If the user set obs_color to "none", then they must not want to include
    # observed data in the graph. Set nrow to 0 in that case.
@@ -838,7 +842,8 @@ ct_plot <- function(ct_dataframe = NA,
    # user should probably be using figure_type = "trial means", and Hannah
    # would like user to get a warning about that.
    suppressMessages(
-      check <- obs_dataframe %>% group_by(CompoundID, Inhibitor, Time) %>% 
+      check <- obs_dataframe %>% 
+         group_by(across(.cols = any_of(c("CompoundID", "Inhibitor", "Time")))) %>% 
          summarize(N = n())
    )
    
