@@ -10,7 +10,7 @@ fm_treemap(
   color_set = "default",
   label_fm_cutoff = 0.05,
   legend_nrow = NA,
-  biggest_box_position = "bottom right",
+  biggest_box_position = "top left",
   graph_title = NA,
   graph_title_size = 14,
   save_graph = NA,
@@ -41,8 +41,9 @@ on its dimensions.}
 \item{legend_nrow}{optionally specify the number of rows to use for the
 legend. If left as NA, there will be 1 row.}
 
-\item{biggest_box_position}{where to put the biggest box. Defaults to "bottom
-left", and other options are "top left", "bottom left", and "top right".}
+\item{biggest_box_position}{where to put the biggest box. Defaults to "top
+left", and other options are "bottom left", "bottom right", and "top
+right".}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph}
