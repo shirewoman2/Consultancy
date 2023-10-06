@@ -184,7 +184,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       MultData[[ff]] <- list()
       
       # Getting summary data for the simulation(s)
-      if(class(existing_exp_details) == "logical"){ # logical when user has supplied NA
+      if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
       } else {
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
