@@ -784,7 +784,9 @@ extractConcTime <- function(sim_data_file,
    
    for(m in compoundToExtract){
       
-      message(paste("Extracting data for compound =", m))
+      if(fromMultFunction){
+         message(paste("Extracting data for compound =", m))
+      }
       
       # "NotAvail" is a hack to skip this iteration of the loop if it's ADAM
       # concentrations that the user requested but they're not available for
@@ -941,7 +943,7 @@ extractConcTime <- function(sim_data_file,
             
             for(s in subsection_ADAMs){
                
-               # message(paste("subsection_ADAMs s =", s))
+               # message(paste("subsection_ADAMs =", s))
                # Some sheets have all compounds included, so need to narrow
                # down which rows to check. Others don't have metabolites
                # listed on the same sheet, so that's why there are these
@@ -1039,7 +1041,7 @@ extractConcTime <- function(sim_data_file,
             if(EffectorPresent){
                
                for(s in subsection_ADAMs){
-                  # message(paste("subsection_ADAMs s =", s))
+                  # message(paste("subsection_ADAMs =", s))
                   # Some sheets have all compounds included, so need to narrow
                   # down which rows to check. Others don't have metabolites
                   # listed on the same sheet, so that's why there are these
@@ -1169,7 +1171,7 @@ extractConcTime <- function(sim_data_file,
             
             for(s in subsection_ADAMs){
                
-               # message(paste("subsection_ADAMs s =", s))
+               # message(paste("subsection_ADAMs =", s))
                # Some sheets have all compounds included, so need to narrow
                # down which rows to check. Others don't have metabolites
                # listed on the same sheet, so that's why there are these
@@ -1370,7 +1372,7 @@ extractConcTime <- function(sim_data_file,
             }
             
             for(s in subsection_ADAMs){
-               # message(paste("subsection_ADAMs s =", s))
+               # message(paste("subsection_ADAMs =", s))
                if(ADAM){
                   RowsToUse <- 
                      data.frame(Orig = sim_data_xl$...1) %>% 
@@ -1441,7 +1443,7 @@ extractConcTime <- function(sim_data_file,
             if(EffectorPresent){
                
                for(s in subsection_ADAMs){
-                  # message(paste("subsection_ADAMs s =", s))
+                  # message(paste("subsection_ADAMs =", s))
                   if(ADAM){
                      RowsToUse <- intersect(
                         which(
@@ -1554,7 +1556,7 @@ extractConcTime <- function(sim_data_file,
             NamesToCheck <- sim_data_xl$...1[(TimeRow+1):(FirstBlank-1)]
             
             for(s in subsection_ADAMs){
-               # message(paste("subsection_ADAMs s =", s))
+               # message(paste("subsection_ADAMs =", s))
                # Some sheets have all compounds included, so need to
                # narrow down which rows to check. Others don't have
                # metabolites listed on the same sheet, so that's why
