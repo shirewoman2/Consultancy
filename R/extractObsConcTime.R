@@ -347,7 +347,7 @@ extractObsConcTime <- function(obs_data_file,
              Time_units = TimeUnits,
              Conc_units = ObsConcUnits[as.character(DVID)])
    
-   dose_data <- obs_data %>% filter(is.na(DVID)) %>% 
+   dose_data <- obs_data %>% filter(complete.cases(Compound)) %>% 
       mutate(CompoundID = tolower(Compound), 
              Dose_units = gsub("\\(|\\)", "", Dose_units), 
              Dose = as.numeric(DoseAmount), 
@@ -371,7 +371,6 @@ extractObsConcTime <- function(obs_data_file,
       
       obs_data <- obs_data %>%
          # Removing dosing rows b/c that's not conc time data. 
-         filter(complete.cases(DVID)) %>%
          filter(is.na(DoseAmount)) %>% 
          mutate(Simulated = FALSE) %>% 
          # Removing dose units column b/c it will be NA for all obs data. Need to
@@ -384,21 +383,26 @@ extractObsConcTime <- function(obs_data_file,
          rename(DoseTime = Time)
       
       # Adding dose info to conc-time data.frame one CompoundID at a time.
-      obs_data <- split(obs_data, f = obs_data$CompoundID)
-      DoseInts <- split(DoseInts, f = DoseInts$CompoundID)
+      obs_data <- split(obs_data, f = list(obs_data$CompoundID, 
+                                           obs_data$Individual))
+      DoseInts <- split(DoseInts, f = list(DoseInts$CompoundID, 
+                                           DoseInts$Individual))
       
       for(i in names(obs_data)){
          
+         i_split <- str_split_1(i, "\\.")
+         
          # For metabolites, we need the parent compound dosing interval info.
          # Dealing with that here.
-         j <- switch(i, 
-                     "substrate" = "substrate", 
-                     "inhibitor 1" = "inhibitor 1", 
-                     "inhibitor 2" = "inhibitor 2", 
-                     "primary metabolite 1" = "substrate", 
-                     "primary metabolite 2" = "substrate", 
-                     "secondary metabolite" = "substrate", 
-                     "inhibitor 1 metabolite" = "inhibitor 1")
+         ParentDrug <- switch(i_split[1], 
+                              "substrate" = "substrate", 
+                              "inhibitor 1" = "inhibitor 1", 
+                              "inhibitor 2" = "inhibitor 2", 
+                              "primary metabolite 1" = "substrate", 
+                              "primary metabolite 2" = "substrate", 
+                              "secondary metabolite" = "substrate", 
+                              "inhibitor 1 metabolite" = "inhibitor 1")
+         j <- paste(ParentDrug, i_split[2], sep = ".")
          
          if(j %in% names(DoseInts) && 
             nrow(DoseInts[[j]]) > 0){
@@ -415,6 +419,8 @@ extractObsConcTime <- function(obs_data_file,
                          by = join_by(CompoundID, Individual, Interval)) %>% 
                mutate(DoseNum = as.numeric(Interval))
          }
+         
+         rm(i_split, ParentDrug, j)
       }
    }
    
