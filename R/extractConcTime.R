@@ -698,12 +698,18 @@ extractConcTime <- function(sim_data_file,
          # inhibitor 1 metabolite name included the name of inhibitor 1, e.g.,
          # when inhibitor 1 is "Carbamazepine" and inhibitor 1 metabolite is
          # "Carbamazepine-10,11-epoxide". Probably should add this for other
-         # possible similar situations w/other compound IDs. FIXME.
+         # possible similar situations w/other compound IDs. <-- NOPE. This is
+         # NOT working. FIXME.
+         
+         # sim_data_xl$...1[PossRows] <- 
+         #    sub(gsub("\\(|\\)|\\-", ".", 
+         #             sub(Deets$Inhibitor1, "EFFECTOR1INHIB", Deets$Inhibitor1Metabolite)),
+         #        "EFFECTOR1MET", sim_data_xl$...1[PossRows])
          
          sim_data_xl$...1[PossRows] <- 
-            sub(gsub("\\(|\\)|\\-", ".", 
-                     sub(Deets$Inhibitor1, "EFFECTOR1INHIB", Deets$Inhibitor1Metabolite)),
+            sub(gsub("\\(|\\)|\\-", ".", Deets$Inhibitor1Metabolite), 
                 "EFFECTOR1MET", sim_data_xl$...1[PossRows])
+         
          rm(PossRows)
          
       } else if("inhibitor 1 metabolite" %in% compoundToExtract){
