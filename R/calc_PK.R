@@ -122,6 +122,8 @@ calc_PK <- function(ct_dataframe,
    
    # Main body of function -------------------------------------------------
    
+   ct_orig <- ct_dataframe # for debugging. remove this later. 
+   
    if("File" %in% names(ct_dataframe) == FALSE){
       ct_dataframe$File <- NA
    }
@@ -134,13 +136,16 @@ calc_PK <- function(ct_dataframe,
       first_dose_time <- min(ct_dataframe$Time[ct_dataframe$DoseNum == 1], na.rm = T)
    }
    
+   MaxDoseNum <- max(ct_dataframe$DoseNum, na.rm = T)
+   
    if(is.na(last_dose_time)){
-      MaxDoseNum <- max(ct_dataframe$DoseNum, na.rm = T)
       last_dose_time <- min(ct_dataframe$Time[ct_dataframe$DoseNum == MaxDoseNum], na.rm = T)
    }
    
-   # Adjusting time to be time since most-recent dose
+   # Adjusting time to be time since most-recent dose. Only keeping 1st and
+   # last-dose data.
    ct_dataframe <- ct_dataframe %>% 
+      filter(DoseNum %in% c(1, MaxDoseNum)) %>% 
       mutate(TimeOrig = Time, 
              DoseTime = ifelse(DoseNum == 1, first_dose_time, last_dose_time), 
              Time = TimeOrig - DoseTime)
@@ -156,19 +161,29 @@ calc_PK <- function(ct_dataframe,
          mutate(MaxTime = 
                    switch(as.character(complete.cases(dose_interval)), 
                           "TRUE" = t0 + dose_interval, 
-                          "FALSE" = MaxTime))
+                          "FALSE" = MaxTime)) %>% 
+         group_by(CompoundID, Inhibitor, Tissue, Individual, Trial, 
+                  Simulated, File, ObsFile, DoseNum)
    )
    # Not sure this will be best way to set this up
    
-   Keys <- group_keys(ct_dataframe) %>% 
+   Keys_CT <- group_keys(ct_dataframe) %>% 
+      mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
+                        ifelse(Simulated == TRUE, "simulated", "observed"),
+                        File, ObsFile, DoseNum))
+   
+   # Keys for CT and t0 *should* be the same, but setting this up separately to
+   # get names for t0s means that this will check that they contain the same
+   # info.
+   Keys_t0 <- group_keys(t0s) %>% 
       mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
                         ifelse(Simulated == TRUE, "simulated", "observed"),
                         File, ObsFile, DoseNum))
    
    ct_dataframe <- group_split(ct_dataframe)
-   names(ct_dataframe) <- Keys$ID
+   names(ct_dataframe) <- Keys_CT$ID
    t0s <- group_split(t0s)
-   names(t0s) <- Keys$ID
+   names(t0s) <- Keys_t0$ID
    
    ElimFits <- list()
    ElimFitGraphs <- list()
@@ -331,7 +346,7 @@ calc_PK <- function(ct_dataframe,
             tmax = CmaxTmax_temp$tmax) %>% 
          mutate(CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000)
       
-      rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap)
+      suppressWarnings(rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap))
    }
    
    PKtemp <- bind_rows(PKtemp) %>% 
@@ -345,7 +360,7 @@ calc_PK <- function(ct_dataframe,
                           PKparameter == "CL_dose1" ~ "CLinf_dose1",
                           TRUE ~ PKparameter))
    
-   if(any(PKtemp$ExtrapProbs)){
+   if(any(PKtemp$ExtrapProbs, na.rm = TRUE)){
       warning(paste0(
          "The following combinations of data had problems with extrapolation to infinity. Data are listed by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
          str_c(unique(PKtemp$ID[PKtemp$ExtrapProbs], collapse = "\n"))), 
@@ -392,7 +407,7 @@ calc_PK <- function(ct_dataframe,
    
    if(returnAggregateOrIndiv %in% c("aggregate", "both")){
       
-      suppressMessages(
+      suppressWarnings(suppressMessages(
          PK_agg_temp <- PKtemp %>% 
             filter(PKparameter != "AUCinf_dose1" |
                       (PKparameter == "AUCinf_dose1" & ExtrapProbs == FALSE)) %>% 
@@ -409,13 +424,13 @@ calc_PK <- function(ct_dataframe,
                Median = median(Value, na.rm = T), 
                Minimum = min(Value, na.rm = T), 
                Maximum = max(Value, na.rm = T)) 
-      )
+      ))
       
    }
    
    if(save_graphs_of_fits){
       # Grouping by File, CompoundID, Inhibitor, Tissue for saving
-      Keys <- Keys %>% 
+      Keys_CT <- Keys_CT %>% 
          mutate(ID2 = paste(File, CompoundID, Inhibitor, Tissue))
       
       for(i in unique(Keys$ID2)){
@@ -424,15 +439,15 @@ calc_PK <- function(ct_dataframe,
             Ncol <- NULL
          } else {
             Nrow <- ifelse(is.null(nrow), 
-                           round_up_unit(length(Keys$ID[Keys$ID2 == i]) / ncol, 1), 
+                           round_up_unit(length(Keys_CT$ID[Keys_CT$ID2 == i]) / ncol, 1), 
                            nrow)
             Ncol <- ifelse(is.null(ncol), 
-                           round_up_unit(length(Keys$ID[Keys$ID2 == i]) / nrow, 1), 
+                           round_up_unit(length(Keys_CT$ID[Keys_CT$ID2 == i]) / nrow, 1), 
                            ncol)
          }
          
          ggpubr::ggarrange(
-            plotlist = ElimFitGraphs[Keys$ID[Keys$ID2 == i]], 
+            plotlist = ElimFitGraphs[Keys_CT$ID[Keys_CT$ID2 == i]], 
             ncol = Ncol, 
             nrow = Nrow)
          ggsave(paste0(gsub("/", "-", gsub(".xlsx", "", i)), ".png"), 
