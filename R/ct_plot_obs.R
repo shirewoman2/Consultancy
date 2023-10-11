@@ -440,12 +440,18 @@ ct_plot_obs <- function(ct_dataframe,
       mean_type != "none"){
       suppressMessages(
          CTagg <- ct_dataframe %>% 
-            group_by(across(.cols = -any_of(c("Individual", "Conc", 
-                                              "Age", "Weight_kg", 
-                                              "Height_cm", "Sex", 
-                                              "SerumCreatinine_umolL", "HSA_gL", 
-                                              "Haematocrit", "PhenotypeCYP2D6", 
-                                              "SmokingStatus")))) %>% 
+            group_by(across(.cols = -any_of(c(
+               "Individual", "Conc", "Age", "Weight_kg", "Height_cm", "Sex", 
+               # Omitting DoseNum b/c people don't consistently include accurate
+               # and COMPLETE dosing information, which means that the graph
+               # will look disjointed b/c dosing at the same time will be listed
+               # for a different DoseNum. I'm not positive that this is the
+               # right course of action, though, b/c I wouldn't want people who
+               # missed a dose to be included in mean calculation. STILL
+               # THINKING ABOUT THIS.
+               "DoseNum", 
+               "SerumCreatinine_umolL", "HSA_gL", "Haematocrit",
+               "PhenotypeCYP2D6", "SmokingStatus")))) %>% 
             summarize(Conc = switch(mean_type, 
                                     "arithmetic" = mean(Conc, na.rm = T), 
                                     "geometric" = gm_mean(Conc), 
