@@ -7,6 +7,7 @@ concentration-time data}
 \usage{
 calc_PK(
   ct_dataframe,
+  PKparameters = "all",
   first_dose_time = NA,
   last_dose_time = NA,
   dose_interval = NA,
@@ -33,6 +34,13 @@ for a dose other than those two, we recommend subsetting your data to
 include only the 1st dose and whatever dose number you do want and perhaps
 running this multiple times in a loop to get all the PK you need. A member
 of the R Working Group can help you set this up if you'd like.}
+
+\item{PKparameters}{Which PK parameters would you like? Options are "all"
+(default) or any combination of \code{c("AUCinf_dose1",
+"AUCinf_fraction_extrapolated_dose1", "AUCt_dose1", "CLinf_dose1",
+"Cmax_dose1", "Clast_dose1", "tmax_dose1", "AUCtau_last", "CLtau_last",
+"Cmax_last", "Clast_last", "Cmin_last", "tmax_last")} If you have provided 
+only single-dose data, then only "XXX_dose1" parameters will be returned.}
 
 \item{first_dose_time}{the time at which the first dose was administered. If
 this is left as NA, the default value, this will be set to 0.}

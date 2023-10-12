@@ -23,6 +23,12 @@
 #'   include only the 1st dose and whatever dose number you do want and perhaps
 #'   running this multiple times in a loop to get all the PK you need. A member
 #'   of the R Working Group can help you set this up if you'd like.
+#' @param PKparameters Which PK parameters would you like? Options are "all"
+#'   (default) or any combination of \code{c("AUCinf_dose1",
+#'   "AUCinf_fraction_extrapolated_dose1", "AUCt_dose1", "CLinf_dose1",
+#'   "Cmax_dose1", "Clast_dose1", "tmax_dose1", "AUCtau_last", "CLtau_last",
+#'   "Cmax_last", "Clast_last", "Cmin_last", "tmax_last")} If you have provided 
+#'   only single-dose data, then only "XXX_dose1" parameters will be returned.
 #' @param first_dose_time the time at which the first dose was administered. If
 #'   this is left as NA, the default value, this will be set to 0.
 #' @param last_dose_time the time at which the last dose was administered. If
@@ -93,6 +99,7 @@
 #' # None yet
 #' 
 calc_PK <- function(ct_dataframe, 
+                    PKparameters = "all",
                     first_dose_time = NA, 
                     last_dose_time = NA,
                     dose_interval = NA,
@@ -128,6 +135,33 @@ calc_PK <- function(ct_dataframe,
    if(is.na(last_dose_time) & any(ct_dataframe$DoseNum > 1)){
       warning("You have not specified the time of the last dose. We'll assume it's the minimum time for the maxmimum dose number in your data.\n", 
               call. = FALSE)
+   }
+   
+   AllPKPossible <- c("AUCinf_dose1",
+                      "AUCinf_fraction_extrapolated_dose1", 
+                      "AUCt_dose1",
+                      "CLinf_dose1",
+                      "Cmax_dose1",
+                      "Clast_dose1",
+                      "tmax_dose1",
+                      "AUCtau_last",
+                      "CLtau_last",
+                      "Cmax_last",
+                      "Clast_last",
+                      "Cmin_last",
+                      "tmax_last")
+   
+   if(length(PKparameters) == 1 && PKparameters == "all"){
+      PKparameters <- AllPKPossible
+   } else {
+      ProbPKparameters <- setdiff(PKparameters, AllPKPossible)
+      if(length(ProbPKparameters) > 0){
+         warning(paste0("The following PK parameters that you requested are not available: ", 
+                        str_comma(paste0("`", ProbPKparameters, "`")), 
+                        ". We will not be able to provide those. Please see the help file for acceptable options.\n"), 
+                 call. = FALSE)
+      }
+      PKparameters <- intersect(PKparameters, AllPKPossible)
    }
    
    # Main body of function -------------------------------------------------
@@ -336,7 +370,9 @@ calc_PK <- function(ct_dataframe,
       
       CmaxTmax_temp <- ct_dataframe[[j]] %>% 
          summarize(Cmax = max(Conc, na.rm = T), 
-                   tmax = Time[which.max(Conc)])
+                   tmax = Time[which.max(Conc)], 
+                   Cmin = min(Conc, na.rm = T), 
+                   Clast = Conc[which.max(Time)])
       
       PKtemp[[j]] <- 
          data.frame(
@@ -358,14 +394,19 @@ calc_PK <- function(ct_dataframe,
             ExtrapProbs = ExtrapProbs,
             AUCt = AUCt_temp, 
             Cmax = CmaxTmax_temp$Cmax, 
-            tmax = CmaxTmax_temp$tmax) %>% 
+            tmax = CmaxTmax_temp$tmax, 
+            Cmin = CmaxTmax_temp$Cmin, 
+            Clast = CmaxTmax_temp$Clast) %>% 
          mutate(CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000)
       
-      suppressWarnings(rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap))
+      suppressWarnings(
+         rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap)
+      )
    }
    
    PKtemp <- bind_rows(PKtemp) %>% 
-      pivot_longer(cols = c(AUCinf, AUCinf_fraction_extrapolated, AUCt, Cmax, tmax, CL), 
+      pivot_longer(cols = c(AUCinf, AUCinf_fraction_extrapolated, AUCt, 
+                            Cmax, Cmin, Clast, tmax, CL), 
                    names_to = "PKparameter", 
                    values_to = "Value") %>% 
       mutate(PKparameter = paste0(PKparameter, "_", WhichDose),
@@ -373,7 +414,11 @@ calc_PK <- function(ct_dataframe,
                 case_when(PKparameter == "AUCt_last" ~ "AUCtau_last",
                           PKparameter == "CL_last" ~ "CLtau_last", 
                           PKparameter == "CL_dose1" ~ "CLinf_dose1",
-                          TRUE ~ PKparameter))
+                          TRUE ~ PKparameter)) %>% 
+      # Removing PK parameters that would not be accurate or informative for
+      # that dose
+      filter(!PKparameter %in% c("Cmin_dose1", "AUCinf_last", 
+                                "AUCinf_fraction_extrapolated_last")) 
    
    if(any(PKtemp$ExtrapProbs, na.rm = TRUE)){
       warning(paste0(
@@ -474,13 +519,15 @@ calc_PK <- function(ct_dataframe,
    Out <- list()
    if(returnAggregateOrIndiv %in% c("individual", "both")){
       Out[["individual"]] <- PKtemp %>% 
+         filter(PKparameter %in% PKparameters) %>% 
          select(CompoundID, Inhibitor, Tissue, Individual, Trial, 
                 Simulated, File, ObsFile, DoseNum, ExtrapProbs, 
                 PKparameter, Value)
    }
    
    if(returnAggregateOrIndiv %in% c("aggregate", "both")){
-      Out[["aggregate"]] <- PK_agg_temp 
+      Out[["aggregate"]] <- PK_agg_temp %>% 
+         filter(PKparameter %in% PKparameters) 
    }
    
    if(return_graphs_of_fits){

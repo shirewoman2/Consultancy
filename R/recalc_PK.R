@@ -16,6 +16,12 @@
 #'   running this multiple times in a loop to get all the PK you need. A member
 #'   of the R Working Group can help you set this up if you'd like.
 #' @param existing_PK the output from \code{\link{calc_PK}}
+#' @param PKparameters Which PK parameters would you like? Options are "all"
+#'   (default) or any combination of \code{c("AUCinf_dose1",
+#'   "AUCinf_fraction_extrapolated_dose1", "AUCt_dose1", "CLinf_dose1",
+#'   "Cmax_dose1", "Clast_dose1", "tmax_dose1", "AUCtau_last", "CLtau_last",
+#'   "Cmax_last", "Clast_last", "Cmin_last", "tmax_last")} If you have provided 
+#'   only single-dose data, then only "XXX_dose1" parameters will be returned.
 #' @param compoundID_match any values in the CompoundID column to match in the
 #'   data; matching PK profiles will be recalculated
 #' @param inhibitor_match any values in the Inhibitor column to match in the
@@ -108,6 +114,7 @@
 #' 
 recalc_PK <- function(ct_dataframe,
                       existing_PK,
+                      PKparameters = "all",
                       compoundID_match = NA,
                       inhibitor_match = NA, 
                       tissue_match = NA, 
@@ -231,6 +238,7 @@ recalc_PK <- function(ct_dataframe,
                         File, ObsFile, DoseNum))
    
    NewPK <- calc_PK(ct_dataframe = CTsubset, 
+                    PKparameters = PKparameters, 
                     first_dose_time = first_dose_time, 
                     last_dose_time = last_dose_time, 
                     dose_interval = dose_interval, 
