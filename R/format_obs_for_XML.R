@@ -131,6 +131,18 @@ format_obs_for_XML <- function(obs_dataframe,
                         Weight = rlang::as_label(weight_column), 
                         Height = rlang::as_label(height_column), 
                         Sex = rlang::as_label(sex_column))
+   if(any(duplicated(GoodNames_step1[GoodNames_step1 != "<empty>"]))){
+      
+      DupCols <- GoodNames_step1[GoodNames_step1 != "<empty>"]
+      DupCols <- c(DupCols[duplicated(DupCols)], 
+                   DupCols[duplicated(DupCols, fromLast = TRUE)])
+      DupCols <- names(DupCols)
+      
+      stop(paste0("You have assigned the same column to more than one thing, which won't work here. Specifically, you assigned the following columns to more than one thing: ", 
+                  str_comma(paste0("`", DupCols, "`"))),
+           call. = FALSE)
+   }
+   
    GoodNames <- names(GoodNames_step1)
    names(GoodNames) <- GoodNames_step1
    
