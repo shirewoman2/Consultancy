@@ -62,6 +62,14 @@
 #'   points after a certain time after the most-recent dose. Default of NA means
 #'   that we'll fit all the data after tmax. Keep in mind that this will apply
 #'   to ALL profiles.
+#' @param omit_0_concs TRUE (default) or FALSE for whether to omit any points
+#'   where the concentration = 0 since A) they were presumably below the LLOQ
+#'   and B) they will mess up weighting, should you choose to use a "1/y" or
+#'   "1/y^2" weighting scheme.
+#' @param weights Weighting scheme to use for the regression. User may supply a
+#'   numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
+#'   "1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
+#'   you don't have any infinite values or this will fail!
 #' @param returnAggregateOrIndiv return aggregate and/or individual PK
 #'   parameters? Options are "aggregate", "individual", or "both" (default).
 #' @param return_graphs_of_fits TRUE (default) or FALSE for whether to return a
@@ -90,6 +98,8 @@ calc_PK <- function(ct_dataframe,
                     dose_interval = NA,
                     fit_points_after_x_time = NA,
                     fit_last_x_number_of_points = NA, 
+                    omit_0_concs = TRUE,
+                    weights = NULL, 
                     returnAggregateOrIndiv = "both", 
                     return_graphs_of_fits = TRUE,
                     save_graphs_of_fits = FALSE, 
@@ -130,6 +140,10 @@ calc_PK <- function(ct_dataframe,
    
    if("ObsFile" %in% names(ct_dataframe) == FALSE){
       ct_dataframe$ObsFile <- NA
+   }
+   
+   if(omit_0_concs){
+      ct_dataframe <- ct_dataframe %>% filter(Conc > 0)
    }
    
    if(is.na(first_dose_time)){
@@ -236,6 +250,7 @@ calc_PK <- function(ct_dataframe,
                          time = Time, 
                          tmax = fit_points_after_x_time, 
                          omit = Omit,
+                         weights = weights,
                          useNLS_outnames = FALSE,
                          modelType = "monoexponential",
                          graph = TRUE)

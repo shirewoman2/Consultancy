@@ -22,6 +22,8 @@ recalc_PK(
   dose_interval = NA,
   fit_points_after_x_time = NA,
   fit_last_x_number_of_points = NA,
+  omit_0_concs = TRUE,
+  weights = NULL,
   returnAggregateOrIndiv = "both",
   return_graphs_of_fits = TRUE,
   save_graphs_of_fits = FALSE,
@@ -114,6 +116,16 @@ approach. If you supply simulated data, it will probably be less confusing
 and yield more predictable results if you specify a value for
 \code{fit_points_after_x_time} rather than
 \code{fit_last_x_number_of_points}.}
+
+\item{omit_0_concs}{TRUE (default) or FALSE for whether to omit any points
+where the concentration = 0 since A) they were presumably below the LLOQ
+and B) they will mess up weighting, should you choose to use a "1/y" or
+"1/y^2" weighting scheme.}
+
+\item{weights}{Weighting scheme to use for the regression. User may supply a
+numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
+"1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
+you don't have any infinite values or this will fail!}
 
 \item{returnAggregateOrIndiv}{return aggregate and/or individual PK
 parameters? Options are "aggregate", "individual", or "both" (default).}
