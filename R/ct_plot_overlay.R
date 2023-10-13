@@ -208,6 +208,18 @@
 #'   line at all) to 1 (completely opaque or black). If left as the default NA,
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
+#' @param connect_obs_points TRUE or FALSE (default) for whether to add
+#'   connecting lines between observed data points from the same individual
+#' @param obs_on_top TRUE (default) or FALSE for whether to show the observed
+#'   data on top of the simulated data. If FALSE, the simulated data will be on
+#'   top.
+#' @param include_errorbars TRUE or FALSE (default) for whether to include error
+#'   bars for observed data points. This ONLY applies when you have supplied
+#'   observed data from V22 or higher because those data files included a column
+#'   titled "SD/SE", which is what we'll use for determining the error bar
+#'   heights.
+#' @param errorbar_width width of error bars to use in hours (or, if you've used
+#'   some other time unit, in whatever units are in your data). Default is 0.5.
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
 #'   for determining the line types and also the shapes of the points for
 #'   depicting any observed data. For example, if \code{linetype_column} is set
@@ -448,6 +460,10 @@ ct_plot_overlay <- function(ct_dataframe,
                             obs_size = NA,
                             obs_fill_trans = NA, 
                             obs_line_trans = NA, 
+                            connect_obs_points = FALSE, 
+                            obs_on_top = TRUE, 
+                            include_errorbars = FALSE, 
+                            errorbar_width = 0.5,
                             linetype_column, 
                             linetype_labels = NA, 
                             linetypes = c("solid", "dashed"),
@@ -626,8 +642,8 @@ ct_plot_overlay <- function(ct_dataframe,
    obs_color_user <- obs_color
    obs_shape_user <- obs_shape
    
-   # Making sure the data.frame contains unique observations.
-   ct_dataframe <- unique(ct_dataframe)
+   # Making sure the data.frame contains unique observations and no unnecessary levels.
+   ct_dataframe <- unique(ct_dataframe) %>% droplevels()
    
    # Prettifying compound names 
    if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
@@ -925,7 +941,7 @@ call. = FALSE)
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
          unite(col = Group, any_of(c("File", "Trial", "Tissue", "Enzyme",
-                                     "Inhibitor",
+                                     "Inhibitor", "Individual",
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE) %>% 
          mutate(Abundance = Abundance / 100) %>% 
@@ -946,7 +962,7 @@ call. = FALSE)
       # for conc-time data
       ct_dataframe <- ct_dataframe %>%
          unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                     "Compound", "Inhibitor",
+                                     "Compound", "Inhibitor", "Individual",
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE) %>% 
          mutate(CompoundID = factor(CompoundID,
@@ -1041,7 +1057,7 @@ call. = FALSE)
             obs_dataframe <- obs_dataframe %>% select(-File) %>% 
                left_join(ToAdd) %>% 
                unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                           "Compound", "Inhibitor",
+                                           "Compound", "Inhibitor", "Individual",
                                            "colorBy_column", "FC1", "FC2")), 
                      sep = " ", remove = FALSE))
          
@@ -1254,23 +1270,23 @@ call. = FALSE)
       # If the user wants to color by Individual, presumably they want the
       # observed data to be colored by individual but still want the simulated
       # data to be black or gray. To deal with this, need to make a separate
-      # column for individual observed data and will have to set the levels to the
-      # obs individuals plus "simulated" to get things to be colored correctly and
-      # show up in the legend correctly.
+      # column for individual observed data and will have to set the levels to
+      # the obs individuals plus whatever the mean type was to get things to be
+      # colored correctly and show up in the legend correctly.
       ct_dataframe <- ct_dataframe %>% 
-         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+         mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
                 SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         "simulated")),
+                                                         MyMeanType)),
                 colorBy_column = SubjectID)
       sim_dataframe <- sim_dataframe %>% 
-         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+         mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
                 SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         "simulated")),
+                                                         MyMeanType)),
                 colorBy_column = SubjectID)
       obs_dataframe <- obs_dataframe %>% 
-         mutate(SubjectID = ifelse(Simulated, "simulated", as.character(Individual)),
+         mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
                 SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         "simulated")),
+                                                         MyMeanType)),
                 colorBy_column = SubjectID)
    }
    
@@ -1585,7 +1601,7 @@ call. = FALSE)
                                     "median" = median(Conc, na.rm = T))) %>%
             ungroup() %>% 
             unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                        "Compound", "Inhibitor",
+                                        "Compound", "Inhibitor", "Individual",
                                         "colorBy_column", "FC1", "FC2")), 
                   sep = " ", remove = FALSE)
       )
@@ -1678,65 +1694,7 @@ call. = FALSE)
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
-   
-   ## Figure type: means only ---------------------------------------------
-   if(figure_type == "means only"){
-      
-      A <- A + 
-         geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
-                   show.legend = AESCols["color"] != "Individual")
-      
-   }
-   
-   ## figure_type: trial means -----------------------------------------------------------
-   if(figure_type == "trial means"){
-      
-      NumTrials <- length(unique(sim_data_trial$Trial))
-      
-      AlphaToUse <- ifelse(complete.cases(line_transparency),
-                           line_transparency,
-                           ifelse(NumTrials > 10, 0.05, 0.2))
-      
-      A <- A +
-         geom_line(alpha = AlphaToUse,
-                   lwd = ifelse(is.na(line_width), 1, line_width)) +
-         geom_line(data = sim_dataframe %>%
-                      filter(Trial == MyMeanType),
-                   lwd = ifelse(is.na(line_width), 1, line_width))
-   }
-   
-   
-   ## Figure type: percentiles ---------------------------------------------
-   
-   if(figure_type == "percentiles"){
-      
-      AlphaToUse <- ifelse(complete.cases(line_transparency),
-                           line_transparency, 0.25)
-      
-      A <- A +
-         geom_line(alpha = AlphaToUse,
-                   lwd = ifelse(is.na(line_width), 0.8, line_width), 
-                   show.legend = AESCols["color"] != "Individual") +
-         geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
-                   lwd = ifelse(is.na(line_width), 1, line_width), 
-                   show.legend = AESCols["color"] != "Individual")
-   }
-   
-   ## Figure type: ribbon --------------------------------------------------
-   if(figure_type == "percentile ribbon"){
-      
-      AlphaToUse <- ifelse(complete.cases(line_transparency),
-                           line_transparency, 0.25)
-      
-      A <- A + 
-         geom_ribbon(alpha = AlphaToUse, color = NA, 
-                     show.legend = AESCols["color"] != "Individual") +
-         geom_line(lwd = ifelse(is.na(line_width), 1, line_width), 
-                   show.legend = AESCols["color"] != "Individual") 
-      
-   }
-   
-   # Observed data -----------------------------------------------
+   # Observed data on bottom -----------------------------------------------
    
    if(nrow(obs_dataframe) > 0){
       
@@ -1755,9 +1713,95 @@ call. = FALSE)
          LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
       }
       
+      if(obs_on_top == FALSE){
+         
+         A <- addObsPoints(obs_data = obs_dataframe, 
+                           A = A, 
+                           AES = AES,
+                           connect_obs_points = connect_obs_points,
+                           line_width = line_width,
+                           obs_shape = obs_shape,
+                           obs_shape_user = obs_shape_user,
+                           obs_size = obs_size, 
+                           obs_color = obs_color,
+                           obs_color_user = obs_color_user,
+                           obs_line_trans = obs_line_trans,
+                           obs_line_trans_user = obs_line_trans_user,
+                           obs_fill_trans = obs_fill_trans,
+                           obs_fill_trans_user = obs_fill_trans_user,
+                           figure_type = figure_type,
+                           MapObsData = MapObsData, 
+                           LegCheck = LegCheck)
+      }
+   }
+   
+   
+   ## Figure type: means only ---------------------------------------------
+   if(figure_type == "means only"){
+      
+      A <- A + 
+         geom_line(linewidth = ifelse(is.na(line_width), 1, line_width), 
+                   show.legend = AESCols["color"] != "Individual")
+      
+   }
+   
+   ## figure_type: trial means -----------------------------------------------------------
+   if(figure_type == "trial means"){
+      
+      NumTrials <- length(unique(sim_data_trial$Trial))
+      
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency,
+                           ifelse(NumTrials > 10, 0.05, 0.2))
+      
+      A <- A +
+         geom_line(alpha = AlphaToUse,
+                   linewidth = ifelse(is.na(line_width), 1, line_width)) +
+         geom_line(data = sim_dataframe %>%
+                      filter(Trial == MyMeanType),
+                   linewidth = ifelse(is.na(line_width), 1, line_width))
+   }
+   
+   
+   ## Figure type: percentiles ---------------------------------------------
+   
+   if(figure_type == "percentiles"){
+      
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency, 0.25)
+      
+      A <- A +
+         geom_line(alpha = AlphaToUse,
+                   linewidth = ifelse(is.na(line_width), 0.8, line_width), 
+                   show.legend = AESCols["color"] != "Individual") +
+         geom_line(data = sim_dataframe %>% filter(Trial == MyMeanType),
+                   linewidth = ifelse(is.na(line_width), 1, line_width), 
+                   show.legend = AESCols["color"] != "Individual")
+   }
+   
+   ## Figure type: ribbon --------------------------------------------------
+   if(figure_type == "percentile ribbon"){
+      
+      AlphaToUse <- ifelse(complete.cases(line_transparency),
+                           line_transparency, 0.25)
+      
+      A <- A + 
+         geom_ribbon(alpha = AlphaToUse, color = NA, 
+                     show.legend = AESCols["color"] != "Individual") +
+         geom_line(linewidth = ifelse(is.na(line_width), 1, line_width), 
+                   show.legend = AESCols["color"] != "Individual") 
+      
+   }
+   
+   # Observed data on top -----------------------------------------------
+   
+   if(nrow(obs_dataframe) > 0 & obs_on_top){
+      
       A <- addObsPoints(obs_data = obs_dataframe, 
                         A = A, 
                         AES = AES,
+                        connect_obs_points = connect_obs_points,
+                        line_width = line_width,
                         obs_shape = obs_shape,
                         obs_shape_user = obs_shape_user,
                         obs_size = obs_size, 
@@ -1770,6 +1814,19 @@ call. = FALSE)
                         figure_type = figure_type,
                         MapObsData = MapObsData, 
                         LegCheck = LegCheck)
+   }
+   
+   if(nrow(obs_dataframe) > 0 && 
+      "SD_SE" %in% names(obs_dataframe) & include_errorbars){
+      if(figure_type == "percentile ribbon"){
+         A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
+                                aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+                                width = errorbar_width)
+      } else {
+         A <- A + geom_errorbar(data = obs_dataframe, 
+                                aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+                                width = errorbar_width)
+      }
    }
    
    

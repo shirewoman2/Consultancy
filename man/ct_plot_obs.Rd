@@ -7,7 +7,7 @@
 ct_plot_obs(
   ct_dataframe,
   mean_type = "arithmetic",
-  figure_type = "means only",
+  nominal_times = NA,
   linear_or_log = "semi-log",
   colorBy_column,
   color_labels = NA,
@@ -18,6 +18,10 @@ ct_plot_obs(
   obs_size = NA,
   obs_fill_trans = NA,
   obs_line_trans = NA,
+  connect_obs_points = TRUE,
+  indiv_on_top = FALSE,
+  include_errorbars = FALSE,
+  errorbar_width = 0.5,
   linetype_column,
   linetype_labels = NA,
   linetypes = c("solid", "dashed"),
@@ -69,22 +73,15 @@ calculate the means yourself just to be sure you're getting what you
 expect. Talk to Laura Sh. if you would like help here. If you don't want to
 show the means, set this to "none".}
 
-\item{figure_type}{the type of figure to plot. \describe{
-
-  \item{"means only"}{(default) show only the mean, geometric mean, or median
-  (whatever you chose for "mean_type")}
-
-  \item{"percentiles"}{plots an opaque line for the mean data and lighter
-  lines for the 5th and 95th percentiles of the simulated data}
-
-  \item{"percentile ribbon"}{show an opaque line for the mean data and
-  transparent shading for the 5th to 95th percentiles. \strong{NOTE: There is
-  a known bug within RStudio that can cause filled semi-transparent areas
-  like you get with the "percentile ribbon" figure type to NOT get graphed
-  for certain versions of RStudio.} To get around this, within RStudio, go to
-  Tools --> Global Options --> General --> Graphics --> And then set
-  "Graphics device: backend" to "AGG". Honestly, this is a better option for
-  higher-quality graphics anyway!}}}
+\item{nominal_times}{optionally specify what the nominal times were for the
+concentration-time data. If left as NA, when we calculate the means, we'll
+group the data by the times \emph{exactly} as listed in the individual
+data. If you know that the nominal times were, say, 0, 0.5, 1, 2, and 4
+hours but that the times listed in the data were the exact draw times, then
+supply a numeric vector like this: \code{nominal_times = c(0, 0.5, 1, 2,
+4)} and we will match each individual time with the nominal time closest to
+it. This way, you'll get data from a draw time at, say, 4.1 h grouped with
+another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
   \item{"semi-log"}{y axis is log transformed; this is the default}
@@ -209,6 +206,18 @@ points overlapping. Acceptable values are from 0 (fully transparent, so no
 line at all) to 1 (completely opaque or black). If left as the default NA,
 the observed data points will be opaque, so the same as if this were set to
 1.}
+
+\item{connect_obs_points}{TRUE (default) or FALSE for whether to add
+connecting lines between observed data points from the same individual}
+
+\item{include_errorbars}{TRUE or FALSE (default) for whether to include error
+bars for observed data points. This ONLY applies when you have supplied
+observed data from V22 or higher because those data files included a column
+titled "SD/SE", which is what we'll use for determining the error bar
+heights.}
+
+\item{errorbar_width}{width of error bars to use in hours (or, if you've used
+some other time unit, in whatever units are in your data). Default is 0.5.}
 
 \item{linetype_column}{the column in \code{ct_dataframe} that should be used
 for determining the line types and also the shapes of the points for

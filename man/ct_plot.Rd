@@ -24,6 +24,10 @@ ct_plot(
   obs_size = NA,
   obs_fill_trans = NA,
   obs_line_trans = NA,
+  connect_obs_points = FALSE,
+  obs_on_top = TRUE,
+  include_errorbars = FALSE,
+  errorbar_width = 0.5,
   showBLQ = FALSE,
   line_type = NA,
   line_transparency = NA,
@@ -226,6 +230,22 @@ line at all) to 1 (completely opaque or black). If left as the default NA,
 the observed data points will be opaque, so the same as if this were set to
 1.}
 
+\item{connect_obs_points}{TRUE or FALSE (default) for whether to add
+connecting lines between observed data points from the same individual}
+
+\item{obs_on_top}{TRUE (default) or FALSE for whether to show the observed
+data on top of the simulated data. If FALSE, the simulated data will be on
+top.}
+
+\item{include_errorbars}{TRUE or FALSE (default) for whether to include error
+bars for observed data points. This ONLY applies when you have supplied
+observed data from V22 or higher because those data files included a column
+titled "SD/SE", which is what we'll use for determining the error bar
+heights.}
+
+\item{errorbar_width}{width of error bars to use in hours (or, if you've used
+some other time unit, in whatever units are in your data). Default is 0.5.}
+
 \item{showBLQ}{TRUE or FALSE (default) to display observed concentrations
 that were clearly below the lower limit of quantitation, that is,
 concentrations equal to 0 after time 0. The default (FALSE) removes these
@@ -368,8 +388,9 @@ and caption text will be filled in automatically. If you leave off ".png"
 or ".docx", the graph will be saved as a png file, but if you specify a
 different graphical file extension, it will be saved as that file format.
 Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
-"tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA means the file will not
-be saved to disk.}
+"tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
+or periods in the file name. Leaving this as NA means the file will not be
+saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}
 

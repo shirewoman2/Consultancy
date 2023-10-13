@@ -15,22 +15,15 @@
 #'   calculate the means yourself just to be sure you're getting what you
 #'   expect. Talk to Laura Sh. if you would like help here. If you don't want to
 #'   show the means, set this to "none".
-#' @param figure_type the type of figure to plot. \describe{
-#'
-#'   \item{"means only"}{(default) show only the mean, geometric mean, or median
-#'   (whatever you chose for "mean_type")}
-#'
-#'   \item{"percentiles"}{plots an opaque line for the mean data and lighter
-#'   lines for the 5th and 95th percentiles of the simulated data}
-#'
-#'   \item{"percentile ribbon"}{show an opaque line for the mean data and
-#'   transparent shading for the 5th to 95th percentiles. \strong{NOTE: There is
-#'   a known bug within RStudio that can cause filled semi-transparent areas
-#'   like you get with the "percentile ribbon" figure type to NOT get graphed
-#'   for certain versions of RStudio.} To get around this, within RStudio, go to
-#'   Tools --> Global Options --> General --> Graphics --> And then set
-#'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
-#'   higher-quality graphics anyway!}}
+#' @param nominal_times optionally specify what the nominal times were for the
+#'   concentration-time data. If left as NA, when we calculate the means, we'll
+#'   group the data by the times \emph{exactly} as listed in the individual
+#'   data. If you know that the nominal times were, say, 0, 0.5, 1, 2, and 4
+#'   hours but that the times listed in the data were the exact draw times, then
+#'   supply a numeric vector like this: \code{nominal_times = c(0, 0.5, 1, 2,
+#'   4)} and we will match each individual time with the nominal time closest to
+#'   it. This way, you'll get data from a draw time at, say, 4.1 h grouped with
+#'   another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -146,6 +139,15 @@
 #'   line at all) to 1 (completely opaque or black). If left as the default NA,
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
+#' @param connect_obs_points TRUE (default) or FALSE for whether to add
+#'   connecting lines between observed data points from the same individual 
+#' @param include_errorbars TRUE or FALSE (default) for whether to include error
+#'   bars for observed data points. This ONLY applies when you have supplied
+#'   observed data from V22 or higher because those data files included a column
+#'   titled "SD/SE", which is what we'll use for determining the error bar
+#'   heights.
+#' @param errorbar_width width of error bars to use in hours (or, if you've used
+#'   some other time unit, in whatever units are in your data). Default is 0.5.
 #' @param linetype_column the column in \code{ct_dataframe} that should be used
 #'   for determining the line types and also the shapes of the points for
 #'   depicting any observed data. For example, if \code{linetype_column} is set
@@ -356,7 +358,7 @@
 #' 
 ct_plot_obs <- function(ct_dataframe, 
                         mean_type = "arithmetic", 
-                        figure_type = "means only", 
+                        nominal_times = NA, 
                         linear_or_log = "semi-log",
                         colorBy_column,
                         color_labels = NA, 
@@ -367,6 +369,10 @@ ct_plot_obs <- function(ct_dataframe,
                         obs_size = NA,
                         obs_fill_trans = NA, 
                         obs_line_trans = NA, 
+                        connect_obs_points = TRUE,
+                        indiv_on_top = FALSE, 
+                        include_errorbars = FALSE, 
+                        errorbar_width = 0.5,
                         linetype_column, 
                         linetype_labels = NA, 
                         linetypes = c("solid", "dashed"),
@@ -415,11 +421,6 @@ ct_plot_obs <- function(ct_dataframe,
            call. = FALSE)
    }
    
-   if(figure_type == "trial means"){
-      warning("A figure type of `trial means` is not available for observed data. We'll set the figure type to `means only`.", 
-              call. = FALSE)
-   }
-   
    # If they didn't include the column "Simulated" and they're using this
    # particular function, that's probably b/c all of the data are observed.
    if("Simulated" %in% names(ct_dataframe) == FALSE){
@@ -430,16 +431,27 @@ ct_plot_obs <- function(ct_dataframe,
    
    ct_dataframe <- ct_dataframe %>% filter(Simulated == FALSE)
    
+   if(any(complete.cases(nominal_times))){
+      nominal_times <- as.numeric(nominal_times)
+      ct_dataframe$Time <- centerBin(ct_dataframe$Time, breaks = nominal_times)
+   }
+   
    if("obs mean" %in% ct_dataframe$Trial == FALSE & 
       mean_type != "none"){
       suppressMessages(
          CTagg <- ct_dataframe %>% 
-            group_by(across(.cols = -any_of(c("Individual", "Conc", 
-                                              "Age", "Weight_kg", 
-                                              "Height_cm", "Sex", 
-                                              "SerumCreatinine_umolL", "HSA_gL", 
-                                              "Haematocrit", "PhenotypeCYP2D6", 
-                                              "SmokingStatus")))) %>% 
+            group_by(across(.cols = -any_of(c(
+               "Individual", "Conc", "Age", "Weight_kg", "Height_cm", "Sex", 
+               # Omitting DoseNum b/c people don't consistently include accurate
+               # and COMPLETE dosing information, which means that the graph
+               # will look disjointed b/c dosing at the same time will be listed
+               # for a different DoseNum. I'm not positive that this is the
+               # right course of action, though, b/c I wouldn't want people who
+               # missed a dose to be included in mean calculation. STILL
+               # THINKING ABOUT THIS.
+               "DoseNum", 
+               "SerumCreatinine_umolL", "HSA_gL", "Haematocrit",
+               "PhenotypeCYP2D6", "SmokingStatus")))) %>% 
             summarize(Conc = switch(mean_type, 
                                     "arithmetic" = mean(Conc, na.rm = T), 
                                     "geometric" = gm_mean(Conc), 
@@ -473,7 +485,7 @@ ct_plot_obs <- function(ct_dataframe,
                    facet2_column = !!facet2_column,
                    obs_to_sim_assignment = NA,
                    mean_type = mean_type,
-                   figure_type = figure_type, 
+                   figure_type = "means only", 
                    linear_or_log = linear_or_log,
                    color_labels = color_labels, 
                    legend_label_color = legend_label_color,
@@ -483,6 +495,10 @@ ct_plot_obs <- function(ct_dataframe,
                    obs_size = obs_size,
                    obs_fill_trans = obs_fill_trans, 
                    obs_line_trans = obs_line_trans, 
+                   obs_on_top = indiv_on_top,
+                   connect_obs_points = connect_obs_points,
+                   include_errorbars = include_errorbars, 
+                   errorbar_width = errorbar_width,
                    linetype_labels = linetype_labels, 
                    linetypes = linetypes,
                    line_width = line_width,

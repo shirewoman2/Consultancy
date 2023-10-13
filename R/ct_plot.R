@@ -194,6 +194,18 @@
 #'   line at all) to 1 (completely opaque or black). If left as the default NA,
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
+#' @param connect_obs_points TRUE or FALSE (default) for whether to add
+#'   connecting lines between observed data points from the same individual
+#' @param obs_on_top TRUE (default) or FALSE for whether to show the observed
+#'   data on top of the simulated data. If FALSE, the simulated data will be on
+#'   top.
+#' @param include_errorbars TRUE or FALSE (default) for whether to include error
+#'   bars for observed data points. This ONLY applies when you have supplied
+#'   observed data from V22 or higher because those data files included a column
+#'   titled "SD/SE", which is what we'll use for determining the error bar
+#'   heights.
+#' @param errorbar_width width of error bars to use in hours (or, if you've used
+#'   some other time unit, in whatever units are in your data). Default is 0.5.
 #' @param showBLQ TRUE or FALSE (default) to display observed concentrations
 #'   that were clearly below the lower limit of quantitation, that is,
 #'   concentrations equal to 0 after time 0. The default (FALSE) removes these
@@ -318,8 +330,9 @@
 #'   or ".docx", the graph will be saved as a png file, but if you specify a
 #'   different graphical file extension, it will be saved as that file format.
 #'   Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
-#'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA means the file will not
-#'   be saved to disk.
+#'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
+#'   or periods in the file name. Leaving this as NA means the file will not be
+#'   saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
@@ -381,6 +394,10 @@ ct_plot <- function(ct_dataframe = NA,
                     obs_size = NA,
                     obs_fill_trans = NA,
                     obs_line_trans = NA,
+                    connect_obs_points = FALSE,
+                    obs_on_top = TRUE,
+                    include_errorbars = FALSE, 
+                    errorbar_width = 0.5,
                     showBLQ = FALSE, 
                     line_type = NA,
                     line_transparency = NA,
@@ -731,8 +748,9 @@ ct_plot <- function(ct_dataframe = NA,
       Data <- 
          Data %>%
          mutate(Compound = ifelse(CompoundIsEffector, MyEffector, Compound),
-                Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor),
-                Group = paste(Compound, Inhibitor, Trial)) %>%
+                Inhibitor = ifelse(Inhibitor != "none", MyEffector, Inhibitor)) %>% 
+         unite(col = Group, remove = FALSE, 
+               any_of(c("Compound", "Inhibitor", "Trial", "Individual"))) %>%
          select(-CompoundIsEffector)
    }
    
@@ -782,7 +800,7 @@ ct_plot <- function(ct_dataframe = NA,
                    Trial %in% c("mean", "geomean", "per5", "per95", 
                                 "per10", "per90", "median") == FALSE) %>%
          group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
-                                  "Simulated", "Trial", "Group",
+                                  "Simulated", "Trial", "Individual", "Group",
                                   "Time", "Time_orig",
                                   "Time_units", "Conc_units")))) %>%
          summarize(Conc = switch(mean_type, 
@@ -790,27 +808,30 @@ ct_plot <- function(ct_dataframe = NA,
                                  "geometric" = gm_mean(Conc, na.rm = T),
                                  "median" = median(Conc, na.rm = T))) %>%
          ungroup() %>% 
-         mutate(Group = paste(Compound, Inhibitor, Trial))
+         unite(col = Group, remove = FALSE, 
+               any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
    )
    
    sim_data_mean <- Data %>%
       filter(Simulated == TRUE  &
                 Trial %in% c(MyMeanType, "per5", "per95")) %>%
-      mutate(Group = paste(Compound, Inhibitor, Trial))
+      unite(col = Group, remove = FALSE, 
+            any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
    
    # Setting up observed data per user input -------------------------------
    
-   obs_data <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
-      mutate(Group = paste(Compound, Inhibitor, Trial))
+   obs_dataframe <- Data %>% filter(Simulated == FALSE) %>% droplevels() %>% 
+      unite(col = Group, remove = FALSE,  
+            any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
    
    # If the user set obs_color to "none", then they must not want to include
    # observed data in the graph. Set nrow to 0 in that case.
    if(complete.cases(obs_color) && obs_color == "none"){
-      obs_data <- obs_data %>% filter(Trial == "mango") # hack to keep all the column names just in case
+      obs_dataframe <- obs_dataframe %>% filter(Trial == "mango") # hack to keep all the column names just in case
    }
    
    if(showBLQ == FALSE){
-      obs_data <- obs_data %>% 
+      obs_dataframe <- obs_dataframe %>% 
          mutate(Conc = ifelse(Conc <= 0 & Time > 0,
                               NA, Conc)) %>% 
          filter(complete.cases(Conc)) 
@@ -821,19 +842,20 @@ ct_plot <- function(ct_dataframe = NA,
    # user should probably be using figure_type = "trial means", and Hannah
    # would like user to get a warning about that.
    suppressMessages(
-      check <- obs_data %>% group_by(CompoundID, Inhibitor, Time) %>% 
+      check <- obs_dataframe %>% 
+         group_by(across(.cols = any_of(c("CompoundID", "Inhibitor", "Time")))) %>% 
          summarize(N = n())
    )
    
-   if(nrow(obs_data) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
+   if(nrow(obs_dataframe) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
       warning(paste0("You have requested a figure type of '", 
                      figure_type, 
                      "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.\n"),
               call. = FALSE)
    }
    
-   if(nrow(obs_data) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
-                                                                   "percentile ribbon", "ribbon")){
+   if(nrow(obs_dataframe) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
+                                                                        "percentile ribbon", "ribbon")){
       warning(paste0("You have requested a figure type of '", 
                      figure_type, 
                      "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.\n"),
@@ -845,15 +867,15 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Setting Y axis limits for both linear and semi-log plots
    Ylim_data <- switch(figure_type, 
-                       "trial means" = bind_rows(sim_data_trial, obs_data), 
-                       "percentiles" = bind_rows(sim_data_trial, sim_data_mean, obs_data), 
-                       "freddy" = bind_rows(sim_data_trial, sim_data_mean, obs_data),
-                       "percentile ribbon" = bind_rows(sim_data_trial, sim_data_mean, obs_data), 
+                       "trial means" = bind_rows(sim_data_trial, obs_dataframe), 
+                       "percentiles" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe), 
+                       "freddy" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe),
+                       "percentile ribbon" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe), 
                        "means only" = sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
    )
    
    if(nrow(Ylim_data) == 0){
-      Ylim_data <- bind_rows(sim_data_trial, obs_data, sim_data_mean)
+      Ylim_data <- bind_rows(sim_data_trial, obs_dataframe, sim_data_mean)
    }
    
    YStuff <- ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
@@ -969,6 +991,31 @@ ct_plot <- function(ct_dataframe = NA,
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
+   if(nrow(obs_dataframe) > 0 & obs_on_top == FALSE){
+      
+      MapObsData <- is.na(obs_color_user) & figure_type != "freddy"
+      
+      A <- addObsPoints(obs_dataframe = obs_dataframe, 
+                        A = A, 
+                        # Needed the argument AES for ct_plot_overlay, but
+                        # it's only ever going to be "linetype" for ct_plot.
+                        AES = "linetype", 
+                        obs_shape = obs_shape,
+                        obs_shape_user = obs_shape_user,
+                        obs_size = obs_size, 
+                        obs_color = obs_color,
+                        obs_color_user = obs_color_user,
+                        obs_line_trans = obs_line_trans,
+                        obs_line_trans_user = obs_line_trans_user,
+                        obs_fill_trans = obs_fill_trans,
+                        obs_fill_trans_user = obs_fill_trans_user,
+                        connect_obs_points = connect_obs_points,
+                        line_width = line_width,
+                        figure_type = figure_type,
+                        MapObsData = MapObsData, 
+                        LegCheck = TRUE)
+   }
+   
    
    ## figure_type: trial means -----------------------------------------------------------
    if(figure_type == "trial means"){
@@ -980,10 +1027,10 @@ ct_plot <- function(ct_dataframe = NA,
       
       A <- A +
          geom_line(alpha = AlphaToUse,
-                   lwd = ifelse(is.na(line_width), 1, line_width)) +
+                   linewidth = ifelse(is.na(line_width), 1, line_width)) +
          geom_line(data = sim_data_mean %>%
                       filter(Trial == MyMeanType),
-                   lwd = ifelse(is.na(line_width), 1, line_width))
+                   linewidth = ifelse(is.na(line_width), 1, line_width))
    }
    
    ## figure_type: percentiles ----------------------------------------------------------
@@ -995,10 +1042,10 @@ ct_plot <- function(ct_dataframe = NA,
       
       A <- A +
          geom_line(alpha = AlphaToUse,
-                   lwd = ifelse(is.na(line_width), 0.8, line_width)) +
+                   linewidth = ifelse(is.na(line_width), 0.8, line_width)) +
          geom_line(data = sim_data_mean %>%
                       filter(Trial == MyMeanType),
-                   lwd = ifelse(is.na(line_width), 1, line_width))
+                   linewidth = ifelse(is.na(line_width), 1, line_width))
       
    }
    
@@ -1011,7 +1058,7 @@ ct_plot <- function(ct_dataframe = NA,
       
       A <- A +
          geom_ribbon(alpha = AlphaToUse, color = NA) +
-         geom_line(lwd = ifelse(is.na(line_width), 1, line_width)) 
+         geom_line(linewidth = ifelse(is.na(line_width), 1, line_width)) 
       
    }
    
@@ -1032,11 +1079,11 @@ ct_plot <- function(ct_dataframe = NA,
          
          ## linear plot
          A <- A +
-            geom_line(lwd = ifelse(is.na(line_width), 0.5, line_width)) +
+            geom_line(linewidth = ifelse(is.na(line_width), 0.5, line_width)) +
             geom_line(data = sim_data_mean %>%
                          filter(Trial %in% c("per5", "per95")),
                       alpha = AlphaToUse, 
-                      lwd = ifelse(is.na(line_width), 0.5, line_width))
+                      linewidth = ifelse(is.na(line_width), 0.5, line_width))
          
       } else {
          # This is when there is no effector present or the graph is of the
@@ -1045,10 +1092,10 @@ ct_plot <- function(ct_dataframe = NA,
          ## linear plot
          A <- A +
             geom_line(alpha = AlphaToUse, 
-                      lwd = ifelse(is.na(line_width), 0.5, line_width)) +
+                      linewidth = ifelse(is.na(line_width), 0.5, line_width)) +
             geom_line(data = sim_data_mean %>%
                          filter(Trial == MyMeanType),
-                      lwd = ifelse(is.na(line_width), 0.5, line_width)) +
+                      linewidth = ifelse(is.na(line_width), 0.5, line_width)) +
             geom_line(data = sim_data_mean %>%
                          filter(Trial %in% c("per5", "per95")),
                       linetype = line_type[2],
@@ -1060,7 +1107,7 @@ ct_plot <- function(ct_dataframe = NA,
    if(figure_type == "means only"){
       
       A <- A +
-         geom_line(lwd = ifelse(is.na(line_width), 1, line_width))
+         geom_line(linewidth = ifelse(is.na(line_width), 1, line_width))
    }
    
    # Setting colors, linetypes, etc. -------------------------------------
@@ -1081,13 +1128,13 @@ ct_plot <- function(ct_dataframe = NA,
       scale_color_manual(values = line_color) +
       scale_fill_manual(values = line_color)
    
-   # Observed data ---------------------------------------------------------
+   # Observed data on top ------------------------------------------------------
    
-   if(nrow(obs_data) > 0){
+   if(nrow(obs_dataframe) > 0 & obs_on_top){
       
       MapObsData <- is.na(obs_color_user) & figure_type != "freddy"
       
-      A <- addObsPoints(obs_data = obs_data, 
+      A <- addObsPoints(obs_dataframe = obs_dataframe, 
                         A = A, 
                         # Needed the argument AES for ct_plot_overlay, but
                         # it's only ever going to be "linetype" for ct_plot.
@@ -1101,6 +1148,8 @@ ct_plot <- function(ct_dataframe = NA,
                         obs_line_trans_user = obs_line_trans_user,
                         obs_fill_trans = obs_fill_trans,
                         obs_fill_trans_user = obs_fill_trans_user,
+                        connect_obs_points = connect_obs_points,
+                        line_width = line_width,
                         figure_type = figure_type,
                         MapObsData = MapObsData, 
                         LegCheck = TRUE)
@@ -1109,8 +1158,20 @@ ct_plot <- function(ct_dataframe = NA,
    # Applying aesthetics ------------------------------------------------
    ## Making linear graph -------------------------------------------------
    
-   if(nrow(obs_data) == 0){
+   if(nrow(obs_dataframe) == 0){
       A <- A + guides(shape = "none")
+   } else {
+      if("SD_SE" %in% names(obs_dataframe) & include_errorbars){
+         if(figure_type == "percentile ribbon"){
+            A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
+                                   aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+                                   width = errorbar_width)
+         } else {
+            A <- A + geom_errorbar(data = obs_dataframe, 
+                                   aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+                                   width = errorbar_width)
+         }
+      }
    }
    
    if(str_detect(figure_type, "ribbon")){
