@@ -286,11 +286,21 @@ extractConcTime <- function(sim_data_file,
       Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
    } 
    
-   if(is.null(Deets$PopRepSim) == FALSE && Deets$PopRepSim == "Yes"){
-      warning(paste0("The simulator file supplied, `", 
-                     sim_data_file, 
-                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
-              call. = FALSE)
+   if(is.null(Deets$PopRepSim) == FALSE && Deets$PopRepSim == "Yes" &
+      "aggregate" %in% returnAggregateOrIndiv){
+      
+      if(all(returnAggregateOrIndiv == "aggregate")){
+         warning(paste0("The simulator file supplied, `", 
+                        sim_data_file, 
+                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. Since you requested only aggregate data, there are no data to return.\n"), 
+                 call. = FALSE)
+         return(data.frame())
+      } else {
+         warning(paste0("The simulator file supplied, `", 
+                        sim_data_file, 
+                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
+                 call. = FALSE)
+      }
    }
    
    # Noting whether this was animal data
@@ -495,7 +505,7 @@ extractConcTime <- function(sim_data_file,
       
    }
    
-   if(length(Sheet) == 0 | is.na(Sheet)){
+   if(length(Sheet) == 0 | is.na(Sheet) | Sheet %in% SheetNames == FALSE){
       warning(paste0("You requested data for ", str_comma(compoundToExtract),
                      " in ", tissue,
                      " from the file `",
@@ -535,7 +545,7 @@ extractConcTime <- function(sim_data_file,
       # all the "Trial" rows removes all the rows with the compound name.
       # Adjusting for that. FIXME - Will this work for ADAM tissues???
       if(any(compoundToExtract %in% c("primary metabolite 1", "primary metabolite 2", 
-                                      "secondary metabolite", "inhibitor 2"))){
+                                      "secondary metabolite"))){
          CmpdMatches1 <- rep(AllCompoundsPresent[[compoundToExtract]], length(CmpdMatches1))
       }
       
@@ -1959,7 +1969,7 @@ extractConcTime <- function(sim_data_file,
    
    Data <- list()
    
-   if("aggregate" %in% returnAggregateOrIndiv){
+   if("aggregate" %in% returnAggregateOrIndiv & Deets$PopRepSim == "No"){
       Data[["agg"]] <- bind_rows(sim_data_mean) %>%
          mutate(Simulated = TRUE, 
                 Species = ifelse(is.na(Deets$Species), 
