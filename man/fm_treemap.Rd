@@ -9,6 +9,10 @@ fm_treemap(
   fm_dataframe,
   color_set = "default",
   label_fm_cutoff = 0.05,
+  legend_nrow = NA,
+  biggest_box_position = "top left",
+  graph_title = NA,
+  graph_title_size = 14,
   save_graph = NA,
   fig_height = 3,
   fig_width = 4
@@ -23,22 +27,35 @@ metaboilized}}}
 matches Simcyp colors in PowerPoint presentations and is rather nice, "set
 1" for Brewer set 1, "set 2" for Brewer set 2 (colorblind friendly),
 "rainbow", which works well when there are a LOT of fm's to visualize,
-"blue-green", which makes a pretty gradient of blues and greens, or
-"viridis", which is from the eponymous package by Simon Garnier and ranges
-colors from purple to blue to green to yellow in a manner that is
-"printer-friendly, perceptually uniform and easy to read by those with
-colorblindness", according to the package author.}
+"blue-green", which makes a pretty gradient of blues and greens, "blues",
+which makes a graident of blues, or "viridis", which is from the eponymous
+package by Simon Garnier and ranges colors from purple to blue to green to
+yellow in a manner that is "printer-friendly, perceptually uniform and easy
+to read by those with colorblindness", according to the package author.}
 
 \item{label_fm_cutoff}{cutoff to use for having a label show up underneath
 the graph; default is 0.05. You may want to play around with this a bit in
 the final graphic file because how this graph looks is extremely dependent
 on its dimensions.}
 
+\item{legend_nrow}{optionally specify the number of rows to use for the
+legend. If left as NA, there will be 1 row.}
+
+\item{biggest_box_position}{where to put the biggest box. Defaults to "top
+left", and other options are "bottom left", "bottom right", and "top
+right".}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph}
+
+\item{graph_title_size}{the font size for the graph title if it's included}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you do not designate a
 file extension, it will be saved as a png file, but if you specify a
 different file extension, it will be saved as that file format. Acceptable
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Do not include any slashes, dollar signs, or periods in the file name.
 Leaving this as NA means the file will not be automatically saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 3}

@@ -207,7 +207,8 @@ default is 14. This also determines the font size of the graph labels.}
 in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
 will be saved as a png file, but if you specify a different file extension,
 it will be saved as that file format. Acceptable extensions are "eps",
-"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA
+"ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
+slashes, dollar signs, or periods in the file name. Leaving this as NA
 means the file will not be automatically saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 5}
@@ -237,12 +238,13 @@ maximal induction is Emax and \emph{not} Indmax, the parameter used in the
 Simcyp Simulator. Note that \strong{Indmax = Emax + 1}.} \item{If you're
 familiar with Howie's R script for fitting induction data
 ("Induction_fit_script_ver2.r"), one way in which this function differs is
-that no upper or lower bounds for parameter estimates are in use. This means
-that, if sufficient data to describe the curve do not exist, the function
-will fail to deliver any fitted parameters, which is meant to be a benefit
-but could be an annoyance depending on your perspective. Because this does
-not include those boundaries, you may get different results between this
-function and Howie's script.}} For detailed
+that the default setting includes no upper or lower bounds for parameter
+estimates. This means that, if sufficient data to describe the curve do not 
+exist, the function will fail to deliver any fitted parameters, which is 
+meant to be a benefit but could be an annoyance depending on your 
+perspective. If you would like this function to behave more like Howie's 
+script, please look at the help file for the arguments \code{bounds_Emax}, 
+\code{bounds_EC50}, and \code{bounds_slope}.}} For detailed
 instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
 R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
 instructions/Fitting induction data/Fitting-induction-data.docx". (Sorry, we
