@@ -441,8 +441,8 @@ ct_plot_1stlast <- function(ct_dataframe,
    }
    
    # Check whether patchwork is loaded
-   if("package:tidyverse" %in% search() == FALSE){
-      stop("This particular function requires the package patchwork to be loaded, and it doesn't appear to be loaded yet. Please run `library(patchwork)` and then try again.", 
+   if("package:patchwork" %in% search() == FALSE){
+      stop("This particular function requires the package `patchwork` to be loaded, and it doesn't appear to be loaded yet. Please run `library(patchwork)` and then try again.", 
            call. = FALSE)
    }
    
@@ -463,6 +463,11 @@ ct_plot_1stlast <- function(ct_dataframe,
       warning("You must supply 2 values (beginning and end) for the last dose for time_range_1st or leave this as NA. We're settin this to NA.\n", 
               call. = FALSE)
       time_range_last <- NA
+   }
+   
+   if(all(is.na(ct_dataframe$DoseNum))){
+      stop("All the dose numbers in your data are NA, and we need to know which time ranges were the 1st and which were the last doses, so we cannot make a graph with the current data. Please check your input for ct_dataframe.\n", 
+           call. = FALSE)
    }
    
    # Main body of function -------------------------------------------------
@@ -541,7 +546,7 @@ ct_plot_1stlast <- function(ct_dataframe,
    }
    
    A <- ct_subfun(
-      dosenum = ifelse(any(complete.cases(time_range_1st)), 
+      dosenumber = ifelse(any(complete.cases(time_range_1st)), 
                        NA, 1), 
       firstorlast = "1st",
       timerange = switch(as.character(any(complete.cases(time_range_1st))), 
@@ -551,7 +556,7 @@ ct_plot_1stlast <- function(ct_dataframe,
    
    suppressMessages(
       B <- ct_subfun(
-         dosenum = ifelse(any(complete.cases(time_range_last)), 
+         dosenumber = ifelse(any(complete.cases(time_range_last)), 
                           NA, max(ct_dataframe$DoseNum, na.rm = T)), 
          firstorlast = "last",
          timerange = switch(as.character(any(complete.cases(time_range_last))), 

@@ -223,12 +223,9 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # Since StartHr values are calculated from StartDayTime, those values must be
-   # included in exp_details to extract. If the user wanted "Input Sheet"
-   # details, we can actually calculate this without reading the summary tab,
-   # which takes more time, so omitting in that instance.
+   # included in exp_details to extract. 
    if(length(setdiff(paste0("StartHr", c("_sub", "_inhib", "_inhib2")), 
-                     exp_details)) > 0 &
-      exp_details_input[1] != "input sheet"){
+                     exp_details)) > 0){
       exp_details <- unique(c(exp_details, 
                               paste0("StartDayTime", c("_sub", "_inhib", "_inhib2")),
                               "SimStartDayTime"))
@@ -248,6 +245,12 @@ extractExpDetails <- function(sim_data_file,
       stop("You must enter at least one study detail to extract.",
            call. = FALSE)
    }
+   
+   # There are some details that we will just ALWAYS need to include b/c so many
+   # downstream functions rely on them. Making sure that these are included. 
+   exp_details <- unique(exp_details, 
+                         c(AllCompounds$DetailNames, 
+                           "StartHr_sub", "StartHr_inhib", "StartHr_inhib2"))
    
    Out <- list()
    
