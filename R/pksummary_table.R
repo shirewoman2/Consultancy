@@ -767,6 +767,18 @@ pksummary_table <- function(sim_data_file = NA,
       
       # And second, the scenario where user has not supplied a filled-out
       # report form.
+      
+      NecessaryDetails <- 
+         c("Units_AUC", "Units_Cmax", 
+           "Units_CL", "Units_tmax",
+           AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract], 
+           paste0("Regimen", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
+           paste0("Dose", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
+           paste0("DoseInt", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
+           paste0("NumDoses", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
+           paste0("MW", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
+           "PopRepSim")
+      
       MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
       GMR_mean_type <- MeanType
       # NB re. GMR_mean_type: I originally had this set to "geometric" all the
@@ -785,7 +797,7 @@ pksummary_table <- function(sim_data_file = NA,
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                    exp_details = "Input Sheet")
+                                    exp_details = NecessaryDetails)
       } else {
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 
@@ -796,10 +808,16 @@ pksummary_table <- function(sim_data_file = NA,
             
             if(nrow(Deets) == 0){
                Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                          exp_details = "Input Sheet")
+                                          exp_details = NecessaryDetails)
             }
          } else {
             Deets <- as.data.frame(Deets)
+         }
+         
+         # Deets should now be a data.frame. Checking that we have everything we need.
+         if(any(NecessaryDetails %in% names(Deets) == FALSE)){
+            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                       exp_details = NecessaryDetails)
          }
       }
       
