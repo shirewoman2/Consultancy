@@ -4,7 +4,9 @@
 #' \code{change_xml_path} changes the path of XML files that are included in
 #' simulations, which can be useful if one person originally created the
 #' workspace and a separate person then wants to run the files since the XML
-#' file paths on SharePoint include the users's name. UNDER CONSTRUCTION.
+#' file paths on SharePoint include the users's name. Please note that this
+#' changes the \strong{file path} and not the \strong{file name}. UNDER
+#' CONSTRUCTION.
 #'
 #' @param sim_workspace_files the set of workspace files to modify; must end in
 #'   ".wksz" if you're specifying individual files. Leave as NA to change all
@@ -113,24 +115,24 @@ change_xml_path <- function(sim_workspace_files = NA,
       
       ## observed data path
       Xbackslash <- XML::xmlValue(RootNode[["GraphsData"]][["ObservedDataPath"]])
-      Pattern <- switch(as.character(new_xml_path == "only change user"), 
-                        "TRUE" = gsub("Users\\\\|\\\\Certara", "",
-                                      str_extract(Xbackslash, pattern = "Users.*Certara")), 
-                        "FALSE" = sub(new_xml_path, "", new_xml_path)) # FIX THIS
+      Pattern <- ifelse(new_xml_path == "only change user", 
+                        gsub("Users\\\\|\\\\Certara", "",
+                             str_extract(Xbackslash, pattern = "Users.*Certara")), 
+                        basename(Xbackslash))
       
-      ReplaceWith <- switch(as.character(new_xml_path == "only change user"), 
-                            "TRUE" = Sys.info()["user"], 
-                            "FALSE" = new_xml_path) # FIX THIS
+      Replacement <- ifelse(new_xml_path == "only change user", 
+                            sub(Pattern, Sys.info()["user"], Xbackslash), 
+                            paste0(new_xml_path, Pattern))
       
       if(XML::xmlValue(RootNode[["GraphsData"]][["UseObservedData"]]) == "true"){
          XML::xmlValue(RootNode[["GraphsData"]][["ObservedDataPath"]]) <- 
-            sub(Pattern, ReplaceWith, Xbackslash)
+            Replacement
       }
       
       if(XML::xmlValue(RootNode[["SimulationData"]][["FixedIndividualTrialDesign"]]) == 
          "true"){
          XML::xmlValue(RootNode[["SimulationData"]][["FixedIndividualDataPath"]]) <- 
-            sub(Pattern, ReplaceWith, Xbackslash)
+            Replacement
       }
       
       if(save_workspaces){
