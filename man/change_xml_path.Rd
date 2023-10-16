@@ -59,7 +59,9 @@ saves workspace files or returns an R object of workspaces
 \code{change_xml_path} changes the path of XML files that are included in
 simulations, which can be useful if one person originally created the
 workspace and a separate person then wants to run the files since the XML
-file paths on SharePoint include the users's name. UNDER CONSTRUCTION.
+file paths on SharePoint include the users's name. Please note that this
+changes the \strong{file path} and not the \strong{file name}. UNDER
+CONSTRUCTION.
 }
 \examples{
 # None yet
