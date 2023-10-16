@@ -2032,7 +2032,7 @@ extractConcTime <- function(sim_data_file,
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
                       "Species", "Tissue", "Individual", "Trial",
-                      "Simulated", "Time", "Conc",
+                      "Simulated", "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
                       "DoseInt", "File", "ObsFile")))
    
