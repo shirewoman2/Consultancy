@@ -463,7 +463,7 @@ ct_plot <- function(ct_dataframe = NA,
                                               face = "italic")) +
             annotate(geom = "text", x = 1, y = 1, size = 8,
                      color = "red", 
-                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether a perpetrator was present.\nWe cannot make your graph.")
       )
    }
    
@@ -799,8 +799,8 @@ ct_plot <- function(ct_dataframe = NA,
          filter(Simulated == TRUE &
                    Trial %in% c("mean", "geomean", "per5", "per95", 
                                 "per10", "per90", "median") == FALSE) %>%
-         group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
-                                  "Simulated", "Trial", "Group",
+         group_by(across(any_of(c("Compound", "CompoundID", "Tissue", "Inhibitor",
+                                  "Simulated", "Trial", 
                                   "Time", "Time_orig",
                                   "Time_units", "Conc_units")))) %>%
          summarize(Conc = switch(mean_type, 
@@ -809,7 +809,7 @@ ct_plot <- function(ct_dataframe = NA,
                                  "median" = median(Conc, na.rm = T))) %>%
          ungroup() %>% 
          unite(col = Group, remove = FALSE, 
-               any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
+               any_of(c("Compound", "Inhibitor", "Trial", "Simulated")))
    )
    
    sim_data_mean <- Data %>%

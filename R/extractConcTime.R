@@ -1793,28 +1793,16 @@ extractConcTime <- function(sim_data_file,
                      # obs data in that situation.
                      rm(obs_data)
                   } else {
-                     if(tissue == "plasma" & compoundToExtract == "substrate" &
-                        all(AllCompoundsID == "substrate")){
-                        warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of an effector. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
-                                call. = FALSE)
-                     } else {
-                        warning("WARNING: This function is extracting observed data from simulator output, ",
-                                "which does not contain information about the observed compound ID or ",
-                                "whether the observed compound was in the presence of an effector. Since ",
-                                "you are extracting something other than the substrate and/or extracting from a ",
-                                "tissue other than plasma, we do not have enough information to assign the compoundID and it will be ",
-                                "listed as `UNKNOWN` in your data. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
-                                call. = FALSE)
-                     }
+                     warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
+                             call. = FALSE)
                      
-                     # If subject names include special characters s/a
-                     # "_", that messes up the regex below. Dealing with
-                     # that here. Also, note that we're ignoring any
-                     # numbers associated w/DV b/c simulator output file
-                     # doesn't include any information about that.
-                     # Everything will be assumed to be for the same
-                     # compound and tissue as the simulated data and will
-                     # be assumed to NOT have an inhibitor present.
+                     # If subject names include special characters s/a "_", that
+                     # messes up the regex below. Dealing with that here. Also,
+                     # note that we're ignoring any numbers associated w/DV b/c
+                     # simulator output file doesn't include any information
+                     # about that. Everything will be assumed to be for the same
+                     # compound and tissue as the simulated data and will be
+                     # assumed to NOT have an inhibitor present.
                      NewNamesObs <- sim_data_xl[StartRow_obs:nrow(sim_data_xl), 1] %>% 
                         rename("OrigName" = 1) %>% 
                         mutate(Individual = 
