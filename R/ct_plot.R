@@ -800,7 +800,7 @@ ct_plot <- function(ct_dataframe = NA,
                    Trial %in% c("mean", "geomean", "per5", "per95", 
                                 "per10", "per90", "median") == FALSE) %>%
          group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
-                                  "Simulated", "Trial", "Individual", "Group",
+                                  "Simulated", "Trial", "Group",
                                   "Time", "Time_orig",
                                   "Time_units", "Conc_units")))) %>%
          summarize(Conc = switch(mean_type, 
@@ -816,7 +816,7 @@ ct_plot <- function(ct_dataframe = NA,
       filter(Simulated == TRUE  &
                 Trial %in% c(MyMeanType, "per5", "per95")) %>%
       unite(col = Group, remove = FALSE, 
-            any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
+            any_of(c("Compound", "Inhibitor", "Trial")))
    
    # Setting up observed data per user input -------------------------------
    
