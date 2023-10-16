@@ -130,6 +130,11 @@ match_obs_to_sim <- function(ct_dataframe,
       ObsAssign <- obs_to_sim_assignment
    } 
    
+   # Adding ".xlsx" to any files that don't have it already since people often
+   # omit the extension or use the wrong one.
+   ObsAssign$ObsFile <- paste0(sub("\\..*", "", ObsAssign$ObsFile), ".xlsx")
+   ObsAssign$File <- paste0(sub("\\..*", "", ObsAssign$File), ".xlsx")
+   
    # Making sure we have all the info we need.
    if(all(ObsAssign$File %in% existing_exp_details$File) == FALSE){
       suppressMessages(
