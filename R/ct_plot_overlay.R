@@ -799,7 +799,8 @@ call. = FALSE)
    # If the linetype labels don't match the files available, give a warning.
    if(as_label(linetype_column) != "<empty>" && 
       any(complete.cases(linetype_labels)) && 
-      all(names(linetype_labels) %in% sort(unique(ct_dataframe[, as_label(linetype_column)]))) == FALSE){
+      all(names(linetype_labels) %in% (unique(ct_dataframe[, as_label(linetype_column)]) %>%
+                                       pull(1) %>% as.character()) == FALSE)){
       BadLabs <- setdiff(names(linetype_labels), unique(ct_dataframe[, as_label(linetype_column)]))
       
       warning(paste0("The labels you supplied for `linetype_labels` are not all present in the column ", 
@@ -812,7 +813,10 @@ call. = FALSE)
       WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
                              gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
       linetype_labels[names(linetype_labels) %in% BadLabs] <- WarningLabel
-      NewNames <- setdiff(unique(ct_dataframe[, as_label(linetype_column)]), names(linetype_labels))
+      NewNames <- setdiff(
+         unique(ct_dataframe[, as_label(linetype_column)] %>% pull(1) %>% 
+                   as.character()), 
+         names(linetype_labels))
       NewNames <- NewNames[complete.cases(NewNames)]
       names(linetype_labels)[which(names(linetype_labels) %in% BadLabs)] <- NewNames
       rm(NewNames, BadLabs, WarningLabel)

@@ -35,12 +35,12 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
   design information}
 
-  \item{"workspace"}{Extract an extremely limited set of details directly
+  \item{"workspace"}{Extract a limited set of details directly
   from the Simcyp Simulator workspace files. The set of possible details may
   be viewed by entering \code{view(AllWorkspaceDetails)} in the console. This
   \emph{only} works if the workspace file name perfectly matches the Excel
   results file name and is located in the same folder. Otherwise, this step
-  in the data extraction will be skipped. UNDER CONSTRUCTION.}
+  in the data extraction will be skipped.}
 
   \item{"all"}{Extract all possible parameters}
 
@@ -84,8 +84,9 @@ organize this output to find what you need.}
 
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-csv file.}
+details.xlsx".  Do not include any slashes, dollar signs, or periods in the
+file name. If you leave off the file extension, it will be saved as a csv
+file.}
 }
 \value{
 Returns a named list of the experimental details
