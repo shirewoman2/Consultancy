@@ -9,11 +9,11 @@
 #' familiar with Howie's R script for fitting induction data
 #' ("Induction_fit_script_ver2.r"), one way in which this function differs is
 #' that the default setting includes no upper or lower bounds for parameter
-#' estimates. This means that, if sufficient data to describe the curve do not 
-#' exist, the function will fail to deliver any fitted parameters, which is 
-#' meant to be a benefit but could be an annoyance depending on your 
-#' perspective. If you would like this function to behave more like Howie's 
-#' script, please look at the help file for the arguments \code{bounds_Emax}, 
+#' estimates. This means that, if sufficient data to describe the curve do not
+#' exist, the function will fail to deliver any fitted parameters, which is
+#' meant to be a benefit but could be an annoyance depending on your
+#' perspective. If you would like this function to behave more like Howie's
+#' script, please look at the help file for the arguments \code{bounds_Emax},
 #' \code{bounds_EC50}, and \code{bounds_slope}.}} For detailed
 #' instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
 #' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
@@ -74,24 +74,30 @@
 #'   numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
 #'   "1/y" or "1/y^2" (default). Be careful that you don't have any infinite
 #'   values or this will fail!
-#' @param bounds_Emax upper and lower boundaries for fitting Indmax or Emax,
+#' @param bounds_Emax lower and upper boundaries for fitting Indmax or Emax,
 #'   specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
 #'   boundaries. If you only want to specify an upper limit, set the first
 #'   number to \code{-Inf} and the second number to that value. If you only want
 #'   to specify a lower limit, set the first number to that value and the second
 #'   number to \code{Inf}.
-#' @param bounds_EC50 upper and lower boundaries for fitting IndC50 or EC50,
+#' @param bounds_EC50 lower and upper boundaries for fitting IndC50 or EC50,
 #'   specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
 #'   boundaries. If you only want to specify an upper limit, set the first
 #'   number to \code{-Inf} and the second number to that value. If you only want
 #'   to specify a lower limit, set the first number to that value and the second
 #'   number to \code{Inf}.
-#' @param bounds_slope upper and lower boundaries for fitting the slope,
+#' @param bounds_slope lower and upper boundaries for fitting the slope,
 #'   specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
 #'   boundaries. If you only want to specify an upper limit, set the first
 #'   number to \code{-Inf} and the second number to that value. If you only want
 #'   to specify a lower limit, set the first number to that value and the second
 #'   number to \code{Inf}.
+#' @param bounds_gamma lower and upper boundaries for fitting the Hill
+#'   coefficient gamma, specified as a vector of numbers, e.g., \code{c(1, 20)};
+#'   default is no boundaries. If you only want to specify an upper limit, set
+#'   the first number to \code{-Inf} and the second number to that value. If you
+#'   only want to specify a lower limit, set the first number to that value and
+#'   the second number to \code{Inf}.
 #' @param omit An index of which, if any, samples to omit from regression(s).
 #'   These samples will be depicted as open circles in the graph but will not be
 #'   included in the regression. An example of acceptable input where, say, you
@@ -167,6 +173,11 @@
 #'   want to have nicely rounded and formatted output in a Word file but you
 #'   \emph{also} want to use the results from \code{calc_PK_ratios} to make
 #'   forest plots, which requires numbers that are \emph{not} rounded.}}
+#' @param save_output optionally save the output by supplying a file name in
+#'   quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
+#'   file will save only the fitted parameters. However, if you would like a
+#'   Word file with a) the equations used, b) the fitted parameters, and c) the
+#'   graphs, end this file name with ".docx" instead.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -176,11 +187,6 @@
 #'   means the file will not be automatically saved to disk.
 #' @param fig_height figure height in inches; default is 5
 #' @param fig_width figure width in inches; default is 5.5
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
-#'   file will save only the fitted parameters. However, if you would like a
-#'   Word file with a) the equations used, b) the fitted parameters, and c) the
-#'   graphs, end this file name with ".docx" instead.
 #'
 #' @return Returns a list of \describe{ \item{Fit}{the fitted parameters}
 #'   \item{Fit_means}{the mean fitted parameters for all donors} \item{Graph}{a
@@ -188,11 +194,9 @@
 #'   lines} \item{Curve}{a data.frame of numeric data used to graph the fitted
 #'   parameters in case you'd like to plot the fitted parameters in some other
 #'   way}}
-#' @import tidyverse
-#' @import rlang
 #' @export
 #' @examples
-#' data(IndData)
+#' # IndData is a data.frame of example induction data included with the package.
 #'
 #' inductFit(IndData, model = "Emax")$Graph
 #' inductFit(IndData %>% rename(Conc_uM = Concentration_uM),
@@ -229,6 +233,7 @@ inductFit <- function(DF,
                       bounds_Emax = NA,
                       bounds_EC50 = NA,
                       bounds_slope = NA,
+                      bounds_gamma = NA,
                       omit = NA,
                       color_set = "default",
                       y_axis_limits = NA,
@@ -253,7 +258,7 @@ inductFit <- function(DF,
    model <- switch(tolower(model), 
                    "emax" = "Emax",
                    "emaxslope" = "EmaxSlope", 
-                   "slope" = "slope", 
+                   "slope" = "Slope", 
                    "sig3param" = "Sig3Param", 
                    "all" = "all")
    
@@ -300,7 +305,14 @@ inductFit <- function(DF,
       }
    }
    
-   if(any(complete.cases(c(bounds_Emax, bounds_EC50, bounds_slope)))){
+   if(any(complete.cases(bounds_gamma))){
+      if(length(bounds_gamma) == 1){
+         warning("You have specified only one value for the boundaries for fitting the Hill coefficient gamma, and it requires two. We will not place any boundaries on the fit for gamma.")
+         bounds_gamma <- NA
+      }
+   }
+   
+   if(any(complete.cases(c(bounds_Emax, bounds_EC50, bounds_slope, bounds_gamma)))){
       Bounds <- TRUE
       if(any(is.na(bounds_Emax))){
          bounds_Emax <- c(-Inf, Inf)
@@ -312,6 +324,10 @@ inductFit <- function(DF,
       
       if(any(is.na(bounds_slope))){
          bounds_slope <- c(-Inf, Inf)
+      }
+      
+      if(any(is.na(bounds_gamma))){
+         bounds_gamma <- c(-Inf, Inf)
       }
       
    } else {
@@ -370,12 +386,8 @@ inductFit <- function(DF,
    # Making prettier facet labels
    ModelFacet <- c(Emax = "Emax model",
                    EmaxSlope = "Emax slope model",
-                   slope = "slope model",
+                   Slope = "slope model",
                    Sig3Param = "sigmoidal 3-parameter model")
-   
-   # Setting better colors for graphs than the weird default
-   scale_colour_discrete <- function(...) scale_colour_brewer(..., palette="Set1")
-   scale_fill_discrete <- function(...) scale_fill_brewer(... , palette="Set1")
    
    # Changing the y axis label to fit activity or mRNA
    Ylab <- switch(measurement,
@@ -386,14 +398,14 @@ inductFit <- function(DF,
    StartVals <- switch(model,
                        EmaxSlope = list(Emax = 4, # max(DF$Concentration_uM, na.rm = T), <-- not sure why this doesn't work, but it doesn't. Fit won't converge.
                                         EC50 = 5, # max(DF$Concentration_uM, na.rm = T)*2/3,
-                                        slope = 1),
+                                        Gamma = 1),
                        Emax = list(Emax = 4,
                                    EC50 = 5),
-                       slope = list(slope = 1),
+                       Slope = list(slope = 1),
                        Sig3Param = list(Indmax = 4,
                                         IndC50 = 5,
-                                        slope = 1),
-                       all = list(Emax = 4, EC50 = 5, slope = 1,
+                                        Gamma = 1),
+                       all = list(Emax = 4, EC50 = 5, slope = 1, Gamma = 1,
                                   Indmax = 4, IndC50 = 5))
    
    
@@ -439,18 +451,18 @@ inductFit <- function(DF,
             mutate(Model = "EmaxSlope",
                    FoldInduction = 
                       1 + (indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "Emax"] *
-                              Concentration_uM^indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "slope"]) /
+                              Concentration_uM^indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "Gamma"]) /
                       (indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "EC50"] ^
-                          indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "slope"] +
-                          Concentration_uM^indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "slope"]))
+                          indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "Gamma"] +
+                          Concentration_uM^indfit[["EmaxSlope"]]$estimate[indfit[["EmaxSlope"]]$term == "Gamma"]))
       }
       
-      if(any(c("all", "slope") %in% model) & 
-         any(c("all", "slope") %in% names(indfit))){
-         MyCurves[["slope"]] <- Curve %>%
-            mutate(Model = "slope", 
+      if(any(c("all", "Slope") %in% model) & 
+         any(c("all", "Slope") %in% names(indfit))){
+         MyCurves[["Slope"]] <- Curve %>%
+            mutate(Model = "Slope", 
                    FoldInduction = 
-                      1 + Concentration_uM * indfit[["slope"]]$estimate[indfit[["slope"]]$term == "slope"])
+                      1 + Concentration_uM * indfit[["Slope"]]$estimate[indfit[["Slope"]]$term == "slope"])
       }
       
       if(any(c("all", "Sig3Param") %in% model) & 
@@ -460,7 +472,7 @@ inductFit <- function(DF,
                    FoldInduction = 
                       indfit[["Sig3Param"]]$estimate[indfit[["Sig3Param"]]$term == "Indmax"] /
                       (1+exp(-(Concentration_uM-indfit[["Sig3Param"]]$estimate[indfit[["Sig3Param"]]$term == "IndC50"]) /
-                                indfit[["Sig3Param"]]$estimate[indfit[["Sig3Param"]]$term == "slope"])))
+                                indfit[["Sig3Param"]]$estimate[indfit[["Sig3Param"]]$term == "Gamma"])))
       }
       
       MyCurves <- bind_rows(MyCurves)  %>%
@@ -471,8 +483,79 @@ inductFit <- function(DF,
       
    }
    
+   # defining individual subfunctions for fitting induction models -------------
    
-   # defining subfunction for fitting to induction models -----------------
+   Emax_fun <- function(indDF){
+      tryCatch(
+         nls(FoldInduction ~ 1+(Emax*Concentration_uM)/(EC50+Concentration_uM),
+             data = indDF %>% filter(Omit == FALSE),
+             start = StartVals[c("Emax", "EC50")], 
+             algorithm = ifelse(Bounds, "port", "default"),
+             lower = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_Emax[1], bounds_EC50[1]),
+                            "FALSE" = -Inf),
+             upper = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_Emax[2], bounds_EC50[2]),
+                            "FALSE" = Inf),
+             weights = indDF$Weights[indDF$Omit == FALSE]),
+         error = function(x){data.frame(term = c("Emax", "EC50"),
+                                        estimate = NA)})
+   }
+   
+   EmaxSlope_fun <- function(indDF){
+      tryCatch(
+         nls(FoldInduction ~ 1+(Emax*Concentration_uM^Gamma) /
+                (EC50^Gamma+Concentration_uM^Gamma),
+             data = indDF %>% filter(Omit == FALSE),
+             start = StartVals[c("Emax", "EC50", "Gamma")],
+             algorithm = ifelse(Bounds, "port", "default"), 
+             lower = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_Emax[1], bounds_EC50[1], bounds_gamma[1]),
+                            "FALSE" = -Inf),
+             upper = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_Emax[2], bounds_EC50[2], bounds_gamma[2]),
+                            "FALSE" = Inf),
+             weights = indDF$Weights[indDF$Omit == FALSE]),
+         error = function(x){data.frame(term = c("Emax", "EC50", "Gamma"),
+                                        estimate = NA)})
+   }
+   
+   Slope_fun <- function(indDF){
+      tryCatch(
+         nls(FoldInduction ~ 1+(Concentration_uM*slope),
+             data = indDF %>% filter(Omit == FALSE),
+             start = StartVals["slope"], 
+             algorithm = ifelse(Bounds, "port", "default"),
+             lower = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_slope[1]),
+                            "FALSE" = -Inf),
+             upper = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_slope[2]),
+                            "FALSE" = Inf),
+             weights = indDF$Weights[indDF$Omit == FALSE]),
+         error = function(x){data.frame(term = c("slope"),
+                                        estimate = NA)})
+   }
+   
+   Sig3Param_fun <- function(indDF){
+      tryCatch(
+         nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/Gamma)),
+             data = indDF %>% filter(Omit == FALSE),
+             start = StartVals[c("Indmax", "IndC50", "Gamma")], 
+             algorithm = ifelse(Bounds, "port", "default"), 
+             lower = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_Emax[1], bounds_EC50[1], bounds_gamma[1]),
+                            "FALSE" = -Inf),
+             upper = switch(as.character(Bounds),
+                            "TRUE" = c(bounds_Emax[2], bounds_EC50[2], bounds_gamma[2]),
+                            "FALSE" = Inf),
+             weights = indDF$Weights[indDF$Omit == FALSE]),
+         error = function(x){data.frame(term = c("Indmax", "IndC50", "slope"),
+                                        estimate = NA)})
+   }
+   
+   
+   # defining general subfunction for fitting induction models -----------------
    inductFit_prelim <- function(indDF, model){
       
       indfit <- list()
@@ -481,66 +564,11 @@ inductFit <- function(DF,
          
          indfit[[model]] <- 
             switch(model,
-                   Emax = tryCatch(
-                      nls(FoldInduction ~ 1+(Emax*Concentration_uM)/(EC50+Concentration_uM),
-                          data = indDF %>% filter(Omit == FALSE),
-                          start = StartVals[c("Emax", "EC50")], 
-                          algorithm = ifelse(Bounds, "port", "default"),
-                          lower = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_Emax[1], bounds_EC50[1]),
-                                         "FALSE" = -Inf),
-                          upper = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_Emax[2], bounds_EC50[2]),
-                                         "FALSE" = Inf),
-                          weights = indDF$Weights[indDF$Omit == FALSE]),
-                      error = function(x){data.frame(term = c("Emax", "EC50"),
-                                                     estimate = NA)}),
-                   
-                   EmaxSlope = tryCatch(
-                      nls(FoldInduction ~ 1+(Emax*Concentration_uM^slope) /
-                             (EC50^slope+Concentration_uM^slope),
-                          data = indDF %>% filter(Omit == FALSE),
-                          start = StartVals[c("Emax", "EC50", "slope")],
-                          algorithm = ifelse(Bounds, "port", "default"), 
-                          lower = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_Emax[1], bounds_EC50[1], bounds_slope[1]),
-                                         "FALSE" = -Inf),
-                          upper = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_Emax[2], bounds_EC50[2], bounds_slope[2]),
-                                         "FALSE" = Inf),
-                          weights = indDF$Weights[indDF$Omit == FALSE]),
-                      error = function(x){data.frame(term = c("Emax", "EC50", "slope"),
-                                                     estimate = NA)}),
-                   
-                   slope =  tryCatch(
-                      nls(FoldInduction ~ 1+(Concentration_uM*slope),
-                          data = indDF %>% filter(Omit == FALSE),
-                          start = StartVals["slope"], 
-                          algorithm = ifelse(Bounds, "port", "default"),
-                          lower = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_slope[1]),
-                                         "FALSE" = -Inf),
-                          upper = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_slope[2]),
-                                         "FALSE" = Inf),
-                          weights = indDF$Weights[indDF$Omit == FALSE]),
-                      error = function(x){data.frame(term = c("slope"),
-                                                     estimate = NA)}),
-                   
-                   Sig3Param = tryCatch(
-                      nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/slope)),
-                          data = indDF %>% filter(Omit == FALSE),
-                          start = StartVals[c("Indmax", "IndC50", "slope")], 
-                          algorithm = ifelse(Bounds, "port", "default"), 
-                          lower = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_Emax[1], bounds_EC50[1], bounds_slope[1]),
-                                         "FALSE" = -Inf),
-                          upper = switch(as.character(Bounds),
-                                         "TRUE" = c(bounds_Emax[2], bounds_EC50[2], bounds_slope[2]),
-                                         "FALSE" = Inf),
-                          weights = indDF$Weights[indDF$Omit == FALSE])),
-                   error = function(x){data.frame(term = c("Indmax", "IndC50", "slope"),
-                                                  estimate = NA)})
+                   "Emax" = Emax_fun(indDF),
+                   "EmaxSlope" = EmaxSlope_fun(indDF),
+                   "Slope" =  Slope_fun(indDF),
+                   "Sig3Param" = Sig3Param_fun(indDF))
+         
          if(class(indfit[[model]]) != "data.frame"){
             indfit[[model]] <- broom::tidy(indfit[[model]]) %>% 
                mutate(AIC = AIC(indfit[[model]]))
@@ -550,7 +578,7 @@ inductFit <- function(DF,
          EC50 <- indfit[[model]]$estimate[indfit[[model]]$term == "EC50"]
          Indmax <- indfit[[model]]$estimate[indfit[[model]]$term == "Indmax"]
          IndC50 <- indfit[[model]]$estimate[indfit[[model]]$term == "IndC50"]
-         slope <- indfit[[model]]$estimate[indfit[[model]]$term == "slope"]
+         Slope <- indfit[[model]]$estimate[indfit[[model]]$term == "slope"]
          
          # Making data.frame to hold the predicted values for the graph
          Curve <- fittedcurve(indfit = indfit, 
@@ -568,76 +596,10 @@ inductFit <- function(DF,
          )
          
          indfit <- list(
-            Emax = tryCatch(
-               nls(FoldInduction ~ 1+(Emax*Concentration_uM)/(EC50+Concentration_uM),
-                   data = indDF %>% filter(Omit == FALSE & Model == "Emax"),
-                   start = StartVals[c("Emax", "EC50")],
-                   algorithm = ifelse(Bounds, "port", "default"), 
-                   lower = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_Emax[1], bounds_EC50[1]),
-                                  "FALSE" = -Inf),
-                   upper = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_Emax[2], bounds_EC50[2]),
-                                  "FALSE" = Inf),
-                   weights = indDF %>% 
-                      filter(Omit == FALSE & Model == "Emax") %>% 
-                      pull(Weights)),
-               error = function(x){data.frame(term = c("Emax", "EC50"),
-                                              estimate = NA, 
-                                              Model = "Emax")}),
-            
-            EmaxSlope = tryCatch(
-               nls(FoldInduction ~ 1+(Emax*Concentration_uM^slope) /
-                      (EC50^slope+Concentration_uM^slope),
-                   data = indDF %>% filter(Omit == FALSE & Model == "EmaxSlope"),
-                   start = StartVals[c("Emax", "EC50", "slope")], 
-                   algorithm = ifelse(Bounds, "port", "default"), 
-                   lower = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_Emax[1], bounds_EC50[1], bounds_slope[1]),
-                                  "FALSE" = -Inf),
-                   upper = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_Emax[2], bounds_EC50[2], bounds_slope[2]),
-                                  "FALSE" = Inf),
-                   weights = indDF %>% filter(Omit == FALSE & Model == "EmaxSlope") %>% 
-                      pull(Weights)),
-               error = function(x){data.frame(term = c("Emax", "EC50", "slope"),
-                                              estimate = NA, 
-                                              Model = "EmaxSlope")}),
-            
-            slope =  tryCatch(
-               nls(FoldInduction ~ 1+(Concentration_uM*slope),
-                   data = indDF %>% filter(Omit == FALSE & Model == "Slope"),
-                   start = StartVals["slope"], 
-                   algorithm = ifelse(Bounds, "port", "default"), 
-                   lower = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_slope[1]),
-                                  "FALSE" = -Inf),
-                   upper = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_slope[2]),
-                                  "FALSE" = Inf),
-                   weights = indDF %>% filter(Omit == FALSE & Model == "Slope") %>% 
-                      pull(Weights)),
-               error = function(x){data.frame(term = c("slope"),
-                                              estimate = NA, 
-                                              Model = "Slope")}),
-            
-            Sig3Param = tryCatch(
-               nls(FoldInduction ~ Indmax/(1+exp(-(Concentration_uM-IndC50)/slope)),
-                   data = indDF %>% filter(Omit == FALSE & Model == "Sig3Param"),
-                   start = StartVals[c("Indmax", "IndC50", "slope")],
-                   algorithm = ifelse(Bounds, "port", "default"), 
-                   lower = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_Emax[1], bounds_EC50[1], bounds_slope[1]),
-                                  "FALSE" = -Inf),
-                   upper = switch(as.character(Bounds),
-                                  "TRUE" = c(bounds_Emax[2], bounds_EC50[2], bounds_slope[2]),
-                                  "FALSE" = Inf),
-                   weights = indDF %>% filter(Omit == FALSE & Model == "Sig3Param") %>% 
-                      pull(Weights)),
-               error = function(x){data.frame(term = c("Indmax", "IndC50", "slope"),
-                                              estimate = NA, 
-                                              Model = "Sig3Param")})
-         )
+            Emax = Emax_fun(indDF),
+            EmaxSlope = EmaxSlope_fun(indDF),
+            Slope =  Slope_fun(indDF),
+            Sig3Param = Sig3Param_fun(indDF))
          
          GoodFits <- which(unlist(lapply(indfit, FUN = function(x) is.data.frame(x))) == FALSE)
          indfit[GoodFits] <- lapply(indfit[GoodFits], FUN = function(x){
@@ -713,7 +675,7 @@ inductFit <- function(DF,
                         names_from = Param) %>% 
             mutate(Model = model) %>% 
             select(Model, DonorID,
-                   any_of(paste0(rep(c("Emax", "EC50", "slope", "Indmax", "IndC50"), 
+                   any_of(paste0(rep(c("Emax", "EC50", "Gamma", "slope", "Indmax", "IndC50"), 
                                      each = 3), 
                                  c("", "_SE", "_pvalue"))), 
                    AIC)
@@ -814,7 +776,7 @@ inductFit <- function(DF,
             pivot_wider(values_from = Value,
                         names_from = Param) %>% 
             select(Model, DonorID,
-                   any_of(paste0(rep(c("Emax", "EC50", "slope", "Indmax", "IndC50"), 
+                   any_of(paste0(rep(c("Emax", "EC50", "Gamma", "slope", "Indmax", "IndC50"), 
                                      each = 3), 
                                  c("", "_SE", "_pvalue"))), 
                    AIC)
@@ -1202,7 +1164,7 @@ inductFit <- function(DF,
    
    # Rounding as requested
    Out$Fit <- Out$Fit %>%
-      mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")),
+      mutate(across(.cols = any_of(c("Emax", "EC50", "Gamma", "slope", "IndC50", "Indmax")),
                     .fns = round_opt, round_fun = rounding))
    
    return(Out)

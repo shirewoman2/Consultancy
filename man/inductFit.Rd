@@ -19,6 +19,7 @@ inductFit(
   bounds_Emax = NA,
   bounds_EC50 = NA,
   bounds_slope = NA,
+  bounds_gamma = NA,
   omit = NA,
   color_set = "default",
   y_axis_limits = NA,
@@ -99,26 +100,33 @@ numeric vector of weights to use or choose from "none", "1/x", "1/x^2",
 "1/y" or "1/y^2" (default). Be careful that you don't have any infinite
 values or this will fail!}
 
-\item{bounds_Emax}{upper and lower boundaries for fitting Indmax or Emax,
+\item{bounds_Emax}{lower and upper boundaries for fitting Indmax or Emax,
 specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
 boundaries. If you only want to specify an upper limit, set the first
 number to \code{-Inf} and the second number to that value. If you only want
 to specify a lower limit, set the first number to that value and the second
 number to \code{Inf}.}
 
-\item{bounds_EC50}{upper and lower boundaries for fitting IndC50 or EC50,
+\item{bounds_EC50}{lower and upper boundaries for fitting IndC50 or EC50,
 specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
 boundaries. If you only want to specify an upper limit, set the first
 number to \code{-Inf} and the second number to that value. If you only want
 to specify a lower limit, set the first number to that value and the second
 number to \code{Inf}.}
 
-\item{bounds_slope}{upper and lower boundaries for fitting the slope,
+\item{bounds_slope}{lower and upper boundaries for fitting the slope,
 specified as a vector of numbers, e.g., \code{c(1, 20)}; default is no
 boundaries. If you only want to specify an upper limit, set the first
 number to \code{-Inf} and the second number to that value. If you only want
 to specify a lower limit, set the first number to that value and the second
 number to \code{Inf}.}
+
+\item{bounds_gamma}{lower and upper boundaries for fitting the Hill
+coefficient gamma, specified as a vector of numbers, e.g., \code{c(1, 20)};
+default is no boundaries. If you only want to specify an upper limit, set
+the first number to \code{-Inf} and the second number to that value. If you
+only want to specify a lower limit, set the first number to that value and
+the second number to \code{Inf}.}
 
 \item{omit}{An index of which, if any, samples to omit from regression(s).
 These samples will be depicted as open circles in the graph but will not be
@@ -239,11 +247,11 @@ Simcyp Simulator. Note that \strong{Indmax = Emax + 1}.} \item{If you're
 familiar with Howie's R script for fitting induction data
 ("Induction_fit_script_ver2.r"), one way in which this function differs is
 that the default setting includes no upper or lower bounds for parameter
-estimates. This means that, if sufficient data to describe the curve do not 
-exist, the function will fail to deliver any fitted parameters, which is 
-meant to be a benefit but could be an annoyance depending on your 
-perspective. If you would like this function to behave more like Howie's 
-script, please look at the help file for the arguments \code{bounds_Emax}, 
+estimates. This means that, if sufficient data to describe the curve do not
+exist, the function will fail to deliver any fitted parameters, which is
+meant to be a benefit but could be an annoyance depending on your
+perspective. If you would like this function to behave more like Howie's
+script, please look at the help file for the arguments \code{bounds_Emax},
 \code{bounds_EC50}, and \code{bounds_slope}.}} For detailed
 instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
 R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
@@ -251,7 +259,7 @@ instructions/Fitting induction data/Fitting-induction-data.docx". (Sorry, we
 are unable to include a link to it here.)
 }
 \examples{
-data(IndData)
+# IndData is a data.frame of example induction data included with the package.
 
 inductFit(IndData, model = "Emax")$Graph
 inductFit(IndData \%>\% rename(Conc_uM = Concentration_uM),
