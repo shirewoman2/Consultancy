@@ -27,9 +27,11 @@ inductFit(
   vert_line = NA,
   Imaxu_line = NA,
   rounding = NA,
+  include_fit_stats = TRUE,
   graph_title = NA,
   graph_title_size = 14,
   save_graph = NA,
+  save_table = NA,
   fig_height = 5,
   fig_width = 5.5,
   save_output = NA
@@ -191,19 +193,32 @@ that upper left corner are a potential concern for induction. Use a numeric
 value for the concentration you want or leave as NA (default) for no line.}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
-\describe{\item{NA or "Consultancy"}{All output will be rounded according
-to Simcyp Consultancy Team standards: to three significant figures when the
-value is < 100 or to the ones place if the value is >= 100. Please see the
-function \code{\link{round_consultancy}}, which does the rounding here.}
-\item{"none"}{No rounding will be performed.} \item{"significant X" where
-"X" is a number}{Output will be rounded to X significant figures. "signif
-X" also works fine.} \item{"round X" where "X" is a number}{Output will be
-rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
-will be rounded using the function \code{\link{round_consultancy}}, but
-nothing will be rounded in the output R object. This can be useful when you
-want to have nicely rounded and formatted output in a Word file but you
-\emph{also} want to use the results from \code{calc_PK_ratios} to make
-forest plots, which requires numbers that are \emph{not} rounded.}}}
+  \describe{
+
+  \item{NA or "Consultancy"}{All output will be rounded according
+  to Simcyp Consultancy Team standards: to three significant figures when the
+  value is < 100 or to the ones place if the value is >= 100. Please see the
+  function \code{\link{round_consultancy}}, which does the rounding here.}
+
+
+  \item{"none"}{No rounding will be performed.}
+
+  \item{"significant X" where "X" is a number}{Output will be rounded to X
+  significant figures. \code{rounding = "signif X"} also works fine.}
+
+  \item{"round X" where "X" is a number}{Output will be rounded to X digits}
+
+  \item{"Word only"}{Output saved to Word file will be rounded using the
+  function \code{\link{round_consultancy}}, but nothing will be rounded in
+  the csv file if you supply a file name for \code{save_table} or in
+  the output R object. This can be useful when you want to have nicely
+  rounded and formatted output in a Word file while
+  keeping all the decimal places elsewhere}}}
+
+\item{include_fit_stats}{TRUE (default) or FALSE for whether to include
+statistics describing the goodness of fit: the standard error (SE), the p
+value, and the Akaike information criterion (AIC). These values come from
+the nonlinear regression of the various models to the data.}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph or set of graphs}
@@ -216,18 +231,29 @@ in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
 will be saved as a png file, but if you specify a different file extension,
 it will be saved as that file format. Acceptable extensions are "eps",
 "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
-slashes, dollar signs, or periods in the file name. Leaving this as NA
-means the file will not be automatically saved to disk.}
+slashes, dollar signs, or periods in the file name. If you only want to
+save the table of fitted parameters, please use the argument
+\code{save_table}. If you want to save a Word document with all the
+results, please use the argument \code{save_output}.}
+
+\item{save_table}{optionally save the table of fitted parameters by supplying
+a file name in quotes here, e.g., "My fitted induction parameters.csv".
+Saving as an xlsx file is also supported. Do not include any slashes,
+dollar signs, or periods in the file name. If you only want to save the
+graphs, please use the argument \code{save_graph}. If you want to save a
+Word document with all the results, please use the argument
+\code{save_output}.}
 
 \item{fig_height}{figure height in inches; default is 5}
 
 \item{fig_width}{figure width in inches; default is 5.5}
 
-\item{save_output}{optionally save the output by supplying a file name in
-quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
-file will save only the fitted parameters. However, if you would like a
-Word file with a) the equations used, b) the fitted parameters, and c) the
-graphs, end this file name with ".docx" instead.}
+\item{save_output}{optionally save a) the equations used for fitting, b) the
+fitted parameters, and c) the graphs by supplying a file name in quotes
+here, e.g., "My induction results.docx". Do not include any slashes, dollar
+signs, or periods in the file name. If you only want to save the graphs,
+please use the argument \code{save_graph}. If you only want to save the
+table of fitted parameters, please use the argument \code{save_table}.}
 }
 \value{
 Returns a list of \describe{ \item{Fit}{the fitted parameters}

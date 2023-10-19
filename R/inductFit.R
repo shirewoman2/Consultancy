@@ -160,33 +160,55 @@
 #'   that upper left corner are a potential concern for induction. Use a numeric
 #'   value for the concentration you want or leave as NA (default) for no line.
 #' @param rounding option for what rounding to perform, if any. Options are:
-#'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
+#'   \describe{
+#'
+#'   \item{NA or "Consultancy"}{All output will be rounded according
 #'   to Simcyp Consultancy Team standards: to three significant figures when the
 #'   value is < 100 or to the ones place if the value is >= 100. Please see the
 #'   function \code{\link{round_consultancy}}, which does the rounding here.}
-#'   \item{"none"}{No rounding will be performed.} \item{"significant X" where
-#'   "X" is a number}{Output will be rounded to X significant figures. "signif
-#'   X" also works fine.} \item{"round X" where "X" is a number}{Output will be
-#'   rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
-#'   will be rounded using the function \code{\link{round_consultancy}}, but
-#'   nothing will be rounded in the output R object. This can be useful when you
-#'   want to have nicely rounded and formatted output in a Word file but you
-#'   \emph{also} want to use the results from \code{calc_PK_ratios} to make
-#'   forest plots, which requires numbers that are \emph{not} rounded.}}
-#' @param save_output optionally save the output by supplying a file name in
-#'   quotes here, e.g., "My fitted induction parameters.csv". Saving as a csv
-#'   file will save only the fitted parameters. However, if you would like a
-#'   Word file with a) the equations used, b) the fitted parameters, and c) the
-#'   graphs, end this file name with ".docx" instead.
+#'
+#'
+#'   \item{"none"}{No rounding will be performed.}
+#'
+#'   \item{"significant X" where "X" is a number}{Output will be rounded to X
+#'   significant figures. \code{rounding = "signif X"} also works fine.}
+#'
+#'   \item{"round X" where "X" is a number}{Output will be rounded to X digits}
+#'
+#'   \item{"Word only"}{Output saved to Word file will be rounded using the
+#'   function \code{\link{round_consultancy}}, but nothing will be rounded in
+#'   the csv file if you supply a file name for \code{save_table} or in
+#'   the output R object. This can be useful when you want to have nicely
+#'   rounded and formatted output in a Word file while
+#'   keeping all the decimal places elsewhere}}
+#' @param include_fit_stats TRUE (default) or FALSE for whether to include
+#'   statistics describing the goodness of fit: the standard error (SE), the p
+#'   value, and the Akaike information criterion (AIC). These values come from
+#'   the nonlinear regression of the various models to the data. 
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
 #'   it will be saved as that file format. Acceptable extensions are "eps",
 #'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
-#'   slashes, dollar signs, or periods in the file name. Leaving this as NA
-#'   means the file will not be automatically saved to disk.
+#'   slashes, dollar signs, or periods in the file name. If you only want to
+#'   save the table of fitted parameters, please use the argument
+#'   \code{save_table}. If you want to save a Word document with all the
+#'   results, please use the argument \code{save_output}.
 #' @param fig_height figure height in inches; default is 5
 #' @param fig_width figure width in inches; default is 5.5
+#' @param save_table optionally save the table of fitted parameters by supplying
+#'   a file name in quotes here, e.g., "My fitted induction parameters.csv".
+#'   Saving as an xlsx file is also supported. Do not include any slashes,
+#'   dollar signs, or periods in the file name. If you only want to save the
+#'   graphs, please use the argument \code{save_graph}. If you want to save a
+#'   Word document with all the results, please use the argument
+#'   \code{save_output}.
+#' @param save_output optionally save a) the equations used for fitting, b) the
+#'   fitted parameters, and c) the graphs by supplying a file name in quotes
+#'   here, e.g., "My induction results.docx". Do not include any slashes, dollar
+#'   signs, or periods in the file name. If you only want to save the graphs,
+#'   please use the argument \code{save_graph}. If you only want to save the
+#'   table of fitted parameters, please use the argument \code{save_table}.
 #'
 #' @return Returns a list of \describe{ \item{Fit}{the fitted parameters}
 #'   \item{Fit_means}{the mean fitted parameters for all donors} \item{Graph}{a
@@ -241,9 +263,11 @@ inductFit <- function(DF,
                       vert_line = NA,
                       Imaxu_line = NA, 
                       rounding = NA, 
+                      include_fit_stats = TRUE, 
                       graph_title = NA,
                       graph_title_size = 14, 
                       save_graph = NA,
+                      save_table = NA,
                       fig_height = 5,
                       fig_width = 5.5, 
                       save_output = NA){
@@ -1101,6 +1125,10 @@ inductFit <- function(DF,
    
    # saving and formatting output ---------------------------------------------
    
+   if(include_fit_stats == FALSE){
+      Out$Fit <- Out$Fit %>% select(-any_of(matches("_SE|_pvalue|AIC")))
+   }
+   
    if(complete.cases(save_graph)){
       FileName <- save_graph
       if(str_detect(FileName, "\\.")){
@@ -1124,48 +1152,74 @@ inductFit <- function(DF,
       ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
              plot = Out$Graph)
       
+      rm(FileName)
+      
+   }
+   
+   if(complete.cases(save_table)){
+      FileName <- save_table
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("csv", "xlsx") == FALSE){
+            warning(paste0("You have requested the table's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your table as a `csv` file instead.\n"),
+                    call. = FALSE)
+         }
+         Ext <- ifelse(Ext %in% c("csv", "xlsx"),
+                       Ext, "csv")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".csv")
+      }
+      
+      # Rounding as requested
+      Out$Fit <- Out$Fit %>%
+         mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax")),
+                       .fns = round_opt, round_fun = rounding, is_this_for_Word = FALSE))
+      
+      write.csv(Out$Fit, FileName, row.names = F)
+      
+      rm(FileName)
+      
    }
    
    if(complete.cases(save_output)){
-      if(str_detect(save_output, "docx")){
-         # This is when they want a Word file as output
-         
-         # May need to change the working directory temporarily, so
-         # determining what it is now
-         CurrDir <- getwd()
-         
-         OutPath <- dirname(save_output)
-         if(OutPath == "."){
-            OutPath <- getwd()
-         }
-         
-         FileName <- basename(save_output)
-         
-         rmarkdown::render(system.file("rmarkdown/templates/inductfit/skeleton/skeleton.Rmd",
-                                       package="SimcypConsultancy"),
-                           output_dir = OutPath,
-                           output_file = FileName,
-                           quiet = TRUE)
-         # Note: The "system.file" part of the call means "go to where the
-         # package is installed, search for the file listed, and return its
-         # full path.
-         
-      } else {
-         # This is when they want a .csv file as output.
-         
-         if(str_detect(save_output, "\\.")){
-            FileName <- sub("\\..*", ".csv", save_output)
-         } else {
-            FileName <- paste0(save_output, ".csv")
-         }
-         write.csv(Out$Fit, FileName, row.names = F)
+      
+      # Rounding as requested
+      Out$Fit <- Out$Fit %>%
+         mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax")),
+                       .fns = round_opt, round_fun = rounding, is_this_for_Word = TRUE))
+      
+      # Prettifying column names
+      names(Out$Fit) <- sub("_SE", " SE", names(Out$Fit))
+      names(Out$Fit) <- sub("_pvalue", " p value", names(Out$Fit))
+      
+      # Setting file extension to be docx
+      FileName <- sub("\\.*", ".docx", save_output)
+      
+      # May need to change the working directory temporarily, so determining
+      # what it is now
+      CurrDir <- getwd()
+      
+      OutPath <- dirname(FileName)
+      if(OutPath == "."){
+         OutPath <- getwd()
       }
+      
+      FileName <- basename(FileName)
+      
+      rmarkdown::render(system.file("rmarkdown/templates/inductfit/skeleton/skeleton.Rmd",
+                                    package="SimcypConsultancy"),
+                        output_dir = OutPath,
+                        output_file = FileName,
+                        quiet = TRUE)
+      # Note: The "system.file" part of the call means "go to where the
+      # package is installed, search for the file listed, and return its
+      # full path.
+      
    }
-   
-   # Rounding as requested
-   Out$Fit <- Out$Fit %>%
-      mutate(across(.cols = any_of(c("Emax", "EC50", "Gamma", "slope", "IndC50", "Indmax")),
-                    .fns = round_opt, round_fun = rounding))
    
    return(Out)
    
