@@ -890,6 +890,10 @@ pksummary_table <- function(sim_data_file = NA,
       PKToPull <- sub("AUCt_last", "AUCtau_last", PKToPull)
       PKToPull <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKToPull)
       
+      # If the user switched the order of "ratio" and "last" or "dose1", fix that.
+      PKToPull <- sub("dose1_ratio", "ratio_dose1", PKToPull)
+      PKToPull <- sub("last_ratio", "ratio_last", PKToPull)
+      
    } else {
       
       if("logical" %in% class(sectionInfo)){ # sectionInfo is logical if they did not supply a report input form
@@ -947,9 +951,8 @@ pksummary_table <- function(sim_data_file = NA,
       any(str_detect(PKparameters, "_last")) & is.na(sheet_PKparameters)){
       warning(paste0("The file `",
                      sim_data_file,
-                     "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.
-We cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 
-call. = FALSE)
+                     "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 
+              call. = FALSE)
       PKToPull <- PKToPull[!str_detect(PKToPull, "_last")]
    }
    
