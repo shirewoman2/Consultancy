@@ -271,7 +271,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    
    # Sorting to help organize output
    Out <- Out %>% 
-      select(File, sort(setdiff(names(Out), "File")))
+      select(File, everything())
    
    if(annotate_output){
       Out <- annotateDetails(Out, 
