@@ -1433,8 +1433,10 @@ extractExpDetails <- function(sim_data_file,
    
    
    # Calculated details & data cleanup ----------------------------------------
+   
    if("StartHr_sub" %in% exp_details && 
       "StartDayTime_sub" %in% names(Out) &&
+      complete.cases(Out$StartDayTime_sub) && 
       Out$StartDayTime_sub != "custom dosing"){
       Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                            time2 = Out$StartDayTime_sub)

@@ -65,9 +65,9 @@ model_label <- switch(model,
 Out$Graph
 
 if(model == "all"){
-    FitsThatWorked <- unique(Out$Fit$Model)    
+   FitsThatWorked <- unique(Out$Fit$Model)    
 } else {
-    FitsThatWorked <- model
+   FitsThatWorked <- model
 }
 
 GoodMod <-  c("EmaxSlope" = "E~max~ slope", 
@@ -88,55 +88,59 @@ FitsThatWorked <- paste(str_comma(FitsThatWorked),
 ```{r indfit3}
 
 if(model == "all" & fitByDonor){
-    
-    Fit_ind <- Out$Fit
-    
-    suppressWarnings(
-        Fit_sum <- Fit_ind %>% group_by(Model) %>% 
-            summarize(across(.cols = everything(), .fns = mean, na.rm = T)) %>% 
-            mutate(DonorID = "mean")
-    )
-    
-    AllFits <- bind_rows(Fit_ind, Fit_sum) %>% 
-        mutate(DonorID = as.factor(DonorID),
-               DonorID = forcats::fct_relevel(DonorID, "mean", after = Inf)) %>% 
-        arrange(Model, DonorID)
-    
+   
+   Fit_ind <- Out$Fit
+   
+   suppressWarnings(
+      Fit_sum <- Fit_ind %>% group_by(Model) %>% 
+         summarize(across(.cols = everything(), .fns = mean, na.rm = T)) %>% 
+         mutate(DonorID = "mean")
+   )
+   
+   AllFits <- bind_rows(Fit_ind, Fit_sum) %>% 
+      mutate(DonorID = as.factor(DonorID),
+             DonorID = forcats::fct_relevel(DonorID, "mean", after = Inf)) %>% 
+      arrange(Model, DonorID)
+   
 } else {
-    # Not fit by donor here, so not calculating means
-    AllFits <- Out$Fit
+   # Not fit by donor here, so not calculating means
+   AllFits <- Out$Fit
 }
 
 # Making "model" look nice for the table
+PvalCols <- names(AllFits)[str_detect(names(AllFits), "p value")]
+OtherCols <- names(AllFits)[str_detect(names(AllFits), "Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")]
+OtherCols <- setdiff(OtherCols, PvalCols)
+
 AllFits <- AllFits %>% 
-    mutate(Model = case_when(Model == "Emax" ~ "Emax", 
-                             Model == "EmaxSlope" ~ "Emax slope", 
-                             Model == "Sig3Param" ~ "sigmoidal 3-parameter", 
-                             Model == "Slope" ~ "slope")) %>% 
-    
-    # Rounding as requested
-    mutate(across(.cols = any_of(c("Emax", "EC50", "Gamma", "slope", "IndC50", "Indmax")), 
-                  .fns = round_opt, 
-                  round_fun = ifelse(complete.cases(rounding) && rounding == "Word only", 
-                                     "Consultancy", rounding)))
+   mutate(Model = case_when(Model == "Emax" ~ "Emax", 
+                            Model == "EmaxSlope" ~ "Emax slope", 
+                            Model == "Sig3Param" ~ "sigmoidal 3-parameter", 
+                            Model == "Slope" ~ "slope")) %>% 
+   
+   # Rounding as requested
+   mutate(across(.cols = any_of(OtherCols),
+                 .fns = round_opt, round_fun = rounding, is_this_for_Word = TRUE), 
+          across(.cols = any_of(PvalCols), 
+                 .fns = ~ as.character(signif(.x, 1))))
 
 MeanRows <- which(AllFits$DonorID == "mean")
 
 if(model == "all"){
-    AllFits <- AllFits %>% 
-        formatTable_Simcyp(shading_column = Model, 
-                           bold_cells = list(c(0, NA)), 
-                           center_1st_column = TRUE) 
+   AllFits <- AllFits %>% 
+      formatTable_Simcyp(shading_column = Model, 
+                         bold_cells = list(c(0, NA)), 
+                         center_1st_column = TRUE) 
 } else {
-    AllFits <- AllFits %>% 
-        formatTable_Simcyp(bold_cells = list(c(0, NA)), 
-                           center_1st_column = TRUE) 
+   AllFits <- AllFits %>% 
+      formatTable_Simcyp(bold_cells = list(c(0, NA)), 
+                         center_1st_column = TRUE) 
 }
 
 AllFits %>% 
-    flextable::bold(i = MeanRows) %>% 
-    flextable::merge_v(j = 1) %>% 
-    flextable::hline_bottom(border = officer::fp_border(width = 0.5))
+   flextable::bold(i = MeanRows) %>% 
+   flextable::merge_v(j = 1) %>% 
+   flextable::hline_bottom(border = officer::fp_border(width = 0.5))
 
 ```
 

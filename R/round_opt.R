@@ -17,7 +17,7 @@ round_opt <- function(x, round_fun, is_this_for_Word = FALSE){
    round_fun <- ifelse(is.na(round_fun), "consultancy", tolower(round_fun))
    round_fun <- ifelse(str_detect(tolower(round_fun), "word") & 
                           is_this_for_Word, 
-                       round_fun, "none")
+                       "consultancy", round_fun)
    
    suppressWarnings(
       NumDig <- as.numeric(str_trim(sub("signif(icant)?|round", "", round_fun)))
