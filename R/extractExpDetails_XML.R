@@ -317,6 +317,33 @@ extractExpDetails_XML <- function(sim_workspace_files,
    Deets <- bind_rows(Deets)
    Deets[Deets == ""] <- NA
    
+   # Sorting to help organize output
+   Deets <- Deets %>% 
+      select(File, everything())
+   
+   if(complete.cases(save_output)){
+      FileName <- save_output
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
+                       Ext, "csv")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".csv")
+         Ext <- "csv"
+      }
+      
+      switch(Ext, 
+             "csv" = write.csv(as.data.frame(Deets), FileName, row.names = F), 
+             "xlsx" = formatXL_head(as.data.frame(Deets), 
+                                    FileName, 
+                                    sheet = "Simulation experimental details"))
+   }
+   
    return(Deets)
    
 }
+
+
