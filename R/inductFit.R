@@ -1129,68 +1129,63 @@ inductFit <- function(DF,
       Out$Fit <- Out$Fit %>% select(-any_of(matches("_SE|_pvalue|AIC")))
    }
    
-   # if(complete.cases(save_graph)){
-   #    FileName <- save_graph
-   #    if(str_detect(FileName, "\\.")){
-   #       # Making sure they've got a good extension
-   #       Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-   #       FileName <- sub(paste0(".", Ext), "", FileName)
-   #       if(Ext %in% c("eps", "ps", "jpeg", "tiff",
-   #                     "png", "bmp", "svg", "jpg") == FALSE){
-   #          warning(paste0("You have requested the graph's file extension be `", 
-   #                         Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
-   #                  call. = FALSE)
-   #       }
-   #       Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-   #                                "png", "bmp", "svg", "jpg"),
-   #                     Ext, "png")
-   #       FileName <- paste0(FileName, ".", Ext)
-   #    } else {
-   #       FileName <- paste0(FileName, ".png")
-   #    }
-   #    
-   #    ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-   #           plot = Out$Graph)
-   #    
-   #    rm(FileName)
-   #    
-   # }
-   # 
-   # if(complete.cases(save_table)){
-   #    FileName <- save_table
-   #    if(str_detect(FileName, "\\.")){
-   #       # Making sure they've got a good extension
-   #       Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-   #       FileName <- sub(paste0(".", Ext), "", FileName)
-   #       if(Ext %in% c("csv", "xlsx") == FALSE){
-   #          warning(paste0("You have requested the table's file extension be `", 
-   #                         Ext, "`, but we haven't set up that option. We'll save your table as a `csv` file instead.\n"),
-   #                  call. = FALSE)
-   #       }
-   #       Ext <- ifelse(Ext %in% c("csv", "xlsx"),
-   #                     Ext, "csv")
-   #       FileName <- paste0(FileName, ".", Ext)
-   #    } else {
-   #       FileName <- paste0(FileName, ".csv")
-   #    }
-   #    
-   #    # Rounding as requested
-   #    Out$Fit <- Out$Fit %>%
-   #       mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax")),
-   #                     .fns = round_opt, round_fun = rounding, is_this_for_Word = FALSE))
-   #    
-   #    write.csv(Out$Fit, FileName, row.names = F)
-   #    
-   #    rm(FileName)
-   #    
-   # }
-   # 
-   if(complete.cases(save_output)){
+   if(complete.cases(save_graph)){
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `",
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg"),
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+      }
+      
+      ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+             plot = Out$Graph)
+      
+      rm(FileName)
+      
+   }
+   
+   if(complete.cases(save_table)){
+      FileName <- save_table
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("csv", "xlsx") == FALSE){
+            warning(paste0("You have requested the table's file extension be `",
+                           Ext, "`, but we haven't set up that option. We'll save your table as a `csv` file instead.\n"),
+                    call. = FALSE)
+         }
+         Ext <- ifelse(Ext %in% c("csv", "xlsx"),
+                       Ext, "csv")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".csv")
+      }
       
       # Rounding as requested
       Out$Fit <- Out$Fit %>%
-         mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax")),
-                       .fns = round_opt, round_fun = rounding, is_this_for_Word = TRUE))
+         mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")),
+                       .fns = round_opt, round_fun = rounding, is_this_for_Word = FALSE))
+      
+      write.csv(Out$Fit, FileName, row.names = F)
+      
+      rm(FileName)
+      
+   }
+   
+   if(complete.cases(save_output)){
       
       # Prettifying column names
       names(Out$Fit) <- sub("_SE", " SE", names(Out$Fit))
