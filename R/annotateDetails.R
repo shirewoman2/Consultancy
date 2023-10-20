@@ -270,7 +270,7 @@ annotateDetails <- function(existing_exp_details,
    # Getting things set up ---------------------------------------------------
    if(class(existing_exp_details)[1] == "list"){
       # This is when the output is the default list from extractExpDetails
-      existing_exp_details <- as.data.frame(existing_exp_details)
+         existing_exp_details <- existing_exp_details$MainDetails
    }
    
    PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))

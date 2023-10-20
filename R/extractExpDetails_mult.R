@@ -168,8 +168,13 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    AnyExistingDeets <- exists(deparse(substitute(existing_exp_details)))
    
    if(AnyExistingDeets){
-      if(class(existing_exp_details)[1] == "list"){
-         existing_exp_details <- bind_rows(existing_exp_details)
+      if("list" %in% class(existing_exp_details) && 
+         "MainDetails" %in% names(existing_exp_details) == FALSE){
+         # This is for when they may have saved exp details from package
+         # versions < 2.8.0, which is when I changed the output from
+         # extractExpDetails from sometimes being a list & sometimes being a
+         # data.frame to ALWAYS being a list.
+         existing_exp_details <- list(MainDetails = existing_exp_details)
       }
       
       if("data.frame" %in% class(existing_exp_details)){

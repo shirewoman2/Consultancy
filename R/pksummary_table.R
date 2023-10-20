@@ -798,6 +798,9 @@ pksummary_table <- function(sim_data_file = NA,
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                     exp_details = NecessaryDetails)
+         if("list" %in% class(Deets)){
+            Deets <- Deets$MainDetails
+         }
       } else {
          Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
                          "TRUE" = existing_exp_details, 

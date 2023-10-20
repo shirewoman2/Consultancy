@@ -223,15 +223,6 @@ extractExpDetails <- function(sim_data_file,
       exp_details <- exp_details[!exp_details == "AGP"]
    }
    
-   # Since StartHr values are calculated from StartDayTime, those values must be
-   # included in exp_details to extract. 
-   if(length(setdiff(paste0("StartHr", c("_sub", "_inhib", "_inhib2")), 
-                     exp_details)) > 0){
-      exp_details <- unique(c(exp_details, 
-                              paste0("StartDayTime", c("_sub", "_inhib", "_inhib2")),
-                              "SimStartDayTime"))
-   }
-   
    if(any(exp_details %in% AllExpDetails$Detail == FALSE)){
       Problem <- str_comma(unique(setdiff(exp_details,
                                           AllExpDetails$Detail)))
@@ -251,7 +242,8 @@ extractExpDetails <- function(sim_data_file,
    # downstream functions rely on them. Making sure that these are included. 
    exp_details <- unique(exp_details, 
                          c(AllCompounds$DetailNames, 
-                           "StartHr_sub", "StartHr_inhib", "StartHr_inhib2"))
+                           paste0(rep(c("StartHr", "StartDayTime", "Regimen"), each = 3), 
+                                  c("_sub", "_inhib", "_inhib2"))))
    
    Out <- list()
    
@@ -265,13 +257,6 @@ extractExpDetails <- function(sim_data_file,
    
    # Pulling details from the summary tab ----------------------------------
    MySumDeets <- sort(intersect(exp_details, SumDeets$Deet))
-   # If all of the details are from one of the other sheets, then don't
-   # bother reading this sheet b/c that takes more processing time. (Some
-   # details show up on multiple sheets, so there are redundancies in this
-   # function to deal with that.)
-   if(exp_details_input[1] %in% c("input sheet")){
-      MySumDeets <- intersect("A", "B")
-   }
    
    if(exp_details_input[1] %in% c("population tab")){
       MySumDeets <- c("Population", "SimulatorVersion")
@@ -443,13 +428,6 @@ extractExpDetails <- function(sim_data_file,
    MyInputDeets <- intersect(exp_details, InputDeets$Deet)
    # Not pulling the same info twice
    MyInputDeets <- setdiff(MyInputDeets, names(Out))
-   # If all of the details are from one of the other sheets, then don't
-   # bother reading this sheet b/c that takes more processing time. (Some
-   # details show up on multiple sheets, so there are redundancies in this
-   # function to deal with that.)
-   if(exp_details_input[1] %in% c("population tab", "summary tab")){
-      MyInputDeets <- intersect("A", "B")
-   }
    
    if(length(MyInputDeets) > 0){
       
@@ -1297,13 +1275,6 @@ extractExpDetails <- function(sim_data_file,
    
    # Pulling details from the population tab -------------------------------
    MyPopDeets <- intersect(exp_details, PopDeets$Deet)
-   # If all of the details are from one of the other sheets, then don't
-   # bother reading this sheet b/c that takes more processing time. (Some
-   # details show up on multiple sheets, so there are redundancies in this
-   # function to deal with that.)
-   if(exp_details_input[1] %in% c("summary tab", "input sheet")){
-      MyPopDeets <- intersect("A", "B")
-   }
    
    # If user asks for population details, then function is set up to read both
    # what that population is and what the simulator version is by reading the
@@ -1553,46 +1524,28 @@ extractExpDetails <- function(sim_data_file,
       Out$Regimen_inhib2 <- "Single Dose" 
    }
    
-   if(annotate_output){
-      Out <- annotateDetails(Out)
-   } 
+   # Splitting this up into main details -- a data.frame -- and then,
+   # separately, whatever items need to be lists, e.g., custom dosing regimens
+   # and dissolution profiles. 
+   Main <- as.data.frame(Out[which(sapply(Out, length) == 1)])
+   CustomDosing_sub <- Out$CustomDosing_sub
+   CustomDosing_inhib <- Out$CustomDosing_inhib
+   CustomDosing_inhib2 <- Out$CustomDosing_inhib2
    
-   if(complete.cases(save_output)){
-      FileName <- save_output
-      if(str_detect(FileName, "\\.")){
-         # Making sure they've got a good extension
-         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-         FileName <- sub(paste0(".", Ext), "", FileName)
-         Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
-                       Ext, "csv")
-         FileName <- paste0(FileName, ".", Ext)
-      } else {
-         FileName <- paste0(FileName, ".csv")
-         Ext <- "csv"
-      }
-      
-      switch(Ext, 
-             "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
-             "xlsx" = formatXL(
-                as.data.frame(Out), 
-                FileName, 
-                sheet = "Simulation experimental details",
-                styles = list(
-                   list(columns = which(names(Out) == "Notes"), 
-                        textposition = list(wrapping = TRUE)),
-                   list(rows = 0, font = list(bold = TRUE),
-                        textposition = list(alignment = "middle",
-                                            wrapping = TRUE)), 
-                   list(columns = which(str_detect(names(Out), "All files have this value")),
-                        fill = "#E7F3FF"), 
-                   list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
-                        font = list(bold = TRUE), 
-                        textposition = list(alignment = "middle",
-                                            wrapping = TRUE), 
-                        fill = "#E7F3FF"))))
+   Out <- list(MainDetails = Main, 
+               CustomDosing_sub = CustomDosing_sub, 
+               CustomDosing_inhib = CustomDosing_inhib, 
+               CustomDosing_inhib2 = CustomDosing_inhib2)
+   
+   if(annotate_output){
+      Out <- annotateDetails(Main, 
+                             save_output = save_output)
+   } else if(complete.cases(save_output)){
+      write.csv(Main, FileName, row.names = F)
    }
    
    return(Out)
+   
 }
 
 
