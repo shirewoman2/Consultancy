@@ -266,6 +266,14 @@
 #'   }
 "ExpDetailDefinitions_Discovery"
 
+#' The names of the items that should be in the list output from running
+#' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}}
+#'
+#' INTERNAL USE. 
+#'
+#' @format a character vector 
+"ExpDetailListItems"
+
 
 #' Example output from \code{extractExpDetails_mult}
 #'

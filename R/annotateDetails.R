@@ -237,9 +237,9 @@ annotateDetails <- function(existing_exp_details,
    simulator_section_orig <- simulator_section
    simulator_section <- str_c(unique(tolower(simulator_section)), collapse = " ")
    
-   if("Substrate" %in% names(existing_exp_details) == FALSE & 
+   if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
       (show_compound_col == TRUE | show_compound_col == "concatenate") & 
-      "Compound" %in% names(existing_exp_details) == FALSE){
+      "Compound" %in% names(existing_exp_details$MainDetails) == FALSE){
       warning(paste0("You set show_compound_col to ", show_compound_col,
                      ", but you appear to have already run annotateDetails on these data with show_compound_col = FALSE. This column no longer exists in your data, so we can't show it."), 
               call. = FALSE)
@@ -268,27 +268,16 @@ annotateDetails <- function(existing_exp_details,
    
    
    # Getting things set up ---------------------------------------------------
-   if(class(existing_exp_details)[1] == "list"){
-      # This is when the output is the default list from extractExpDetails
-         existing_exp_details <- existing_exp_details$MainDetails
-   }
    
-   PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))
+   existing_exp_details <- harmonize_details(existing_exp_details)
    
-   if(PrevAnnotated){
-      
-      existing_exp_details <- deannotateDetails(existing_exp_details, 
-                                                apply_class = FALSE)
-      
-   } else if("File" %in% names(existing_exp_details) == FALSE){
-      existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
-      FileOrder <- existing_exp_details$File
-      existing_exp_details <- existing_exp_details %>% 
-         mutate(File = factor(File, levels = FileOrder))
+   if("File" %in% names(existing_exp_details$MainDetails) == FALSE){
+      existing_exp_details$MainDetails$File <- paste("unknown file", 1:nrow(existing_exp_details$MainDetails))
+      FileOrder <- existing_exp_details$MainDetails$File
    }
    
    if(complete.cases(template_sim) && 
-      template_sim %in% existing_exp_details$File == FALSE){
+      template_sim %in% existing_exp_details$MainDetails$File == FALSE){
       warning(paste0("You requested a template_sim of `", 
                      template_sim, 
                      "`, but that is not one of the files included in `existing_exp_details`. We won't be able to compare parameters to a template simulation in the output."), 
@@ -296,7 +285,7 @@ annotateDetails <- function(existing_exp_details,
       template_sim <- NA
    }
    
-   Out <- existing_exp_details %>% 
+   Main <- existing_exp_details$MainDetails %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
       pivot_longer(cols = -File,
                    names_to = "Detail", 
@@ -326,7 +315,7 @@ annotateDetails <- function(existing_exp_details,
    # require so much copying and pasting!
    if("Abs_model_sub" %in% names(existing_exp_details) &&
       any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
-      Out <- Out %>%
+      Main <- Main %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "substrate" &
                                           ADAMParameter == TRUE) %>%
@@ -335,7 +324,7 @@ annotateDetails <- function(existing_exp_details,
    
    if("Abs_model_inhib" %in% names(existing_exp_details) &&
       any(existing_exp_details$Abs_model_inhib == "ADAM", na.rm = T) == FALSE){
-      Out <- Out %>%
+      Main <- Main %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "inhibitor 1" &
                                           ADAMParameter == TRUE) %>%
@@ -344,7 +333,7 @@ annotateDetails <- function(existing_exp_details,
    
    if("Abs_model_inhib2" %in% names(existing_exp_details) &&
       any(existing_exp_details$Abs_model_inhib2 == "ADAM", na.rm = T) == FALSE){
-      Out <- Out %>%
+      Main <- Main %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "inhibitor 2" &
                                           ADAMParameter == TRUE) %>%
@@ -353,7 +342,7 @@ annotateDetails <- function(existing_exp_details,
    
    if("Abs_model_met1" %in% names(existing_exp_details) &&
       any(existing_exp_details$Abs_model_met1 == "ADAM", na.rm = T) == FALSE){
-      Out <- Out %>%
+      Main <- Main %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "primary metabolite 1" &
                                           ADAMParameter == TRUE) %>%
@@ -362,7 +351,7 @@ annotateDetails <- function(existing_exp_details,
    
    if("Abs_model_met2" %in% names(existing_exp_details) &&
       any(existing_exp_details$Abs_model_met2 == "ADAM", na.rm = T) == FALSE){
-      Out <- Out %>%
+      Main <- Main %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "primary metabolite 2" &
                                           ADAMParameter == TRUE) %>%
@@ -371,7 +360,7 @@ annotateDetails <- function(existing_exp_details,
    
    if("Abs_model_secmet" %in% names(existing_exp_details) &&
       any(existing_exp_details$Abs_model_secmet == "ADAM", na.rm = T) == FALSE){
-      Out <- Out %>%
+      Main <- Main %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "secondary metabolite" &
                                           ADAMParameter == TRUE) %>%
@@ -380,14 +369,14 @@ annotateDetails <- function(existing_exp_details,
    
    if("Abs_model_inhib1met" %in% names(existing_exp_details) &&
       any(existing_exp_details$Abs_model_inhib1met == "ADAM", na.rm = T) == FALSE){
-      Out <- Out %>%
+      Main <- Main %>%
          filter(Detail %in% (AllExpDetails %>%
                                 filter(CompoundID == "inhibitor 1 metabolite" &
                                           ADAMParameter == TRUE) %>%
                                 pull(Detail)) == FALSE)
    }
    
-   CompoundNames <- Out %>%
+   CompoundNames <- Main %>%
       filter(Detail %in% c("Substrate", "PrimaryMetabolite1", 
                            "PrimaryMetabolite2", "SecondaryMetabolite", 
                            "Inhibitor1", "Inhibitor2", 
@@ -405,7 +394,7 @@ annotateDetails <- function(existing_exp_details,
       mutate(CompoundNameID = paste(File, CompoundID))
    
    suppressMessages(
-      Out <- Out %>% 
+      Main <- Main %>% 
          arrange(File) %>% 
          mutate(CompoundNameID = paste(File, CompoundID), 
                 Detail_base = sub("_sub|_inhib1met|_inhib2|_inhib|_secmet|_met1|_met2", 
@@ -431,7 +420,7 @@ annotateDetails <- function(existing_exp_details,
          ungroup())
    
    suppressMessages(
-      Out <- Out %>% 
+      Main <- Main %>% 
          left_join(CompoundNames) %>% 
          select(-CompoundNameID)
    )
@@ -439,7 +428,7 @@ annotateDetails <- function(existing_exp_details,
    # Metabolism and interaction parameters won't match input details, so
    # adding which sheet they came from and what simulator section they
    # were. Also adding some notes explaining what detail is.
-   Out <- Out %>% unique() %>% 
+   Main <- Main %>% unique() %>% 
       mutate(
          # Elimination details
          Sheet = ifelse(str_detect(Detail, "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^CL_"), 
@@ -556,23 +545,23 @@ annotateDetails <- function(existing_exp_details,
    ## compoundID ---------------------------------------------------------------
    if(any(complete.cases(compoundID))){
       
-      Out <- Out %>% filter(CompoundID %in% sort(unique(compoundID)) |
-                               is.na(CompoundID))
+      Main <- Main %>% filter(CompoundID %in% sort(unique(compoundID)) |
+                                 is.na(CompoundID))
    }
    
    ## compound -------------------------------------------------------------
    if(complete.cases(compound)){
       
-      if(any(str_detect(tolower(Out$Compound), tolower(compound))) == FALSE){
+      if(any(str_detect(tolower(Main$Compound), tolower(compound))) == FALSE){
          warning(paste0("None of the simulations had information on the compound you requested. You requested a compound called `", 
                         compound, 
                         "``, but the compounds present in these simulations are: ", 
-                        str_comma(sort(unique(Out$Compound))), ". All the information specific to those compounds will be omitted from your output."), 
+                        str_comma(sort(unique(Main$Compound))), ". All the information specific to those compounds will be omitted from your output."), 
                  call. = FALSE)
       }
       
-      Out <- Out %>% filter(str_detect(tolower(Compound), tolower({{compound}})) |
-                               is.na(Compound)) %>% 
+      Main <- Main %>% filter(str_detect(tolower(Compound), tolower({{compound}})) |
+                                 is.na(Compound)) %>% 
          mutate(Notes = str_trim(gsub("(for|of) (the )?(substrate|primary metabolite 1|primary metabolite 2|secondary metabolite|inhibitor 1|inhibitor 2|inhibitor 1 metabolite)",
                                       "", Notes)), 
                 Detail = sub("_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$|_inhib1met$", 
@@ -640,7 +629,7 @@ annotateDetails <- function(existing_exp_details,
                  call. = FALSE)
       }
       
-      Out <- Out %>% filter(SimulatorSection %in% MySections)
+      Main <- Main %>% filter(SimulatorSection %in% MySections)
       
    }
    
@@ -656,7 +645,7 @@ annotateDetails <- function(existing_exp_details,
             DetailSet, (AllExpDetails %>%
                            filter(complete.cases(CDSInputMatch)) %>%
                            pull(Detail)), 
-            Out %>% 
+            Main %>% 
                filter(str_detect(Detail, 
                                  "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^Ki_|^kinact|^Kapp|^MBI|^Ind")) %>% 
                pull(Detail),
@@ -686,22 +675,22 @@ annotateDetails <- function(existing_exp_details,
       
       if(any(str_detect(tolower(detail_set), "summary"))){
          DetailSet <- c(DetailSet, 
-                        Out %>% filter(Sheet %in% c("Input Sheet", 
-                                                    "Input Sheet or Summary", 
-                                                    "Input Sheet, Summary, or workspace XML file",
-                                                    "calculated, Summary, or workspace XML file")) %>% pull(Detail))
+                        Main %>% filter(Sheet %in% c("Input Sheet", 
+                                                     "Input Sheet or Summary", 
+                                                     "Input Sheet, Summary, or workspace XML file",
+                                                     "calculated, Summary, or workspace XML file")) %>% pull(Detail))
       }
       
       if(any(str_detect(tolower(detail_set), "input sheet"))){
          DetailSet <- c(DetailSet, 
-                        Out %>% filter(Sheet %in% c("Input Sheet", 
-                                                    "Input Sheet or Summary", 
-                                                    "Input Sheet, Summary, or workspace XML file")) %>% pull(Detail))
+                        Main %>% filter(Sheet %in% c("Input Sheet", 
+                                                     "Input Sheet or Summary", 
+                                                     "Input Sheet, Summary, or workspace XML file")) %>% pull(Detail))
       }
       
       if(any(str_detect(tolower(detail_set), "population"))){
          DetailSet <- c(DetailSet, 
-                        Out %>% filter(Sheet == "population") %>% pull(Detail))
+                        Main %>% filter(Sheet == "population") %>% pull(Detail))
       }
       
       # This is when they have requested individual details.
@@ -714,59 +703,59 @@ annotateDetails <- function(existing_exp_details,
                                 FUN = function(x) sub("_X", x, Xdetails)))
       DetailSet <- c(DetailSet, Xdetails)
       
-      Out <- Out %>% filter(Detail %in% 
-                               switch(as.character(complete.cases(compound)),
-                                      "TRUE" = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
-                                                   "", DetailSet),
-                                      "FALSE" = DetailSet))
+      Main <- Main %>% filter(Detail %in% 
+                                 switch(as.character(complete.cases(compound)),
+                                        "TRUE" = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
+                                                     "", DetailSet),
+                                        "FALSE" = DetailSet))
    }
    
    
    # find_matching_details --------------------------------------------------------
    
    if(complete.cases(find_matching_details)){
-      Out <- Out %>% 
+      Main <- Main %>% 
          filter(str_detect(Detail, find_matching_details))
    }
    
    
    # Cleaning up and removing unnecessary info ----------------------------
    # Removing unnecessary compounds.
-   if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib$")) %>%
+   if(all(is.na(Main %>% filter(str_detect(Detail, "_inhib$")) %>%
                 pull(Value)))){
-      Out <- Out %>% filter(!str_detect(Detail, "_inhib$|Inhibitor1$"))
+      Main <- Main %>% filter(!str_detect(Detail, "_inhib$|Inhibitor1$"))
    }
    
-   if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib2")) %>%
+   if(all(is.na(Main %>% filter(str_detect(Detail, "_inhib2")) %>%
                 pull(Value)))){
-      Out <- Out %>% filter(!str_detect(Detail, "_inhib2|Inhibitor2"))
+      Main <- Main %>% filter(!str_detect(Detail, "_inhib2|Inhibitor2"))
    }
    
-   if(all(is.na(Out %>% filter(str_detect(Detail, "_inhib1met")) %>%
+   if(all(is.na(Main %>% filter(str_detect(Detail, "_inhib1met")) %>%
                 pull(Value)))){
-      Out <- Out %>% filter(!str_detect(Detail, "_inhib1met|Inhibitor1Metabolite"))
+      Main <- Main %>% filter(!str_detect(Detail, "_inhib1met|Inhibitor1Metabolite"))
    }
    
-   if(all(is.na(Out %>% filter(str_detect(Detail, "_met1")) %>%
+   if(all(is.na(Main %>% filter(str_detect(Detail, "_met1")) %>%
                 pull(Value)))){
-      Out <- Out %>% filter(!str_detect(Detail, "_met1|PrimaryMetabolite1"))
+      Main <- Main %>% filter(!str_detect(Detail, "_met1|PrimaryMetabolite1"))
    }
    
-   if(all(is.na(Out %>% filter(str_detect(Detail, "_met2")) %>%
+   if(all(is.na(Main %>% filter(str_detect(Detail, "_met2")) %>%
                 pull(Value)))){
-      Out <- Out %>% filter(!str_detect(Detail, "_met2|PrimaryMetabolite2"))
+      Main <- Main %>% filter(!str_detect(Detail, "_met2|PrimaryMetabolite2"))
    }
    
-   if(all(is.na(Out %>% filter(str_detect(Detail, "_secmet")) %>%
+   if(all(is.na(Main %>% filter(str_detect(Detail, "_secmet")) %>%
                 pull(Value)))){
-      Out <- Out %>% filter(!str_detect(Detail, "_secmet|SecondaryMetabolite"))
+      Main <- Main %>% filter(!str_detect(Detail, "_secmet|SecondaryMetabolite"))
    }
    
    
    # Removing compound column if they don't want it
    if(class(show_compound_col) == "logical"){
       if(show_compound_col == FALSE){
-         Out <- Out %>% select(-Compound)
+         Main <- Main %>% select(-Compound)
       }
    } else if(show_compound_col == "concatenate"){
       if(complete.cases(compound)){
@@ -798,20 +787,20 @@ annotateDetails <- function(existing_exp_details,
                     call. = FALSE)
          } else {
             
-            AllCompounds <- str_comma(sort(unique(Out$Compound)), conjunction = "or")
-            Out <- Out %>% mutate(Compound = ifelse(complete.cases(Compound), 
-                                                    AllCompounds, NA)) %>% 
+            AllCompounds <- str_comma(sort(unique(Main$Compound)), conjunction = "or")
+            Main <- Main %>% mutate(Compound = ifelse(complete.cases(Compound), 
+                                                      AllCompounds, NA)) %>% 
                select(SimulatorSection, Sheet, Notes, Compound, Detail,
                       File, Value)
          }
       } else {
-         AllCompounds <- Out %>% select(Compound, CompoundID) %>% 
+         AllCompounds <- Main %>% select(Compound, CompoundID) %>% 
             filter(complete.cases(CompoundID)) %>% 
             group_by(CompoundID) %>% 
             summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
          
          suppressMessages(
-            Out <- Out %>% select(-Compound) %>% left_join(AllCompounds) %>% 
+            Main <- Main %>% select(-Compound) %>% left_join(AllCompounds) %>% 
                select(SimulatorSection, Sheet, Notes, CompoundID, Compound, Detail,
                       File, Value))
       }
@@ -820,16 +809,16 @@ annotateDetails <- function(existing_exp_details,
    
    # Pivoting wider again ------------------------------------------------
    
-   AllFiles <- unique(Out$File)
+   AllFiles <- unique(Main$File)
    
-   Out <- Out %>% 
+   Main <- Main %>% 
       pivot_wider(names_from = File, 
                   values_from = Value)
    
    # Need to check again whether template_sim is included b/c it might not be
    # any more if the user has filtered results for a specific compound ID that
    # doesn't exist in template_sim.
-   if(complete.cases(template_sim) & template_sim %in% names(Out) == FALSE){
+   if(complete.cases(template_sim) & template_sim %in% names(Main) == FALSE){
       warning(paste0("Your template simulation file, `", 
                      template_sim, 
                      "`, was originally included in the object you supplied for `existing_exp_details`, but that particular simulation didn't have any of the combination of details or compound IDs or compounds that you requested we filter the results by. We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim`."), 
@@ -840,7 +829,7 @@ annotateDetails <- function(existing_exp_details,
    
    if(length(AllFiles) > 1){
       # Checking for details that are the SAME across all files
-      AllSame <- Out %>% 
+      AllSame <- Main %>% 
          select(any_of(c("CompoundID", "Compound", "Detail")),
                 matches("xlsx$")) %>% 
          pivot_longer(cols = matches("xlsx$"), 
@@ -852,13 +841,13 @@ annotateDetails <- function(existing_exp_details,
          select(-Length)
       
       suppressMessages(
-         Out <- Out %>%
+         Main <- Main %>%
             left_join(AllSame)
       )
    }
    
    if(complete.cases(template_sim)){
-      Out <- Out %>% 
+      Main <- Main %>% 
          select(-UniqueVal) %>% 
          select(any_of(c("SimulatorSection", "Sheet", "Notes",
                          "CompoundID", "Compound", "Detail")), 
@@ -866,42 +855,42 @@ annotateDetails <- function(existing_exp_details,
                 everything())
       
       TSim <- paste("TEMPLATE SIMULATION -", template_sim)
-      names(Out)[names(Out) == template_sim] <- TSim
+      names(Main)[names(Main) == template_sim] <- TSim
       
-   } else if("UniqueVal" %in% names(Out)){
-      Out <- Out %>% 
+   } else if("UniqueVal" %in% names(Main)){
+      Main <- Main %>% 
          select(any_of(c("SimulatorSection", "Sheet", "Notes",
                          "CompoundID", "Compound", "Detail", 
                          "UniqueVal")), 
                 everything())
       
-      if("Compound" %in% names(Out)){
+      if("Compound" %in% names(Main)){
          if(complete.cases(compound)){
-            Out <- Out %>% 
+            Main <- Main %>% 
                rename("All files have this value for this compound" = UniqueVal)
          } else {
-            Out <- Out %>% 
+            Main <- Main %>% 
                mutate(ToOmit = complete.cases(CompoundID) & 
                          is.na(Compound)) %>% 
                filter(ToOmit == FALSE) %>% select(-ToOmit) %>% 
                rename("All files have this value for this compound ID and compound" = UniqueVal)
          }
       } else {
-         Out <- Out %>% 
+         Main <- Main %>% 
             rename("All files have this value for this compound ID" = UniqueVal)
       }
    }  
    
    # Removing anything that was all NA's if that's what user requested
    if(omit_all_missing){
-      Out$AllNA <- apply(Out[, names(Out)[str_detect(names(Out), "xlsx$")]], 
-                         MARGIN = 1, FUN = function(.) all(is.na(.)))    
+      Main$AllNA <- apply(Main[, names(Main)[str_detect(names(Main), "xlsx$")]], 
+                          MARGIN = 1, FUN = function(.) all(is.na(.)))    
       
-      Out <- Out %>% filter(AllNA == FALSE) %>% select(-AllNA)
+      Main <- Main %>% filter(AllNA == FALSE) %>% select(-AllNA)
    }
    
    # Sorting to help organize output
-   Out <- Out %>%
+   Main <- Main %>%
       mutate(BaseDetail = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
                               "", Detail), 
              EnzymeForSorting = str_extract(Detail, "(CYP|UGT)[1-9][A-Z][1-9]{1,2}")) %>% 
@@ -923,12 +912,12 @@ annotateDetails <- function(existing_exp_details,
       
       for(i in 1:length(NontempFiles)){
          Diffs[[i]] <- 
-            list(columns = which(names(Out) == NontempFiles[i]),
-                 rows = which(Out[ , NontempFiles[i]] != Out[, TSim] |
-                                 (complete.cases(Out[ , NontempFiles[i]]) &
-                                     is.na(Out[, TSim])) |
-                                 (is.na(Out[ , NontempFiles[i]]) & 
-                                     complete.cases(Out[, TSim]))), 
+            list(columns = which(names(Main) == NontempFiles[i]),
+                 rows = which(Main[ , NontempFiles[i]] != Main[, TSim] |
+                                 (complete.cases(Main[ , NontempFiles[i]]) &
+                                     is.na(Main[, TSim])) |
+                                 (is.na(Main[ , NontempFiles[i]]) & 
+                                     complete.cases(Main[, TSim]))), 
                  fill = "#FFC7CE", 
                  font = list(color = "#9B030C"))
       }
@@ -938,7 +927,7 @@ annotateDetails <- function(existing_exp_details,
    if(show_only_diff_from_template){
       RowsWithDiffs <- lapply(Diffs, FUN = function(x) x[["rows"]])
       RowsWithDiffs <- sort(unique(unlist(RowsWithDiffs)))
-      Out <- Out[RowsWithDiffs, ]
+      Main <- Main[RowsWithDiffs, ]
    }
    
    # Check for when there isn't any information beyond what the simulator
@@ -946,7 +935,7 @@ annotateDetails <- function(existing_exp_details,
    # then wants information that would not have been extracted. For example,
    # extractExpDetails pulls only the "Summary" tab by default, so it won't have
    # a LOT of useful information.
-   if(nrow(Out) == 1){
+   if(nrow(Main) == 1){
       warning("There is only 1 row in your output. When you ran `extractExpDetails` or `extractExpDetails_mult`, did you request all the information you wanted? For example, if you only requested information from the `Summary` tab, that won't include any elimination information.", 
               call. = FALSE)
    }
@@ -968,34 +957,35 @@ annotateDetails <- function(existing_exp_details,
       }
       
       if(Ext == "csv"){
-         write.csv(Out, FileName, row.names = F)
+         write.csv(Main, FileName, row.names = F)
       } else if(Ext == "xlsx"){
          if(is.na(template_sim)){
             # This is when there is no template simulation, but we are
             # including a column noting when a given value was the same for
             # all simulations.
             formatXL(
-               Out, FileName, sheet = "Simulation experimental details",
+               Main, FileName, sheet = "Simulation experimental details",
                styles = list(
-                  list(columns = which(names(Out) == "Notes"), 
+                  list(columns = which(names(Main) == "Notes"), 
                        textposition = list(wrapping = TRUE)),
                   list(rows = 0, font = list(bold = TRUE),
                        textposition = list(alignment = "middle",
                                            wrapping = TRUE)), 
-                  list(columns = which(str_detect(names(Out), "All files have this value")),
+                  list(columns = which(str_detect(names(Main), "All files have this value")),
                        fill = "#E7F3FF"), 
-                  list(rows = 0, columns = which(str_detect(names(Out), "All files have this value")), 
+                  list(rows = 0, columns = which(str_detect(names(Main), "All files have this value")), 
                        font = list(bold = TRUE), 
                        textposition = list(alignment = "middle",
                                            wrapping = TRUE), 
                        fill = "#E7F3FF")))
+            
          } else {
             # This is when there IS a template simulation. Formatting to
             # highlight in red all the places where things differ.
             
             MyStyles[[1]] <- 
                # wrapping text in the notes column since it's sometimes long
-               list(columns = which(names(Out) == "Notes"), 
+               list(columns = which(names(Main) == "Notes"), 
                     textposition = list(wrapping = TRUE))
             
             MyStyles[[2]] <- 
@@ -1006,11 +996,11 @@ annotateDetails <- function(existing_exp_details,
             
             # making the template sim column blue
             MyStyles[[3]] <- 
-               list(columns = which(str_detect(names(Out), template_sim)),
+               list(columns = which(str_detect(names(Main), template_sim)),
                     fill = "#E7F3FF")
             
             MyStyles[[4]] <- 
-               list(columns = which(str_detect(names(Out), template_sim)),
+               list(columns = which(str_detect(names(Main), template_sim)),
                     rows = 0, font = list(bold = TRUE), 
                     textposition = list(alignment = "middle",
                                         wrapping = TRUE), 
@@ -1019,12 +1009,31 @@ annotateDetails <- function(existing_exp_details,
             MyStyles <- append(MyStyles, Diffs)
             
             formatXL(
-               Out, FileName, sheet = "Simulation experimental details",
+               Main, FileName, sheet = "Simulation experimental details",
                styles = MyStyles)
             
          }
+         
+         # Checking for other things we should save
+         if(any(complete.cases(detail_set)) == FALSE |
+            (any(complete.cases(detail_set)) & detail_set == "all")){
+            ToWrite <- names(existing_exp_details)[
+               sapply(existing_exp_details, is.null) == FALSE]
+            ToWrite <- names(existing_exp_details[ToWrite])[
+               sapply(existing_exp_details[ToWrite], nrow) > 0]
+            ToWrite <- setdiff(ToWrite, "MainDetails")
+            
+            for(i in ToWrite){
+               formatXL_head(DF = existing_exp_details[[i]], 
+                             file = FileName, 
+                             sheet = i)
+            }
+         }
       }
    }
+   
+   Out <- existing_exp_details
+   Out$MainDetails <- Main
    
    return(Out)
    

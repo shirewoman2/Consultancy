@@ -18,6 +18,9 @@
 #' @param exp_details Experiment details you want to extract from the simulator
 #'   output file. Options are \describe{
 #'
+#'   \item{"Summary and Input"}{Extract details available from the "Summary tab"
+#'   and the "Input Sheet" (default)}
+#'
 #'   \item{"Summary tab"}{Extract details available from the "Summary tab"
 #'   (default)}
 #'
@@ -49,11 +52,10 @@
 #'   listed, or "_inhib1met" for the inhibitor 1 metabolite. An example of
 #'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 #'
-#'   \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
-#'   listed on the "Summary" tab. If you want experimental details on a second
-#'   inhibitor or more information on metabolites, try pulling them from the
-#'   "Input sheet" instead of the "Summary" tab, which doesn't have as much
-#'   information on those compounds.} \item{There are a few places where
+#'   \strong{NOTES:} \enumerate{\item{The default pulls parameters from the
+#'   "Summary" tab and the "Input Sheet" tab. Note that the
+#'   "Summary" tab does not include information on any compounds beyond the
+#'   substrate and inhibitor 1.} \item{There are a few places where
 #'   requesting one item as input will get you multiple items as output:
 #'   intrinsic clearance, interaction parameters, and transport parameters. For
 #'   example, if you request intrinsic clearance values (ex: "CLint_sub"),
@@ -61,10 +63,7 @@
 #'   they'll be named according to which parameter it is, which enzyme it's for,
 #'   etc. Same thing with requesting interaction parameters (ex:
 #'   "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
-#'   and transporter parameters (ex: "Transport_sub").} \item{We have limited
-#'   experience with extracting these data when a custom dosing regimen was
-#'   used, so it would be a good idea to carefully check that the data are being
-#'   pulled correctly in that scenario.}}
+#'   and transporter parameters (ex: "Transport_sub").}}
 #' @param annotate_output TRUE or FALSE (default) on whether to transpose the
 #'   rows and columns in the output, making the output table longer instead of
 #'   wider, and adding columns to the output for a) which compound the
@@ -96,7 +95,7 @@
 #'
 #' 
 extractExpDetails <- function(sim_data_file,
-                              exp_details = "Summary tab", 
+                              exp_details = "Summary and Input", 
                               annotate_output = FALSE, 
                               save_output = NA){
    
@@ -123,13 +122,24 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # Cleaning up possible problems w/how exp_details by tab might be inputted
-   if(str_detect(tolower(exp_details[1]), "summary")){exp_details <- "Summary tab"}
-   if(str_detect(tolower(exp_details[1]), "input") &
-      !str_detect(tolower(exp_details[1]), "simcyp")){exp_details <- "Input sheet"}
-   if(str_detect(tolower(exp_details[1]), "population")){exp_details <- "population tab"}
+   if(str_detect(tolower(exp_details[1]), "summary") & 
+      str_detect(tolower(exp_details[1]), "input")){
+      exp_details <- "summary and input"
+   } else if(str_detect(tolower(exp_details[1]), "simcyp") & 
+             str_detect(tolower(exp_details[1]), "input")){
+      exp_details <- "simcyp inputs"
+   } else if(str_detect(tolower(exp_details[1]), "summary")){
+      exp_details <- "summary tab"
+   } else if(str_detect(tolower(exp_details[1]), "input")){
+      exp_details <- "input sheet"
+   } else if(str_detect(tolower(exp_details[1]), "population")){
+      exp_details <- "population tab"
+   } else if(str_detect(tolower(exp_details[1]), "worksp")){
+      exp_details <- "workspace"
+   }
    
    # Noting exp_details requested for later
-   exp_details_input <- tolower(exp_details)
+   exp_details_input <- exp_details
    
    
    # Main body of function ----------------------------------------------------
@@ -161,34 +171,29 @@ extractExpDetails <- function(sim_data_file,
    PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
       rename(Deet = Detail) %>% arrange(Deet)
    
-   if(exp_details_input[1] == "all"){
-      exp_details <- unique(AllExpDetails$Detail)
-   }
-   
-   if(exp_details_input[1] == "summary tab"){
-      exp_details <- c(SumDeets$Deet, paste0("StartHr", c("_sub", "_inhib")))
-      # Note that StartHr_inhib2, even if there were an inhibitor 2, is
-      # not available from the Summary Sheet. It IS available from the
-      # Input Sheet, though.
-   }
-   
-   if(exp_details_input[1] == "input sheet"){
-      exp_details <- c(InputDeets$Deet, paste0("StartHr", 
-                                               c("_sub", "_inhib", 
-                                                 "_inhib2")))
-   }
-   
-   if(exp_details_input[1] == "population tab"){
-      exp_details <- PopDeets$Deet
-   }
-   
-   if(tolower(exp_details_input[1]) == "simcyp inputs"){
-      exp_details <- sort(unique(
-         c("Substrate", "Inhibitor1", "Inhibitor2", "Metabolite1",
-           "Metabolite2", "SecondaryMetabolite", "Inhibitor1Metabolite",
-           AllExpDetails %>% 
-              filter(complete.cases(CDSInputMatch)) %>% 
-              pull(Detail))))
+   if(length(exp_details_input) == 1){
+      exp_details <- 
+         switch(exp_details_input, 
+                "all" = unique(AllExpDetails$Detail), 
+                "summary tab" = SumDeets$Deet, 
+                "input sheet" = InputDeets$Deet, 
+                "summary and input" = c(SumDeets$Deet, InputDeets$Deet),
+                "population tab" = PopDeets$Deet, 
+                "simcyp inputs" = AllExpDetails %>% 
+                   filter(complete.cases(CDSInputMatch)) %>% 
+                   pull(Detail))
+      
+      # There are some details that we will just ALWAYS need to include b/c so
+      # many downstream functions rely on them. Making sure that these are
+      # included. Note that we are not requiring these when the user requested a
+      # *specific* set of exp_details b/c I'm assuming that this function will
+      # be serving a different purpose in that scenario.
+      exp_details <- 
+         unique(exp_details, 
+                c(AllCompounds$DetailNames, 
+                  paste0(rep(c("StartHr", "StartDayTime", "Regimen"), each = 3), 
+                         c("_sub", "_inhib", "_inhib2"))))
+      
    }
    
    # Need to note original exp_details requested b/c I'm adding to it if people
@@ -237,13 +242,6 @@ extractExpDetails <- function(sim_data_file,
       stop("You must enter at least one study detail to extract.",
            call. = FALSE)
    }
-   
-   # There are some details that we will just ALWAYS need to include b/c so many
-   # downstream functions rely on them. Making sure that these are included. 
-   exp_details <- unique(exp_details, 
-                         c(AllCompounds$DetailNames, 
-                           paste0(rep(c("StartHr", "StartDayTime", "Regimen"), each = 3), 
-                                  c("_sub", "_inhib", "_inhib2"))))
    
    Out <- list()
    
@@ -1536,6 +1534,12 @@ extractExpDetails <- function(sim_data_file,
                CustomDosing_sub = CustomDosing_sub, 
                CustomDosing_inhib = CustomDosing_inhib, 
                CustomDosing_inhib2 = CustomDosing_inhib2)
+   
+   for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
+      Out[[j]] <- Out[[j]] %>% 
+         mutate(File = sim_data_file) %>% 
+         select(File, everything())
+   }
    
    if(annotate_output){
       Out <- annotateDetails(Main, 
