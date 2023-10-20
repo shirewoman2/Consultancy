@@ -170,10 +170,10 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    if(AnyExistingDeets){
       if("list" %in% class(existing_exp_details) && 
          "MainDetails" %in% names(existing_exp_details) == FALSE){
-         # This is for when they may have saved exp details from package
-         # versions < 2.8.0, which is when I changed the output from
-         # extractExpDetails from sometimes being a list & sometimes being a
-         # data.frame to ALWAYS being a list.
+         # This is for when they may have saved the output from
+         # extractExpDetails from package versions < 2.8.0, which is when I
+         # changed the output from extractExpDetails from sometimes being a list
+         # & sometimes being a data.frame to ALWAYS being a list.
          existing_exp_details <- list(MainDetails = existing_exp_details)
       }
       
@@ -182,27 +182,29 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             # This is when existing_exp_details has been annotated.
             # Ironically, need to de-annotate here to make this work well
             # with the rest of the function.
-            existing_exp_details <- existing_exp_details %>% 
-               select(-any_of(c("SimulatorSection", "Sheet", "Notes",
-                                "CompoundID", "Compound"))) %>% 
-               pivot_longer(cols = -Detail, 
-                            names_to = "File", values_to = "Value") %>% 
-               pivot_wider(names_from = Detail, values_from = Value)
-            
-         } else if("File" %in% names(existing_exp_details) == FALSE){
-            existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
-         }
-         
-         if(overwrite == FALSE){
-            sim_data_files_topull <- unique(setdiff(sim_data_files, 
-                                                    existing_exp_details$File))
+            existing_exp_details <- deannotateDetails(existing_exp_details)
          } else {
-            sim_data_files_topull <- unique(sim_data_files)
-            existing_exp_details <- existing_exp_details %>%
-               filter(!File %in% existing_exp_details$File)
+            # This is for when they may have saved extractExpDetails_mult from
+            # package versions < 2.8.0, which is when I changed the output from
+            # extractExpDetails_X from sometimes being a list & sometimes being a
+            # data.frame to ALWAYS being a list.
+            existing_exp_details <- list(MainDetails = existing_exp_details)
          }
       }
       
+      if("File" %in% names(existing_exp_details$MainDetails) == FALSE){
+         existing_exp_details$MainDetails$File <-
+            paste("unknown file", 1:nrow(existing_exp_details$MainDetails))
+      }
+      
+      if(overwrite == FALSE){
+         sim_data_files_topull <- 
+            unique(setdiff(sim_data_files, existing_exp_details$MainDetails$File))
+      } else {
+         sim_data_files_topull <- unique(sim_data_files)
+         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>%
+            filter(!File %in% existing_exp_details$MainDetails$File)
+      }
    } else {
       sim_data_files_topull <- unique(sim_data_files)
    }
@@ -210,7 +212,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    MyDeets <- list()
    CustomDosing <- c()
    
-   for(i in sim_data_files_topull){
+   for(i in sim_data_files_topull){ # FIXME - left off here!
       message(paste("Extracting simulation experimental details from file =", i))
       MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
                                         exp_details = exp_details) 

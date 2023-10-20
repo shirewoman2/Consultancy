@@ -72,6 +72,8 @@ deannotateDetails <- function(existing_exp_details,
         arrange(File) %>% 
         mutate(File = as.character(File))
     
+    existing_exp_details <- list(MainDetails = existing_exp_details)
+    
     return(existing_exp_details)
     
 }
